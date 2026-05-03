@@ -1,0 +1,1 @@
+<small style="font-size: 9pt; text-align:center; font-family: sans;"> {!! getLessOrGreaterThanMinRefVal($result->extra_data->inserted_result, $result->parameter_id, $result->sample->analysis->profile_id) !!} </small>

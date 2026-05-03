@@ -1,0 +1,69 @@
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class ProposalTemplateRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     */
+    public function rules(): array
+    {
+        if ($this->isMethod('post')) {
+            $rules = [
+                'name' => 'required|min:1|unique:proposal_templates,name',
+                'content' => 'required',
+                'user_id' => 'required|exists:users,id',
+            ];
+        } else {
+            $rules = [
+                'name' => 'required|min:1|unique:proposal_templates,name,' . request()->template,
+                'content' => 'required',
+
+            ];
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Get custom attributes for validator errors.
+     *
+     * @return array
+     */
+    public function attributes()
+    {
+        return [
+            'name' => trans('gestlab.general.labels.proposal_templates.name'),
+            'content' => trans('gestlab.general.labels.proposal_templates.content'),
+            'user_id' => trans('gestlab.general.labels.proposal_templates.user_id'),
+        ];
+    }
+
+    /**
+     * Configure the validator instance.
+     *
+     * @param  \Illuminate\Validation\Validator  $validator
+     * @return void
+     */
+    public function prepareForValidation()
+    {
+        if ($this->isMethod('post')) {
+            $this->merge([
+                'user_id' => auth()->user()->id ?? null,
+            ]);
+        }
+    }
+}

@@ -1,0 +1,1 @@
+<small style="font-size: 9pt; text-align:center; font-family: sans;">{!! $result->approved_value !!} {{ !is_null($result->uncertainty_value) && !empty($result->uncertainty_value) ? '± ' . $result->uncertainty_value : '' }}</small>

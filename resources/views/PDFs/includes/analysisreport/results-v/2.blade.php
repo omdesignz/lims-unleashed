@@ -1,0 +1,1 @@
+<small>{!! $result->category->name !!}</small>

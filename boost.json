@@ -1,0 +1,22 @@
+{
+    "agents": [
+        "junie",
+        "codex",
+        "opencode"
+    ],
+    "guidelines": true,
+    "mcp": true,
+    "nightwatch_mcp": false,
+    "packages": [
+        "spatie/laravel-medialibrary"
+    ],
+    "sail": false,
+    "skills": [
+        "fortify-development",
+        "laravel-best-practices",
+        "configuring-horizon",
+        "inertia-vue-development",
+        "tailwindcss-development",
+        "medialibrary-development"
+    ]
+}
