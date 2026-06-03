@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="export-certificate-show space-y-8" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
     <div class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
       <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -289,7 +289,7 @@
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 text-center">
                     <div class="flex items-center justify-center gap-2">
                       <span class="font-semibold">{{ formatQuantity(item.qty) }}</span>
-                      <span class="text-sm text-gray-400">units</span>
+                      <span class="text-sm text-gray-400">{{ $t('gestlab.general.labels.export_certificates.units') }}</span>
                     </div>
                   </td>
 
@@ -539,6 +539,7 @@
 
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed } from "vue";
 import { router, Link } from "@inertiajs/vue3";
 import { 
@@ -659,3 +660,76 @@ const canEdit = computed(() => {
   return !props.record.data?.invoiced;
 });
 </script>
+
+<style scoped>
+.export-certificate-show :deep(.bg-white) {
+  background-color: rgb(255 253 247 / 0.96);
+}
+
+.export-certificate-show :deep(.bg-gray-50) {
+  background-color: rgb(247 241 231 / 0.76);
+}
+
+.export-certificate-show :deep(.border-gray-200),
+.export-certificate-show :deep(.border-gray-100),
+.export-certificate-show :deep(.divide-gray-200),
+.export-certificate-show :deep(.divide-gray-300) {
+  border-color: #ded3bf;
+}
+
+.export-certificate-show :deep(.text-blue-900) {
+  color: rgb(var(--primary-800-rgb));
+}
+
+.export-certificate-show :deep(.bg-blue-900),
+.export-certificate-show :deep(.bg-blue-950) {
+  background-color: rgb(var(--primary-900-rgb));
+}
+
+.export-certificate-show :deep(.from-blue-900) {
+  --tw-gradient-from: rgb(var(--primary-900-rgb)) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(var(--primary-900-rgb) / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.export-certificate-show :deep(.to-blue-800) {
+  --tw-gradient-to: rgb(var(--primary-700-rgb)) var(--tw-gradient-to-position);
+}
+
+:global(.dark) .export-certificate-show :deep(.bg-white),
+:global(.dark) .export-certificate-show :deep(.bg-gray-50),
+:global(.dark) .export-certificate-show :deep(.bg-gray-100) {
+  background-color: rgb(7 17 15 / 0.9);
+}
+
+:global(.dark) .export-certificate-show :deep(.border-gray-200),
+:global(.dark) .export-certificate-show :deep(.border-gray-100),
+:global(.dark) .export-certificate-show :deep(.divide-gray-200),
+:global(.dark) .export-certificate-show :deep(.divide-gray-300) {
+  border-color: #25443c;
+}
+
+:global(.dark) .export-certificate-show :deep(.text-gray-900) {
+  color: #f7f1e7;
+}
+
+:global(.dark) .export-certificate-show :deep(.text-gray-800),
+:global(.dark) .export-certificate-show :deep(.text-gray-700) {
+  color: #d7e2dd;
+}
+
+:global(.dark) .export-certificate-show :deep(.text-gray-600),
+:global(.dark) .export-certificate-show :deep(.text-gray-500),
+:global(.dark) .export-certificate-show :deep(.text-gray-400) {
+  color: #a9bbb4;
+}
+
+:global(.dark) .export-certificate-show :deep(.text-blue-900) {
+  color: rgb(var(--primary-200-rgb));
+}
+
+:global(.dark) .export-certificate-show :deep(.bg-blue-50),
+:global(.dark) .export-certificate-show :deep(.bg-blue-100) {
+  background-color: rgb(var(--primary-500-rgb) / 0.12);
+}
+</style>

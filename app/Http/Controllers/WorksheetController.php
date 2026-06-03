@@ -3,13 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Analysis;
-use Illuminate\Http\Request;
+use App\Models\Parameter;
+use App\Models\Result;
 use App\Models\Worksheet;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 
 class WorksheetController extends Controller
 {
-
     public function index()
     {
         $worksheets = Worksheet::query()
@@ -20,6 +24,30 @@ class WorksheetController extends Controller
             'worksheets' => $worksheets,
         ]);
     }
+
+    public function getWorksheet(): JsonResponse
+    {
+        $search = request()->string('q')->trim()->toString();
+
+        $data = Worksheet::query()
+            ->select(['id', 'name', 'updated_at'])
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where('name', 'LIKE', "%{$search}%");
+            })
+            ->latest('updated_at')
+            ->limit(25)
+            ->get()
+            ->map(fn (Worksheet $worksheet): array => [
+                'id' => $worksheet->id,
+                'value' => $worksheet->id,
+                'label' => $worksheet->name,
+                'name' => $worksheet->name,
+                'updated_at' => $worksheet->updated_at?->toIso8601String(),
+            ]);
+
+        return response()->json($data);
+    }
+
     // Store a new worksheet file
     public function store(Request $request)
     {
@@ -38,7 +66,7 @@ class WorksheetController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
     }
 
@@ -65,24 +93,37 @@ class WorksheetController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
-    public function destroy(Worksheet $worksheet)
+    public function destroy(Request $request): RedirectResponse
     {
-        $worksheet->delete();
+        $validated = $request->validate([
+            'recordIds' => ['required', 'array', 'min:1'],
+            'recordIds.*' => ['integer', 'exists:worksheets,id'],
+        ]);
+
+        Worksheet::query()
+            ->whereIn('id', $validated['recordIds'])
+            ->delete();
 
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ]
+            ],
         ]);
     }
 
-    public function restore() {
-
+    public function restore(): RedirectResponse
+    {
+        return redirect()->back()->with([
+            'toast' => [
+                'title' => trans('gestlab.toasts.notification'),
+                'message' => trans('gestlab.toasts.record_successfully_restored'),
+            ],
+        ]);
     }
 
     public function storeAnalysisDraft(Analysis $analysis)
@@ -147,7 +188,7 @@ class WorksheetController extends Controller
             ->all();
 
         $worksheet = Worksheet::query()->create([
-            'name' => 'Worksheet - ' . ($analysis->code?->code ?? ('Análise #' . $analysis->id)),
+            'name' => 'Worksheet - '.($analysis->code?->code ?? ('Análise #'.$analysis->id)),
             'worksheets' => [
                 'analysis_id' => $analysis->id,
                 'collection_product_id' => $analysis->code?->collection_id,
@@ -187,8 +228,8 @@ class WorksheetController extends Controller
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, \App\Models\Parameter>  $expectedParameters
-     * @param  \Illuminate\Support\Collection<int, \App\Models\Result>  $existingResults
+     * @param  Collection<int, Parameter>  $expectedParameters
+     * @param  Collection<int, Result>  $existingResults
      * @return array<string, mixed>
      */
     private function buildWorksheetScopeControl(Analysis $analysis, $expectedParameters, $existingResults): array

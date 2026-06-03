@@ -18,7 +18,7 @@ function writeStorage(value) {
     window.localStorage.setItem(STORAGE_KEY, value)
 }
 
-export function useTheme(userTheme = null) {
+export function useTheme(userTheme = null, persistToServer = false) {
     const stored = readStorage()
 
     const isDark = ref(
@@ -43,7 +43,7 @@ export function useTheme(userTheme = null) {
     async function persistTheme(theme) {
         const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
 
-        await fetch('/api/user/theme', {
+        await fetch('/user/theme', {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -59,9 +59,11 @@ export function useTheme(userTheme = null) {
         const theme = val ? 'dark' : 'light'
         writeStorage(theme)
         applyTheme()
-        persistTheme(theme).catch(() => {
-            // Keep the local theme applied even if persistence fails.
-        })
+        if (persistToServer) {
+            persistTheme(theme).catch(() => {
+                // Keep the local theme applied even if persistence fails.
+            })
+        }
     })
 
     onMounted(() => {

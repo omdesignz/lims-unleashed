@@ -1,72 +1,85 @@
 <template>
-    <Head title="Forgot Password" />
-    <div class="min-h-screen bg-white flex">
-        <div class="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
-        <div class="mx-auto w-full max-w-sm lg:w-96">
-            <div>
-            <!-- <img class="h-12 w-auto" src="https://tailwindui.com/img/logos/workflow-mark-indigo-600.svg" alt="Workflow" /> -->
-            <!-- <logo class="fill-white" width="320" height="72" /> -->
-            <h2 class="mt-6 text-3xl font-bold text-gray-900">
-                Deixe-nos restaurar o seu acesso
-            </h2>
-            <p class="mt-2 text-sm text-gray-600">
-                preenchendo o seu endereço de email
-            </p>
-            </div>
+  <Head title="Recuperar acesso" />
+  <AuthExperienceShell
+    mode="portal"
+    title="Recupere o acesso ao portal"
+    eyebrow="Portal do cliente"
+    description="Reponha o acesso ao acompanhamento de propostas, amostras, resultados e certificados sem depender de contacto manual com a equipa."
+    context-title="Pedido seguro por email"
+    context-description="Enviamos instruções para o endereço associado à conta para preservar confidencialidade e rastreabilidade do cliente."
+  >
+    <div class="space-y-7">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-[0.22em] text-[#143d37] dark:text-[#f1d78b]">
+          Recuperação
+        </p>
+        <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
+          Restaurar palavra-passe
+        </h2>
+        <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+          Informe o email da sua conta. Se existir um registo activo, enviaremos um link seguro de redefinição.
+        </p>
+      </div>
 
-            <div class="mt-8">
-
-
-            <div class="mt-6">
-                <form @submit.prevent="form.post('/forgot-password')" class="space-y-6">
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700">
-                    Endereço de Email
-                    </label>
-                    <div class="mt-1">
-                    <input v-model="form.email" id="email" name="email" type="email" autocomplete="email" required="" :class="[form.errors.email ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
-                    <p v-if="form.errors.email" class="mt-2 text-sm text-red-600" id="email-error">{{ form.errors.email }}</p>
-                    </div>
-                </div>
-
-                <div>
-                    <span class="relative z-0 inline-flex shadow-sm rounded-md w-full">
-                        <Link :href="route('login')" class="relative w-1/4 inline-flex items-center justify-center px-4 py-2 rounded-l-md border border-transparent shadow-sm bg-ft-orange text-sm font-medium text-white hover:bg-ft-gray focus:z-10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ft-orange">
-                            Voltar
-                        </Link>
-                        <button :class="{ 'opacity-25': form.processing }" :disabled="form.processing" type="submit" class="-ml-px w-3/4 relative justify-center inline-flex items-center px-4 py-2 rounded-r-md border border-transparent shadow-sm bg-ft-orange text-sm font-medium text-white hover:bg-ft-gray focus:z-10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ft-orange">
-                            Enviar instruções via email
-                        </button>
-                    </span>
-                </div>
-                </form>
-            </div>
-            </div>
+      <form @submit.prevent="submit" class="space-y-5">
+        <div>
+          <label for="email" class="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            Email
+          </label>
+          <input
+            id="email"
+            v-model="form.email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            required
+            placeholder="cliente@empresa.co.ao"
+            :class="[
+              'mt-2 block w-full rounded-2xl border bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none transition focus:border-[#1f7a68] focus:ring-4 focus:ring-[#1f7a68]/20 dark:bg-slate-950 dark:text-white',
+              form.errors.email ? 'border-red-300 focus:border-red-500 focus:ring-red-500/15' : 'border-slate-300 dark:border-slate-700'
+            ]"
+          />
+          <p v-if="form.errors.email" class="mt-2 text-xs font-medium text-red-600 dark:text-red-400">
+            {{ form.errors.email }}
+          </p>
         </div>
+
+        <div class="grid gap-3 sm:grid-cols-[0.45fr_1fr]">
+          <Link
+            :href="route('portal.login')"
+            class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            Voltar
+          </Link>
+          <button
+            type="submit"
+            :disabled="form.processing"
+            class="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-[#143d37] to-[#1f7a68] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#143d37]/20 transition hover:from-[#0d2a25] hover:to-[#176452] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {{ form.processing ? 'A enviar...' : 'Enviar instruções' }}
+          </button>
         </div>
-        <div class="hidden lg:block relative w-0 flex-1">
-        <img class="absolute inset-0 h-full w-full object-cover" src="https://images.unsplash.com/photo-1505904267569-f02eaeb45a4c?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1908&q=80" alt="" />
-        </div>
+      </form>
     </div>
-
+  </AuthExperienceShell>
 </template>
 
 <script setup>
-import { useForm } from '@inertiajs/vue3';
-// import Logo from '@/Shared/Logo'
+import { Head, Link, useForm } from '@inertiajs/vue3'
+import AuthExperienceShell from '@/Components/auth/AuthExperienceShell.vue'
+import EmptyLayout from '../../Shared/EmptyLayout.vue'
 
-defineProps({
-    layout: null,
-});
-
-let form = useForm({
-    email: '',
+defineOptions({
+  layout: EmptyLayout,
 })
 
-let submit = () => {
-    form.post('/forgot-password', {
-        onFinish: () => form.reset('email'),
-    })
-}
+const form = useForm({
+  email: '',
+})
 
+const submit = () => {
+  form.post(route('portal.password.email'), {
+    onFinish: () => form.reset('email'),
+  })
+}
 </script>

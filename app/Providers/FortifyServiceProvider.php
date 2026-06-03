@@ -2,29 +2,30 @@
 
 namespace App\Providers;
 
-use Inertia\Inertia;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\DisableTwoFactorAuthentication;
 use App\Actions\Fortify\EnableTwoFactorAuthentication;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
-use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\ServiceProvider;
-use Laravel\Fortify\Actions\EnableTwoFactorAuthentication as BaseEnableTwoFactorAuthentication;
-use Laravel\Fortify\Actions\DisableTwoFactorAuthentication as BaseDisableTwoFactorAuthentication;
-use Laravel\Fortify\Fortify;
 use App\Http\Responses\LoginResponse;
 use App\Http\Responses\LogoutResponse;
 use App\Models\User;
 use App\Models\Warehouse;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Auth\StatefulGuard;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Laravel\Fortify\Contracts\LogoutResponse as LogoutResponseContract;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\ServiceProvider;
+use Inertia\Inertia;
+use Laravel\Fortify\Actions\DisableTwoFactorAuthentication as BaseDisableTwoFactorAuthentication;
+use Laravel\Fortify\Actions\EnableTwoFactorAuthentication as BaseEnableTwoFactorAuthentication;
 use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
+use Laravel\Fortify\Contracts\LogoutResponse as LogoutResponseContract;
 use Laravel\Fortify\Contracts\TwoFactorLoginResponse as TwoFactorLoginResponseContract;
-
+use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -33,18 +34,16 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
-        if(request()->is('portal/*')) {
-            config()->set('fortify.guard', 'portal');
-            config()->set('fortify.home', 'portal/home');
-        }
+        $this->app->bind(StatefulGuard::class, function () {
+            return Auth::guard($this->requestIsPortal() ? 'portal' : config('fortify.guard', null));
+        });
 
         // Bind custom EnableTwoFactorAuthentication action
         $this->app->singleton(
             BaseEnableTwoFactorAuthentication::class,
             EnableTwoFactorAuthentication::class
         );
-        
+
         // Bind custom DisableTwoFactorAuthentication action
         $this->app->singleton(
             BaseDisableTwoFactorAuthentication::class,
@@ -65,7 +64,7 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::authenticateUsing(function (Request $request) {
             $username = filter_var($request->email, FILTER_VALIDATE_EMAIL) ? 'email' : 'nif';
 
-            if(request()->is('portal/*')) {
+            if ($this->requestIsPortal()) {
                 $request->session()->put('fortify.portal_login_attempt', true);
 
                 $user = Warehouse::where($username, $request->email)->first();
@@ -78,12 +77,12 @@ class FortifyServiceProvider extends ServiceProvider
 
             if ($user &&
                     Hash::check($request->password, $user->password)) {
-                    return $user;
-                }
+                return $user;
+            }
         });
 
         Fortify::loginView(function () {
-            if(request()->is('portal/*')) {
+            if ($this->requestIsPortal()) {
                 return Inertia::render('PortalAuth/Login');
             }
 
@@ -91,25 +90,48 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         Fortify::registerView(function () {
+            if ($this->requestIsPortal()) {
+                return Inertia::render('PortalAuth/Register');
+            }
+
             return Inertia::render('Auth/Register');
         });
 
         Fortify::requestPasswordResetLinkView(function () {
+            if ($this->requestIsPortal()) {
+                return Inertia::render('PortalAuth/ForgotPassword');
+            }
+
             return Inertia::render('Auth/ForgotPassword');
         });
 
         Fortify::resetPasswordView(function () {
+            if ($this->requestIsPortal()) {
+                return Inertia::render('PortalAuth/ResetPassword', [
+                    'token' => request()->token,
+                    'email' => request()->email,
+                ]);
+            }
+
             return Inertia::render('Auth/ResetPassword', [
                 'token' => request()->token,
-                'email' => request()->email
+                'email' => request()->email,
             ]);
         });
 
         Fortify::confirmPasswordView(function () {
-           return Inertia::render('Auth/ConfirmPassword');
+            if ($this->requestIsPortal()) {
+                return Inertia::render('PortalAuth/ConfirmPassword');
+            }
+
+            return Inertia::render('Auth/ConfirmPassword');
         });
 
         Fortify::verifyEmailView(function () {
+            if ($this->requestIsPortal()) {
+                return Inertia::render('PortalAuth/VerifyEmail');
+            }
+
             return Inertia::render('Auth/VerifyEmail');
         });
 
@@ -134,5 +156,10 @@ class FortifyServiceProvider extends ServiceProvider
         $this->app->singleton(LoginResponseContract::class, LoginResponse::class);
         $this->app->singleton(TwoFactorLoginResponseContract::class, LoginResponse::class);
         $this->app->singleton(LogoutResponseContract::class, LogoutResponse::class);
+    }
+
+    private function requestIsPortal(): bool
+    {
+        return request()->is('portal') || request()->is('portal/*');
     }
 }

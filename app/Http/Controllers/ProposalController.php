@@ -13,15 +13,18 @@ use App\Models\ProposalComplianceAgreement;
 use App\Models\ProposalComplianceAgreementLog;
 use App\Models\ProposalItem;
 use App\Models\ProposalTemplate;
+use App\Models\VAPProposal;
+use App\Models\VAPProposalTemplate;
 use App\Notifications\ProposalComplianceAcknowledged;
 use App\Notifications\ProposalSentNotification;
 use App\Settings\GeneralSettings;
+use App\Support\ReportStudioPdfBuilder;
+use App\Support\ReportStudioPdfRenderer;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
-use NumberToWords\NumberToWords;
 use Spatie\QueryBuilder\QueryBuilder;
-use PDF;
 
 class ProposalController extends Controller
 {
@@ -30,13 +33,12 @@ class ProposalController extends Controller
         // abort_if( !auth()->user()->can('view_proposals'), 403, '');
 
         $records = QueryBuilder::for(Proposal::class)
-                                ->with('complianceAgreement', 'customer', 'warehouse')
-                                ->withCount('activities as revision_count')
-                                ->withMax('activities as last_revision_at', 'created_at')
-                                ->allowedFilters(Proposal::getAllowedFilters())
-                                ->allowedSorts(Proposal::getAllowedSorts())
-                                ->paginate(request()->query('per_page', 10));
-
+            ->with('complianceAgreement', 'customer', 'warehouse')
+            ->withCount('activities as revision_count')
+            ->withMax('activities as last_revision_at', 'created_at')
+            ->allowedFilters(Proposal::getAllowedFilters())
+            ->allowedSorts(Proposal::getAllowedSorts())
+            ->paginate(request()->query('per_page', 10));
 
         return Inertia::render('Proposals/Index', [
             'record' => ProposalResource::collection($records),
@@ -46,23 +48,22 @@ class ProposalController extends Controller
             'initialIncludes' => request()->query('includes', []),
             'initialGlobalFilter' => request()->query('globalFilter', ''),
             'per_page' => request()->query('per_page', 2),
-            'slideOverEdit' => false,  
+            'slideOverEdit' => false,
             'trashedFilter' => true,
             'trashedOptions' => Proposal::getTrashedOptions(),
             'fields' => Proposal::getColumns(),
             'model' => Proposal::MENU_NAME,
-            'abilities' => method_exists(Proposal::class, 'getAbilities') ? collect(Proposal::ABILITIES)->map(function($item){
-                return $item . '_' . Proposal::MENU_NAME;
-            }) : collect(config('gestlab.default_abilities'))->map(function($item){
-                return $item . '_' . Proposal::MENU_NAME;
-            }),                           
-            'query' => request()->only(['search', 'trashed', 'date', 'orderBy'])
+            'abilities' => method_exists(Proposal::class, 'getAbilities') ? collect(Proposal::ABILITIES)->map(function ($item) {
+                return $item.'_'.Proposal::MENU_NAME;
+            }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
+                return $item.'_'.Proposal::MENU_NAME;
+            }),
+            'query' => request()->only(['search', 'trashed', 'date', 'orderBy']),
         ]);
     }
 
     /**
      * Show the form for creating a new resource.
-     *
      */
     public function create()
     {
@@ -70,15 +71,14 @@ class ProposalController extends Controller
 
         return Inertia::render('Proposals/Create', [
             'templates' => ProposalTemplate::select('id', 'name', 'content')->get(),
-            'discount_categories' => collect(DiscountCategory::all())->map(function($item) {
+            'discount_categories' => collect(DiscountCategory::all())->map(function ($item) {
                 return [
                     'value' => $item->id,
                     'label' => $item->symbol,
                 ];
-            })
+            }),
         ]);
     }
-
 
     //
     public function store(ProposalRequest $request)
@@ -89,7 +89,7 @@ class ProposalController extends Controller
         DB::transaction(function () use ($request): void {
             $proposal = Proposal::create($request->safe()->except(['items']));
 
-            foreach(collect($request->safe()->only(['items']))->first() as $item) {
+            foreach (collect($request->safe()->only(['items']))->first() as $item) {
 
                 $obj = new ProposalItem;
 
@@ -130,18 +130,17 @@ class ProposalController extends Controller
             $proposal->warehouse->notify(new ProposalSentNotification($proposal));
 
         });
-    
+
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
     }
 
-            /**
+    /**
      * Display the specified resource.
-     *
      */
     public function show($id)
     {
@@ -248,7 +247,7 @@ class ProposalController extends Controller
                 'converted_to_invoice' => $record->converted_to_invoice,
                 'obs' => $record->obs,
                 'tolerance_days' => $record->tolerance_days,
-                'items' => collect($record->items)->map(function($item) {
+                'items' => collect($record->items)->map(function ($item) {
                     return [
                         'id' => $item->id ?? null,
                         'proposal_id' => $item->proposal_id ?? null,
@@ -266,12 +265,12 @@ class ProposalController extends Controller
                         'item_id' => [
                             'value' => $item->item_id,
                             'label' => $item->item_description,
-                            'price'=> $item->unit_price + $item->discount_amount,
-                            'tax_id'=> $item->tax_id,
-                            'charge_tax'=> $item->charge_tax,
-                            'tax_percentage'=> $item->tax_percentage,
-                            'exemption_id'=> $item->exemption_id,
-                            'exemption_code'=> $item->exemption_code,
+                            'price' => $item->unit_price + $item->discount_amount,
+                            'tax_id' => $item->tax_id,
+                            'charge_tax' => $item->charge_tax,
+                            'tax_percentage' => $item->tax_percentage,
+                            'exemption_id' => $item->exemption_id,
+                            'exemption_code' => $item->exemption_code,
                         ],
                         'item_description' => $item->item_description,
                         'itemable_id' => [
@@ -293,35 +292,34 @@ class ProposalController extends Controller
                         'global_discount_amount' => $item->global_discount_amount,
                         'obs' => $item->obs,
                     ];
-                })
+                }),
             ],
             'templates' => ProposalTemplate::select('id', 'name', 'content')->get(),
-            'discount_categories' => collect(DiscountCategory::all())->map(function($item) {
+            'discount_categories' => collect(DiscountCategory::all())->map(function ($item) {
                 return [
                     'value' => $item->id,
                     'label' => $item->symbol,
                 ];
-            })
+            }),
         ]);
     }
 
     public function update(ProposalRequest $request, $id)
     {
-        abort_if( !auth()->user()->can('edit_proposals'), 403, '');
+        abort_if(! auth()->user()->can('edit_proposals'), 403, '');
 
         DB::transaction(function () use ($request, $id): void {
 
-            tap(Proposal::findOrFail($id), function($record) use($request) {
+            tap(Proposal::findOrFail($id), function ($record) use ($request) {
 
                 $record->update($request->validated());
 
                 ProposalItem::where('proposal_id', $record->id)->forcedelete();
 
-
-                foreach(collect($request->safe()->only(['items']))->first() as $item) {
+                foreach (collect($request->safe()->only(['items']))->first() as $item) {
 
                     $obj = new ProposalItem;
-    
+
                     $obj->proposal_id = $record->id;
                     $obj->item_id = $item['item_id'];
                     $obj->item_description = $item['item_description'];
@@ -343,18 +341,17 @@ class ProposalController extends Controller
                     $obj->global_discount_portion_percentage = $item['global_discount_portion_percentage'];
                     $obj->global_discount_amount = $item['global_discount_amount'];
                     $obj->obs = $item['obs'];
-    
+
                     $obj->save();
 
-
-                    if($record->itemable_id) {
+                    if ($record->itemable_id) {
 
                         CollectionProduct::findOrFail(LabCode::findOrFail($record->itemable_id)->collection_id)->proposal_item()->save($record);
-        
+
                     }
-    
+
                 }
-    
+
             });
 
         });
@@ -363,7 +360,7 @@ class ProposalController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
@@ -372,7 +369,7 @@ class ProposalController extends Controller
         // abort_if( !auth()->user()->can('delete_proposals'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and delete the record
         foreach (Proposal::withTrashed()->findOrFail(request('recordIds')) as $record) {
@@ -383,7 +380,7 @@ class ProposalController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ]
+            ],
         ]);
     }
 
@@ -392,19 +389,19 @@ class ProposalController extends Controller
         // abort_if( !auth()->user()->can('restore_proposals'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and restore the record
         foreach (Proposal::withTrashed()->findOrFail(request('recordIds')) as $record) {
             $record->restore();
         }
 
-       return redirect()->back()->with([
+        return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ]
-       ]);
+            ],
+        ]);
     }
 
     public function accept(Request $request, Proposal $proposal)
@@ -423,12 +420,12 @@ class ProposalController extends Controller
             'acknowledged_at' => now(),
             'client_ip' => $request->ip(),
         ];
-    
+
         // Log the current agreement to the logs table
         ProposalComplianceAgreementLog::create(array_merge($complianceData, [
             'proposal_id' => $proposal->id,
         ]));
-    
+
         // Update or create the current agreement
         ProposalComplianceAgreement::updateOrCreate(
             ['proposal_id' => $proposal->id],
@@ -446,7 +443,7 @@ class ProposalController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
     }
 
@@ -466,12 +463,12 @@ class ProposalController extends Controller
             'acknowledged_at' => now(),
             'client_ip' => $request->ip(),
         ];
-    
+
         // Log the current agreement to the logs table
         ProposalComplianceAgreementLog::create(array_merge($complianceData, [
             'proposal_id' => $proposal->id,
         ]));
-    
+
         // Update or create the current agreement
         ProposalComplianceAgreement::updateOrCreate(
             ['proposal_id' => $proposal->id],
@@ -487,63 +484,71 @@ class ProposalController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
     }
 
-    public function getProposal() {
+    public function getProposal()
+    {
         $data = [];
 
-        if(request()->has('q')){
+        if (request()->has('q')) {
             $search = request()->q;
-            
-            $data = DB::table("proposals")
+
+            $data = DB::table('proposals')
                 ->select('proposals.*')
-                ->where('proposal_no','LIKE',"%$search%")
-                ->orWhere('service_location','LIKE',"%$search%")
+                ->where('proposal_no', 'LIKE', "%$search%")
+                ->orWhere('service_location', 'LIKE', "%$search%")
                 ->get();
         }
 
         return response()->json($data);
     }
 
-    public function getPDF() {
-        abort_if( !auth()->user()->can('view_proposals'), 403, '');
+    public function getPDF(
+        ReportStudioPdfBuilder $reportStudioPdfBuilder,
+        ReportStudioPdfRenderer $reportStudioPdfRenderer,
+        GeneralSettings $settings
+    ): Response {
+        abort_if(! auth()->user()->can('view_proposals'), 403, '');
 
-        $ntw = new NumberToWords();
-        $nTrans = $ntw->getNumberTransformer('pt_BR');
-        $cTrans = $ntw->getCurrencyTransformer('pt_BR');
-        $model = Proposal::with('items', 'user', 'customer', 'warehouse')->find(request()->id);
-        //dd($model);
-        
-        $pdf = PDF::loadView('PDFs.proposal', [
-            'model' => $model,
-            'settings' => app(GeneralSettings::class),
-        ], [], [
-            'margin_left' => 15,
-            'margin_right' => 15,
-            'margin_top' => 15,
-            'margin_bottom' => 15,
-            'margin_header' => 25,
-            'margin_footer' => 25,
-            'title'=> 'Proposta Nº ' . $model->proposal_no,
-            'author'=> $model->user->name,
-            'watermark'            => 'PAGO',
-            'show_watermark'       => false,
-            'display_mode' => 'fullpage',
-            'watermark_text_alpha' => 0.1,
-            'showBarcodeNumbers' => FALSE
-        ]);
+        $model = VAPProposal::query()->with([
+            'items.unit',
+            'items.standard',
+            'user',
+            'customer',
+            'warehouse',
+            'department',
+            'template',
+            'complianceAgreement',
+        ])->findOrFail(request()->integer('id'));
+
+        $parsedContent = $model->template?->content
+            ? VAPProposalTemplate::parseContent($model->template->content, $model, $settings)
+            : '<p>Sem conteúdo configurado para esta proposta.</p>';
+
+        $payload = $reportStudioPdfBuilder->buildProposalPayload($model, $parsedContent, $settings);
+        $filename = str($model->proposal_number)->slug('-')->prepend('Proposta-')->append('.pdf')->value();
+        $renderedPdf = $reportStudioPdfRenderer->renderDocument('proposal', $payload, $filename);
 
         if (request()->q) {
-                activity()->log('baixou a Proposta Nº ' . $model->proposal_no);
+            activity()->log('baixou a Proposta Nº '.$model->proposal_number);
 
-                return $pdf->download($model->proposal_no . '.pdf');
-        }  if (!request()->q ) {
-                activity()
-                ->causedBy(auth()->user()->id)
-                ->log('visualizou a Proposta Nº ' . $model->proposal_no );
-                return  $pdf->stream($model->proposal_no . '.pdf');
+            return response($renderedPdf['content'], 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+                'X-Report-Studio-Renderer' => $renderedPdf['renderer'],
+            ]);
         }
+
+        activity()
+            ->causedBy(auth()->user())
+            ->log('visualizou a Proposta Nº '.$model->proposal_number);
+
+        return response($renderedPdf['content'], 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
+            'X-Report-Studio-Renderer' => $renderedPdf['renderer'],
+        ]);
     }
 }

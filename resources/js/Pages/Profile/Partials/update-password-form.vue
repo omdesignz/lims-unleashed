@@ -1,5 +1,5 @@
 <template>
-  <FormSection @submitted="updatePassword">
+  <FormSection @submitted="updatePassword" :class="commercialDocumentThemeClasses">
     <template #title>
       <div class="flex items-center gap-2">
         <svg class="h-5 w-5 text-blue-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -240,6 +240,7 @@ import InputLabel from '../../../Components/input-label.vue'
 import TextInput from '../../../Components/text-input.vue'
 import PrimaryButton from '../../../Components/primary-button.vue'
 import FormSection from '../../../Components/form-section.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 const passwordInput = ref(null);
 const currentPasswordInput = ref(null);

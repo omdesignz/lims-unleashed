@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chemical Analysis Worksheet</title>
     <style>
+        @include('PDFs.partials.premium-document-style')
+
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
@@ -55,17 +57,22 @@
         }
     </style>
 </head>
-<body>
+<body class="pdf-document analysis-document">
+
+<div class="document-header">
+    <div class="document-title">Folha de Trabalho de Análises Químicas</div>
+    <div class="bilingual-label">Chemical analysis worksheet</div>
+</div>
 
 <table>
     <thead>
         <tr>
-            <th>Código de Laboratório</th>
-            <th>Área Responsável</th>
-            <th>Parâmetro</th>
-            <th>Diluição</th>
-            <th>Resultado</th>
-            <th>Resultado Final</th> <!-- New Column for Final Result -->
+            <th>Código de Laboratório<br><span class="bilingual-label">Laboratory code</span></th>
+            <th>Área Responsável<br><span class="bilingual-label">Responsible area</span></th>
+            <th>Parâmetro<br><span class="bilingual-label">Parameter</span></th>
+            <th>Diluição<br><span class="bilingual-label">Dilution</span></th>
+            <th>Resultado<br><span class="bilingual-label">Result</span></th>
+            <th>Resultado Final<br><span class="bilingual-label">Final result</span></th>
         </tr>
     </thead>
     <tbody>

@@ -8,6 +8,8 @@ use App\Models\Profile;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -31,7 +33,7 @@ class PortalCustomerServicesTest extends TestCase
 
         if (! $warehouse->email) {
             $warehouse->forceFill([
-                'email' => 'portal.' . $warehouse->id . '@lims-unleashed.test',
+                'email' => 'portal.'.$warehouse->id.'@lims-unleashed.test',
             ])->save();
         }
 
@@ -42,7 +44,7 @@ class PortalCustomerServicesTest extends TestCase
     {
         return CustomerRequestCategory::query()->firstOrCreate(
             ['name' => $name],
-            ['description' => $name . ' criado pelos testes do portal']
+            ['description' => $name.' criado pelos testes do portal']
         );
     }
 
@@ -51,7 +53,7 @@ class PortalCustomerServicesTest extends TestCase
         return Profile::query()->firstOrCreate(
             ['name' => 'Perfil Portal Smoke'],
             [
-                'code' => 'PRT-' . Str::upper(Str::random(6)),
+                'code' => 'PRT-'.Str::upper(Str::random(6)),
                 'description' => 'Perfil criado para smoke tests do portal',
                 'price' => 0,
                 'category_id' => null,
@@ -87,6 +89,10 @@ class PortalCustomerServicesTest extends TestCase
             ->assertOk();
 
         $this->actingAs($warehouse, 'portal')
+            ->get(route('portal.security'))
+            ->assertOk();
+
+        $this->actingAs($warehouse, 'portal')
             ->get(route('portal.collections'))
             ->assertOk();
 
@@ -119,12 +125,107 @@ class PortalCustomerServicesTest extends TestCase
             ->assertOk();
     }
 
+    public function test_portal_login_ignores_staff_intended_url_and_redirects_to_portal_home(): void
+    {
+        $warehouse = $this->portalWarehouse();
+
+        $warehouse->forceFill([
+            'email' => 'portal-login-'.$warehouse->id.'@lims-unleashed.test',
+            'password' => Hash::make('PortalPassword123!'),
+            'email_verified_at' => now(),
+        ])->save();
+
+        $this->withSession(['url.intended' => route('dashboard')])
+            ->post(route('portal.login.store'), [
+                'email' => $warehouse->email,
+                'password' => 'PortalPassword123!',
+                'remember' => 'on',
+            ])
+            ->assertRedirect(route('portal.home'));
+
+        $this->assertAuthenticatedAs($warehouse, 'portal');
+        $this->assertGuest('web');
+    }
+
+    public function test_portal_security_page_loads_for_authenticated_customer(): void
+    {
+        $warehouse = $this->portalWarehouse();
+
+        $warehouse->forceFill([
+            'password' => Hash::make('PortalPassword123!'),
+            'email_verified_at' => now(),
+        ])->save();
+
+        DB::table('passkeys')->insert([
+            'authenticatable_type' => Warehouse::class,
+            'authenticatable_id' => $warehouse->getKey(),
+            'name' => 'Touch ID do cliente',
+            'credential_id' => 'portal-security-test-'.$warehouse->getKey(),
+            'data' => json_encode(['id' => 'portal-security-test-'.$warehouse->getKey()]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($warehouse, 'portal')
+            ->get(route('portal.security'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('ClientPortal/Security')
+                ->has('warehouse.data')
+                ->has('passkeys')
+                ->where('passkeys.0.name', 'Touch ID do cliente')
+                ->where('security.has_password', true)
+                ->where('security.email_verified', true)
+                ->where('security.two_factor_enabled', false)
+                ->where('security.passkey_count', 1)
+            );
+    }
+
+    public function test_portal_customer_can_update_their_password(): void
+    {
+        $warehouse = $this->portalWarehouse();
+
+        $warehouse->forceFill([
+            'password' => Hash::make('OldPortalPassword123!'),
+            'email_verified_at' => now(),
+        ])->save();
+
+        $this->actingAs($warehouse, 'portal')
+            ->put(route('portal.user-password.update'), [
+                'current_password' => 'OldPortalPassword123!',
+                'password' => 'NewPortalPassword123!',
+                'password_confirmation' => 'NewPortalPassword123!',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertTrue(Hash::check('NewPortalPassword123!', $warehouse->fresh()->password));
+    }
+
+    public function test_portal_customer_can_terminate_other_browser_sessions(): void
+    {
+        $warehouse = $this->portalWarehouse();
+
+        $warehouse->forceFill([
+            'password' => Hash::make('PortalPassword123!'),
+            'email_verified_at' => now(),
+        ])->save();
+
+        $this->actingAs($warehouse, 'portal')
+            ->delete(route('portal.other-browser-sessions.destroy'), [
+                'password' => 'PortalPassword123!',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('status', 'portal-other-browser-sessions-terminated');
+    }
+
     public function test_portal_customer_can_submit_analysis_request(): void
     {
         $warehouse = $this->portalWarehouse();
         $category = $this->portalCategory('Análises');
         $profile = $this->analysisProfile();
-        $title = 'Portal Analysis ' . Str::upper(Str::random(6));
+        $title = 'Portal Analysis '.Str::upper(Str::random(6));
 
         $this->actingAs($warehouse, 'portal')
             ->post(route('portal.request.store'), [
@@ -163,7 +264,7 @@ class PortalCustomerServicesTest extends TestCase
         $warehouse = $this->portalWarehouse();
         $category = $this->portalCategory('Análises em lote');
         $profile = $this->analysisProfile();
-        $title = 'Portal Batch Analysis ' . Str::upper(Str::random(6));
+        $title = 'Portal Batch Analysis '.Str::upper(Str::random(6));
 
         $this->actingAs($warehouse, 'portal')
             ->post(route('portal.request.store'), [
@@ -220,7 +321,7 @@ class PortalCustomerServicesTest extends TestCase
     {
         $warehouse = $this->portalWarehouse();
         $category = $this->portalCategory('Colheitas');
-        $title = 'Portal Collection ' . Str::upper(Str::random(6));
+        $title = 'Portal Collection '.Str::upper(Str::random(6));
 
         $this->actingAs($warehouse, 'portal')
             ->post(route('portal.request.store'), [
@@ -262,7 +363,7 @@ class PortalCustomerServicesTest extends TestCase
     {
         $warehouse = $this->portalWarehouse();
         $category = $this->portalCategory('Suporte Geral');
-        $title = 'Portal Duplicate Guard ' . Str::upper(Str::random(6));
+        $title = 'Portal Duplicate Guard '.Str::upper(Str::random(6));
 
         $payload = [
             'request_type' => 'general_support',

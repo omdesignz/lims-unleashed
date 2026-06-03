@@ -4,7 +4,7 @@
     maxWidth="2xl"
     @close="closeModal"
   >
-    <div class="space-y-6">
+    <div class="space-y-6" :class="commercialDocumentThemeClasses">
       <!-- Modal Header -->
       <div class="text-center">
         <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-blue-900 to-blue-800">
@@ -35,7 +35,7 @@
                                 :hasError="false" 
                                 v-model="form.type_id" 
                                 :load-options="loadInvoiceCategories"
-                                placeholder="Select invoice type..."
+                                :placeholder="$t('gestlab.general.labels.quotes.placeholders.select_invoice_type')"
                             />
                         </div>
                     </div>
@@ -87,6 +87,8 @@
 <script setup>
 import { useForm, usePage } from '@inertiajs/vue3'
 import { watch, computed, onMounted } from 'vue'
+import { trans } from 'laravel-vue-i18n'
+import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import Modal from "@/Components/modal.vue";
 import comboboxEnhanced from "@/Components/combobox-enhanced.vue";
 import {
@@ -111,15 +113,15 @@ const form = useForm({
 // Computed properties
 
 const modalTitle = computed(() => {
-  return 'Converter Proforma';
+  return trans('gestlab.general.labels.quotes.convert_to_invoice_title');
 });
 
 const modalDescription = computed(() => {
-  return 'Por favor, seleccione o tipo de factura para a devida conversão.';
+  return trans('gestlab.general.labels.quotes.convert_to_invoice_description');
 });
 
 const actionButtonText = computed(() => {
-  return 'Converter Proforma';
+  return trans('gestlab.general.labels.quotes.convert_to_invoice');
 });
 
 // Watch for record changes

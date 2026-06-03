@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @include('PDFs.partials.premium-document-style')
     
     /* Base Styles - Aligned with Visual System */
     body {
@@ -275,7 +276,7 @@
     }
 </style>
 </head>
-<body>
+<body class="pdf-document analysis-document">
 <sethtmlpagefooter name="page-footer" value="on" />
 <sethtmlpageheader name="page-header" value="on" />
 
@@ -284,7 +285,7 @@
     <table class="header-table">
         <tr>
             <td rowspan="4" style="border: 1.5px solid #111827; text-align: center; width: 33%;">
-                <img src="{{ public_path() . '/images/SVG/sncqa_logo.png' }}" style="width: 80px; height: auto;" alt="VAP Logo">
+                @include('PDFs.partials.brand-logo', ['settings' => $settings ?? null, 'width' => '80px', 'style' => 'height: auto;'])
             </td>
             <td style="border-right: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb; border-left: 1px solid #e5e7eb; padding: 8px; width: 33%;">
                 <div class="h3" style="color: #1e3a8a; font-weight: 700;">

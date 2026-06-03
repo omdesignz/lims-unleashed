@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <!-- Header Card -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between">
@@ -305,6 +305,7 @@ import UpdatePasswordForm from "./Partials/update-password-form.vue";
 import UpdateProfileInformationForm from "./Partials/update-profile-information-form.vue";
 import Layout from "@/Shared/Layouts/Layout.vue"
 import { ref } from 'vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 defineProps({
     confirmsTwoFactorAuthentication: Boolean,

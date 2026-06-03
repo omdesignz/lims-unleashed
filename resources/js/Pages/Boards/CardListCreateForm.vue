@@ -3,6 +3,7 @@ import {PlusIcon} from '@heroicons/vue/24/outline';
 import {nextTick, ref} from "vue";
 import {useForm} from "@inertiajs/vue3";
 import { trans } from 'laravel-vue-i18n';
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
 const props = defineProps({
@@ -33,30 +34,31 @@ function onSubmit() {
 </script>
 <template>
   <form
+    :class="commercialDocumentThemeClasses"
     v-if="isShowingForm"
     ref="formRef"
     @keydown.esc="isShowingForm = false"
     @submit.prevent="onSubmit()"
-    class="space-y-3 rounded-[1.5rem] border border-dashed border-slate-300 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/80"
+    class="space-y-3 rounded-[1.5rem] border border-dashed border-[#d8cbb8] bg-[#fffdf7]/85 p-4 shadow-[0_18px_55px_rgb(20_61_55/0.08)] backdrop-blur dark:border-[#315149] dark:bg-[#07110f]/85"
   >
     <input
       ref="inputNameRef"
       v-model="form.name"
-      class="block w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+      class="block w-full rounded-2xl border border-[#d8cbb8] bg-white px-3 py-3 text-sm font-medium text-[#15231f] shadow-sm placeholder:text-[#8d9b94] focus:border-[rgb(var(--primary-500-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.22)] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:placeholder:text-[#657970]"
       :placeholder="$t('gestlab.general.labels.kanban.list_name_placeholder')"
       type="text"
     />
     <div class="flex items-center gap-2">
       <button
         type="submit"
-        class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-900 to-sky-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:from-sky-800 hover:to-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-800 focus:ring-offset-2"
+        class="inline-flex items-center gap-2 rounded-2xl bg-[rgb(var(--primary-800-rgb))] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[rgb(var(--primary-700-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.28)] focus:ring-offset-2 dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f] dark:hover:bg-[rgb(var(--primary-300-rgb))]"
       >
         {{ $t('gestlab.general.labels.kanban.add_list') }}
       </button>
       <button
         type="button"
         @click="isShowingForm = false"
-        class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors duration-200 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+        class="rounded-2xl border border-[#d8cbb8] px-4 py-2.5 text-sm font-semibold text-[#5f6f68] transition-colors duration-200 hover:bg-[#f7f1e7] hover:text-[#15231f] dark:border-[#315149] dark:text-[#a9bbb4] dark:hover:bg-[#10231f] dark:hover:text-[#f7f1e7]"
       >
         {{ $t('gestlab.general.buttons.cancel') }}
       </button>
@@ -66,7 +68,7 @@ function onSubmit() {
   <button
     v-else
     @click="showForm()"
-    class="flex w-full items-center gap-2 rounded-[1.5rem] border border-dashed border-white/30 bg-white/10 px-4 py-4 text-sm font-medium text-slate-700 transition-colors duration-200 hover:bg-white/60 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:bg-slate-800"
+    class="flex w-full items-center gap-2 rounded-[1.5rem] border border-dashed border-[#d8cbb8] bg-[#fffdf7]/65 px-4 py-4 text-sm font-semibold text-[#5f6f68] transition-colors duration-200 hover:bg-[#fffdf7] hover:text-[#15231f] dark:border-[#315149] dark:bg-[#07110f]/70 dark:text-[#a9bbb4] dark:hover:bg-[#10231f] dark:hover:text-[#f7f1e7]"
   >
     <PlusIcon class="h-5 w-5" />
     <span>{{ $t('gestlab.general.labels.kanban.add_list') }}</span>

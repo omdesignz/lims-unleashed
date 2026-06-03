@@ -1,104 +1,84 @@
 <template>
-  <div class="space-y-8">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ArrowsRightLeftIcon class="h-7 w-7 text-blue-900" />
-            Transferências de Estoque
-          </h1>
-          <p class="mt-2 text-gray-600">
-            Monitore e gerencie os movimentos de estoque entre armazéns
-          </p>
-        </div>
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
+    <ModuleHero
+      eyebrow="Multi-location stock"
+      title="Transferências de Estoque"
+      description="Monitore e gerencie movimentos de estoque entre armazéns, com receção, cancelamento e rastreabilidade operacional."
+    >
+      <template #actions>
         <div class="flex items-center gap-3">
           <Link
             :href="route('vap-inventory.transfers.create')"
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+            class="inline-flex items-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
           >
             <PlusCircleIcon class="h-5 w-5" />
             Nova Transferência
           </Link>
         </div>
-      </div>
-    </div>
+      </template>
+    </ModuleHero>
 
     <!-- FILTERS AND STATS -->
     <div class="grid grid-cols-1 gap-8 xl:grid-cols-3">
       <div class="lg:col-span-2 space-y-6">
         <!-- FILTERS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <ModuleCard title="Filtros de transferência" description="Filtre por estado, armazém de origem/destino e item antes de receber ou cancelar movimentos.">
           <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
             <!-- STATUS FILTER -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
+              <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
                 <CheckCircleIcon class="h-4 w-4 inline mr-1" />
                 Estado
               </label>
-              <select
-                v-model="filters.status"
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-              >
+              <BaseSelect v-model="filters.status">
                 <option value="">Todos os Estados</option>
                 <option value="pending">Pendente</option>
                 <option value="sent">Enviado</option>
                 <option value="received">Recebido</option>
-              </select>
+              </BaseSelect>
             </div>
 
             <!-- SOURCE WAREHOUSE -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
+              <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
                 <ArrowUpTrayIcon class="h-4 w-4 inline mr-1" />
                 Armazém de Origem
               </label>
-              <select
-                v-model="filters.source_id"
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-              >
+              <BaseSelect v-model="filters.source_id">
                 <option value="">Todos os Armazéns</option>
                 <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
                   {{ warehouse.name }}
                 </option>
-              </select>
+              </BaseSelect>
             </div>
 
             <!-- DESTINATION WAREHOUSE -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
+              <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
                 <ArrowDownTrayIcon class="h-4 w-4 inline mr-1" />
                 Armazém de Destino
               </label>
-              <select
-                v-model="filters.destination_id"
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-              >
+              <BaseSelect v-model="filters.destination_id">
                 <option value="">Todos os Armazéns</option>
                 <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
                   {{ warehouse.name }}
                 </option>
-              </select>
+              </BaseSelect>
             </div>
 
             <!-- SEARCH -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
+              <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
                 <MagnifyingGlassIcon class="h-4 w-4 inline mr-1" />
                 Pesquisar
               </label>
-              <input
-                v-model="filters.search"
-                type="text"
-                placeholder="Pesquisar itens..."
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-              />
+              <BaseInput v-model="filters.search" placeholder="Pesquisar itens..." />
             </div>
           </div>
-        </div>
+        </ModuleCard>
 
         <!-- TRANSFERS TABLE -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <ModuleCard class="overflow-hidden" title="Movimentos entre armazéns">
           <div class="grid gap-4 p-4 md:hidden">
             <article
               v-for="transfer in transfers.data"
@@ -276,17 +256,13 @@
           <div v-if="transfers.data.length > 0" class="border-t border-gray-200 px-6 py-4">
             <Pagination :links="transfers.links" :from="transfers.from" :to="transfers.to" :total="transfers.total" :current_page="transfers.current_page" :last_page="transfers.last_page" />
           </div>
-        </div>
+        </ModuleCard>
       </div>
 
       <!-- RIGHT COLUMN - STATS -->
       <div class="space-y-6">
         <!-- STATS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <ChartBarIcon class="h-5 w-5 text-blue-900" />
-            Indicadores de transferência
-          </h3>
+        <ModuleCard title="Indicadores de transferência">
           <div class="space-y-4">
             <div class="bg-gradient-to-r from-blue-50 to-white rounded-lg border border-blue-100 p-4">
               <div class="flex items-center justify-between">
@@ -320,13 +296,10 @@
               </div>
             </div>
           </div>
-        </div>
+        </ModuleCard>
 
         <!-- QUICK ACTIONS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            Acções rápidas
-          </h3>
+        <ModuleCard title="Acções rápidas">
           <div class="space-y-3">
             <Link
               :href="route('vap-inventory.transfers.create')"
@@ -377,7 +350,7 @@
               <ChevronRightIcon class="h-5 w-5 text-gray-400" />
             </Link>
           </div>
-        </div>
+        </ModuleCard>
       </div>
     </div>
 
@@ -520,6 +493,11 @@
 </template>
 
 <script setup>
+import BaseInput from '@/Components/base/BaseInput.vue'
+import BaseSelect from '@/Components/base/BaseSelect.vue'
+import ModuleCard from '@/Components/base/ModuleCard.vue'
+import ModuleHero from '@/Components/base/ModuleHero.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import {

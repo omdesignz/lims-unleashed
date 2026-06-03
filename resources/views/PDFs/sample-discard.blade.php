@@ -1,271 +1,323 @@
-{{-- resources/views/pdf/sample-discard.blade.php --}}
 <!DOCTYPE html>
-<html>
+<html lang="pt">
 <head>
     <meta charset="utf-8">
-    <title>Sample Discard Certificate - {{ $discard->sample->code }}</title>
+    <title>Certificado de Descarte de Amostra - {{ $discard->sample->code ?? $discard->id }}</title>
     <style>
+        @include('PDFs.partials.premium-document-style')
+
         @page {
-            margin: 20px;
+            margin: 18mm 16mm;
         }
+
         body {
+            color: #1f2937;
             font-family: 'DejaVu Sans', sans-serif;
-            font-size: 12px;
-            color: #333;
-        }
-        .header {
-            border-bottom: 3px solid #dc2626;
-            padding-bottom: 15px;
-            margin-bottom: 30px;
-        }
-        .logo {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .logo h1 {
-            color: #1e3a8a;
-            font-size: 24px;
-            margin: 0;
-        }
-        .certificate-title {
-            text-align: center;
-            font-size: 18px;
-            font-weight: bold;
-            color: #dc2626;
-            margin-bottom: 30px;
-        }
-        .warning-box {
-            background-color: #fef2f2;
-            border: 2px solid #dc2626;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            text-align: center;
-        }
-        .warning-icon {
-            color: #dc2626;
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-        .warning-text {
-            color: #7f1d1d;
-            font-weight: bold;
-        }
-        .section {
-            margin-bottom: 25px;
-        }
-        .section-title {
-            background-color: #dc2626;
-            color: white;
-            padding: 8px 15px;
-            font-weight: bold;
-            font-size: 14px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 10px;
-        }
-        .info-item {
-            margin-bottom: 8px;
-        }
-        .info-label {
-            font-weight: bold;
-            color: #4b5563;
-        }
-        .info-value {
-            color: #111827;
-            border-bottom: 1px dotted #d1d5db;
-            padding-bottom: 3px;
-        }
-        .footer {
-            margin-top: 50px;
-            padding-top: 15px;
-            border-top: 1px solid #d1d5db;
-            text-align: center;
-            color: #6b7280;
-            font-size: 10px;
-        }
-        .signature-area {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #d1d5db;
-        }
-        .signature-line {
-            width: 200px;
-            border-bottom: 1px solid #333;
-            margin: 0 auto;
-            padding-top: 40px;
-        }
-        .signature-label {
-            text-align: center;
             font-size: 11px;
-            color: #6b7280;
-            margin-top: 5px;
         }
-        .barcode {
-            text-align: center;
-            margin: 20px 0;
-            font-family: 'Libre Barcode 128', cursive;
-            font-size: 36px;
+
+        .document-hero {
+            background: #111827;
+            border-radius: 16px 16px 10px 10px;
+            color: #ffffff;
+            margin-bottom: 18px;
+            padding: 0;
         }
-        .method-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 12px;
+
+        .document-hero-top {
+            background: #b91c1c;
+            border-radius: 16px 16px 0 0;
+            padding: 16px 18px;
+        }
+
+        .document-hero-body {
+            padding: 16px 18px 18px;
+        }
+
+        .hero-label {
+            color: #fecaca;
+            font-size: 9px;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+        }
+
+        .hero-title {
+            font-size: 22px;
+            font-weight: 800;
+            margin: 5px 0 3px;
+        }
+
+        .hero-subtitle {
+            color: #fee2e2;
             font-size: 10px;
-            font-weight: bold;
-            margin-left: 10px;
         }
-        .method-incineration {
-            background-color: #fef3c7;
-            color: #92400e;
+
+        .hero-meta {
+            color: #fee2e2;
+            font-size: 10px;
+            text-align: right;
+            white-space: nowrap;
         }
-        .method-chemical {
-            background-color: #dbeafe;
-            color: #1e40af;
-        }
-        .method-autoclave {
-            background-color: #d1fae5;
-            color: #065f46;
-        }
-        .stamp {
-            position: absolute;
-            right: 20px;
-            bottom: 100px;
-            width: 150px;
-            height: 150px;
-            border: 3px solid #dc2626;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transform: rotate(-15deg);
-            opacity: 0.7;
-        }
-        .stamp-text {
+
+        .alert-box {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 14px;
+            color: #7f1d1d;
+            font-weight: 800;
+            margin: 16px 0 18px;
+            padding: 12px 14px;
             text-align: center;
-            color: #dc2626;
-            font-weight: bold;
-            font-size: 16px;
+        }
+
+        .barcode {
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            border-radius: 12px;
+            color: #991b1b;
+            font-family: monospace;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 4px;
+            margin: 16px 0 18px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .section {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            margin-bottom: 14px;
+            padding: 14px;
+        }
+
+        .section-title {
+            border-bottom: 1px solid #e5e7eb;
+            color: #111827;
+            font-size: 12px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+        }
+
+        .section-title span {
+            color: #6b7280;
+            display: block;
+            font-size: 8px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-top: 2px;
+            text-transform: uppercase;
+        }
+
+        .details-table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .details-table td {
+            border-bottom: 1px solid #f1f5f9;
+            padding: 7px 6px;
+            vertical-align: top;
+            width: 50%;
+        }
+
+        .details-table tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .label {
+            color: #64748b;
+            display: block;
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: .7px;
+            text-transform: uppercase;
+        }
+
+        .value {
+            color: #111827;
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 3px;
+        }
+
+        .note-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            color: #334155;
+            line-height: 1.55;
+            padding: 10px 12px;
+        }
+
+        .method-badge {
+            background: #fee2e2;
+            border-radius: 999px;
+            color: #991b1b;
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 800;
+            margin-top: 5px;
+            padding: 4px 9px;
+            text-transform: uppercase;
+        }
+
+        .stamp {
+            border: 3px solid #b91c1c;
+            border-radius: 999px;
+            color: #b91c1c;
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1.4;
+            margin: 18px auto 6px;
+            padding: 22px 10px;
+            text-align: center;
+            width: 128px;
+        }
+
+        .signature-table {
+            border-collapse: collapse;
+            margin-top: 22px;
+            width: 100%;
+        }
+
+        .signature-table td {
+            padding: 18px 12px 0;
+            width: 50%;
+        }
+
+        .signature-line {
+            border-top: 1px solid #94a3b8;
+            color: #64748b;
+            font-size: 9px;
+            padding-top: 6px;
+            text-align: center;
+        }
+
+        .footer {
+            border-top: 1px solid #e5e7eb;
+            color: #64748b;
+            font-size: 9px;
+            line-height: 1.5;
+            margin-top: 22px;
+            padding-top: 10px;
+            text-align: center;
         }
     </style>
 </head>
-<body>
-    <div class="header">
-        <div class="logo">
-            <h1>LABORATORY INFORMATION MANAGEMENT SYSTEM</h1>
-            <p>Sample Discard Certificate</p>
+<body class="pdf-document certificate-document">
+    @php
+        $settings = $settings ?? app(\App\Settings\GeneralSettings::class);
+        $labName = $settings->app_client_lab_name ?: ($settings->app_name ?: config('app.name'));
+        $certificateCode = 'DISC-' . str_pad((string) $discard->id, 6, '0', STR_PAD_LEFT);
+        $discardedAt = $discard->discarded_at ?: now();
+        $sample = $discard->sample;
+    @endphp
+
+    <div class="document-hero">
+        <div class="document-hero-top">
+            <table style="width: 100%;">
+                <tr>
+                    <td>
+                        <div class="hero-label">{{ $labName }}</div>
+                        <div class="hero-title">Certificado de Descarte de Amostra</div>
+                        <div class="hero-subtitle">Sample discard certificate · Retenção e eliminação controlada</div>
+                    </td>
+                    <td class="hero-meta">
+                        <strong>{{ $certificateCode }}</strong><br>
+                        Emitido em {{ $date }} · {{ $time }}<br>
+                        Amostra: {{ $sample->code ?? 'N/A' }}
+                    </td>
+                </tr>
+            </table>
         </div>
-        
-        <div class="certificate-title">
-            DISCARD CERTIFICATE #DISC-{{ str_pad($discard->id, 6, '0', STR_PAD_LEFT) }}
+        <div class="document-hero-body">
+            Este certificado documenta a eliminação permanente da amostra, mantendo rastreabilidade, responsável, método e data da acção.
         </div>
     </div>
 
-    <div class="warning-box">
-        <div class="warning-icon">⚠️</div>
-        <div class="warning-text">SAMPLE PERMANENTLY DISCARDED - IRREVERSIBLE ACTION</div>
+    <div class="alert-box">
+        AMOSTRA DESCARTADA DE FORMA PERMANENTE / SAMPLE PERMANENTLY DISCARDED
     </div>
 
-    <div class="barcode">
-        *DISC-{{ str_pad($discard->id, 6, '0', STR_PAD_LEFT) }}*
+    <div class="barcode">*{{ $certificateCode }}*</div>
+
+    <div class="section">
+        <div class="section-title">Informação do Descarte <span>Discard information</span></div>
+        <table class="details-table">
+            <tr>
+                <td>
+                    <span class="label">Método / Method</span>
+                    <span class="value">{{ $discard->discard_method ?: 'N/A' }}</span>
+                    <span class="method-badge">{{ $discard->discard_method ?: 'Método não informado' }}</span>
+                </td>
+                <td><span class="label">Quantidade / Quantity</span><span class="value">{{ $discard->qty ?: 'N/A' }}</span></td>
+            </tr>
+            <tr>
+                <td><span class="label">Data / Date</span><span class="value">{{ $discardedAt->format('d/m/Y H:i') }}</span></td>
+                <td><span class="label">Responsável / Performed by</span><span class="value">{{ $discard->discardedBy->name ?? 'N/A' }}</span></td>
+            </tr>
+            <tr>
+                <td><span class="label">Certificado / Certificate</span><span class="value">{{ $certificateCode }}</span></td>
+                <td><span class="label">Estado documental / Document status</span><span class="value">Final / Final</span></td>
+            </tr>
+        </table>
     </div>
 
     <div class="section">
-        <div class="section-title">Discard Information</div>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Discard Method:</div>
-                <div class="info-value">
-                    {{ $discard->discard_method }}
-                    <span class="method-badge method-{{ strtolower(str_replace(' ', '-', $discard->discard_method)) }}">
-                        {{ $discard->discard_method }}
-                    </span>
-                </div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Quantity:</div>
-                <div class="info-value">{{ $discard->qty }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Discarded Date:</div>
-                <div class="info-value">{{ $discard->discarded_at->format('d/m/Y H:i') }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Discarded By:</div>
-                <div class="info-value">{{ $discard->discardedBy->name ?? 'N/A' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Certificate ID:</div>
-                <div class="info-value">DISC-{{ str_pad($discard->id, 6, '0', STR_PAD_LEFT) }}</div>
-            </div>
-        </div>
+        <div class="section-title">Amostra Original <span>Original sample information</span></div>
+        <table class="details-table">
+            <tr>
+                <td><span class="label">Código / Code</span><span class="value">{{ $sample->code ?? 'N/A' }}</span></td>
+                <td><span class="label">Nome / Name</span><span class="value">{{ $sample->name ?? 'N/A' }}</span></td>
+            </tr>
+            <tr>
+                <td><span class="label">Tipo / Type</span><span class="value">{{ $sample->sample_type ?? 'N/A' }}</span></td>
+                <td><span class="label">Estado original / Original status</span><span class="value">{{ $sample->status ?? 'N/A' }}</span></td>
+            </tr>
+            <tr>
+                <td><span class="label">Cliente / Customer</span><span class="value">{{ $sample->customer->name ?? 'N/A' }}</span></td>
+                <td><span class="label">Recebida em / Received at</span><span class="value">{{ $sample?->received_at?->format('d/m/Y H:i') ?: 'N/A' }}</span></td>
+            </tr>
+        </table>
     </div>
 
     <div class="section">
-        <div class="section-title">Original Sample Information</div>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Sample Code:</div>
-                <div class="info-value">{{ $discard->sample->code ?? 'N/A' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Sample Name:</div>
-                <div class="info-value">{{ $discard->sample->name ?? 'N/A' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Sample Type:</div>
-                <div class="info-value">{{ $discard->sample->sample_type ?? 'N/A' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Original Status:</div>
-                <div class="info-value">{{ $discard->sample->status ?? 'N/A' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Customer:</div>
-                <div class="info-value">{{ $discard->sample->customer->name ?? 'N/A' }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Received Date:</div>
-                <div class="info-value">{{ $discard->sample->received_at ? $discard->sample->received_at->format('d/m/Y H:i') : 'N/A' }}</div>
-            </div>
+        <div class="section-title">Laboratório e Rastreabilidade <span>Laboratory and traceability</span></div>
+        <table class="details-table">
+            <tr>
+                <td><span class="label">Laboratório / Laboratory</span><span class="value">{{ $discard->lab->name ?? ($sample->lab->name ?? $labName) }}</span></td>
+                <td><span class="label">Departamento / Department</span><span class="value">{{ $discard->department->name ?? ($sample->department->name ?? 'N/A') }}</span></td>
+            </tr>
+            <tr>
+                <td><span class="label">Documento relacionado / Related record</span><span class="value">{{ $sample->code ?? 'N/A' }}</span></td>
+                <td><span class="label">Palavras-chave / Keywords</span><span class="value">{{ $settings->app_document_keywords ?: 'rastreabilidade; retenção; descarte; ISO 17025' }}</span></td>
+            </tr>
+        </table>
+        <div class="note-box" style="margin-top: 10px;">
+            A eliminação deve estar alinhada com os procedimentos internos, requisitos de segurança, regras ambientais aplicáveis e cadeia de custódia da amostra.
         </div>
     </div>
 
-    <div class="section">
-        <div class="section-title">Laboratory Information</div>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Laboratory:</div>
-                <div class="info-value">{{ $discard->lab->name ?? ($discard->sample->lab->name ?? 'N/A') }}</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Department:</div>
-                <div class="info-value">{{ $discard->department->name ?? ($discard->sample->department->name ?? 'N/A') }}</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="signature-area">
-        <div class="signature-line"></div>
-        <div class="signature-label">Authorized by: {{ $discard->discardedBy->name ?? 'N/A' }}</div>
-    </div>
+    <table class="signature-table">
+        <tr>
+            <td><div class="signature-line">Executado por / Performed by: {{ $discard->discardedBy->name ?? 'N/A' }}</div></td>
+            <td><div class="signature-line">Validação da qualidade / Quality validation</div></td>
+        </tr>
+    </table>
 
     <div class="stamp">
-        <div class="stamp-text">
-            DISCARDED<br>
-            {{ $discard->discarded_at->format('d/m/Y') }}<br>
-            FINAL
-        </div>
+        DESCARTADA<br>
+        {{ $discardedAt->format('d/m/Y') }}<br>
+        FINAL
     </div>
 
     <div class="footer">
-        <p>Document generated on {{ $date }} at {{ $time }}</p>
-        <p>This certificate confirms that the sample has been permanently discarded according to laboratory protocols.</p>
-        <p>This is a computer-generated document. No signature is required.</p>
+        Documento controlado gerado pelo sistema em {{ $date }} às {{ $time }}. Código de rastreabilidade: {{ $certificateCode }}.<br>
+        This certificate confirms permanent discard according to laboratory procedures and must remain linked to the original sample record.
     </div>
 </body>
 </html>

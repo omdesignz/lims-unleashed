@@ -4,6 +4,8 @@
 <meta charset="UTF-8" />
     <!-- <link href="http://app.mediagagroalimentar.com/public/css/bootstrap.min.css"/> -->
     <style>
+        @include('PDFs.partials.premium-document-style')
+
         .center {
             position: relative;
             /* left: 50%;
@@ -49,7 +51,7 @@
 
     </style>
 </head>
-<body>
+<body class="pdf-document analysis-document">
 <sethtmlpagefooter name="page-footer" value="on" />
 <sethtmlpageheader name="page-header" value="on" />
 

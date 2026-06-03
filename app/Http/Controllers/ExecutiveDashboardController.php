@@ -6,26 +6,26 @@ use App\Models\Analysis;
 use App\Models\Collection;
 use App\Models\Customer;
 use App\Models\CustomerRequest;
+use App\Models\InventoryNeed;
+use App\Models\InventorySupplierAssessment;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\Profile;
 use App\Models\Proposal;
-use App\Models\ReportStudioTemplate;
 use App\Models\QualityCertificate;
-use App\Models\InventorySupplierAssessment;
-use App\Models\InventoryNeed;
+use App\Models\ReportStudioTemplate;
 use App\Models\Standard;
 use App\Models\User;
-use App\Models\VAPSampleEntry;
 use App\Models\VAPNonConformity;
-use App\Support\ReportStudioPdfBuilder;
+use App\Models\VAPSampleEntry;
 use App\Settings\GeneralSettings;
+use App\Support\ReportStudioPdfBuilder;
+use App\Support\ReportStudioPdfRenderer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
-use PDF;
 
 class ExecutiveDashboardController extends Controller
 {
@@ -327,25 +327,19 @@ class ExecutiveDashboardController extends Controller
 
         if (request()->string('format')->lower()->value() === 'pdf') {
             $studioPayload = app(ReportStudioPdfBuilder::class)->buildExecutiveReportPayload($payload, app(GeneralSettings::class));
+            $filename = 'executive-dashboard-'.now()->format('Ymd-His').'.pdf';
+            $renderedPdf = app(ReportStudioPdfRenderer::class)->renderDocument('executive', $studioPayload, $filename);
 
-            return PDF::loadView($studioPayload['view'], $studioPayload['data'], [], [
-                'format' => $studioPayload['data']['format'] ?? 'A4',
-                'orientation' => $studioPayload['data']['orientation'] ?? 'P',
-                'margin_top' => data_get($studioPayload, 'data.margins.top', 20),
-                'margin_header' => 5,
-                'margin_left' => data_get($studioPayload, 'data.margins.left', 14),
-                'margin_right' => data_get($studioPayload, 'data.margins.right', 14),
-                'margin_bottom' => data_get($studioPayload, 'data.margins.bottom', 20),
-                'margin_footer' => 8,
-                'title' => 'Relatório Executivo',
-                'author' => auth()->user()?->name,
-                'display_mode' => 'fullpage',
-            ])->download('executive-dashboard-' . now()->format('Ymd-His') . '.pdf');
+            return response($renderedPdf['content'], 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+                'X-Report-Studio-Renderer' => $renderedPdf['renderer'],
+            ]);
         }
 
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="executive-dashboard-' . now()->format('Ymd-His') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="executive-dashboard-'.now()->format('Ymd-His').'.csv"',
         ];
 
         $rows = [
@@ -398,6 +392,7 @@ class ExecutiveDashboardController extends Controller
 
             if ($supplierId === null) {
                 $missingSupplierCount++;
+
                 continue;
             }
 
@@ -405,11 +400,13 @@ class ExecutiveDashboardController extends Controller
 
             if ($assessment === null) {
                 $unassessedSupplierCount++;
+
                 continue;
             }
 
             if (in_array($assessment->status, ['rejected', 'suspended'], true) || ($assessment->risk_level === 'critical' && ! $assessment->approved_supplier)) {
                 $blockedSupplierCount++;
+
                 continue;
             }
 

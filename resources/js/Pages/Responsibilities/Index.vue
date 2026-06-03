@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
@@ -74,6 +74,7 @@
 <script setup>
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { router, useForm } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
 

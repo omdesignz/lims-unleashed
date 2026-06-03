@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <style>
+        @include('PDFs.partials.premium-document-style')
+
         body {
             font-family: Arial, sans-serif;
             font-size: 11pt;
@@ -272,7 +274,7 @@
         }
     </style>
 </head>
-<body>
+<body class="pdf-document commercial-document">
 
 <htmlpageheader name="page-header">
     {{-- <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 10px;">
@@ -345,7 +347,7 @@
 
 <!-- Watermark -->
 <div class="watermark">
-    <img src="{{ public_path() . '/images/SVG/sncqa_logo.png' }}" style="width: 120px; height: auto;" alt="VAP Solutions">
+    @include('PDFs.partials.brand-logo', ['settings' => $settings, 'width' => '120px', 'style' => 'height: auto;'])
 </div>
 
 <!-- Main Content -->

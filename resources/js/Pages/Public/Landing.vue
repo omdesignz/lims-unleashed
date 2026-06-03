@@ -1,389 +1,311 @@
 <template>
   <div
-    class="min-h-screen bg-slate-950 text-slate-100"
+    class="landing-shell min-h-screen overflow-hidden bg-[#f4efe4] text-[#111814] dark:bg-[#07110f] dark:text-[#f8f4e8]"
     :style="brandingCssVariables"
   >
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute -top-32 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-cyan-500/20 blur-3xl"></div>
-      <div class="absolute right-0 top-40 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl"></div>
-      <div class="absolute bottom-0 left-0 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl"></div>
+    <Head :title="`${brandName} | LIMS para laboratórios ISO/IEC 17025`" />
+
+    <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      <div class="absolute inset-0 bg-[linear-gradient(115deg,rgba(9,34,31,0.08),transparent_38%,rgba(190,134,47,0.12)_72%,transparent)] dark:bg-[linear-gradient(115deg,rgba(52,211,153,0.08),transparent_38%,rgba(190,134,47,0.08)_72%,transparent)]"></div>
+      <div class="absolute -left-28 top-12 h-[34rem] w-[34rem] rounded-full bg-[#0f3f3a]/12 blur-3xl dark:bg-emerald-500/10"></div>
+      <div class="absolute -right-24 top-72 h-[32rem] w-[32rem] rounded-full bg-[#be862f]/20 blur-3xl dark:bg-[#be862f]/10"></div>
+      <div class="absolute inset-0 opacity-[0.18] dark:opacity-[0.12] laboratory-grid"></div>
     </div>
 
-    <div class="relative mx-auto max-w-7xl px-6 py-6 sm:px-8 lg:px-10">
-      <header class="sticky top-4 z-30 rounded-[2rem] border border-white/10 bg-slate-950/75 px-5 py-4 shadow-2xl shadow-slate-950/30 backdrop-blur-xl sm:px-6">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-              <img
-                v-if="branding.logo_url"
-                :src="branding.logo_url"
-                :alt="branding.app_name || 'LIMS Unleashed'"
-                class="h-9 w-9 object-contain"
-              />
-              <span
-                v-else
-                class="text-lg font-semibold tracking-[0.2em] text-cyan-200"
-              >
-                LU
-              </span>
-            </div>
+    <div class="relative z-10 mx-auto max-w-[92rem] px-4 py-5 sm:px-6 lg:px-8">
+      <header class="landing-nav">
+        <Link href="/" class="flex min-w-0 items-center gap-3">
+          <span class="brand-mark">
+            <img
+              v-if="branding.logo_url"
+              :src="branding.logo_url"
+              :alt="brandName"
+              class="max-h-9 max-w-9 object-contain"
+            />
+            <span v-else class="text-lg font-black tracking-[-0.04em] text-[#f8f4e8]">LU</span>
+          </span>
+          <span class="min-w-0">
+            <span class="block truncate text-sm font-black uppercase tracking-[0.18em] text-[#111814]">
+              {{ brandName }}
+            </span>
+            <span class="block text-xs font-extrabold leading-5 text-[#33433a] sm:truncate">
+              Evidência técnica e confiança comercial
+            </span>
+          </span>
+        </Link>
 
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/80">
-                {{ branding.app_name || 'LIMS Unleashed' }}
-              </p>
-              <p class="mt-1 text-sm text-slate-400">
-                {{ branding.app_slogan || 'Qualidade, rastreabilidade e operação num único sistema.' }}
-              </p>
-            </div>
-          </div>
+        <nav class="hidden items-center gap-1 rounded-full border border-[#d8cfbd] bg-[#fffaf0]/80 p-1 shadow-sm backdrop-blur-xl lg:flex">
+          <a v-for="item in navigation" :key="item.href" :href="item.href" class="nav-pill">
+            {{ item.label }}
+          </a>
+        </nav>
 
-          <nav class="flex flex-wrap items-center gap-3 text-sm text-slate-300">
-            <a href="#capabilities" class="rounded-full px-3 py-2 transition hover:bg-white/5 hover:text-white">Capacidades</a>
-            <a href="#request-flow" class="rounded-full px-3 py-2 transition hover:bg-white/5 hover:text-white">Pedido de análise</a>
-            <a href="#executive" class="rounded-full px-3 py-2 transition hover:bg-white/5 hover:text-white">Gestão</a>
-            <a href="#cta" class="rounded-full px-3 py-2 transition hover:bg-white/5 hover:text-white">Começar</a>
-          </nav>
-
-          <div class="flex flex-col gap-3 sm:flex-row">
-            <Link
-              :href="route('login')"
-              class="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-cyan-400/60 hover:bg-cyan-400/10"
-            >
-              Entrar no backoffice
-            </Link>
-            <Link
-              v-if="branding.portal_enabled !== false"
-              :href="route('portal.login')"
-              class="inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100"
-            >
-              Portal do cliente
-            </Link>
-          </div>
+        <div class="flex items-center gap-2">
+          <Link :href="route('login')" class="secondary-action">
+            Área interna
+          </Link>
+          <Link v-if="branding.portal_enabled !== false" :href="route('portal.login')" class="primary-action">
+            Portal
+          </Link>
         </div>
       </header>
 
-      <main class="pb-20 pt-8 sm:pt-10">
-        <section class="grid gap-8 xl:grid-cols-[1.04fr,0.96fr] xl:items-start">
-          <div class="space-y-8">
-            <div class="space-y-6">
-              <div class="flex flex-wrap gap-3">
-                <span
-                  v-for="badge in heroBadges"
-                  :key="badge"
-                  class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100"
-                >
-                  {{ badge }}
-                </span>
-              </div>
-
-              <div class="space-y-5">
-                <h1 class="max-w-5xl text-4xl font-semibold tracking-tight text-white sm:text-5xl xl:text-7xl">
-                  O sistema que faz o laboratório
-                  <span class="text-cyan-300">parecer sério</span>
-                  antes mesmo da auditoria começar.
-                </h1>
-                <p class="max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">
-                  Pedidos, amostras, resultados, documentos, inventário, recursos e governação ISO 17025
-                  conectados numa plataforma com presença executiva, disciplina operacional e experiência de cliente à altura.
-                </p>
-              </div>
-
-              <div class="flex flex-col gap-3 sm:flex-row">
-                <a
-                  href="#request-flow"
-                  class="inline-flex items-center justify-center rounded-full bg-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:bg-cyan-300"
-                >
-                  Ver o percurso do cliente
-                </a>
-                <a
-                  href="#capabilities"
-                  class="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/10"
-                >
-                  Explorar módulos
-                </a>
-              </div>
+      <main>
+        <section class="grid min-h-[calc(100vh-7rem)] gap-12 pb-20 pt-12 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:pb-24 lg:pt-20">
+          <div class="max-w-5xl">
+            <div class="reveal-badge">
+              <span class="h-2 w-2 rounded-full bg-[#1f7a68] shadow-[0_0_0_6px_rgba(31,122,104,0.12)]"></span>
+              ISO/IEC 17025 · ensaio · calibração · qualidade
             </div>
 
-            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <article
-                v-for="metric in metricCards"
-                :key="metric.label"
-                class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 shadow-lg shadow-slate-950/20"
-              >
-                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{{ metric.label }}</p>
-                <p class="mt-3 text-3xl font-semibold text-white">{{ metric.value }}</p>
-                <p class="mt-3 text-sm leading-6 text-slate-300">{{ metric.caption }}</p>
-              </article>
+            <h1 class="mt-7 max-w-5xl text-[clamp(3.2rem,7.4vw,7.75rem)] font-black leading-[0.92] tracking-[-0.06em] text-[#111814] dark:text-[#f8f4e8]">
+              <span v-for="line in heroLines" :key="line" class="mask-line">
+                <span>{{ line }}</span>
+              </span>
+            </h1>
+
+            <p class="mt-8 max-w-2xl animate-soft-in text-lg font-bold leading-8 text-[#344239] dark:text-[#d7e5dc]">
+              Um LIMS sério para laboratórios de análise que precisam provar competência, proteger a imparcialidade, controlar amostras e emitir certificados com rastreabilidade completa, não apenas “registar dados”.
+            </p>
+
+            <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a href="#iso17025" class="primary-cta">
+                Ver cobertura ISO 17025
+                <IconArrow />
+              </a>
+              <a href="#workflow" class="outline-cta">
+                Entender o fluxo técnico
+              </a>
             </div>
 
-            <section class="grid gap-4 lg:grid-cols-3">
-              <article
-                v-for="proof in proofStrip"
-                :key="proof.title"
-                class="rounded-[1.75rem] border border-white/10 bg-slate-900/70 p-5"
-              >
-                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">{{ proof.kicker }}</p>
-                <h2 class="mt-3 text-lg font-semibold text-white">{{ proof.title }}</h2>
-                <p class="mt-3 text-sm leading-7 text-slate-300">{{ proof.description }}</p>
+            <div class="mt-10 grid max-w-4xl gap-3 sm:grid-cols-3">
+              <article v-for="assurance in assuranceCards" :key="assurance.title" class="assurance-card">
+                <p class="text-[0.7rem] font-black uppercase tracking-[0.18em] text-[#1f6f5f] dark:text-[#93d6c2]">{{ assurance.kicker }}</p>
+                <h2 class="mt-3 text-lg font-black leading-6 tracking-[-0.025em] text-[#111814]">{{ assurance.title }}</h2>
+                <p class="mt-2 text-sm font-bold leading-6 text-[#344239]">{{ assurance.description }}</p>
               </article>
-            </section>
+            </div>
           </div>
 
-          <div class="space-y-6">
-            <section class="overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-slate-950/20">
-              <div class="flex items-center justify-between">
+          <div class="relative">
+            <div class="absolute -inset-6 rounded-[3rem] bg-[#0f3f3a]/15 blur-3xl dark:bg-emerald-400/10"></div>
+            <section class="lab-console">
+              <div class="console-header">
                 <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">Centro de comando</p>
-                  <h2 class="mt-2 text-2xl font-semibold text-white">Uma leitura que inspira confiança</h2>
+                  <p class="eyebrow text-[#93d6c2]">Centro de controlo</p>
+                  <h2 class="mt-2 text-2xl font-black tracking-[-0.03em] text-white">Amostras, risco e certificados em tempo real</h2>
                 </div>
-                <span class="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200">
-                  Visão imediata
+                <span class="rounded-full border border-[#93d6c2]/30 bg-[#93d6c2]/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-[#c9f7e6]">
+                  Operação viva
                 </span>
               </div>
 
-              <div class="mt-6 grid gap-4">
-                <article
-                  v-for="executiveMetric in executiveMetrics"
-                  :key="executiveMetric.title"
-                  class="rounded-[1.5rem] border border-white/10 bg-slate-900/80 p-5"
-                >
+              <div class="grid gap-4 p-4 lg:grid-cols-[0.92fr_1.08fr]">
+                <div class="space-y-4">
+                  <article v-for="item in commandTiles" :key="item.label" class="console-tile">
+                    <p class="text-[0.68rem] font-black uppercase tracking-[0.18em] text-[#d9b05f]">{{ item.phase }}</p>
+                    <p class="mt-2 text-sm font-black text-white">{{ item.label }}</p>
+                    <p class="mt-2 text-xs font-bold leading-5 text-[#d7e5dc]">{{ item.description }}</p>
+                  </article>
+                </div>
+
+                <article id="analytics" class="rounded-[1.75rem] border border-white/10 bg-[#0d1d19] p-5">
                   <div class="flex items-start justify-between gap-4">
                     <div>
-                      <p class="text-sm font-semibold text-white">{{ executiveMetric.title }}</p>
-                      <p class="mt-2 text-sm leading-7 text-slate-300">{{ executiveMetric.description }}</p>
+                      <p class="eyebrow text-[#d9b05f]">Indicadores laboratoriais</p>
+                      <h3 class="mt-2 text-xl font-black tracking-[-0.03em] text-white">Prazos, risco e capacidade por área</h3>
                     </div>
-                    <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-right">
-                      <p class="text-xs uppercase tracking-[0.18em] text-slate-400">{{ executiveMetric.badge }}</p>
-                      <p class="mt-1 text-2xl font-semibold text-white">{{ executiveMetric.value }}</p>
+                    <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-[#dce7df]">Gráficos prontos</span>
+                  </div>
+
+                  <div class="mt-7">
+                    <svg viewBox="0 0 520 220" class="h-56 w-full overflow-visible">
+                      <defs>
+                        <linearGradient id="lineGradient" x1="0" x2="1" y1="0" y2="0">
+                          <stop offset="0%" stop-color="#93d6c2" />
+                          <stop offset="100%" stop-color="#d9b05f" />
+                        </linearGradient>
+                        <linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="0%" stop-color="#93d6c2" stop-opacity="0.24" />
+                          <stop offset="100%" stop-color="#93d6c2" stop-opacity="0" />
+                        </linearGradient>
+                      </defs>
+                      <path d="M0 196 H520" stroke="rgba(255,255,255,.10)" />
+                      <path d="M0 146 H520" stroke="rgba(255,255,255,.08)" />
+                      <path d="M0 96 H520" stroke="rgba(255,255,255,.08)" />
+                      <path d="M0 46 H520" stroke="rgba(255,255,255,.08)" />
+                      <path d="M0 178 C72 130 108 152 154 104 C206 48 256 82 304 66 C376 42 424 88 520 34 L520 220 L0 220 Z" fill="url(#areaGradient)" />
+                      <path d="M0 178 C72 130 108 152 154 104 C206 48 256 82 304 66 C376 42 424 88 520 34" fill="none" stroke="url(#lineGradient)" stroke-linecap="round" stroke-width="6" />
+                      <circle v-for="point in chartPoints" :key="point.x" :cx="point.x" :cy="point.y" r="6" fill="#f4efe4" stroke="#0d1d19" stroke-width="3" />
+                    </svg>
+                  </div>
+
+                  <div class="grid grid-cols-3 gap-2">
+                    <div v-for="signal in chartSignals" :key="signal.label" class="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                      <p class="text-[0.62rem] font-black uppercase tracking-[0.18em] text-[#7e9187]">{{ signal.label }}</p>
+                      <p class="mt-1 text-sm font-black leading-5 text-white">{{ signal.value }}</p>
                     </div>
                   </div>
                 </article>
               </div>
-
-              <div class="mt-6 rounded-[1.5rem] border border-cyan-400/20 bg-cyan-400/10 p-5">
-                <div class="flex items-center justify-between gap-3">
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100">Pulso operacional</p>
-                    <h3 class="mt-2 text-lg font-semibold text-white">O que prova maturidade do sistema</h3>
-                  </div>
-                  <span class="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white">
-                    Em produção
-                  </span>
-                </div>
-
-                <div class="mt-5 space-y-3">
-                  <article
-                    v-for="pulse in heroPulse"
-                    :key="pulse.title"
-                    class="rounded-[1.25rem] border border-white/10 bg-slate-950/45 p-4"
-                  >
-                    <div class="flex items-start justify-between gap-4">
-                      <div>
-                        <p class="text-sm font-semibold text-white">{{ pulse.title }}</p>
-                        <p class="mt-2 text-sm leading-6 text-slate-300">{{ pulse.description }}</p>
-                      </div>
-                      <span class="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
-                        {{ pulse.badge }}
-                      </span>
-                    </div>
-                  </article>
-                </div>
-              </div>
-            </section>
-
-            <section class="rounded-[2rem] border border-cyan-400/20 bg-cyan-400/10 p-6">
-              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100">Confiança operacional</p>
-              <div class="mt-5 grid gap-4 sm:grid-cols-2">
-                <div
-                  v-for="pillar in trustPillars"
-                  :key="pillar.title"
-                  class="rounded-[1.5rem] border border-white/10 bg-slate-950/40 p-5"
-                >
-                  <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-100">
-                    {{ pillar.badge }}
-                  </span>
-                  <h3 class="mt-4 text-lg font-semibold text-white">{{ pillar.title }}</h3>
-                  <p class="mt-2 text-sm leading-7 text-slate-200/90">{{ pillar.description }}</p>
-                </div>
-              </div>
             </section>
           </div>
         </section>
 
-        <section id="capabilities" class="mt-10 space-y-6">
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Capacidades nucleares</p>
-              <h2 class="mt-2 text-3xl font-semibold text-white sm:text-4xl">
-                Não é apenas um registo. É um sistema operacional do laboratório.
-              </h2>
-            </div>
-            <p class="max-w-2xl text-sm leading-7 text-slate-300">
-              Cada módulo suporta a execução diária, a rastreabilidade documental e a leitura executiva do negócio.
-            </p>
-          </div>
-
-          <div class="grid gap-5 xl:grid-cols-3">
-            <article
-              v-for="highlight in highlights"
-              :key="highlight.title"
-              class="rounded-[2rem] border border-white/10 bg-white/5 p-6"
-            >
-              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">{{ highlight.kicker }}</p>
-              <h3 class="mt-4 text-xl font-semibold text-white">{{ highlight.title }}</h3>
-              <p class="mt-3 text-sm leading-7 text-slate-300">{{ highlight.description }}</p>
-            </article>
-          </div>
-
-          <div class="grid gap-5 xl:grid-cols-3">
-            <article
-              v-for="assurance in assuranceCards"
-              :key="assurance.title"
-              class="rounded-[2rem] border border-white/10 bg-slate-900/80 p-6"
-            >
-              <h3 class="text-lg font-semibold text-white">{{ assurance.title }}</h3>
-              <p class="mt-3 text-sm leading-7 text-slate-300">{{ assurance.description }}</p>
-            </article>
-          </div>
-        </section>
-
-        <section id="request-flow" class="mt-10 rounded-[2.25rem] border border-white/10 bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950/60 p-7 shadow-2xl shadow-slate-950/30 sm:p-8">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-200">Pedido de análise</p>
-              <h2 class="mt-2 text-3xl font-semibold text-white sm:text-4xl">
-                Um portal que o cliente quer mesmo usar.
-              </h2>
-            </div>
-            <span class="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-200">
-              Pré-preenchimento, lote e validação técnica
+        <section class="border-y border-[#d8cfbd] py-6 dark:border-white/10">
+          <div class="grid gap-4 text-sm font-black uppercase tracking-[0.18em] text-[#59645d] dark:text-[#b8c6bd] md:grid-cols-4">
+            <span v-for="proof in trustStrip" :key="proof" class="flex items-center gap-3">
+              <span class="h-1.5 w-1.5 rounded-full bg-[#1f7a68]"></span>
+              {{ proof }}
             </span>
           </div>
-
-          <div class="mt-7 grid gap-5 xl:grid-cols-3">
-            <article
-              v-for="mode in requestModes"
-              :key="mode.title"
-              class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5"
-            >
-              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200">{{ mode.kicker }}</p>
-              <h3 class="mt-3 text-xl font-semibold text-white">{{ mode.title }}</h3>
-              <p class="mt-3 text-sm leading-7 text-slate-300">{{ mode.description }}</p>
-            </article>
-          </div>
-
-          <div class="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <article
-              v-for="step in requestJourney"
-              :key="step.title"
-              class="rounded-[1.75rem] border border-white/10 bg-slate-950/55 p-5"
-            >
-              <div class="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-400/15 text-sm font-semibold text-cyan-100">
-                {{ step.index }}
-              </div>
-              <h3 class="mt-4 text-sm font-semibold uppercase tracking-[0.18em] text-white">{{ step.title }}</h3>
-              <p class="mt-2 text-sm leading-6 text-slate-300">{{ step.description }}</p>
-            </article>
-          </div>
         </section>
 
-        <section id="executive" class="mt-10 grid gap-6 xl:grid-cols-[0.92fr,1.08fr]">
-          <article class="rounded-[2rem] border border-white/10 bg-white/5 p-7">
-            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Percursos operacionais</p>
-            <div class="mt-6 space-y-4">
-              <div
-                v-for="step in workflow"
-                :key="step.title"
-                class="rounded-[1.5rem] border border-white/10 bg-slate-900/80 p-5"
-              >
-                <div class="flex items-center gap-3">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-sm font-semibold text-cyan-200">
-                    {{ step.index }}
-                  </div>
-                  <h3 class="text-lg font-semibold text-white">{{ step.title }}</h3>
-                </div>
-                <p class="mt-3 text-sm leading-7 text-slate-300">{{ step.description }}</p>
-              </div>
-            </div>
-          </article>
-
-          <article class="rounded-[2rem] border border-white/10 bg-white/5 p-7">
-            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Branding e validação</p>
-            <div class="mt-6 grid gap-4 md:grid-cols-2">
-              <div class="rounded-[1.5rem] border border-white/10 bg-slate-900/80 p-5">
-                <p class="text-sm text-slate-400">Entidade de validação</p>
-                <p class="mt-2 text-xl font-semibold text-white">
-                  {{ branding.validation_name || 'Entidade configurável no sistema' }}
-                </p>
-                <p v-if="branding.validation_number" class="mt-2 text-sm text-slate-300">
-                  Referência {{ branding.validation_number }}
-                </p>
-              </div>
-
-              <div class="rounded-[1.5rem] border border-white/10 bg-slate-900/80 p-5">
-                <p class="text-sm text-slate-400">Laboratório principal</p>
-                <p class="mt-2 text-xl font-semibold text-white">
-                  {{ branding.lab_name || 'Laboratório principal' }}
-                </p>
-                <p v-if="branding.lab_director" class="mt-2 text-sm text-slate-300">
-                  Direcção técnica: {{ branding.lab_director }}
-                </p>
-              </div>
-            </div>
-
-            <div class="mt-6 grid gap-4 sm:grid-cols-2">
-              <div
-                v-for="track in operationalTracks"
-                :key="track.title"
-                class="rounded-[1.5rem] border border-white/10 bg-slate-950/40 p-5"
-              >
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">{{ track.kicker }}</p>
-                <h3 class="mt-3 text-lg font-semibold text-white">{{ track.title }}</h3>
-                <p class="mt-2 text-sm leading-7 text-slate-300">{{ track.description }}</p>
-              </div>
-            </div>
-          </article>
-        </section>
-
-        <section id="cta" class="mt-10 rounded-[2.25rem] border border-white/10 bg-white px-7 py-8 text-slate-950 shadow-2xl shadow-slate-950/20 sm:px-8">
-          <div class="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
-            <div class="max-w-3xl">
-              <p class="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-700">Pronto para produção</p>
-              <h2 class="mt-3 text-3xl font-semibold sm:text-4xl">
-                Faça o cliente confiar no processo e a equipa confiar no sistema.
+        <section id="iso17025" class="py-20 lg:py-28">
+          <div class="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+            <div class="max-w-xl">
+              <p class="text-2xl font-black tracking-[-0.035em] text-[#9d6d1f] dark:text-[#d9b05f]">Qualidade que deixa rasto</p>
+              <h2 class="mt-4 text-4xl font-black tracking-[-0.055em] text-[#111814] sm:text-6xl dark:text-[#f8f4e8]">
+                ISO 17025 não deve viver numa pasta. Deve viver no processo.
               </h2>
-              <p class="mt-4 text-base leading-8 text-slate-600">
-                Desde a proposta e o pedido até ao resultado, certificado, retenção e evidência, a plataforma foi desenhada
-                para suportar a operação diária e a leitura auditável do laboratório.
+              <p class="mt-6 text-lg font-bold leading-8 text-[#344239] dark:text-[#d7e5dc]">
+                A norma exige competência, imparcialidade e operação consistente. O sistema deve produzir evidência enquanto o laboratório trabalha, sem depender de registos dispersos.
               </p>
             </div>
 
-            <div class="flex flex-col gap-3 sm:flex-row">
-              <Link
-                :href="route('login')"
-                class="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                Aceder ao sistema
-              </Link>
-              <Link
-                v-if="branding.portal_enabled !== false"
-                :href="route('portal.login')"
-                class="inline-flex items-center justify-center rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-900 transition hover:border-cyan-500 hover:text-cyan-700"
-              >
-                Entrar no portal do cliente
-              </Link>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <article v-for="feature in isoFeatures" :key="feature.title" class="iso-card">
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#143d37] text-[#d9b05f] shadow-lg shadow-[#143d37]/20">
+                  <component :is="feature.icon" />
+                </div>
+                <p class="mt-5 text-[0.68rem] font-black uppercase tracking-[0.2em] text-[#1f7a68] dark:text-[#93d6c2]">{{ feature.kicker }}</p>
+                <h3 class="mt-3 text-xl font-black tracking-[-0.03em] text-[#111814]">{{ feature.title }}</h3>
+                <p class="mt-3 text-sm font-bold leading-7 text-[#344239]">{{ feature.description }}</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section id="workflow" class="grid gap-10 py-20 lg:grid-cols-[1.08fr_0.92fr] lg:items-center">
+          <div class="workflow-panel">
+            <div class="flex flex-col gap-6 border-b border-white/10 p-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p class="eyebrow text-[#d9b05f]">Cadeia de custódia digital</p>
+                <h2 class="mt-2 text-3xl font-black tracking-[-0.045em] text-white">Da proposta ao certificado, sem perder contexto</h2>
+              </div>
+              <span class="rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#dce7df]">Auditável</span>
+            </div>
+
+            <div class="grid gap-0 md:grid-cols-2">
+              <article v-for="step in workflowSteps" :key="step.title" class="workflow-step">
+                <p class="text-4xl font-black tracking-[-0.06em] text-[#d9b05f]">{{ step.index }}</p>
+                <h3 class="mt-4 text-xl font-black tracking-[-0.035em] text-white">{{ step.title }}</h3>
+                <p class="mt-3 text-sm font-semibold leading-7 text-[#b8c6bd]">{{ step.description }}</p>
+              </article>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-2xl font-black tracking-[-0.035em] text-[#9d6d1f] dark:text-[#d9b05f]">Menos fricção, mais confiança</p>
+            <h2 class="mt-4 text-4xl font-black tracking-[-0.055em] text-[#111814] sm:text-6xl dark:text-[#f8f4e8]">
+              O cliente percebe profissionalismo antes da primeira amostra.
+            </h2>
+            <p class="mt-6 text-lg font-bold leading-8 text-[#344239] dark:text-[#d7e5dc]">
+              Propostas com escopo claro, decisão aceite, pedido de análise pré-preenchido, amostra ligada ao produto e matriz, resultado com incerteza, contra-análise quando aplicável e certificado verificável.
+            </p>
+
+            <div class="mt-8 grid gap-3">
+              <div v-for="item in workflowProof" :key="item" class="proof-row">
+                <span class="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-[#1f7a68] text-xs font-black text-white">✓</span>
+                {{ item }}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="reports" class="py-20">
+          <div class="rounded-[2.5rem] bg-[#111814] p-4 shadow-2xl shadow-[#111814]/20 dark:bg-[#0a1512]">
+            <div class="grid overflow-hidden rounded-[2rem] border border-white/10 lg:grid-cols-[0.95fr_1.05fr]">
+              <div class="p-7 sm:p-10">
+                <p class="eyebrow text-[#d9b05f]">Relatórios premium</p>
+                <h2 class="mt-4 text-4xl font-black tracking-[-0.055em] text-white sm:text-6xl">
+                  Documentos que parecem acreditáveis porque são.
+                </h2>
+                <p class="mt-6 text-lg font-semibold leading-8 text-[#c8d5cc]">
+                  Certificados, relatórios de análise, propostas, facturas, recibos e etiquetas devem conservar cabeçalhos, rodapés, paginação, assinaturas, código QR, variáveis reais e identidade institucional.
+                </p>
+              </div>
+
+              <div class="grid gap-px bg-white/10 sm:grid-cols-2">
+                <article v-for="document in documentStudio" :key="document.title" class="bg-[#15211d] p-6">
+                  <p class="text-[0.68rem] font-black uppercase tracking-[0.2em] text-[#d9b05f]">{{ document.kicker }}</p>
+                  <h3 class="mt-4 text-2xl font-black tracking-[-0.04em] text-white">{{ document.title }}</h3>
+                  <p class="mt-3 text-sm font-semibold leading-7 text-[#b8c6bd]">{{ document.description }}</p>
+                </article>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="py-20">
+          <div class="grid gap-4 lg:grid-cols-3">
+            <article v-for="pillar in businessPillars" :key="pillar.title" class="business-card">
+              <p class="text-[0.68rem] font-black uppercase tracking-[0.2em] text-[#1f7a68] dark:text-[#93d6c2]">{{ pillar.kicker }}</p>
+              <h3 class="mt-4 text-2xl font-black tracking-[-0.04em] text-[#111814]">{{ pillar.title }}</h3>
+              <p class="mt-3 text-sm font-bold leading-7 text-[#344239]">{{ pillar.description }}</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="cta" class="pb-10 pt-16">
+          <div class="cta-panel">
+            <div class="relative mx-auto max-w-4xl text-center">
+              <p class="text-2xl font-black tracking-[-0.035em] text-[#8b621f]">Para laboratórios que não podem parecer improvisados</p>
+              <h2 class="mt-5 text-4xl font-black tracking-[-0.055em] text-[#111814] sm:text-6xl">
+                Transforme análise, qualidade e gestão num sistema de confiança.
+              </h2>
+              <p class="mx-auto mt-6 max-w-2xl text-lg font-bold leading-8 text-[#344239]">
+                Configure a marca, ligue o portal, organize amostras, resultados, equipamentos, SGQ e relatórios. A experiência precisa vender seriedade antes da auditoria e depois dela.
+              </p>
+              <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+                <Link :href="route('login')" class="primary-cta">
+                  Aceder ao sistema
+                  <IconArrow />
+                </Link>
+                <Link v-if="branding.portal_enabled !== false" :href="route('portal.login')" class="outline-cta">
+                  Ver portal do cliente
+                </Link>
+              </div>
             </div>
           </div>
         </section>
       </main>
+
+      <footer class="border-t border-[#d8cfbd] py-9 dark:border-white/10">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.24em] text-[#1f7a68] dark:text-[#93d6c2]">{{ brandName }}</p>
+            <h2 class="mt-3 max-w-3xl text-3xl font-black tracking-[-0.04em] text-[#111814] dark:text-[#f8f4e8]">
+              Competência, rastreabilidade e comunicação profissional para laboratórios de análise.
+            </h2>
+          </div>
+          <div class="grid gap-3 text-sm font-bold text-[#59645d] dark:text-[#b8c6bd] sm:grid-cols-2">
+            <a v-for="item in navigation" :key="`footer-${item.href}`" :href="item.href" class="transition hover:text-[#1f7a68] dark:hover:text-[#93d6c2]">{{ item.label }}</a>
+          </div>
+        </div>
+        <div class="mt-8 flex flex-col gap-3 text-sm font-semibold text-[#69736b] dark:text-[#92a39a] sm:flex-row sm:items-center sm:justify-between">
+          <span>© {{ currentYear }} {{ brandName }}. Sistema de gestão laboratorial.</span>
+          <span>{{ branding.validation_name || 'Preparado para fluxos ISO/IEC 17025' }}</span>
+        </div>
+      </footer>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { Link } from '@inertiajs/vue3'
+import { computed, h } from 'vue'
+import { Head, Link } from '@inertiajs/vue3'
+import { buildBrandingCssVariables } from '@/Utils/brandingPalette'
 
 defineOptions({
   layout: false,
@@ -394,226 +316,560 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
-  metrics: {
-    type: Object,
-    default: () => ({}),
-  },
 })
 
-const brandingCssVariables = computed(() => ({
-  '--brand-primary': props.branding.primary_color || '#1f87e8',
-  '--brand-secondary': props.branding.secondary_color || '#0f172a',
-  '--brand-accent': props.branding.accent_color || '#14b8a6',
-}))
+const brandingCssVariables = computed(() => buildBrandingCssVariables(props.branding))
+const brandName = computed(() => props.branding.app_name || 'LIMS Unleashed')
+const currentYear = new Date().getFullYear()
 
-const numberFormatter = new Intl.NumberFormat('pt-PT')
+const heroLines = ['Resultados', 'que merecem', 'confiança.']
 
-const heroBadges = [
-  'ISO 17025',
-  'Portal do cliente',
-  'Resultados e certificados',
-]
-
-const proofStrip = [
-  {
-    kicker: 'Presença',
-    title: 'Parece uma operação estruturada, não um conjunto de formulários',
-    description: 'A primeira impressão comunica disciplina: pedidos claros, documentos premium, métricas executivas e rasto consistente.',
-  },
-  {
-    kicker: 'Execução',
-    title: 'A equipa trabalha com contexto em vez de retrabalho',
-    description: 'O que o cliente informa, o que o técnico valida e o que a gestão acompanha partem da mesma base de dados operacional.',
-  },
-  {
-    kicker: 'Auditoria',
-    title: 'A evidência não é montada depois, nasce durante o processo',
-    description: 'Revisões, aprovações, retenção, histórico, inventário e circulação documental ficam ligados ao estado real da operação.',
-  },
-]
-
-const metricCards = computed(() => [
-  {
-    label: 'Amostras',
-    value: numberFormatter.format(props.metrics.samples || 0),
-    caption: 'Entradas controladas, em análise, em retenção ou descartadas com histórico completo.',
-  },
-  {
-    label: 'Certificados',
-    value: numberFormatter.format(props.metrics.certificates || 0),
-    caption: 'Documentos emitidos com revisão, assinatura, paginação e cadeia de evidência.',
-  },
-  {
-    label: 'Inventário',
-    value: numberFormatter.format(props.metrics.inventory_items || 0),
-    caption: 'Insumos, reagentes e equipamentos controlados por estado, validade e disponibilidade.',
-  },
-  {
-    label: 'Pedidos',
-    value: numberFormatter.format(props.metrics.customer_requests || 0),
-    caption: 'Solicitações estruturadas no portal, prontas para validação e encaminhamento técnico.',
-  },
-])
-
-const highlights = [
-  {
-    kicker: 'Cliente',
-    title: 'Pede análise com contexto real, não com formulários genéricos',
-    description: 'Produto, matriz, lote, acondicionamento, prioridade e perfis entram logo no pedido, incluindo submissão em lote quando necessário.',
-  },
-  {
-    kicker: 'Laboratório',
-    title: 'Valida e processa sem reintroduzir a mesma informação',
-    description: 'O backoffice reaproveita o pré-preenchimento do portal para entrada, triagem, análise, contra-análise e emissão documental.',
-  },
-  {
-    kicker: 'Gestão',
-    title: 'Vê risco, backlog, conformidade e entrega numa só leitura',
-    description: 'Dashboards executivos, revisões, condições ambientais, recursos críticos e alertas operacionais ligam-se ao mesmo estado do sistema.',
-  },
-]
-
-const workflow = [
-  {
-    index: '01',
-    title: 'Pedido e recepção',
-    description: 'O pedido nasce no portal ou internamente, é validado e convertido no fluxo laboratorial formal sem perda de contexto.',
-  },
-  {
-    index: '02',
-    title: 'Análise e contra-análise',
-    description: 'Resultados seguem por inserção, verificação, aprovação e, quando necessário, uma contra-análise com identidade própria.',
-  },
-  {
-    index: '03',
-    title: 'Certificado, retenção e evidência',
-    description: 'A cadeia fecha com emissão documental, retenção, descarte, histórico e rastreabilidade de cada decisão tomada.',
-  },
+const navigation = [
+  { label: 'ISO 17025', href: '#iso17025' },
+  { label: 'Fluxo técnico', href: '#workflow' },
+  { label: 'Indicadores', href: '#analytics' },
+  { label: 'Relatórios', href: '#reports' },
 ]
 
 const assuranceCards = [
   {
-    title: 'Documentos controlados',
-    description: 'Versões, revisões, obsolescência, retenção, confidencialidade e aprovações no mesmo gestor documental.',
-  },
-  {
-    title: 'Recursos sob controlo',
-    description: 'Competências, manutenção, metrologia, inventário, condições ambientais e disponibilidade operacional visíveis no fluxo.',
-  },
-  {
-    title: 'Resultados auditáveis',
-    description: 'Hierarquia de validação, assinatura, unidades, limites, incerteza e rastreabilidade das alterações suportam auditorias reais.',
-  },
-]
-
-const executiveMetrics = computed(() => [
-  {
-    title: 'Capacidade operacional',
-    description: 'Ritmo entre pedidos, amostras em progresso e gargalos de operação.',
-    badge: 'Fluxo',
-    value: numberFormatter.format((props.metrics.customer_requests || 0) + (props.metrics.samples || 0)),
-  },
-  {
-    title: 'Entrega documental',
-    description: 'Volume de certificados e documentação controlada emitida com revisão.',
-    badge: 'Entrega',
-    value: numberFormatter.format(props.metrics.certificates || 0),
-  },
-  {
-    title: 'Base controlada',
-    description: 'Profundidade de inventário e activos operacionais com rastreabilidade activa.',
-    badge: 'Recursos',
-    value: numberFormatter.format(props.metrics.inventory_items || 0),
-  },
-])
-
-const heroPulse = [
-  {
-    title: 'Pedidos entram com mais estrutura e menos ambiguidade',
-    description: 'Produto, matriz, lote, prioridade, recolha e perfis seguem no mesmo percurso até à análise e ao documento final.',
-    badge: 'Cliente',
-  },
-  {
-    title: 'Resultados e documentos passam por decisão, não por improviso',
-    description: 'Inserção, verificação, aprovação, certificados e controlo documental mantêm actores, datas e contexto técnico ligados.',
-    badge: 'Laboratório',
-  },
-  {
-    title: 'A gestão vê capacidade, risco e entrega no mesmo ecrã',
-    description: 'Backlog, recursos, certificados, inventário e conformidade alimentam uma leitura executiva mais credível.',
-    badge: 'Gestão',
-  },
-]
-
-const trustPillars = [
-  {
-    badge: 'Rastreio',
-    title: 'A mesma verdade para cliente, técnico e gestão',
-    description: 'Pedidos, amostras, resultados, certificados, recolhas e documentos deixam de viver em ilhas desconectadas.',
-  },
-  {
-    badge: 'Controlo',
-    title: 'Bloqueios antes do erro operacional',
-    description: 'Proposta aceite, competência válida, equipamento apto e condições controladas podem influenciar a execução do trabalho.',
-  },
-  {
-    badge: 'Entrega',
-    title: 'Portal útil e elegante',
-    description: 'O cliente não abre pedidos vagos; ele encaminha análises, recolhas, documentos e certificados com estrutura real.',
-  },
-]
-
-const requestModes = [
-  {
-    kicker: 'Amostra única',
-    title: 'Pedido rápido com contexto completo',
-    description: 'Produto, matriz, lote, quantidade, embalagem e observações entram num fluxo simples e claro para o cliente.',
-  },
-  {
-    kicker: 'Lote',
-    title: 'Submissão em batch com modelo estruturado',
-    description: 'Clientes com várias amostras podem usar um template e acelerar o envio sem perder consistência de dados.',
+    kicker: 'Recepção',
+    title: 'A amostra entra com contexto técnico',
+    description: 'Produto, matriz, lote, origem, recolha, prioridade e requisitos ficam ligados ao processo desde o início.',
   },
   {
     kicker: 'Validação',
-    title: 'Técnico confirma e encaminha',
-    description: 'Cada linha pode ser validada, ajustada e colocada no circuito normal de análise sem retrabalho manual.',
+    title: 'O resultado passa por decisão formal',
+    description: 'Inserção, cálculo, incerteza, verificação, aprovação e contra-análise seguem uma cadeia auditável.',
+  },
+  {
+    kicker: 'Emissão',
+    title: 'O certificado preserva evidência',
+    description: 'Assinatura, código QR, cabeçalhos, rodapés, paginação e histórico acompanham o documento final.',
   },
 ]
 
-const requestJourney = [
+const commandTiles = [
+  {
+    phase: 'Triagem',
+    label: 'Pedidos sem ambiguidade operacional',
+    description: 'O portal recolhe dados laboratoriais úteis antes de criar trabalho técnico para a equipa.',
+  },
+  {
+    phase: 'Controlo',
+    label: 'Bloqueios antes do erro',
+    description: 'Competência, equipamento, método, incerteza e decisão deixam de depender de memória informal.',
+  },
+  {
+    phase: 'Comunicação',
+    label: 'Notificações com responsabilidade',
+    description: 'Amostras paradas, validações pendentes e clientes sem resposta ficam visíveis antes de virarem reclamação.',
+  },
+]
+
+const chartPoints = [
+  { x: 0, y: 178 },
+  { x: 154, y: 104 },
+  { x: 304, y: 66 },
+  { x: 520, y: 34 },
+]
+
+const chartSignals = [
+  { label: 'Prazos', value: 'Atrasos por etapa' },
+  { label: 'Risco', value: 'Pendências críticas' },
+  { label: 'Resposta', value: 'Acções responsáveis' },
+]
+
+const trustStrip = [
+  'Imparcialidade',
+  'Confidencialidade',
+  'Rastreabilidade metrológica',
+  'Relatórios válidos',
+]
+
+const isoFeatures = [
+  {
+    kicker: 'Cláusulas 4.1 / 4.2',
+    title: 'Imparcialidade e confidencialidade',
+    description: 'Permissões, trilhos de auditoria, segregação de responsabilidades e comunicação controlada para reduzir risco de influência indevida.',
+    icon: () => h(IconShield),
+  },
+  {
+    kicker: 'Cláusula 6.2',
+    title: 'Competência técnica',
+    description: 'Matriz de responsabilidade, competências por método, certificações, acompanhamento e evidência de autorização para executar tarefas críticas.',
+    icon: () => h(IconUserCheck),
+  },
+  {
+    kicker: 'Cláusulas 6.4 / 6.5',
+    title: 'Equipamento e rastreabilidade',
+    description: 'Manutenção, calibração, estado operacional, etiquetas e ligação entre instrumento, amostra, resultado e certificado.',
+    icon: () => h(IconWrench),
+  },
+  {
+    kicker: 'Cláusulas 7.2 / 7.6',
+    title: 'Métodos, fórmulas e incerteza',
+    description: 'Parâmetros certificados, fórmulas de cálculo, fontes de incerteza, unidades e regras técnicas ligadas à inserção de resultados.',
+    icon: () => h(IconFormula),
+  },
+  {
+    kicker: 'Cláusula 7.8',
+    title: 'Certificados e relatórios',
+    description: 'Modelos multi-página com cabeçalhos, rodapés, paginação, decisão, código QR, assinaturas e variáveis reais do laboratório.',
+    icon: () => h(IconReport),
+  },
+  {
+    kicker: 'Cláusulas 8.7 / 8.9',
+    title: 'Não conformidades e melhoria',
+    description: 'Ocorrências, acções correctivas, reclamações, análises críticas, SGQ e painéis para melhoria contínua.',
+    icon: () => h(IconLoop),
+  },
+]
+
+const workflowSteps = [
   {
     index: '01',
-    title: 'Cliente prepara',
-    description: 'Escolhe o tipo de pedido, identifica a amostra e indica perfis ou necessidades de recolha.',
+    title: 'Proposta aceite',
+    description: 'Escopo, preço, regra de decisão, condições e assinatura ficam claros antes da execução.',
   },
   {
     index: '02',
-    title: 'Portal estrutura',
-    description: 'O sistema regista prioridade, referência, metadados e observações operacionais úteis.',
+    title: 'Entrada da amostra',
+    description: 'Produto, matriz, lote, origem, prioridade e requisitos técnicos entram sem perder contexto.',
   },
   {
     index: '03',
-    title: 'Técnico valida',
-    description: 'A equipa confirma, corrige quando necessário e cria a entrada formal da amostra ou da recolha.',
+    title: 'Resultado validado',
+    description: 'Inserção, cálculo, incerteza, verificação, aprovação e contra-análise ficam rastreáveis.',
   },
   {
     index: '04',
-    title: 'Sistema entrega',
-    description: 'Segue para análise, aprovação e emissão documental mantendo a cadeia completa de rastreabilidade.',
+    title: 'Certificado verificável',
+    description: 'O documento final carrega assinatura, código QR, histórico, paginação e identidade institucional.',
   },
 ]
 
-const operationalTracks = [
+const workflowProof = [
+  'Recepção da amostra como ponto de entrada natural do ciclo',
+  'Contra-análise tratada como decisão técnica, não remendo manual',
+  'Notificações para evitar amostras esquecidas ou clientes sem resposta',
+  'Inventário, equipamentos e reagentes ligados à validade do resultado',
+]
+
+const documentStudio = [
   {
-    kicker: 'Imagem',
-    title: 'Marca, validação e identidade configuráveis',
-    description: 'Cores, nome da aplicação, laboratório, entidade de validação e portal podem alinhar-se com a operação real.',
+    kicker: 'Estúdio de propostas',
+    title: 'Propostas que fecham escopo',
+    description: 'Cabeçalhos, rodapés, tabelas, regras de decisão, blocos de assinatura e anexos com apresentação comercial séria.',
   },
   {
-    kicker: 'Studio',
-    title: 'Base pronta para documentos premium',
-    description: 'Certificados, relatórios e propostas podem evoluir com layouts, cabeçalhos, rodapés e paginação controlados.',
+    kicker: 'Estúdio de relatórios',
+    title: 'Certificados com autoridade',
+    description: 'Modelos flexíveis para resultados, incerteza, comentários técnicos, código QR e paginação consistente.',
+  },
+  {
+    kicker: 'Relatórios executivos',
+    title: 'Gestão com indicadores',
+    description: 'Prazos, carga pendente, capacidade, risco, não conformidades, produtividade e tendência por laboratório ou departamento.',
+  },
+  {
+    kicker: 'Estúdio de etiquetas',
+    title: 'Etiquetas operacionais',
+    description: 'Amostras, equipamentos, reagentes e lotes com código QR, tamanhos customizados e impressão controlada.',
   },
 ]
+
+const businessPillars = [
+  {
+    kicker: 'Cliente',
+    title: 'Confiança desde o primeiro contacto',
+    description: 'Portal, propostas, pedidos de análise, certificados e documentos comerciais reduzem fricção e aumentam credibilidade.',
+  },
+  {
+    kicker: 'Técnico',
+    title: 'Execução orientada por evidência',
+    description: 'A equipa trabalha por prioridade, estado, método, competência, equipamento e validação, não por listas soltas.',
+  },
+  {
+    kicker: 'Direcção',
+    title: 'Decisão com dados laboratoriais',
+    description: 'Painéis, notificações e relatórios executivos mostram capacidade, risco, atrasos e melhoria contínua.',
+  },
+]
+
+function IconShield() {
+  return h('svg', { class: 'h-6 w-6', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.8' }, [
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M12 3 5 6v5c0 4.2 2.8 8.1 7 10 4.2-1.9 7-5.8 7-10V6l-7-3Z' }),
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'm9 12 2 2 4-4' }),
+  ])
+}
+
+function IconUserCheck() {
+  return h('svg', { class: 'h-6 w-6', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.8' }, [
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M15 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM4 21a7 7 0 0 1 11-5.7' }),
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'm16 19 2 2 4-5' }),
+  ])
+}
+
+function IconWrench() {
+  return h('svg', { class: 'h-6 w-6', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.8' }, [
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M14.7 6.3a4 4 0 0 0 5 5L11 20l-4-4 8.7-8.7Z' }),
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'm7 16-3 3 1 1 3-3' }),
+  ])
+}
+
+function IconFormula() {
+  return h('svg', { class: 'h-6 w-6', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.8' }, [
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M5 5h14M7 19h10M9 5l6 14M15 5 9 19' }),
+  ])
+}
+
+function IconReport() {
+  return h('svg', { class: 'h-6 w-6', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.8' }, [
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M7 3h7l4 4v14H7V3Z' }),
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M14 3v5h5M9 14h6M9 18h4' }),
+  ])
+}
+
+function IconLoop() {
+  return h('svg', { class: 'h-6 w-6', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '1.8' }, [
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M4 12a8 8 0 0 1 13.7-5.6L20 8M20 4v4h-4M20 12a8 8 0 0 1-13.7 5.6L4 16M4 20v-4h4' }),
+  ])
+}
+
+function IconArrow() {
+  return h('svg', { class: 'h-4 w-4', fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor', 'stroke-width': '2' }, [
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M5 12h14m-6-6 6 6-6 6' }),
+  ])
+}
 </script>
+
+<style scoped>
+@import url('https://fonts.bunny.net/css?family=manrope:500,600,700,800,900');
+
+.landing-shell {
+  font-family: "Manrope", "Aptos", sans-serif;
+}
+
+.laboratory-grid {
+  background-image:
+    linear-gradient(rgba(17, 24, 20, 0.10) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 24, 20, 0.10) 1px, transparent 1px);
+  background-size: 52px 52px;
+  -webkit-mask-image: radial-gradient(circle at 50% 22%, black 0%, transparent 72%);
+  mask-image: radial-gradient(circle at 50% 22%, black 0%, transparent 72%);
+}
+
+.landing-nav {
+  align-items: center;
+  background: rgba(255, 252, 244, 0.96);
+  border: 1px solid rgba(171, 154, 122, 0.42);
+  border-radius: 999px;
+  box-shadow: 0 24px 70px rgba(17, 24, 20, 0.12);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.75rem;
+  position: sticky;
+  top: 1rem;
+  z-index: 40;
+  backdrop-filter: blur(24px);
+}
+
+:global(.dark) .landing-nav {
+  background: rgba(255, 252, 244, 0.96);
+  border-color: rgba(171, 154, 122, 0.42);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.26);
+}
+
+.brand-mark {
+  align-items: center;
+  background: linear-gradient(145deg, #143d37, #111814);
+  border-radius: 1.25rem;
+  display: flex;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+  box-shadow: 0 18px 36px rgba(17, 24, 20, 0.18);
+}
+
+.nav-pill {
+  border-radius: 999px;
+  color: #21342b;
+  font-size: 0.86rem;
+  font-weight: 900;
+  padding: 0.65rem 0.95rem;
+  transition: all 180ms ease;
+}
+
+.nav-pill:hover {
+  background: #143d37;
+  color: #f8f4e8;
+}
+
+:global(.dark) .nav-pill {
+  color: #21342b;
+}
+
+.primary-action,
+.secondary-action,
+.primary-cta,
+.outline-cta {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 950;
+  justify-content: center;
+  line-height: 1;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, border-color 180ms ease;
+}
+
+.primary-action {
+  background: #143d37;
+  color: #f8f4e8;
+  padding: 0.85rem 1.1rem;
+}
+
+.secondary-action {
+  border: 1px solid rgba(20, 61, 55, 0.16);
+  color: #143d37;
+  padding: 0.85rem 1.05rem;
+}
+
+:global(.dark) .secondary-action {
+  border-color: rgba(20, 61, 55, 0.16);
+  color: #143d37;
+}
+
+.primary-cta {
+  background: #143d37;
+  box-shadow: 0 24px 50px rgba(20, 61, 55, 0.24);
+  color: #f8f4e8;
+  gap: 0.65rem;
+  padding: 1rem 1.35rem;
+}
+
+.outline-cta {
+  background: rgba(255, 252, 244, 0.84);
+  border: 1px solid rgba(20, 61, 55, 0.18);
+  color: #143d37;
+  padding: 1rem 1.35rem;
+}
+
+:global(.dark) .outline-cta {
+  background: rgba(255, 252, 244, 0.88);
+  border-color: rgba(171, 154, 122, 0.38);
+  color: #143d37;
+}
+
+.cta-panel .outline-cta,
+:global(.dark) .cta-panel .outline-cta {
+  background: rgba(255, 252, 244, 0.74);
+  border-color: rgba(20, 61, 55, 0.18);
+  color: #143d37;
+}
+
+.primary-action:hover,
+.secondary-action:hover,
+.primary-cta:hover,
+.outline-cta:hover {
+  transform: translateY(-2px);
+}
+
+.reveal-badge {
+  align-items: center;
+  animation: microScaleFade 600ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  background: rgba(255, 250, 240, 0.72);
+  border: 1px solid rgba(216, 207, 189, 0.9);
+  border-radius: 999px;
+  color: #143d37;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 950;
+  gap: 0.65rem;
+  letter-spacing: 0.2em;
+  padding: 0.65rem 0.9rem;
+  text-transform: uppercase;
+}
+
+:global(.dark) .reveal-badge {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #d8efe4;
+}
+
+.mask-line {
+  display: block;
+  overflow: hidden;
+}
+
+.mask-line > span {
+  animation: maskRevealUp 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  display: block;
+  filter: blur(6px);
+  transform: translateY(30px);
+}
+
+.mask-line:nth-child(2) > span {
+  animation-delay: 90ms;
+}
+
+.mask-line:nth-child(3) > span {
+  animation-delay: 180ms;
+}
+
+.animate-soft-in {
+  animation: maskRevealUp 760ms cubic-bezier(0.22, 1, 0.36, 1) 260ms both;
+}
+
+.assurance-card,
+.iso-card,
+.business-card {
+  background: rgba(255, 252, 244, 0.96);
+  border: 1px solid rgba(171, 154, 122, 0.38);
+  border-radius: 1.75rem;
+  box-shadow: 0 22px 64px rgba(17, 24, 20, 0.09);
+  padding: 1.25rem;
+}
+
+:global(.dark) .assurance-card,
+:global(.dark) .iso-card,
+:global(.dark) .business-card {
+  background: rgba(255, 252, 244, 0.96);
+  border-color: rgba(171, 154, 122, 0.38);
+  color: #111814;
+}
+
+.lab-console,
+.workflow-panel {
+  background: #111814;
+  border: 1px solid rgba(248, 244, 232, 0.12);
+  border-radius: 2.25rem;
+  box-shadow: 0 38px 90px rgba(17, 24, 20, 0.35);
+  overflow: hidden;
+}
+
+.console-header {
+  align-items: flex-start;
+  background:
+    radial-gradient(circle at top right, rgba(147, 214, 194, 0.20), transparent 34%),
+    linear-gradient(135deg, #143d37, #111814);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1.5rem;
+}
+
+.console-tile {
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 1.5rem;
+  padding: 1rem;
+}
+
+.eyebrow {
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.iso-card,
+.business-card {
+  padding: 1.5rem;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.iso-card:hover,
+.business-card:hover {
+  box-shadow: 0 30px 80px rgba(17, 24, 20, 0.12);
+  transform: translateY(-4px);
+}
+
+.workflow-step {
+  border-color: rgba(255, 255, 255, 0.10);
+  border-style: solid;
+  border-width: 0 1px 1px 0;
+  min-height: 16rem;
+  padding: 1.5rem;
+}
+
+.proof-row {
+  align-items: flex-start;
+  background: rgba(255, 250, 240, 0.72);
+  border: 1px solid rgba(216, 207, 189, 0.86);
+  border-radius: 1.25rem;
+  color: #26332c;
+  display: flex;
+  font-size: 0.95rem;
+  font-weight: 850;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+:global(.dark) .proof-row {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(255, 255, 255, 0.10);
+  color: #dce7df;
+}
+
+.cta-panel {
+  background:
+    radial-gradient(circle at top left, rgba(31, 122, 104, 0.16), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(217, 176, 95, 0.22), transparent 36%),
+    rgba(255, 250, 240, 0.72);
+  border: 1px solid rgba(216, 207, 189, 0.9);
+  border-radius: 2.5rem;
+  box-shadow: 0 32px 90px rgba(17, 24, 20, 0.10);
+  overflow: hidden;
+  padding: clamp(2rem, 5vw, 4.5rem);
+}
+
+:global(.dark) .cta-panel {
+  background:
+    radial-gradient(circle at top left, rgba(31, 122, 104, 0.14), transparent 32%),
+    radial-gradient(circle at bottom right, rgba(217, 176, 95, 0.20), transparent 36%),
+    rgba(255, 252, 244, 0.92);
+  border-color: rgba(171, 154, 122, 0.38);
+  color: #111814;
+}
+
+@keyframes maskRevealUp {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes microScaleFade {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .landing-nav {
+    align-items: stretch;
+    border-radius: 1.5rem;
+    flex-direction: column;
+  }
+
+  .workflow-step {
+    border-right-width: 0;
+  }
+}
+</style>

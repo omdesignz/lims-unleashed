@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 defineOptions({ layout: Layout });
 
@@ -11,7 +12,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="space-y-6 p-6">
+  <div class="space-y-6 p-6" :class="commercialDocumentThemeClasses">
     <div>
       <h1 class="text-2xl font-semibold text-gray-900">Reclamações</h1>
       <p class="mt-1 text-sm text-gray-600">Registo, acompanhamento e fecho de reclamações com rastreabilidade.</p>

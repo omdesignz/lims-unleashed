@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div class="max-w-3xl space-y-3">
         <div class="inline-flex rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700">
@@ -67,6 +67,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3'
 import Layout from '@/Shared/Layouts/PortalLayout.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 defineOptions({
   layout: Layout,

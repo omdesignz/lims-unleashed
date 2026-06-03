@@ -1,12 +1,13 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import RecordsTable from '@/Components/records-table.vue';
 import confirmDialog from "@/Components/confirm-dialog.vue";
-import { TransitionRoot } from '@headlessui/vue'
 import slideOver from '@/Components/slide-over.vue';
 import { ref, computed } from "vue";
-import { useForm, router } from "@inertiajs/vue3";
-import combobox from "@/Components/combobox.vue";
+import { Link, useForm, router } from "@inertiajs/vue3";
+import combobox from "@/Components/combobox-enhanced.vue";
+import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
 import { trans } from 'laravel-vue-i18n';
 import { EyeIcon } from "@heroicons/vue/24/outline";
 
@@ -83,6 +84,11 @@ const close = () => {
 
 const showDeleteConfirmation = ref(false);
 
+const prepareBulkAction = (selectedActionId) => {
+    actionId.value = selectedActionId;
+    showDeleteConfirmation.value = true;
+}
+
 const openSlideoverWithData = (data) => {
     openslideover.value = true;
     form.id = data.id;
@@ -130,12 +136,17 @@ let submit = () => {
     executeAction(actionId.value);
   }
 
-  const executeAction = (actionId) => {
+  const executeAction = (selectedActionId) => {
   const recordIds = props.record.data.filter(record => record.selected).map(record => record.id);
 
-  if(!recordIds.length) return;
+  if(!recordIds.length) {
+    showDeleteConfirmation.value = false;
+    actionId.value = null;
 
-  switch (actionId) {
+    return;
+  }
+
+  switch (selectedActionId) {
     case 'delete':
       router.get(route('qualitycertificates.destroy'), {
           recordIds: recordIds
@@ -144,7 +155,7 @@ let submit = () => {
         preserveScroll: true,
         onSuccess: () => {
             showDeleteConfirmation.value = false;
-            actionId = null;
+            actionId.value = null;
         }
       });
       showDeleteConfirmation.value = false;
@@ -158,7 +169,7 @@ let submit = () => {
             preserveScroll: true,
             onSuccess: () => {
                 showDeleteConfirmation.value = false;
-                actionId = null;
+                actionId.value = null;
             }
         });
         showDeleteConfirmation.value = false;
@@ -166,56 +177,23 @@ let submit = () => {
 }
 
 function loadCustomers(query, setOptions) {
-    fetch('/customers/getCustomer?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.name,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/customers/getCustomer', query, setOptions, optionMappers.name);
 }
 
 function loadWarehouses(query, setOptions) {
-    fetch('/warehouses/getWarehouse?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.address,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/warehouses/getWarehouse', query, setOptions, optionMappers.address);
 }
 
 function loadLabCodes(query, setOptions) {
-    fetch('/labcodes/getCode?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.code,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/labcodes/getCode', query, setOptions, optionMappers.code);
 }
 </script>
 <template>
-<div class="space-y-6">
-<section class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.14),_transparent_30%),linear-gradient(135deg,_#ffffff,_#f8fafc)] shadow-sm dark:border-slate-700 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_30%),linear-gradient(135deg,_#0f172a,_#111827)]">
+<div class="quality-certificate-page space-y-6" :class="commercialDocumentThemeClasses">
+<section class="overflow-hidden rounded-[1.75rem] border border-[rgb(var(--primary-200-rgb)/0.55)] bg-[radial-gradient(circle_at_top_left,_rgba(var(--primary-500-rgb),0.16),_transparent_32%),linear-gradient(135deg,_#fffdf7,_#f8fafc)] shadow-sm dark:border-[rgb(var(--primary-700-rgb)/0.45)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(var(--primary-400-rgb),0.2),_transparent_34%),linear-gradient(135deg,_#07110f,_#111827)]">
   <div class="flex flex-col gap-5 px-6 py-6 md:flex-row md:items-end md:justify-between">
     <div class="max-w-3xl">
-      <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-700 dark:text-sky-300">Emissão final</p>
+      <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-200-rgb))]">Emissão final</p>
       <h3 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">{{ $t('gestlab.general.labels.quality_certificates.page_title') }}</h3>
       <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
         Centralize os certificados emitidos, consulte rapidamente o histórico e abra cada documento final com menos fricção.
@@ -229,7 +207,7 @@ function loadLabCodes(query, setOptions) {
 </section>
 
 <section class="rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-<records-table :createAction="false" :model="props.model" :abilities="props.abilities" :record="props.record" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @slideover-on="openSlideoverWithData">
+<records-table :createAction="false" :model="props.model" :abilities="props.abilities" :record="props.record" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="prepareBulkAction" @slideover-on="openSlideoverWithData">
   <template #actions="{ id }">
       <Link
           :href="route('qualitycertificates.show', {certificate: id})"
@@ -241,7 +219,7 @@ function loadLabCodes(query, setOptions) {
 </records-table>
 </section>
 
-<slide-over v-if="openslideover" @close="close" :title="slideOverTitle" :description="slideOverDescription">
+<slide-over v-if="openslideover" :class="commercialDocumentThemeClasses" @close="close" :title="slideOverTitle" :description="slideOverDescription">
     <template #content>
         <div class="space-y-6 py-6 sm:space-y-0 sm:divide-y sm:divide-gray-200 sm:py-0">
 
@@ -314,3 +292,31 @@ function loadLabCodes(query, setOptions) {
 <confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
 </div>
 </template>
+
+<style scoped>
+.quality-certificate-page :deep(input:not([type='checkbox']):not([type='radio'])),
+.quality-certificate-page :deep(textarea),
+.quality-certificate-page :deep(select) {
+  border-radius: 1rem;
+  border-color: rgb(216 203 184);
+  background: #fffdf7;
+  color: #15231f;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.quality-certificate-page :deep(input:not([type='checkbox']):not([type='radio']):focus),
+.quality-certificate-page :deep(textarea:focus),
+.quality-certificate-page :deep(select:focus) {
+  border-color: rgb(var(--primary-500-rgb));
+  box-shadow: 0 0 0 3px rgb(var(--primary-500-rgb) / 0.18);
+  outline: none;
+}
+
+:global(.dark) .quality-certificate-page :deep(input:not([type='checkbox']):not([type='radio'])),
+:global(.dark) .quality-certificate-page :deep(textarea),
+:global(.dark) .quality-certificate-page :deep(select) {
+  border-color: #315149;
+  background: #10231f;
+  color: #f7f1e7;
+}
+</style>

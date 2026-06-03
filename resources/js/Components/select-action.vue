@@ -1,51 +1,89 @@
 <template>
-  <div class="flex items-center gap-2.5">
-    <div class="relative flex-1">
-      <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-        <svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
-        </svg>
-      </div>
-      <select
-        :disabled="!recordIds.length"
-        v-model="actionId"
+  <div class="flex flex-wrap items-center gap-2.5">
+    <Listbox
+      :disabled="!recordIds.length"
+      :model-value="actionId"
+      as="div"
+      class="relative min-w-60"
+      @update:model-value="selectAction"
+    >
+      <ListboxButton
         :class="[
-          'block w-full rounded-xl py-2.5 pl-10 pr-4 text-sm shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-0',
+          'group inline-flex w-full items-center justify-between gap-3 rounded-2xl border px-3.5 py-3 text-left text-sm font-semibold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.24)]',
           recordIds.length
-            ? 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:border-primary-500 focus:ring-primary-500/20'
-            : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-400 dark:text-gray-500 cursor-not-allowed',
+            ? 'border-[#d8cbb8] bg-white text-[#15231f] hover:border-[rgb(var(--primary-500-rgb))] dark:border-[#315149] dark:bg-[#07110f] dark:text-[#f7f1e7] dark:hover:bg-[#10231f]'
+            : 'cursor-not-allowed border-[#e7ddce] bg-[#f7f1e7]/70 text-[#8d9b94] dark:border-[#213a34] dark:bg-[#10231f]/50 dark:text-[#657970]',
         ]"
       >
-        <option :value="null" disabled class="text-gray-400">
-          {{ $t('gestlab.actions.select_action') }}
-        </option>
-        <option
-          v-for="(action, index) in actions"
-          :value="action.id"
-          :key="index"
-          class="text-gray-900 dark:text-gray-100"
-        >
-          {{ $t(action.label) }}
-        </option>
-      </select>
+        <span class="inline-flex min-w-0 items-center gap-2">
+          <span
+            :class="[
+              'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition',
+              recordIds.length
+                ? 'bg-[#f7f1e7] text-[rgb(var(--primary-800-rgb))] group-hover:bg-[rgb(var(--primary-50-rgb))] dark:bg-[#10231f] dark:text-[rgb(var(--primary-200-rgb))]'
+                : 'bg-[#eee4d5] text-[#8d9b94] dark:bg-[#0b1b17] dark:text-[#657970]',
+            ]"
+          >
+            <QueueListIcon class="h-4 w-4" />
+          </span>
+          <span class="truncate">{{ $t(selectedActionLabel) }}</span>
+        </span>
 
-      <div
-        v-if="recordIds.length"
-        class="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary-800 dark:bg-primary-600 text-xs font-semibold text-white shadow-sm ring-2 ring-white dark:ring-gray-800"
+        <span class="inline-flex items-center gap-2">
+          <span
+            v-if="recordIds.length"
+            class="rounded-full bg-[rgb(var(--primary-800-rgb))] px-2 py-0.5 text-[11px] font-black text-white dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f]"
+          >
+            {{ recordIds.length }}
+          </span>
+          <ChevronUpDownIcon class="h-5 w-5 shrink-0 text-[#8d9b94] dark:text-[#657970]" />
+        </span>
+      </ListboxButton>
+
+      <TransitionRoot
+        leave="transition ease-in duration-100"
+        leave-from="opacity-100"
+        leave-to="opacity-0"
       >
-        {{ recordIds.length }}
-      </div>
-    </div>
+        <ListboxOptions class="absolute left-0 z-50 mt-2 max-h-72 w-full overflow-auto rounded-[1.35rem] border border-[#ded3bf] bg-[#fffdf7] p-2 shadow-[0_22px_70px_rgb(20_61_55/0.18)] ring-1 ring-white/70 focus:outline-none dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
+          <ListboxOption
+            v-for="action in actionableActions"
+            :key="action.id"
+            v-slot="{ active, selected }"
+            as="template"
+            :value="action.id"
+          >
+            <li
+              :class="[
+                'flex cursor-pointer select-none items-center justify-between gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition',
+                active ? 'bg-[rgb(var(--primary-800-rgb))] text-white dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f]' : 'text-[#31413b] dark:text-[#d7e2dd]',
+              ]"
+            >
+              <span class="truncate">{{ $t(action.label) }}</span>
+              <CheckIcon
+                v-if="selected"
+                class="h-4 w-4"
+                :class="active ? 'text-white dark:text-[#07110f]' : 'text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--primary-200-rgb))]'"
+              />
+            </li>
+          </ListboxOption>
+
+          <li v-if="!actionableActions.length" class="rounded-2xl px-3 py-2.5 text-sm font-medium text-[#73827b] dark:text-[#8ea49b]">
+            {{ $t('gestlab.general.messages.no_items') }}
+          </li>
+        </ListboxOptions>
+      </TransitionRoot>
+    </Listbox>
 
     <button
-      @click="$emit('execute', actionId)"
       :disabled="!actionId || !recordIds.length"
       :class="[
-        'inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+        'inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.28)] focus:ring-offset-2 focus:ring-offset-[#fffdf7] dark:focus:ring-offset-[#07110f]',
         actionId && recordIds.length
-          ? 'bg-primary-800 dark:bg-primary-600 text-white hover:bg-primary-700 dark:hover:bg-primary-500'
-          : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed',
+          ? 'bg-[rgb(var(--primary-800-rgb))] text-white hover:bg-[rgb(var(--primary-700-rgb))] dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f] dark:hover:bg-[rgb(var(--primary-300-rgb))]'
+          : 'cursor-not-allowed bg-[#f7f1e7] text-[#8d9b94] dark:bg-[#10231f] dark:text-[#657970]',
       ]"
+      @click="executeSelectedAction"
     >
       <CursorArrowRippleIcon class="h-4 w-4" />
       {{ $t('gestlab.actions.apply') }}
@@ -54,14 +92,46 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { CursorArrowRippleIcon } from '@heroicons/vue/24/outline'
+import { computed, ref, watch } from 'vue'
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions, TransitionRoot } from '@headlessui/vue'
+import { CheckIcon, ChevronUpDownIcon, CursorArrowRippleIcon, QueueListIcon } from '@heroicons/vue/24/outline'
 
-defineProps({
-  actions: Array,
-  recordIds: { type: Array, default: [] },
+const props = defineProps({
+  actions: {
+    type: Array,
+    default: () => [],
+  },
+  recordIds: {
+    type: Array,
+    default: () => [],
+  },
 })
 
 const emit = defineEmits(['execute'])
 const actionId = ref(null)
+
+const actionableActions = computed(() => props.actions.filter(action => action.id))
+const selectedAction = computed(() => actionableActions.value.find(action => action.id === actionId.value))
+const selectedActionLabel = computed(() => selectedAction.value?.label ?? 'gestlab.actions.select_action')
+
+watch(
+  () => props.recordIds.length,
+  count => {
+    if (!count) {
+      actionId.value = null
+    }
+  },
+)
+
+function selectAction(value) {
+  actionId.value = value
+}
+
+function executeSelectedAction() {
+  if (!actionId.value || !props.recordIds.length) {
+    return
+  }
+
+  emit('execute', actionId.value)
+}
 </script>

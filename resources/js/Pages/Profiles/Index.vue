@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import RecordsTable from '@/Components/records-table.vue';
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { ref, computed } from "vue";
@@ -99,7 +100,7 @@ const showDeleteConfirmation = ref(false);
 }  
 </script>
 <template>
-<div class="border-b border-gray-200 pb-5">
+<div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.profiles.page_title') }}</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500"></p>
 </div>

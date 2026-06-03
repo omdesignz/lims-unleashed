@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between">
@@ -297,6 +297,7 @@
 import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import ConfirmationModal from '@/Components/confirm-dialog.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import {
   BeakerIcon,
   PencilSquareIcon,

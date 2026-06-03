@@ -21,8 +21,8 @@ class GestlabMediaResource extends JsonResource
             'mime_type' => $this->mime_type,
             'size' => $this->size,
             'author' => [
-                'id' => $this->author->id,
-                'name' => $this->author->name,
+                'id' => $this->author?->id,
+                'name' => $this->author?->name,
             ],
             'created_at' => $this->created_at->format('d/m/Y'),
             'updated_at' => $this->updated_at->format('d/m/Y'),
@@ -31,12 +31,12 @@ class GestlabMediaResource extends JsonResource
             'links' => [
                 'edit_path' => route('media.edit', $this->id),
                 'delete_path' => route('media.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('media.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

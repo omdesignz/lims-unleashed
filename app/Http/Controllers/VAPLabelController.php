@@ -3,21 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\CollectionProduct;
+use App\Models\Department;
 use App\Models\InventoryItem;
+use App\Models\VAPLab;
 use App\Models\VAPLabel;
 use App\Models\VAPLabelTemplate;
-use App\Models\VAPLab;
 use App\Models\VAPSampleEntry;
-use App\Models\Department;
 use App\Support\LabelStudioSourceResolver;
-use Inertia\Inertia;
+use App\Support\VAPLabelPdfRenderer;
 use Illuminate\Http\Request;
-use Mpdf\Mpdf;
 use Illuminate\Support\Str;
-use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Writer\PngWriter;
-use Endroid\QrCode\Color\Color;
-use Endroid\QrCode\ErrorCorrectionLevel;
+use Inertia\Inertia;
 
 class VAPLabelController extends Controller
 {
@@ -75,41 +71,8 @@ class VAPLabelController extends Controller
             'departments' => $departments,
             'sourcePreview' => $resolver->resolve($request->string('source_type')->value(), $request->input('source_id')),
             'supportedPlaceholders' => $resolver->supportedPlaceholders(),
-            'sourceOptions' => [
-                'samples' => VAPSampleEntry::query()
-                    ->latest()
-                    ->limit(50)
-                    ->get(['id', 'name', 'code'])
-                    ->map(fn ($sample) => [
-                        'id' => $sample->id,
-                        'label' => trim(($sample->code ? $sample->code . ' · ' : '') . ($sample->name ?: 'Amostra')),
-                    ])
-                    ->values(),
-                'inventory' => InventoryItem::query()
-                    ->latest()
-                    ->limit(50)
-                    ->get(['id', 'name', 'code', 'internal_code'])
-                    ->map(fn ($item) => [
-                        'id' => $item->id,
-                        'label' => trim(($item->code ?: $item->internal_code ?: 'ITEM-' . $item->id) . ' · ' . $item->name),
-                    ])
-                    ->values(),
-                'collection_products' => CollectionProduct::query()
-                    ->latest()
-                    ->limit(50)
-                    ->get(['id', 'lot'])
-                    ->map(fn ($product) => [
-                        'id' => $product->id,
-                        'label' => 'Recolha #' . $product->id . ($product->lot ? ' · Lote ' . $product->lot : ''),
-                    ])
-                    ->values(),
-            ],
-            'defaultSettings' => [
-                'width' => 50,
-                'height' => 25,
-                'font_size' => 12,
-                'border_width' => 1,
-            ],
+            'sourceOptions' => $this->labelStudioSourceOptions(),
+            'defaultSettings' => $this->defaultLabelSettings(),
         ]);
     }
 
@@ -156,10 +119,10 @@ class VAPLabelController extends Controller
         $label = VAPLabel::create($validated);
 
         return redirect()->route('vap_labels.labels.show', $label->id)
-            ->with('success', 'Label created successfully.');
+            ->with('success', __('gestlab.general.labels.vap_labels.created'));
     }
 
-    public function show(VAPLabel $label, LabelStudioSourceResolver $resolver)
+    public function show(VAPLabel $label, LabelStudioSourceResolver $resolver, VAPLabelPdfRenderer $renderer)
     {
         $label->load(['lab', 'department', 'user']);
         $templates = VAPLabelTemplate::where('is_active', true)
@@ -177,32 +140,45 @@ class VAPLabelController extends Controller
                 'source_preview' => $sourcePreview,
             ]);
         }
-        
+
         return Inertia::render('VAPLabels/Show', [
             'label' => $label,
             'previewData' => [
                 'sample_text' => $sourcePreview
                     ? $resolver->renderContent($label->content, $sourcePreview)
-                    : 'Sample Label Content',
-                'sample_qr' => data_get($sourcePreview, 'qr_content', 'LAB-' . strtoupper(Str::random(8))),
-                'sample_barcode' => data_get($sourcePreview, 'barcode_content', 'BAR-' . strtoupper(Str::random(6))),
+                    : __('gestlab.general.labels.vap_labels.sample_label_content'),
+                'sample_qr' => data_get($sourcePreview, 'qr_content', 'LAB-'.strtoupper(Str::random(8))),
+                'sample_barcode' => data_get($sourcePreview, 'barcode_content', 'BAR-'.strtoupper(Str::random(6))),
             ],
             'templates' => $templates,
             'sourcePreview' => $sourcePreview,
+            'pdfRenderer' => $renderer->capabilities(),
+            'printSettings' => $this->defaultPrintSettings($label),
         ]);
     }
 
-    public function edit(VAPLabel $label)
+    public function edit(VAPLabel $label, LabelStudioSourceResolver $resolver)
     {
-        $templates = VAPLabelTemplate::where('is_active', true)->get();
+        $templates = VAPLabelTemplate::where('is_active', true)
+            ->orderBy('is_featured', 'desc')
+            ->orderBy('name')
+            ->get();
         $labs = VAPLab::active()->get(['id', 'name']);
         $departments = Department::active()->get(['id', 'name']);
 
-        return Inertia::render('VAPLabels/Edit', [
+        return Inertia::render('VAPLabels/Create', [
             'label' => $label,
             'templates' => $templates,
+            'selectedTemplateId' => data_get($label->template_data, 'template_id'),
             'labs' => $labs,
             'departments' => $departments,
+            'sourcePreview' => $resolver->resolve(
+                data_get($label->template_data, 'source_type'),
+                data_get($label->template_data, 'source_id')
+            ),
+            'supportedPlaceholders' => $resolver->supportedPlaceholders(),
+            'sourceOptions' => $this->labelStudioSourceOptions(),
+            'defaultSettings' => $this->defaultLabelSettings(),
         ]);
     }
 
@@ -242,7 +218,7 @@ class VAPLabelController extends Controller
         $label->update($validated);
 
         return redirect()->route('vap_labels.labels.show', $label->id)
-            ->with('success', 'Label updated successfully.');
+            ->with('success', __('gestlab.general.labels.vap_labels.updated'));
     }
 
     public function destroy(VAPLabel $label)
@@ -250,59 +226,34 @@ class VAPLabelController extends Controller
         $label->delete();
 
         return redirect()->route('vap_labels.labels.index')
-            ->with('success', 'Label deleted successfully.');
+            ->with('success', __('gestlab.general.labels.vap_labels.deleted'));
     }
 
     public function duplicate(VAPLabel $label)
     {
         $duplicate = $label->replicate();
-        $duplicate->name = $label->name . ' (Copy)';
+        $duplicate->name = $label->name.' (Copy)';
         $duplicate->tenant_id = auth()->user()->tenant_id;
         $duplicate->user_id = auth()->id();
         $duplicate->save();
 
         return redirect()->route('vap_labels.labels.edit', $duplicate)
-            ->with('success', 'Label duplicated successfully.');
+            ->with('success', __('gestlab.general.labels.vap_labels.duplicated'));
     }
 
-    public function previewPdf(VAPLabel $label, LabelStudioSourceResolver $resolver)
+    public function previewPdf(VAPLabel $label, LabelStudioSourceResolver $resolver, VAPLabelPdfRenderer $renderer)
     {
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => [$label->width + 10, $label->height + 10], // Extra space for cutout marks
-            'default_font_size' => $label->font_size,
-            'margin_left' => 5,
-            'margin_right' => 5,
-            'margin_top' => 5,
-            'margin_bottom' => 5,
-            'margin_header' => 0,
-            'margin_footer' => 0,
-        ]);
+        $renderedPdf = $renderer->renderPreview($label, $resolver);
 
-        $sourcePreview = $resolver->resolve(
-            data_get($label->template_data, 'source_type'),
-            data_get($label->template_data, 'source_id')
-        );
-
-        $html = view('PDFs.labels.preview', [
-            'label' => $label,
-            'show_cutouts' => true,
-            'sample_text' => $sourcePreview
-                ? $resolver->renderContent($label->content, $sourcePreview)
-                : 'Exemplo de Etiqueta',
-            'sample_qr' => data_get($sourcePreview, 'qr_content', 'LAB-' . strtoupper(Str::random(8))),
-            'sample_barcode' => data_get($sourcePreview, 'barcode_content', 'BAR-' . strtoupper(Str::random(6))),
-        ])->render();
-
-        $mpdf->WriteHTML($html);
-        
-        return response($mpdf->Output('preview-etiqueta.pdf', 'I'))
-            ->header('Content-Type', 'application/pdf');
+        return response($renderedPdf['content'])
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="preview-etiqueta.pdf"')
+            ->header('X-Label-Pdf-Renderer', $renderedPdf['renderer']);
     }
 
-    public function generatePdf(Request $request, VAPLabel $label, LabelStudioSourceResolver $resolver)
+    public function generatePdf(Request $request, VAPLabel $label, LabelStudioSourceResolver $resolver, VAPLabelPdfRenderer $renderer)
     {
-        $request->validate([
+        $validated = $request->validate([
             'data' => 'required|array',
             'data.*.content' => 'required|string',
             'data.*.qr_content' => 'nullable|string',
@@ -310,129 +261,61 @@ class VAPLabelController extends Controller
             'include_cutouts' => 'boolean',
             'labels_per_page' => 'integer|min:1|max:100',
             'margin' => 'numeric|min:0|max:20',
+            'page_size' => 'nullable|in:A3,A4,Letter,Legal',
+            'orientation' => 'nullable|in:portrait,landscape',
         ]);
+        $printSettings = $this->persistPrintSettings($label, $request->only([
+            'include_cutouts',
+            'labels_per_page',
+            'margin',
+            'page_size',
+            'orientation',
+        ]));
 
-        $includeCutouts = $request->input('include_cutouts', true);
-        $labelsPerPage = $request->input('labels_per_page', 1);
-        $margin = $request->input('margin', 5);
-        
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font_size' => $label->font_size,
-            'margin_left' => $margin,
-            'margin_right' => $margin,
-            'margin_top' => $margin,
-            'margin_bottom' => $margin,
-            'margin_header' => 0,
-            'margin_footer' => 0,
-        ]);
+        $renderedPdf = $renderer->renderLabels($label, $validated['data'], $printSettings, $resolver);
+        $filename = 'etiquetas-'.Str::slug($label->name).'-'.now()->format('Y-m-d-H-i-s').'.pdf';
 
-        $writer = new PngWriter();
-        
-        $sourcePreview = $resolver->resolve(
-            data_get($label->template_data, 'source_type'),
-            data_get($label->template_data, 'source_id')
-        );
-
-        foreach ($request->data as $index => $item) {
-            $content = $sourcePreview
-                ? $resolver->renderContent($item['content'], $sourcePreview)
-                : $item['content'];
-            $qrContent = $item['qr_content'] ?? data_get($sourcePreview, 'qr_content');
-            $barcodeContent = $item['barcode_content'] ?? data_get($sourcePreview, 'barcode_content');
-
-            // Generate QR code if needed
-            $qrCodeImage = null;
-            if ($label->has_qr_code && filled($qrContent)) {
-                $qrCode = new QrCode($qrContent);
-                $qrCode->setSize(300);
-                $qrCode->setMargin(10);
-                $qrCode->setForegroundColor(new Color(0, 0, 0));
-                $qrCode->setBackgroundColor(new Color(255, 255, 255));
-                $qrCode->setErrorCorrectionLevel(ErrorCorrectionLevel::High);
-                
-                $result = $writer->write($qrCode);
-                $qrCodeImage = 'data:image/png;base64,' . base64_encode($result->getString());
-            }
-
-            $html = view('PDFs.labels.generate', [
-                'label' => $label,
-                'content' => $content,
-                'qr_content' => $qrContent,
-                'qr_code_image' => $qrCodeImage,
-                'barcode_content' => $barcodeContent,
-                'include_cutouts' => $includeCutouts,
-                'item_index' => $index,
-                'labels_per_page' => $labelsPerPage,
-                'margin' => $margin,
-            ])->render();
-
-            $mpdf->WriteHTML($html);
-            
-            // Add page break if multiple labels per page
-            if (($index + 1) % $labelsPerPage === 0 && $index < count($request->data) - 1) {
-                $mpdf->AddPage();
-            }
-        }
-
-        $filename = 'etiquetas-' . Str::slug($label->name) . '-' . now()->format('Y-m-d-H-i-s') . '.pdf';
-        
-        return response($mpdf->Output($filename, 'I'))
-            ->header('Content-Type', 'application/pdf');
+        return response($renderedPdf['content'])
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="'.$filename.'"')
+            ->header('X-Label-Pdf-Renderer', $renderedPdf['renderer']);
     }
 
-
-    public function generateBatchPdf(Request $request, VAPLabel $label)
+    public function generateBatchPdf(Request $request, VAPLabel $label, VAPLabelPdfRenderer $renderer)
     {
-        $request->validate([
+        $validated = $request->validate([
             'data' => 'required|array',
             'data.*.content' => 'required|string',
             'columns' => 'integer|min:1|max:10',
             'rows' => 'integer|min:1|max:50',
             'spacing' => 'numeric|min:0|max:20',
             'include_cutouts' => 'boolean',
+            'page_size' => 'nullable|in:A3,A4,Letter,Legal',
+            'orientation' => 'nullable|in:portrait,landscape',
         ]);
+        $printSettings = $this->persistPrintSettings($label, $request->only([
+            'columns',
+            'rows',
+            'spacing',
+            'include_cutouts',
+            'page_size',
+            'orientation',
+        ]));
 
-        $columns = $request->input('columns', 2);
-        $rows = $request->input('rows', 4);
-        $spacing = $request->input('spacing', 5);
-        $includeCutouts = $request->input('include_cutouts', true);
+        $renderedPdf = $renderer->renderBatch($label, $validated['data'], $printSettings);
+        $filename = 'etiquetas-lote-'.Str::slug($label->name).'-'.now()->format('Y-m-d-H-i-s').'.pdf';
 
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'default_font_size' => $label->font_size,
-            'margin_left' => 10,
-            'margin_right' => 10,
-            'margin_top' => 10,
-            'margin_bottom' => 10,
-            'margin_header' => 0,
-            'margin_footer' => 0,
-        ]);
-
-        $html = view('PDFs.labels.batch', [
-            'label' => $label,
-            'data' => $request->data,
-            'columns' => $columns,
-            'rows' => $rows,
-            'spacing' => $spacing,
-            'include_cutouts' => $includeCutouts,
-        ])->render();
-
-        $mpdf->WriteHTML($html);
-        
-        $filename = 'etiquetas-lote-' . Str::slug($label->name) . '-' . now()->format('Y-m-d-H-i-s') . '.pdf';
-        
-        return response($mpdf->Output($filename, 'I'))
-            ->header('Content-Type', 'application/pdf');
+        return response($renderedPdf['content'])
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="'.$filename.'"')
+            ->header('X-Label-Pdf-Renderer', $renderedPdf['renderer']);
     }
 
     public function toggleStatus(VAPLabel $label)
     {
-        $label->update(['is_active' => !$label->is_active]);
+        $label->update(['is_active' => ! $label->is_active]);
 
-        return back()->with('success', 'Label status updated.');
+        return back()->with('success', __('gestlab.general.labels.vap_labels.status_updated'));
     }
 
     public function getTemplates()
@@ -475,7 +358,7 @@ class VAPLabelController extends Controller
             'template_data' => $templateData,
         ]));
 
-        return back()->with('success', 'Template applied successfully.');
+        return back()->with('success', __('gestlab.general.labels.vap_labels.template_applied'));
     }
 
     public function generateFromSource(Request $request, LabelStudioSourceResolver $resolver)
@@ -530,7 +413,8 @@ class VAPLabelController extends Controller
             'is_active' => true,
         ]);
 
-        return redirect()->route('vap_labels.labels.show', $label)->with('success', 'Label generated successfully from source.');
+        return redirect()->route('vap_labels.labels.show', $label)
+            ->with('success', __('gestlab.general.labels.vap_labels.generated_from_source'));
     }
 
     private function enrichLabelPayload(array $validated, LabelStudioSourceResolver $resolver, ?VAPLabel $existingLabel = null): array
@@ -575,5 +459,100 @@ class VAPLabelController extends Controller
             'reagent' => 'material',
             default => 'custom',
         };
+    }
+
+    private function labelStudioSourceOptions(): array
+    {
+        return [
+            'samples' => VAPSampleEntry::query()
+                ->latest()
+                ->limit(50)
+                ->get(['id', 'name', 'code'])
+                ->map(fn ($sample) => [
+                    'id' => $sample->id,
+                    'label' => trim(($sample->code ? $sample->code.' · ' : '').($sample->name ?: 'Amostra')),
+                ])
+                ->values(),
+            'inventory' => InventoryItem::query()
+                ->latest()
+                ->limit(50)
+                ->get(['id', 'name', 'code', 'internal_code'])
+                ->map(fn ($item) => [
+                    'id' => $item->id,
+                    'label' => trim(($item->code ?: $item->internal_code ?: 'ITEM-'.$item->id).' · '.$item->name),
+                ])
+                ->values(),
+            'collection_products' => CollectionProduct::query()
+                ->latest()
+                ->limit(50)
+                ->get(['id', 'lot'])
+                ->map(fn ($product) => [
+                    'id' => $product->id,
+                    'label' => 'Recolha #'.$product->id.($product->lot ? ' · Lote '.$product->lot : ''),
+                ])
+                ->values(),
+        ];
+    }
+
+    private function defaultLabelSettings(): array
+    {
+        return [
+            'width' => 50,
+            'height' => 25,
+            'font_size' => 12,
+            'border_width' => 1,
+        ];
+    }
+
+    /**
+     * @return array{include_cutouts: bool, labels_per_page: int, margin: int, columns: int, rows: int, spacing: int, page_size: string, orientation: string}
+     */
+    private function defaultPrintSettings(?VAPLabel $label = null): array
+    {
+        return array_merge([
+            'include_cutouts' => true,
+            'labels_per_page' => 1,
+            'margin' => 5,
+            'columns' => 2,
+            'rows' => 4,
+            'spacing' => 5,
+            'page_size' => 'A4',
+            'orientation' => 'portrait',
+        ], data_get($label?->template_data, 'print_settings', []));
+    }
+
+    /**
+     * @param  array<string, mixed>  $settings
+     * @return array{include_cutouts: bool, labels_per_page: int, margin: int, columns: int, rows: int, spacing: int, page_size: string, orientation: string}
+     */
+    private function persistPrintSettings(VAPLabel $label, array $settings): array
+    {
+        $normalized = $this->normalizePrintSettings(array_merge($this->defaultPrintSettings($label), $settings));
+        $templateData = $label->template_data ?? [];
+        $templateData['print_settings'] = $normalized;
+
+        $label->forceFill(['template_data' => $templateData])->save();
+
+        return $normalized;
+    }
+
+    /**
+     * @param  array<string, mixed>  $settings
+     * @return array{include_cutouts: bool, labels_per_page: int, margin: int, columns: int, rows: int, spacing: int, page_size: string, orientation: string}
+     */
+    private function normalizePrintSettings(array $settings): array
+    {
+        $pageSize = strtoupper((string) ($settings['page_size'] ?? 'A4'));
+
+        return [
+            'include_cutouts' => filter_var($settings['include_cutouts'] ?? true, FILTER_VALIDATE_BOOLEAN),
+            'labels_per_page' => max(1, min(100, (int) ($settings['labels_per_page'] ?? 1))),
+            'margin' => max(0, min(20, (int) ($settings['margin'] ?? 5))),
+            'columns' => max(1, min(10, (int) ($settings['columns'] ?? 2))),
+            'rows' => max(1, min(50, (int) ($settings['rows'] ?? 4))),
+            'spacing' => max(0, min(20, (int) ($settings['spacing'] ?? 5))),
+            'page_size' => in_array($pageSize, ['A3', 'A4', 'LETTER', 'LEGAL'], true) ? Str::title(strtolower($pageSize)) : 'A4',
+            'orientation' => in_array($settings['orientation'] ?? 'portrait', ['portrait', 'landscape'], true) ? (string) $settings['orientation'] : 'portrait',
+        ];
     }
 }

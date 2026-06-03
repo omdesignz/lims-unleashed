@@ -4,6 +4,7 @@ import { computed } from "vue";
 import { usePermission } from "@/Composables/usePermissions";
 import { ArrowPathRoundedSquareIcon, ChartBarSquareIcon, DocumentIcon, DocumentTextIcon, PaperClipIcon, PencilIcon, TagIcon, TrashIcon } from "@heroicons/vue/24/outline";
 import sampleStatus from '@/Components/sample-status.vue';
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
 const { hasRole, hasPermission } = usePermission();
@@ -131,7 +132,7 @@ defineOptions({
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.direct_collections.page_title') }}</h3>
 </div> -->
 
-<div>
+<div :class="commercialDocumentThemeClasses">
     <section class="mb-6 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
       <article class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div class="flex flex-wrap items-start justify-between gap-4">
@@ -335,6 +336,6 @@ defineOptions({
 
       </dl>
     </div>
-  </div>
+</div>
 
 </template>

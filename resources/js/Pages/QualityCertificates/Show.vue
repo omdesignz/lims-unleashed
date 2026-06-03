@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="quality-certificate-show space-y-6" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
     <div class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
       <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -47,7 +47,7 @@
             v-if="hasPermission('validate_quality_certificates')"
             @click="viewPDF"
             type="button"
-            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:border-blue-900 hover:bg-slate-50 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-400 dark:hover:bg-slate-800 dark:hover:text-blue-300 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-950"
+            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors duration-200 hover:border-[rgb(var(--primary-700-rgb))] hover:bg-slate-50 hover:text-[rgb(var(--primary-900-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-700-rgb))] focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-[rgb(var(--primary-300-rgb))] dark:hover:bg-slate-800 dark:hover:text-[rgb(var(--primary-100-rgb))] dark:focus:ring-[rgb(var(--primary-300-rgb))] dark:focus:ring-offset-slate-950"
           >
             <DocumentMagnifyingGlassIcon class="h-4 w-4" />
             {{ $t('gestlab.general.labels.quality_certificates.view_pdf') }}
@@ -59,7 +59,7 @@
     <!-- CERTIFICATE DETAILS CARD -->
     <div class="overflow-hidden rounded-[26px] border border-slate-200 bg-white/95 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
       <!-- Card Header -->
-      <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
+      <div class="bg-gradient-to-r from-[rgb(var(--primary-900-rgb))] to-[rgb(var(--primary-700-rgb))] px-6 py-4 dark:from-[#07110f] dark:to-[rgb(var(--primary-900-rgb))]">
         <h2 class="text-lg font-semibold text-white flex items-center gap-2">
           <DocumentTextIcon class="h-5 w-5" />
           {{ $t('gestlab.general.labels.quality_certificates.certificate_details') }}
@@ -97,7 +97,7 @@
             </label>
             <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white">
               <div class="flex items-center gap-2">
-                <div class="h-6 w-6 rounded-full bg-gradient-to-r from-blue-900 to-blue-800 flex items-center justify-center">
+                <div class="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-[rgb(var(--primary-900-rgb))] to-[rgb(var(--primary-700-rgb))]">
                   <span class="text-xs font-semibold text-white uppercase">
                     {{ getInitials(props.record.data?.user?.name) }}
                   </span>
@@ -157,7 +157,7 @@
     <!-- DOCUMENTS CARD -->
     <div class="overflow-hidden rounded-[26px] border border-slate-200 bg-white/95 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
       <!-- Card Header -->
-      <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
+      <div class="bg-gradient-to-r from-[rgb(var(--primary-900-rgb))] to-[rgb(var(--primary-700-rgb))] px-6 py-4 dark:from-[#07110f] dark:to-[rgb(var(--primary-900-rgb))]">
         <h2 class="text-lg font-semibold text-white flex items-center gap-2">
           <DocumentIcon class="h-5 w-5" />
           {{ $t('gestlab.general.labels.quality_certificates.documents') }}
@@ -168,7 +168,7 @@
       <div class="p-6">
         <div class="space-y-4">
           <!-- PDF Document -->
-          <div class="flex flex-col gap-4 rounded-2xl border border-slate-200 p-4 transition-colors duration-150 hover:border-blue-900 hover:bg-blue-50/30 dark:border-slate-700 dark:hover:border-blue-400 dark:hover:bg-blue-500/10 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex flex-col gap-4 rounded-2xl border border-slate-200 p-4 transition-colors duration-150 hover:border-[rgb(var(--primary-700-rgb))] hover:bg-[rgb(var(--primary-50-rgb)/0.5)] dark:border-slate-700 dark:hover:border-[rgb(var(--primary-300-rgb))] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.1)] lg:flex-row lg:items-center lg:justify-between">
             <div class="flex items-center gap-3">
               <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 dark:bg-red-500/10">
                 <DocumentIcon class="h-5 w-5 text-red-600" />
@@ -187,7 +187,7 @@
               <button
                 @click="viewPDF"
                 type="button"
-                class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-950 to-blue-800 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-blue-900 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-all duration-200 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-950"
+                class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[rgb(var(--primary-900-rgb))] to-[rgb(var(--primary-700-rgb))] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:from-[rgb(var(--primary-800-rgb))] hover:to-[rgb(var(--primary-600-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-700-rgb))] focus:ring-offset-2 dark:focus:ring-[rgb(var(--primary-300-rgb))] dark:focus:ring-offset-slate-950"
               >
                 <DocumentMagnifyingGlassIcon class="h-3 w-3" />
                 {{ $t('gestlab.general.buttons.view') }}
@@ -197,7 +197,7 @@
                 :href="props.record.data?.links?.pdf_path"
                 target="_blank"
                 download
-                class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:border-blue-900 hover:bg-slate-50 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-400 dark:hover:bg-slate-800 dark:hover:text-blue-300 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-950"
+                class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition-colors duration-200 hover:border-[rgb(var(--primary-700-rgb))] hover:bg-slate-50 hover:text-[rgb(var(--primary-900-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-700-rgb))] focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-[rgb(var(--primary-300-rgb))] dark:hover:bg-slate-800 dark:hover:text-[rgb(var(--primary-100-rgb))] dark:focus:ring-[rgb(var(--primary-300-rgb))] dark:focus:ring-offset-slate-950"
               >
                 <ArrowDownTrayIcon class="h-3 w-3" />
                 {{ $t('gestlab.general.buttons.download') }}
@@ -209,7 +209,7 @@
           <div
             v-for="(doc, index) in additionalDocuments"
             :key="index"
-            class="flex flex-col gap-4 rounded-2xl border border-slate-200 p-4 transition-colors duration-150 hover:border-blue-900 hover:bg-blue-50/30 dark:border-slate-700 dark:hover:border-blue-400 dark:hover:bg-blue-500/10 lg:flex-row lg:items-center lg:justify-between"
+            class="flex flex-col gap-4 rounded-2xl border border-slate-200 p-4 transition-colors duration-150 hover:border-[rgb(var(--primary-700-rgb))] hover:bg-[rgb(var(--primary-50-rgb)/0.5)] dark:border-slate-700 dark:hover:border-[rgb(var(--primary-300-rgb))] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.1)] lg:flex-row lg:items-center lg:justify-between"
           >
             <div class="flex items-center gap-3">
               <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800">
@@ -229,7 +229,7 @@
               <a
                 :href="doc.url"
                 target="_blank"
-                class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:border-blue-900 hover:bg-slate-50 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-400 dark:hover:bg-slate-800 dark:hover:text-blue-300 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-950"
+                class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition-colors duration-200 hover:border-[rgb(var(--primary-700-rgb))] hover:bg-slate-50 hover:text-[rgb(var(--primary-900-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-700-rgb))] focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-[rgb(var(--primary-300-rgb))] dark:hover:bg-slate-800 dark:hover:text-[rgb(var(--primary-100-rgb))] dark:focus:ring-[rgb(var(--primary-300-rgb))] dark:focus:ring-offset-slate-950"
               >
                 <EyeIcon class="h-3 w-3" />
                 {{ $t('gestlab.general.buttons.view') }}
@@ -243,7 +243,7 @@
     <!-- ACTIONS CARD -->
     <div class="rounded-[26px] border border-slate-200 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
       <h3 class="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-        <BoltIcon class="h-5 w-5 text-blue-900" />
+        <BoltIcon class="h-5 w-5 text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-300-rgb))]" />
         {{ $t('gestlab.general.labels.quality_certificates.actions') }}
       </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -253,25 +253,15 @@
         <button
           v-if="hasPermission('edit_qualitycertificate') && !props.record.data?.validated_at"
           @click="editCertificate"
-          class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm hover:border-blue-900 hover:bg-slate-50 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-400 dark:hover:bg-slate-800 dark:hover:text-blue-300 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-950"
+          class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition-colors duration-200 hover:border-[rgb(var(--primary-700-rgb))] hover:bg-slate-50 hover:text-[rgb(var(--primary-900-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-700-rgb))] focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-[rgb(var(--primary-300-rgb))] dark:hover:bg-slate-800 dark:hover:text-[rgb(var(--primary-100-rgb))] dark:focus:ring-[rgb(var(--primary-300-rgb))] dark:focus:ring-offset-slate-950"
         >
           <PencilIcon class="h-4 w-4" />
           {{ $t('gestlab.general.buttons.edit') }}
         </button>
-        
-        <!-- Send Certificate -->
-        <!-- <button
-          @click="sendCertificate"
-          class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-blue-900 hover:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-        >
-          <EnvelopeIcon class="h-4 w-4" />
-          {{ $t('gestlab.general.labels.quality_certificates.send_certificate') }}
-        </button> -->
-        
         <!-- Generate New Version -->
         <button
           @click="generateNewVersion"
-          class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-blue-900 hover:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
+          class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm transition-colors duration-200 hover:border-[rgb(var(--primary-700-rgb))] hover:bg-slate-50 hover:text-[rgb(var(--primary-900-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-700-rgb))] focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-[rgb(var(--primary-300-rgb))] dark:hover:bg-slate-800 dark:hover:text-[rgb(var(--primary-100-rgb))] dark:focus:ring-[rgb(var(--primary-300-rgb))] dark:focus:ring-offset-slate-950"
         >
           <ArrowPathRoundedSquareIcon class="h-4 w-4" />
           {{ $t('gestlab.general.labels.quality_certificates.generate_new_version') }}
@@ -280,9 +270,9 @@
     </div>
 
     <!-- HISTORY CARD -->
-    <div v-if="activityHistory.length > 0" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div v-if="activityHistory.length > 0" class="overflow-hidden rounded-[26px] border border-slate-200 bg-white/95 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
       <!-- Card Header -->
-      <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
+      <div class="bg-gradient-to-r from-[rgb(var(--primary-900-rgb))] to-[rgb(var(--primary-700-rgb))] px-6 py-4 dark:from-[#07110f] dark:to-[rgb(var(--primary-900-rgb))]">
         <h2 class="text-lg font-semibold text-white flex items-center gap-2">
           <ClockIcon class="h-5 w-5" />
           {{ $t('gestlab.general.labels.quality_certificates.activity_history') }}
@@ -299,26 +289,26 @@
           >
             <!-- Timeline Line -->
             <div class="relative">
-              <div class="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-blue-900 to-blue-800">
+              <div class="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-[rgb(var(--primary-900-rgb))] to-[rgb(var(--primary-700-rgb))]">
                 <component :is="getActivityIcon(activity.type)" class="h-3 w-3 text-white" />
               </div>
-              <div v-if="index !== activityHistory.length - 1" class="absolute left-1/2 top-6 h-full w-0.5 -translate-x-1/2 bg-gray-200"></div>
+              <div v-if="index !== activityHistory.length - 1" class="absolute left-1/2 top-6 h-full w-0.5 -translate-x-1/2 bg-slate-200 dark:bg-slate-800"></div>
             </div>
             
             <!-- Activity Content -->
             <div class="flex-1">
               <div class="flex items-center justify-between">
-                <h3 class="text-sm font-semibold text-gray-900">
+                <h3 class="text-sm font-semibold text-slate-900 dark:text-white">
                   {{ activity.title }}
                 </h3>
-                <span class="text-xs text-gray-500">
+                <span class="text-xs text-slate-500 dark:text-slate-400">
                   {{ formatRelativeTime(activity.timestamp) }}
                 </span>
               </div>
-              <p class="mt-1 text-sm text-gray-600">
+              <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
                 {{ activity.description }}
               </p>
-              <div v-if="activity.user" class="mt-2 flex items-center gap-2 text-xs text-gray-500">
+              <div v-if="activity.user" class="mt-2 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <UserIcon class="h-3 w-3" />
                 Por: {{ activity.user }}
               </div>
@@ -332,6 +322,7 @@
 
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed } from "vue";
 import { usePermission } from "@/Composables/usePermissions";
 import { 
@@ -486,7 +477,7 @@ const viewPDF = () => {
 };
 
 const editCertificate = () => {
-  router.get(route('qualitycertificates.edit', { id: props.record.data.id }), {
+  router.get(route('qualitycertificates.edit', { certificate: props.record.data.id }), {
     preserveScroll: true,
     preserveState: true,
   });
@@ -521,44 +512,17 @@ const generateNewVersion = () => {
 </script>
 
 <style scoped>
-/* Smooth transitions */
-button, a, div {
+.quality-certificate-show :is(button, a) {
   transition: all 0.2s ease-in-out;
 }
 
-/* Focus states for accessibility */
-button:focus-visible,
-a:focus-visible {
-  outline: 2px solid #1e3a8a;
+.quality-certificate-show :is(button, a):focus-visible {
+  outline: 2px solid rgb(var(--primary-700-rgb));
   outline-offset: 2px;
 }
 
-/* Custom styles for disabled states */
-button:disabled {
+.quality-certificate-show button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-}
-
-/* Hover effects for document cards */
-.hover\\:border-blue-900:hover {
-  border-color: #1e3a8a;
-}
-
-
-
-/* Timeline connector lines */
-.relative::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 100%;
-  height: 100%;
-  width: 2px;
-  background-color: #e5e7eb;
-  transform: translateX(-50%);
-}
-
-.relative:last-child::after {
-  display: none;
 }
 </style>

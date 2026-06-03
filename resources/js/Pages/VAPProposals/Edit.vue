@@ -1,71 +1,91 @@
 <template>
-  <div class="space-y-8">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <DocumentTextIcon class="h-7 w-7 text-blue-900" />
-            {{ $t('gestlab.general.labels.vap_proposals.title') }}
-          </h1>
-          <div class="mt-2 flex items-center gap-3">
-            <span class="text-gray-600">
-              {{ $t('gestlab.general.labels.vap_proposals.edit.editing_proposal') }}:
-            </span>
-            <span class="inline-flex items-center rounded-full bg-blue-900 px-3 py-1 text-sm font-medium text-white">
+  <div class="proposal-editor-shell space-y-8" :class="commercialDocumentThemeClasses">
+    <section class="overflow-hidden rounded-[34px] border border-[#ded2bb] bg-[#fbfaf6] shadow-[0_26px_70px_-44px_rgba(20,61,55,0.55)] dark:border-white/10 dark:bg-slate-950">
+      <div class="border-b border-[#ded2bb] bg-[radial-gradient(circle_at_top_left,rgba(199,154,67,0.2),transparent_34%),linear-gradient(135deg,#fffaf0,#f7f1e6_62%,#143d37_62%,#143d37)] px-6 py-7 dark:border-white/10 dark:bg-[radial-gradient(circle_at_top_left,rgba(199,154,67,0.18),transparent_34%),linear-gradient(135deg,#17231f,#101815_62%,#0b1210_62%,#0b1210)] sm:px-8">
+        <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <div class="max-w-4xl">
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="inline-flex items-center gap-2 rounded-full border border-[#c79a43]/40 bg-white/85 px-3 py-1 text-xs font-black uppercase tracking-[0.24em] text-[#143d37] shadow-sm dark:bg-white/10 dark:text-amber-100">
+                <DocumentTextIcon class="h-4 w-4 text-[#c79a43]" />
+                {{ $t('gestlab.general.labels.vap_proposals.surface.commercial_revision') }}
+              </span>
+              <span :class="[
+                'inline-flex items-center rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.18em]',
+                proposal.status_badge.class
+              ]">
+                {{ proposal.status_badge.text }}
+              </span>
+            </div>
+            <h1 class="mt-5 text-3xl font-black tracking-[-0.04em] text-[#10221d] dark:text-white sm:text-5xl">
               {{ proposal.proposal_number }}
-            </span>
-            <span :class="[
-              'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium',
-              proposal.status_badge.class
-            ]">
-              {{ proposal.status_badge.text }}
-            </span>
+            </h1>
+            <p class="mt-4 max-w-3xl text-base font-medium leading-7 text-[#59665f] dark:text-slate-300">
+              {{ $t('gestlab.general.labels.vap_proposals.edit.editing_proposal') }}:
+              <span class="font-black text-[#143d37] dark:text-emerald-100">{{ proposal.customer?.name || proposal.proposal_number }}</span>
+            </p>
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-3 xl:min-w-[35rem]">
+            <div class="rounded-[24px] border border-white/40 bg-white/85 p-4 shadow-[0_18px_50px_-34px_rgba(20,61,55,0.45)] backdrop-blur dark:border-white/10 dark:bg-white/10">
+              <p class="text-xs font-black uppercase tracking-[0.2em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.surface.items') }}</p>
+              <p class="mt-2 text-lg font-black text-[#143d37] dark:text-emerald-100">{{ form.items.length }}</p>
+            </div>
+            <div class="rounded-[24px] border border-white/40 bg-white/85 p-4 shadow-[0_18px_50px_-34px_rgba(20,61,55,0.45)] backdrop-blur dark:border-white/10 dark:bg-white/10">
+              <p class="text-xs font-black uppercase tracking-[0.2em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.surface.expiry') }}</p>
+              <p class="mt-2 text-lg font-black text-[#143d37] dark:text-emerald-100">{{ calculateExpiryDate }}</p>
+            </div>
+            <div class="rounded-[24px] border border-white/40 bg-white/85 p-4 shadow-[0_18px_50px_-34px_rgba(20,61,55,0.45)] backdrop-blur dark:border-white/10 dark:bg-white/10">
+              <p class="text-xs font-black uppercase tracking-[0.2em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.surface.total') }}</p>
+              <p class="mt-2 text-lg font-black text-[#143d37] dark:text-emerald-100">AOA {{ formatNumber(proposalTotal) }}</p>
+            </div>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <Link 
+      </div>
+
+      <div class="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <div v-if="!proposal.is_original" class="inline-flex items-start gap-3 rounded-[22px] border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-100">
+          <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-200" />
+          <span>
+            {{ $t('gestlab.general.labels.vap_proposals.edit.revision_warning') }}
+            {{ $t('gestlab.general.labels.vap_proposals.edit.original_proposal') }}: {{ proposal.proposal_number }}
+          </span>
+        </div>
+        <div class="flex flex-col gap-3 sm:ml-auto sm:flex-row">
+          <Link
             :href="route('vap-proposals.show', proposal.id)"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-all duration-200"
+            class="inline-flex items-center justify-center gap-2 rounded-[20px] border border-[#ded2bb] bg-white px-5 py-3 text-sm font-black text-[#143d37] shadow-[0_18px_42px_-32px_rgba(20,61,55,0.55)] transition hover:border-[#c79a43] hover:bg-[#fff7e5] dark:border-white/10 dark:bg-white/10 dark:text-emerald-100 dark:hover:bg-white/15"
           >
             <ArrowLeftIcon class="h-5 w-5" />
             {{ $t('gestlab.general.buttons.back') }}
           </Link>
-          <Link 
+          <Link
             :href="route('vap-proposals.index')"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-all duration-200"
+            class="inline-flex items-center justify-center gap-2 rounded-[20px] border border-[#ded2bb] bg-white px-5 py-3 text-sm font-black text-[#143d37] shadow-[0_18px_42px_-32px_rgba(20,61,55,0.55)] transition hover:border-[#c79a43] hover:bg-[#fff7e5] dark:border-white/10 dark:bg-white/10 dark:text-emerald-100 dark:hover:bg-white/15"
           >
             <ListBulletIcon class="h-5 w-5" />
             {{ $t('gestlab.general.labels.vap_proposals.title') }}
           </Link>
         </div>
       </div>
-      
-      <!-- REVISION INFO -->
-      <div v-if="!proposal.is_original" class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <div class="flex items-start">
-          <ExclamationTriangleIcon class="h-5 w-5 text-yellow-600 mt-0.5 mr-2" />
-          <div>
-            <p class="text-sm text-yellow-800">
-              {{ $t('gestlab.general.labels.vap_proposals.edit.revision_warning') }}
-            </p>
-            <p class="text-xs text-yellow-700 mt-1">
-              {{ $t('gestlab.general.labels.vap_proposals.edit.original_proposal') }}: {{ proposal.proposal_number }}
-            </p>
-          </div>
-        </div>
-      </div>
+    </section>
+
+    <div
+      v-if="formErrorMessage"
+      class="rounded-[22px] border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-800 shadow-[0_18px_40px_-30px_rgba(185,28,28,0.45)] dark:border-red-300/20 dark:bg-red-400/10 dark:text-red-200"
+    >
+      {{ formErrorMessage }}
     </div>
 
     <!-- MAIN CONTENT SECTION -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_25rem]">
       <!-- LEFT COLUMN (2/3 width) -->
-      <div class="lg:col-span-2 space-y-6">
+      <div class="space-y-6">
         <!-- BASIC INFORMATION CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <InformationCircleIcon class="h-5 w-5" />
+        <div class="overflow-hidden rounded-[30px] border border-[#ded2bb] bg-white/90 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
+          <div class="border-b border-[#ded2bb] bg-[#fbfaf6] px-6 py-5 dark:border-white/10 dark:bg-white/5">
+            <p class="text-xs font-black uppercase tracking-[0.28em] text-[#c79a43]">{{ $t('gestlab.general.labels.vap_proposals.surface.commercial_base') }}</p>
+            <h2 class="mt-2 flex items-center gap-2 text-2xl font-black tracking-[-0.03em] text-[#10221d] dark:text-white">
+              <InformationCircleIcon class="h-6 w-6 text-[#143d37] dark:text-emerald-100" />
               {{ $t('gestlab.general.labels.vap_proposals.edit.basic_info') }}
             </h2>
           </div>
@@ -75,32 +95,32 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <!-- CLIENT SELECTION -->
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1">
                   <UserIcon class="h-4 w-4" />
                   {{ $t('gestlab.general.labels.vap_proposals.edit.customer') }}
                   <span class="text-red-500">*</span>
                 </label>
-                <div class="flex items-center gap-2 p-2.5 bg-gray-50 rounded-lg border border-gray-200">
-                  <UserIcon class="h-4 w-4 text-gray-500" />
-                  <span class="text-sm font-medium text-gray-900">
+                <div class="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-900/70 rounded-lg border border-slate-200 dark:border-slate-800">
+                  <UserIcon class="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                  <span class="text-sm font-medium text-slate-900 dark:text-white">
                     {{ proposal.customer?.name || $t('gestlab.general.labels.vap_proposals.edit.not_available') }}
                   </span>
                 </div>
-                <p class="text-xs text-gray-500">
+                <p class="text-xs text-slate-500 dark:text-slate-400">
                   {{ $t('gestlab.general.labels.vap_proposals.edit.customer_locked') }}
                 </p>
               </div>
 
               <!-- WAREHOUSE SELECTION -->
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1">
                   <BuildingStorefrontIcon class="h-4 w-4" />
                   {{ $t('gestlab.general.labels.vap_proposals.edit.warehouse') }}
                   <span class="text-red-500">*</span>
                 </label>
-                <div class="flex items-center gap-2 p-2.5 bg-gray-50 rounded-lg border border-gray-200">
-                  <BuildingStorefrontIcon class="h-4 w-4 text-gray-500" />
-                  <span class="text-sm font-medium text-gray-900">
+                <div class="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-900/70 rounded-lg border border-slate-200 dark:border-slate-800">
+                  <BuildingStorefrontIcon class="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                  <span class="text-sm font-medium text-slate-900 dark:text-white">
                     {{ proposal.warehouse?.address || $t('gestlab.general.labels.vap_proposals.edit.not_available') }}
                   </span>
                 </div>
@@ -108,14 +128,14 @@
 
               <!-- DEPARTMENT SELECTION -->
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1">
                   <BuildingOfficeIcon class="h-4 w-4" />
                   {{ $t('gestlab.general.labels.vap_proposals.edit.department') }}
                   <span class="text-red-500">*</span>
                 </label>
-                <div class="flex items-center gap-2 p-2.5 bg-gray-50 rounded-lg border border-gray-200">
-                  <BuildingOfficeIcon class="h-4 w-4 text-gray-500" />
-                  <span class="text-sm font-medium text-gray-900">
+                <div class="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-900/70 rounded-lg border border-slate-200 dark:border-slate-800">
+                  <BuildingOfficeIcon class="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                  <span class="text-sm font-medium text-slate-900 dark:text-white">
                     {{ proposal.department?.name || $t('gestlab.general.labels.vap_proposals.edit.not_available') }}
                   </span>
                 </div>
@@ -123,7 +143,7 @@
 
               <!-- TEMPLATE SELECTION -->
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1">
                   <DocumentTextIcon class="h-4 w-4" />
                   {{ $t('gestlab.general.labels.vap_proposals.edit.template') }}
                   <span class="text-red-500">*</span>
@@ -147,7 +167,7 @@
 
               <!-- LAB CODE SELECTION -->
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1">
                   <DocumentTextIcon class="h-4 w-4" />
                   {{ $t('gestlab.general.labels.vap_proposals.edit.labcode') }}
                 </label>
@@ -156,14 +176,17 @@
                     :load-options="loadLabCodes"
                     :placeholder="$t('gestlab.general.labels.vap_proposals.edit.select_labcode')"
                 />
-                <div v-if="loadingParameters" class="text-xs text-blue-600">
+                <div v-if="loadingParameters" class="text-xs font-semibold text-[#143d37] dark:text-emerald-200">
                   {{ $t('gestlab.general.labels.vap_proposals.edit.loading_parameters') }}
+                </div>
+                <div v-if="loadErrorMessage" class="text-xs font-semibold text-red-600 dark:text-red-300">
+                  {{ loadErrorMessage }}
                 </div>
               </div>
 
               <!-- SERVICE LOCATION -->
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1">
                   <MapPinIcon class="h-4 w-4" />
                   {{ $t('gestlab.general.labels.vap_proposals.edit.service_location') }}
                   <span class="text-red-500">*</span>
@@ -171,7 +194,7 @@
                 <input
                   v-model="form.service_location"
                   type="text"
-                  class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                  class="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2.5 text-sm focus:border-[#143d37] focus:outline-none focus:ring-2 focus:ring-[#c79a43]"
                   :class="{ 'border-red-500': form.errors.service_location }"
                   :placeholder="$t('gestlab.general.labels.vap_proposals.edit.service_location')"
                 />
@@ -182,7 +205,7 @@
 
               <!-- TOLERANCE DAYS -->
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1">
                   <ClockIcon class="h-4 w-4" />
                   {{ $t('gestlab.general.labels.vap_proposals.edit.tolerance_days') }}
                   <span class="text-red-500">*</span>
@@ -192,9 +215,9 @@
                   type="number"
                   min="1"
                   max="365"
-                  class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                  class="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2.5 text-sm focus:border-[#143d37] focus:outline-none focus:ring-2 focus:ring-[#c79a43]"
                   :class="{ 'border-red-500': form.errors.tolerance_days }"
-                  placeholder="7"
+                  :placeholder="$t('gestlab.general.labels.vap_proposals.edit.tolerance_days_placeholder')"
                 />
                 <p v-if="form.errors.tolerance_days" class="text-xs text-red-600">
                   {{ form.errors.tolerance_days }}
@@ -207,9 +230,9 @@
                   v-model="form.use_matrix_price"
                   type="checkbox"
                   id="use_matrix_price"
-                  class="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
+                  class="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-[#143d37] dark:text-emerald-200 focus:ring-[#c79a43]"
                 />
-                <label for="use_matrix_price" class="text-sm text-gray-700">
+                <label for="use_matrix_price" class="text-sm text-slate-700 dark:text-slate-200">
                   {{ $t('gestlab.general.labels.vap_proposals.edit.use_matrix_price') }}
                 </label>
               </div>
@@ -220,9 +243,9 @@
                   v-model="form.withhold_tax"
                   type="checkbox"
                   id="withhold_tax"
-                  class="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
+                  class="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-[#143d37] dark:text-emerald-200 focus:ring-[#c79a43]"
                 />
-                <label for="withhold_tax" class="text-sm text-gray-700">
+                <label for="withhold_tax" class="text-sm text-slate-700 dark:text-slate-200">
                   {{ $t('gestlab.general.labels.vap_proposals.edit.withhold_tax') }}
                 </label>
               </div>
@@ -230,14 +253,14 @@
 
             <!-- REVISION REASON -->
             <div class="mt-6">
-              <label class="block text-sm font-medium text-gray-700 mb-2">
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
                 {{ $t('gestlab.general.labels.vap_proposals.edit.revision_reason') }}
                 <span class="text-red-500">*</span>
               </label>
               <textarea
                 v-model="form.revision_reason"
                 rows="3"
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2.5 text-sm focus:border-[#143d37] focus:outline-none focus:ring-2 focus:ring-[#c79a43]"
                 :class="{ 'border-red-500': form.errors.revision_reason }"
                 :placeholder="$t('gestlab.general.labels.vap_proposals.edit.revision_reason_placeholder')"
               ></textarea>
@@ -248,13 +271,13 @@
 
             <!-- OBSERVATIONS -->
             <div class="mt-6">
-              <label class="block text-sm font-medium text-gray-700 mb-2">
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
                 {{ $t('gestlab.general.labels.vap_proposals.edit.observations') }}
               </label>
               <textarea
                 v-model="form.obs"
                 rows="3"
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2.5 text-sm focus:border-[#143d37] focus:outline-none focus:ring-2 focus:ring-[#c79a43]"
                 :placeholder="$t('gestlab.general.labels.vap_proposals.edit.observations_placeholder')"
               ></textarea>
             </div>
@@ -262,13 +285,13 @@
         </div>
 
         <!-- SERVICE ITEMS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="border-b border-gray-200 px-6 py-4">
+        <div class="overflow-hidden rounded-[30px] border border-[#ded2bb] bg-white/90 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
+          <div class="border-b border-[#ded2bb] bg-[#fbfaf6] px-6 py-5 dark:border-white/10 dark:bg-white/5">
             <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <ListBulletIcon class="h-5 w-5 text-blue-900" />
+              <h2 class="flex items-center gap-2 text-2xl font-black tracking-[-0.03em] text-[#10221d] dark:text-white">
+                <ListBulletIcon class="h-6 w-6 text-[#143d37] dark:text-emerald-100" />
                 {{ $t('gestlab.general.labels.vap_proposals.edit.items.title') }}
-                <span class="text-sm font-normal text-gray-500 ml-2">
+                <span class="ml-2 rounded-full bg-white px-3 py-1 text-sm font-black text-[#143d37] ring-1 ring-[#ded2bb] dark:bg-white/10 dark:text-emerald-100 dark:ring-white/10">
                   ({{ form.items.length }} {{ $t('gestlab.general.buttons.items') }})
                 </span>
               </h2>
@@ -277,7 +300,7 @@
                   @click="loadParametersBasedOnLabCode(labcode_id?.value)"
                   v-if="labcode_id && !form.items.length"
                   :disabled="!labcode_id || loadingParameters"
-                  class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 transition-colors duration-200"
+                  class="inline-flex items-center gap-2 rounded-[18px] bg-emerald-700 px-4 py-2.5 text-sm font-black text-white shadow-[0_16px_38px_-26px_rgba(21,128,61,0.75)] transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
                 >
                   <DocumentTextIcon class="h-5 w-5" />
                   {{ $t('gestlab.general.labels.vap_proposals.assign_lab_code') }}
@@ -285,25 +308,25 @@
                 <button 
                   @click="addItem"
                   type="button"
-                  class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
+                  class="inline-flex items-center gap-2 rounded-[18px] bg-[#143d37] px-4 py-2.5 text-sm font-black text-white shadow-[0_16px_38px_-26px_rgba(20,61,55,0.75)] transition hover:bg-[#0f302b] focus:outline-none focus:ring-2 focus:ring-[#c79a43] focus:ring-offset-2"
                 >
                   <PlusCircleIcon class="h-5 w-5" />
                   {{ $t('gestlab.general.labels.vap_proposals.edit.items.add_item') }}
                 </button>
               </div>
             </div>
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {{ $t('gestlab.general.labels.vap_proposals.edit.items.description') }}
             </p>
           </div>
 
           <!-- EMPTY STATE -->
           <div v-if="form.items.length === 0" class="p-12 text-center">
-            <DocumentTextIcon class="mx-auto h-12 w-12 text-gray-300" />
-            <h3 class="mt-4 text-sm font-semibold text-gray-900">
+            <DocumentTextIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
+            <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
               {{ $t('gestlab.general.labels.vap_proposals.edit.items.title') }}
             </h3>
-            <p class="mt-2 text-sm text-gray-500">
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
               {{ $t('gestlab.general.labels.vap_proposals.edit.items.description') }}
             </p>
             <div class="mt-6 flex justify-center gap-3">
@@ -319,7 +342,7 @@
               <button 
                 @click="addItem"
                 type="button"
-                class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
+                class="inline-flex items-center gap-2 rounded-lg bg-[#143d37] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#0f302b] focus:outline-none focus:ring-2 focus:ring-[#c79a43] focus:ring-offset-2"
               >
                 <PlusCircleIcon class="h-5 w-5" />
                 {{ $t('gestlab.general.labels.vap_proposals.edit.items.add_item') }}
@@ -333,26 +356,26 @@
             <div 
               v-for="(item, index) in form.items"
               :key="index"
-              class="group relative bg-white rounded-lg border border-gray-200 hover:border-blue-900 transition-all duration-200 overflow-hidden shadow-sm"
+              class="group relative rounded-2xl bg-white/95 dark:bg-slate-950/85 border border-slate-200 dark:border-slate-800 hover:border-[#143d37] transition-all duration-200 overflow-hidden shadow-sm"
               v-motion
               :initial="{ opacity: 0, y: 20 }"
               :enter="{ opacity: 1, y: 0 }"
               :delay="index * 50"
             >
               <!-- ITEM HEADER -->
-              <div class="bg-gradient-to-r from-blue-50 to-white px-4 py-3 border-b border-gray-200">
+              <div class="bg-gradient-to-r from-[#f7f1e6] to-white px-4 py-3 border-b border-slate-200 dark:border-slate-800">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
-                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-900 text-white font-semibold">
+                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-[#143d37] text-white font-semibold">
                       {{ index + 1 }}
                     </div>
                     <div>
-                      <h3 class="text-sm font-semibold text-gray-900">
+                      <h3 class="text-sm font-semibold text-slate-900 dark:text-white">
                         {{ item.item_description || $t('gestlab.general.labels.vap_proposals.edit.items.item_description') }}
                       </h3>
-                      <p class="text-xs text-gray-500">
+                      <p class="text-xs text-slate-500 dark:text-slate-400">
                         {{ $t('gestlab.general.buttons.item') }} #{{ index + 1 }}
-                        <span v-if="item.item_id" class="ml-2 text-gray-400">
+                        <span v-if="item.item_id" class="ml-2 text-slate-400">
                           ID: {{ item.item_id }}
                         </span>
                       </p>
@@ -362,7 +385,7 @@
                     <button 
                       @click="duplicateItem(index)"
                       type="button"
-                      class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-600 transition-all duration-200 p-1 rounded-full hover:bg-blue-50"
+                      class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-[#143d37] transition-all duration-200 p-1 rounded-full hover:bg-[#f7f1e6]"
                       :title="$t('gestlab.general.labels.vap_proposals.edit.items.duplicate_item')"
                     >
                       <DocumentDuplicateIcon class="h-5 w-5" />
@@ -370,7 +393,7 @@
                     <button 
                       @click="removeItem(index)"
                       type="button"
-                      class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition-all duration-200 p-1 rounded-full hover:bg-red-50"
+                      class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 transition-all duration-200 p-1 rounded-full hover:bg-red-50"
                       :title="$t('gestlab.general.labels.vap_proposals.edit.items.remove_item')"
                     >
                       <TrashIcon class="h-5 w-5" />
@@ -384,7 +407,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <!-- ITEM SELECTION (Matrix or Parameter) -->
                   <div class="space-y-2">
-                    <label class="block text-xs font-medium text-gray-700">
+                    <label class="block text-xs font-medium text-slate-700 dark:text-slate-200">
                       {{ $t('gestlab.general.labels.vap_proposals.edit.items.item') }}
                       <span class="text-red-500">*</span>
                     </label>
@@ -400,14 +423,14 @@
 
                   <!-- ITEM DESCRIPTION -->
                   <div class="space-y-2">
-                    <label class="block text-xs font-medium text-gray-700">
+                    <label class="block text-xs font-medium text-slate-700 dark:text-slate-200">
                       {{ $t('gestlab.general.labels.vap_proposals.edit.items.item_description') }}
                       <span class="text-red-500">*</span>
                     </label>
                     <input
                       v-model="item.item_description"
                       type="text"
-                      class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                      class="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm focus:border-[#143d37] focus:outline-none focus:ring-2 focus:ring-[#c79a43]"
                       :placeholder="$t('gestlab.general.labels.vap_proposals.edit.items.item_description_placeholder')"
                       @input="calculateItemTotal(index)"
                     />
@@ -415,7 +438,7 @@
 
                   <!-- STANDARD SELECTION -->
                   <div class="space-y-2">
-                    <label class="block text-xs font-medium text-gray-700">
+                    <label class="block text-xs font-medium text-slate-700 dark:text-slate-200">
                       {{ $t('gestlab.general.labels.vap_proposals.edit.items.standard') }}
                     </label>
                     <comboboxEnhanced 
@@ -429,7 +452,7 @@
 
                   <!-- UNIT SELECTION -->
                   <div class="space-y-2">
-                    <label class="block text-xs font-medium text-gray-700">
+                    <label class="block text-xs font-medium text-slate-700 dark:text-slate-200">
                       {{ $t('gestlab.general.labels.vap_proposals.edit.items.unit') }}
                       <span class="text-red-500">*</span>
                     </label>
@@ -444,7 +467,7 @@
 
                   <!-- QUANTITY -->
                   <div class="space-y-2">
-                    <label class="block text-xs font-medium text-gray-700">
+                    <label class="block text-xs font-medium text-slate-700 dark:text-slate-200">
                       {{ $t('gestlab.general.labels.vap_proposals.edit.items.quantity') }}
                       <span class="text-red-500">*</span>
                     </label>
@@ -453,25 +476,25 @@
                       type="number"
                       min="0.01"
                       step="0.01"
-                      class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                      class="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm focus:border-[#143d37] focus:outline-none focus:ring-2 focus:ring-[#c79a43]"
                       @input="calculateItemTotal(index)"
                     />
                   </div>
 
                   <!-- UNIT PRICE -->
                   <div class="space-y-2">
-                    <label class="block text-xs font-medium text-gray-700">
+                    <label class="block text-xs font-medium text-slate-700 dark:text-slate-200">
                       {{ $t('gestlab.general.labels.vap_proposals.edit.items.unit_price') }}
                       <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
-                      <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                      <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-slate-400 text-sm">AOA</span>
                       <input
                         v-model="item.unit_price"
                         type="number"
                         min="0"
                         step="0.01"
-                        class="w-full rounded-lg border border-gray-300 pl-10 pr-3 py-2 text-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                        class="w-full rounded-lg border border-slate-300 dark:border-slate-700 pl-10 pr-3 py-2 text-sm focus:border-[#143d37] focus:outline-none focus:ring-2 focus:ring-[#c79a43]"
                         @input="calculateItemTotal(index)"
                       />
                     </div>
@@ -479,13 +502,13 @@
 
                   <!-- DISCOUNT TYPE -->
                   <div class="space-y-2">
-                    <label class="block text-xs font-medium text-gray-700">
+                    <label class="block text-xs font-medium text-slate-700 dark:text-slate-200">
                       {{ $t('gestlab.general.labels.vap_proposals.edit.items.discount') }}
                     </label>
                     <div class="flex gap-2">
                       <select 
                         v-model="item.discount_id"
-                        class="w-1/3 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                        class="w-1/3 rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm focus:border-[#143d37] focus:outline-none focus:ring-2 focus:ring-[#c79a43]"
                         @change="calculateItemTotal(index)"
                       >
                         <option v-for="type in discount_categories" :key="type.value" :value="type.value">
@@ -499,7 +522,7 @@
                           type="number"
                           min="0"
                           step="0.01"
-                          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                          class="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm focus:border-[#143d37] focus:outline-none focus:ring-2 focus:ring-[#c79a43]"
                           @input="calculateItemTotal(index)"
                         />
                         <input
@@ -509,11 +532,11 @@
                           min="0"
                           max="100"
                           step="0.01"
-                          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                          class="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm focus:border-[#143d37] focus:outline-none focus:ring-2 focus:ring-[#c79a43]"
                           @input="calculateItemTotal(index)"
                         />
-                        <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
-                          {{ item.discount_id == 2 ? 'R$' : '%' }}
+                        <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-slate-400 text-sm">
+                          {{ item.discount_id == 2 ? 'AOA' : '%' }}
                         </span>
                       </div>
                     </div>
@@ -521,7 +544,7 @@
 
                   <!-- TAX PERCENTAGE -->
                   <div class="space-y-2" v-if="item.charge_tax">
-                    <label class="block text-xs font-medium text-gray-700">
+                    <label class="block text-xs font-medium text-slate-700 dark:text-slate-200">
                       {{ $t('gestlab.general.labels.vap_proposals.edit.items.tax') }}
                     </label>
                     <div class="relative">
@@ -531,10 +554,10 @@
                         min="0"
                         max="100"
                         step="0.01"
-                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                        class="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm focus:border-[#143d37] focus:outline-none focus:ring-2 focus:ring-[#c79a43]"
                         @input="calculateItemTotal(index)"
                       />
-                      <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">%</span>
+                      <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 dark:text-slate-400 text-sm">%</span>
                     </div>
                   </div>
 
@@ -544,21 +567,21 @@
                       v-model="item.charge_tax"
                       type="checkbox"
                       :id="`charge_tax_${index}`"
-                      class="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
+                      class="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-[#143d37] dark:text-emerald-200 focus:ring-[#c79a43]"
                       @change="calculateItemTotal(index)"
                     />
-                    <label :for="`charge_tax_${index}`" class="text-xs text-gray-700">
+                    <label :for="`charge_tax_${index}`" class="text-xs text-slate-700 dark:text-slate-200">
                       {{ $t('gestlab.general.labels.vap_proposals.edit.items.charge_tax') }}
                     </label>
                   </div>
 
                   <!-- TOTAL -->
                   <div class="space-y-2">
-                    <label class="block text-xs font-medium text-gray-700">
+                    <label class="block text-xs font-medium text-slate-700 dark:text-slate-200">
                       {{ $t('gestlab.general.labels.vap_proposals.edit.items.total') }}
                     </label>
                     <div class="flex items-center">
-                      <div class="flex-1 bg-gray-50 rounded-lg px-3 py-2 text-sm font-semibold text-gray-900">
+                      <div class="flex-1 bg-slate-50 dark:bg-slate-900/70 rounded-lg px-3 py-2 text-sm font-semibold text-slate-900 dark:text-white">
                         AOA {{ formatNumber(itemsWithSubTotal[index]?.total || 0) }}
                       </div>
                     </div>
@@ -566,40 +589,40 @@
 
                   <!-- OBSERVATIONS -->
                   <div class="space-y-2 col-span-full">
-                    <label class="block text-xs font-medium text-gray-700">
+                    <label class="block text-xs font-medium text-slate-700 dark:text-slate-200">
                       {{ $t('gestlab.general.labels.vap_proposals.edit.items.observations') }}
                     </label>
                     <textarea
                       v-model="item.obs"
                       rows="2"
-                      class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                      class="w-full rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm focus:border-[#143d37] focus:outline-none focus:ring-2 focus:ring-[#c79a43]"
                       :placeholder="$t('gestlab.general.labels.vap_proposals.edit.items.observations_placeholder')"
                     ></textarea>
                   </div>
                 </div>
 
                 <!-- ITEM BREAKDOWN -->
-                <div v-if="item.qty && item.unit_price" class="mt-4 pt-4 border-t border-gray-100">
+                <div v-if="item.qty && item.unit_price" class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                   <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
-                    <div class="bg-gray-50 rounded p-2">
-                      <div class="text-gray-500">Quantidade</div>
+                    <div class="bg-slate-50 dark:bg-slate-900/70 rounded p-2">
+                      <div class="text-slate-500 dark:text-slate-400">Quantidade</div>
                       <div class="font-medium">{{ item.qty }}</div>
                     </div>
-                    <div class="bg-gray-50 rounded p-2">
-                      <div class="text-gray-500">Preço Unitário</div>
+                    <div class="bg-slate-50 dark:bg-slate-900/70 rounded p-2">
+                      <div class="text-slate-500 dark:text-slate-400">Preço Unitário</div>
                       <div class="font-medium">AOA {{ formatNumber(item.unit_price) }}</div>
                     </div>
-                    <div class="bg-gray-50 rounded p-2" v-if="itemsWithSubTotal[index]?.discount_amount > 0">
-                      <div class="text-gray-500">Desconto</div>
+                    <div class="bg-slate-50 dark:bg-slate-900/70 rounded p-2" v-if="itemsWithSubTotal[index]?.discount_amount > 0">
+                      <div class="text-slate-500 dark:text-slate-400">Desconto</div>
                       <div class="font-medium text-green-600">-AOA {{ formatNumber(itemsWithSubTotal[index]?.discount_amount || 0) }}</div>
                     </div>
-                    <div class="bg-gray-50 rounded p-2" v-if="itemsWithSubTotal[index]?.tax_amount > 0">
-                      <div class="text-gray-500">Taxa ({{ item.tax_percentage }}%)</div>
-                      <div class="font-medium text-blue-600">AOA {{ formatNumber(itemsWithSubTotal[index]?.tax_amount || 0) }}</div>
+                    <div class="bg-slate-50 dark:bg-slate-900/70 rounded p-2" v-if="itemsWithSubTotal[index]?.tax_amount > 0">
+                      <div class="text-slate-500 dark:text-slate-400">Taxa ({{ item.tax_percentage }}%)</div>
+                      <div class="font-medium text-[#143d37]">AOA {{ formatNumber(itemsWithSubTotal[index]?.tax_amount || 0) }}</div>
                     </div>
-                    <div class="bg-blue-50 rounded p-2">
-                      <div class="text-blue-700 font-medium">Total Item</div>
-                      <div class="text-blue-900 font-bold">AOA {{ formatNumber(itemsWithSubTotal[index]?.total || 0) }}</div>
+                    <div class="bg-[#f7f1e6] rounded p-2">
+                      <div class="text-[#263c36] font-medium">{{ $t('gestlab.general.labels.vap_proposals.edit.items.item_total') }}</div>
+                      <div class="text-[#143d37] dark:text-emerald-200 font-bold">AOA {{ formatNumber(itemsWithSubTotal[index]?.total || 0) }}</div>
                     </div>
                   </div>
                 </div>
@@ -608,21 +631,21 @@
           </div>
 
           <!-- TOTALS SUMMARY -->
-          <div v-if="form.items.length > 0" class="border-t border-gray-200 px-6 py-4 bg-gray-50">
+          <div v-if="form.items.length > 0" class="border-t border-slate-200 dark:border-slate-800 px-6 py-4 bg-slate-50 dark:bg-slate-900/70">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div class="text-sm text-gray-600">
+              <div class="text-sm text-slate-600 dark:text-slate-300">
                 {{ form.items.length }} {{ $t('gestlab.general.buttons.items') }}
               </div>
               <div class="text-right">
-                <div class="text-sm text-gray-600">
+                <div class="text-sm text-slate-600 dark:text-slate-300">
                   {{ $t('gestlab.general.labels.vap_proposals.edit.items.subtotal') }}
                 </div>
-                <div class="text-lg font-bold text-blue-900">
+                <div class="text-lg font-bold text-[#143d37] dark:text-emerald-200">
                   AOA {{ formatNumber(calculateSubtotal) }}
                 </div>
               </div>
               <div class="text-right">
-                <div class="text-sm text-gray-600">
+                <div class="text-sm text-slate-600 dark:text-slate-300">
                   {{ $t('gestlab.general.labels.vap_proposals.edit.items.discount') }}
                 </div>
                 <div class="text-lg font-bold text-green-600">
@@ -630,10 +653,10 @@
                 </div>
               </div>
               <div class="text-right">
-                <div class="text-sm text-gray-600">
+                <div class="text-sm text-slate-600 dark:text-slate-300">
                   {{ $t('gestlab.general.labels.vap_proposals.edit.items.total') }}
                 </div>
-                <div class="text-2xl font-bold text-blue-900">
+                <div class="text-2xl font-bold text-[#143d37] dark:text-emerald-200">
                   AOA {{ formatNumber(proposalTotal) }}
                 </div>
               </div>
@@ -643,10 +666,11 @@
       </div>
 
       <!-- RIGHT COLUMN (1/3 width) -->
-      <div class="space-y-6">
+      <div class="space-y-6 xl:sticky xl:top-6 xl:self-start">
         <!-- ACTIONS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+        <div class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
+          <p class="text-xs font-black uppercase tracking-[0.28em] text-[#c79a43]">{{ $t('gestlab.general.labels.vap_proposals.surface.decision') }}</p>
+          <h3 class="mb-4 mt-2 text-2xl font-black tracking-[-0.03em] text-[#10221d] dark:text-white">
             {{ $t('gestlab.general.labels.vap_proposals.edit.actions.title') }}
           </h3>
           <div class="space-y-4">
@@ -654,10 +678,10 @@
               @click="submit"
               :disabled="form.processing || !isFormValid || !form.revision_reason"
               :class="[
-                'w-full inline-flex justify-center items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
+                'w-full inline-flex justify-center items-center gap-2 rounded-[20px] px-4 py-3 text-sm font-black shadow-[0_18px_42px_-26px_rgba(20,61,55,0.72)] transition-all duration-200',
                 form.processing || !isFormValid || !form.revision_reason
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-900 to-blue-800 text-white hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2'
+                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+                  : 'bg-[#143d37] text-white hover:bg-[#0f302b] focus:outline-none focus:ring-2 focus:ring-[#c79a43] focus:ring-offset-2'
               ]"
             >
               <CheckCircleIcon class="h-5 w-5" />
@@ -667,37 +691,37 @@
             <button 
               @click="resetForm"
               type="button"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200"
+              class="inline-flex w-full items-center justify-center gap-2 rounded-[20px] border border-[#ded2bb] bg-[#fbfaf6] px-4 py-3 text-sm font-black text-[#143d37] shadow-[0_14px_32px_-28px_rgba(20,61,55,0.55)] transition hover:border-[#c79a43] hover:bg-[#fff7e5] focus:outline-none focus:ring-2 focus:ring-[#c79a43] focus:ring-offset-2 dark:border-white/10 dark:bg-white/5 dark:text-emerald-100 dark:hover:bg-white/10"
             >
               <ArrowPathIcon class="h-5 w-5" />
               {{ $t('gestlab.general.labels.vap_proposals.edit.reset_changes') }}
             </button>
             
             <!-- QUICK STATS -->
-            <div class="border-t border-gray-200 pt-4">
-              <h4 class="text-sm font-medium text-gray-900 mb-2">
+            <div class="border-t border-slate-200 dark:border-slate-800 pt-4">
+              <h4 class="text-sm font-medium text-slate-900 dark:text-white mb-2">
                 {{ $t('gestlab.general.labels.vap_proposals.edit.stats.title') }}
               </h4>
               <div class="space-y-2">
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.edit.stats.total_items') }}</span>
-                  <span class="font-semibold text-blue-900">{{ form.items.length }}</span>
+                  <span class="text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_proposals.edit.stats.total_items') }}</span>
+                  <span class="font-semibold text-[#143d37] dark:text-emerald-200">{{ form.items.length }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.edit.items.subtotal') }}</span>
-                  <span class="font-semibold text-blue-900">AOA {{ formatNumber(calculateSubtotal) }}</span>
+                  <span class="text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_proposals.edit.items.subtotal') }}</span>
+                  <span class="font-semibold text-[#143d37] dark:text-emerald-200">AOA {{ formatNumber(calculateSubtotal) }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.edit.items.discount') }}</span>
+                  <span class="text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_proposals.edit.items.discount') }}</span>
                   <span class="font-semibold text-green-600">-AOA {{ formatNumber(discountTotal) }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.edit.tolerance_days') }}</span>
-                  <span class="font-semibold text-blue-900">{{ form.tolerance_days || 7 }}</span>
+                  <span class="text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_proposals.edit.tolerance_days') }}</span>
+                  <span class="font-semibold text-[#143d37] dark:text-emerald-200">{{ form.tolerance_days || 7 }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.edit.items.total') }}</span>
-                  <span class="font-semibold text-blue-900">AOA {{ formatNumber(proposalTotal) }}</span>
+                  <span class="text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_proposals.edit.items.total') }}</span>
+                  <span class="font-semibold text-[#143d37] dark:text-emerald-200">AOA {{ formatNumber(proposalTotal) }}</span>
                 </div>
               </div>
             </div>
@@ -705,14 +729,15 @@
         </div>
 
         <!-- PROPOSAL STATUS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Cog6ToothIcon class="h-5 w-5 text-blue-900" />
+        <div class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
+          <p class="text-xs font-black uppercase tracking-[0.28em] text-[#c79a43]">{{ $t('gestlab.general.labels.vap_proposals.surface.status') }}</p>
+          <h3 class="mb-4 mt-2 flex items-center gap-2 text-2xl font-black tracking-[-0.03em] text-[#10221d] dark:text-white">
+            <Cog6ToothIcon class="h-6 w-6 text-[#143d37] dark:text-emerald-100" />
             {{ $t('gestlab.general.labels.vap_proposals.edit.status.title') }}
           </h3>
           <div class="space-y-3">
             <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.edit.status.current') }}</span>
+              <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_proposals.edit.status.current') }}</span>
               <span :class="[
                 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
                 proposal.status_badge.class
@@ -721,26 +746,26 @@
               </span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.edit.status.original') }}</span>
-              <span class="text-sm font-medium text-blue-900">
+              <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_proposals.edit.status.original') }}</span>
+              <span class="text-sm font-medium text-[#143d37] dark:text-emerald-200">
                 {{ proposal.is_original ? $t('gestlab.general.status.yes') : $t('gestlab.general.status.no') }}
               </span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.edit.status.created_by') }}</span>
-              <span class="text-sm font-medium text-blue-900">
+              <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_proposals.edit.status.created_by') }}</span>
+              <span class="text-sm font-medium text-[#143d37] dark:text-emerald-200">
                 {{ proposal.user?.name || $t('gestlab.general.labels.vap_proposals.edit.not_available') }}
               </span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.edit.status.created_at') }}</span>
-              <span class="text-sm font-medium text-blue-900">
+              <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_proposals.edit.status.created_at') }}</span>
+              <span class="text-sm font-medium text-[#143d37] dark:text-emerald-200">
                 {{ formatDate(proposal.created_at) }}
               </span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">Validade</span>
-              <span class="text-sm font-medium text-blue-900">
+              <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_proposals.surface.expiry') }}</span>
+              <span class="text-sm font-medium text-[#143d37] dark:text-emerald-200">
                 {{ calculateExpiryDate }}
               </span>
             </div>
@@ -748,24 +773,24 @@
         </div>
 
         <!-- SELECTED TEMPLATE PREVIEW -->
-        <div v-if="selectedTemplate" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <DocumentTextIcon class="h-5 w-5 text-blue-900" />
+        <div v-if="selectedTemplate" class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
+          <h3 class="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
+            <DocumentTextIcon class="h-5 w-5 text-[#143d37] dark:text-emerald-200" />
             {{ $t('gestlab.general.labels.vap_proposals.edit.template_preview') }}
           </h3>
           <div class="space-y-3">
             <div>
-              <h4 class="text-sm font-medium text-gray-700">{{ selectedTemplate.name }}</h4>
-              <p class="text-xs text-gray-500 mt-1">
+              <h4 class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ selectedTemplate.name }}</h4>
+              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 {{ $t('gestlab.general.labels.vap_proposals.show.template.created_by') }} {{ selectedTemplate.user.name }}
               </p>
             </div>
-            <div class="mt-4 text-sm text-gray-600 line-clamp-4 max-h-32 overflow-y-auto">
+            <div class="mt-4 max-h-32 overflow-y-auto text-sm text-slate-600 line-clamp-4 dark:text-slate-300">
               {{ stripHtml(selectedTemplate.content) }}
             </div>
             <button 
               @click="showTemplatePreview = true"
-              class="mt-2 text-xs text-blue-900 hover:text-blue-800 font-medium"
+              class="mt-2 text-xs font-medium text-[#143d37] hover:text-[#0f302b] dark:text-emerald-200 dark:hover:text-emerald-100"
             >
               {{ $t('gestlab.general.labels.vap_proposals.edit.view_full_template') }}
             </button>
@@ -773,9 +798,9 @@
         </div>
 
         <!-- QUICK ADD ITEMS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <BoltIcon class="h-5 w-5 text-blue-900" />
+        <div v-if="quickItems.length" class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
+          <h3 class="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
+            <BoltIcon class="h-5 w-5 text-[#c79a43]" />
             {{ $t('gestlab.general.labels.vap_proposals.edit.quick_add') }}
           </h3>
           <div class="space-y-3">
@@ -783,14 +808,14 @@
               v-for="quickItem in quickItems"
               :key="quickItem.name"
               @click="addQuickItem(quickItem)"
-              class="w-full text-left p-3 border border-gray-200 rounded-lg hover:border-blue-900 hover:bg-blue-50 transition-all duration-200"
+              class="w-full rounded-2xl border border-slate-200 p-3 text-left transition-all duration-200 hover:border-[#d8cbb4] hover:bg-[#f7f1e6] dark:border-slate-800 dark:hover:bg-emerald-400/10"
             >
               <div class="flex items-center justify-between">
                 <div>
-                  <div class="text-sm font-medium text-gray-900">{{ quickItem.name }}</div>
-                  <div class="text-xs text-gray-500">{{ quickItem.description }}</div>
+                  <div class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ quickItem.name }}</div>
+                  <div class="text-xs text-slate-500 dark:text-slate-400">{{ quickItem.description }}</div>
                 </div>
-                <div class="text-sm font-semibold text-blue-900">AOA {{ formatNumber(quickItem.price) }}</div>
+                <div class="text-sm font-semibold text-[#143d37] dark:text-emerald-200">AOA {{ formatNumber(quickItem.price) }}</div>
               </div>
             </button>
           </div>
@@ -799,15 +824,15 @@
     </div>
 
     <!-- FOOTER ACTIONS -->
-    <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-      <div class="text-sm text-gray-500">
+    <div class="flex flex-col gap-4 rounded-[30px] border border-[#ded2bb] bg-[#fbfaf6] p-5 shadow-[0_22px_70px_-48px_rgba(20,61,55,0.42)] dark:border-white/10 dark:bg-slate-950/90 sm:flex-row sm:items-center sm:justify-between">
+      <div class="text-sm text-slate-500 dark:text-slate-400">
         {{ $t('gestlab.general.labels.vap_proposals.edit.footer_note') }}
       </div>
       <div class="flex items-center gap-4">
         <button 
           @click="resetForm"
           type="button"
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          class="inline-flex items-center gap-2 rounded-2xl border border-[#d8cbb4] bg-white px-4 py-2.5 text-sm font-semibold text-[#263c36] shadow-sm hover:bg-[#f7f1e6] focus:outline-none focus:ring-2 focus:ring-[#143d37] focus:ring-offset-2 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
         >
           <ArrowPathIcon class="h-5 w-5" />
           {{ $t('gestlab.general.labels.vap_proposals.edit.reset_changes') }}
@@ -818,8 +843,8 @@
           :class="[
             'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200',
             form.processing || !isFormValid || !form.revision_reason
-              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : 'bg-gradient-to-r from-blue-900 to-blue-800 text-white hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2'
+              ? 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+              : 'bg-[#143d37] text-white hover:bg-[#0f302b] focus:outline-none focus:ring-2 focus:ring-[#c79a43] focus:ring-offset-2'
           ]"
         >
           <CheckCircleIcon class="h-5 w-5" />
@@ -830,16 +855,16 @@
 
     <!-- TEMPLATE PREVIEW MODAL -->
     <Modal :show="showTemplatePreview" @close="showTemplatePreview = false" max-width="4xl">
-      <div class="p-6">
+      <div class="p-6 dark:bg-slate-950">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-lg font-semibold text-gray-900">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
             {{ selectedTemplate?.name }}
           </h2>
-          <button @click="showTemplatePreview = false" class="text-gray-400 hover:text-gray-600">
+          <button @click="showTemplatePreview = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
             <XMarkIcon class="h-6 w-6" />
           </button>
         </div>
-        <div class="prose max-w-none border border-gray-200 rounded-lg p-6 max-h-[60vh] overflow-y-auto">
+        <div class="prose max-w-none rounded-2xl border border-slate-200 p-6 max-h-[60vh] overflow-y-auto dark:border-slate-800 dark:prose-invert">
           <div v-html="selectedTemplate?.content"></div>
         </div>
       </div>
@@ -849,6 +874,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import { useForm, Link } from '@inertiajs/vue3'
 import { 
   DocumentTextIcon, ArrowLeftIcon, InformationCircleIcon,
@@ -873,7 +899,7 @@ const props = defineProps({
     type: Array,
     default: () => [
       { value: 1, label: '%' },
-      { value: 2, label: 'R$' }
+      { value: 2, label: 'AOA' }
     ]
   }
 })
@@ -892,6 +918,9 @@ const form = useForm({
 // UI State
 const showTemplatePreview = ref(false)
 const loadingParameters = ref(false)
+const formErrorMessage = ref('')
+const loadErrorMessage = ref('')
+const resetConfirmationPending = ref(false)
 
 // Selection refs
 const templateSelected = ref(null)
@@ -913,6 +942,16 @@ const standardOptions = computed(() =>
     data: standard
   }))
 )
+
+const parseJsonResponse = async (response) => {
+  const contentType = response.headers.get('content-type') || ''
+
+  if (!response.ok || !contentType.includes('application/json')) {
+    throw new Error(`Resposta inválida (${response.status})`)
+  }
+
+  return response.json()
+}
 
 // Initialize form with proposal data
 onMounted(() => {
@@ -997,10 +1036,14 @@ const loadParametersBasedOnLabCode = async (code_id) => {
   if (!code_id) return
   
   loadingParameters.value = true
+  loadErrorMessage.value = ''
   
   try {
-    const response = await fetch(`/labcodes/getCodeParameters?code_id=${code_id}&use_matrix_price=${form.use_matrix_price}`)
-    const results = await response.json()
+    const response = await fetch(route('vap-proposals.options.lab-code-parameters', {
+      code_id,
+      use_matrix_price: form.use_matrix_price ? 1 : 0,
+    }))
+    const results = await parseJsonResponse(response)
     
     // Clear existing items and add new ones from lab code
     form.items = []
@@ -1037,7 +1080,7 @@ const loadParametersBasedOnLabCode = async (code_id) => {
         tax_percentage: item.tax_percentage || 0,
         tax_amount: 0,
         tax_id: item.tax_id || null,
-        charge_tax: item.charge_tax || true,
+        charge_tax: item.charge_tax ?? true,
         withhold_tax: item.withhold_tax || false,
         exemption_id: item.exemption_id || null,
         exemption_code: item.exemption_code || '',
@@ -1050,8 +1093,8 @@ const loadParametersBasedOnLabCode = async (code_id) => {
       
       form.items.push(newItem)
     })
-  } catch (error) {
-    console.error('Error loading lab code parameters:', error)
+  } catch {
+    loadErrorMessage.value = 'Não foi possível carregar os parâmetros deste código laboratorial.'
   } finally {
     loadingParameters.value = false
   }
@@ -1061,14 +1104,14 @@ watch(templateSelected, (newVal) => form.template_id = newVal?.value || '')
 
 // Function to load items from matrix or parameter
 function loadMatrixes(query, setOptions) {
-  fetch('/matrixes/getMatrix?q=' + query)
-    .then(response => response.json())
+  fetch(route('vap-proposals.options.matrixes', { q: query || '' }))
+    .then(parseJsonResponse)
     .then(results => {
       setOptions(
         results.map(result => ({
           value: result.id,
           label: result.description,
-          price: result.fixed_price,
+          price: result.price ?? result.fixed_price ?? 0,
           tax_id: result.tax_id,
           charge_tax: result.charge_tax,
           tax_percentage: result.tax_percentage,
@@ -1078,11 +1121,12 @@ function loadMatrixes(query, setOptions) {
         }))
       )
     })
+    .catch(() => setOptions([]))
 }
 
 function loadParameters(query, setOptions) {
-  fetch('/parameters/getParameter?q=' + query)
-    .then(response => response.json())
+  fetch(route('vap-proposals.options.parameters', { q: query || '' }))
+    .then(parseJsonResponse)
     .then(results => {
       setOptions(
         results.map(result => ({
@@ -1098,11 +1142,12 @@ function loadParameters(query, setOptions) {
         }))
       )
     })
+    .catch(() => setOptions([]))
 }
 
 function loadLabCodes(query, setOptions) {
-  fetch('/labcodes/getCode?q=' + query)
-    .then(response => response.json())
+  fetch(route('vap-proposals.options.lab-codes', { q: query || '' }))
+    .then(parseJsonResponse)
     .then(results => {
       setOptions(
         results.map(result => ({
@@ -1111,6 +1156,7 @@ function loadLabCodes(query, setOptions) {
         }))
       )
     })
+    .catch(() => setOptions([]))
 }
 
 // When an item is selected from matrix/parameter
@@ -1155,41 +1201,7 @@ const onStandardChange = (item, index) => {
   }
 }
 
-// Quick items for easy addition
-const quickItems = ref([
-  {
-    name: 'Análise Química Básica',
-    description: 'Análise de pH, condutividade, sólidos totais',
-    qty: 1,
-    unit_price: 250.00,
-    unit_id: 1,
-    item_description: 'Análise Química Básica - pH, condutividade, sólidos totais'
-  },
-  {
-    name: 'Teste Microbiológico',
-    description: 'Contagem total de bactérias e fungos',
-    qty: 1,
-    unit_price: 350.00,
-    unit_id: 1,
-    item_description: 'Teste Microbiológico - Contagem total'
-  },
-  {
-    name: 'Análise de Metais Pesados',
-    description: 'Análise de Pb, Cd, Hg, As',
-    qty: 1,
-    unit_price: 450.00,
-    unit_id: 1,
-    item_description: 'Análise de Metais Pesados - Pb, Cd, Hg, As'
-  },
-  {
-    name: 'Teste de Pureza',
-    description: 'Análise de pureza por HPLC',
-    qty: 1,
-    unit_price: 550.00,
-    unit_id: 1,
-    item_description: 'Teste de Pureza - Análise por HPLC'
-  }
-])
+const quickItems = ref([])
 
 // Computed Properties
 const selectedTemplate = computed(() => {
@@ -1306,7 +1318,7 @@ const calculateExpiryDate = computed(() => {
   const days = parseInt(form.tolerance_days)
   const date = new Date()
   date.setDate(date.getDate() + days)
-  return date.toLocaleDateString('pt-BR')
+  return date.toLocaleDateString('pt-AO')
 })
 
 // Methods
@@ -1356,7 +1368,7 @@ const removeItem = (index) => {
   if (form.items.length > 1) {
     form.items.splice(index, 1)
   } else {
-    alert('A proposta deve ter pelo menos um item')
+    formErrorMessage.value = 'A proposta deve ter pelo menos um item.'
   }
 }
 
@@ -1401,86 +1413,106 @@ const calculateItemTotal = (index) => {
 }
 
 const formatNumber = (number) => {
-  return parseFloat(number).toFixed(2).replace('.', ',')
+  return new Intl.NumberFormat('pt-AO', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(number || 0))
 }
 
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
-  return date.toLocaleDateString('pt-BR')
+  return date.toLocaleDateString('pt-AO')
 }
 
 const stripHtml = (html) => {
   if (!html) return ''
-  return html.replace(/<[^>]*>/g, '').substring(0, 200) + '...'
+  const text = html.replace(/<[^>]*>/g, '').trim()
+
+  return text.length > 200 ? `${text.substring(0, 200)}...` : text
 }
 
 const resetForm = () => {
-  if (confirm('Tem certeza que deseja descartar todas as alterações? Os dados serão restaurados para os valores originais.')) {
-    // Reload the form with original data
-    form.template_id = props.proposal.template_id
-    form.service_location = props.proposal.service_location
-    form.tolerance_days = props.proposal.tolerance_days
-    form.withhold_tax = props.proposal.withhold_tax
-    form.use_matrix_price = props.proposal.use_matrix_price ?? true
-    form.obs = props.proposal.obs || ''
-    form.revision_reason = ''
-    
-    // Reload items
-    if (props.proposal.items && props.proposal.items.length > 0) {
-      form.items = props.proposal.items.map(item => {
-        const unitDisplay = unitOptions.value.find(u => u.value === item.unit_id) || null
-        const standardDisplay = standardOptions.value.find(s => s.value === item.standard_id) || null
-        
-        let itemSelection = null
-        if (item.itemable_type && item.itemable_id) {
-          const type = item.itemable_type.includes('Matrix') ? 'matrix' : 'parameter'
-          itemSelection = {
-            value: item.itemable_id,
-            label: item.item_description || '',
-            type: type,
-            price: item.unit_price || 0,
-            tax_percentage: item.tax_percentage || 0,
-            charge_tax: item.charge_tax ?? true,
-            tax_id: item.tax_id || null,
-            exemption_id: item.exemption_id || null,
-            exemption_code: item.exemption_code || '',
-          }
-        }
-        
-        return {
-          item_id: item.item_id || item.itemable_id,
-          itemable_type: item.itemable_type,
-          itemable_id: item.itemable_id,
-          item_selection: itemSelection,
-          item_description: item.item_description,
-          standard_id: item.standard_id,
-          standard_display: standardDisplay,
-          unit_id: item.unit_id,
-          unit_display: unitDisplay,
-          qty: item.qty,
-          unit_price: item.unit_price,
-          discount_percentage: item.discount_percentage || 0,
-          discount_id: item.discount_id || 1,
-          discount_amount: item.discount_amount || 0,
-          total: item.total || 0,
+  if (!resetConfirmationPending.value) {
+    resetConfirmationPending.value = true
+    formErrorMessage.value = 'Clique novamente em Repor alterações para restaurar os valores originais.'
+    window.setTimeout(() => {
+      resetConfirmationPending.value = false
+    }, 5000)
+
+    return
+  }
+
+  resetConfirmationPending.value = false
+  formErrorMessage.value = ''
+  loadErrorMessage.value = ''
+  // Reload the form with original data
+  form.template_id = props.proposal.template_id
+  form.service_location = props.proposal.service_location
+  form.tolerance_days = props.proposal.tolerance_days
+  form.withhold_tax = props.proposal.withhold_tax
+  form.use_matrix_price = props.proposal.use_matrix_price ?? true
+  form.obs = props.proposal.obs || ''
+  form.revision_reason = ''
+
+  // Reload items
+  if (props.proposal.items && props.proposal.items.length > 0) {
+    form.items = props.proposal.items.map(item => {
+      const unitDisplay = unitOptions.value.find(u => u.value === item.unit_id) || null
+      const standardDisplay = standardOptions.value.find(s => s.value === item.standard_id) || null
+
+      let itemSelection = null
+      if (item.itemable_type && item.itemable_id) {
+        const type = item.itemable_type.includes('Matrix') ? 'matrix' : 'parameter'
+        itemSelection = {
+          value: item.itemable_id,
+          label: item.item_description || '',
+          type: type,
+          price: item.unit_price || 0,
           tax_percentage: item.tax_percentage || 0,
-          tax_amount: item.tax_amount || 0,
-          tax_id: item.tax_id || null,
           charge_tax: item.charge_tax ?? true,
-          withhold_tax: item.withhold_tax ?? false,
+          tax_id: item.tax_id || null,
           exemption_id: item.exemption_id || null,
           exemption_code: item.exemption_code || '',
-          obs: item.obs || '',
         }
-      })
-    }
+      }
+
+      return {
+        item_id: item.item_id || item.itemable_id,
+        itemable_type: item.itemable_type,
+        itemable_id: item.itemable_id,
+        item_selection: itemSelection,
+        item_description: item.item_description,
+        standard_id: item.standard_id,
+        standard_display: standardDisplay,
+        unit_id: item.unit_id,
+        unit_display: unitDisplay,
+        qty: item.qty,
+        unit_price: item.unit_price,
+        discount_percentage: item.discount_percentage || 0,
+        discount_id: item.discount_id || 1,
+        discount_amount: item.discount_amount || 0,
+        total: item.total || 0,
+        tax_percentage: item.tax_percentage || 0,
+        tax_amount: item.tax_amount || 0,
+        tax_id: item.tax_id || null,
+        charge_tax: item.charge_tax ?? true,
+        withhold_tax: item.withhold_tax ?? false,
+        exemption_id: item.exemption_id || null,
+        exemption_code: item.exemption_code || '',
+        obs: item.obs || '',
+      }
+    })
+  } else {
+    form.items = []
   }
 }
 
 const submit = () => {
+  formErrorMessage.value = ''
+
   if (!isFormValid.value) {
-    alert('Por favor, preencha todos os campos obrigatórios e adicione pelo menos um item')
+    formErrorMessage.value = 'Preencha os campos obrigatórios e adicione pelo menos um item.'
     return
   }
 
@@ -1520,16 +1552,14 @@ const submit = () => {
     })
   }
 
-  console.log('Submitting revision:', transformedData)
-
   form.transform(() => transformedData)
     .put(route('vap-proposals.update', { proposal: props.proposal.id }), {
       preserveScroll: true,
       onSuccess: () => {
         // Redirecionamento tratado pelo controller
       },
-      onError: (errors) => {
-        console.error('Erros no formulário:', errors)
+      onError: () => {
+        formErrorMessage.value = 'Não foi possível actualizar a proposta. Revise os campos assinalados.'
       }
     })
 }
@@ -1562,5 +1592,32 @@ const submit = () => {
   100% {
     background-position: 0% 50%;
   }
+}
+
+.proposal-editor-shell :deep(input:not([type='checkbox'])),
+.proposal-editor-shell :deep(select),
+.proposal-editor-shell :deep(textarea) {
+  background: rgba(255, 255, 255, 0.98);
+  color: #18231f;
+  border-color: #d8cbb4;
+  box-shadow: 0 14px 30px -28px rgba(20, 61, 55, 0.55);
+}
+
+.proposal-editor-shell :deep(input::placeholder),
+.proposal-editor-shell :deep(textarea::placeholder) {
+  color: #7a867f;
+}
+
+:global(.dark) .proposal-editor-shell :deep(input:not([type='checkbox'])),
+:global(.dark) .proposal-editor-shell :deep(select),
+:global(.dark) .proposal-editor-shell :deep(textarea) {
+  background: rgba(15, 23, 42, 0.92);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+:global(.dark) .proposal-editor-shell :deep(input::placeholder),
+:global(.dark) .proposal-editor-shell :deep(textarea::placeholder) {
+  color: #94a3b8;
 }
 </style>

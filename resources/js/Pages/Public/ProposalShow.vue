@@ -1,12 +1,15 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="public-proposal-shell min-h-screen" :class="commercialDocumentThemeClasses">
     <!-- HEADER -->
     <div class="bg-white shadow">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center py-6">
           <div class="flex items-center">
             <div class="flex-shrink-0">
-              <img class="h-8 w-auto" :src="companyLogo" alt="Company Logo">
+              <img v-if="companyLogo" class="h-10 max-w-[140px] rounded-2xl object-contain" :src="companyLogo" alt="Logótipo">
+              <div v-else class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#143d37] text-sm font-black text-[#fffdf7] shadow-[0_16px_32px_-22px_rgba(20,61,55,0.85)]">
+                {{ companyInitials }}
+              </div>
             </div>
             <div class="ml-4">
               <h1 class="text-lg font-semibold text-gray-900">{{ companyName }}</h1>
@@ -40,6 +43,12 @@
             {{ $t('gestlab.general.labels.vap_proposals.public.expired_warning') }}
           </p>
         </div>
+      </div>
+    </div>
+
+    <div v-if="pageErrorMessage" class="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+      <div class="rounded-[22px] border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-800 shadow-[0_18px_40px_-30px_rgba(185,28,28,0.45)] dark:border-red-300/20 dark:bg-red-400/10 dark:text-red-200">
+        {{ pageErrorMessage }}
       </div>
     </div>
 
@@ -493,8 +502,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { ref, computed, reactive } from 'vue'
 import {
   ArrowDownTrayIcon,
   ExclamationCircleIcon,
@@ -503,40 +511,51 @@ import {
   XMarkIcon
 } from '@heroicons/vue/24/outline'
 import Modal from '@/Components/modal.vue'
-import Layout from "@/Shared/Layouts/empty-layout.vue";
-import { trans } from "laravel-vue-i18n";
+import Layout from '@/Shared/Layouts/empty-layout.vue'
+import { trans } from 'laravel-vue-i18n'
+import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 
 defineOptions({
     layout: Layout
-});
+})
 
 const props = defineProps({
   proposal: Object,
   isExpired: Boolean,
+  company: {
+    type: Object,
+    default: () => ({}),
+  },
 })
 
-// Company info from config
-const companyName = ref('')
-const companyLogo = ref('')
-const companyTagline = ref('')
-const companyAddress = ref('')
-const companyPhone = ref('')
-const companyEmail = ref('')
-const companyCopyright = ref(`© ${new Date().getFullYear()} All rights reserved.`)
+const companyName = computed(() => props.company?.name || 'Laboratório')
+const companyLogo = computed(() => props.company?.logo_url || '')
+const companyTagline = computed(() => props.company?.tagline || 'Propostas técnicas e comerciais com rastreabilidade.')
+const companyAddress = computed(() => props.company?.address || 'Endereço institucional por configurar')
+const companyPhone = computed(() => props.company?.phone || 'Contacto por configurar')
+const companyEmail = computed(() => props.company?.email || 'email por configurar')
+const companyCopyright = computed(() => `© ${new Date().getFullYear()} ${companyName.value}. Todos os direitos reservados.`)
+const companyInitials = computed(() => companyName.value
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((word) => word[0]?.toUpperCase())
+  .join('') || 'LU')
 
-// Forms
-const form = useForm({
-  confidentiality: false,
-  impartiality: false,
-  nondisclosure: false,
+const form = reactive({
+  processing: false,
+  errors: {},
 })
 
-const rejectForm = useForm({
+const rejectForm = reactive({
   reason: '',
+  processing: false,
+  errors: {},
 })
 
 // UI State
 const showRejectModal = ref(false)
+const pageErrorMessage = ref('')
 
 // Agreement object
 const agreement = ref({
@@ -573,7 +592,7 @@ const parsedTemplateContent = computed(() => {
 // Methods
 const formatDate = (date) => {
   if (!date) return ''
-  return new Date(date).toLocaleDateString('pt-BR', {
+  return new Date(date).toLocaleDateString('pt-AO', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
@@ -582,7 +601,7 @@ const formatDate = (date) => {
 
 const formatDateTime = (date) => {
   if (!date) return ''
-  return new Date(date).toLocaleString('pt-BR', {
+  return new Date(date).toLocaleString('pt-AO', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -592,10 +611,10 @@ const formatDateTime = (date) => {
 }
 
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('pt-BR', {
+  return new Intl.NumberFormat('pt-AO', {
     style: 'currency',
     currency: 'AOA'
-  }).format(amount || 0)
+  }).format(normaliseNumber(amount))
 }
 
 const getItemableTypeLabel = (itemableType) => {
@@ -630,39 +649,48 @@ const parseTemplateContent = (template, proposal) => {
     '{tax}': formatCurrency(proposal.tax || 0),
     '{discount}': formatCurrency(proposal.discount || 0),
     '{global_discount_amount}': formatCurrency(proposal.global_discount_amount || 0),
-    '{global_discount_percentage}': proposal.global_discount_percentage ? proposal.global_discount_percentage.replace('.', ',') : '0,00',
+    '{global_discount_percentage}': formatNumber(proposal.global_discount_percentage),
     '{withholding_tax_amount}': formatCurrency(proposal.withholding_tax_amount || 0),
-    '{withholding_tax_percentage}': proposal.withholding_tax_percentage ? proposal.withholding_tax_percentage.replace('.', ',') : '0,00',
+    '{withholding_tax_percentage}': formatNumber(proposal.withholding_tax_percentage),
     '{pricing_mode}': proposal.use_matrix_price ? 'Preço de Matriz' : 'Preço de Parâmetro',
     '{withhold_tax}': proposal.withhold_tax ? 'Sim' : 'Não',
     '{observations}': proposal.obs || '',
     '{total_items}': proposal.items?.length || 0,
     '{taxable_items}': taxableItemsCount.value,
+    '{banking_details}': generateBankingDetailsHtml(),
+    '{document_keywords}': generateDocumentKeywordsHtml(),
+    '{lab_signature}': props.company?.lab_director || 'Direcção técnica',
+    '{client_signature}': proposal.customer?.name || 'Representante do cliente',
+    '{signature_block}': generateSignatureBlockHtml(proposal),
+    '{lab_name}': companyName.value,
+    '{lab_details}': generateLabDetailsHtml(),
+    '{customer_details}': generateCustomerDetailsHtml(proposal),
+    '{bank_name}': props.company?.bank_name || '',
+    '{bank_iban}': props.company?.bank_iban || '',
   }
   
   // Special handling for template tags
   // Items table
-  if (content.includes('{items_table}')) {
+  if (content.includes('{items_table}') || content.includes('{{items_table}}')) {
     const itemsTableHtml = generateItemsTableHtml(proposal)
-    content = content.replace('{items_table}', itemsTableHtml)
+    content = replacePlaceholder(content, '{items_table}', itemsTableHtml)
   }
   
   // Items list
-  if (content.includes('{items_list}')) {
+  if (content.includes('{items_list}') || content.includes('{{items_list}}')) {
     const itemsListHtml = generateItemsListHtml(proposal)
-    content = content.replace('{items_list}', itemsListHtml)
+    content = replacePlaceholder(content, '{items_list}', itemsListHtml)
   }
   
   // Summary table
-  if (content.includes('{summary_table}')) {
+  if (content.includes('{summary_table}') || content.includes('{{summary_table}}')) {
     const summaryTableHtml = generateSummaryTableHtml(proposal)
-    content = content.replace('{summary_table}', summaryTableHtml)
+    content = replacePlaceholder(content, '{summary_table}', summaryTableHtml)
   }
   
   // Replace all other placeholders
   Object.keys(replacements).forEach(key => {
-    const regex = new RegExp(escapeRegExp(key), 'g')
-    content = content.replace(regex, replacements[key])
+    content = replacePlaceholder(content, key, replacements[key])
   })
   
   // Handle conditional observations
@@ -690,63 +718,148 @@ const escapeRegExp = (string) => {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+const replacePlaceholder = (content, placeholder, value) => {
+  const barePlaceholder = placeholder.replace(/^\{|\}$/g, '')
+
+  return content
+    .replace(new RegExp(escapeRegExp(placeholder), 'g'), value ?? '')
+    .replace(new RegExp(escapeRegExp(`{{${barePlaceholder}}}`), 'g'), value ?? '')
+}
+
+const generateBankingDetailsHtml = () => {
+  const bankRows = [
+    ['Banco', props.company?.bank_name],
+    ['Titular', props.company?.bank_account_name],
+    ['Conta', props.company?.bank_account_number],
+    ['IBAN', props.company?.bank_iban],
+    ['SWIFT', props.company?.bank_swift],
+  ].filter(([, value]) => Boolean(value))
+
+  const details = props.company?.bank_details
+    ? `<p style="margin:10px 0 0; color:#58665f; white-space:pre-line;">${escapeHtml(props.company.bank_details)}</p>`
+    : ''
+
+  if (bankRows.length === 0 && !details) {
+    return '<section style="padding:14px 16px; border:1px solid #ded3bf; border-radius:18px; background:#fffdf7; color:#58665f;">Dados bancários por configurar nas definições da aplicação.</section>'
+  }
+
+  const rows = bankRows
+    .map(([label, value]) => `<div style="display:flex; justify-content:space-between; gap:18px; padding:6px 0; border-bottom:1px solid #eee4d3;"><span style="color:#738076;">${label}</span><strong style="color:#143d37; text-align:right;">${escapeHtml(value)}</strong></div>`)
+    .join('')
+
+  return `<section style="padding:16px 18px; border:1px solid #ded3bf; border-radius:18px; background:#fffdf7;"><div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#9a7a2f; font-weight:800;">Dados bancários</div><div style="margin-top:10px;">${rows}</div>${details}</section>`
+}
+
+const generateDocumentKeywordsHtml = () => {
+  const keywords = String(props.company?.document_keywords || 'proposta, análise, laboratório, ISO 17025')
+    .split(/[,;]+/)
+    .map((keyword) => keyword.trim())
+    .filter(Boolean)
+
+  if (keywords.length === 0) return ''
+
+  const chips = keywords
+    .map((keyword) => `<span style="display:inline-block; margin:0 6px 6px 0; padding:5px 9px; border:1px solid #ded3bf; border-radius:999px; background:#fbf7ee; color:#143d37; font-size:9px; font-weight:700;">${escapeHtml(keyword)}</span>`)
+    .join('')
+
+  return `<section style="margin-top:12px;"><div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#9a7a2f; font-weight:800; margin-bottom:8px;">Palavras-chave</div>${chips}</section>`
+}
+
+const generateSignatureBlockHtml = (proposal) => {
+  const labSigner = props.company?.lab_director || proposal.user?.name || 'Direcção técnica'
+  const clientSigner = proposal.customer?.name || 'Representante do cliente'
+
+  return `<section style="margin-top:24px;"><table style="width:100%; border-collapse:collapse;"><tr><td style="width:48%; padding-top:26px; border-top:1px solid #143d37; color:#20332f;"><strong>${escapeHtml(labSigner)}</strong><br><span style="color:#58665f;">Validação técnica / comercial</span></td><td style="width:4%;"></td><td style="width:48%; padding-top:26px; border-top:1px solid #143d37; color:#20332f;"><strong>${escapeHtml(clientSigner)}</strong><br><span style="color:#58665f;">Aceitação da proposta</span></td></tr></table></section>`
+}
+
+const generateLabDetailsHtml = () => {
+  return detailsLinesHtml([
+    companyName.value,
+    props.company?.address,
+    props.company?.nif ? `NIF: ${props.company.nif}` : null,
+    props.company?.phone,
+    props.company?.email,
+    props.company?.lab_director ? `Direção técnica: ${props.company.lab_director}` : null,
+  ], 'Laboratório')
+}
+
+const generateCustomerDetailsHtml = (proposal) => {
+  const customer = proposal.customer || {}
+
+  return detailsLinesHtml([
+    customer.name,
+    customer.address,
+    customer.nif ? `NIF: ${customer.nif}` : null,
+    customer.primary_phone || customer.contact || customer.phone,
+    customer.email || customer.invoicing_email,
+  ], customer.name || 'Cliente')
+}
+
+const detailsLinesHtml = (lines, fallback) => {
+  const visibleLines = lines
+    .filter((line) => line !== null && line !== undefined && String(line).trim() !== '')
+    .map((line) => escapeHtml(line).replace(/\n/g, '<br>'))
+
+  return (visibleLines.length ? visibleLines : [escapeHtml(fallback)]).join('<br>')
+}
+
 const generateItemsTableHtml = (proposal) => {
   if (!proposal.items || proposal.items.length === 0) {
     return '<p>Nenhum item disponível</p>'
   }
   
-  let html = '<table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 9pt;">'
+  let html = '<table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 9pt; border: 1px solid #ded3bf;">'
   html += '<thead>'
-  html += '<tr style="background: #1e3a8a; color: white;">'
-  html += '<th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Item</th>'
-  html += '<th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Descrição</th>'
-  html += '<th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Padrão</th>'
-  html += '<th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Qtd</th>'
-  html += '<th style="padding: 8px; border: 1px solid #ddd; text-align: center;">Unid.</th>'
-  html += '<th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Preço Unit.</th>'
-  html += '<th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Desconto</th>'
-  html += '<th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Taxa</th>'
-  html += '<th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Total</th>'
+  html += '<tr style="background: #143d37; color: #fffdf7;">'
+  html += '<th style="padding: 8px; border: 1px solid #143d37; text-align: left;">Item</th>'
+  html += '<th style="padding: 8px; border: 1px solid #143d37; text-align: left;">Descrição</th>'
+  html += '<th style="padding: 8px; border: 1px solid #143d37; text-align: center;">Norma</th>'
+  html += '<th style="padding: 8px; border: 1px solid #143d37; text-align: center;">Qtd.</th>'
+  html += '<th style="padding: 8px; border: 1px solid #143d37; text-align: center;">Unid.</th>'
+  html += '<th style="padding: 8px; border: 1px solid #143d37; text-align: right;">Preço unit.</th>'
+  html += '<th style="padding: 8px; border: 1px solid #143d37; text-align: right;">Desconto</th>'
+  html += '<th style="padding: 8px; border: 1px solid #143d37; text-align: right;">Imposto</th>'
+  html += '<th style="padding: 8px; border: 1px solid #143d37; text-align: right;">Total</th>'
   html += '</tr>'
   html += '</thead>'
   html += '<tbody>'
 
   proposal.items.forEach((item, index) => {
-    const rowStyle = index % 2 === 0 ? 'background: #f9fafb;' : ''
+    const rowStyle = index % 2 === 0 ? 'background: #fffdf7;' : 'background: #ffffff;'
     
     html += `<tr style="${rowStyle}">`
-    html += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: bold;">${index + 1}</td>`
-    html += `<td style="padding: 8px; border: 1px solid #ddd;">`
+    html += `<td style="padding: 8px; border: 1px solid #ded3bf; text-align: center; font-weight: bold; color:#143d37;">${index + 1}</td>`
+    html += `<td style="padding: 8px; border: 1px solid #ded3bf;">`
     html += `<div style="font-weight: bold;">${escapeHtml(item.item_description)}</div>`
     
     if (item.obs) {
-      html += `<div style="font-size: 8pt; color: #666; margin-top: 2px;">${escapeHtml(item.obs)}</div>`
+      html += `<div style="font-size: 8pt; color: #58665f; margin-top: 2px;">${escapeHtml(item.obs)}</div>`
     }
     
     if (item.itemable_type) {
       const typeLabel = item.itemable_type.includes('Matrix') ? 'Matriz' : 'Parâmetro'
-      html += `<div style="font-size: 8pt; color: #666; margin-top: 2px;">${typeLabel} #${item.itemable_id}</div>`
+      html += `<div style="font-size: 8pt; color: #58665f; margin-top: 2px;">${typeLabel} #${item.itemable_id}</div>`
     }
     
     if (!item.charge_tax) {
-      html += '<div style="font-size: 8pt; color: #10b981; margin-top: 2px;">✓ Isento de taxa</div>'
+      html += '<div style="font-size: 8pt; color: #147a61; margin-top: 2px;">✓ Isento de imposto</div>'
     }
     
     if (item.exemption_code) {
-      html += `<div style="font-size: 8pt; color: #10b981; margin-top: 2px;">Código isenção: ${item.exemption_code}</div>`
+      html += `<div style="font-size: 8pt; color: #147a61; margin-top: 2px;">Código isenção: ${escapeHtml(item.exemption_code)}</div>`
     }
     
     html += '</td>'
-    html += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.standard?.code || '-'}</td>`
-    html += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${formatNumber(item.qty)}</td>`
-    html += `<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.unit?.code || '-'}</td>`
-    html += `<td style="padding: 8px; border: 1px solid #ddd; text-align: right;">AOA ${formatNumber(item.unit_price)}</td>`
+    html += `<td style="padding: 8px; border: 1px solid #ded3bf; text-align: center;">${escapeHtml(item.standard?.code || '-')}</td>`
+    html += `<td style="padding: 8px; border: 1px solid #ded3bf; text-align: center;">${formatNumber(item.qty)}</td>`
+    html += `<td style="padding: 8px; border: 1px solid #ded3bf; text-align: center;">${escapeHtml(item.unit?.code || '-')}</td>`
+    html += `<td style="padding: 8px; border: 1px solid #ded3bf; text-align: right;">AOA ${formatNumber(item.unit_price)}</td>`
     
     // Discount cell
-    html += '<td style="padding: 8px; border: 1px solid #ddd; text-align: right;">'
+    html += '<td style="padding: 8px; border: 1px solid #ded3bf; text-align: right;">'
     if (item.discount_amount > 0) {
       if (item.discount_id == 1) {
-        html += `<div style="font-size: 8pt; color: #10b981;">${formatNumber(item.discount_percentage)}%</div>`
+        html += `<div style="font-size: 8pt; color: #147a61;">${formatNumber(item.discount_percentage)}%</div>`
       }
       html += `-AOA ${formatNumber(item.discount_amount)}`
     } else {
@@ -755,9 +868,9 @@ const generateItemsTableHtml = (proposal) => {
     html += '</td>'
     
     // Tax cell
-    html += '<td style="padding: 8px; border: 1px solid #ddd; text-align: right;">'
+    html += '<td style="padding: 8px; border: 1px solid #ded3bf; text-align: right;">'
     if (item.tax_amount > 0) {
-      html += `<div style="font-size: 8pt; color: #3b82f6;">${formatNumber(item.tax_percentage)}%</div>`
+      html += `<div style="font-size: 8pt; color: #9a7a2f;">${formatNumber(item.tax_percentage)}%</div>`
       html += `+AOA ${formatNumber(item.tax_amount)}`
     } else {
       html += '-'
@@ -765,7 +878,7 @@ const generateItemsTableHtml = (proposal) => {
     html += '</td>'
     
     // Total cell
-    html += '<td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold;">'
+    html += '<td style="padding: 8px; border: 1px solid #ded3bf; text-align: right; font-weight: bold; color:#143d37;">'
     html += `AOA ${formatNumber(item.total)}`
     html += '</td>'
     
@@ -786,7 +899,7 @@ const generateItemsListHtml = (proposal) => {
   let html = '<ul style="list-style-type: none; padding-left: 0; margin: 20px 0;">'
   
   proposal.items.forEach((item, index) => {
-    html += '<li style="margin-bottom: 15px; padding: 10px; border-left: 3px solid #1e3a8a; background: #f8fafc;">'
+    html += '<li style="margin-bottom: 15px; padding: 12px 14px; border-left: 3px solid #d8b85f; border-radius: 14px; background: #fffdf7;">'
     html += `<div style="font-weight: bold;">${index + 1}. ${escapeHtml(item.item_description)}</div>`
     
     const details = []
@@ -811,10 +924,10 @@ const generateItemsListHtml = (proposal) => {
     
     details.push(`<strong>Total: AOA ${formatNumber(item.total)}</strong>`)
     
-    html += `<div style="font-size: 9pt; color: #4b5563; margin-top: 5px;">${details.join(' • ')}</div>`
+    html += `<div style="font-size: 9pt; color: #58665f; margin-top: 5px;">${details.join(' • ')}</div>`
     
     if (item.obs) {
-      html += `<div style="font-size: 8pt; color: #666; margin-top: 5px; font-style: italic;">${escapeHtml(item.obs)}</div>`
+      html += `<div style="font-size: 8pt; color: #58665f; margin-top: 5px; font-style: italic;">${escapeHtml(item.obs)}</div>`
     }
     
     html += '</li>'
@@ -887,9 +1000,9 @@ const generateSummaryTableHtml = (proposal) => {
   }
   
   // Grand Total
-  html += '<tr style="background: #f1f5f9;">'
-  html += '<td style="padding: 12px; border-top: 2px solid #1e3a8a; text-align: right; font-weight: bold; font-size: 11pt; color: #1e3a8a;">TOTAL GERAL:</td>'
-  html += '<td style="padding: 12px; border-top: 2px solid #1e3a8a; text-align: right; font-weight: bold; font-size: 11pt; color: #1e3a8a;">'
+  html += '<tr style="background: #fbf7ee;">'
+  html += '<td style="padding: 12px; border-top: 2px solid #143d37; text-align: right; font-weight: bold; font-size: 11pt; color: #143d37;">TOTAL GERAL:</td>'
+  html += '<td style="padding: 12px; border-top: 2px solid #143d37; text-align: right; font-weight: bold; font-size: 11pt; color: #143d37;">'
   html += `AOA ${formatNumber(proposal.total)}`
   html += '</td>'
   html += '</tr>'
@@ -908,85 +1021,243 @@ const generateSummaryTableHtml = (proposal) => {
 }
 
 const formatNumber = (number) => {
-  return number ? number.replace('.', ',') : '0,00'
+  return new Intl.NumberFormat('pt-AO', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(normaliseNumber(number))
 }
 
-const escapeHtml = (text) => {
-  const div = document.createElement('div')
-  div.textContent = text
-  return div.innerHTML
+const normaliseNumber = (value) => {
+  if (value === null || value === undefined || value === '') return 0
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0
+
+  const rawValue = String(value).trim().replace(/\s/g, '')
+  const normalised = rawValue.includes(',')
+    ? rawValue.replace(/\./g, '').replace(',', '.')
+    : rawValue
+
+  const parsed = Number.parseFloat(normalised)
+
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+const escapeHtml = (text = '') => {
+  return String(text ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  }[char]))
 }
 
 const downloadPdf = () => {
   window.open(route('vap-proposals.public.download', props.proposal.unique_hash), '_blank')
 }
 
-const submitAgreement = () => {
+const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+
+const postProposalDecision = async (url, payload) => {
+  const response = await fetch(url, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRF-TOKEN': csrfToken(),
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    const error = new Error(data.message || 'Não foi possível concluir a resposta à proposta.')
+    error.errors = data.errors || {}
+    error.status = response.status
+    throw error
+  }
+
+  return data
+}
+
+const submitAgreement = async () => {
+  pageErrorMessage.value = ''
+  form.errors = {}
+
   if (!canSubmitAgreement.value) {
+    pageErrorMessage.value = 'Confirme os compromissos de confidencialidade, imparcialidade e não divulgação antes de aceitar.'
     return
   }
 
-  form.confidentiality = agreement.value.confidentiality
-  form.impartiality = agreement.value.impartiality
-  form.nondisclosure = agreement.value.nondisclosure
+  form.processing = true
 
-  form.post(route('proposals.api.accept', props.proposal.id), {
-    preserveScroll: true,
-    onSuccess: () => {
-      window.location.reload()
-    },
-    onError: (errors) => {
-      console.error('Error submitting agreement:', errors)
-    }
-  })
+  try {
+    const data = await postProposalDecision(route('proposals.api.accept', props.proposal.id), {
+      confidentiality: agreement.value.confidentiality,
+      impartiality: agreement.value.impartiality,
+      nondisclosure: agreement.value.nondisclosure,
+    })
+
+    window.location.href = data.redirect || route('vap-proposals.public.thankyou', props.proposal.id)
+  } catch (error) {
+    form.errors = error.errors || {}
+    pageErrorMessage.value = error.message || 'Não foi possível aceitar a proposta. Revise os campos assinalados e tente novamente.'
+  } finally {
+    form.processing = false
+  }
 }
 
-const submitRejection = () => {
+const submitRejection = async () => {
+  pageErrorMessage.value = ''
+  rejectForm.errors = {}
+
   if (!rejectForm.reason.trim()) {
+    rejectForm.errors = {
+      reason: 'Indique o motivo da rejeição para concluir a resposta.',
+    }
+    pageErrorMessage.value = 'Indique o motivo da rejeição para concluir a resposta.'
     return
   }
 
-  rejectForm.post(route('proposals.api.reject', props.proposal.id), {
-    preserveScroll: true,
-    onSuccess: () => {
-      showRejectModal.value = false
-      window.location.reload()
-    },
-    onError: (errors) => {
-      console.error('Error rejecting proposal:', errors)
-    }
-  })
-}
+  rejectForm.processing = true
 
-// Watch for form changes
-watch(() => form.confidentiality, () => {
-  agreement.value.confidentiality = form.confidentiality
-})
-watch(() => form.impartiality, () => {
-  agreement.value.impartiality = form.impartiality
-})
-watch(() => form.nondisclosure, () => {
-  agreement.value.nondisclosure = form.nondisclosure
-})
+  try {
+    const data = await postProposalDecision(route('proposals.api.reject', props.proposal.id), {
+      reason: rejectForm.reason.trim(),
+    })
+
+    showRejectModal.value = false
+    window.location.href = data.redirect || route('vap-proposals.public.thankyou', props.proposal.id)
+  } catch (error) {
+    rejectForm.errors = error.errors || {}
+    pageErrorMessage.value = error.message || 'Não foi possível rejeitar a proposta. Revise o motivo informado e tente novamente.'
+  } finally {
+    rejectForm.processing = false
+  }
+}
 </script>
 
 <style scoped>
 @reference "../../../css/app.css";
 
+.public-proposal-shell {
+  background:
+    radial-gradient(circle at top left, rgba(199, 154, 67, 0.2), transparent 34%),
+    linear-gradient(135deg, #fffaf0 0%, #f7f1e6 52%, #eef3ed 100%);
+  color: #18241f;
+}
+
+:global(.dark) .public-proposal-shell {
+  background:
+    radial-gradient(circle at top left, rgba(199, 154, 67, 0.12), transparent 34%),
+    linear-gradient(135deg, #0b1210 0%, #111c18 54%, #020617 100%);
+  color: #f8fafc;
+}
+
+.public-proposal-shell :deep(.bg-white) {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+.public-proposal-shell :deep(.bg-gray-50) {
+  background-color: #fbfaf6 !important;
+}
+
+.public-proposal-shell :deep(.border-gray-200),
+.public-proposal-shell :deep(.divide-gray-200 > :not([hidden]) ~ :not([hidden])) {
+  border-color: #ded2bb !important;
+}
+
+.public-proposal-shell :deep(.bg-blue-900),
+.public-proposal-shell :deep(.from-blue-900),
+.public-proposal-shell :deep(.to-blue-800) {
+  --tw-gradient-from: #143d37 !important;
+  --tw-gradient-to: #0f302b !important;
+  background-color: #143d37 !important;
+}
+
+.public-proposal-shell :deep(.bg-blue-50) {
+  background-color: #f7f1e6 !important;
+}
+
+.public-proposal-shell :deep(.text-blue-900),
+.public-proposal-shell :deep(.text-blue-600) {
+  color: #143d37 !important;
+}
+
+.public-proposal-shell :deep(.text-gray-900) {
+  color: #10221d !important;
+}
+
+.public-proposal-shell :deep(.text-gray-700),
+.public-proposal-shell :deep(.text-gray-600),
+.public-proposal-shell :deep(.text-gray-500) {
+  color: #59665f !important;
+}
+
+.public-proposal-shell :deep(.rounded-xl),
+.public-proposal-shell :deep(.rounded-lg) {
+  border-radius: 1.5rem !important;
+}
+
+.public-proposal-shell :deep(table) {
+  overflow: hidden;
+  border-radius: 1.5rem;
+}
+
+.public-proposal-shell :deep(input:not([type='checkbox'])),
+.public-proposal-shell :deep(textarea) {
+  background: rgba(255, 255, 255, 0.98);
+  color: #18231f;
+  border-color: #d8cbb4;
+  box-shadow: 0 14px 30px -28px rgba(20, 61, 55, 0.55);
+}
+
+:global(.dark) .public-proposal-shell :deep(.bg-white),
+:global(.dark) .public-proposal-shell :deep(.bg-gray-50),
+:global(.dark) .public-proposal-shell :deep(tbody),
+:global(.dark) .public-proposal-shell :deep(tfoot),
+:global(.dark) .public-proposal-shell :deep(thead) {
+  background-color: rgba(15, 23, 42, 0.9) !important;
+}
+
+:global(.dark) .public-proposal-shell :deep(.text-gray-900),
+:global(.dark) .public-proposal-shell :deep(.text-gray-700),
+:global(.dark) .public-proposal-shell :deep(.text-gray-600) {
+  color: #f8fafc !important;
+}
+
+:global(.dark) .public-proposal-shell :deep(.text-gray-500) {
+  color: #cbd5e1 !important;
+}
+
+:global(.dark) .public-proposal-shell :deep(.border-gray-200),
+:global(.dark) .public-proposal-shell :deep(.divide-gray-200 > :not([hidden]) ~ :not([hidden])) {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+:global(.dark) .public-proposal-shell :deep(input:not([type='checkbox'])),
+:global(.dark) .public-proposal-shell :deep(textarea) {
+  background: rgba(15, 23, 42, 0.92);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
 .prose :deep(h1) {
-  @apply text-2xl font-bold text-gray-900 mb-4;
+  @apply text-2xl font-bold text-[#10221d] mb-4 dark:text-white;
 }
 
 .prose :deep(h2) {
-  @apply text-xl font-semibold text-gray-900 mb-3;
+  @apply text-xl font-semibold text-[#10221d] mb-3 dark:text-white;
 }
 
 .prose :deep(h3) {
-  @apply text-lg font-medium text-gray-900 mb-2;
+  @apply text-lg font-medium text-[#10221d] mb-2 dark:text-white;
 }
 
 .prose :deep(p) {
-  @apply text-sm text-gray-700 mb-3;
+  @apply text-sm text-[#59665f] mb-3 dark:text-slate-300;
 }
 
 .prose :deep(ul) {
@@ -994,18 +1265,18 @@ watch(() => form.nondisclosure, () => {
 }
 
 .prose :deep(li) {
-  @apply text-sm text-gray-700 mb-1;
+  @apply text-sm text-[#59665f] mb-1 dark:text-slate-300;
 }
 
 .prose :deep(table) {
-  @apply min-w-full divide-y divide-gray-200;
+  @apply min-w-full divide-y divide-[#ded2bb] dark:divide-white/10;
 }
 
 .prose :deep(th) {
-  @apply px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+  @apply px-3 py-2 text-left text-xs font-black uppercase tracking-wider text-[#78847c] dark:text-slate-400;
 }
 
 .prose :deep(td) {
-  @apply px-3 py-2 text-sm text-gray-900;
+  @apply px-3 py-2 text-sm text-[#33413a] dark:text-slate-200;
 }
 </style>

@@ -12,6 +12,7 @@ import combobox from "@/Components/combobox.vue";
 import { TrashIcon, PencilIcon, ArrowPathRoundedSquareIcon, EyeIcon } from '@heroicons/vue/24/outline';
 import VapTable from '@/Components/vap-table/table.vue';
 import { usePermission } from "@/Composables/usePermissions";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
 const { hasRole, hasPermission } = usePermission();
@@ -279,6 +280,7 @@ const updateRange = (e) => {
 
 </script>
 <template>
+<div class="space-y-6" :class="commercialDocumentThemeClasses">
 <div class="border-b border-gray-200 pb-5">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.proposals.page_title') }}</h3>
 </div>
@@ -495,4 +497,5 @@ const updateRange = (e) => {
 
 <confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
 
+</div>
 </template>

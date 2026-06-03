@@ -1,4 +1,5 @@
 <template>
+  <div :class="commercialDocumentThemeClasses">
   <LabForm 
     :labs-count="labsCount"
     :active-labs-count="activeLabsCount"
@@ -8,10 +9,12 @@
     :last-updated="lastUpdated"
     :is-edit="false"
   />
+  </div>
 </template>
 
 <script setup>
 import LabForm from '@/Pages/VAPLabs/LabForm.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 const props = defineProps({
   labsCount: Number,

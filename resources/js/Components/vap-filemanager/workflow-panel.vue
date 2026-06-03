@@ -110,13 +110,13 @@
             v-if="workflowStore.pendingTasks.length === 0 && workflowStore.inProgressTasks.length === 0 && !workflowStore.isLoading"
             class="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm leading-6 text-slate-500 dark:border-slate-600 dark:bg-slate-800/70 dark:text-slate-300"
           >
-            Nenhuma tarefa activa para o documento seleccionado.
+            {{ $t('gestlab.general.labels.vap_filemanager.no_active_workflow_tasks') }}
           </div>
         </div>
       </div>
 
       <div v-else class="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm leading-6 text-slate-500 dark:border-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
-        Seleccione um documento para acompanhar revisão, aprovação, publicação e comentários operacionais.
+        {{ $t('gestlab.general.labels.vap_filemanager.select_document_workflow_hint') }}
       </div>
     </div>
   </section>
@@ -128,6 +128,7 @@ import { useWorkflowStore, type WorkflowTask } from '../../Stores/workflowStore'
 import { useFileStore } from '../../Stores/fileStore'
 import TaskCard from './task-card.vue'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
+import { loadSelectOptions, optionMappers } from '@/Utils/selectOptions'
 
 const workflowStore = useWorkflowStore()
 const fileStore = useFileStore()
@@ -209,17 +210,6 @@ async function addTaskComment(taskId: string, comment: string) {
 }
 
 function loadUsers(query, setOptions) {
-  fetch('/users/getUser?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-      setOptions(
-        results.map(result => {
-          return {
-            value: result.id,
-            label: result.name,
-          };
-        })
-      );
-    });
+  return loadSelectOptions('/users/getUser', query, setOptions, optionMappers.name)
 }
 </script>

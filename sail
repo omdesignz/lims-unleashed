@@ -92,7 +92,7 @@ function display_help {
     echo "  ${GREEN}sail bash${NC}         Alias for 'sail shell'"
     echo "  ${GREEN}sail root-shell${NC}   Start a root shell session within the application container"
     echo "  ${GREEN}sail root-bash${NC}    Alias for 'sail root-shell'"
-    echo "  ${GREEN}sail tinker${NC}       Start a new Laravel Tinker session"
+    echo "  ${GREEN}sail tinkeAOA{NC}       Start a new Laravel Tinker session"
     echo
     echo "${YELLOW}Sharing:${NC}"
     echo "  ${GREEN}sail share${NC}   Share the application publicly via a temporary URL"

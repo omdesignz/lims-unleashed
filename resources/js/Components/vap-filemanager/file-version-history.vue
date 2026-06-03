@@ -100,7 +100,7 @@
                 <ClockIcon class="h-10 w-10 text-slate-400 dark:text-slate-500" />
               </div>
               <h3 class="mt-5 text-lg font-semibold text-slate-900 dark:text-slate-100">
-                Ainda não existem revisões
+                {{ $t('gestlab.general.labels.vap_filemanager.no_versions_title') }}
               </h3>
               <p class="mt-2 max-w-md text-sm text-slate-500 dark:text-slate-400">
                 O histórico passará a aparecer aqui assim que o ficheiro tiver novas versões registadas.

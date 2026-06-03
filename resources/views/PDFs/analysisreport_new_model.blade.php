@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8" />
     <style>
+        @include('PDFs.partials.premium-document-style')
+
         .center {
             position: relative;
             /* left: 50%;
@@ -64,7 +66,7 @@
 
     </style>
 </head>
-<body>
+<body class="pdf-document analysis-document">
 <sethtmlpagefooter name="page-footer" value="on" show-this-page="1" />
 <sethtmlpageheader name="page-header" value="on" show-this-page="1" />
 

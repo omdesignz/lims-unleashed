@@ -536,7 +536,7 @@ class VAPFileController extends Controller
             'change_reason' => 'required|string|max:1000',
         ]);
 
-        DB::transaction(function () use ($file, $validated, $request) {
+        DB::transaction(function () use ($file, $validated) {
             $file->update([
                 'status' => 'in_review',
                 'change_reason' => $validated['change_reason'],
@@ -641,30 +641,34 @@ class VAPFileController extends Controller
     public function search(Request $request)
     {
         $validated = $request->validate([
-            'query' => 'required|string|min:1',
+            'query' => 'nullable|string|max:255',
         ]);
 
-        $query = $validated['query'];
+        $query = trim((string) ($validated['query'] ?? ''));
+
+        if ($query === '') {
+            return response()->json([]);
+        }
 
         $files = VAPFile::query()
             ->where(function ($builder) use ($query) {
-                $builder->where('name', 'like', '%' . $query . '%')
-                    ->orWhere('document_number', 'like', '%' . $query . '%')
-                    ->orWhere('category', 'like', '%' . $query . '%')
-                    ->orWhere('document_type', 'like', '%' . $query . '%')
+                $builder->where('name', 'like', '%'.$query.'%')
+                    ->orWhere('document_number', 'like', '%'.$query.'%')
+                    ->orWhere('category', 'like', '%'.$query.'%')
+                    ->orWhere('document_type', 'like', '%'.$query.'%')
                     ->orWhereHas('tags', function ($tagQuery) use ($query) {
-                        $tagQuery->where('name', 'like', '%' . $query . '%');
+                        $tagQuery->where('name', 'like', '%'.$query.'%');
                     });
             })
             ->tap(fn ($builder) => $this->scopeAccessibleFiles($builder, $request->user()))
             ->where('archived', false)
             ->with(['permissions.user', 'tags', 'creator', 'owner', 'approver'])
-            ->orderByRaw("CASE 
+            ->orderByRaw('CASE 
                 WHEN name = ? THEN 1
                 WHEN document_number = ? THEN 2
                 WHEN name LIKE ? THEN 3
                 ELSE 4
-            END", [$query, $query, $query . '%'])
+            END', [$query, $query, $query.'%'])
             ->orderBy('modified_at', 'desc')
             ->get();
 
@@ -701,7 +705,7 @@ class VAPFileController extends Controller
         $this->scopeAccessibleFiles($query, $request->user());
 
         if ($request->filled('q')) {
-            $query->where('name', 'like', '%' . $request->q . '%');
+            $query->where('name', 'like', '%'.$request->q.'%');
         }
 
         return response()->json($query->orderBy('name')->get());
@@ -789,12 +793,12 @@ class VAPFileController extends Controller
     {
         $nextNumber = $file->versions()->count() + 1;
 
-        return 'R' . str_pad((string) $nextNumber, 2, '0', STR_PAD_LEFT);
+        return 'R'.str_pad((string) $nextNumber, 2, '0', STR_PAD_LEFT);
     }
 
     private function storeUploadedFile($uploadedFile, string $fileName): string
     {
-        $storagePath = 'files/' . Str::uuid() . '/' . $fileName;
+        $storagePath = 'files/'.Str::uuid().'/'.$fileName;
         Storage::put($storagePath, file_get_contents($uploadedFile->getRealPath()));
 
         return $storagePath;

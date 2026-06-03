@@ -1,27 +1,30 @@
 <template>
-  <div class="space-y-8">
+  <div class="label-template-surface space-y-8" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+      <div class="relative isolate flex flex-col gap-5 overflow-hidden p-6 lg:flex-row lg:items-center lg:justify-between">
+        <div class="absolute inset-x-0 top-0 -z-10 h-32 bg-gradient-to-r from-primary-600/15 via-sky-400/10 to-emerald-400/10 dark:from-primary-500/20 dark:via-sky-500/10 dark:to-emerald-500/10"></div>
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <DocumentTextIcon class="h-7 w-7 text-blue-900" />
+          <h1 class="flex items-center gap-3 text-2xl font-bold text-slate-950 dark:text-white">
+            <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-600/20">
+              <DocumentTextIcon class="h-6 w-6" />
+            </span>
             {{ $t('gestlab.general.labels.vap_labels.templates.title') }}
           </h1>
-          <p class="mt-2 text-gray-600">
+          <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
             {{ $t('gestlab.general.labels.vap_labels.templates.description') }}
-            <span class="font-semibold text-blue-900">
+            <span class="font-semibold text-primary-700 dark:text-primary-300">
               {{ filters.category ? filters.category : $t('gestlab.general.labels.vap_labels.templates.all_categories') }}
             </span>
           </p>
         </div>
-        <div class="flex items-center gap-3">
-          <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900 ring-1 ring-inset ring-blue-700/10">
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="inline-flex items-center rounded-full bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-800 ring-1 ring-inset ring-primary-700/10 dark:bg-primary-500/10 dark:text-primary-200 dark:ring-primary-400/20">
             {{ stats.total }} {{ $t('gestlab.general.labels.vap_labels.templates.total_templates') }}
           </span>
           <Link
             :href="route('vap_labels.label-templates.create')"
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
+            class="inline-flex items-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary-600/20 transition-colors duration-200 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
           >
             <PlusCircleIcon class="h-5 w-5" />
             {{ $t('gestlab.general.labels.vap_labels.buttons.create_template') }}
@@ -31,26 +34,26 @@
     </div>
 
     <!-- FILTERS CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700">
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
             {{ $t('gestlab.general.labels.vap_labels.templates.search') }}
           </label>
           <input
             v-model="filters.search"
             type="search"
             :placeholder="$t('gestlab.general.labels.vap_labels.templates.search_placeholder')"
-            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900 text-sm"
+            class="block w-full rounded-2xl border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
           />
         </div>
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700">
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
             {{ $t('gestlab.general.labels.vap_labels.templates.category') }}
           </label>
           <select
             v-model="filters.category"
-            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900 text-sm"
+            class="block w-full rounded-2xl border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
             <option value="">{{ $t('gestlab.general.labels.vap_labels.templates.all_categories') }}</option>
             <option v-for="category in categories" :key="category" :value="category">
@@ -59,12 +62,12 @@
           </select>
         </div>
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700">
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
             {{ $t('gestlab.general.labels.vap_labels.templates.featured') }}
           </label>
           <select
             v-model="filters.featured"
-            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900 text-sm"
+            class="block w-full rounded-2xl border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
             <option value="">{{ $t('gestlab.general.labels.vap_labels.templates.all') }}</option>
             <option value="yes">{{ $t('gestlab.general.labels.vap_labels.templates.featured_only') }}</option>
@@ -72,12 +75,12 @@
           </select>
         </div>
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700">
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
             {{ $t('gestlab.general.labels.vap_labels.templates.status') }}
           </label>
           <select
             v-model="filters.status"
-            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900 text-sm"
+            class="block w-full rounded-2xl border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           >
             <option value="">{{ $t('gestlab.general.labels.vap_labels.templates.all_status') }}</option>
             <option value="active">{{ $t('gestlab.general.labels.vap_labels.templates.active') }}</option>
@@ -89,28 +92,28 @@
 
     <!-- STATS CARD -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">{{ $t('gestlab.general.labels.vap_labels.templates.total_templates') }}</p>
-            <p class="mt-2 text-3xl font-bold text-blue-900">{{ stats.total }}</p>
+            <p class="text-sm font-medium text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_labels.templates.total_templates') }}</p>
+            <p class="mt-2 text-3xl font-bold text-primary-700 dark:text-primary-300">{{ stats.total }}</p>
           </div>
           <DocumentTextIcon class="h-10 w-10 text-blue-100" />
         </div>
       </div>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">{{ $t('gestlab.general.labels.vap_labels.templates.active_templates') }}</p>
+            <p class="text-sm font-medium text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_labels.templates.active_templates') }}</p>
             <p class="mt-2 text-3xl font-bold text-green-500">{{ stats.active }}</p>
           </div>
           <CheckCircleIcon class="h-10 w-10 text-green-100" />
         </div>
       </div>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">{{ $t('gestlab.general.labels.vap_labels.templates.featured_templates') }}</p>
+            <p class="text-sm font-medium text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_labels.templates.featured_templates') }}</p>
             <p class="mt-2 text-3xl font-bold text-yellow-500">{{ stats.featured }}</p>
           </div>
           <StarIcon class="h-10 w-10 text-yellow-100" />
@@ -119,13 +122,13 @@
     </div>
 
     <!-- TEMPLATES LIST -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div class="border-b border-gray-200 px-6 py-4">
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+      <div class="border-b border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-800 dark:bg-slate-950/60">
         <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <ListBulletIcon class="h-5 w-5 text-blue-900" />
+          <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
+            <ListBulletIcon class="h-5 w-5 text-primary-600 dark:text-primary-300" />
             {{ $t('gestlab.general.labels.vap_labels.templates.list') }}
-            <span class="text-sm font-normal text-gray-500 ml-2">
+            <span class="ml-2 text-sm font-normal text-slate-500 dark:text-slate-400">
               ({{ templates.total }} {{ $t('gestlab.general.labels.vap_labels.general.items') }})
             </span>
           </h2>
@@ -134,16 +137,16 @@
 
       <!-- EMPTY STATE -->
       <div v-if="templates.data.length === 0" class="p-12 text-center">
-        <DocumentTextIcon class="mx-auto h-12 w-12 text-gray-300" />
-        <h3 class="mt-4 text-sm font-semibold text-gray-900">
+        <DocumentTextIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
+        <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
           {{ $t('gestlab.general.labels.vap_labels.templates.empty_state.title') }}
         </h3>
-        <p class="mt-2 text-sm text-gray-500">
+        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
           {{ $t('gestlab.general.labels.vap_labels.templates.empty_state.description') }}
         </p>
         <Link
           :href="route('vap_labels.label-templates.create')"
-          class="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
+          class="mt-6 inline-flex items-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
         >
           <PlusCircleIcon class="h-5 w-5" />
           {{ $t('gestlab.general.labels.vap_labels.buttons.create_first_template') }}
@@ -155,21 +158,21 @@
         <div 
           v-for="template in templates.data"
           :key="template.id"
-          class="group relative bg-white rounded-xl border border-gray-200 hover:border-blue-900 transition-all duration-200 overflow-hidden shadow-sm hover:shadow-md"
+          class="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:border-primary-400 hover:shadow-md dark:border-slate-800 dark:bg-slate-900/80 dark:hover:border-primary-500/60"
           v-motion
           :initial="{ opacity: 0, y: 20 }"
           :enter="{ opacity: 1, y: 0 }"
           :delay="100"
         >
           <!-- TEMPLATE HEADER -->
-          <div class="bg-gradient-to-r from-blue-50 to-white px-4 py-3 border-b border-gray-200">
+          <div class="border-b border-slate-200 bg-gradient-to-r from-primary-50 to-white px-4 py-3 dark:border-slate-800 dark:from-primary-500/10 dark:to-slate-950">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-900 text-white font-semibold">
+                <div class="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary-600 text-white font-semibold">
                   <DocumentTextIcon class="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 class="text-sm font-semibold text-gray-900">
+                  <h3 class="text-sm font-semibold text-slate-900 dark:text-white">
                     {{ template.name }}
                   </h3>
                   <div class="flex items-center gap-2 mt-1">
@@ -186,7 +189,7 @@
                 <button 
                   @click="toggleFeatured(template)"
                   type="button"
-                  class="text-gray-400 hover:text-yellow-500 transition-all duration-200 p-1 rounded hover:bg-yellow-50"
+                  class="rounded-xl p-1 text-slate-400 transition-all duration-200 hover:bg-yellow-50 hover:text-yellow-500 dark:hover:bg-yellow-500/10"
                   :title="template.is_featured ? $t('gestlab.general.labels.vap_labels.buttons.remove_featured') : $t('gestlab.general.labels.vap_labels.buttons.mark_featured')"
                 >
                   <StarIcon :class="['h-5 w-5', template.is_featured ? 'text-yellow-500 fill-yellow-500' : '']" />
@@ -194,7 +197,7 @@
                 <button 
                   @click="confirmDelete(template)"
                   type="button"
-                  class="text-gray-400 hover:text-red-600 transition-all duration-200 p-1 rounded hover:bg-red-50"
+                  class="rounded-xl p-1 text-slate-400 transition-all duration-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
                   :title="$t('gestlab.general.labels.vap_labels.buttons.delete')"
                 >
                   <TrashIcon class="h-5 w-5" />
@@ -205,15 +208,15 @@
           
           <!-- TEMPLATE CONTENT -->
           <div class="p-4">
-            <p class="text-sm text-gray-600 mb-4 line-clamp-2">
+            <p class="mb-4 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">
               {{ template.description || $t('gestlab.general.labels.vap_labels.templates.no_description') }}
             </p>
             
             <!-- TEMPLATE PREVIEW -->
-            <div class="mb-4 p-3 bg-gray-50 rounded-lg">
-              <div class="text-xs font-medium text-gray-700 mb-2">{{ $t('gestlab.general.labels.vap_labels.templates.preview') }}:</div>
+            <div class="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/60">
+              <div class="mb-2 text-xs font-medium text-slate-700 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_labels.templates.preview') }}:</div>
               <div 
-                class="mx-auto border border-gray-300"
+                class="mx-auto rounded-xl border border-slate-300 dark:border-slate-700"
                 :style="{
                   width: '100%',
                   height: '100px',
@@ -234,24 +237,24 @@
                   {{ template.template_data?.content ? template.template_data.content.substring(0, 50) + '...' : $t('gestlab.general.labels.vap_labels.templates.sample_content') }}
                 </div>
               </div>
-              <div class="mt-2 text-center text-xs text-gray-500">
+              <div class="mt-2 text-center text-xs text-slate-500 dark:text-slate-400">
                 {{ template.template_data?.width || 50 }} × {{ template.template_data?.height || 25 }} mm
               </div>
             </div>
             
             <!-- TEMPLATE FEATURES -->
             <div class="mb-4">
-              <div class="text-xs font-medium text-gray-700 mb-2">{{ $t('gestlab.general.labels.vap_labels.templates.features') }}:</div>
+              <div class="mb-2 text-xs font-medium text-slate-700 dark:text-slate-300">{{ $t('gestlab.general.labels.vap_labels.templates.features') }}:</div>
               <div class="flex flex-wrap gap-2">
-                <span v-if="template.template_data?.has_qr_code" class="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
+                <span v-if="template.template_data?.has_qr_code" class="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 dark:bg-blue-500/10 dark:text-blue-200">
                   <QrCodeIcon class="h-3 w-3 mr-1" />
                   QR Code
                 </span>
-                <span v-if="template.template_data?.has_barcode" class="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                <span v-if="template.template_data?.has_barcode" class="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-500/10 dark:text-green-200">
                   <Bars2Icon class="h-3 w-3 mr-1" />
                   {{ template.template_data?.barcode_type || 'CODE128' }}
                 </span>
-                <span v-if="template.template_data?.logo_path" class="inline-flex items-center rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800">
+                <span v-if="template.template_data?.logo_path" class="inline-flex items-center rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800 dark:bg-yellow-500/10 dark:text-yellow-200">
                   <PhotoIcon class="h-3 w-3 mr-1" />
                   Logo
                 </span>
@@ -259,12 +262,12 @@
             </div>
             
             <!-- TEMPLATE ACTIONS -->
-            <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+            <div class="flex items-center justify-between border-t border-slate-200 pt-4 dark:border-slate-800">
               <div class="flex items-center gap-2">
                 <span :class="statusBadgeClass(template.is_active)">
                   {{ template.is_active ? $t('gestlab.general.labels.vap_labels.templates.active') : $t('gestlab.general.labels.vap_labels.templates.inactive') }}
                 </span>
-                <span class="text-xs text-gray-500">
+                <span class="text-xs text-slate-500 dark:text-slate-400">
                   {{ formatDate(template.updated_at) }}
                 </span>
               </div>
@@ -272,7 +275,7 @@
               <div class="flex items-center gap-2">
                 <Link
                   :href="route('vap_labels.label-templates.edit', template.id)"
-                  class="text-blue-900 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
+                  class="rounded-xl p-1.5 text-primary-700 hover:bg-primary-50 hover:text-primary-800 dark:text-primary-300 dark:hover:bg-primary-500/10"
                   :title="$t('gestlab.general.labels.vap_labels.buttons.edit')"
                 >
                   <PencilIcon class="h-5 w-5" />
@@ -281,9 +284,9 @@
                   @click="toggleStatus(template)"
                   :class="[
                     'p-1 rounded',
-                    template.is_active 
-                      ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50' 
-                      : 'text-green-500 hover:text-green-600 hover:bg-green-50'
+                    template.is_active
+                      ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-500/10'
+                      : 'text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10'
                   ]"
                   :title="template.is_active ? $t('gestlab.general.labels.vap_labels.buttons.deactivate') : $t('gestlab.general.labels.vap_labels.buttons.activate')"
                 >
@@ -294,10 +297,10 @@
           </div>
           
           <!-- USE TEMPLATE BUTTON -->
-          <div class="border-t border-gray-200 p-4 bg-gray-50">
+          <div class="border-t border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
             <Link
               :href="route('vap_labels.labels.create', { template_id: template.id })"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg bg-white border border-blue-900 px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm hover:bg-blue-50 transition-all duration-200"
+              class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-primary-500 bg-white px-4 py-2 text-sm font-semibold text-primary-700 shadow-sm transition-all duration-200 hover:bg-primary-50 dark:bg-slate-900 dark:text-primary-300 dark:hover:bg-primary-500/10"
             >
               <PlusCircleIcon class="h-4 w-4" />
               {{ $t('gestlab.general.labels.vap_labels.buttons.use_template') }}
@@ -307,7 +310,7 @@
       </div>
 
       <!-- PAGINATION -->
-      <div v-if="templates.data.length > 0" class="border-t border-gray-200 px-6 py-4">
+      <div v-if="templates.data.length > 0" class="border-t border-slate-200 px-6 py-4 dark:border-slate-800">
         <Pagination :links="templates.links" />
       </div>
     </div>
@@ -316,6 +319,7 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { Link, router } from '@inertiajs/vue3'
 import { 
   DocumentTextIcon, 
@@ -331,6 +335,7 @@ import {
   PhotoIcon
 } from '@heroicons/vue/24/outline'
 import { debounce } from 'lodash'
+import { trans } from 'laravel-vue-i18n'
 import Pagination from '@/Components/Pagination.vue'
 
 const props = defineProps({
@@ -344,21 +349,21 @@ const filters = ref(props.filters)
 
 const categoryBadgeClass = (category) => {
   const colors = {
-    equipment: 'bg-blue-100 text-blue-800',
-    consumables: 'bg-green-100 text-green-800',
-    samples: 'bg-purple-100 text-purple-800',
-    storage: 'bg-yellow-100 text-yellow-800',
-    safety: 'bg-red-100 text-red-800',
-    general: 'bg-gray-100 text-gray-800',
-    custom: 'bg-indigo-100 text-indigo-800',
+    equipment: 'bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-200',
+    consumables: 'bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-200',
+    samples: 'bg-purple-100 text-purple-800 dark:bg-purple-500/10 dark:text-purple-200',
+    storage: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/10 dark:text-yellow-200',
+    safety: 'bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-200',
+    general: 'bg-slate-100 text-slate-800 dark:bg-slate-700/70 dark:text-slate-200',
+    custom: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-200',
   }
-  return `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${colors[category] || 'bg-gray-100 text-gray-800'}`
+  return `inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${colors[category] || 'bg-slate-100 text-slate-800 dark:bg-slate-700/70 dark:text-slate-200'}`
 }
 
 const statusBadgeClass = (isActive) => {
   return isActive 
-    ? 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800'
-    : 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-800'
+    ? 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-200'
+    : 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-700/70 dark:text-slate-200'
 }
 
 const formatDate = (dateString) => {
@@ -369,7 +374,7 @@ const formatDate = (dateString) => {
 }
 
 const confirmDelete = (template) => {
-  if (confirm('Tem certeza que deseja eliminar este modelo? Esta ação não pode ser desfeita.')) {
+  if (confirm(trans('gestlab.general.labels.vap_labels.templates.confirm_delete_template'))) {
     router.delete(route('vap_labels.label-templates.destroy', template.id))
   }
 }

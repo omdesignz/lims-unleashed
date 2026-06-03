@@ -4,6 +4,7 @@ import Layout from "@/Shared/Layouts/Layout.vue";
 import { ref, computed, watch, reactive } from "vue";
 import debounce from 'lodash/debounce'
 import { useForm, router } from "@inertiajs/vue3";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { usePermission } from '@/Composables/usePermissions'
 import UFCCalculation from '@/Components/ufc-calculation.vue';
 import standardDeviationCalculator from '@/Components/standard-deviation-calculator.vue';
@@ -35,7 +36,7 @@ defineOptions({
 
 </script>
 <template>
-<div class="border-b border-gray-200 pb-5">
+<div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
     <UFCCalculation />
         <!-- <standardDeviationCalculator /> -->
         <!-- <technicalUncertaintyCalculator /> -->

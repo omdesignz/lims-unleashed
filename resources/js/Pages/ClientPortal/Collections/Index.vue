@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6" :class="commercialDocumentThemeClasses">
     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
@@ -191,6 +191,7 @@ import debounce from 'lodash/debounce'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import Pagination from '@/Components/pagination.vue'
 import Layout from '@/Shared/Layouts/PortalLayout.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 defineOptions({
   layout: Layout,

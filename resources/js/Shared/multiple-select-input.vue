@@ -1,23 +1,23 @@
 <template>
     <Combobox as="div" v-model="internalValue" multiple>
-        <ComboboxLabel class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ label }}
+        <ComboboxLabel class="block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
+            {{ $t(label) }}
         </ComboboxLabel>
 
         <div class="relative mt-1">
             <ComboboxInput
-                class="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-3 pr-10 text-sm text-gray-900 shadow-sm transition focus:border-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-900/20 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:focus:border-primary-500 dark:focus:ring-primary-500/20"
+                class="w-full rounded-2xl border border-slate-300/90 bg-white/95 py-3 pl-4 pr-11 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-white/50 transition focus:border-[#1f7a68] focus:outline-none focus:ring-2 focus:ring-[#1f7a68]/20 dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-800/60"
                 :display-value="displaySelection"
-                :placeholder="placeholder"
+                :placeholder="$t(placeholder)"
                 @change="query = $event.target.value"
             />
-            <ComboboxButton class="absolute inset-y-0 right-0 flex items-center rounded-r-lg px-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <ComboboxButton class="absolute inset-y-0 right-0 flex items-center rounded-r-2xl px-3 text-slate-400 transition hover:text-[#143d37] dark:text-slate-500 dark:hover:text-[#f1d78b]">
                 <ChevronUpDownIcon class="h-5 w-5" aria-hidden="true" />
             </ComboboxButton>
 
             <ComboboxOptions
                 v-if="filteredOptions.length > 0"
-                class="absolute z-10 mt-2 max-h-60 w-full overflow-auto rounded-xl border border-gray-200 bg-white py-2 text-sm shadow-xl ring-1 ring-black/5 focus:outline-none dark:border-gray-700 dark:bg-gray-900"
+                class="absolute z-50 mt-2 max-h-72 w-full overflow-auto rounded-2xl border border-slate-200 bg-white/98 p-2 text-sm shadow-2xl ring-1 ring-slate-900/5 backdrop-blur-sm focus:outline-none dark:border-slate-700 dark:bg-slate-900/98 dark:ring-slate-100/5"
             >
                 <ComboboxOption
                     v-for="option in filteredOptions"
@@ -28,8 +28,8 @@
                 >
                     <li
                         :class="[
-                            'relative cursor-pointer select-none py-2 pl-3 pr-9 transition',
-                            active ? 'bg-primary-900 text-white dark:bg-primary-600' : 'text-gray-900 dark:text-gray-100',
+                            'relative cursor-pointer select-none rounded-xl py-2.5 pl-4 pr-10 transition',
+                            active ? 'bg-[#143d37] text-white dark:bg-[#1f7a68]' : 'text-slate-900 dark:text-slate-100',
                         ]"
                     >
                         <span :class="['block truncate', selected ? 'font-semibold' : 'font-normal']">
@@ -40,7 +40,7 @@
                             v-if="selected"
                             :class="[
                                 'absolute inset-y-0 right-0 flex items-center pr-3',
-                                active ? 'text-white' : 'text-primary-900 dark:text-primary-400',
+                                active ? 'text-white' : 'text-[#143d37] dark:text-[#f1d78b]',
                             ]"
                         >
                             <CheckIcon class="h-5 w-5" aria-hidden="true" />
@@ -75,11 +75,11 @@ const props = defineProps({
     },
     label: {
         type: String,
-        default: 'Seleccionar responsáveis',
+        default: 'gestlab.general.labels.responsibles',
     },
     placeholder: {
         type: String,
-        default: 'Pesquisar e seleccionar responsáveis',
+        default: 'gestlab.general.placeholders.search_responsibles',
     },
 })
 

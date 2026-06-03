@@ -1,6 +1,6 @@
 <template>
 <!-- Page header -->
-<div class="bg-white">
+<div class="bg-white" :class="commercialDocumentThemeClasses">
   <div class="px-4 sm:px-6 lg:max-w-6xl lg:mx-auto lg:px-8">
     <div class="py-6 md:flex md:items-center md:justify-between">
       <div class="flex-1 min-w-0">
@@ -217,6 +217,7 @@
 </template>
 <script setup>
 import { computed, ref } from 'vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import confirmPasswordModal from '../../Shared/confirm-password-modal.vue'
 import { useForm, usePage, router } from '@inertiajs/vue3';
 import {

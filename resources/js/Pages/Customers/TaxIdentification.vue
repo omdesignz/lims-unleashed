@@ -21,6 +21,7 @@ import {
   CheckCircleIcon
 } from "@heroicons/vue/24/outline";
 import confirmDialog from "@/Components/confirm-dialog.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 const props = defineProps({});
 
@@ -115,7 +116,7 @@ const clearSearch = () => {
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between">

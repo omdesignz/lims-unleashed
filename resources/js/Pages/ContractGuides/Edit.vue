@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed, onMounted, reactive, watch } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import combobox from '@/Components/combobox.vue';
@@ -219,12 +220,12 @@ if(!form.id) {
 </script>
 
 <template>
-<div class="border-b border-gray-200 pb-5">
+<div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.contract_guides.page_title') }}</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500">{{ $t('gestlab.general.labels.contract_guides.page_update_description') }} {{ form.guide_no }}</p>
 </div>
 
-<form @submit.prevent>
+<form :class="commercialDocumentThemeClasses" @submit.prevent>
     <div class="space-y-12">
       
       <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-10">

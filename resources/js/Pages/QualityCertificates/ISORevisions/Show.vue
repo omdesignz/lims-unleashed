@@ -1,6 +1,6 @@
 <template>
  
-    <div class="space-y-8">
+    <div class="iso-revision-show space-y-8" :class="commercialDocumentThemeClasses">
       <!-- HEADER CARD -->
       <div class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -381,6 +381,7 @@ import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import Layout from "@/Shared/Layouts/Layout.vue";
 import RestoreRevisionModal from './Partials/RestoreRevisionModal.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 // Icons
 import {
@@ -571,3 +572,77 @@ const handleRevisionRestored = () => {
   router.reload()
 }
 </script>
+
+<style scoped>
+.iso-revision-show :deep(.bg-blue-900),
+.iso-revision-show :deep(.bg-blue-950) {
+  background-color: rgb(var(--primary-900-rgb)) !important;
+}
+
+.iso-revision-show :deep(.from-blue-900),
+.iso-revision-show :deep(.from-blue-950) {
+  --tw-gradient-from: rgb(var(--primary-900-rgb)) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(var(--primary-900-rgb) / 0) var(--tw-gradient-to-position) !important;
+}
+
+.iso-revision-show :deep(.to-blue-800) {
+  --tw-gradient-to: rgb(var(--primary-700-rgb)) var(--tw-gradient-to-position) !important;
+}
+
+.iso-revision-show :deep(.text-blue-900),
+.iso-revision-show :deep(.text-blue-800),
+.iso-revision-show :deep(.text-blue-700) {
+  color: rgb(var(--primary-800-rgb)) !important;
+}
+
+.iso-revision-show :deep(.bg-blue-50),
+.iso-revision-show :deep(.bg-blue-100) {
+  background-color: rgb(var(--primary-50-rgb) / 0.82) !important;
+}
+
+.iso-revision-show :deep(.border-blue-200) {
+  border-color: rgb(var(--primary-200-rgb) / 0.78) !important;
+}
+
+.iso-revision-show :deep(input),
+.iso-revision-show :deep(select),
+.iso-revision-show :deep(textarea) {
+  border-color: #d8cbb8;
+  background: #fffdf7;
+  color: #15231f;
+  border-radius: 0.875rem;
+}
+
+.iso-revision-show :deep(input:focus),
+.iso-revision-show :deep(select:focus),
+.iso-revision-show :deep(textarea:focus) {
+  border-color: rgb(var(--primary-500-rgb));
+  box-shadow: 0 0 0 3px rgb(var(--primary-500-rgb) / 0.18);
+  outline: none;
+}
+
+:global(.dark) .iso-revision-show :deep(.bg-white),
+:global(.dark) .iso-revision-show :deep(.bg-gray-50),
+:global(.dark) .iso-revision-show :deep(.bg-slate-50) {
+  background-color: rgb(15 23 42 / 0.86) !important;
+}
+
+:global(.dark) .iso-revision-show :deep(.text-gray-900),
+:global(.dark) .iso-revision-show :deep(.text-slate-900) {
+  color: #f8fafc !important;
+}
+
+:global(.dark) .iso-revision-show :deep(.text-gray-700),
+:global(.dark) .iso-revision-show :deep(.text-slate-700),
+:global(.dark) .iso-revision-show :deep(.text-gray-600) {
+  color: #cbd5e1 !important;
+}
+
+:global(.dark) .iso-revision-show :deep(input),
+:global(.dark) .iso-revision-show :deep(select),
+:global(.dark) .iso-revision-show :deep(textarea) {
+  border-color: #315149;
+  background: #10231f;
+  color: #f7f1e7;
+}
+</style>

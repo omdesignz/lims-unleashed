@@ -1,5 +1,4 @@
 <script setup>
-import { ref, watch, onMounted } from "vue";
 import CalculationResultEntry from '@/Components/results/CalculationResultEntry.vue';
 
 const props = defineProps({
@@ -21,8 +20,6 @@ const emit = defineEmits(['close', 'calculated']);
 // };
 
 const handleCalculatedResults = (comprehensivePayload) => {
-    console.log('CalculationModal received results:', comprehensivePayload)
-    
     // Add action to payload if not present
     if (!comprehensivePayload.action) {
         comprehensivePayload.action = props.action
@@ -37,22 +34,19 @@ const handleCalculatedResults = (comprehensivePayload) => {
 const closeModal = () => {
     emit('close');
 };
-
-onMounted(() => {
-  console.log('CalculationModal mounted with action:', props.action);
-  console.log('Parameters:', props.parameters);
-  console.log('Existing results:', props.existingResults);
-});
 </script>
 
 <template>
-<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-auto">
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+    <div class="max-h-[90vh] w-full max-w-6xl overflow-auto rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_30px_120px_rgba(7,17,15,0.45)] dark:border-[#25443c] dark:bg-[#07110f]">
         <div class="p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">Calculadora de Parâmetros</h3>
+            <div class="mb-6 flex items-center justify-between gap-4 border-b border-[#ded3bf] pb-4 dark:border-[#25443c]">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-700 dark:text-primary-300">Cálculo técnico</p>
+                    <h3 class="mt-1 text-xl font-bold text-[#17231f] dark:text-[#f7f1e7]">Calculadora de Parâmetros</h3>
+                </div>
                 <button @click="$emit('close')" 
-                        class="text-gray-400 hover:text-gray-600">
+                        class="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>

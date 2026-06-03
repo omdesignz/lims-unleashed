@@ -5,6 +5,7 @@ import CardListCreateForm from '@/Pages/Boards/CardListCreateForm.vue';
 import CardList from '@/Pages/Boards/CardList.vue';
 import CardListItemModal from '@/Pages/Boards/CardListItemModal.vue';
 import Layout from '@/Shared/Layouts/Layout.vue';
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 const props = defineProps({
   board: Object,
@@ -17,8 +18,8 @@ defineOptions({
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+  <div class="space-y-6" :class="commercialDocumentThemeClasses">
+    <div class="overflow-hidden rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_24px_80px_rgb(20_61_55/0.10)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
       <div
         class="border-b border-white/10 px-6 py-6 text-white"
         :style="{ background: `linear-gradient(135deg, ${board.bgcolor || '#0f172a'} 0%, rgba(15, 23, 42, 0.92) 100%)` }"
@@ -30,13 +31,13 @@ defineOptions({
             </span>
             <BoardNameForm :board="board" />
             <p class="max-w-2xl text-sm leading-6 text-white/75">
-              Organize laboratory work visually, keep the team aligned, and move tasks through execution without losing context.
+              {{ $t('gestlab.general.labels.kanban.board_description') }}
             </p>
           </div>
 
           <div class="flex items-center gap-3">
             <div class="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-right backdrop-blur">
-              <div class="text-xs uppercase tracking-wide text-white/70">Lists</div>
+              <div class="text-xs uppercase tracking-wide text-white/70">{{ $t('gestlab.general.labels.kanban.lists') }}</div>
               <div class="mt-1 text-2xl font-semibold text-white">{{ board.lists.length }}</div>
             </div>
 
@@ -53,29 +54,29 @@ defineOptions({
         </div>
       </div>
 
-      <div class="grid gap-3 border-t border-slate-100 px-6 py-4 text-sm text-slate-600 dark:border-slate-800 dark:text-slate-300 sm:grid-cols-3">
-        <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-800/80">
-          <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Board</div>
-          <div class="mt-1 font-semibold text-slate-900 dark:text-white">{{ board.name }}</div>
+      <div class="grid gap-3 border-t border-[#ded3bf] px-6 py-4 text-sm text-[#5f6f68] dark:border-[#25443c] dark:text-[#a9bbb4] sm:grid-cols-3">
+        <div class="rounded-2xl border border-[#e8ddcd] bg-[#f7f1e7]/80 px-4 py-3 dark:border-[#25443c] dark:bg-[#10231f]/80">
+          <div class="text-xs font-semibold uppercase tracking-wide text-[#73827b] dark:text-[#8ea49b]">{{ $t('gestlab.general.labels.kanban.board') }}</div>
+          <div class="mt-1 font-semibold text-[#15231f] dark:text-[#f7f1e7]">{{ board.name }}</div>
         </div>
-        <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-800/80">
-          <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Cards</div>
-          <div class="mt-1 font-semibold text-slate-900 dark:text-white">
+        <div class="rounded-2xl border border-[#e8ddcd] bg-[#f7f1e7]/80 px-4 py-3 dark:border-[#25443c] dark:bg-[#10231f]/80">
+          <div class="text-xs font-semibold uppercase tracking-wide text-[#73827b] dark:text-[#8ea49b]">{{ $t('gestlab.general.labels.kanban.cards_count') }}</div>
+          <div class="mt-1 font-semibold text-[#15231f] dark:text-[#f7f1e7]">
             {{ board.lists.reduce((total, list) => total + list.cards.length, 0) }}
           </div>
         </div>
-        <div class="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-800/80">
-          <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">View</div>
-          <div class="mt-1 font-semibold text-slate-900 dark:text-white">{{ $t('gestlab.general.labels.kanban.page_description') }}</div>
+        <div class="rounded-2xl border border-[#e8ddcd] bg-[#f7f1e7]/80 px-4 py-3 dark:border-[#25443c] dark:bg-[#10231f]/80">
+          <div class="text-xs font-semibold uppercase tracking-wide text-[#73827b] dark:text-[#8ea49b]">{{ $t('gestlab.general.labels.kanban.view') }}</div>
+          <div class="mt-1 font-semibold text-[#15231f] dark:text-[#f7f1e7]">{{ $t('gestlab.general.labels.kanban.page_description') }}</div>
         </div>
       </div>
     </div>
 
     <div
-      class="overflow-hidden rounded-[2rem] border border-slate-200 p-4 shadow-sm dark:border-slate-800"
-      :style="{ background: `linear-gradient(180deg, color-mix(in srgb, ${board.bgcolor || '#0f172a'} 15%, white) 0%, rgba(248, 250, 252, 0.96) 100%)` }"
+      class="overflow-hidden rounded-[2rem] border border-[#ded3bf] p-4 shadow-[0_24px_80px_rgb(20_61_55/0.08)] dark:border-[#25443c]"
+      :style="{ background: `linear-gradient(180deg, color-mix(in srgb, ${board.bgcolor || '#143d37'} 12%, #fffaf0) 0%, rgba(247, 241, 231, 0.96) 100%)` }"
     >
-      <div class="rounded-[1.75rem] border border-white/60 bg-white/55 p-4 backdrop-blur dark:border-slate-700/80 dark:bg-slate-950/50">
+      <div class="rounded-[1.75rem] border border-white/70 bg-[#fffdf7]/72 p-4 backdrop-blur dark:border-[#25443c]/80 dark:bg-[#07110f]/70">
         <div class="min-h-[calc(100vh-240px)] rounded-[1.5rem] p-3 sm:p-4">
           <div class="flex items-start gap-5 overflow-x-auto pb-4">
             <CardList

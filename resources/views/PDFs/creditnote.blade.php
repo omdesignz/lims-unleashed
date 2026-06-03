@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <style>
+        @include('PDFs.partials.premium-document-style')
+
         body {
             font-family: Arial, sans-serif;
             font-size: 11pt;
@@ -37,7 +39,7 @@
         }
     </style>
 </head>
-<body>
+<body class="pdf-document commercial-document">
 
 <htmlpageheader name="page-header">
     {{-- <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 15px;">
@@ -79,7 +81,7 @@
                 <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
                         <td width="45%" valign="top">
-                            <img src="{{ public_path() . '/images/SVG/sncqa_logo.png' }}" width="15%" alt="">
+                            @include('PDFs.partials.brand-logo', ['settings' => $settings, 'width' => '15%'])
                             <div style="font-size: 15px; font-weight: 600; color: #1e3a8a; margin-bottom: 5px;">{!! mb_strtoupper($settings->app_client_name) !!}</div>
                             <div style="font-size: 10px; color: #6b7280; line-height: 1.4;">
                                 {!! mb_strtoupper($settings->app_client_address) !!}<br>
@@ -311,7 +313,7 @@
     @endif
 
     <!-- Items Table Card -->
-    <table width="100%" cellpadding="0" cellspacing="0" class="keep-together" style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <table width="100%" cellpadding="0" cellspacing="0" class="keep-together report-table" style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
         <thead>
             <tr>
                 <th style="background-color: #f9fafb; font-size: 10px; font-weight: 600; color: #374151; text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; width: 35px; font-weight: bold;">Artigo</th>

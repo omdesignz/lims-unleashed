@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.bunny.net/css?family=manrope:400,500,600,700,800,900&display=swap');
 @import "tailwindcss";
 @config "../../tailwind.config.js";
 
@@ -10,18 +10,40 @@
    1. CSS Custom Properties (Design Tokens)
    ============================================================ */
 :root {
+  --brand-primary: #143d37;
+  --brand-secondary: #07110f;
+  --brand-accent: #d9b05f;
+  --primary-50-rgb: 238 247 243;
+  --primary-100-rgb: 216 236 228;
+  --primary-200-rgb: 180 216 204;
+  --primary-300-rgb: 126 187 170;
+  --primary-400-rgb: 66 142 122;
+  --primary-500-rgb: 31 122 104;
+  --primary-600-rgb: 20 86 75;
+  --primary-700-rgb: 20 61 55;
+  --primary-800-rgb: 13 42 37;
+  --primary-900-rgb: 7 17 15;
+  --primary-950-rgb: 3 10 9;
+  --accent-50-rgb: 253 248 233;
+  --accent-100-rgb: 249 235 193;
+  --accent-200-rgb: 241 215 139;
+  --accent-300-rgb: 230 189 91;
+  --accent-400-rgb: 217 176 95;
+  --accent-500-rgb: 199 148 49;
+  --accent-600-rgb: 159 111 31;
+
   /* --- Brand Palette --- */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e3a5f;
-  --color-primary-900: #0f2a4a;
-  --color-primary-950: #091c32;
+  --color-primary-50: rgb(var(--primary-50-rgb) / 1);
+  --color-primary-100: rgb(var(--primary-100-rgb) / 1);
+  --color-primary-200: rgb(var(--primary-200-rgb) / 1);
+  --color-primary-300: rgb(var(--primary-300-rgb) / 1);
+  --color-primary-400: rgb(var(--primary-400-rgb) / 1);
+  --color-primary-500: rgb(var(--primary-500-rgb) / 1);
+  --color-primary-600: rgb(var(--primary-600-rgb) / 1);
+  --color-primary-700: rgb(var(--primary-700-rgb) / 1);
+  --color-primary-800: rgb(var(--primary-800-rgb) / 1);
+  --color-primary-900: rgb(var(--primary-900-rgb) / 1);
+  --color-primary-950: rgb(var(--primary-950-rgb) / 1);
 
   /* --- V-Calendar Primary Color Mapping --- */
   --vc-primary-50: var(--color-primary-50);
@@ -36,13 +58,13 @@
   --vc-primary-900: var(--color-primary-900);
 
   /* --- Accent (Teal/Cyan for lab context) --- */
-  --color-accent-50: #ecfeff;
-  --color-accent-100: #cffafe;
-  --color-accent-200: #a5f3fc;
-  --color-accent-300: #67e8f9;
-  --color-accent-400: #22d3ee;
-  --color-accent-500: #06b6d4;
-  --color-accent-600: #0891b2;
+  --color-accent-50: rgb(var(--accent-50-rgb) / 1);
+  --color-accent-100: rgb(var(--accent-100-rgb) / 1);
+  --color-accent-200: rgb(var(--accent-200-rgb) / 1);
+  --color-accent-300: rgb(var(--accent-300-rgb) / 1);
+  --color-accent-400: rgb(var(--accent-400-rgb) / 1);
+  --color-accent-500: rgb(var(--accent-500-rgb) / 1);
+  --color-accent-600: rgb(var(--accent-600-rgb) / 1);
 
   /* --- Semantic --- */
   --color-success-50: #ecfdf5;
@@ -64,21 +86,21 @@
   --color-muted-dark: #9ca3af;
 
   /* --- Surfaces --- */
-  --color-surface: #ffffff;
-  --color-surface-dim: #f8fafc;
-  --color-surface-raised: #ffffff;
+  --color-surface: #fffaf0;
+  --color-surface-dim: #f4efe4;
+  --color-surface-raised: #fffdf7;
   --color-surface-overlay: rgba(0, 0, 0, 0.5);
-  --color-border: #e2e8f0;
-  --color-border-light: #f1f5f9;
+  --color-border: #ded3bf;
+  --color-border-light: #eee5d5;
 
   /* --- Text --- */
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-tertiary: #94a3b8;
+  --color-text-primary: #15231f;
+  --color-text-secondary: #475a53;
+  --color-text-tertiary: #84958d;
   --color-text-inverse: #ffffff;
 
   /* --- Typography --- */
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
 
   /* --- Spacing Scale --- */
@@ -125,17 +147,17 @@
    2. Dark Mode Tokens
    ============================================================ */
 .dark {
-  --color-surface: #0f172a;
-  --color-surface-dim: #1e293b;
-  --color-surface-raised: #1e293b;
+  --color-surface: #0c1714;
+  --color-surface-dim: #07110f;
+  --color-surface-raised: #10231f;
   --color-surface-overlay: rgba(0, 0, 0, 0.7);
-  --color-border: #334155;
-  --color-border-light: #1e293b;
+  --color-border: #25443c;
+  --color-border-light: #13231f;
 
-  --color-text-primary: #f1f5f9;
-  --color-text-secondary: #94a3b8;
-  --color-text-tertiary: #64748b;
-  --color-text-inverse: #0f172a;
+  --color-text-primary: #f7f1e7;
+  --color-text-secondary: #cbd8cf;
+  --color-text-tertiary: #83978d;
+  --color-text-inverse: #07110f;
 
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -155,7 +177,15 @@ html {
 
 body {
   color: var(--color-text-primary);
-  background-color: var(--color-surface-dim);
+  background:
+    radial-gradient(circle at 8% 8%, rgb(var(--primary-300-rgb) / 0.16), transparent 34rem),
+    radial-gradient(circle at 92% 0%, rgb(var(--accent-300-rgb) / 0.14), transparent 30rem),
+    var(--color-surface-dim);
+}
+
+::selection {
+  background: rgb(var(--accent-300-rgb) / 0.5);
+  color: var(--color-text-primary);
 }
 
 /* ============================================================
@@ -274,7 +304,7 @@ body {
   border-radius: var(--radius-2xl) !important;
   border: 1px solid rgba(148, 163, 184, 0.18) !important;
   background:
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 38%),
+    radial-gradient(circle at top right, rgb(var(--primary-500-rgb) / 0.12), transparent 38%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98)) !important;
   box-shadow:
     0 24px 60px -28px rgba(15, 23, 42, 0.35),
@@ -368,7 +398,7 @@ body {
 .dark .vc-day-popover-container {
   border-color: rgba(71, 85, 105, 0.65) !important;
   background:
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 42%),
+    radial-gradient(circle at top right, rgb(var(--primary-500-rgb) / 0.16), transparent 42%),
     linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(17, 24, 39, 0.98)) !important;
   box-shadow:
     0 28px 68px -26px rgba(2, 6, 23, 0.78),
@@ -392,7 +422,7 @@ body {
 .dark .vc-nav-arrow:hover,
 .dark .vc-nav-title:hover,
 .dark .vc-day-content:hover {
-  background-color: rgba(59, 130, 246, 0.14) !important;
+  background-color: rgb(var(--primary-500-rgb) / 0.14) !important;
   color: #f8fafc !important;
 }
 
@@ -530,6 +560,17 @@ select {
   font-family: var(--font-sans);
 }
 
+.dark textarea:not([class*="bg-transparent"]) {
+  color-scheme: dark;
+  border-color: rgb(51 65 85);
+  background-color: rgb(15 23 42);
+  color: rgb(241 245 249);
+}
+
+.dark textarea:not([class*="bg-transparent"])::placeholder {
+  color: rgb(100 116 139);
+}
+
 /* --- Unified form input token --- */
 .form-input {
   display: block;
@@ -552,7 +593,7 @@ select {
 .form-input:focus {
   outline: none;
   border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 0 3px rgb(var(--primary-500-rgb) / 0.15);
 }
 
 .form-input:disabled {
@@ -573,7 +614,39 @@ select {
 
 .dark .form-input:focus {
   border-color: var(--color-primary-400);
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+  box-shadow: 0 0 0 3px rgb(var(--primary-400-rgb) / 0.2);
+}
+
+/* ============================================================
+    15. ApexCharts Dark Mode
+   ============================================================ */
+.apexcharts-canvas {
+  color: var(--color-text-primary);
+}
+
+.dark .apexcharts-canvas text,
+.dark .apexcharts-legend-text,
+.dark .apexcharts-xaxis-title-text,
+.dark .apexcharts-yaxis-title-text {
+  fill: #cbd5e1 !important;
+  color: #cbd5e1 !important;
+}
+
+.dark .apexcharts-gridline,
+.dark .apexcharts-xaxis-tick {
+  stroke: rgba(148, 163, 184, 0.22) !important;
+}
+
+.dark .apexcharts-tooltip,
+.dark .apexcharts-tooltip-title {
+  border-color: rgba(51, 65, 85, 0.95) !important;
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+  box-shadow: 0 20px 45px rgba(2, 6, 23, 0.35) !important;
+}
+
+.dark .apexcharts-tooltip-marker {
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.95);
 }
 
 /* --- Uniform select --- */
@@ -585,4 +658,659 @@ select {
   background-repeat: no-repeat;
   background-size: 1.25rem;
   padding-right: 2.5rem;
+}
+
+/* ============================================================
+   16. Legacy Module Dark Mode & Backoffice Polish
+   ------------------------------------------------------------
+   Covers older Inventory, Needs, Sample, Collection and Analysis
+   lifecycle pages that still rely on hardcoded gray/slate classes.
+   ============================================================ */
+.dark :where(
+  [class~="bg-white"],
+  [class~="bg-gray-50"],
+  [class~="bg-slate-50"]
+) {
+  background-color: rgb(15 23 42 / 0.92) !important;
+  color: rgb(226 232 240) !important;
+}
+
+.dark :where(
+  [class~="bg-gray-100"],
+  [class~="bg-slate-100"],
+  [class~="bg-gray-200"],
+  [class~="bg-slate-200"]
+) {
+  background-color: rgb(30 41 59 / 0.9) !important;
+  color: rgb(226 232 240) !important;
+}
+
+.dark :where(
+  [class~="border-gray-100"],
+  [class~="border-gray-200"],
+  [class~="border-gray-300"],
+  [class~="border-slate-100"],
+  [class~="border-slate-200"],
+  [class~="border-slate-300"],
+  [class~="border-gray-900/10"]
+) {
+  border-color: rgb(51 65 85 / 0.9) !important;
+}
+
+.dark :where(
+  [class~="divide-gray-100"],
+  [class~="divide-gray-200"],
+  [class~="divide-slate-100"],
+  [class~="divide-slate-200"]
+) > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(51 65 85 / 0.9) !important;
+}
+
+.dark :where(
+  [class~="text-gray-900"],
+  [class~="text-slate-900"],
+  [class~="text-blue-900"],
+  [class~="text-cyan-900"],
+  [class~="text-emerald-900"],
+  [class~="text-yellow-900"]
+) {
+  color: rgb(248 250 252) !important;
+}
+
+.dark :where(
+  [class~="text-gray-800"],
+  [class~="text-slate-800"],
+  [class~="text-blue-800"],
+  [class~="text-cyan-800"],
+  [class~="text-emerald-800"],
+  [class~="text-yellow-800"]
+) {
+  color: rgb(226 232 240) !important;
+}
+
+.dark :where(
+  [class~="text-gray-700"],
+  [class~="text-slate-700"],
+  [class~="text-blue-700"],
+  [class~="text-cyan-700"],
+  [class~="text-emerald-700"]
+) {
+  color: rgb(203 213 225) !important;
+}
+
+.dark :where(
+  [class~="text-gray-600"],
+  [class~="text-slate-600"],
+  [class~="text-gray-500"],
+  [class~="text-slate-500"],
+  [class~="text-gray-400"],
+  [class~="text-slate-400"]
+) {
+  color: rgb(148 163 184) !important;
+}
+
+.dark :where([class~="text-rose-900"], [class~="text-red-900"]) { color: rgb(254 205 211) !important; }
+.dark :where([class~="text-rose-800"], [class~="text-red-800"], [class~="text-rose-700"], [class~="text-red-700"]) { color: rgb(253 164 175) !important; }
+.dark :where([class~="text-amber-900"], [class~="text-yellow-900"]) { color: rgb(253 230 138) !important; }
+.dark :where([class~="text-amber-800"], [class~="text-yellow-800"], [class~="text-amber-700"], [class~="text-yellow-700"]) { color: rgb(252 211 77) !important; }
+.dark :where([class~="text-green-900"], [class~="text-emerald-900"]) { color: rgb(187 247 208) !important; }
+.dark :where([class~="text-green-800"], [class~="text-green-700"], [class~="text-emerald-800"], [class~="text-emerald-700"]) { color: rgb(134 239 172) !important; }
+
+.dark :where(
+  [class~="bg-blue-50"],
+  [class~="bg-cyan-50"],
+  [class~="bg-sky-50"],
+  [class~="bg-indigo-50"]
+) {
+  background-color: rgb(var(--primary-500-rgb) / 0.12) !important;
+}
+
+.dark :where([class~="bg-emerald-50"], [class~="bg-green-50"]) {
+  background-color: rgb(16 185 129 / 0.12) !important;
+}
+
+.dark :where([class~="bg-amber-50"], [class~="bg-yellow-50"]) {
+  background-color: rgb(245 158 11 / 0.14) !important;
+}
+
+.dark :where([class~="bg-rose-50"], [class~="bg-red-50"]) {
+  background-color: rgb(244 63 94 / 0.12) !important;
+}
+
+.dark :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([class*="bg-transparent"]),
+  select:not([class*="bg-transparent"]),
+  textarea:not([class*="bg-transparent"])
+) {
+  color-scheme: dark;
+  border-color: rgb(51 65 85) !important;
+  background-color: rgb(15 23 42 / 0.88) !important;
+  color: rgb(241 245 249) !important;
+}
+
+.dark :where(
+  input:not([type="checkbox"]):not([type="radio"])::placeholder,
+  textarea::placeholder
+) {
+  color: rgb(100 116 139) !important;
+}
+
+.dark :where(
+  input:not([type="checkbox"]):not([type="radio"]):focus,
+  select:focus,
+  textarea:focus
+) {
+  border-color: rgb(var(--primary-400-rgb) / 1) !important;
+  box-shadow: 0 0 0 3px rgb(var(--primary-500-rgb) / 0.2) !important;
+  outline: none !important;
+}
+
+.dark :where(table) {
+  color: rgb(226 232 240);
+}
+
+.dark :where(thead, [class~="bg-gray-50"], [class~="bg-slate-50"]) {
+  background-color: rgb(15 23 42 / 0.96) !important;
+}
+
+.dark :where(tbody tr:hover, [class~="hover:bg-gray-50"]:hover, [class~="hover:bg-slate-50"]:hover) {
+  background-color: rgb(30 41 59 / 0.74) !important;
+}
+
+.dark :where(
+  section[class*="rounded"][class*="border"],
+  article[class*="rounded"][class*="border"],
+  div[class*="rounded"][class*="border"]
+) {
+  box-shadow: 0 18px 40px -30px rgb(2 6 23 / 0.95);
+}
+
+:where(
+  section[class*="rounded"][class*="border"],
+  article[class*="rounded"][class*="border"],
+  div[class*="rounded"][class*="border"]
+) {
+  transition:
+    background-color var(--transition-base),
+    border-color var(--transition-base),
+    color var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+.lims-backoffice-content[data-module-family="inventory"] > :where(div, form),
+.lims-backoffice-content[data-module-family="sample-lifecycle"] > :where(div, form) {
+  animation: fade-in-up 260ms ease-out both;
+}
+
+.lims-backoffice-content[data-module-family="sample-lifecycle"] > form,
+.lims-backoffice-content[data-module-family="sample-lifecycle"] > div > form {
+  margin-top: 1.25rem;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 1.75rem;
+  background:
+    radial-gradient(circle at top right, rgb(var(--primary-500-rgb) / 0.08), transparent 32%),
+    rgb(255 255 255 / 0.96);
+  padding: clamp(1rem, 2vw, 1.5rem);
+  box-shadow: 0 18px 45px -34px rgb(15 23 42 / 0.45);
+}
+
+.dark .lims-backoffice-content[data-module-family="sample-lifecycle"] > form,
+.dark .lims-backoffice-content[data-module-family="sample-lifecycle"] > div > form {
+  border-color: rgb(51 65 85 / 0.9);
+  background:
+    radial-gradient(circle at top right, rgb(var(--primary-400-rgb) / 0.12), transparent 34%),
+    rgb(15 23 42 / 0.9);
+  box-shadow: 0 24px 55px -34px rgb(2 6 23 / 0.95);
+}
+
+.lims-backoffice-content[data-module-family="inventory"] > div:first-child > :where([class*="border-b"], section:first-child),
+.lims-backoffice-content[data-module-family="sample-lifecycle"] > div:first-child > :where([class*="border-b"], section:first-child),
+.lims-backoffice-content[data-module-family="sample-lifecycle"] > :where([class*="border-b"]:first-child) {
+  border: 1px solid rgb(226 232 240);
+  border-radius: 1.75rem;
+  background:
+    radial-gradient(circle at top left, rgb(var(--primary-500-rgb) / 0.1), transparent 32%),
+    linear-gradient(135deg, rgb(255 255 255), rgb(248 250 252));
+  padding: clamp(1rem, 2vw, 1.5rem);
+  box-shadow: 0 18px 45px -34px rgb(15 23 42 / 0.45);
+}
+
+.dark .lims-backoffice-content[data-module-family="inventory"] > div:first-child > :where([class*="border-b"], section:first-child),
+.dark .lims-backoffice-content[data-module-family="sample-lifecycle"] > div:first-child > :where([class*="border-b"], section:first-child),
+.dark .lims-backoffice-content[data-module-family="sample-lifecycle"] > :where([class*="border-b"]:first-child) {
+  border-color: rgb(51 65 85 / 0.9);
+  background:
+    radial-gradient(circle at top left, rgb(var(--primary-400-rgb) / 0.14), transparent 36%),
+    linear-gradient(135deg, rgb(15 23 42 / 0.96), rgb(30 41 59 / 0.86));
+}
+
+.lims-backoffice-content[data-module-family="inventory"] :where(table, .table),
+.lims-backoffice-content[data-module-family="sample-lifecycle"] :where(table, .table) {
+  overflow: hidden;
+  border-radius: 1.25rem;
+}
+
+.lims-backoffice-content[data-module-family="inventory"] :where(button, a, input, select, textarea),
+.lims-backoffice-content[data-module-family="sample-lifecycle"] :where(button, a, input, select, textarea) {
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+/* ============================================================
+   17. Full Backoffice Harmonization Pass
+   ------------------------------------------------------------
+   A production-grade safety net for the legacy CRUD/admin,
+   commercial, sample lifecycle, inventory and QMS screens that
+   still carry older Tailwind v2/v3 utility combinations.
+   ============================================================ */
+.lims-backoffice-content {
+  color: rgb(15 23 42);
+}
+
+.dark .lims-backoffice-content {
+  color: rgb(226 232 240);
+}
+
+.lims-backoffice-content > :where(div, form, section) {
+  max-width: 100%;
+}
+
+.lims-backoffice-content :where(
+  .bg-white,
+  .bg-gray-50,
+  .bg-slate-50,
+  section[class*="rounded"],
+  article[class*="rounded"],
+  div[class*="rounded"][class*="shadow"],
+  div[class*="rounded"][class*="border"]
+) {
+  transition:
+    background-color var(--transition-base),
+    border-color var(--transition-base),
+    color var(--transition-base),
+    box-shadow var(--transition-base);
+}
+
+.lims-backoffice-content :where(.bg-white.rounded, .bg-white.rounded-md, .bg-white.rounded-lg, .bg-white.rounded-xl, .bg-white.rounded-2xl, .bg-white.rounded-3xl) {
+  border-color: rgb(226 232 240);
+  background:
+    radial-gradient(circle at top right, rgb(var(--primary-500-rgb) / 0.055), transparent 28%),
+    rgb(255 255 255);
+  box-shadow: 0 18px 45px -38px rgb(15 23 42 / 0.5);
+}
+
+.dark .lims-backoffice-content :where(.bg-white.rounded, .bg-white.rounded-md, .bg-white.rounded-lg, .bg-white.rounded-xl, .bg-white.rounded-2xl, .bg-white.rounded-3xl) {
+  border-color: rgb(30 41 59) !important;
+  background:
+    radial-gradient(circle at top right, rgb(var(--primary-400-rgb) / 0.11), transparent 32%),
+    rgb(2 6 23 / 0.92) !important;
+  box-shadow: 0 22px 55px -38px rgb(0 0 0 / 0.9);
+}
+
+.lims-backoffice-content[data-module-family="commercial"] > :where(div, form, section),
+.lims-backoffice-content[data-module-family="operations"] > :where(div, form, section),
+.lims-backoffice-content[data-module-family="admin"] > :where(div, form, section),
+.lims-backoffice-content[data-module-family="general"] > :where(div, form, section) {
+  animation: fade-in-up 260ms ease-out both;
+}
+
+.lims-backoffice-content[data-module-family="commercial"] :where(form, .form, [class*="space-y-"][class*="bg-white"]),
+.lims-backoffice-content[data-module-family="operations"] :where(form, .form, [class*="space-y-"][class*="bg-white"]),
+.lims-backoffice-content[data-module-family="admin"] :where(form, .form, [class*="space-y-"][class*="bg-white"]) {
+  border-radius: 1.5rem;
+}
+
+.lims-backoffice-content :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([class*="bg-transparent"]),
+  select:not([class*="bg-transparent"]),
+  textarea:not([class*="bg-transparent"])
+) {
+  min-height: 2.625rem;
+  border-color: rgb(203 213 225);
+  border-radius: 0.875rem;
+  background-color: rgb(255 255 255);
+  color: rgb(15 23 42);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.lims-backoffice-content :where(textarea:not([class*="bg-transparent"])) {
+  min-height: 6rem;
+}
+
+.lims-backoffice-content :where(select:not([class*="bg-transparent"])) {
+  padding-right: 2.5rem;
+}
+
+.lims-backoffice-content :where(input[type="date"], input[type="datetime-local"], input[type="time"], input[type="month"]) {
+  color-scheme: light;
+}
+
+.dark .lims-backoffice-content :where(input[type="date"], input[type="datetime-local"], input[type="time"], input[type="month"]) {
+  color-scheme: dark;
+}
+
+.lims-backoffice-content :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([class*="bg-transparent"]):focus,
+  select:not([class*="bg-transparent"]):focus,
+  textarea:not([class*="bg-transparent"]):focus
+) {
+  border-color: rgb(var(--primary-500-rgb)) !important;
+  box-shadow: 0 0 0 3px rgb(var(--primary-500-rgb) / 0.16) !important;
+  outline: none;
+}
+
+.lims-backoffice-content :where(label, .label) {
+  color: rgb(51 65 85);
+}
+
+.dark .lims-backoffice-content :where(label, .label) {
+  color: rgb(203 213 225) !important;
+}
+
+.lims-backoffice-content :where(table) {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.lims-backoffice-content :where(.overflow-x-auto:has(table), .table-responsive, .table-container) {
+  border-radius: 1.25rem;
+}
+
+.lims-backoffice-content :where(thead) {
+  background: linear-gradient(90deg, rgb(248 250 252), rgb(241 245 249));
+}
+
+.dark .lims-backoffice-content :where(thead) {
+  background: linear-gradient(90deg, rgb(15 23 42), rgb(30 41 59)) !important;
+}
+
+.lims-backoffice-content :where(th) {
+  color: rgb(71 85 105);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.dark .lims-backoffice-content :where(th) {
+  color: rgb(203 213 225) !important;
+}
+
+.dark .lims-backoffice-content :where(td) {
+  color: rgb(226 232 240);
+}
+
+.lims-backoffice-content :where(tbody tr) {
+  transition: background-color var(--transition-fast);
+}
+
+.lims-backoffice-content :where(tbody tr:hover) {
+  background-color: rgb(var(--primary-50-rgb) / 0.62);
+}
+
+.dark .lims-backoffice-content :where(tbody tr:hover) {
+  background-color: rgb(30 41 59 / 0.78) !important;
+}
+
+.lims-backoffice-content :where(button, a[role="button"], .btn, [type="submit"]) {
+  border-radius: 0.875rem;
+}
+
+.lims-backoffice-content :where(.rounded-md) {
+  border-radius: 0.875rem;
+}
+
+.lims-backoffice-content :where(.rounded-lg) {
+  border-radius: 1rem;
+}
+
+.lims-backoffice-content :where(.rounded-xl) {
+  border-radius: 1.25rem;
+}
+
+.lims-backoffice-content :where(.rounded-2xl) {
+  border-radius: 1.5rem;
+}
+
+.lims-backoffice-content :where(.shadow, .shadow-sm, .shadow-md) {
+  box-shadow: 0 16px 40px -34px rgb(15 23 42 / 0.6);
+}
+
+.dark .lims-backoffice-content :where(.shadow, .shadow-sm, .shadow-md) {
+  box-shadow: 0 18px 50px -34px rgb(0 0 0 / 0.95) !important;
+}
+
+.dark .lims-backoffice-content :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([class*="bg-transparent"]),
+  select:not([class*="bg-transparent"]),
+  textarea:not([class*="bg-transparent"])
+) {
+  border-color: rgb(51 65 85) !important;
+  background-color: rgb(2 6 23 / 0.82) !important;
+  color: rgb(241 245 249) !important;
+}
+
+.dark .lims-backoffice-content :where(option) {
+  background-color: rgb(15 23 42);
+  color: rgb(241 245 249);
+}
+
+.dark .lims-backoffice-content :where(input::placeholder, textarea::placeholder) {
+  color: rgb(100 116 139) !important;
+}
+
+.lims-backoffice-content :where(.apexcharts-canvas) {
+  max-width: 100%;
+}
+
+.lims-backoffice-content :where(.apexcharts-tooltip, .apexcharts-menu) {
+  border-radius: 0.875rem !important;
+  border-color: rgb(226 232 240) !important;
+  box-shadow: 0 20px 45px rgb(15 23 42 / 0.14) !important;
+}
+
+.dark .lims-backoffice-content :where(.apexcharts-tooltip, .apexcharts-menu) {
+  border-color: rgb(51 65 85) !important;
+  background: rgb(2 6 23) !important;
+}
+
+/* Avoid the “card inside card” look in dense system modules. */
+.lims-backoffice-content[data-module-family="admin"] :where(.bg-white .bg-white.rounded-xl, .bg-white .bg-white.rounded-2xl, .bg-white .bg-white.rounded-3xl) {
+  background: rgb(248 250 252 / 0.72);
+  box-shadow: none;
+}
+
+.dark .lims-backoffice-content[data-module-family="admin"] :where(.bg-white .bg-white.rounded-xl, .bg-white .bg-white.rounded-2xl, .bg-white .bg-white.rounded-3xl) {
+  background: rgb(15 23 42 / 0.68) !important;
+  box-shadow: none !important;
+}
+
+/* File manager should breathe full-width while secondary panels feel optional. */
+.lims-backoffice-content[data-module-family="admin"] :where([class*="filemanager"], [class*="file-manager"], [class*="Filemanager"]) {
+  max-width: none;
+}
+
+/* Drawer/offcanvas defaults used by legacy modules. */
+.dark :where(.offcanvas, [class*="offcanvas"], [class*="slide-over"], [class*="slideover"]) {
+  color: rgb(226 232 240);
+}
+
+.dark :where(.offcanvas, [class*="offcanvas"], [class*="slide-over"], [class*="slideover"]) :where(.bg-white) {
+  background-color: rgb(2 6 23) !important;
+}
+
+.dark :where(.offcanvas, [class*="offcanvas"], [class*="slide-over"], [class*="slideover"]) :where(.text-gray-900, .text-slate-900) {
+  color: rgb(248 250 252) !important;
+}
+
+/* ============================================================
+   18. Legacy Palette Normalization
+   ------------------------------------------------------------
+   Older modules still contain blue/cyan/indigo utility classes.
+   Keep their hierarchy, but remap them to the current LIMS brand.
+   ============================================================ */
+:where(.lims-app-shell, [data-theme-preset]) :where(
+  .text-blue-900,
+  .text-blue-800,
+  .text-cyan-900,
+  .text-cyan-800,
+  .text-sky-900,
+  .text-indigo-900
+) {
+  color: rgb(var(--primary-800-rgb) / 1) !important;
+}
+
+:where(.lims-app-shell, [data-theme-preset]) :where(
+  .text-blue-700,
+  .text-blue-600,
+  .text-cyan-700,
+  .text-cyan-600,
+  .text-sky-700,
+  .text-indigo-600
+) {
+  color: rgb(var(--primary-700-rgb) / 1) !important;
+}
+
+:where(.lims-app-shell, [data-theme-preset]) :where(
+  .bg-blue-900,
+  .bg-blue-800,
+  .bg-cyan-900,
+  .bg-cyan-800,
+  .bg-sky-900,
+  .bg-indigo-900
+) {
+  background-color: rgb(var(--primary-800-rgb) / 1) !important;
+}
+
+:where(.lims-app-shell, [data-theme-preset]) :where(
+  .bg-blue-700,
+  .bg-blue-600,
+  .bg-cyan-700,
+  .bg-cyan-600,
+  .bg-sky-700,
+  .bg-indigo-600
+) {
+  background-color: rgb(var(--primary-700-rgb) / 1) !important;
+}
+
+:where(.lims-app-shell, [data-theme-preset]) :where(
+  .bg-blue-100,
+  .bg-blue-50,
+  .bg-cyan-100,
+  .bg-cyan-50,
+  .bg-sky-100,
+  .bg-indigo-50
+) {
+  background-color: rgb(var(--primary-50-rgb) / 0.95) !important;
+}
+
+:where(.lims-app-shell, [data-theme-preset]) :where(
+  .border-blue-900,
+  .border-blue-800,
+  .border-blue-700,
+  .border-cyan-900,
+  .border-cyan-800,
+  .border-indigo-600
+) {
+  border-color: rgb(var(--primary-700-rgb) / 1) !important;
+}
+
+:where(.lims-app-shell, [data-theme-preset]) :where(
+  .focus\:ring-blue-900:focus,
+  .focus\:ring-blue-500:focus,
+  .focus\:ring-cyan-500:focus,
+  .focus\:ring-indigo-600:focus
+) {
+  --tw-ring-color: rgb(var(--primary-500-rgb) / 0.32) !important;
+}
+
+:where(.lims-app-shell, [data-theme-preset]) :where(
+  .from-blue-900,
+  .from-blue-800,
+  .from-cyan-900,
+  .from-sky-800,
+  .from-indigo-800
+) {
+  --tw-gradient-from: rgb(var(--primary-800-rgb) / 1) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(var(--primary-800-rgb) / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+:where(.lims-app-shell, [data-theme-preset]) :where(
+  .to-blue-800,
+  .to-blue-700,
+  .to-cyan-600,
+  .to-indigo-700
+) {
+  --tw-gradient-to: rgb(var(--primary-600-rgb) / 1) var(--tw-gradient-to-position) !important;
+}
+
+/* Auth surfaces use a fixed high-trust palette so white-label experiments do not
+   make security-critical screens look disconnected or low contrast. */
+.auth-experience-shell :where(.text-primary-900, .text-primary-800, .text-primary-700, .text-primary-600) {
+  color: #143d37 !important;
+}
+
+.auth-experience-shell [class*="text-primary-"] {
+  color: #143d37 !important;
+}
+
+.auth-experience-shell :where(.from-primary-950, .from-primary-900, .from-primary-800) {
+  --tw-gradient-from: #143d37 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(20 61 55 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.auth-experience-shell :where(.to-primary-800, .to-primary-700, .to-primary-600) {
+  --tw-gradient-to: #1f7a68 var(--tw-gradient-to-position) !important;
+}
+
+.auth-experience-shell [class*="from-primary-"][class*="to-primary-"] {
+  background-color: #143d37 !important;
+  background-image: linear-gradient(to right, #143d37, #1f7a68) !important;
+}
+
+.auth-experience-shell :where(.bg-primary-900, .bg-primary-800, .bg-primary-700) {
+  background-color: #143d37 !important;
+}
+
+.auth-experience-shell :where(.focus\:border-primary-600:focus, .focus\:border-primary-700:focus) {
+  border-color: #1f7a68 !important;
+}
+
+.auth-experience-shell :where(.focus\:ring-primary-600\/15:focus, .focus\:ring-primary-700\/20:focus) {
+  --tw-ring-color: rgb(31 122 104 / 0.18) !important;
+}
+
+.dark .auth-experience-shell :where(.text-primary-300, .text-primary-200, .text-primary-100) {
+  color: #f1d78b !important;
+}
+
+.dark .auth-experience-shell [class*="text-primary-"] {
+  color: #f1d78b !important;
+}
+
+.dark :where(.lims-app-shell, [data-theme-preset]) :where(
+  .text-blue-900,
+  .text-blue-800,
+  .text-blue-700,
+  .text-cyan-900,
+  .text-cyan-800,
+  .text-cyan-700,
+  .text-indigo-600
+) {
+  color: rgb(var(--accent-200-rgb) / 1) !important;
+}
+
+.dark :where(.lims-app-shell, [data-theme-preset]) :where(
+  .bg-blue-100,
+  .bg-blue-50,
+  .bg-cyan-100,
+  .bg-cyan-50,
+  .bg-sky-100,
+  .bg-indigo-50
+) {
+  background-color: rgb(var(--primary-400-rgb) / 0.12) !important;
 }

@@ -4,12 +4,11 @@ namespace App\Http\Controllers\ClientPortal;
 
 use App\Exports\CollectionParametersSheetExport;
 use App\Http\Requests\Portal\StorePortalCustomerRequest;
-use Illuminate\Routing\Controller;
 use App\Http\Resources\CollectionProductResource;
 use App\Http\Resources\ContractGuideResource;
 use App\Http\Resources\CreditNoteResource;
-use App\Http\Resources\CustomerRequestResource;
 use App\Http\Resources\CustomerRequestCategoryResource;
+use App\Http\Resources\CustomerRequestResource;
 use App\Http\Resources\FAQResource;
 use App\Http\Resources\InvoiceResource;
 use App\Http\Resources\QualityCertificateResource;
@@ -17,34 +16,39 @@ use App\Http\Resources\QuoteResource;
 use App\Http\Resources\ReceiptResource;
 use App\Http\Resources\WarehouseResource;
 use App\Models\CollectionProduct;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use App\Models\Invoice;
-use App\Models\Matrix;
-use App\Models\PackagingCategory;
-use App\Models\Profile;
-use App\Models\Product;
-use App\Models\Quote;
-use App\Models\Receipt;
 use App\Models\ContractGuide;
-use App\Models\QualityCertificate;
 use App\Models\CreditNote;
 use App\Models\CustomerRequest;
 use App\Models\CustomerRequestCategory;
 use App\Models\FAQ;
+use App\Models\Invoice;
+use App\Models\Matrix;
+use App\Models\PackagingCategory;
+use App\Models\Passkey;
+use App\Models\Product;
+use App\Models\Profile;
+use App\Models\QualityCertificate;
+use App\Models\Quote;
+use App\Models\Receipt;
+use App\Models\User;
+use App\Notifications\GlobalNotification;
 use App\Settings\GeneralSettings;
 use App\Support\DuplicateSubmissionGuard;
+use App\Support\PdfResponse;
 use App\Support\ReportStudioPdfBuilder;
+use App\Support\ReportStudioPdfRenderer;
 use App\Support\SpreadsheetDownloadResponder;
-use App\Notifications\GlobalNotification;
-use App\Models\User;
 use Carbon\Carbon;
-use Inertia\Inertia;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Collection as SupportCollection;
-use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Inertia\Inertia;
+use Jenssegers\Agent\Agent;
 use PDF;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PortalController extends Controller
 {
@@ -223,7 +227,7 @@ class PortalController extends Controller
         ];
     }
 
-    private function portalRequestBaseQuery(): \Illuminate\Database\Eloquent\Builder
+    private function portalRequestBaseQuery(): Builder
     {
         return CustomerRequest::query()
             ->where('warehouse_id', $this->portalWarehouse()->id)
@@ -273,7 +277,7 @@ class PortalController extends Controller
         );
     }
 
-    private function portalCollectionBaseQuery(): \Illuminate\Database\Eloquent\Builder
+    private function portalCollectionBaseQuery(): Builder
     {
         return CollectionProduct::query()
             ->with([
@@ -364,7 +368,7 @@ class PortalController extends Controller
         $category = CustomerRequestCategory::query()
             ->where(function ($query) use ($terms) {
                 foreach ($terms as $term) {
-                    $query->orWhere('name', 'like', '%' . $term . '%');
+                    $query->orWhere('name', 'like', '%'.$term.'%');
                 }
             })
             ->orderBy('name')
@@ -378,7 +382,7 @@ class PortalController extends Controller
         $warehouse = $this->portalWarehouse();
         $recentRequests = $this->portalRequestBaseQuery()->limit(5)->get();
         $stats = [
-            'overdue' => 'AOA ' . number_format(Invoice::unpaid($warehouse->id)->sum('amount_due'), 2),
+            'overdue' => 'AOA '.number_format(Invoice::unpaid($warehouse->id)->sum('amount_due'), 2),
             'qualitycertificates' => QualityCertificate::where('warehouse_id', $warehouse->id)->count(),
             'contractguides' => ContractGuide::where('warehouse_id', $warehouse->id)->count(),
             'collections' => CollectionProduct::where('warehouse_id', $warehouse->id)->count(),
@@ -405,10 +409,8 @@ class PortalController extends Controller
         ]);
     }
 
-
-     /**
+    /**
      * Display a listing of the resource.
-     *
      */
     public function faqs()
     {
@@ -416,40 +418,38 @@ class PortalController extends Controller
         return Inertia::render('ClientPortal/FAQs/Index', [
             'record' => FAQResource::collection(
                 FAQ::query()
-                            ->with('category', 'answers')
-                            ->when(request()->input('search'), function($query, $search){
-                                $query->where('description', 'like', "%{$search}%");
-                            })
-                            ->when(request()->input('category'), function ($query, $category) {
-                                $query->where('category_id', $category);
-                            })
-                            ->when(request()->input('filter'), function($query, $filter){
-                                if($filter === 'trashed'){
-                                    $query->withTrashed();
-                                }
-                            })
-                            ->paginate(10)
-                            ->withQueryString()
-                        ),
-            'slideOverEdit' => true,            
+                    ->with('category', 'answers')
+                    ->when(request()->input('search'), function ($query, $search) {
+                        $query->where('description', 'like', "%{$search}%");
+                    })
+                    ->when(request()->input('category'), function ($query, $category) {
+                        $query->where('category_id', $category);
+                    })
+                    ->when(request()->input('filter'), function ($query, $filter) {
+                        if ($filter === 'trashed') {
+                            $query->withTrashed();
+                        }
+                    })
+                    ->paginate(10)
+                    ->withQueryString()
+            ),
+            'slideOverEdit' => true,
             'fields' => [
                 [
                     'name' => 'Pergunta',
-                    'value' => 'description'
+                    'value' => 'description',
                 ],
                 [
                     'name' => 'Categoria',
-                    'value' => 'category'
+                    'value' => 'category',
                 ],
-            ],                           
-            'query' => request()->only(['search', 'category', 'filter'])
+            ],
+            'query' => request()->only(['search', 'category', 'filter']),
         ]);
     }
 
-
-     /**
+    /**
      * Display a listing of the resource.
-     *
      */
     public function requests()
     {
@@ -486,17 +486,17 @@ class PortalController extends Controller
             'matrixes' => Matrix::query()->orderBy('description')->get(['id', 'description']),
             'packaging_categories' => PackagingCategory::query()->orderBy('name')->get(['id', 'name', 'description']),
             'record' => CustomerRequestResource::collection($requests),
-            'slideOverEdit' => true,            
+            'slideOverEdit' => true,
             'fields' => [
                 [
                     'name' => 'Título',
-                    'value' => 'title'
+                    'value' => 'title',
                 ],
                 [
                     'name' => 'Tipo',
-                    'value' => 'request_type'
+                    'value' => 'request_type',
                 ],
-            ],                           
+            ],
             'query' => request()->only(['search', 'status_filter', 'request_type', 'page']),
             'prefill' => [
                 'request_type' => $presetType ?: null,
@@ -526,10 +526,68 @@ class PortalController extends Controller
         ]);
     }
 
+    public function security()
+    {
+        $warehouse = $this->portalWarehouse();
+        $passkeys = $warehouse->passkeys()
+            ->latest()
+            ->get(['id', 'name', 'last_used_at', 'created_at'])
+            ->map(fn (Passkey $passkey) => [
+                'id' => $passkey->id,
+                'name' => $passkey->name,
+                'last_used_at' => optional($passkey->last_used_at)?->toIso8601String(),
+                'created_at' => optional($passkey->created_at)?->toIso8601String(),
+            ]);
 
-     /**
+        return Inertia::render('ClientPortal/Security', [
+            'warehouse' => WarehouseResource::make($warehouse),
+            'sessions' => $this->portalSessions(),
+            'passkeys' => $passkeys,
+            'security' => [
+                'email_verified' => (bool) $warehouse?->email_verified_at,
+                'two_factor_enabled' => (bool) $warehouse?->two_factor_secret,
+                'two_factor_confirmed' => (bool) $warehouse?->two_factor_confirmed_at,
+                'has_password' => ! empty($warehouse?->password),
+                'passkey_count' => $passkeys->count(),
+                'last_login_at' => $warehouse?->last_login_at,
+                'last_activity_at' => $warehouse?->last_activity_at,
+            ],
+        ]);
+    }
+
+    private function portalSessions(): array
+    {
+        if (config('session.driver') !== 'database') {
+            return [];
+        }
+
+        $warehouse = $this->portalWarehouse();
+
+        return DB::table(config('session.table', 'sessions'))
+            ->where('user_id', $warehouse->getAuthIdentifier())
+            ->orderByDesc('last_activity')
+            ->get()
+            ->map(function ($session) {
+                $agent = new Agent;
+                $agent->setUserAgent($session->user_agent);
+
+                return [
+                    'id' => $session->id,
+                    'ip_address' => $session->ip_address,
+                    'is_current_device' => $session->id === request()->session()->getId(),
+                    'last_active' => Carbon::createFromTimestamp($session->last_activity)->diffForHumans(),
+                    'agent' => [
+                        'is_desktop' => $agent->isDesktop(),
+                        'platform' => $agent->platform() ?: 'Desconhecido',
+                        'browser' => $agent->browser() ?: 'Desconhecido',
+                    ],
+                ];
+            })
+            ->all();
+    }
+
+    /**
      * Display a listing of the resource.
-     *
      */
     public function invoices()
     {
@@ -537,38 +595,37 @@ class PortalController extends Controller
         return Inertia::render('ClientPortal/Invoices/Index', [
             'record' => InvoiceResource::collection(
                 Invoice::query()
-                            ->with('warehouse', 'customer')
-                            ->where('warehouse_id', auth()->guard('portal')->user()->id)
-                            ->when(request()->input('search'), function($query, $search){
-                                $query->where('inv_no', 'like', "%{$search}%");
-                            })
-                            ->when(request()->input('filter'), function($query, $filter){
-                                if($filter === 'trashed'){
-                                    $query->withTrashed();
-                                }
-                            })
-                            ->paginate(10)
-                            ->withQueryString()
-                        ),
-            'slideOverEdit' => false,            
+                    ->with('warehouse', 'customer')
+                    ->where('warehouse_id', auth()->guard('portal')->user()->id)
+                    ->when(request()->input('search'), function ($query, $search) {
+                        $query->where('inv_no', 'like', "%{$search}%");
+                    })
+                    ->when(request()->input('filter'), function ($query, $filter) {
+                        if ($filter === 'trashed') {
+                            $query->withTrashed();
+                        }
+                    })
+                    ->paginate(10)
+                    ->withQueryString()
+            ),
+            'slideOverEdit' => false,
             'fields' => [
                 [
                     'name' => 'Emissão',
-                    'value' => 'date'
+                    'value' => 'date',
                 ],
                 [
                     'name' => 'Referência',
-                    'value' => 'inv_no'
+                    'value' => 'inv_no',
                 ],
                 [
                     'name' => 'Total',
-                    'value' => 'total'
+                    'value' => 'total',
                 ],
-            ],                           
-            'query' => request()->only(['search', 'filter'])
+            ],
+            'query' => request()->only(['search', 'filter']),
         ]);
     }
-
 
     public function receipts()
     {
@@ -576,43 +633,43 @@ class PortalController extends Controller
         return Inertia::render('ClientPortal/Receipts/Index', [
             'record' => ReceiptResource::collection(
                 Receipt::query()
-                            ->with('warehouse', 'customer')
-                            ->where('warehouse_id', auth()->guard('portal')->user()->id)
-                            ->when(request()->input('search'), function($query, $search){
-                                $query->where('rec_no', 'like', "%{$search}%");
-                            })
-                            ->when(request()->input('filter'), function($query, $filter){
-                                if($filter === 'trashed'){
-                                    $query->withTrashed();
-                                }
-                            })
-                            ->paginate(10)
-                            ->withQueryString()
-                        ),
-            'slideOverEdit' => false,            
+                    ->with('warehouse', 'customer')
+                    ->where('warehouse_id', auth()->guard('portal')->user()->id)
+                    ->when(request()->input('search'), function ($query, $search) {
+                        $query->where('rec_no', 'like', "%{$search}%");
+                    })
+                    ->when(request()->input('filter'), function ($query, $filter) {
+                        if ($filter === 'trashed') {
+                            $query->withTrashed();
+                        }
+                    })
+                    ->paginate(10)
+                    ->withQueryString()
+            ),
+            'slideOverEdit' => false,
             'fields' => [
                 [
                     'name' => 'Emissão',
-                    'value' => 'date'
+                    'value' => 'date',
                 ],
                 [
                     'name' => 'Referência',
-                    'value' => 'rec_no'
+                    'value' => 'rec_no',
                 ],
                 [
                     'name' => 'Cliente',
-                    'value' => 'customer'
+                    'value' => 'customer',
                 ],
                 [
                     'name' => 'Armazém',
-                    'value' => 'warehouse'
+                    'value' => 'warehouse',
                 ],
                 [
                     'name' => 'Total',
-                    'value' => 'total'
+                    'value' => 'total',
                 ],
-            ],                           
-            'query' => request()->only(['search', 'filter'])
+            ],
+            'query' => request()->only(['search', 'filter']),
         ]);
     }
 
@@ -626,50 +683,50 @@ class PortalController extends Controller
                 $baseQuery
                     ->paginate(10)
                     ->withQueryString()
-                        ),
-            'slideOverEdit' => false,            
+            ),
+            'slideOverEdit' => false,
             'fields' => [
                 [
                     'name' => 'Código',
-                    'value' => 'cl'
+                    'value' => 'cl',
                 ],
                 [
                     'name' => 'Produto',
-                    'value' => 'product'
+                    'value' => 'product',
                 ],
                 [
                     'name' => 'Colheita',
-                    'value' => 'collection_date'
+                    'value' => 'collection_date',
                 ],
                 [
                     'name' => 'Cliente',
-                    'value' => 'customer'
+                    'value' => 'customer',
                 ],
                 [
                     'name' => 'Armazém',
-                    'value' => 'warehouse'
+                    'value' => 'warehouse',
                 ],
                 [
                     'name' => 'Lote',
-                    'value' => 'lot'
+                    'value' => 'lot',
                 ],
                 [
                     'name' => 'BL',
-                    'value' => 'bl'
+                    'value' => 'bl',
                 ],
                 [
                     'name' => 'QTD',
-                    'value' => 'qty'
+                    'value' => 'qty',
                 ],
                 [
                     'name' => 'Marca Comercial',
-                    'value' => 'comercial_brand'
+                    'value' => 'comercial_brand',
                 ],
                 [
                     'name' => 'Acompanhamento',
-                    'value' => 'tracking.label'
+                    'value' => 'tracking.label',
                 ],
-            ],                           
+            ],
             'summary' => [
                 'total' => $summaryRecords->count(),
                 'recent' => $summaryRecords->filter(fn ($record) => optional($record->collection_date ?? $record->created_at)?->gte(now()->subDays(30)))->count(),
@@ -677,7 +734,7 @@ class PortalController extends Controller
                 'analysis_pending' => $summaryRecords->filter(fn ($record) => ! $record->quality_certificate && (($record->collection?->collectionable?->placed_analysis ?? false) || $record->code?->pending_analysis?->count() > 0))->count(),
                 'in_progress' => $summaryRecords->filter(fn ($record) => $record->code?->in_progress_analysis?->count() > 0)->count(),
             ],
-            'query' => request()->only(['search', 'status_filter', 'type_filter', 'date_filter', 'page'])
+            'query' => request()->only(['search', 'status_filter', 'type_filter', 'date_filter', 'page']),
         ]);
     }
 
@@ -710,39 +767,39 @@ class PortalController extends Controller
         return Inertia::render('ClientPortal/ContractGuides/Index', [
             'record' => ContractGuideResource::collection(
                 ContractGuide::query()
-                            ->with('warehouse', 'customer')
-                            ->where('warehouse_id', auth()->guard('portal')->user()->id)
-                            ->when(request()->input('search'), function($query, $search){
-                                $query->where('guide_no', 'like', "%{$search}%");
-                            })
-                            ->when(request()->input('filter'), function($query, $filter){
-                                if($filter === 'trashed'){
-                                    $query->withTrashed();
-                                }
-                            })
-                            ->paginate(10)
-                            ->withQueryString()
-                        ),
-            'slideOverEdit' => false,            
+                    ->with('warehouse', 'customer')
+                    ->where('warehouse_id', auth()->guard('portal')->user()->id)
+                    ->when(request()->input('search'), function ($query, $search) {
+                        $query->where('guide_no', 'like', "%{$search}%");
+                    })
+                    ->when(request()->input('filter'), function ($query, $filter) {
+                        if ($filter === 'trashed') {
+                            $query->withTrashed();
+                        }
+                    })
+                    ->paginate(10)
+                    ->withQueryString()
+            ),
+            'slideOverEdit' => false,
             'fields' => [
                 [
                     'name' => 'Emissão',
-                    'value' => 'date'
+                    'value' => 'date',
                 ],
                 [
                     'name' => 'Referência',
-                    'value' => 'guide_no'
+                    'value' => 'guide_no',
                 ],
                 [
                     'name' => 'Cliente',
-                    'value' => 'customer'
+                    'value' => 'customer',
                 ],
                 [
                     'name' => 'Armazém',
-                    'value' => 'warehouse'
-                ]
-            ],                           
-            'query' => request()->only(['search', 'filter'])
+                    'value' => 'warehouse',
+                ],
+            ],
+            'query' => request()->only(['search', 'filter']),
         ]);
     }
 
@@ -752,43 +809,43 @@ class PortalController extends Controller
         return Inertia::render('ClientPortal/CreditNotes/Index', [
             'record' => CreditNoteResource::collection(
                 CreditNote::query()
-                            ->with('warehouse', 'customer')
-                            ->where('warehouse_id', auth()->guard('portal')->user()->id)
-                            ->when(request()->input('search'), function($query, $search){
-                                $query->where('note_no', 'like', "%{$search}%");
-                            })
-                            ->when(request()->input('filter'), function($query, $filter){
-                                if($filter === 'trashed'){
-                                    $query->withTrashed();
-                                }
-                            })
-                            ->paginate(10)
-                            ->withQueryString()
-                        ),
-            'slideOverEdit' => false,            
+                    ->with('warehouse', 'customer')
+                    ->where('warehouse_id', auth()->guard('portal')->user()->id)
+                    ->when(request()->input('search'), function ($query, $search) {
+                        $query->where('note_no', 'like', "%{$search}%");
+                    })
+                    ->when(request()->input('filter'), function ($query, $filter) {
+                        if ($filter === 'trashed') {
+                            $query->withTrashed();
+                        }
+                    })
+                    ->paginate(10)
+                    ->withQueryString()
+            ),
+            'slideOverEdit' => false,
             'fields' => [
                 [
                     'name' => 'Emissão',
-                    'value' => 'date'
+                    'value' => 'date',
                 ],
                 [
                     'name' => 'Referência',
-                    'value' => 'note_no'
+                    'value' => 'note_no',
                 ],
                 [
                     'name' => 'Cliente',
-                    'value' => 'customer'
+                    'value' => 'customer',
                 ],
                 [
                     'name' => 'Armazém',
-                    'value' => 'warehouse'
+                    'value' => 'warehouse',
                 ],
                 [
                     'name' => 'Total',
-                    'value' => 'total'
+                    'value' => 'total',
                 ],
-            ],                           
-            'query' => request()->only(['search', 'filter'])
+            ],
+            'query' => request()->only(['search', 'filter']),
         ]);
     }
 
@@ -798,43 +855,43 @@ class PortalController extends Controller
         return Inertia::render('ClientPortal/Quotes/Index', [
             'record' => QuoteResource::collection(
                 Quote::query()
-                            ->with('warehouse', 'customer')
-                            ->where('warehouse_id', auth()->guard('portal')->user()->id)
-                            ->when(request()->input('search'), function($query, $search){
-                                $query->where('quote_no', 'like', "%{$search}%");
-                            })
-                            ->when(request()->input('filter'), function($query, $filter){
-                                if($filter === 'trashed'){
-                                    $query->withTrashed();
-                                }
-                            })
-                            ->paginate(10)
-                            ->withQueryString()
-                        ),
-            'slideOverEdit' => false,            
+                    ->with('warehouse', 'customer')
+                    ->where('warehouse_id', auth()->guard('portal')->user()->id)
+                    ->when(request()->input('search'), function ($query, $search) {
+                        $query->where('quote_no', 'like', "%{$search}%");
+                    })
+                    ->when(request()->input('filter'), function ($query, $filter) {
+                        if ($filter === 'trashed') {
+                            $query->withTrashed();
+                        }
+                    })
+                    ->paginate(10)
+                    ->withQueryString()
+            ),
+            'slideOverEdit' => false,
             'fields' => [
                 [
                     'name' => 'Emissão',
-                    'value' => 'date'
+                    'value' => 'date',
                 ],
                 [
                     'name' => 'Referência',
-                    'value' => 'quote_no'
+                    'value' => 'quote_no',
                 ],
                 [
                     'name' => 'Cliente',
-                    'value' => 'customer'
+                    'value' => 'customer',
                 ],
                 [
                     'name' => 'Armazém',
-                    'value' => 'warehouse'
+                    'value' => 'warehouse',
                 ],
                 [
                     'name' => 'Total',
-                    'value' => 'total'
+                    'value' => 'total',
                 ],
-            ],                           
-            'query' => request()->only(['search', 'filter'])
+            ],
+            'query' => request()->only(['search', 'filter']),
         ]);
     }
 
@@ -844,66 +901,64 @@ class PortalController extends Controller
         return Inertia::render('ClientPortal/QualityCertificates/Index', [
             'record' => QualityCertificateResource::collection(
                 QualityCertificate::query()
-                            ->with('lab_code', 'customer', 'warehouse', 'invoice')
-                            ->where('warehouse_id', auth()->guard('portal')->user()->id)
-                            ->whereNotNull('validated_at')
-                            ->whereHas('collection', function($q) {
-                                $q->whereRelation('invoice', 'status', true);
-                            })
-                            ->when(request()->input('search'), function($query, $search){
-                                $query->where('code', 'like', "%{$search}%")
-                                ->orWhereRelation('lab_code', 'code', 'like', "%{$search}%");
-                            })
-                            ->when(request()->input('filter'), function($query, $filter){
-                                if($filter === 'trashed'){
-                                    $query->withTrashed();
-                                }
-                            })
-                            ->paginate(10)
-                            ->withQueryString()
-                        ),
-            'slideOverEdit' => true,            
+                    ->with('lab_code', 'customer', 'warehouse', 'invoice')
+                    ->where('warehouse_id', auth()->guard('portal')->user()->id)
+                    ->whereNotNull('validated_at')
+                    ->whereHas('collection', function ($q) {
+                        $q->whereRelation('invoice', 'status', true);
+                    })
+                    ->when(request()->input('search'), function ($query, $search) {
+                        $query->where('code', 'like', "%{$search}%")
+                            ->orWhereRelation('lab_code', 'code', 'like', "%{$search}%");
+                    })
+                    ->when(request()->input('filter'), function ($query, $filter) {
+                        if ($filter === 'trashed') {
+                            $query->withTrashed();
+                        }
+                    })
+                    ->paginate(10)
+                    ->withQueryString()
+            ),
+            'slideOverEdit' => true,
             'fields' => [
                 [
                     'name' => 'Código de Laboratório',
-                    'value' => 'lab_code'
+                    'value' => 'lab_code',
                 ],
                 [
                     'name' => 'Nº Documento',
-                    'value' => 'code'
+                    'value' => 'code',
                 ],
                 [
                     'name' => 'Cliente',
-                    'value' => 'customer'
+                    'value' => 'customer',
                 ],
                 [
                     'name' => 'Armazém',
-                    'value' => 'warehouse'
+                    'value' => 'warehouse',
                 ],
-            ],                           
-            'query' => request()->only(['search', 'filter'])
+            ],
+            'query' => request()->only(['search', 'filter']),
         ]);
     }
 
     /**
      * Show the form for creating a new resource.
-     *
      */
     public function create()
     {
         return Inertia::render('ClientPortal/Invoices/Create', [
-            'discount_categories' => collect(DiscountCategory::all())->map(function($item) {
+            'discount_categories' => collect(DiscountCategory::all())->map(function ($item) {
                 return [
                     'value' => $item->id,
                     'label' => $item->symbol,
                 ];
-            })
+            }),
         ]);
     }
 
     /**
      * Store a newly created resource in storage.
-     *
      */
     public function storerequest(StorePortalCustomerRequest $request)
     {
@@ -952,7 +1007,7 @@ class PortalController extends Controller
             ]);
 
             $customerRequest->update([
-                'reference' => 'REQ-' . now()->format('Y') . '-' . str_pad((string) $customerRequest->id, 6, '0', STR_PAD_LEFT),
+                'reference' => 'REQ-'.now()->format('Y').'-'.str_pad((string) $customerRequest->id, 6, '0', STR_PAD_LEFT),
             ]);
 
             $sender = User::query()->role('admin')->whereNotNull('email_verified_at')->first();
@@ -964,7 +1019,7 @@ class PortalController extends Controller
                         'Nova solicitação do portal',
                         sprintf(
                             'O cliente %s submeteu o pedido %s (%s).',
-                            $warehouse->name ?? ('Armazém #' . $warehouse->id),
+                            $warehouse->name ?? ('Armazém #'.$warehouse->id),
                             $customerRequest->reference,
                             $customerRequest->request_type
                         ),
@@ -977,8 +1032,8 @@ class PortalController extends Controller
         return redirect()->back()->with([
             'toast' => [
                 'title' => 'Notificção',
-                'message' => 'Solicitação enviada com sucesso.'
-            ]
+                'message' => 'Solicitação enviada com sucesso.',
+            ],
         ]);
     }
 
@@ -1024,7 +1079,7 @@ class PortalController extends Controller
 
     public function exportRequests(): StreamedResponse
     {
-        $filename = 'portal-requests-' . now()->format('Y-m-d') . '.csv';
+        $filename = 'portal-requests-'.now()->format('Y-m-d').'.csv';
         $requests = $this->portalRequestBaseQuery()->get();
 
         return response()->streamDownload(function () use ($requests): void {
@@ -1051,7 +1106,6 @@ class PortalController extends Controller
 
     /**
      * Display the specified resource.
-     *
      */
     public function show($id)
     {
@@ -1060,7 +1114,6 @@ class PortalController extends Controller
 
     /**
      * Show the form for editing the specified resource.
-     *
      */
     public function edit($id)
     {
@@ -1096,7 +1149,7 @@ class PortalController extends Controller
                     'value' => $record?->warehouse?->id,
                     'label' => $record?->warehouse?->address,
                 ],
-                'items' => collect($record->items)->map(function($item) {
+                'items' => collect($record->items)->map(function ($item) {
                     return [
                         'id' => $item->id ?? null,
                         'invoice_id' => $item->invoice_id ?? null,
@@ -1110,12 +1163,12 @@ class PortalController extends Controller
                         'item_id' => [
                             'value' => $item->item_id,
                             'label' => $item->item_description,
-                            'price'=> $item->unit_price + $item->discount_amount,
-                            'tax_id'=> $item->tax_id,
-                            'charge_tax'=> $item->charge_tax,
-                            'tax_percentage'=> $item->tax_percentage,
-                            'exemption_id'=> $item->exemption_id,
-                            'exemption_code'=> $item->exemption_code,
+                            'price' => $item->unit_price + $item->discount_amount,
+                            'tax_id' => $item->tax_id,
+                            'charge_tax' => $item->charge_tax,
+                            'tax_percentage' => $item->tax_percentage,
+                            'exemption_id' => $item->exemption_id,
+                            'exemption_code' => $item->exemption_code,
                         ],
                         'item_description' => $item->item_description,
                         'itemable_id' => [
@@ -1134,27 +1187,26 @@ class PortalController extends Controller
                         'obs' => $item->obs,
                         'charge_tax' => $item->charge_tax,
                     ];
-                })
+                }),
             ],
-            'discount_categories' => collect(DiscountCategory::all())->map(function($item) {
+            'discount_categories' => collect(DiscountCategory::all())->map(function ($item) {
                 return [
                     'value' => $item->id,
                     'label' => $item->symbol,
                 ];
-            })
+            }),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
-     *
      */
     public function markAsDone($id)
     {
 
         DB::transaction(function () use ($id): void {
 
-            tap(CustomerRequest::findOrFail($id), function($record) {
+            tap(CustomerRequest::findOrFail($id), function ($record) {
                 abort_unless($record->warehouse_id === $this->portalWarehouse()->id, 403);
 
                 $record->update([
@@ -1162,7 +1214,7 @@ class PortalController extends Controller
                     'status' => 'completed',
                     'resolved_at' => now(),
                 ]);
-    
+
             });
 
         });
@@ -1170,14 +1222,13 @@ class PortalController extends Controller
         return redirect()->back()->with([
             'toast' => [
                 'title' => 'Notificção',
-                'message' => 'Registro actualizado com êxito'
-            ]
+                'message' => 'Registro actualizado com êxito',
+            ],
         ]);
     }
 
     /**
      * Remove the specified resource from storage.
-     *
      */
     public function destroyrequest($id)
     {
@@ -1185,7 +1236,7 @@ class PortalController extends Controller
         // Find and delete the record
         $record = CustomerRequest::findOrFail($id);
 
-        if($record->warehouse_id == auth()->guard('portal')->id()){
+        if ($record->warehouse_id == auth()->guard('portal')->id()) {
             $record->update([
                 'status' => 'cancelled',
             ]);
@@ -1194,27 +1245,26 @@ class PortalController extends Controller
             return redirect()->back()->with([
                 'toast' => [
                     'title' => '',
-                    'message' => 'Registro removido com sucesso'
-                ]
+                    'message' => 'Registro removido com sucesso',
+                ],
             ]);
         }
 
         return redirect()->back()->with([
             'toast' => [
                 'title' => '',
-                'message' => 'Unable Registro removido com sucesso'
-            ]
+                'message' => 'Unable Registro removido com sucesso',
+            ],
         ]);
     }
 
     /**
      * Remove the specified resource from storage.
-     *
      */
     public function destroy()
     {
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and delete the record
         foreach (Invoice::withTrashed()->findOrFail(request('recordIds')) as $record) {
@@ -1224,240 +1274,189 @@ class PortalController extends Controller
         return redirect()->back()->with([
             'toast' => [
                 'title' => '',
-                'message' => 'Registro removido com sucesso'
-            ]
+                'message' => 'Registro removido com sucesso',
+            ],
         ]);
     }
 
     /**
      * restore the specified resource from storage.
-     *
      */
     public function restore()
     {
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and restore the record
         foreach (Invoice::withTrashed()->findOrFail(request('recordIds')) as $record) {
             $record->restore();
         }
 
-       return redirect()->back()->with([
+        return redirect()->back()->with([
             'toast' => [
                 'title' => '',
-                'message' => 'Registro restaurado com sucesso'
-            ]
-       ]);
+                'message' => 'Registro restaurado com sucesso',
+            ],
+        ]);
     }
 
-
-    public function getInvoice() {
+    public function getInvoice()
+    {
         $data = [];
 
-        if(request()->has('q')){
+        if (request()->has('q')) {
             $search = request()->q;
-            
-            $data = DB::table("invoices")
+
+            $data = DB::table('invoices')
                 ->select('invoices.*')
-                ->where('inv_no','LIKE',"%$search%")
+                ->where('inv_no', 'LIKE', "%$search%")
                 ->get();
         }
 
         return response()->json($data);
     }
 
-    public function getInvoicePDF() {
+    public function getInvoicePDF()
+    {
+        $model = Invoice::query()
+            ->with('items.exemption', 'items.unit', 'items.itemable', 'customer', 'warehouse', 'invoice_category', 'user')
+            ->where('warehouse_id', $this->portalWarehouse()->id)
+            ->findOrFail(request()->integer('id'));
+        $payload = app(ReportStudioPdfBuilder::class)->buildInvoicePayload(
+            $model,
+            app(GeneralSettings::class)
+        );
 
-        $ntw = new NumberToWords();
-        $nTrans = $ntw->getNumberTransformer('pt_BR');
-        $cTrans = $ntw->getCurrencyTransformer('pt_BR');
-
-        $app_name = app(GeneralSettings::class)->app_name;
-        $app_validation_number = app(GeneralSettings::class)->app_agt_validation_number;
-        $model = Invoice::with('items.exemption', 'items.unit', 'items.itemable', 'customer', 'warehouse', 'invoice_category', 'user')->find(request()->id);
-        //dd($model);
-        
-        $pdf = PDF::loadView('PDFs.invoice', [
-            'model' => $model,
-            'settings' => app(GeneralSettings::class),
-            'nTrans' => $nTrans
-        ], [], [
-            'margin_left' => 15,
-            'margin_right' => 15,
-            'margin_top' => 15,
-            'margin_bottom' => 15,
-            'margin_header' => 25,
-            'margin_footer' => 25,
-            'title'=> 'Factura Nº ' . $model->inv_no,
-            'author'=> $model->user->name,
-            'watermark'            => 'PAGO',
-            'show_watermark'       => false,
-            'display_mode' => 'fullpage',
-            'watermark_text_alpha' => 0.1,
-            'showBarcodeNumbers' => FALSE
-        ]);
+        $filename = $model->inv_no.'.pdf';
+        $renderedPdf = app(ReportStudioPdfRenderer::class)->renderDocument('invoice', $payload, $filename);
 
         if (request()->q) {
-                 activity()
-                 ->by(auth()->guard('portal')->user())
-                 ->log('baixou o Factura Nº ' . $model->inv_no);
-
-                return $pdf->download($model->inv_no . '.pdf');
-        }  if (!request()->q ) {
-                activity()
+            activity()
                 ->by(auth()->guard('portal')->user())
-                ->log('visualizou o Factura Nº ' . $model->inv_no );
-                return  $pdf->stream($model->inv_no . '.pdf');
+                ->log('baixou o Factura Nº '.$model->inv_no);
+
+            return $this->reportStudioPdfResponse($renderedPdf, $filename, true);
+        }  if (! request()->q) {
+            activity()
+                ->by(auth()->guard('portal')->user())
+                ->log('visualizou o Factura Nº '.$model->inv_no);
+
+            return $this->reportStudioPdfResponse($renderedPdf, $filename, false);
         }
-        
+
     }
 
-    public function getQuotePDF() {
+    public function getQuotePDF()
+    {
 
-        $ntw = new NumberToWords();
-        $nTrans = $ntw->getNumberTransformer('pt_BR');
-        $cTrans = $ntw->getCurrencyTransformer('pt_BR');
-        $model = Quote::with('items', 'user', 'customer', 'warehouse')->find(request()->id);
-        //dd($model);
-        
-        $pdf = PDF::loadView('PDFs.quote', [
-            'model' => $model,
-            'settings' => app(GeneralSettings::class),
-        ], [], [
-            'margin_left' => 15,
-            'margin_right' => 15,
-            'margin_top' => 15,
-            'margin_bottom' => 15,
-            'margin_header' => 25,
-            'margin_footer' => 25,
-            'title'=> 'Proforma Nº ' . $model->quote_no,
-            'author'=> $model->user->name,
-            'watermark'            => 'PAGO',
-            'show_watermark'       => false,
-            'display_mode' => 'fullpage',
-            'watermark_text_alpha' => 0.1,
-            'showBarcodeNumbers' => FALSE
-        ]);
+        $model = Quote::query()
+            ->with('items', 'user', 'customer', 'warehouse')
+            ->where('warehouse_id', $this->portalWarehouse()->id)
+            ->findOrFail(request()->integer('id'));
+        $payload = app(ReportStudioPdfBuilder::class)->buildQuotePayload(
+            $model,
+            app(GeneralSettings::class)
+        );
+
+        $filename = $model->quote_no.'.pdf';
+        $renderedPdf = app(ReportStudioPdfRenderer::class)->renderDocument('quote', $payload, $filename);
 
         if (request()->q) {
-                 activity()
-                 ->by(auth()->guard('portal')->user())
-                 ->log('baixou o Proforma Nº ' . $model->quote_no);
-
-                return $pdf->download($model->quote_no . '.pdf');
-        }  if (!request()->q ) {
-                activity()
+            activity()
                 ->by(auth()->guard('portal')->user())
-                ->log('visualizou o Proforma Nº ' . $model->quote_no );
-                return  $pdf->stream($model->quote_no . '.pdf');
+                ->log('baixou o Proforma Nº '.$model->quote_no);
+
+            return $this->reportStudioPdfResponse($renderedPdf, $filename, true);
+        }  if (! request()->q) {
+            activity()
+                ->by(auth()->guard('portal')->user())
+                ->log('visualizou o Proforma Nº '.$model->quote_no);
+
+            return $this->reportStudioPdfResponse($renderedPdf, $filename, false);
         }
-        
+
     }
 
-    public function getCreditNotePDF() {
+    public function getCreditNotePDF()
+    {
+        $model = CreditNote::query()
+            ->with('items', 'user', 'customer', 'warehouse', 'invoice')
+            ->where('warehouse_id', $this->portalWarehouse()->id)
+            ->findOrFail(request()->integer('id'));
+        $payload = app(ReportStudioPdfBuilder::class)->buildCreditNotePayload(
+            $model,
+            app(GeneralSettings::class)
+        );
 
-        $ntw = new NumberToWords();
-        $nTrans = $ntw->getNumberTransformer('pt_BR');
-        $cTrans = $ntw->getCurrencyTransformer('pt_BR');
-
-        $model = CreditNote::with('items', 'user', 'customer', 'warehouse', 'invoice')->find(request()->id);
-        //dd($model);
-        
-        $pdf = PDF::loadView('PDFs.creditnote', [
-            'model' => $model,
-            'settings' => app(GeneralSettings::class),
-            'nTrans' => $nTrans
-        ], [], [
-            'margin_left' => 15,
-            'margin_right' => 15,
-            'margin_top' => 15,
-            'margin_bottom' => 15,
-            'margin_header' => 25,
-            'margin_footer' => 25,
-            'title'=> 'Nota de Crédito Nº ' . $model->note_no,
-            'author'=> $model->user->name,
-            'watermark'            => 'PAGO',
-            'show_watermark'       => false,
-            'display_mode' => 'fullpage',
-            'watermark_text_alpha' => 0.1,
-            'showBarcodeNumbers' => FALSE
-        ]);
+        $filename = $model->note_no.'.pdf';
+        $renderedPdf = app(ReportStudioPdfRenderer::class)->renderDocument('credit_note', $payload, $filename);
 
         if (request()->q) {
-                 activity()
-                 ->by(auth()->guard('portal')->user())
-                 ->log('baixou o Nota de Crédito Nº ' . $model->note_no);
-
-                return $pdf->download($model->note_no . '.pdf');
-        }  if (!request()->q ) {
-                activity()
+            activity()
                 ->by(auth()->guard('portal')->user())
-                ->log('visualizou o Nota de Crédito Nº ' . $model->note_no );
-                return  $pdf->stream($model->note_no . '.pdf');
+                ->log('baixou o Nota de Crédito Nº '.$model->note_no);
+
+            return $this->reportStudioPdfResponse($renderedPdf, $filename, true);
+        }  if (! request()->q) {
+            activity()
+                ->by(auth()->guard('portal')->user())
+                ->log('visualizou o Nota de Crédito Nº '.$model->note_no);
+
+            return $this->reportStudioPdfResponse($renderedPdf, $filename, false);
         }
-        
+
     }
 
-    public function getReceiptPDF() {
+    public function getReceiptPDF()
+    {
+        $model = Receipt::query()
+            ->with('items.invoice', 'user', 'customer', 'warehouse')
+            ->where('warehouse_id', $this->portalWarehouse()->id)
+            ->findOrFail(request()->integer('id'));
+        $payload = app(ReportStudioPdfBuilder::class)->buildReceiptPayload(
+            $model,
+            app(GeneralSettings::class)
+        );
 
-        $ntw = new NumberToWords();
-        $nTrans = $ntw->getNumberTransformer('pt_BR');
-        $cTrans = $ntw->getCurrencyTransformer('pt_BR');
-        $model = Receipt::with('items.invoice', 'user', 'customer', 'warehouse')->find(request()->id);
-        //dd($model);
-        
-        $pdf = PDF::loadView('PDFs.receipt', [
-            'model' => $model,
-            'nTrans' => $nTrans,
-            'settings' => app(GeneralSettings::class),
-        ], [], [
-            'margin_left' => 15,
-            'margin_right' => 15,
-            'margin_top' => 15,
-            'margin_bottom' => 15,
-            'margin_header' => 25,
-            'margin_footer' => 25,
-            'title'=> 'Recibo Nº ' . $model->rec_no,
-            'author'=> $model->user->name,
-            'watermark'            => 'PAGO',
-            'show_watermark'       => false,
-            'display_mode' => 'fullpage',
-            'watermark_text_alpha' => 0.1,
-            'showBarcodeNumbers' => FALSE
-        ]);
+        $filename = $model->rec_no.'.pdf';
+        $renderedPdf = app(ReportStudioPdfRenderer::class)->renderDocument('receipt', $payload, $filename);
 
         if (request()->q) {
-                 activity()
-                 ->by(auth()->guard('portal')->user())
-                 ->log('baixou o Recibo Nº ' . $model->rec_no);
-
-                return $pdf->download($model->rec_no . '.pdf');
-        }  if (!request()->q ) {
-                activity()
+            activity()
                 ->by(auth()->guard('portal')->user())
-                ->log('visualizou o Recibo Nº ' . $model->rec_no );
-                return  $pdf->stream($model->rec_no . '.pdf');
+                ->log('baixou o Recibo Nº '.$model->rec_no);
+
+            return $this->reportStudioPdfResponse($renderedPdf, $filename, true);
+        }  if (! request()->q) {
+            activity()
+                ->by(auth()->guard('portal')->user())
+                ->log('visualizou o Recibo Nº '.$model->rec_no);
+
+            return $this->reportStudioPdfResponse($renderedPdf, $filename, false);
         }
-        
+
     }
 
-    public function getContractGuidePDF() {
+    public function getContractGuidePDF()
+    {
 
-        $ntw = new NumberToWords();
+        $ntw = new NumberToWords;
         $nTrans = $ntw->getNumberTransformer('pt_BR');
         $cTrans = $ntw->getCurrencyTransformer('pt_BR');
 
         $app_name = app(GeneralSettings::class)->app_name;
         $app_validation_number = app(GeneralSettings::class)->app_agt_validation_number;
         // $model = ContractGuide::with('items.exemption', 'items.unit', 'items.itemable', 'customer', 'warehouse', 'invoice_category', 'user')->find(request()->id);
-        $model = ContractGuide::with('items.product', 'items.country', 'warehouse', 'customer')->find(request()->id);
-        //dd($model);
-        
+        $model = ContractGuide::query()
+            ->with('items.product', 'items.country', 'warehouse', 'customer', 'user')
+            ->where('warehouse_id', $this->portalWarehouse()->id)
+            ->findOrFail(request()->integer('id'));
+        // dd($model);
+
         $pdf = PDF::loadView('PDFs.contractguide', [
             'model' => $model,
             'settings' => app(GeneralSettings::class),
-            'nTrans' => $nTrans
+            'nTrans' => $nTrans,
         ], [], [
             'margin_left' => 15,
             'margin_right' => 15,
@@ -1465,46 +1464,9 @@ class PortalController extends Controller
             'margin_bottom' => 10,
             'margin_header' => 10,
             'margin_footer' => 10,
-            'title'=> 'Factura Nº ' . $model->guide_no,
-            'author'=> $model->user->name,
-            'watermark'            => 'PAGO',
-            'show_watermark'       => false,
-            'display_mode' => 'fullpage',
-            'watermark_text_alpha' => 0.1,
-            'showBarcodeNumbers' => FALSE
-        ]);
-
-        if (request()->q) {
-                 activity()
-                 ->by(auth()->guard('portal')->user())
-                 ->log('baixou o Factura Nº ' . $model->guide_no);
-
-                return $pdf->download($model->guide_no . '.pdf');
-        }  if (!request()->q ) {
-                activity()
-                ->by(auth()->guard('portal')->user())
-                ->log('visualizou o Factura Nº ' . $model->guide_no );
-                return  $pdf->stream($model->guide_no . '.pdf');
-        }
-        
-    }
-
-    public function getQualityCertificatePDF() {
-        $model = QualityCertificate::with('collection', 'lab_code', 'user', 'customer', 'warehouse')->findOrFail(request()->id);
-        $payload = app(ReportStudioPdfBuilder::class)->buildAnalysisReportPayload($model, app(GeneralSettings::class));
-
-        $pdf = PDF::loadView($payload['view'], $payload['data'], [], [
-            'format' => $payload['data']['format'] ?? 'A4',
-            'orientation' => $payload['data']['orientation'] ?? 'P',
-            'margin_top' => data_get($payload, 'data.margins.top', 20),
-            'margin_header' => 5,
-            'margin_left' => data_get($payload, 'data.margins.left', 14),
-            'margin_right' => data_get($payload, 'data.margins.right', 14),
-            'margin_bottom' => data_get($payload, 'data.margins.bottom', 24),
-            'margin_footer' => 10,
-            'title' => 'Boletim Analítico Nº ' . $model->code,
+            'title' => 'Factura Nº '.$model->guide_no,
             'author' => $model->user?->name,
-            'watermark' => '',
+            'watermark' => 'PAGO',
             'show_watermark' => false,
             'display_mode' => 'fullpage',
             'watermark_text_alpha' => 0.1,
@@ -1512,17 +1474,57 @@ class PortalController extends Controller
         ]);
 
         if (request()->q) {
-                 activity()
-                 ->by(auth()->guard('portal')->user())
-                 ->log('baixou o Boletim Analítico Nº ' . $model->code);
-
-                return $pdf->download($model->code . '.pdf');
-        }  if (!request()->q ) {
-                activity()
+            activity()
                 ->by(auth()->guard('portal')->user())
-                ->log('visualizou o Boletim Analítico Nº ' . $model->code );
-                return  $pdf->stream($model->code . '.pdf');
+                ->log('baixou o Factura Nº '.$model->guide_no);
+
+            return PdfResponse::download($pdf, $model->guide_no.'.pdf');
+        }  if (! request()->q) {
+            activity()
+                ->by(auth()->guard('portal')->user())
+                ->log('visualizou o Factura Nº '.$model->guide_no);
+
+            return PdfResponse::inline($pdf, $model->guide_no.'.pdf');
         }
-        
+
+    }
+
+    public function getQualityCertificatePDF()
+    {
+        $model = QualityCertificate::query()
+            ->with('collection', 'lab_code', 'user', 'customer', 'warehouse')
+            ->where('warehouse_id', $this->portalWarehouse()->id)
+            ->findOrFail(request()->integer('id'));
+        $payload = app(ReportStudioPdfBuilder::class)->buildAnalysisReportPayload($model, app(GeneralSettings::class));
+
+        $filename = $model->code.'.pdf';
+        $renderedPdf = app(ReportStudioPdfRenderer::class)->renderDocument('analysis', $payload, $filename);
+
+        if (request()->q) {
+            activity()
+                ->by(auth()->guard('portal')->user())
+                ->log('baixou o Boletim Analítico Nº '.$model->code);
+
+            return $this->reportStudioPdfResponse($renderedPdf, $filename, true);
+        }  if (! request()->q) {
+            activity()
+                ->by(auth()->guard('portal')->user())
+                ->log('visualizou o Boletim Analítico Nº '.$model->code);
+
+            return $this->reportStudioPdfResponse($renderedPdf, $filename, false);
+        }
+
+    }
+
+    /**
+     * @param  array{content: string, renderer: string}  $renderedPdf
+     */
+    private function reportStudioPdfResponse(array $renderedPdf, string $filename, bool $download)
+    {
+        return response($renderedPdf['content'], 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => ($download ? 'attachment' : 'inline').'; filename="'.$filename.'"',
+            'X-Report-Studio-Renderer' => $renderedPdf['renderer'],
+        ]);
     }
 }

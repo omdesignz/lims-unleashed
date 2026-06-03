@@ -40,7 +40,7 @@ const props = defineProps({
   createOption: Function,
 })
 
-const options = ref(props.options)
+const options = ref([...props.options])
 const isLoading = ref(false)
 
 const queryOption = computed(() => {
@@ -53,34 +53,68 @@ const queryOption = computed(() => {
 })
 
 const query = ref('')
+function applyLoadedOptions(results = []) {
+  options.value = Array.isArray(results) ? results : []
+
+  if (
+    props.modelValue &&
+    !options.value.some(o => {
+      return o.value === props.modelValue?.value
+    })
+  ) {
+    options.value.unshift(props.modelValue)
+  }
+
+  isLoading.value = false
+}
+
+function loadRemoteOptions(q) {
+  isLoading.value = true
+
+  try {
+    const maybePromise = props.loadOptions(q, applyLoadedOptions)
+
+    if (maybePromise?.then) {
+      maybePromise
+        .then(results => {
+          if (Array.isArray(results)) {
+            applyLoadedOptions(results)
+          }
+        })
+        .catch(() => applyLoadedOptions([]))
+    } else if (Array.isArray(maybePromise)) {
+      applyLoadedOptions(maybePromise)
+    }
+  } catch {
+    applyLoadedOptions([])
+  }
+}
+
 watch(
   query,
   (q) => {
     if (props.loadOptions) {
-      isLoading.value = true
-      props.loadOptions(q, results => {
-        options.value = results
-
-        if (
-          props.modelValue &&
-          !options.value.some(o => {
-            return o.value === props.modelValue?.value
-          })
-        ) {
-          options.value.unshift(props.modelValue)
-        }
-        isLoading.value = false
-      })
+      loadRemoteOptions(q)
     }
   },
   { immediate: true }
+)
+
+watch(
+  () => props.options,
+  (value) => {
+    if (!props.loadOptions) {
+      options.value = Array.isArray(value) ? value : []
+    }
+  },
+  { deep: true }
 )
 
 const filteredOptions = computed(() =>
   query.value === ''
     ? options.value
     : options.value.filter(option =>
-        option.label
+        String(option?.label ?? '')
           .toLowerCase()
           .replace(/\s+/g, '')
           .includes(query.value.toLowerCase().replace(/\s+/g, ''))
@@ -111,7 +145,7 @@ function clear() {
     :model-value="props.modelValue"
     @update:model-value="handleUpdateModelValue"
   >
-    <ComboboxLabel v-if="props.titleLabel" class="mb-2 block text-sm font-medium leading-6 text-slate-900 dark:text-slate-100">
+    <ComboboxLabel v-if="props.titleLabel" class="mb-2 block text-sm font-semibold leading-6 text-[#31413b] dark:text-[#d7e2dd]">
       {{ props.titleLabel }}
     </ComboboxLabel>
     <div class="relative mt-0">
@@ -159,14 +193,14 @@ function clear() {
             "
             class="relative cursor-default select-none rounded-xl px-4 py-3 text-sm text-slate-500 dark:text-slate-400"
           >
-            Nenhum registo encontrado.
+            {{ $t('gestlab.general.messages.no_items') }}
           </div>
 
           <div
             v-if="isLoading"
             class="relative flex cursor-default select-none items-center gap-2 rounded-xl px-4 py-3 text-sm text-slate-500 dark:text-slate-400"
           >
-            A carregar opções...
+            {{ $t('gestlab.general.buttons.searching') }}
           </div>
 
           <template v-if="!isLoading">
@@ -185,7 +219,7 @@ function clear() {
                   'text-slate-900 dark:text-slate-100': !active,
                 }"
               >
-                Criar "{{ queryOption.label }}"
+                {{ $t('gestlab.general.buttons.create') }} "{{ queryOption.label }}"
               </li>
             </ComboboxOption>
             <ComboboxOption

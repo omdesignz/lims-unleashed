@@ -441,7 +441,7 @@
                       <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
-                      <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">R$</span>
+                      <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">AOA</span>
                       <input
                         v-model="item.unit_price"
                         type="number"
@@ -853,7 +853,7 @@ const calculateExpiryDate = computed(() => {
   const days = parseInt(form.tolerance_days)
   const date = new Date()
   date.setDate(date.getDate() + days)
-  return date.toLocaleDateString('pt-BR')
+  return date.toLocaleDateString('pt-Pt')
 })
 
 // Methods

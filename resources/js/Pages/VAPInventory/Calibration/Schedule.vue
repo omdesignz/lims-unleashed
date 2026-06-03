@@ -1,112 +1,91 @@
 <template>
-  <div class="space-y-8">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <WrenchScrewdriverIcon class="h-7 w-7 text-purple-900" />
-            Agenda de Calibração de Equipamento
-          </h1>
-          <p class="mt-2 text-gray-600">
-            Monitore e gerencie a agenda de calibração de equipamento
-            <span class="font-semibold text-purple-900">
-              {{ stats.total_due }} itens atrasados para calibração
-            </span>
-          </p>
-        </div>
+  <div class="calibration-schedule-shell space-y-8" :class="commercialDocumentThemeClasses">
+    <ModuleHero
+      eyebrow="Metrology control"
+      title="Agenda de Calibração de Equipamento"
+      :description="`Monitore e gerencie a agenda de calibração de equipamento. ${stats.total_due} itens atrasados para calibração.`"
+    >
+      <template #actions>
         <div class="flex items-center gap-3">
           <button
             @click="exportSchedule"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             <ArrowDownTrayIcon class="h-4 w-4" />
             Exportar Agenda
           </button>
           <Link
             :href="route('vap-inventory.items.index')"
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+            class="inline-flex items-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
           >
             <ArrowLeftIcon class="h-4 w-4" />
             
             Voltar ao Inventário
           </Link>
         </div>
-      </div>
-    </div>
+      </template>
+    </ModuleHero>
 
     <!-- FILTERS -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <ModuleCard title="Filtros de calibração" description="Priorize por estado metrológico, tipo, categoria e data alvo.">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <!-- STATUS FILTER -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             <CheckCircleIcon class="h-4 w-4 inline mr-1" />
             Estado da Calibração
           </label>
-          <select
-            v-model="filters.status"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-          >
+          <BaseSelect v-model="filters.status">
             <option value="">Todos os Estados</option>
             <option value="overdue">Atrasado</option>
             <option value="due_soon">Vencido em Breve (≤ 30 dias)</option>
             <option value="upcoming">Em Breve (> 30 dias)</option>
-          </select>
+          </BaseSelect>
         </div>
 
         <!-- TYPE FILTER -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             <CogIcon class="h-4 w-4 inline mr-1" />
             Tipo de Equipamento
           </label>
-          <select
-            v-model="filters.type_id"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-          >
+          <BaseSelect v-model="filters.type_id">
             <option value="">Todos os Tipos</option>
             <option v-for="type in types" :key="type.id" :value="type.id">
               {{ type.name }}
             </option>
-          </select>
+          </BaseSelect>
         </div>
 
         <!-- CATEGORY FILTER -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             <TagIcon class="h-4 w-4 inline mr-1" />
             Categoria
           </label>
-          <select
-            v-model="filters.category_id"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-          >
+          <BaseSelect v-model="filters.category_id">
             <option value="">Todas as Categorias</option>
             <option v-for="category in categories" :key="category.id" :value="category.id">
               {{ category.name }}
             </option>
-          </select>
+          </BaseSelect>
         </div>
 
         <!-- SORT BY -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             <ArrowsUpDownIcon class="h-4 w-4 inline mr-1" />
             Ordenar Por
           </label>
-          <select
-            v-model="filters.sort_by"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-          >
+          <BaseSelect v-model="filters.sort_by">
             <option value="next_calibration_date">Data de Calibração</option>
             <option value="days_to_calibration">Dias para Calibração</option>
             <option value="name">Nome do Equipamento</option>
             <option value="last_calibration_date">Última Calibração</option>
-          </select>
+          </BaseSelect>
         </div>
       </div>
-    </div>
+    </ModuleCard>
 
     <!-- STATS CARDS -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -156,7 +135,7 @@
     </div>
 
     <!-- EQUIPMENT TABLE -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <ModuleCard class="overflow-hidden" title="Agenda de Calibração">
       <div class="border-b border-gray-200 px-6 py-4">
         <div class="flex items-center justify-between">
           <h2 class="text-lg font-semibold text-gray-900">
@@ -241,7 +220,7 @@
                     </span>
                   </div>
                   <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-600">Next Calibration:</span>
+                    <span class="text-sm text-gray-600">Próxima Calibração:</span>
                     <span class="font-semibold" :class="getNextCalibrationColor(item)">
                       {{ formatDate(item.next_calibration_date) }}
                     </span>
@@ -368,7 +347,7 @@
       <div v-if="items.data.length > 0" class="border-t border-gray-200 px-6 py-4">
         <Pagination :links="items.links" :from="items.from" :to="items.to" :total="items.total" :current_page="items.current_page" :last_page="items.last_page" />
       </div>
-    </div>
+    </ModuleCard>
 
     <!-- CALIBRATION TIMELINE -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -386,7 +365,7 @@
             <div class="flex items-center justify-between">
               <div>
                 <div class="font-medium text-gray-900">{{ month.month }}</div>
-                <div class="text-sm text-gray-500">{{ month.count }} calibrations due</div>
+                <div class="text-sm text-gray-500">{{ month.count }} calibrações previstas</div>
               </div>
               <div class="text-sm font-semibold" :class="month.color">
                 {{ month.percentage }}%
@@ -463,6 +442,10 @@
 </template>
 
 <script setup>
+import BaseSelect from '@/Components/base/BaseSelect.vue'
+import ModuleCard from '@/Components/base/ModuleCard.vue'
+import ModuleHero from '@/Components/base/ModuleHero.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import {
@@ -496,7 +479,7 @@ const props = defineProps({
 
 const formatDate = (dateString) => {
   if (!dateString) return ''
-  return new Date(dateString).toLocaleDateString('en-US', {
+  return new Date(dateString).toLocaleDateString('pt-PT', {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
@@ -564,10 +547,10 @@ const getStatusClasses = (item) => {
 }
 
 const getStatusText = (item) => {
-  if (item.needs_calibration) return 'Overdue'
-  if (item.days_to_calibration <= 30) return 'Due Soon'
-  if (item.days_to_calibration <= 90) return 'Upcoming'
-  return 'Scheduled'
+  if (item.needs_calibration) return 'Atrasado'
+  if (item.days_to_calibration <= 30) return 'Vence em breve'
+  if (item.days_to_calibration <= 90) return 'Próximo'
+  return 'Agendado'
 }
 
 const calibrationTimeline = computed(() => {
@@ -576,7 +559,7 @@ const calibrationTimeline = computed(() => {
   
   for (let i = 0; i < 3; i++) {
     const monthDate = new Date(today.getFullYear(), today.getMonth() + i, 1)
-    const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    const monthName = monthDate.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })
     
     // Count calibrations due in this month
     const count = props.items.data.filter(item => {
@@ -628,9 +611,9 @@ const recordCalibration = (item) => {
 }
 
 const rescheduleCalibration = (item) => {
-  const newDate = prompt('Enter new calibration date (YYYY-MM-DD):', 
+  const newDate = prompt('Indique a nova data de calibração (YYYY-MM-DD):',
     new Date(item.next_calibration_date).toISOString().split('T')[0])
-  
+
   if (newDate) {
     router.post(route('vap-inventory.calibration.reschedule', item.id), {
       next_calibration_date: newDate
@@ -651,7 +634,7 @@ const sendCalibrationAlerts = async () => {
     await router.post(route('vap-inventory.calibration.send-alerts'), {
       days_threshold: 30
     })
-    alert('Calibration alerts sent successfully!')
+    alert('Lembretes de calibração enviados com sucesso.')
   } catch (error) {
     console.error('Error sending alerts:', error)
   }
@@ -669,3 +652,135 @@ watch(
   { deep: true }
 )
 </script>
+
+<style scoped>
+.calibration-schedule-shell :deep(.bg-white.rounded-xl),
+.calibration-schedule-shell :deep(.rounded-xl.border.border-gray-200) {
+  border-color: rgb(226 232 240);
+  border-radius: 1.5rem;
+  background: rgb(255 255 255);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+}
+
+.calibration-schedule-shell :deep(thead.bg-gradient-to-r) {
+  background: linear-gradient(90deg, rgb(248 250 252), rgb(241 245 249));
+}
+
+.calibration-schedule-shell :deep(.bg-gray-50),
+.calibration-schedule-shell :deep(.bg-gray-100) {
+  border-color: rgb(226 232 240);
+  background: rgb(248 250 252 / 0.84);
+}
+
+.calibration-schedule-shell :deep(.text-blue-900) {
+  color: rgb(var(--color-primary-900, 30 58 138));
+}
+
+.calibration-schedule-shell :deep(.bg-blue-50) {
+  background-color: rgb(var(--color-primary-50, 239 246 255));
+}
+
+.calibration-schedule-shell :deep(.bg-blue-100) {
+  background-color: rgb(var(--color-primary-100, 219 234 254));
+}
+
+.calibration-schedule-shell :deep(.border-gray-200),
+.calibration-schedule-shell :deep(.border-gray-300),
+.calibration-schedule-shell :deep(.divide-gray-200 > :not([hidden]) ~ :not([hidden])) {
+  border-color: rgb(226 232 240);
+}
+
+.calibration-schedule-shell :deep(.hover\:bg-gray-50:hover),
+.calibration-schedule-shell :deep(.hover\:bg-gray-100:hover),
+.calibration-schedule-shell :deep(tr:hover) {
+  background: rgb(var(--color-primary-50, 239 246 255) / 0.58);
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.bg-white.rounded-xl),
+:global(.dark) .calibration-schedule-shell :deep(.rounded-xl.border.border-gray-200) {
+  border-color: rgb(30 41 59);
+  background:
+    radial-gradient(circle at top right, rgb(var(--color-primary-500, 59 130 246) / 0.1), transparent 30%),
+    rgb(2 6 23);
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.bg-white),
+:global(.dark) .calibration-schedule-shell :deep(tbody.bg-white) {
+  background: rgb(2 6 23);
+}
+
+:global(.dark) .calibration-schedule-shell :deep(thead.bg-gradient-to-r) {
+  background: linear-gradient(90deg, rgb(15 23 42), rgb(30 41 59));
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.bg-gray-50),
+:global(.dark) .calibration-schedule-shell :deep(.bg-gray-100),
+:global(.dark) .calibration-schedule-shell :deep(.hover\:bg-gray-50:hover),
+:global(.dark) .calibration-schedule-shell :deep(.hover\:bg-gray-100:hover),
+:global(.dark) .calibration-schedule-shell :deep(tr:hover) {
+  border-color: rgb(51 65 85);
+  background: rgb(15 23 42 / 0.72);
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.bg-gray-200),
+:global(.dark) .calibration-schedule-shell :deep(.bg-gray-300) {
+  background-color: rgb(30 41 59);
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.text-gray-900),
+:global(.dark) .calibration-schedule-shell :deep(.text-gray-800),
+:global(.dark) .calibration-schedule-shell :deep(.text-gray-700) {
+  color: rgb(226 232 240);
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.text-gray-600),
+:global(.dark) .calibration-schedule-shell :deep(.text-gray-500),
+:global(.dark) .calibration-schedule-shell :deep(.text-gray-400) {
+  color: rgb(148 163 184);
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.border-gray-200),
+:global(.dark) .calibration-schedule-shell :deep(.border-gray-300),
+:global(.dark) .calibration-schedule-shell :deep(.divide-gray-200 > :not([hidden]) ~ :not([hidden])) {
+  border-color: rgb(30 41 59);
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.text-blue-900) {
+  color: rgb(var(--color-primary-200, 191 219 254));
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.bg-blue-50),
+:global(.dark) .calibration-schedule-shell :deep(.bg-blue-100) {
+  background-color: rgb(var(--color-primary-500, 59 130 246) / 0.1);
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.text-red-900),
+:global(.dark) .calibration-schedule-shell :deep(.text-red-800) {
+  color: rgb(252 165 165);
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.text-orange-900),
+:global(.dark) .calibration-schedule-shell :deep(.text-orange-800),
+:global(.dark) .calibration-schedule-shell :deep(.text-yellow-900),
+:global(.dark) .calibration-schedule-shell :deep(.text-yellow-800) {
+  color: rgb(253 230 138);
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.text-green-900),
+:global(.dark) .calibration-schedule-shell :deep(.text-green-800) {
+  color: rgb(110 231 183);
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.bg-red-100) {
+  background-color: rgb(239 68 68 / 0.12);
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.bg-orange-100),
+:global(.dark) .calibration-schedule-shell :deep(.bg-yellow-100) {
+  background-color: rgb(245 158 11 / 0.12);
+}
+
+:global(.dark) .calibration-schedule-shell :deep(.bg-green-100) {
+  background-color: rgb(34 197 94 / 0.12);
+}
+</style>

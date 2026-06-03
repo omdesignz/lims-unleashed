@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Notifications\PortalPasswordResetNotification;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -29,5 +31,23 @@ class WarehouseShowTest extends TestCase
                 ->where('charts.operations.labels.0', 'Colheitas processadas')
                 ->where('charts.documents.labels.0', 'Proformas')
             );
+    }
+
+    public function test_admin_can_send_portal_password_reset_to_warehouse(): void
+    {
+        Notification::fake();
+
+        $user = User::query()->firstOrFail();
+        $warehouse = Warehouse::query()->firstOrFail();
+
+        $warehouse->forceFill([
+            'email' => 'warehouse-reset-'.$warehouse->id.'@lims-unleashed.test',
+        ])->save();
+
+        $this->actingAs($user)
+            ->post(route('warehouses.send-password-reset', $warehouse))
+            ->assertRedirect();
+
+        Notification::assertSentTo($warehouse, PortalPasswordResetNotification::class);
     }
 }

@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <title>Necessidade {{ $need->reference }} - {{ $companyName }}</title>
     <style>
+        @include('PDFs.partials.premium-document-style')
+
         body {
             font-family: 'DejaVu Sans', sans-serif;
             font-size: 11px;
@@ -167,7 +169,7 @@
         }
     </style>
 </head>
-<body>
+<body class="pdf-document report-document">
     <div class="page">
         <section class="hero">
             <div class="eyebrow">Need Dossier</div>

@@ -32,7 +32,7 @@
       </div>
       <div class="rounded-2xl bg-slate-50 px-3 py-3 dark:bg-slate-800/70">
         <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.due_date') }}</dt>
-        <dd class="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">{{ formatDate(task.dueDate) || 'Sem prazo' }}</dd>
+        <dd class="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">{{ formatDate(task.dueDate) || $t('gestlab.general.labels.vap_filemanager.no_due_date') }}</dd>
       </div>
       <div class="rounded-2xl bg-slate-50 px-3 py-3 dark:bg-slate-800/70">
         <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.completed') }}</dt>

@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <title>Pedido #{{ $order->seq ?? $order->id }} - {{ $companyName }}</title>
     <style>
+        @include('PDFs.partials.premium-document-style')
+
         /* ===== BASE STYLES ===== */
         body {
             font-family: 'DejaVu Sans', sans-serif;
@@ -312,7 +314,7 @@
         }
     </style>
 </head>
-<body>
+<body class="pdf-document commercial-document">
 
     <!-- HEADER SECTION -->
     <table class="w-full document-header">
@@ -406,8 +408,9 @@
         <tbody>
             @foreach($order->items as $index => $item)
                 @php
+                    $itemStatus = $item->status instanceof \BackedEnum ? $item->status->value : (string) $item->status;
                     $statusClass = '';
-                    switch($item->status) {
+                    switch($itemStatus) {
                         case 'PENDING': $statusClass = 'status-pending'; break;
                         case 'ORDERED': $statusClass = 'status-ordered'; break;
                         case 'PARTIALLY_RECEIVED': $statusClass = 'status-partial'; break;
@@ -417,13 +420,13 @@
                     }
                     
                     $statusText = '';
-                    switch($item->status->value) {
+                    switch($itemStatus) {
                         case 'PENDING': $statusText = 'Pendente'; break;
                         case 'ORDERED': $statusText = 'Pedido'; break;
                         case 'PARTIALLY_RECEIVED': $statusText = 'Parcial'; break;
                         case 'RECEIVED': $statusText = 'Recebido'; break;
                         case 'CANCELLED': $statusText = 'Cancelado'; break;
-                        default: $statusText = $item->status->value;
+                        default: $statusText = $itemStatus ?: 'N/A';
                     }
                 @endphp
                 <tr>

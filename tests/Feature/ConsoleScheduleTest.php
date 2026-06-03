@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\CheckProficiencyTestDeadlines;
 use App\Jobs\CheckSupplierAssessmentDeadlines;
 use Illuminate\Console\Scheduling\Schedule;
 use Tests\TestCase;
@@ -22,5 +23,6 @@ class ConsoleScheduleTest extends TestCase
         $this->assertTrue($commands->contains(fn (?string $command) => str_contains((string) $command, 'backup:monitor')));
         $this->assertTrue($commands->contains(fn (?string $command) => str_contains((string) $command, 'cleanup:old-zips')));
         $this->assertTrue($commands->contains(fn (?string $command) => str_contains((string) $command, CheckSupplierAssessmentDeadlines::class)));
+        $this->assertTrue($commands->contains(fn (?string $command) => str_contains((string) $command, CheckProficiencyTestDeadlines::class)));
     }
 }

@@ -4,9 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\AnalysisCategory;
 use App\Models\Department;
+use App\Models\ExportCertificate;
+use App\Models\ImportCertificate;
 use App\Models\Matrix;
 use App\Models\Parameter;
 use App\Models\Profile;
+use App\Models\Quote;
 use App\Models\ResultCategory;
 use App\Models\Role;
 use App\Models\TaxExemption;
@@ -56,16 +59,37 @@ class ComboboxEndpointSmokeTest extends TestCase
             ['name' => 'variables.getVariable', 'params' => ['q' => 'a']],
             ['name' => 'temperatures.getTemperature', 'params' => ['q' => 'a']],
             ['name' => 'analysiscategories.getAnalysisCategory', 'params' => ['q' => 'a']],
+            ['name' => 'collectioncollaborations.getCollectionCollaboration', 'params' => ['q' => 'a']],
+            ['name' => 'collectionendresults.getCollectionEndResult', 'params' => ['q' => 'a']],
+            ['name' => 'collectionreasons.getCollectionReason', 'params' => ['q' => 'a']],
+            ['name' => 'currencies.getCurrency', 'params' => ['q' => 'a']],
+            ['name' => 'customercategories.getCustomerCategory', 'params' => ['q' => 'a']],
             ['name' => 'equipmentcategories.getEquipmentCategory', 'params' => ['q' => 'a']],
+            ['name' => 'faqcategories.getFAQCategory', 'params' => ['q' => 'a']],
+            ['name' => 'faqs.getFAQ', 'params' => ['q' => 'a']],
+            ['name' => 'faqanswers.getFAQAnswer', 'params' => ['q' => 'a']],
+            ['name' => 'formulas.getFormula', 'params' => ['q' => 'a']],
             ['name' => 'maintenancecategories.getMaintenanceCategory', 'params' => ['q' => 'a']],
+            ['name' => 'nwps.getNwp', 'params' => ['q' => 'a']],
+            ['name' => 'occurrencecategories.getOccurrenceCategory', 'params' => ['q' => 'a']],
+            ['name' => 'occurrenceorigins.getOccurrenceOrigin', 'params' => ['q' => 'a']],
+            ['name' => 'occurrencestatuses.getOccurrenceStatus', 'params' => ['q' => 'a']],
             ['name' => 'packagingcategories.getPackagingCategory', 'params' => ['q' => 'a']],
+            ['name' => 'phytosanitary_products.getPhytosanitaryProduct', 'params' => ['q' => 'a']],
             ['name' => 'resultcategories.getResultCategory', 'params' => ['q' => 'a']],
             ['name' => 'customerrequestcategories.getCustomerRequestCategory', 'params' => ['q' => 'a']],
             ['name' => 'invoicecategories.getInvoiceCategory', 'params' => ['q' => 'a']],
+            ['name' => 'itemcategories.getItemCategory', 'params' => ['q' => 'a']],
+            ['name' => 'itemstatuses.getItemStatus', 'params' => ['q' => 'a']],
             ['name' => 'iunits.getInventoryUnit', 'params' => ['q' => 'a']],
             ['name' => 'itypes.getInventoryItemType', 'params' => ['q' => 'a']],
+            ['name' => 'ilocations.getInventoryItemLocation', 'params' => ['q' => 'a']],
+            ['name' => 'iwarehouses.getInventoryItemWarehouse', 'params' => ['q' => 'a']],
             ['name' => 'isuppliers.getInventoryItemSupplier', 'params' => ['q' => 'a']],
+            ['name' => 'iorders.getInventoryOrder', 'params' => ['q' => 'a']],
+            ['name' => 'itransactiontypes.getInventoryTransactionType', 'params' => ['q' => 'a']],
             ['name' => 'taxexemptions.getExemption', 'params' => ['q' => 'a']],
+            ['name' => 'taxtypes.getTaxType', 'params' => ['q' => 'a']],
             ['name' => 'transportcategories.getTransportCategory', 'params' => ['q' => 'a']],
             ['name' => 'paymentcategories.getPaymentCategory', 'params' => ['q' => 'a']],
             ['name' => 'vehicles.getVehicle', 'params' => ['q' => 'a']],
@@ -79,6 +103,18 @@ class ComboboxEndpointSmokeTest extends TestCase
             ['name' => 'itransfers.getInventoryItemTransfer', 'params' => ['q' => 'a']],
             ['name' => 'customerrequests.getCustomerRequest', 'params' => ['q' => 'a']],
             ['name' => 'protocols.getProtocol', 'params' => ['q' => 'a']],
+            ['name' => 'paidservices.getPaidService', 'params' => ['q' => 'a']],
+            ['name' => 'proposaltemplates.getProposalTemplate', 'params' => ['q' => 'a']],
+            ['name' => 'proposalcomplianceagreements.getProposalComplianceAgreement', 'params' => ['q' => 'a']],
+            ['name' => 'qualitycertificates.getQualityCertificate', 'params' => ['q' => 'a']],
+            ['name' => 'invoices.getInvoice', 'params' => ['q' => 'a']],
+            ['name' => 'worksheets.getWorksheet', 'params' => ['q' => 'a']],
+            ['name' => 'importcertificates.getImportCertificate', 'params' => ['q' => 'a']],
+            ['name' => 'exportcertificates.getExportCertificate', 'params' => ['q' => 'a']],
+            ['name' => 'creditnotes.getCreditNote', 'params' => ['q' => 'a']],
+            ['name' => 'contractguides.getContractGuide', 'params' => ['q' => 'a']],
+            ['name' => 'quotes.getQuote', 'params' => ['q' => 'a']],
+            ['name' => 'receipts.getReceipt', 'params' => ['q' => 'a']],
         ];
 
         $failures = [];
@@ -109,6 +145,41 @@ class ComboboxEndpointSmokeTest extends TestCase
         $this->assertSame([], $failures, implode(PHP_EOL, $failures));
     }
 
+    public function test_unauthenticated_combobox_fetches_return_json_instead_of_login_html(): void
+    {
+        $this->getJson(route('units.getUnit', ['q' => 'a']))
+            ->assertUnauthorized()
+            ->assertJsonStructure(['message']);
+    }
+
+    public function test_unauthenticated_browser_modal_routes_redirect_to_login_instead_of_json(): void
+    {
+        $checks = [];
+
+        if ($quote = Quote::query()->first()) {
+            $checks[] = route('quotes.getConvertToInvoiceModal', ['id' => $quote->id]);
+        }
+
+        if ($certificate = ImportCertificate::query()->first()) {
+            $checks[] = route('importcertificates.getIssueInvoiceModal', ['id' => $certificate->id]);
+        }
+
+        if ($certificate = ExportCertificate::query()->first()) {
+            $checks[] = route('exportcertificates.getIssueInvoiceModal', ['id' => $certificate->id]);
+        }
+
+        if ($checks === []) {
+            $this->markTestSkipped('No modal-backed commercial records exist for modal route smoke testing.');
+        }
+
+        foreach ($checks as $url) {
+            $response = $this->get($url);
+
+            $response->assertRedirect(route('login'));
+            $this->assertStringNotContainsString('application/json', (string) $response->headers->get('content-type'));
+        }
+    }
+
     public function test_catalog_scope_endpoints_and_edit_pages_expose_control_metadata(): void
     {
         $user = $this->verifiedAdmin();
@@ -118,15 +189,15 @@ class ComboboxEndpointSmokeTest extends TestCase
         $suffix = Str::upper(Str::random(6));
 
         $analysisCategory = AnalysisCategory::query()->create([
-            'name' => 'Scope Category ' . $suffix,
-            'code' => 'SC-' . $suffix,
+            'name' => 'Scope Category '.$suffix,
+            'code' => 'SC-'.$suffix,
             'description' => 'Scope control category',
             'department_id' => $department->id,
         ]);
 
         $parameter = Parameter::query()->create([
-            'name' => 'Scope Parameter ' . $suffix,
-            'code' => 'SP-' . $suffix,
+            'name' => 'Scope Parameter '.$suffix,
+            'code' => 'SP-'.$suffix,
             'description' => 'Scope control parameter',
             'price' => 1250,
             'charge_tax' => false,
@@ -137,8 +208,8 @@ class ComboboxEndpointSmokeTest extends TestCase
         ]);
 
         $profile = Profile::query()->create([
-            'name' => 'Scope Profile ' . $suffix,
-            'code' => 'PR-' . $suffix,
+            'name' => 'Scope Profile '.$suffix,
+            'code' => 'PR-'.$suffix,
             'description' => 'Scope control profile',
             'price' => 1250,
             'category_id' => $analysisCategory->id,
@@ -167,7 +238,7 @@ class ComboboxEndpointSmokeTest extends TestCase
         ]);
 
         $matrix = Matrix::query()->create([
-            'code' => 'MX-' . $suffix,
+            'code' => 'MX-'.$suffix,
             'description' => 'Scope control matrix',
             'price' => 1250,
             'fixed_price' => 0,
@@ -230,12 +301,12 @@ class ComboboxEndpointSmokeTest extends TestCase
         $suffix = Str::upper(Str::random(6));
 
         $activeCategory = ResultCategory::query()->create([
-            'name' => 'Scope Result Category ' . $suffix,
+            'name' => 'Scope Result Category '.$suffix,
             'description' => 'Active category for combobox filtering',
         ]);
 
         $deletedCategory = ResultCategory::query()->create([
-            'name' => 'Deleted Result Category ' . $suffix,
+            'name' => 'Deleted Result Category '.$suffix,
             'description' => 'Deleted category for combobox filtering',
         ]);
         $deletedCategory->delete();

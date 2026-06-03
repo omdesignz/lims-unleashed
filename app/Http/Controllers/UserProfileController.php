@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Passkey;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
-use Laravel\Fortify\Contracts\UpdatesUserProfileInformation;
+use Jenssegers\Agent\Agent;
 use Laravel\Fortify\Contracts\UpdatesUserPasswords;
+use Laravel\Fortify\Contracts\UpdatesUserProfileInformation;
 use Laravel\Fortify\Features;
-use Spatie\LaravelPasskeys\Models\Passkey;
 
 class UserProfileController extends Controller
 {
@@ -32,7 +32,7 @@ class UserProfileController extends Controller
                 ]),
             // 'availablePermissions' => ['create', 'read', 'update', 'delete'], // Customize as needed
             // 'defaultPermissions' => ['read'],
-            'mustVerifyEmail' => Features::enabled(Features::emailVerification()) && !$request->user()->hasVerifiedEmail(),
+            'mustVerifyEmail' => Features::enabled(Features::emailVerification()) && ! $request->user()->hasVerifiedEmail(),
             'status' => session('status'),
             'confirmsTwoFactorAuthentication' => Features::enabled(Features::twoFactorAuthentication()) && $request->user()->two_factor_secret && $request->user()->two_factor_confirmed_at,
         ]);
@@ -72,7 +72,7 @@ class UserProfileController extends Controller
 
     private function getSessions(Request $request): array
     {
-        if (!Features::enabled(Features::updateProfileInformation())) {
+        if (! Features::enabled(Features::updateProfileInformation())) {
             return [];
         }
 
@@ -82,7 +82,7 @@ class UserProfileController extends Controller
                 ->orderBy('last_activity', 'desc')
                 ->get()
         )->map(function ($session) use ($request) {
-            $agent = new \Jenssegers\Agent\Agent();
+            $agent = new Agent;
             $agent->setUserAgent($session->user_agent);
 
             return (object) [

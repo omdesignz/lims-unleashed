@@ -1,5 +1,5 @@
 <template>
-    <ActionSection>
+    <ActionSection :class="commercialDocumentThemeClasses">
         <template #title>
             Sessões do Navegador
         </template>
@@ -106,6 +106,7 @@ import PrimaryButton from "../../../Components/primary-button.vue";
 import SecondaryButton from "../../../Components/secondary-button.vue";
 import TextInput from "../../../Components/text-input.vue";
 import DialogModal from "../../../Components/dialog-modal.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 defineProps({
     sessions: Array,

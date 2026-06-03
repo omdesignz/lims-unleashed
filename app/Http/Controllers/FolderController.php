@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Folder;
 use App\Models\File;
+use App\Models\Folder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -38,12 +38,12 @@ class FolderController extends Controller
         // Get the parent folder ID from the request, default is null (root folder)
         $parentFolderId = $request->input('parent_id', null);
 
-        $folders = Folder::with('files','subfolders')->where('parent_id', $parentFolderId)->get();
+        $folders = Folder::with('files', 'subfolders')->where('parent_id', $parentFolderId)->get();
         // $files = File::whereNull('deleted_at')->where('folder_id', $parentFolderId)->get();
 
         // You may also want to fetch files in the current folder
-        $files = $parentFolderId 
-            ? Folder::with('files', 'subfolders')->find($parentFolderId)->files // Files in the selected folder
+        $files = $parentFolderId
+            ? Folder::with('files', 'subfolders')->findOrFail($parentFolderId)->files // Files in the selected folder
             : [];
 
         return response()->json([
@@ -51,15 +51,12 @@ class FolderController extends Controller
             'files' => $files,
         ]);
 
-        
         $parentFolderId = $request->get('parent_id', null);
 
         // Fetch folders with their children (subfolders)
         $folders = Folder::with('children')
             ->where('parent_id', $parentFolderId)
             ->get();
-
-        
 
         return response()->json([
             'folders' => $folders,
@@ -84,7 +81,7 @@ class FolderController extends Controller
         $folderPath = $this->getFolderPath($folder);
 
         // Create the folder in the filesystem
-        if (!Storage::exists($folderPath)) {
+        if (! Storage::exists($folderPath)) {
             Storage::makeDirectory($folderPath);
         }
 
@@ -92,7 +89,7 @@ class FolderController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
     }
 
@@ -138,8 +135,6 @@ class FolderController extends Controller
         // Update the paths of files inside this folder and its subfolders
         $this->updateFilePaths($folder, $oldFolderPath, $newFolderPath);
 
-
-
         return redirect()->back()->with('success', 'Folder renamed successfully!');
     }
 
@@ -147,7 +142,7 @@ class FolderController extends Controller
     {
         $this->authorize('view', $folder);
 
-        // Fetch all available folders except the current one 
+        // Fetch all available folders except the current one
         $availableFolders = Folder::with('files', 'subfolders')->where('id', '!=', $folder->id)->get();
 
         return Inertia::render('Folders/Show', [
@@ -163,9 +158,10 @@ class FolderController extends Controller
         $path = $folder->name;
         while ($folder->parent) {
             $folder = $folder->parent;
-            $path = $folder->name . '/' . $path;
+            $path = $folder->name.'/'.$path;
         }
-        return 'uploads/' . $path;
+
+        return 'uploads/'.$path;
     }
 
     // Helper function to delete all subfolders and files
@@ -192,6 +188,7 @@ class FolderController extends Controller
     {
         // Construct new path with the updated folder name
         $oldPath = $this->getFolderPath($folder);
+
         return preg_replace('/[^\/]+$/', $newFolderName, $oldPath);
     }
 
@@ -256,7 +253,7 @@ class FolderController extends Controller
 
         // Get the old path and new path
         $oldFolderPath = $this->getFolderPath($folder);
-        $newFolderPath = $this->getFolderPath(Folder::find($targetFolderId)) . '/' . $folder->name;
+        $newFolderPath = $this->getFolderPath(Folder::find($targetFolderId)).'/'.$folder->name;
 
         // Move folder in the filesystem
         if (Storage::exists($oldFolderPath)) {
@@ -270,7 +267,7 @@ class FolderController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
     }
 }

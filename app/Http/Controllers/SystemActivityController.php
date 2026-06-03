@@ -5,28 +5,27 @@ namespace App\Http\Controllers;
 use App\Exports\ActivityLogExport;
 use App\Http\Requests\ExportActivityLogRequest;
 use App\Http\Requests\FilterActivityLogRequest;
-use Illuminate\Http\Request;
 use App\Http\Resources\SystemActivityResource;
 use App\Http\Resources\UserResource;
 use App\Models\SystemActivity;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Spatie\Activitylog\Models\Activity;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
+use Spatie\Activitylog\Models\Activity;
 
 class SystemActivityController extends Controller
 {
-     /**
+    /**
      * Display a listing of the resource.
-     *
      */
     public function index(FilterActivityLogRequest $request)
     {
-        abort_if( !auth()->user()->can('view_activity_log'), 403, '');
+        abort_if(! auth()->user()->can('view_activity_log'), 403, '');
 
         // dd($request->all());
 
@@ -54,7 +53,7 @@ class SystemActivityController extends Controller
         // Return JSON for Inertia requests, view for regular requests
         // if ($request->wantsJson() || $request->inertia()) {
         //     return response()->json($responseData);
-        // }    
+        // }
 
         return Inertia::render('SystemActivity/Index', $responseData);
 
@@ -80,7 +79,7 @@ class SystemActivityController extends Controller
         //                     ->paginate(10)
         //                     ->withQueryString()
         //                 ),
-        //     'users' => UserResource::collection(User::with('departments')->get()),            
+        //     'users' => UserResource::collection(User::with('departments')->get()),
         //     'fields' => [
         //         [
         //             'name' => 'Código',
@@ -100,7 +99,7 @@ class SystemActivityController extends Controller
         //         return $item . '_' . SystemActivity::MENU_NAME;
         //     }) : collect(config('gestlab.default_abilities'))->map(function($item){
         //         return $item . '_' . SystemActivity::MENU_NAME;
-        //     }),                           
+        //     }),
         //     'query' => request()->only(['search', 'user_id'])
         // ]);
     }
@@ -125,27 +124,27 @@ class SystemActivityController extends Controller
 
     public function show(Activity $activity) // Use route model binding
     {
-        if (!auth()->user()->can('view_activity_log')) {
+        if (! auth()->user()->can('view_activity_log')) {
             abort(403, 'Unauthorized action.');
         }
 
         // Load relationships
         $activity->load(['causer', 'subject']);
-        
+
         // Get properties and ensure they're properly formatted
         $properties = $activity->properties;
-        
+
         // If properties is a string, decode it
         if (is_string($properties)) {
             $properties = json_decode($properties, true);
             $jsonError = json_last_error();
-            
+
             // If JSON decode failed, use original string
             if ($jsonError !== JSON_ERROR_NONE) {
                 $properties = $activity->properties;
             }
         }
-        
+
         // If properties is null or empty, provide default
         if (empty($properties)) {
             $properties = ['No properties available'];
@@ -162,13 +161,13 @@ class SystemActivityController extends Controller
      */
     public function destroy(Activity $activity)
     {
-        if (!auth()->user()->can('delete_activity_log')) {
+        if (! auth()->user()->can('delete_activity_log')) {
             abort(403, 'Unauthorized action.');
         }
 
         try {
             $activity->delete();
-            
+
             return back();
 
         } catch (\Exception $e) {
@@ -185,18 +184,18 @@ class SystemActivityController extends Controller
      */
     public function destroyAll(Request $request)
     {
-        if (!auth()->user()->can('delete_activity_log')) {
+        if (! auth()->user()->can('delete_activity_log')) {
             abort(403, 'Unauthorized action.');
         }
 
         try {
             $count = Activity::count();
-            
+
             // Use chunk to avoid memory issues with large datasets
             Activity::chunk(1000, function ($activities) {
                 $activities->each->delete();
             });
-            
+
             return response()->json([
                 'success' => true,
                 'message' => __(':count activity logs deleted successfully.', ['count' => $count]),
@@ -241,7 +240,7 @@ class SystemActivityController extends Controller
         // REMOVE THIS LINE
         // dd($request->all());
 
-        if (!auth()->user()->can('export_activity_log')) {
+        if (! auth()->user()->can('export_activity_log')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -255,7 +254,7 @@ class SystemActivityController extends Controller
         // Get all results for export
         $activities = $query->get();
 
-        $filename = 'activity-logs-' . Carbon::now()->format('Y-m-d-His') . '.xlsx';
+        $filename = 'activity-logs-'.Carbon::now()->format('Y-m-d-His').'.xlsx';
 
         // Fix the export response
         // return (new ActivityLogExport($activities))->download($filename);
@@ -269,7 +268,7 @@ class SystemActivityController extends Controller
      */
     public function stats(Request $request)
     {
-        if (!auth()->user()->can('view_activity_log')) {
+        if (! auth()->user()->can('view_activity_log')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -293,7 +292,7 @@ class SystemActivityController extends Controller
      */
     public function stream(Request $request)
     {
-        if (!auth()->user()->can('view_activity_log')) {
+        if (! auth()->user()->can('view_activity_log')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -315,21 +314,22 @@ class SystemActivityController extends Controller
                 ->get();
 
             if ($newActivities->isNotEmpty()) {
-                $lastId = $newActivities->first()->id;
-                
-                echo "data: " . json_encode([
+                $lastActivity = $newActivities->first();
+                $lastId = $lastActivity->id;
+
+                echo 'data: '.json_encode([
                     'activities' => $newActivities,
                     'last_id' => $lastId,
                     'timestamp' => now()->toISOString(),
-                ]) . "\n\n";
-                
+                ])."\n\n";
+
                 ob_flush();
                 flush();
             }
 
             // Sleep for 5 seconds before checking again
             sleep(5);
-            
+
             // Break if client disconnected
             if (connection_aborted()) {
                 break;
@@ -342,7 +342,7 @@ class SystemActivityController extends Controller
      */
     public function cleanupRecommendations()
     {
-        if (!auth()->user()->can('manage_activity_log')) {
+        if (! auth()->user()->can('manage_activity_log')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -376,7 +376,7 @@ class SystemActivityController extends Controller
         $errorLogsLastHour = Activity::where('log_name', 'error')
             ->where('created_at', '>=', Carbon::now()->subHour())
             ->count();
-        
+
         if ($errorLogsLastHour > 10) {
             $recommendations[] = [
                 'type' => 'frequent_errors',
@@ -403,7 +403,7 @@ class SystemActivityController extends Controller
         // Causer filter
         if ($request->filled('causer_id')) {
             $query->where('causer_id', $request->get('causer_id'))
-                  ->where('causer_type', User::class);
+                ->where('causer_type', User::class);
         }
 
         // Subject filter
@@ -423,12 +423,12 @@ class SystemActivityController extends Controller
         // Property filter (search in properties JSON)
         if ($request->filled('property')) {
             $property = $request->get('property');
-            $query->where('properties', 'LIKE', '%' . $property . '%');
+            $query->where('properties', 'LIKE', '%'.$property.'%');
         }
 
         // Description filter
         if ($request->filled('description')) {
-            $query->where('description', 'LIKE', '%' . $request->get('description') . '%');
+            $query->where('description', 'LIKE', '%'.$request->get('description').'%');
         }
 
         // Date range filter
@@ -479,7 +479,7 @@ class SystemActivityController extends Controller
             ->map(function ($activity) {
                 return [
                     'value' => $activity->causer_id,
-                    'label' => $activity->causer ? $activity->causer->name . ' (' . $activity->causer->email . ')' : 'Unknown',
+                    'label' => $activity->causer ? $activity->causer->name.' ('.$activity->causer->email.')' : 'Unknown',
                 ];
             })
             ->toArray();
@@ -530,7 +530,7 @@ class SystemActivityController extends Controller
         // This is a simplified version - in production you might want
         // to extract all unique keys from JSON properties
         $commonProperties = ['attributes', 'old', 'new', 'ip_address', 'user_agent', 'url'];
-        
+
         return collect($commonProperties)->map(function ($property) {
             return [
                 'value' => $property,
@@ -548,7 +548,7 @@ class SystemActivityController extends Controller
             $properties = json_decode($properties, true);
         }
 
-        if (json_last_error() !== JSON_ERROR_NONE || !is_array($properties)) {
+        if (json_last_error() !== JSON_ERROR_NONE || ! is_array($properties)) {
             return $properties;
         }
 
@@ -612,7 +612,7 @@ class SystemActivityController extends Controller
             ->orderBy('hour')
             ->get()
             ->mapWithKeys(function ($item) {
-                return [str_pad($item->hour, 2, '0', STR_PAD_LEFT) . ':00' => $item->count];
+                return [str_pad($item->hour, 2, '0', STR_PAD_LEFT).':00' => $item->count];
             });
     }
 
@@ -621,7 +621,7 @@ class SystemActivityController extends Controller
      */
     public function archive(Request $request)
     {
-        if (!auth()->user()->can('manage_activity_log')) {
+        if (! auth()->user()->can('manage_activity_log')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -634,7 +634,7 @@ class SystemActivityController extends Controller
 
         try {
             // Create archive table if it doesn't exist
-            if (!Schema::hasTable('activity_log_archive')) {
+            if (! Schema::hasTable('activity_log_archive')) {
                 Schema::create('activity_log_archive', function (Blueprint $table) {
                     $table->id();
                     $table->string('log_name')->nullable();
@@ -702,7 +702,7 @@ class SystemActivityController extends Controller
      */
     public function restoreArchive(Request $request)
     {
-        if (!auth()->user()->can('manage_activity_log')) {
+        if (! auth()->user()->can('manage_activity_log')) {
             abort(403, 'Unauthorized action.');
         }
 

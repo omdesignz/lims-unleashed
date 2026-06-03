@@ -2,21 +2,19 @@
 
 namespace App\Models;
 
+use App\Filters\GlobalFilter;
+use HighSolutions\EloquentSequence\Sequence;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use HighSolutions\EloquentSequence\Sequence;
 use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\AllowedSort;
-use App\Filters\GlobalFilter;
-use Illuminate\Database\Eloquent\Builder;
-
 
 class Sample extends Model
 {
-    use HasFactory, SoftDeletes, Sequence;
+    use HasFactory, Sequence, SoftDeletes;
 
-    public CONST MENU_NAME = 'samples';
+    public const MENU_NAME = 'samples';
 
     /**
      * The attributes that are mass assignable.
@@ -31,6 +29,7 @@ class Sample extends Model
     ];
 
     protected $table = 'samples';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     public function sequence()
@@ -40,7 +39,6 @@ class Sample extends Model
             'fieldName' => 'seq',
         ];
     }
-
 
     /**
      * Analysis
@@ -62,22 +60,25 @@ class Sample extends Model
         return $this->hasOne(CounterAnalysis::class);
     }
 
-
     public function collection()
     {
         return $this->belongsTo(LabCode::class, 'cl_id');
     }
 
-    public function scopeByParameters(Builder $q, $parameters) : void {
-        
-        $this->analysis()->whereHas('profile', function($q) use ($parameters) {
-               $q->whereHas('parameters', function($q) use ($parameters) {
-               $q->whereIn('parameter_id', explode(',', $parameters));
-           });
-       });
-   }
+    public function scopeByParameters(Builder $query, mixed $parameters): void
+    {
+        $parameterIds = self::normalizeParameterIds($parameters);
 
-    /** 
+        if ($parameterIds === []) {
+            return;
+        }
+
+        $query->whereHas('analysis.profile.parameters', function (Builder $query) use ($parameterIds): void {
+            $query->whereIn('parameter_id', $parameterIds);
+        });
+    }
+
+    /**
      * Results
      *
      * @return Relationship
@@ -91,19 +92,19 @@ class Sample extends Model
     {
         parent::boot();
 
-            static::creating(function($model) {
+        static::creating(function ($model) {
 
-                $model->seq += 1; 
-                $model->code = $model->sample_month . '/' . str_pad ($model->seq, 4, '0', STR_PAD_LEFT);
-        
-            });
+            $model->seq += 1;
+            $model->code = $model->sample_month.'/'.str_pad($model->seq, 4, '0', STR_PAD_LEFT);
 
-            self::deleting(function($model) {
-                // Analysis
-                $model->analysis()->delete();             
-                // Results
-                $model->results->each->forcedelete();
-           });
+        });
+
+        self::deleting(function ($model) {
+            // Analysis
+            $model->analysis()->delete();
+            // Results
+            $model->results->each->forcedelete();
+        });
 
     }
 
@@ -111,24 +112,21 @@ class Sample extends Model
     {
         return [
             AllowedFilter::partial('collection.code'),
+            AllowedFilter::partial('code'),
             AllowedFilter::partial('created_at'),
             // AllowedFilter::scope('parameters', 'by_parameters'),
-            AllowedFilter::callback('parameters', function($query, $value) {
-                 $query->whereHas('analysis', function($q) use ($value) {
-                    $q->whereHas('profile', function($q) use ($value) {
-                        $q->whereHas('parameters', function($q) use ($value) {
-                            
-                            // dd(collect($value)->filter(function($item) {
-                            //     return array_key_exists('value', $item);
-                            // })->map->value->unique()->values());
-                            
-                            is_array($value) ? $q->whereIn('parameter_id', collect($value)->filter(fn($item) => array_key_exists('value', $item))->collapse()->unique()->values()) : $q->whereIn('parameter_id', explode(',', $value));
-                            // $q->whereIn('parameter_id', explode(',', $value));
-                        });
-                    });
+            AllowedFilter::callback('parameters', function (Builder $query, mixed $value): void {
+                $parameterIds = self::normalizeParameterIds($value);
+
+                if ($parameterIds === []) {
+                    return;
+                }
+
+                $query->whereHas('analysis.profile.parameters', function (Builder $query) use ($parameterIds): void {
+                    $query->whereIn('parameter_id', $parameterIds);
                 });
             }),
-            AllowedFilter::custom('globalFilter', new GlobalFilter(['name', 'description', 'collection.code'])),
+            AllowedFilter::custom('globalFilter', new GlobalFilter(['code', 'collection.code'])),
             AllowedFilter::trashed(),
         ];
     }
@@ -144,51 +142,74 @@ class Sample extends Model
     public static function getColumns(): array
     {
         return [
-                [
-                    'name' => trans('gestlab.general.labels.samples.cl_id'),
-                    'value' => 'collection',
-                    'filter_field' => 'collection.code',
-                    'filterable' => true,
-                    'type' => 'string',
-                    'format' => '',
-                    'filter' => '',
-                    'options' => [
-                        // ['value' => 'pending', 'label' => 'Pending'],
-                        // ['value' => 'approved', 'label' => 'Approved'],
-                        // ['value' => 'rejected', 'label' => 'Rejected']
-                    ],
-                    'config' => [
-                        'url' => route('customers.getCustomer'),
-                        'label' => 'name',
-                        'value' => 'id',
-                    ]
+            [
+                'name' => trans('gestlab.general.labels.samples.cl_id'),
+                'value' => 'collection',
+                'filter_field' => 'collection.code',
+                'filterable' => true,
+                'type' => 'string',
+                'format' => '',
+                'filter' => '',
+                'options' => [
+                    // ['value' => 'pending', 'label' => 'Pending'],
+                    // ['value' => 'approved', 'label' => 'Approved'],
+                    // ['value' => 'rejected', 'label' => 'Rejected']
                 ],
-                [
-                    'name' => trans('gestlab.general.labels.created_at'),
-                    'value' => 'created_at',
-                    'filter_field' => 'created_at',
-                    'filterable' => true,
-                    'type' => 'date',
-                    'format' => '',
-                    'filter' => '',
+                'config' => [
+                    'url' => route('customers.getCustomer'),
+                    'label' => 'name',
+                    'value' => 'id',
                 ],
-                [
-                    'name' => trans('gestlab.actions.edit'),
-                    'value' => 'actions',
-                    'filter_field' => 'actions',
-                    'filterable' => false,
-                    'type' => 'actions',
-                    'format' => '',
-                    'filter' => '',
-                ],
-            ];
+            ],
+            [
+                'name' => trans('gestlab.general.labels.samples.code'),
+                'value' => 'code',
+                'filter_field' => 'code',
+                'filterable' => true,
+                'type' => 'string',
+                'format' => '',
+                'filter' => '',
+            ],
+            [
+                'name' => trans('gestlab.general.labels.created_at'),
+                'value' => 'created_at',
+                'filter_field' => 'created_at',
+                'filterable' => true,
+                'type' => 'date',
+                'format' => '',
+                'filter' => '',
+            ],
+        ];
     }
 
     public static function getTrashedOptions(): array
     {
         return [
             ['value' => 'only', 'text' => trans('gestlab.general.labels.trashed_only')],
-            ['value' => 'with', 'text' => trans('gestlab.general.labels.trashed_with')]
+            ['value' => 'with', 'text' => trans('gestlab.general.labels.trashed_with')],
         ];
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private static function normalizeParameterIds(mixed $parameters): array
+    {
+        $values = is_array($parameters) ? $parameters : explode(',', (string) $parameters);
+
+        return collect($values)
+            ->flatten()
+            ->flatMap(function (mixed $item): array {
+                if (is_array($item)) {
+                    return collect(data_get($item, 'value', $item))->flatten()->all();
+                }
+
+                return [$item];
+            })
+            ->filter(fn (mixed $id): bool => is_numeric($id))
+            ->map(fn (mixed $id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
     }
 }

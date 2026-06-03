@@ -1,5 +1,5 @@
 
-<img src="{!! public_path() . '/images/SVG/sncqa_logo.png'!!}" alt="" width="25%"> <br> <br>
+@include('PDFs.partials.brand-logo', ['settings' => $settings ?? null, 'width' => '25%']) <br> <br>
 
 
 <div style="float: right; width: 54%;">

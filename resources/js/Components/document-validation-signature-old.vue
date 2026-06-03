@@ -4,6 +4,7 @@ import { watch } from 'vue'
 import { trans } from 'laravel-vue-i18n';
 import Modal from "@/Components/modal.vue";
 import DocumentValidationSignature from '@/Components/document-validation-signature.vue';
+import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
 
 
 const props = defineProps({
@@ -45,18 +46,7 @@ function updateRecord(e) {
 }
 
 function loadUsers(query, setOptions) {
-    fetch('/users/getUser?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.name,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/users/getUser', query, setOptions, optionMappers.name);
 }
 </script>
 

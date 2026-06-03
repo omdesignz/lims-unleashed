@@ -1,5 +1,5 @@
 <template>
-  <ActionSection>
+  <ActionSection :class="commercialDocumentThemeClasses">
     <template #title>
       <div class="flex items-center gap-2">
         <svg class="h-5 w-5 text-blue-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -331,6 +331,7 @@ import ActionSection from "../../../Components/action-section.vue";
 import ConfirmsPassword from "../../../Components/confirms-password.vue";
 import InputError from "../../../Components/input-error.vue";
 import TextInput from "../../../Components/text-input.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 const props = defineProps({
     requiresConfirmation: Boolean,

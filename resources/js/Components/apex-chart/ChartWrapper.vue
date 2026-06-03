@@ -1,18 +1,18 @@
 <template>
-  <div>
+  <div class="rounded-[1.5rem] border border-[#e8ddcd] bg-[#fffdf7]/70 p-3 shadow-inner shadow-white/40 dark:border-[#25443c] dark:bg-[#07110f]/40 dark:shadow-none">
     <ApexChart
       :type="type"
       :height="height"
       :width="width"
       :series="series"
-      :options="options"
+      :options="mergedOptions"
       :key="chartKey"
     />
   </div>
 </template>
 
 <script setup>
-import { computed, defineAsyncComponent, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 const ApexChart = defineAsyncComponent(async () => (await import('vue3-apexcharts')).default)
 
@@ -40,15 +40,48 @@ const props = defineProps({
 })
 
 const chartKey = ref(0)
+const isDarkMode = ref(false)
+
+let themeObserver = null
+
+const syncDarkMode = () => {
+  if (typeof document === 'undefined') {
+    return
+  }
+
+  isDarkMode.value = document.documentElement.classList.contains('dark')
+}
+
+onMounted(() => {
+  syncDarkMode()
+
+  themeObserver = new MutationObserver(syncDarkMode)
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class'],
+  })
+})
+
+onBeforeUnmount(() => {
+  themeObserver?.disconnect()
+})
 
 // Force re-render when options change
 watch(() => props.options, () => {
   chartKey.value += 1
 }, { deep: true })
 
+watch(isDarkMode, () => {
+  chartKey.value += 1
+})
+
 // Merge default options with custom options
 const mergedOptions = computed(() => ({
+  ...props.options,
   chart: {
+    background: 'transparent',
+    foreColor: isDarkMode.value ? '#d7e2dd' : '#31413b',
+    fontFamily: 'inherit',
     toolbar: { show: false },
     animations: {
       enabled: true,
@@ -65,9 +98,9 @@ const mergedOptions = computed(() => ({
     },
     ...props.options.chart
   },
-  colors: ['#1e3a8a', '#10b981', '#f59e0b', '#dc2626', '#8b5cf6', '#06b6d4'],
+  colors: props.options.colors ?? ['#143d37', '#1f7a68', '#d6a43a', '#b54747', '#5b6f63', '#6aa99b'],
   grid: {
-    borderColor: '#e5e7eb',
+    borderColor: isDarkMode.value ? '#25443c' : '#e8ddcd',
     strokeDashArray: 4,
     padding: {
       top: 0,
@@ -81,7 +114,8 @@ const mergedOptions = computed(() => ({
     enabled: false,
     style: {
       fontSize: '12px',
-      fontWeight: 600
+      fontWeight: 600,
+      colors: [isDarkMode.value ? '#f7f1e7' : '#15231f'],
     },
     ...props.options.dataLabels
   },
@@ -93,6 +127,7 @@ const mergedOptions = computed(() => ({
   xaxis: {
     labels: {
       style: {
+        colors: isDarkMode.value ? '#a9bbb4' : '#5f6f68',
         fontSize: '12px',
         fontWeight: 400
       }
@@ -102,6 +137,7 @@ const mergedOptions = computed(() => ({
   yaxis: {
     labels: {
       style: {
+        colors: isDarkMode.value ? '#a9bbb4' : '#5f6f68',
         fontSize: '12px',
         fontWeight: 400
       },
@@ -114,13 +150,17 @@ const mergedOptions = computed(() => ({
   tooltip: {
     shared: true,
     intersect: false,
-    theme: 'light',
+    theme: props.options.tooltip?.theme ?? (isDarkMode.value ? 'dark' : 'light'),
     ...props.options.tooltip
   },
   legend: {
     position: 'top',
     horizontalAlign: 'left',
     fontSize: '12px',
+    labels: {
+      colors: isDarkMode.value ? '#d7e2dd' : '#31413b',
+      ...props.options.legend?.labels,
+    },
     markers: {
       radius: 12
     },
@@ -130,6 +170,9 @@ const mergedOptions = computed(() => ({
     },
     ...props.options.legend
   },
-  ...props.options
+  theme: {
+    mode: isDarkMode.value ? 'dark' : 'light',
+    ...props.options.theme,
+  },
 }))
 </script>

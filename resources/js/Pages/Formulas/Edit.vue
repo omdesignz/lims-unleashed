@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed, onMounted, watch } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import {
@@ -350,7 +351,7 @@ const goBack = () => {
 </script>
 
 <template>
-  <div class="border-b border-gray-200 pb-5">
+  <div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
     <div class="flex items-center justify-between">
       <div>
         <button

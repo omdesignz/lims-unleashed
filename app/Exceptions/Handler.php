@@ -2,11 +2,12 @@
 
 namespace App\Exceptions;
 
-use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Psr\Log\LogLevel;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -14,7 +15,7 @@ class Handler extends ExceptionHandler
     /**
      * A list of exception types with their corresponding custom log levels.
      *
-     * @var array<class-string<\Throwable>, \Psr\Log\LogLevel::*>
+     * @var array<class-string<Throwable>, LogLevel::*>
      */
     protected $levels = [
         //
@@ -23,7 +24,7 @@ class Handler extends ExceptionHandler
     /**
      * A list of the exception types that are not reported.
      *
-     * @var array<int, class-string<\Throwable>>
+     * @var array<int, class-string<Throwable>>
      */
     protected $dontReport = [
         //
@@ -52,34 +53,33 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $e)
     {
-         $response = parent::render($request, $e);
+        $response = parent::render($request, $e);
 
-         if ($this->shouldReturnJsonResponse($request)) {
+        if ($this->shouldReturnJsonResponse($request)) {
             return $this->normalizeJsonErrorResponse($request, $e, $response);
-         }
+        }
 
         //  dd($e->getMessage());
 
-         if($this->shouldRenderCustomErrorPage() &&  in_array($response->status(), [400, 401, 403, 404, 500, 503])) {
+        if ($this->shouldRenderCustomErrorPage() && in_array($response->status(), [400, 401, 403, 404, 500, 503])) {
             return inertia()->render('Error', [
                 'status' => $response->status(),
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ])
-            ->toResponse($request)
-            ->setStatusCode($response->status());
-         }
+                ->toResponse($request)
+                ->setStatusCode($response->status());
+        }
 
-         if($response->status() === 419)
-         {
+        if ($response->status() === 419) {
             return back()->with([
                 'toast' => [
                     'title' => 'Session Expired',
                     'message' => 'Your session has expired! Please try again.',
-                ]
-                ]);
-         }
+                ],
+            ]);
+        }
 
-         return $response;
+        return $response;
     }
 
     protected function unauthenticated($request, AuthenticationException $exception)
@@ -99,26 +99,60 @@ class Handler extends ExceptionHandler
 
     protected function shouldReturnJsonResponse(Request $request): bool
     {
-        if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+        if ($request->headers->has('X-Inertia')) {
+            return false;
+        }
+
+        if ($request->is('api/*')) {
             return true;
         }
 
         $routeName = (string) optional($request->route())->getName();
         $path = trim($request->path(), '/');
         $accept = (string) $request->headers->get('accept');
+        $wantsJson = str_contains($accept, 'application/json') || str_contains($accept, 'text/json');
+
+        if ($this->isBrowserDocumentRequest($routeName, $path, $accept) || $this->isBrowserModalRequest($routeName, $path, $accept)) {
+            return false;
+        }
 
         if (
             str_contains($routeName, '.get')
             || str_starts_with($routeName, 'passkeys.')
             || str_starts_with($routeName, 'security.passkeys.')
             || preg_match('#(^|/)(get[A-Z][^/]*|authentication-options)(/|$)#', $path) === 1
-            || str_contains($accept, 'application/json')
-            || str_contains($accept, 'text/json')
+            || ($wantsJson && ! str_contains($accept, 'text/html'))
         ) {
             return true;
         }
 
         return false;
+    }
+
+    protected function isBrowserDocumentRequest(string $routeName, string $path, string $accept): bool
+    {
+        if (str_contains($accept, 'application/json') || str_contains($accept, 'text/json')) {
+            return false;
+        }
+
+        if ($accept !== '' && ! str_contains($accept, 'text/html') && ! str_contains($accept, '*/*')) {
+            return false;
+        }
+
+        return preg_match('#(pdf|excel|xlsx|csv|export|download|print)#i', $routeName.' '.$path) === 1;
+    }
+
+    protected function isBrowserModalRequest(string $routeName, string $path, string $accept): bool
+    {
+        if (str_contains($accept, 'application/json') || str_contains($accept, 'text/json')) {
+            return false;
+        }
+
+        if ($accept !== '' && ! str_contains($accept, 'text/html') && ! str_contains($accept, '*/*')) {
+            return false;
+        }
+
+        return preg_match('#modal#i', $routeName.' '.$path) === 1;
     }
 
     protected function normalizeJsonErrorResponse(Request $request, Throwable $e, $response): JsonResponse
@@ -149,11 +183,10 @@ class Handler extends ExceptionHandler
 
     protected function shouldRenderCustomErrorPage()
     {
-        if(! app()->environment(['local', 'testing']))
-        {
+        if (! app()->environment(['local', 'testing'])) {
             return true;
         }
 
-        return true; 
+        return true;
     }
 }

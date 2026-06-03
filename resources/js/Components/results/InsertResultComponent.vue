@@ -5,7 +5,7 @@
     <div class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
       <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-950 text-white shadow-lg shadow-blue-950/20 dark:bg-blue-500 dark:text-slate-950">
+          <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-900 text-white shadow-lg shadow-primary-900/20 dark:bg-primary-400 dark:text-slate-950">
             <BeakerIcon class="h-6 w-6" />
           </div>
           <h1 class="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
@@ -13,19 +13,19 @@
           </h1>
           <p class="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
             {{ $t('gestlab.general.labels.results.code_id') }}
-            <span v-if="record" class="font-semibold text-blue-900 dark:text-blue-300">
+            <span v-if="record" class="font-semibold text-primary-900 dark:text-primary-300">
               {{ record.code }}
             </span>
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
-          <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-500/15 dark:text-blue-200 dark:ring-blue-400/20">
+          <span class="inline-flex items-center rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-900 ring-1 ring-inset ring-primary-700/10 dark:bg-primary-500/15 dark:text-primary-200 dark:ring-primary-400/20">
             {{ totalResults }} {{ $t('gestlab.general.labels.results.items') }}
           </span>
           
           <!-- Individual Entry Badge -->
           <span v-if="hasIndividualEntries" 
-                class="inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-900 ring-1 ring-inset ring-green-700/10 dark:bg-green-500/15 dark:text-green-200 dark:ring-green-400/20">
+                class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-900 ring-1 ring-inset ring-emerald-700/10 dark:bg-emerald-500/15 dark:text-emerald-200 dark:ring-emerald-400/20">
             <CheckCircleIcon class="h-4 w-4" />
             {{ individualEntryCount }} individuais
           </span>
@@ -37,14 +37,14 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div class="text-sm text-slate-600 dark:text-slate-300">
             Modo de trabalho: 
-            <span class="font-medium text-blue-900 dark:text-blue-300">{{ workflowMode === 'batch' ? 'Em Lote' : 'Individual' }}</span>
+            <span class="font-medium text-primary-900 dark:text-primary-300">{{ workflowMode === 'batch' ? 'Em Lote' : 'Individual' }}</span>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <button @click="switchWorkflowMode('batch')"
                     :class="[
                       'rounded-xl px-4 py-2 text-sm font-medium transition-all',
                       workflowMode === 'batch'
-                        ? 'bg-blue-900 text-white shadow-sm'
+                        ? 'bg-primary-900 text-white shadow-sm dark:bg-primary-600'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
                     ]">
               <DocumentTextIcon class="h-4 w-4 inline mr-1" />
@@ -54,7 +54,7 @@
                     :class="[
                       'rounded-xl px-4 py-2 text-sm font-medium transition-all',
                       workflowMode === 'individual'
-                        ? 'bg-blue-900 text-white shadow-sm'
+                        ? 'bg-primary-900 text-white shadow-sm dark:bg-primary-600'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
                     ]">
               <DocumentPlusIcon class="h-4 w-4 inline mr-1" />
@@ -64,12 +64,12 @@
         </div>
         
         <!-- Instructions based on mode -->
-        <div v-if="workflowMode === 'individual'" class="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-500/20 dark:bg-blue-500/10">
+        <div v-if="workflowMode === 'individual'" class="mt-4 rounded-2xl border border-primary-200 bg-primary-50 p-4 dark:border-primary-500/20 dark:bg-primary-500/10">
           <div class="flex items-start gap-3">
-            <InformationCircleIcon class="h-5 w-5 text-blue-900 mt-0.5" />
+            <InformationCircleIcon class="mt-0.5 h-5 w-5 text-primary-900 dark:text-primary-300" />
             <div>
-              <p class="text-sm font-medium text-blue-900 dark:text-blue-200">Modo individual activo</p>
-              <p class="mt-1 text-xs text-blue-700 dark:text-blue-300">
+              <p class="text-sm font-medium text-primary-900 dark:text-primary-200">Modo individual activo</p>
+              <p class="mt-1 text-xs text-primary-700 dark:text-primary-300">
                 Clique em qualquer parâmetro para inserir ou editar o respectivo resultado.
                 Pode alternar para o modo em lote a qualquer momento.
               </p>
@@ -84,20 +84,20 @@
       <!-- QUICK STATS CARD -->
       <div class="rounded-[26px] border border-slate-200 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div class="rounded-2xl bg-blue-50 p-4 text-center dark:bg-blue-500/10">
-            <div class="text-2xl font-bold text-blue-900 dark:text-blue-300">{{ totalResults }}</div>
+          <div class="rounded-2xl border border-primary-100 bg-primary-50 p-4 text-center dark:border-primary-500/20 dark:bg-primary-500/10">
+            <div class="text-2xl font-bold text-primary-900 dark:text-primary-300">{{ totalResults }}</div>
             <div class="text-sm text-slate-600 dark:text-slate-300">Total de Parâmetros</div>
           </div>
-          <div class="rounded-2xl bg-green-50 p-4 text-center dark:bg-green-500/10">
-            <div class="text-2xl font-bold text-green-900 dark:text-green-300">{{ insertedCount }}</div>
+          <div class="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-center dark:border-emerald-500/20 dark:bg-emerald-500/10">
+            <div class="text-2xl font-bold text-emerald-900 dark:text-emerald-300">{{ insertedCount }}</div>
             <div class="text-sm text-slate-600 dark:text-slate-300">Inseridos</div>
           </div>
-          <div class="rounded-2xl bg-yellow-50 p-4 text-center dark:bg-amber-500/10">
-            <div class="text-2xl font-bold text-yellow-900 dark:text-amber-300">{{ pendingCount }}</div>
+          <div class="rounded-2xl border border-amber-100 bg-amber-50 p-4 text-center dark:border-amber-500/20 dark:bg-amber-500/10">
+            <div class="text-2xl font-bold text-amber-900 dark:text-amber-300">{{ pendingCount }}</div>
             <div class="text-sm text-slate-600 dark:text-slate-300">Pendentes</div>
           </div>
-          <div class="rounded-2xl bg-purple-50 p-4 text-center dark:bg-purple-500/10">
-            <div class="text-2xl font-bold text-purple-900 dark:text-purple-300">{{ calculatedCount }}</div>
+          <div class="rounded-2xl border border-primary-100 bg-primary-50 p-4 text-center dark:border-primary-500/20 dark:bg-primary-500/10">
+            <div class="text-2xl font-bold text-primary-900 dark:text-primary-300">{{ calculatedCount }}</div>
             <div class="text-sm text-slate-600 dark:text-slate-300">Calculados</div>
           </div>
         </div>
@@ -106,11 +106,11 @@
         <div class="mt-6">
           <div class="mb-2 flex justify-between text-sm text-slate-600 dark:text-slate-300">
             <span>Progresso: {{ insertedCount }} de {{ totalResults }}</span>
-            <span>{{ Math.round((insertedCount / totalResults) * 100) }}%</span>
+            <span>{{ progressPercent }}%</span>
           </div>
           <div class="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-            <div class="h-full bg-gradient-to-r from-blue-900 to-blue-800 rounded-full transition-all duration-500"
-                 :style="{ width: `${(insertedCount / totalResults) * 100}%` }"></div>
+            <div class="h-full rounded-full bg-gradient-to-r from-primary-900 via-primary-700 to-primary-500 transition-all duration-500"
+                 :style="{ width: `${progressPercent}%` }"></div>
           </div>
         </div>
       </div>
@@ -120,10 +120,10 @@
         <div v-for="(result, index) in form.results" 
              :key="getResultKey(result, index)"
              @click="openIndividualEntryForResult(result)"
-             class="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 transition-all duration-200 hover:border-blue-900 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+             class="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 transition-all duration-200 hover:border-primary-500 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
              :class="{
-               'border-green-200 bg-green-50 dark:border-green-500/30 dark:bg-green-500/10': getResultDisplayValue(result) && String(getResultDisplayValue(result)).trim() !== '',
-               'border-purple-200 bg-purple-50 dark:border-purple-500/30 dark:bg-purple-500/10': result.requires_calculation,
+               'border-emerald-200 bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-500/10': getResultDisplayValue(result) && String(getResultDisplayValue(result)).trim() !== '',
+               'border-primary-200 bg-primary-50 dark:border-primary-500/30 dark:bg-primary-500/10': result.requires_calculation,
                'border-slate-200 dark:border-slate-800': !getResultDisplayValue(result) || String(getResultDisplayValue(result)).trim() === ''
              }">
           <div class="flex items-start justify-between">
@@ -133,7 +133,7 @@
                   {{ result.parameter_id?.code || 'N/D' }}
                 </span>
                 <span v-if="result.requires_calculation" 
-                      class="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-0.5 text-xs text-purple-800 dark:bg-purple-500/15 dark:text-purple-200">
+                      class="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-900 dark:bg-primary-500/15 dark:text-primary-100">
                   <CalculatorIcon class="h-3 w-3" />
                   Calculado
                 </span>
@@ -154,7 +154,7 @@
               
               <!-- Value Display -->
               <div v-if="getResultDisplayValue(result) && String(getResultDisplayValue(result)).trim() !== ''" class="mt-2">
-                <div class="text-lg font-bold text-green-900">
+                <div class="text-lg font-bold text-emerald-900 dark:text-emerald-200">
                   {{ getResultDisplayValue(result) }}
                   <span v-if="result.unit_label" class="text-sm font-normal text-slate-600 dark:text-slate-400">
                     {{ result.unit_label }}
@@ -164,13 +164,13 @@
                   ± {{ result.uncertainty_value }}
                 </div>
                 <div v-if="result.insertion_method === 'individual'" 
-                     class="text-xs text-blue-600 mt-1 flex items-center gap-1">
+                     class="mt-1 flex items-center gap-1 text-xs font-medium text-primary-700 dark:text-primary-300">
                   <DocumentPlusIcon class="h-3 w-3" />
                   Individual
                 </div>
               </div>
               <div v-else class="mt-2">
-                <div class="text-sm text-yellow-700 bg-yellow-50 px-2 py-1 rounded inline-flex items-center gap-1">
+                <div class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-sm font-medium text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
                   <ClockIcon class="h-3 w-3" />
                   Pendente
                 </div>
@@ -180,7 +180,7 @@
             <!-- Status Icon -->
             <div class="ml-2">
               <CheckCircleIcon v-if="getResultDisplayValue(result) && String(getResultDisplayValue(result)).trim() !== ''" 
-                               class="h-5 w-5 text-green-600 dark:text-green-300" />
+                               class="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
               <ClockIcon v-else class="h-5 w-5 text-slate-400 dark:text-slate-500" />
             </div>
           </div>
@@ -188,7 +188,7 @@
           <!-- Reference Range -->
           <div v-if="result.min_ref_value || result.max_ref_value" class="mt-3 border-t border-slate-100 pt-3 dark:border-slate-800">
             <p class="mb-1 text-xs text-slate-500 dark:text-slate-400">Referência:</p>
-            <p class="text-xs font-medium text-blue-900 dark:text-blue-300">
+            <p class="text-xs font-medium text-primary-900 dark:text-primary-300">
               <template v-if="result.min_ref_value && result.max_ref_value">
                 {{ result.min_ref_value }} - {{ result.max_ref_value }}
               </template>
@@ -205,7 +205,7 @@
           <!-- Action Button -->
           <div class="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <button @click.stop="openIndividualEntryForResult(result)"
-                    class="w-full rounded-xl bg-blue-50 py-1 text-center text-sm font-medium text-blue-900 hover:bg-blue-100 hover:text-blue-700 dark:bg-blue-500/10 dark:text-blue-200 dark:hover:bg-blue-500/20">
+                    class="w-full rounded-full bg-primary-50 py-1.5 text-center text-sm font-semibold text-primary-900 transition hover:bg-primary-100 hover:text-primary-700 dark:bg-primary-500/10 dark:text-primary-200 dark:hover:bg-primary-500/20">
               {{ getResultDisplayValue(result) && String(getResultDisplayValue(result)).trim() !== '' ? 'Editar Resultado' : 'Inserir Resultado' }}
             </button>
           </div>
@@ -216,8 +216,8 @@
     <!-- BATCH MODE CONTENT -->
     <div v-else class="space-y-6">
       <!-- CALCULATED PARAMETERS SECTION -->
-      <div v-if="groupedResults.calculated.length > 0" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
+      <div v-if="groupedResults.calculated.length > 0" class="overflow-hidden rounded-[1.75rem] border border-[#ded3bf] bg-[#fffdf7]/95 shadow-[0_18px_60px_rgba(7,17,15,0.08)] dark:border-[#25443c] dark:bg-[#07110f]/90">
+        <div class="bg-gradient-to-r from-primary-950 via-primary-900 to-primary-700 px-6 py-4">
           <h2 class="text-lg font-semibold text-white flex items-center gap-2">
             <CalculatorIcon class="h-5 w-5" />
             {{ $t('gestlab.general.labels.results.calculated_params') }}
@@ -226,13 +226,13 @@
         
         <div class="p-6">
           <div class="mb-6">
-            <p class="text-sm text-gray-600 mb-4">
+            <p class="mb-4 text-sm text-slate-600 dark:text-slate-300">
               {{ groupedResults.calculated.length }} {{ $t('gestlab.general.labels.results.calculated_params_description') }}
             </p>
             <button 
               @click="emit('open-calculation')"
               type="button"
-              class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
+              class="inline-flex items-center gap-2 rounded-full bg-primary-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:focus:ring-offset-[#07110f]"
             >
               <CalculatorIcon class="h-5 w-5" />
               {{ $t('gestlab.general.labels.results.open_calculator') }}
@@ -244,39 +244,39 @@
             <div 
               v-for="(result, index) in groupedResults.calculated"
               :key="index"
-              class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+              class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white/80 p-3 dark:border-slate-800 dark:bg-slate-900/70"
             >
               <div>
                 <div class="flex items-center gap-2">
-                  <span class="font-medium text-sm text-gray-900">
+                  <span class="text-sm font-medium text-[#17231f] dark:text-[#f7f1e7]">
                     {{ result.parameter_id?.code }}
                   </span>
-                  <span class="text-xs text-gray-500">
+                  <span class="text-xs text-slate-500 dark:text-slate-400">
                     {{ result.parameter_id?.name }}
                   </span>
                 </div>
               </div>
               <div class="text-right">
                 <div v-if="result.requires_calculation && !getCalculationReadiness(result).ready"
-                     class="mb-2 inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-full">
+                     class="mb-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
                   <ClockIcon class="h-3 w-3" />
                   Aguardando {{ getCalculationReadiness(result).missingVariables.join(', ') }}
                 </div>
                 <div v-if="getResultDisplayValue(result)" class="space-y-1">
-                  <div class="font-semibold text-green-600 text-sm">
+                  <div class="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
                     {{ getResultDisplayValue(result) }} {{ result.unit_id?.code }}
                   </div>
                   <div v-if="result.uncertainty_value" 
-                       class="text-xs text-gray-500">
+                       class="text-xs text-slate-500 dark:text-slate-400">
                     (± {{ result.uncertainty_value }})
                   </div>
                 </div>
-                <div v-else class="inline-flex items-center gap-1 text-xs text-yellow-700 bg-yellow-50 px-2 py-1 rounded-full">
+                <div v-else class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
                   <ClockIcon class="h-3 w-3" />
                   {{ $t('gestlab.general.labels.results.awaiting_calculation') }}
                 </div>
                 <div v-if="result.is_override" 
-                     class="text-xs text-blue-600 mt-1">
+                     class="mt-1 text-xs font-medium text-primary-700 dark:text-primary-300">
                   {{ $t('gestlab.general.labels.results.manual_override') }}
                 </div>
               </div>
@@ -286,12 +286,12 @@
       </div>
 
       <!-- INPUT VARIABLES SECTION -->
-      <div v-if="groupedResults.inputVariables.length > 0" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="border-b border-gray-200 px-6 py-4">
-          <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <VariableIcon class="h-5 w-5 text-blue-900" />
+      <div v-if="groupedResults.inputVariables.length > 0" class="overflow-hidden rounded-[1.75rem] border border-[#ded3bf] bg-[#fffdf7]/95 shadow-[0_18px_60px_rgba(7,17,15,0.08)] dark:border-[#25443c] dark:bg-[#07110f]/90">
+        <div class="border-b border-[#ded3bf] px-6 py-4 dark:border-[#25443c]">
+          <h2 class="flex items-center gap-2 text-lg font-semibold text-[#17231f] dark:text-[#f7f1e7]">
+            <VariableIcon class="h-5 w-5 text-primary-900 dark:text-primary-300" />
             {{ $t('gestlab.general.labels.results.input_variables') }}
-            <span class="text-sm font-normal text-gray-500 ml-2">
+            <span class="ml-2 text-sm font-normal text-slate-500 dark:text-slate-400">
               ({{ groupedResults.inputVariables.length }} {{ $t('gestlab.general.labels.items') }})
             </span>
           </h2>
@@ -312,20 +312,20 @@
       </div>
 
       <!-- MANUAL PARAMETERS SECTION -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="border-b border-gray-200 px-6 py-4">
+      <div class="overflow-hidden rounded-[1.75rem] border border-[#ded3bf] bg-[#fffdf7]/95 shadow-[0_18px_60px_rgba(7,17,15,0.08)] dark:border-[#25443c] dark:bg-[#07110f]/90">
+        <div class="border-b border-[#ded3bf] px-6 py-4 dark:border-[#25443c]">
           <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <PencilIcon class="h-5 w-5 text-blue-900" />
+            <h2 class="flex items-center gap-2 text-lg font-semibold text-[#17231f] dark:text-[#f7f1e7]">
+              <PencilIcon class="h-5 w-5 text-primary-900 dark:text-primary-300" />
               {{ $t('gestlab.general.labels.results.manual_params') }}
-              <span class="text-sm font-normal text-gray-500 ml-2">
+              <span class="ml-2 text-sm font-normal text-slate-500 dark:text-slate-400">
                 ({{ groupedResults.manual.length }} {{ $t('gestlab.general.buttons.items') }})
               </span>
             </h2>
             <button 
               @click="addResult"
               type="button"
-              class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
+              class="inline-flex items-center gap-2 rounded-full bg-primary-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:focus:ring-offset-[#07110f]"
             >
               <PlusCircleIcon class="h-5 w-5" />
               {{ $t('gestlab.general.labels.results.add_manual_param') }}
@@ -335,17 +335,17 @@
 
         <!-- EMPTY STATE -->
         <div v-if="groupedResults.manual.length === 0" class="p-12 text-center">
-          <DocumentIcon class="mx-auto h-12 w-12 text-gray-300" />
-          <h3 class="mt-4 text-sm font-semibold text-gray-900">
+          <DocumentIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
+          <h3 class="mt-4 text-sm font-semibold text-[#17231f] dark:text-[#f7f1e7]">
             {{ $t('gestlab.general.labels.results.empty_state.title') }}
           </h3>
-          <p class="mt-2 text-sm text-gray-500">
+          <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
             {{ $t('gestlab.general.labels.results.empty_state.manual_params') }}
           </p>
           <button 
             @click="addResult"
             type="button"
-            class="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
+            class="mt-6 inline-flex items-center gap-2 rounded-full bg-primary-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:focus:ring-offset-[#07110f]"
           >
             <PlusCircleIcon class="h-5 w-5" />
             {{ $t('gestlab.general.buttons.add_first_param') }}  
@@ -368,20 +368,20 @@
       </div>
 
       <!-- INDIVIDUAL ENTRY OPTION -->
-      <div class="bg-white rounded-xl shadow-sm border border-blue-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-50 to-white px-6 py-4 border-b border-blue-200">
-          <h3 class="text-lg font-semibold text-blue-900 flex items-center gap-2">
+      <div class="overflow-hidden rounded-[1.75rem] border border-primary-200 bg-primary-50/70 shadow-sm dark:border-primary-500/25 dark:bg-primary-500/10">
+        <div class="border-b border-primary-200 bg-gradient-to-r from-primary-50 to-white px-6 py-4 dark:border-primary-500/25 dark:from-primary-500/10 dark:to-transparent">
+          <h3 class="flex items-center gap-2 text-lg font-semibold text-primary-900 dark:text-primary-100">
             <DocumentPlusIcon class="h-5 w-5" />
             Inserção Individual
           </h3>
         </div>
         <div class="p-6">
-          <p class="text-sm text-gray-600 mb-4">
+          <p class="mb-4 text-sm text-slate-600 dark:text-slate-300">
             Precisa inserir apenas alguns resultados? Use o modo individual para maior flexibilidade.
           </p>
           <button @click="switchWorkflowMode('individual')"
                   type="button"
-                  class="inline-flex items-center gap-2 rounded-lg border border-blue-900 bg-white px-4 py-2.5 text-sm font-semibold text-blue-900 shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200">
+                  class="inline-flex items-center gap-2 rounded-full border border-primary-900 bg-white px-4 py-2.5 text-sm font-semibold text-primary-900 shadow-sm transition-colors duration-200 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:border-primary-400 dark:bg-[#07110f] dark:text-primary-200 dark:hover:bg-primary-500/10 dark:focus:ring-offset-[#07110f]">
             <DocumentPlusIcon class="h-5 w-5" />
             Alternar para Modo Individual
           </button>
@@ -403,10 +403,10 @@
                     'inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
                     form.processing || insertedCount === 0
                       ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500'
-                      : 'bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 text-white hover:from-blue-900 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-950'
+                      : 'bg-gradient-to-r from-primary-950 via-primary-900 to-primary-700 text-white hover:from-primary-900 hover:to-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:focus:ring-primary-400 dark:focus:ring-offset-slate-950'
                   ]">
             <CheckIcon class="h-5 w-5" />
-            {{ form.processing ? 'A processar...' : `Finalizar (${insertedCount}/${totalResults})` }}
+            {{ form.processing ? $t('gestlab.general.buttons.processing') : `Finalizar (${insertedCount}/${totalResults})` }}
           </button>
         </div>
         
@@ -415,7 +415,7 @@
           <button @click="emit('open-calculation')"
                   v-if="hasCalculatedParameters"
                   type="button"
-                  class="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-900 bg-white px-4 py-2.5 text-sm font-semibold text-blue-900 shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200 dark:border-blue-400 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-blue-500/10 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-950">
+                  class="inline-flex items-center justify-center gap-2 rounded-full border border-primary-900 bg-white px-4 py-2.5 text-sm font-semibold text-primary-900 shadow-sm transition-colors duration-200 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:border-primary-400 dark:bg-slate-900 dark:text-primary-300 dark:hover:bg-primary-500/10 dark:focus:ring-primary-400 dark:focus:ring-offset-slate-950">
             <CalculatorIcon class="h-4 w-4" />
             {{ $t('gestlab.general.labels.results.recalculate') }}
           </button>
@@ -426,10 +426,10 @@
                     'inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
                     form.processing
                       ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500'
-                      : 'bg-gradient-to-r from-blue-950 via-blue-900 to-blue-800 text-white hover:from-blue-900 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-950'
+                      : 'bg-gradient-to-r from-primary-950 via-primary-900 to-primary-700 text-white hover:from-primary-900 hover:to-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:focus:ring-primary-400 dark:focus:ring-offset-slate-950'
                   ]">
             <CheckIcon class="h-5 w-5" />
-            {{ form.processing ? 'A processar...' : 'Inserir resultados' }}
+            {{ form.processing ? $t('gestlab.general.buttons.processing') : 'Inserir resultados' }}
           </button>
         </div>
       </div>
@@ -461,9 +461,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
 import { 
-  TrashIcon, 
   PlusCircleIcon, 
   CalculatorIcon,
   BeakerIcon,
@@ -528,6 +527,14 @@ const pendingCount = computed(() => {
 const calculatedCount = computed(() => {
     if (!props.form.results) return 0
     return props.form.results.filter(r => r.is_calculated).length
+});
+
+const progressPercent = computed(() => {
+    if (!totalResults.value) {
+        return 0
+    }
+
+    return Math.round((insertedCount.value / totalResults.value) * 100)
 });
 
 const individualEntryCount = computed(() => {

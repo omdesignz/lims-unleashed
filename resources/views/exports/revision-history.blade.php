@@ -1,114 +1,194 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>ISO 17025 Revision History</title>
+    <title>Histórico de Revisões ISO 17025</title>
     <style>
+        @include('PDFs.partials.premium-document-style')
+
+        @page {
+            margin: 16mm 14mm;
+        }
+
         body {
+            color: #111827;
             font-family: DejaVu Sans, sans-serif;
-            font-size: 12px;
-            color: #1f2937;
-            margin: 24px;
+            font-size: 10px;
         }
 
-        h1, h2, h3 {
-            margin: 0 0 8px;
+        .hero {
+            background: #0f172a;
+            border-radius: 16px 16px 10px 10px;
+            color: #ffffff;
+            margin-bottom: 16px;
         }
 
-        p {
-            margin: 0 0 6px;
+        .hero-top {
+            background: #0f766e;
+            border-radius: 16px 16px 0 0;
+            padding: 15px 17px;
         }
 
-        .section {
-            margin-top: 20px;
+        .hero-body {
+            color: #ccfbf1;
+            padding: 12px 17px 15px;
+        }
+
+        .eyebrow {
+            color: #99f6e4;
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: 1.6px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 21px;
+            margin: 4px 0 2px;
         }
 
         .meta {
-            display: table;
-            width: 100%;
-            margin-top: 12px;
+            color: #ccfbf1;
+            font-size: 9px;
+            text-align: right;
+            white-space: nowrap;
         }
 
-        .meta-row {
-            display: table-row;
+        .section {
+            background: #ffffff;
+            border: 1px solid #dbe4f0;
+            border-radius: 14px;
+            margin-bottom: 13px;
+            padding: 13px;
         }
 
-        .meta-label,
-        .meta-value {
-            display: table-cell;
-            padding: 4px 0;
-            vertical-align: top;
+        .section-title {
+            border-bottom: 1px solid #e2e8f0;
+            color: #0f172a;
+            font-size: 12px;
+            font-weight: 800;
+            margin-bottom: 9px;
+            padding-bottom: 7px;
         }
 
-        .meta-label {
-            width: 180px;
-            font-weight: bold;
-        }
-
-        table {
-            width: 100%;
+        .details-table,
+        .data-table {
             border-collapse: collapse;
-            margin-top: 12px;
+            width: 100%;
         }
 
-        th,
-        td {
-            border: 1px solid #d1d5db;
-            padding: 8px;
+        .details-table td {
+            border-bottom: 1px solid #eef2f7;
+            padding: 7px 6px;
+            vertical-align: top;
+            width: 50%;
+        }
+
+        .label {
+            color: #64748b;
+            display: block;
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: .7px;
+            text-transform: uppercase;
+        }
+
+        .value {
+            color: #111827;
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            margin-top: 3px;
+        }
+
+        .data-table th {
+            background: #0f172a;
+            border: 1px solid #0f172a;
+            color: #ffffff;
+            font-size: 8px;
+            letter-spacing: .4px;
+            padding: 8px 6px;
             text-align: left;
+            text-transform: uppercase;
+        }
+
+        .data-table td {
+            border: 1px solid #e2e8f0;
+            padding: 7px 6px;
             vertical-align: top;
         }
 
-        th {
-            background: #f3f4f6;
-            font-weight: bold;
+        .data-table tbody tr:nth-child(even) td {
+            background: #f8fafc;
         }
 
-        .muted {
-            color: #6b7280;
+        .footer {
+            border-top: 1px solid #dbe4f0;
+            color: #64748b;
+            font-size: 8px;
+            line-height: 1.5;
+            margin-top: 18px;
+            padding-top: 9px;
+            text-align: center;
         }
     </style>
 </head>
-<body>
-    <h1>ISO 17025 Revision History</h1>
-    <p class="muted">Generated at {{ $exportDate->format('Y-m-d H:i:s') }}</p>
+<body class="pdf-document report-document">
+    @php
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $labName = $settings->app_client_lab_name ?: ($settings->app_name ?: config('app.name'));
+    @endphp
 
-    <div class="section">
-        <h2>Certificate Summary</h2>
-        <div class="meta">
-            <div class="meta-row">
-                <div class="meta-label">Certificate Code</div>
-                <div class="meta-value">{{ $certificate->code ?? 'N/A' }}</div>
-            </div>
-            <div class="meta-row">
-                <div class="meta-label">Customer</div>
-                <div class="meta-value">{{ optional($certificate->customer)->name ?? 'N/A' }}</div>
-            </div>
-            <div class="meta-row">
-                <div class="meta-label">Warehouse</div>
-                <div class="meta-value">{{ optional($certificate->warehouse)->name ?? 'N/A' }}</div>
-            </div>
-            <div class="meta-row">
-                <div class="meta-label">Current Version</div>
-                <div class="meta-value">{{ $certificate->current_version ?? '1.0' }}</div>
-            </div>
+    <div class="hero">
+        <div class="hero-top">
+            <table style="width: 100%;">
+                <tr>
+                    <td>
+                        <div class="eyebrow">{{ $labName }}</div>
+                        <h1>Histórico de Revisões ISO 17025</h1>
+                        <div>ISO 17025 revision history · Controlo documental e rastreabilidade</div>
+                    </td>
+                    <td class="meta">
+                        Emitido em {{ $exportDate->format('d/m/Y H:i') }}<br>
+                        Certificado: {{ $certificate->code ?? 'N/A' }}<br>
+                        {{ $revisions->count() }} revisão(ões)
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="hero-body">
+            Evidência controlada das alterações, aprovações e vigência associadas ao certificado analítico.
         </div>
     </div>
 
     <div class="section">
-        <h2>Revisions</h2>
+        <div class="section-title">Resumo do Certificado</div>
+        <table class="details-table">
+            <tr>
+                <td><span class="label">Código / Code</span><span class="value">{{ $certificate->code ?? 'N/A' }}</span></td>
+                <td><span class="label">Versão actual / Current version</span><span class="value">{{ $certificate->current_version ?? '1.0' }}</span></td>
+            </tr>
+            <tr>
+                <td><span class="label">Cliente / Customer</span><span class="value">{{ optional($certificate->customer)->name ?? 'N/A' }}</span></td>
+                <td><span class="label">Armazém / Warehouse</span><span class="value">{{ optional($certificate->warehouse)->name ?? 'N/A' }}</span></td>
+            </tr>
+        </table>
+    </div>
 
-        <table>
+    <div class="section">
+        <div class="section-title">Revisões</div>
+        <table class="data-table">
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Version</th>
-                    <th>Type</th>
-                    <th>Reason</th>
-                    <th>Created By</th>
-                    <th>Approved By</th>
-                    <th>Effective Date</th>
-                    <th>Current</th>
+                    <th>Versão</th>
+                    <th>Tipo</th>
+                    <th>Motivo</th>
+                    <th>Criado por</th>
+                    <th>Aprovado por</th>
+                    <th>Vigência</th>
+                    <th>Actual</th>
                 </tr>
             </thead>
             <tbody>
@@ -120,16 +200,20 @@
                         <td>{{ $revision->change_reason }}</td>
                         <td>{{ optional($revision->createdBy)->name ?? 'N/A' }}</td>
                         <td>{{ optional($revision->approvedBy)->name ?? 'N/A' }}</td>
-                        <td>{{ optional($revision->effective_date)?->format('Y-m-d H:i:s') ?? 'N/A' }}</td>
-                        <td>{{ $revision->is_current ? 'Yes' : 'No' }}</td>
+                        <td>{{ optional($revision->effective_date)?->format('d/m/Y H:i') ?? 'N/A' }}</td>
+                        <td>{{ $revision->is_current ? 'Sim / Yes' : 'Não / No' }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8">No ISO revisions recorded.</td>
+                        <td colspan="8" style="text-align: center;">Sem revisões ISO registadas.</td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
+    </div>
+
+    <div class="footer">
+        Documento controlado gerado pelo sistema. Palavras-chave: {{ $settings->app_document_keywords ?: 'ISO 17025; revisão; certificado; rastreabilidade' }}.
     </div>
 </body>
 </html>

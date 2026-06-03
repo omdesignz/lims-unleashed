@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div class="grid gap-6 bg-[radial-gradient(circle_at_top_right,_rgba(14,116,144,0.18),_transparent_40%),linear-gradient(135deg,#0f172a,#1e293b_55%,#0f766e)] px-6 py-8 text-white md:grid-cols-[1.3fr_0.7fr] md:px-8">
         <div class="space-y-4">
@@ -216,6 +216,7 @@
 import { computed } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import Layout from '@/Shared/Layouts/PortalLayout.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 defineOptions({
   layout: Layout,

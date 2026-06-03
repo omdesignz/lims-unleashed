@@ -32,7 +32,11 @@ function shouldForceJsonHeaders(url) {
     return false;
   }
 
-  return true;
+  const path = url.pathname.replace(/^\/+/, '');
+
+  return path.startsWith('api/')
+    || path.includes('/get')
+    || /(^|\/)(get[A-Z][^/]*|authentication-options)(\/|$)/.test(path);
 }
 
 window.fetch = (input, init = {}) => {

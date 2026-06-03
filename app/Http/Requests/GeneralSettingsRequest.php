@@ -55,6 +55,13 @@ class GeneralSettingsRequest extends FormRequest
             'app_client_lab_province' => ['nullable', 'string', 'max:255'],
             'app_client_lab_director' => ['nullable', 'string', 'max:255'],
             'app_client_lab_slogan' => ['nullable', 'string', 'max:255'],
+            'app_bank_name' => ['nullable', 'string', 'max:255'],
+            'app_bank_account_name' => ['nullable', 'string', 'max:255'],
+            'app_bank_account_number' => ['nullable', 'string', 'max:255'],
+            'app_bank_iban' => ['nullable', 'string', 'max:255'],
+            'app_bank_swift' => ['nullable', 'string', 'max:255'],
+            'app_bank_details' => ['nullable', 'string', 'max:1000'],
+            'app_document_keywords' => ['nullable', 'string', 'max:1000'],
         ];
     }
 
@@ -80,6 +87,13 @@ class GeneralSettingsRequest extends FormRequest
             'app_notification_email_outro' => 'fecho do email de notificação',
             'app_notification_default_title' => 'título padrão da notificação',
             'app_notification_default_message' => 'mensagem padrão da notificação',
+            'app_bank_name' => 'banco',
+            'app_bank_account_name' => 'titular da conta',
+            'app_bank_account_number' => 'número de conta',
+            'app_bank_iban' => 'IBAN',
+            'app_bank_swift' => 'SWIFT/BIC',
+            'app_bank_details' => 'observações bancárias',
+            'app_document_keywords' => 'palavras-chave documentais',
         ];
     }
 }

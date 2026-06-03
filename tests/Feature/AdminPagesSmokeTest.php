@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class AdminPagesSmokeTest extends TestCase
@@ -57,5 +58,30 @@ class AdminPagesSmokeTest extends TestCase
         }
 
         $this->assertSame([], $failures, implode(PHP_EOL, $failures));
+    }
+
+    public function test_registered_controller_routes_resolve_to_existing_methods(): void
+    {
+        $missingRoutes = [];
+
+        foreach (Route::getRoutes() as $route) {
+            $action = $route->getActionName();
+
+            if (! str_contains($action, '@')) {
+                continue;
+            }
+
+            [$controller, $method] = explode('@', $action, 2);
+
+            if (! class_exists($controller) || ! method_exists($controller, $method)) {
+                $missingRoutes[] = [
+                    'uri' => $route->uri(),
+                    'name' => $route->getName(),
+                    'action' => $action,
+                ];
+            }
+        }
+
+        $this->assertSame([], $missingRoutes, json_encode($missingRoutes, JSON_PRETTY_PRINT));
     }
 }

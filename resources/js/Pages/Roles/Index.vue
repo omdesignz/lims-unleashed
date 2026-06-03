@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import RecordsTable from '@/Components/records-table.vue';
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import slideOver from '@/Components/slide-over.vue';
@@ -218,7 +219,7 @@ const executeAction = (actionId) => {
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between">
@@ -414,6 +415,7 @@ const executeAction = (actionId) => {
   <!-- SLIDE OVER COMPONENT -->
   <slide-over 
     v-if="openslideover" 
+    :class="commercialDocumentThemeClasses"
     @close="close" 
     :title="slideOverTitle" 
     :description="slideOverDescription"

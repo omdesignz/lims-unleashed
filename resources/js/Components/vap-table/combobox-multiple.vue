@@ -19,13 +19,17 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  placeholder: {
+    type: String,
+    default: ''
+  },
   loadingLabel: {
     type: String,
-    default: 'A carregar...'
+    default: ''
   },
-    noResultsLabel: {
+  noResultsLabel: {
     type: String,
-    default: 'Nenhum registo encontrado...'
+    default: ''
   },
   options: {
     type: Array,
@@ -37,12 +41,16 @@ const props = defineProps({
 });
 
 
-const options = ref(props.options);
+const options = ref([...props.options]);
 const isLoading = ref(false);
 
 const removeOption = (index) => {
-  props.modelValue.splice(index, 1)
+  const nextValue = Array.isArray(props.modelValue) ? [...props.modelValue] : [];
+  nextValue.splice(index, 1);
+  emit("update:modelValue", nextValue);
 }
+
+const selectedOptions = computed(() => Array.isArray(props.modelValue) ? props.modelValue.filter(Boolean) : []);
 
 const queryOption = computed(() => {
   return query.value === ""
@@ -54,62 +62,73 @@ const queryOption = computed(() => {
 });
 
 let query = ref("");
+function applyLoadedOptions(results = []) {
+  options.value = Array.isArray(results) ? results : [];
+
+  if (
+    props.modelValue &&
+    !Array.isArray(props.modelValue) &&
+    !options.value?.some(o => {
+      return o.value === props.modelValue?.value;
+    })
+  ) {
+    options.value.unshift(props.modelValue);
+  }
+
+  isLoading.value = false;
+}
+
+function loadRemoteOptions(q) {
+  isLoading.value = true;
+
+  try {
+    const maybePromise = props.loadOptions(q, applyLoadedOptions);
+
+    if (maybePromise?.then) {
+      maybePromise
+        .then(results => {
+          if (Array.isArray(results)) {
+            applyLoadedOptions(results);
+          }
+        })
+        .catch(() => applyLoadedOptions([]));
+    } else if (Array.isArray(maybePromise)) {
+      applyLoadedOptions(maybePromise);
+    }
+  } catch {
+    applyLoadedOptions([]);
+  }
+}
+
 watch(
   query,
   q => {
     if (props.loadOptions) {
-      isLoading.value = true;
-      props.loadOptions(q, results => {
-        options.value = results;
-
-        if (
-          props.modelValue &&
-          !options.value?.some(o => {
-            return o.value === props.modelValue?.value;
-          })
-        ) {
-          options.value.unshift(props.modelValue);
-        }
-        isLoading.value = false;
-      });
+      loadRemoteOptions(q);
     }
   },
   {immediate: true}
+);
+
+watch(
+  () => props.options,
+  value => {
+    if (!props.loadOptions) {
+      options.value = Array.isArray(value) ? value : [];
+    }
+  },
+  {deep: true}
 );
 
 let filteredOptions = computed(() =>
   query.value === ""
     ? options.value
     : options.value.filter(option =>
-        option?.label
-          ?.toLowerCase()
-          ?.replace(/\s+/g, "")
-          .includes(query?.value?.toLowerCase()?.replace(/\s+/g, ""))
-      )
-);
-
-let filteredOptions1 = computed(() => {
-
-  if(query.value === "" || query.value === null) {
-    return options.value;
-  }
-
-  return options.value.filter(option => {
-
-    if (Array.isArray(option)) {
-        return option?.label?.toLowerCase()
-      }
-     return option.label
+        String(option?.label ?? "")
           .toLowerCase()
           .replace(/\s+/g, "")
           .includes(query?.value?.toLowerCase()?.replace(/\s+/g, ""))
-      })
-
-  
-
-      
-}
-
+      )
 );
 
 function handleUpdateModelValue(selected) {
@@ -134,14 +153,13 @@ function handleUpdateModelValue(selected) {
   >
   <!-- <ComboboxLabel class="block text-sm font-medium leading-6 text-gray-900">{{ props.titleLabel }}</ComboboxLabel> -->
   
-    <div class="">
-    <div>
+    <div class="relative">
       <div
-        class="flex flex-col overflow-hidden rounded-2xl border border-slate-300/90 bg-white/95 text-left shadow-sm focus-within:ring-2 focus-within:ring-primary-500/20 focus-within:ring-offset-2 dark:border-slate-700 dark:bg-slate-900/90 dark:ring-offset-slate-900 sm:text-sm sm:leading-6"
+        class="relative flex min-h-12 flex-col overflow-hidden rounded-2xl border border-slate-300/90 bg-white/95 text-left shadow-sm ring-1 ring-white/50 transition-all focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900/90 dark:ring-slate-800/60 sm:text-sm sm:leading-6"
       >
-      <div class="mt-2 flex flex-auto flex-wrap">
+      <div class="flex flex-auto flex-wrap gap-1.5 px-2 py-2">
       <div
-    v-for="(option, index) in props.modelValue"
+    v-for="(option, index) in selectedOptions"
               as="template"
               :key="option.value"
               :value="option"
@@ -165,9 +183,10 @@ function handleUpdateModelValue(selected) {
     </div>
       <div class="flex-1">
         <ComboboxInput
-          class="w-full rounded-xl border-0 bg-transparent py-2.5 pl-3.5 pr-10 text-sm text-slate-900 focus:border-transparent focus:ring-0 dark:text-slate-100"
+          class="min-w-28 rounded-xl border-0 bg-transparent py-1.5 pl-2 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-transparent focus:ring-0 dark:text-slate-100 dark:placeholder:text-slate-500"
           :displayValue="option => option?.label"
           @change="query = $event.target.value"
+          :placeholder="props.placeholder"
         />
         </div>
         <ComboboxButton
@@ -179,7 +198,6 @@ function handleUpdateModelValue(selected) {
           />
         </ComboboxButton>
         
-      </div>
       </div>
       </div>
       <TransitionRoot
@@ -200,14 +218,14 @@ function handleUpdateModelValue(selected) {
             "
             class="relative cursor-default select-none rounded-xl px-4 py-3 text-sm text-gray-700 dark:text-gray-400"
           >
-            {{ $t(props.noResultsLabel) }}
+            {{ props.noResultsLabel || $t('gestlab.general.messages.no_items') }}
           </div>
 
           <div
             v-if="isLoading"
             class="relative cursor-default select-none rounded-xl px-4 py-3 text-sm text-gray-700 dark:text-gray-400"
           >
-            {{ $t(props.loadingLabel) }}
+            {{ props.loadingLabel || $t('gestlab.general.buttons.searching') }}
           </div>
 
           <template v-if="!isLoading">
@@ -222,11 +240,11 @@ function handleUpdateModelValue(selected) {
               <li
                 class="relative cursor-default select-none rounded-xl py-2.5 pl-10 pr-4 text-sm"
                 :class="{
-                  'bg-primary-900 dark:bg-gray-700 text-white dark:text-gray-400': active,
-                  'text-gray-900 dark:text-gray-400': !active,
+                  'bg-primary-900 text-white dark:bg-primary-700': active,
+                  'text-slate-900 dark:text-slate-100': !active,
                 }"
               >
-                {{ $t('Criar') }} "{{ queryOption.label }}"
+                {{ $t('gestlab.general.buttons.create') }} "{{ queryOption.label }}"
               </li>
             </ComboboxOption>
             <ComboboxOption
@@ -239,8 +257,8 @@ function handleUpdateModelValue(selected) {
               <li
                 class="relative cursor-default select-none rounded-xl py-2.5 pl-10 pr-4 text-sm"
                 :class="{
-                  'bg-primary-900 dark:bg-gray-700 text-white dark:text-gray-400': active,
-                  'text-gray-900 dark:text-gray-400': !active,
+                  'bg-primary-900 text-white dark:bg-primary-700': active,
+                  'text-slate-900 dark:text-slate-100': !active,
                 }"
               >
                 <span
@@ -252,7 +270,7 @@ function handleUpdateModelValue(selected) {
                 <span
                   v-if="selected"
                   class="absolute inset-y-0 left-0 flex items-center pl-3"
-                  :class="{'text-white dark:text-gray-400': active, 'text-primary-900 dark:text-gray-400': !active}"
+                  :class="{'text-white': active, 'text-primary-700 dark:text-primary-300': !active}"
                 >
                   <CheckIcon
                     class="h-5 w-5"

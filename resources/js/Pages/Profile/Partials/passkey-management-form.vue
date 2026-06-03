@@ -1,5 +1,5 @@
 <template>
-  <section class="space-y-4">
+  <section class="space-y-4" :class="commercialDocumentThemeClasses">
     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/60">
       <p class="text-sm text-slate-700 dark:text-slate-300">
         Registe passkeys para iniciar sessão com Touch ID, Face ID, chaves de segurança ou gestores de credenciais compatíveis.
@@ -18,7 +18,10 @@
           placeholder="Ex.: MacBook do laboratório"
           class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
         />
-        <p v-if="errorMessage" class="mt-2 text-xs text-red-600 dark:text-red-400">
+        <p v-if="successMessage" class="mt-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+          {{ successMessage }}
+        </p>
+        <p v-if="errorMessage" class="mt-2 text-xs font-semibold text-red-600 dark:text-red-400">
           {{ errorMessage }}
         </p>
       </div>
@@ -63,9 +66,11 @@
         <button
           type="button"
           @click="removePasskey(passkey)"
+          :disabled="removingPasskeyId === passkey.id"
           class="inline-flex items-center justify-center rounded-xl border border-red-200 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900/60 dark:text-red-300 dark:hover:bg-red-950/40"
+          :class="removingPasskeyId === passkey.id ? 'cursor-not-allowed opacity-60' : ''"
         >
-          Remover
+          {{ removingPasskeyId === passkey.id ? 'A remover...' : 'Remover' }}
         </button>
       </div>
 
@@ -83,17 +88,28 @@
 import { router } from '@inertiajs/vue3'
 import { startRegistration } from '@simplewebauthn/browser'
 import { ref } from 'vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 const props = defineProps({
   passkeys: {
     type: Array,
     default: () => [],
   },
+  routes: {
+    type: Object,
+    default: () => ({
+      registrationOptions: 'security.passkeys.registration-options',
+      store: 'security.passkeys.store',
+      destroy: 'security.passkeys.destroy',
+    }),
+  },
 })
 
 const passkeyName = ref('')
 const isRegistering = ref(false)
+const removingPasskeyId = ref(null)
 const errorMessage = ref('')
+const successMessage = ref('')
 
 function csrfToken() {
   return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
@@ -116,10 +132,11 @@ function formatDate(value) {
 
 async function registerPasskey() {
   errorMessage.value = ''
+  successMessage.value = ''
   isRegistering.value = true
 
   try {
-    const optionsResponse = await fetch(route('security.passkeys.registration-options'), {
+    const optionsResponse = await fetch(route(props.routes.registrationOptions), {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -134,7 +151,7 @@ async function registerPasskey() {
     const options = await optionsResponse.json()
     const registration = await startRegistration({ optionsJSON: options })
 
-    const storeResponse = await fetch(route('security.passkeys.store'), {
+    const storeResponse = await fetch(route(props.routes.store), {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -154,7 +171,8 @@ async function registerPasskey() {
     }
 
     passkeyName.value = ''
-    router.reload({ only: ['passkeys'] })
+    successMessage.value = payload.message || 'Passkey registada com sucesso.'
+    router.reload({ only: ['passkeys'], preserveScroll: true })
   } catch (error) {
     errorMessage.value = error?.message || 'Não foi possível registar a passkey.'
   } finally {
@@ -163,7 +181,11 @@ async function registerPasskey() {
 }
 
 function removePasskey(passkey) {
-  fetch(route('security.passkeys.destroy', passkey.id), {
+  errorMessage.value = ''
+  successMessage.value = ''
+  removingPasskeyId.value = passkey.id
+
+  fetch(route(props.routes.destroy, passkey.id), {
     method: 'DELETE',
     headers: {
       'Accept': 'application/json',
@@ -176,10 +198,15 @@ function removePasskey(passkey) {
         throw new Error(payload.message || 'Não foi possível remover a passkey.')
       }
 
-      router.reload({ only: ['passkeys'] })
+      const payload = await response.json().catch(() => ({}))
+      successMessage.value = payload.message || 'Passkey removida com sucesso.'
+      router.reload({ only: ['passkeys'], preserveScroll: true })
     })
     .catch(error => {
       errorMessage.value = error?.message || 'Não foi possível remover a passkey.'
+    })
+    .finally(() => {
+      removingPasskeyId.value = null
     })
 }
 </script>

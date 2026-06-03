@@ -3,6 +3,7 @@ import Layout from "@/Shared/Layouts/Layout.vue";
 import { ref, computed } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import fancyTextarea from '@/Components/fancy-textarea.vue';
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
 defineOptions({
@@ -38,6 +39,7 @@ const insertPlaceholder = (placeholder) => {
 </script>
 
 <template>
+<div class="space-y-6" :class="commercialDocumentThemeClasses">
 <div class="border-b border-gray-200 pb-5">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.proposal_templates.page_title') }}</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500">A editar o modelo de proposta: {{ form.name }}</p>
@@ -77,4 +79,5 @@ const insertPlaceholder = (placeholder) => {
     </div>
   </form>
 
+</div>
 </template>

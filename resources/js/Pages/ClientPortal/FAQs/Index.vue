@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+  <div class="min-h-screen bg-gradient-to-b from-gray-50 to-white" :class="commercialDocumentThemeClasses">
     <!-- Header Section -->
     <div class="border-b border-gray-200 bg-white">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -385,6 +385,7 @@ import debounce from 'lodash/debounce'
 import { useForm, router, Link, usePage } from '@inertiajs/vue3'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import Pagination from '@/Components/pagination.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import {
   HomeModernIcon,
   QuestionMarkCircleIcon,

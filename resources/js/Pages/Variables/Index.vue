@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import RecordsTable from '@/Components/records-table.vue';
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import slideOver from '@/Components/slide-over.vue';
@@ -158,7 +159,7 @@ const executeAction = (selectedActionId) => {
 </script>
 
 <template>
-  <div class="border-b border-gray-200 pb-5">
+  <div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.variables.page_title') }}</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500">
       Defina variáveis reutilizáveis para fórmulas e cálculos laboratoriais.
@@ -179,7 +180,7 @@ const executeAction = (selectedActionId) => {
   />
   <br>
 
-  <slide-over v-if="openslideover" :title="slideOverTitle" :description="slideOverDescription" @close="close">
+  <slide-over v-if="openslideover" :class="commercialDocumentThemeClasses" :title="slideOverTitle" :description="slideOverDescription" @close="close">
     <template #content>
       <div class="space-y-6 py-6 sm:space-y-0 sm:divide-y sm:divide-gray-200 sm:py-0">
         <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">

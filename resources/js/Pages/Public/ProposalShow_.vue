@@ -527,7 +527,7 @@ const canSubmitAgreement = computed(() => {
 
 // Methods
 const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('pt-BR', {
+  return new Date(date).toLocaleDateString('pt-Pt', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
@@ -535,7 +535,7 @@ const formatDate = (date) => {
 }
 
 const formatDateTime = (date) => {
-  return new Date(date).toLocaleString('pt-BR', {
+  return new Date(date).toLocaleString('pt-Pt', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -545,9 +545,9 @@ const formatDateTime = (date) => {
 }
 
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('pt-BR', {
+  return new Intl.NumberFormat('pt-Pt', {
     style: 'currency',
-    currency: 'BRL'
+    currency: 'AOA'
   }).format(amount)
 }
 

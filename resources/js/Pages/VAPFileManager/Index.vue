@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import FileList from "@/Components/vap-filemanager/file-list.vue";
 import ArchivedItems from "@/Components/vap-filemanager/archived-items.vue";
 import WorkflowPanel from "@/Components/vap-filemanager/workflow-panel.vue";
@@ -186,18 +187,18 @@ const attentionCards = computed(() => {
 
 function signalClass(tone: string): string {
   if (tone === "emerald") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-800";
+    return "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200";
   }
 
   if (tone === "amber") {
-    return "border-amber-200 bg-amber-50 text-amber-800";
+    return "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200";
   }
 
   if (tone === "rose") {
-    return "border-rose-200 bg-rose-50 text-rose-800";
+    return "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200";
   }
 
-  return "border-slate-200 bg-slate-100 text-slate-700";
+  return "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200";
 }
 
 function formatDate(value?: string | null): string {
@@ -220,7 +221,7 @@ function closeSidePanel(): void {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6" :class="commercialDocumentThemeClasses">
     <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.32),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.18),_transparent_28%),linear-gradient(135deg,_#020617,_#0f172a_48%,_#0b1120)] p-6 text-white shadow-sm">
       <div class="grid gap-6 xl:grid-cols-[1.2fr,0.8fr] xl:items-start">
         <div class="space-y-6">
@@ -308,8 +309,8 @@ function closeSidePanel(): void {
               <div>
                 <h3 class="text-lg font-semibold text-white">{{ selectedFile.name }}</h3>
                 <p class="mt-1 text-sm text-slate-300">
-                  {{ selectedFile.document_number || "Sem número documental" }} •
-                  {{ selectedFile.revision_code || "Sem revisão" }}
+                  {{ selectedFile.document_number || $t("gestlab.general.labels.vap_filemanager.missing_document_number") }} •
+                  {{ selectedFile.revision_code || $t("gestlab.general.labels.vap_filemanager.missing_revision") }}
                 </p>
               </div>
 
@@ -337,7 +338,7 @@ function closeSidePanel(): void {
             </div>
 
             <div v-else class="mt-4 rounded-2xl border border-dashed border-white/15 bg-white/5 px-4 py-5 text-sm leading-6 text-slate-300">
-              Seleccione um único documento na lista para ver o resumo de controlo, o estado da revisão e os próximos passos operacionais.
+              {{ $t("gestlab.general.labels.vap_filemanager.select_single_document_hint") }}
             </div>
           </section>
         </div>
@@ -347,8 +348,8 @@ function closeSidePanel(): void {
     <main class="space-y-4">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 class="text-lg font-semibold text-slate-900">Workspace documental</h2>
-          <p class="mt-1 text-sm text-slate-500">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Workspace documental</h2>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
             A lista ocupa toda a largura. Abra os painéis laterais apenas quando precisar de controlo ou workflow.
           </p>
         </div>
@@ -356,7 +357,7 @@ function closeSidePanel(): void {
         <div class="flex flex-wrap gap-3">
           <button
             type="button"
-            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
             @click="openSidePanel('compliance')"
           >
             <ShieldCheckIcon class="h-5 w-5 text-sky-700" />
@@ -364,7 +365,7 @@ function closeSidePanel(): void {
           </button>
           <button
             type="button"
-            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
             @click="openSidePanel('workflow')"
           >
             <CheckBadgeIcon class="h-5 w-5 text-emerald-700" />
@@ -410,15 +411,15 @@ function closeSidePanel(): void {
                 leave-to="translate-x-full"
               >
                 <DialogPanel class="pointer-events-auto w-screen max-w-2xl">
-                  <div class="flex h-full flex-col overflow-y-auto border-l border-slate-200 bg-slate-50 shadow-2xl">
-                    <div class="border-b border-slate-200 bg-white px-5 py-4 sm:px-6">
+                  <div class="flex h-full flex-col overflow-y-auto border-l border-slate-200 bg-slate-50 shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+                    <div class="border-b border-slate-200 bg-white px-5 py-4 sm:px-6 dark:border-slate-800 dark:bg-slate-900">
                       <div class="flex items-start justify-between gap-4">
                         <div>
-                          <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-700">Painel lateral</p>
-                          <DialogTitle class="mt-2 text-xl font-semibold text-slate-900">
+                          <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-700 dark:text-sky-300">Painel lateral</p>
+                          <DialogTitle class="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">
                             {{ activeSidePanel === 'compliance' ? 'Controlo documental' : 'Workflow documental' }}
                           </DialogTitle>
-                          <p class="mt-1 text-sm text-slate-500">
+                          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                             {{ activeSidePanel === 'compliance'
                               ? 'Metadados ISO, revisão, retenção e efetividade do documento seleccionado.'
                               : 'Estado operacional, tarefas e seguimento do fluxo documental.' }}
@@ -426,7 +427,7 @@ function closeSidePanel(): void {
                         </div>
                         <button
                           type="button"
-                          class="inline-flex rounded-2xl border border-slate-200 bg-white p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+                          class="inline-flex rounded-2xl border border-slate-200 bg-white p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
                           @click="closeSidePanel"
                         >
                           <XMarkIcon class="h-5 w-5" />
@@ -437,7 +438,7 @@ function closeSidePanel(): void {
                         <button
                           type="button"
                           class="rounded-full px-3 py-1.5 text-xs font-semibold transition"
-                          :class="activeSidePanel === 'compliance' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                          :class="activeSidePanel === 'compliance' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'"
                           @click="openSidePanel('compliance')"
                         >
                           Controlo documental
@@ -445,7 +446,7 @@ function closeSidePanel(): void {
                         <button
                           type="button"
                           class="rounded-full px-3 py-1.5 text-xs font-semibold transition"
-                          :class="activeSidePanel === 'workflow' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
+                          :class="activeSidePanel === 'workflow' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'"
                           @click="openSidePanel('workflow')"
                         >
                           Workflow e tarefas

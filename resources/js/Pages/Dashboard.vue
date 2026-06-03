@@ -1,16 +1,85 @@
 <template>
-  <div class="space-y-6">
-    <!-- Welcome Banner -->
-    <user-card :auth="$page?.props?.auth?.user" />
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
+    <section class="overflow-hidden rounded-[2.35rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_30px_100px_rgba(20,61,55,0.12)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
+      <div class="grid gap-0 xl:grid-cols-[minmax(0,1fr)_26rem]">
+        <div class="relative isolate p-6 sm:p-8">
+          <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_0%,rgba(217,176,95,0.26),transparent_35%),linear-gradient(135deg,#fffdf7,#f7f1e7)] dark:bg-[radial-gradient(circle_at_12%_0%,rgba(217,176,95,0.16),transparent_34%),linear-gradient(135deg,#07110f,#10231f)]" />
+          <div class="inline-flex rounded-full border border-[#ded3bf] bg-white/80 px-3 py-1 text-xs font-black uppercase tracking-[0.24em] text-[#143d37] dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#f1d78b]">
+            Cockpit LIMS
+          </div>
+          <h1 class="mt-5 max-w-4xl text-3xl font-black tracking-tight text-[#15231f] dark:text-[#f7f1e7] sm:text-4xl">
+            O trabalho crítico do laboratório, sem ruído operacional.
+          </h1>
+          <p class="mt-4 max-w-3xl text-sm font-medium leading-6 text-[#475a53] dark:text-[#cbd8cf]">
+            Comece pelas acções que desbloqueiam amostras, resultados, certificados, compras e SGQ. Os painéis executivos ficam abaixo para leitura de gestão, não para bloquear a operação diária.
+          </p>
 
-    <!-- Quick Stats -->
-    <quick-stats :stats="props.stats" />
+          <div class="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <a
+              v-for="action in dashboardPrimaryActions"
+              :key="action.label"
+              :href="action.href"
+              class="group rounded-3xl border border-[#ded3bf] bg-white/85 p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#d9b05f] hover:shadow-xl dark:border-[#25443c] dark:bg-[#081512] dark:hover:border-[#d9b05f]/60"
+            >
+              <component :is="action.icon" class="h-6 w-6 text-[#143d37] transition group-hover:scale-110 dark:text-[#f1d78b]" />
+              <span class="mt-4 block text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">{{ action.label }}</span>
+              <span class="mt-1 block text-xs leading-5 text-[#475a53] dark:text-[#cbd8cf]">{{ action.hint }}</span>
+            </a>
+          </div>
+        </div>
 
-    <!-- Quick Menu -->
-    <quick-menu />
+        <aside class="border-t border-[#ded3bf] bg-[#f7f1e7] p-6 dark:border-[#25443c] dark:bg-[#081512] xl:border-l xl:border-t-0">
+          <div class="flex items-center gap-3 rounded-3xl border border-white/70 bg-white/80 p-4 shadow-sm dark:border-[#25443c] dark:bg-[#07110f]">
+            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#143d37] text-[#f1d78b] dark:bg-[#f1d78b] dark:text-[#07110f]">
+              <UserCircleIcon class="h-7 w-7" />
+            </div>
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#83978d]">Sessão activa</p>
+              <p class="mt-1 text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">{{ $page?.props?.auth?.user?.name || 'Utilizador' }}</p>
+            </div>
+          </div>
+
+          <div class="mt-4 grid gap-3">
+            <article
+              v-for="signal in dashboardSignalCards"
+              :key="signal.label"
+              class="rounded-3xl border border-white/70 bg-white/80 p-4 shadow-sm dark:border-[#25443c] dark:bg-[#07110f]"
+            >
+              <p class="text-xs font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#83978d]">{{ signal.label }}</p>
+              <p class="mt-2 text-3xl font-black text-[#143d37] dark:text-[#f1d78b]">{{ signal.value }}</p>
+              <p class="mt-1 text-xs leading-5 text-[#475a53] dark:text-[#cbd8cf]">{{ signal.hint }}</p>
+            </article>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="grid gap-6">
+      <div class="rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] p-5 shadow-[0_22px_70px_rgba(20,61,55,0.08)] dark:border-[#25443c] dark:bg-[#07110f] sm:p-6">
+        <div class="mb-4 flex items-center justify-between gap-4">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.22em] text-[#6b7b74] dark:text-[#83978d]">Pulso operacional</p>
+            <h2 class="mt-2 text-lg font-black text-[#15231f] dark:text-[#f7f1e7]">Indicadores principais</h2>
+          </div>
+        </div>
+        <quick-stats :stats="props.stats" />
+      </div>
+
+      <div class="rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] p-5 shadow-[0_22px_70px_rgba(20,61,55,0.08)] dark:border-[#25443c] dark:bg-[#07110f] sm:p-6">
+        <div class="mb-2 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.22em] text-[#6b7b74] dark:text-[#83978d]">Atalhos secundários</p>
+            <p class="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#475a53] dark:text-[#cbd8cf]">
+              Acesso rápido aos módulos complementares, agora em largura total para leitura clara e navegação menos comprimida.
+            </p>
+          </div>
+        </div>
+        <quick-menu :default-open="false" />
+      </div>
+    </section>
 
     <!-- Executive Dashboard -->
-    <section v-if="props.executive" class="mt-6 space-y-5">
+    <section v-if="props.executive" class="space-y-5">
       <div class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(15,118,110,0.18),_transparent_30%),linear-gradient(135deg,_#ffffff,_#f8fafc)] shadow-sm dark:border-slate-700 dark:bg-[radial-gradient(circle_at_top_left,_rgba(45,212,191,0.18),_transparent_30%),linear-gradient(135deg,_#0f172a,_#111827)]">
         <div class="flex flex-col gap-5 px-6 py-6 md:flex-row md:items-end md:justify-between">
           <div class="max-w-3xl">
@@ -348,16 +417,18 @@
 </template>
 
 <script setup>
-import UserCard from '@/Pages/partials/user-card.vue';
-import dashSummary from '../Components/vap-inventory/dash-summary.vue';
 import QuickMenu from '@/Components/quick-menu.vue';
 import QuickStats from '@/Components/quick-stats.vue';
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { computed, ref, watch } from "vue";
-import { useForm, router } from "@inertiajs/vue3";
-import { usePermission } from '@/Composables/usePermissions';
-
-const { hasRole } = usePermission();
+import { computed } from "vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import {
+  BeakerIcon,
+  ClipboardDocumentCheckIcon,
+  DocumentTextIcon,
+  ShieldCheckIcon,
+  UserCircleIcon,
+} from '@heroicons/vue/24/outline';
 
 const props = defineProps({
     auth: Object,
@@ -374,6 +445,56 @@ defineOptions({
 
 const formatShortDate = (value) => value ? new Date(value).toLocaleDateString('pt-PT') : '—'
 const executiveCharts = computed(() => props.executive?.charts || {})
+const safeRoute = (name, params = undefined, fallback = '#') => {
+  if (typeof route === 'function') {
+    return route(name, params)
+  }
+
+  return fallback
+}
+const dashboardPrimaryActions = computed(() => [
+  {
+    label: 'Receber amostras',
+    hint: 'Entrada individual, fila manual ou Excel.',
+    href: safeRoute('vap_samples.index', undefined, '/vap-samples'),
+    icon: BeakerIcon,
+  },
+  {
+    label: 'Inserir resultados',
+    hint: 'Trabalho técnico, verificação e aprovação.',
+    href: safeRoute('analysis.index', undefined, '/analysis'),
+    icon: ClipboardDocumentCheckIcon,
+  },
+  {
+    label: 'Emitir documentos',
+    hint: 'Certificados, propostas e PDFs premium.',
+    href: safeRoute('report-studios.index', undefined, '/report-studios'),
+    icon: DocumentTextIcon,
+  },
+  {
+    label: 'Controlar SGQ',
+    hint: 'NCs, evidências, competência e melhoria.',
+    href: safeRoute('qms.index', undefined, '/qms'),
+    icon: ShieldCheckIcon,
+  },
+])
+const dashboardSignalCards = computed(() => [
+  {
+    label: 'Amostras',
+    value: props.stats?.analysis || 0,
+    hint: 'Carga técnica visível no cockpit.',
+  },
+  {
+    label: 'Certificados',
+    value: props.stats?.certificates || 0,
+    hint: 'Documentos emitidos ou controlados.',
+  },
+  {
+    label: 'Clientes',
+    value: props.stats?.customers || 0,
+    hint: 'Carteira comercial e portal.',
+  },
+])
 const throughputChartSeries = computed(() => executiveCharts.value.throughput?.series || [])
 const throughputTotal = computed(() => throughputChartSeries.value.reduce((sum, series) => sum + series.data.reduce((inner, value) => inner + value, 0), 0))
 const sampleStatusChartSeries = computed(() => executiveCharts.value.sample_status?.series || [])

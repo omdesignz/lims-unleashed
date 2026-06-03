@@ -1,28 +1,25 @@
 <template>
-  <div class="space-y-8">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <PlusIcon class="h-7 w-7 text-blue-900" />
-            Criar Pedido de Compra
-          </h1>
-          <p class="mt-2 text-gray-600">
-            Registe um novo pedido de compra para abastecimento do inventário
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
+  <div class="inventory-order-form-shell space-y-8" :class="commercialDocumentThemeClasses">
+    <ModuleHero
+      eyebrow="Compras e abastecimento"
+      title="Criar pedido de compra"
+      description="Registe pedidos de compra com fornecedor avaliado, itens de inventário, destino de armazém e datas previstas de receção."
+    >
+      <template #actions>
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="inline-flex items-center rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary-900 ring-1 ring-primary-700/10 dark:bg-primary-500/10 dark:text-primary-200 dark:ring-primary-400/20">
+            Procurement
+          </span>
           <button
             @click="goBack"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
+            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             <ArrowLeftIcon class="h-5 w-5" />
             Voltar
           </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </ModuleHero>
 
     <form @submit.prevent="submit" class="space-y-6">
       <!-- ORDER DETAILS -->
@@ -39,26 +36,12 @@
               Fornecedor
               <span class="text-red-500">*</span>
             </label>
-            <select
-              v-model="form.supplier_id"
-              :class="[
-                'block w-full rounded-lg shadow-sm focus:border-blue-900 focus:ring-blue-900',
-                form.errors.supplier_id ? 'border-red-300' : 'border-gray-300'
-              ]"
-              required
-            >
-              <option value="">Seleccione um Fornecedor</option>
-              <option 
-                v-for="supplier in suppliers" 
-                :key="supplier.id" 
-                :value="supplier.id"
-              >
-                {{ supplier.name }}
-                <template v-if="supplier.address">
-                  - {{ supplier.address.substring(0, 30) }}...
-                </template>
-              </option>
-            </select>
+            <comboboxEnhanced
+              v-model="selectedSupplierOption"
+              :has-error="form.errors.supplier_id"
+              :options="supplierOptions"
+              placeholder="Pesquisar fornecedor"
+            />
             <p v-if="form.errors.supplier_id" class="text-xs text-red-600">
               {{ form.errors.supplier_id }}
             </p>
@@ -123,18 +106,12 @@
             <label class="block text-sm font-medium text-gray-700">
               Estado
             </label>
-            <select
-              v-model="form.status"
-              :class="[
-                'block w-full rounded-lg shadow-sm focus:border-blue-900 focus:ring-blue-900',
-                form.errors.status ? 'border-red-300' : 'border-gray-300'
-              ]"
-            >
-              <option value="PENDING">Pendente</option>
-              <option value="APPROVED">Aprovado</option>
-              <option value="ORDERED">Ordenado</option>
-              <option value="CANCELLED">Cancelado</option>
-            </select>
+            <comboboxEnhanced
+              v-model="selectedStatusOption"
+              :has-error="form.errors.status"
+              :options="statusOptions"
+              placeholder="Selecionar estado"
+            />
             <p v-if="form.errors.status" class="text-xs text-red-600">
               {{ form.errors.status }}
             </p>
@@ -218,26 +195,13 @@
                     Item
                     <span class="text-red-500">*</span>
                   </label>
-                  <select
-                    v-model="item.item_id"
-                    @change="onItemChange(index)"
-                    :class="[
-                      'block w-full text-sm rounded-lg shadow-sm focus:border-blue-900 focus:ring-blue-900',
-                      itemErrors[index]?.item_id ? 'border-red-300' : 'border-gray-300'
-                    ]"
-                  >
-                    <option value="">Seleccione um Item</option>
-                    <option 
-                      v-for="inventoryItem in items" 
-                      :key="inventoryItem.id" 
-                      :value="inventoryItem.id"
-                    >
-                      {{ inventoryItem.name }} ({{ inventoryItem.internal_code }})
-                      <template v-if="inventoryItem.category">
-                        - {{ inventoryItem.category.name }}
-                      </template>
-                    </option>
-                  </select>
+                  <comboboxEnhanced
+                    v-model="item.item_obj"
+                    :has-error="itemErrors[index]?.item_id"
+                    :options="itemOptions"
+                    placeholder="Pesquisar item"
+                    @update:modelValue="onItemChange(index)"
+                  />
                   <p v-if="itemErrors[index]?.item_id" class="text-xs text-red-600">
                     {{ itemErrors[index].item_id }}
                   </p>
@@ -316,22 +280,13 @@
                     Armazém de Destino
                     <span class="text-red-500">*</span>
                   </label>
-                  <select
-                    v-model="item.warehouse_id"
-                    :class="[
-                      'block w-full text-sm rounded-lg shadow-sm focus:border-blue-900 focus:ring-blue-900',
-                      itemErrors[index]?.warehouse_id ? 'border-red-300' : 'border-gray-300'
-                    ]"
-                  >
-                    <option value="">Seleccione um Armazém</option>
-                    <option 
-                      v-for="warehouse in warehouses" 
-                      :key="warehouse.id" 
-                      :value="warehouse.id"
-                    >
-                      {{ warehouse.name }}
-                    </option>
-                  </select>
+                  <comboboxEnhanced
+                    v-model="item.warehouse_obj"
+                    :has-error="itemErrors[index]?.warehouse_id"
+                    :options="warehouseOptions"
+                    placeholder="Pesquisar armazém"
+                    @update:modelValue="onWarehouseChange(index)"
+                  />
                   <p v-if="itemErrors[index]?.warehouse_id" class="text-xs text-red-600">
                     {{ itemErrors[index].warehouse_id }}
                   </p>
@@ -506,7 +461,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { useForm, router } from '@inertiajs/vue3'
 import {
   PlusIcon,
@@ -522,6 +478,8 @@ import {
   CalculatorIcon,
   CheckCircleIcon
 } from '@heroicons/vue/24/outline'
+import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
+import ModuleHero from '@/Components/base/ModuleHero.vue'
 
 const props = defineProps({
   items: {
@@ -542,14 +500,46 @@ const form = useForm({
   supplier_id: '',
   date: new Date().toISOString().split('T')[0],
   reference: '',
-  status: 'pending',
+  status: 'PENDING',
   obs: '',
   order_items: []
 })
 
 const itemErrors = ref([])
+const selectedSupplierOption = ref(null)
+const selectedStatusOption = ref({ value: 'PENDING', label: 'Pendente' })
 const minDate = new Date().toISOString().split('T')[0]
 const maxDate = new Date().toISOString().split('T')[0]
+
+const supplierOptions = computed(() => props.suppliers.map((supplier) => ({
+  value: supplier.id,
+  label: supplier.address ? `${supplier.name} - ${supplier.address.substring(0, 30)}...` : supplier.name,
+})))
+
+const statusOptions = [
+  { value: 'PENDING', label: 'Pendente' },
+  { value: 'APPROVED', label: 'Aprovado' },
+  { value: 'ORDERED', label: 'Ordenado' },
+  { value: 'CANCELLED', label: 'Cancelado' },
+]
+
+const itemOptions = computed(() => props.items.map((item) => ({
+  value: item.id,
+  label: `${item.name}${item.internal_code ? ` (${item.internal_code})` : ''}${item.category?.name ? ` - ${item.category.name}` : ''}`,
+})))
+
+const warehouseOptions = computed(() => props.warehouses.map((warehouse) => ({
+  value: warehouse.id,
+  label: warehouse.location?.name ? `${warehouse.name} (${warehouse.location.name})` : warehouse.name,
+})))
+
+watch(selectedSupplierOption, (supplier) => {
+  form.supplier_id = supplier?.value || ''
+})
+
+watch(selectedStatusOption, (status) => {
+  form.status = status?.value || 'PENDING'
+})
 
 const selectedSupplier = computed(() => {
   return props.suppliers.find(supplier => supplier.id == form.supplier_id)
@@ -679,8 +669,10 @@ function getStatusClass(status) {
 
 function addOrderItem() {
   form.order_items.push({
+    item_obj: null,
     item_id: '',
     qty: 1,
+    warehouse_obj: null,
     warehouse_id: '',
     expected_date: '',
     status: 'PENDING',
@@ -697,10 +689,16 @@ function removeOrderItem(index) {
 
 function onItemChange(index) {
   const item = form.order_items[index]
+  item.item_id = item.item_obj?.value || ''
   // Auto-select first warehouse if not set
   // if (item.item_id && !item.warehouse_id && props.warehouses.length > 0) {
   //   item.warehouse_id = props.warehouses[0].id
   // }
+}
+
+function onWarehouseChange(index) {
+  const item = form.order_items[index]
+  item.warehouse_id = item.warehouse_obj?.value || ''
 }
 
 function validateItemQuantity(index) {
@@ -728,7 +726,10 @@ function submit() {
     return
   }
 
-  form.post(route('vap-inventory.orders.store'), {
+  form.transform((data) => ({
+    ...data,
+    order_items: data.order_items.map(({ item_obj, warehouse_obj, ...orderItem }) => orderItem),
+  })).post(route('vap-inventory.orders.store'), {
     preserveScroll: true,
     onSuccess: () => {
       form.reset()
@@ -753,3 +754,111 @@ onMounted(() => {
   }
 })
 </script>
+
+<style scoped>
+.inventory-order-form-shell :deep(.bg-white.rounded-xl) {
+  border-color: rgb(226 232 240);
+  border-radius: 1.5rem;
+  background: rgb(255 255 255);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+}
+
+.inventory-order-form-shell :deep(label) {
+  color: rgb(51 65 85);
+}
+
+.inventory-order-form-shell :deep(input:not([type='checkbox']):not([type='radio']):not([type='file'])),
+.inventory-order-form-shell :deep(textarea),
+.inventory-order-form-shell :deep(select) {
+  border-color: rgb(203 213 225);
+  border-radius: 1rem;
+  background: rgb(255 255 255);
+  color: rgb(15 23 42);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.inventory-order-form-shell :deep(input:not([type='checkbox']):not([type='radio']):not([type='file']):focus),
+.inventory-order-form-shell :deep(textarea:focus),
+.inventory-order-form-shell :deep(select:focus) {
+  border-color: rgb(var(--color-primary-500, 59 130 246));
+  box-shadow: 0 0 0 3px rgb(var(--color-primary-500, 59 130 246) / 0.18);
+  outline: none;
+}
+
+.inventory-order-form-shell :deep(.bg-gradient-to-r.from-blue-900.to-blue-800) {
+  --tw-gradient-from: rgb(var(--color-primary-700, 29 78 216)) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(var(--color-primary-900, 30 58 138)) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.inventory-order-form-shell :deep(.bg-blue-900) {
+  background-color: rgb(var(--color-primary-600, 37 99 235));
+}
+
+.inventory-order-form-shell :deep(.text-blue-900) {
+  color: rgb(var(--color-primary-900, 30 58 138));
+}
+
+.inventory-order-form-shell :deep(.bg-gray-50) {
+  border: 1px solid rgb(226 232 240);
+  border-radius: 1rem;
+  background: rgb(248 250 252 / 0.75);
+}
+
+.inventory-order-form-shell :deep(.divide-gray-200 > :not([hidden]) ~ :not([hidden])) {
+  border-color: rgb(226 232 240);
+}
+
+:global(.dark) .inventory-order-form-shell :deep(.bg-white.rounded-xl) {
+  border-color: rgb(30 41 59);
+  background: rgb(2 6 23);
+}
+
+:global(.dark) .inventory-order-form-shell :deep(label),
+:global(.dark) .inventory-order-form-shell :deep(.text-gray-900),
+:global(.dark) .inventory-order-form-shell :deep(.text-gray-700),
+:global(.dark) .inventory-order-form-shell :deep(.text-gray-600) {
+  color: rgb(226 232 240);
+}
+
+:global(.dark) .inventory-order-form-shell :deep(.text-gray-500) {
+  color: rgb(148 163 184);
+}
+
+:global(.dark) .inventory-order-form-shell :deep(input:not([type='checkbox']):not([type='radio']):not([type='file'])),
+:global(.dark) .inventory-order-form-shell :deep(textarea),
+:global(.dark) .inventory-order-form-shell :deep(select) {
+  border-color: rgb(51 65 85);
+  background: rgb(2 6 23 / 0.72);
+  color: rgb(241 245 249);
+}
+
+:global(.dark) .inventory-order-form-shell :deep(input::placeholder),
+:global(.dark) .inventory-order-form-shell :deep(textarea::placeholder) {
+  color: rgb(100 116 139);
+}
+
+:global(.dark) .inventory-order-form-shell :deep(.border-gray-200),
+:global(.dark) .inventory-order-form-shell :deep(.border-gray-300) {
+  border-color: rgb(51 65 85);
+}
+
+:global(.dark) .inventory-order-form-shell :deep(.bg-gray-50),
+:global(.dark) .inventory-order-form-shell :deep(.group:hover) {
+  border-color: rgb(51 65 85);
+  background: rgb(15 23 42 / 0.68);
+}
+
+:global(.dark) .inventory-order-form-shell :deep(.divide-gray-200 > :not([hidden]) ~ :not([hidden])) {
+  border-color: rgb(30 41 59);
+}
+
+:global(.dark) .inventory-order-form-shell :deep(.text-blue-900) {
+  color: rgb(var(--color-primary-200, 191 219 254));
+}
+
+:global(.dark) .inventory-order-form-shell :deep(.bg-blue-900) {
+  background-color: rgb(var(--color-primary-500, 59 130 246));
+}
+</style>

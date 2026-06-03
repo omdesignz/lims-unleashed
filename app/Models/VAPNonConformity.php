@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class VAPNonConformity extends Model
+class VAPNonConformity extends Model implements HasMedia
 {
     use HasFactory;
+    use InteractsWithMedia;
 
     protected $table = 'v_non_conformities';
 
@@ -45,7 +48,7 @@ class VAPNonConformity extends Model
         'corrective_actions',
         'preventive_actions',
         'comments',
-        'attachments'
+        'attachments',
     ];
 
     protected $casts = [
@@ -56,8 +59,14 @@ class VAPNonConformity extends Model
         'approved_at' => 'datetime',
         'effective_at' => 'datetime',
         'was_effective' => 'boolean',
-        'attachments' => 'array'
+        'attachments' => 'array',
     ];
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('attachments')
+            ->useDisk('public');
+    }
 
     // Relationships
     public function lab(): BelongsTo
@@ -114,7 +123,7 @@ class VAPNonConformity extends Model
     // Methods
     public function isOverdue(): bool
     {
-        if (!$this->due_date) {
+        if (! $this->due_date) {
             return false;
         }
 
@@ -123,7 +132,7 @@ class VAPNonConformity extends Model
 
     public function daysOpen(): int
     {
-        if (!$this->reported_at) {
+        if (! $this->reported_at) {
             return 0;
         }
 

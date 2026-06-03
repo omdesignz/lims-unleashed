@@ -1,1 +1,0 @@
-import{_ as o}from"./_plugin-vue_export-helper-DlAUqK2U.js";import{c as e,e as r}from"./editor-collab-B-hT7rw0.js";const t={name:"logo"};function c(n,s,a,p,_,m){return e(),r("div")}const d=o(t,[["render",c]]);export{d as L};

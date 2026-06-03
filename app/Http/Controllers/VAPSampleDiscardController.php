@@ -1,12 +1,14 @@
 <?php
+
 // app/Http/Controllers/SampleDiscardController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\VAPSampleDiscard;
 use App\Models\VAPSampleEntry;
+use App\Settings\GeneralSettings;
+use App\Support\PdfResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use PDF;
 
@@ -29,9 +31,9 @@ class VAPSampleDiscardController extends Controller
         DB::beginTransaction();
         try {
             $sample = VAPSampleEntry::findOrFail($validated['sample_id']);
-            
+
             // Check if sample can be discarded
-            if (!in_array($sample->status, ['COMPLETADO', 'CANCELADO'])) {
+            if (! in_array($sample->status, ['COMPLETADO', 'CANCELADO'])) {
                 return redirect()->back()->with([
                     'message' => 'Only completed or canceled samples can be discarded.',
                     'type' => 'error',
@@ -61,8 +63,9 @@ class VAPSampleDiscardController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()->back()->with([
-                'message' => 'Error recording sample discard: ' . $e->getMessage(),
+                'message' => 'Error recording sample discard: '.$e->getMessage(),
                 'type' => 'error',
             ]);
         }
@@ -74,16 +77,17 @@ class VAPSampleDiscardController extends Controller
     public function generatePdf(VAPSampleDiscard $sampleDiscard)
     {
         $sampleDiscard->load(['sample.customer', 'sample.lab', 'sample.department', 'discardedBy']);
-        
+
         $pdf = PDF::loadView('PDFs.sample-discard', [
             'discard' => $sampleDiscard,
+            'settings' => app(GeneralSettings::class),
             'date' => now()->format('d/m/Y'),
             'time' => now()->format('H:i:s'),
         ]);
 
-        $filename = "discard-certificate-{$sampleDiscard->sample->code}-" . now()->format('Ymd-His') . '.pdf';
-        
-        return $pdf->download($filename);
+        $filename = "discard-certificate-{$sampleDiscard->sample->code}-".now()->format('Ymd-His').'.pdf';
+
+        return PdfResponse::download($pdf, $filename);
     }
 
     /**
@@ -92,7 +96,7 @@ class VAPSampleDiscardController extends Controller
     public function recent(Request $request)
     {
         $days = $request->get('days', 7);
-        
+
         $discards = VAPSampleDiscard::with(['sample', 'discardedBy'])
             ->recent($days)
             ->orderBy('created_at', 'desc')
@@ -151,12 +155,12 @@ class VAPSampleDiscardController extends Controller
 
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="discards-' . now()->format('Ymd-His') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="discards-'.now()->format('Ymd-His').'.csv"',
         ];
 
         $callback = function () use ($discards) {
             $file = fopen('php://output', 'w');
-            
+
             // CSV headers
             fputcsv($file, [
                 'ID',

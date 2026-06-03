@@ -1,6 +1,6 @@
 <!-- resources/js/Pages/Events/Index.vue -->
 <template>
-    <div class="container mx-auto p-6">
+    <div class="container mx-auto p-6" :class="commercialDocumentThemeClasses">
       <h1 class="text-2xl font-bold mb-4">Manage Events & Email Templates</h1>
   
       <button @click="syncEvents" class="btn btn-primary mb-4">Sync Events</button>
@@ -36,6 +36,7 @@
   </template>
   
   <script setup>
+  import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
   import { ref } from "vue";
   import { useForm, router } from "@inertiajs/vue3";
 
@@ -72,4 +73,3 @@
     border-radius: 0.25rem;
   }
   </style>
-  

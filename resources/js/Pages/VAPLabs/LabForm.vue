@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
     <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
       <div class="flex items-center justify-between">
@@ -368,6 +368,7 @@
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import { ref, computed, watchEffect } from 'vue'
 import { useForm } from '@inertiajs/vue3'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import {
   BeakerIcon,
   InformationCircleIcon,

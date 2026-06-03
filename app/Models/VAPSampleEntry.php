@@ -1,12 +1,14 @@
 <?php
+
 // app/Models/SampleEntry.php
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class VAPSampleEntry extends Model
 {
@@ -134,18 +136,29 @@ class VAPSampleEntry extends Model
         return $query->where('created_at', '>=', now()->subDays($days));
     }
 
+    /**
+     * @param  Builder<VAPSampleEntry>  $query
+     * @return Builder<VAPSampleEntry>
+     */
+    public function scopeInternalRawMaterialQualityControl(Builder $query): Builder
+    {
+        return $query
+            ->whereIn('sample_type', ['MATERIA_PRIMA', 'RAW_MATERIAL'])
+            ->where('client_submitted_info->request_origin', 'internal');
+    }
+
     // Methods
     public function generateCode(): string
     {
-        if (!$this->code) {
+        if (! $this->code) {
             $year = $this->sample_year ?? date('Y');
             $prefix = strtoupper(substr($this->sample_type ?? 'GEN', 0, 3));
             $sequence = $this->seq ?? self::where('sample_year', $year)->max('seq') + 1;
-            
-            $this->code = "SMP-{$year}-{$prefix}-" . str_pad($sequence, 5, '0', STR_PAD_LEFT);
+
+            $this->code = "SMP-{$year}-{$prefix}-".str_pad($sequence, 5, '0', STR_PAD_LEFT);
             $this->seq = $sequence;
         }
-        
+
         return $this->code;
     }
 

@@ -8,6 +8,7 @@ import { onMounted } from 'vue';
 import { router, usePage } from "@inertiajs/vue3";
 import { computed, ref } from 'vue';
 import Pagination from "@/Components/pagination.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
 const { hasRole, hasPermission } = usePermission();
@@ -32,7 +33,7 @@ onMounted(() => {
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.iitems.page_title') }}</h3>
 </div> -->
 
-<div>
+<div :class="commercialDocumentThemeClasses">
     
     <div class="bg-blue-900 rounded-md mt-2">
         <div class="mx-auto max-w-7xl">

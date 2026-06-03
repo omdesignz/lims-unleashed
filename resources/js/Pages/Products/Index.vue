@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import RecordsTable from '@/Components/records-table.vue';
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { TransitionRoot } from '@headlessui/vue'
@@ -196,14 +197,14 @@ function loadExemptions(query, setOptions) {
 }
 </script>
 <template>
-<div class="border-b border-gray-200 pb-5">
+<div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.products.page_title') }}</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500"></p>
 </div>
 
 <records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="() => router.get(route('products.create'))" @slideover-on="openSlideoverWithData"/> <br>
 
-<slide-over v-if="openslideover" @close="close" :title="slideOverTitle" :description="slideOverDescription">
+<slide-over v-if="openslideover" :class="commercialDocumentThemeClasses" @close="close" :title="slideOverTitle" :description="slideOverDescription">
     <template #content>
         <div class="space-y-6 py-6 sm:space-y-0 sm:divide-y sm:divide-gray-200 sm:py-0">
               <!-- Name -->

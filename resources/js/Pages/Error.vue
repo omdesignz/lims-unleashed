@@ -5,6 +5,7 @@
   <div
     v-if="status == 403"
     id="page-container"
+    :class="commercialDocumentThemeClasses"
     class="mx-auto flex min-h-screen w-full min-w-[320px] flex-col bg-gray-100 dark:bg-gray-900 dark:text-gray-100"
   >
     <!-- Page Content -->
@@ -97,6 +98,7 @@
   <div
     v-if="status == 404"
     id="page-container"
+    :class="commercialDocumentThemeClasses"
     class="mx-auto flex min-h-screen w-full min-w-[320px] flex-col bg-gray-100 dark:bg-gray-900 dark:text-gray-100"
   >
     <!-- Page Content -->
@@ -217,6 +219,7 @@
 <div
   v-if="status == 500"
   id="page-container"
+  :class="commercialDocumentThemeClasses"
   class="mx-auto flex min-h-screen w-full min-w-[320px] flex-col bg-gray-100 dark:bg-gray-900 dark:text-gray-100"
 >
   <!-- Page Content -->
@@ -311,6 +314,7 @@
   <div
     v-if="status == 401"
     id="page-container"
+    :class="commercialDocumentThemeClasses"
     class="mx-auto flex min-h-screen w-full min-w-[320px] flex-col bg-gray-100 dark:bg-gray-900 dark:text-gray-100"
   >
     <!-- Page Content -->
@@ -402,6 +406,7 @@
   <div
     v-if="status == 503"
     id="page-container"
+    :class="commercialDocumentThemeClasses"
     class="mx-auto flex min-h-screen w-full min-w-[320px] flex-col bg-gray-100 dark:bg-gray-900 dark:text-gray-100"
   >
     <!-- Page Content -->
@@ -496,6 +501,7 @@
   <div
     v-if="status == 400"
     id="page-container"
+    :class="commercialDocumentThemeClasses"
     class="mx-auto flex min-h-screen w-full min-w-[320px] flex-col bg-gray-100 dark:bg-gray-900 dark:text-gray-100"
   >
     <!-- Page Content -->
@@ -588,6 +594,7 @@
 import EmptyLayout from '@/Shared/Layouts/empty-layout.vue';
 import { computed } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 defineOptions({
     layout: EmptyLayout

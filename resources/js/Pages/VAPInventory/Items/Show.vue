@@ -1,31 +1,36 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
+    <div class="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 p-6 text-white shadow-xl dark:border-white/10">
+      <div class="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-400/20 blur-3xl"></div>
+      <div class="absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl"></div>
+      <div class="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <CubeIcon class="h-7 w-7 text-blue-900" />
+          <span class="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-100 ring-1 ring-white/10">
+            Item controlado
+          </span>
+          <h1 class="mt-4 flex items-center gap-3 text-3xl font-bold tracking-tight">
+            <CubeIcon class="h-8 w-8 text-blue-200" />
             {{ item.name }}
           </h1>
-          <p class="mt-2 text-gray-600">
+          <p class="mt-3 max-w-3xl text-sm leading-6 text-blue-100/90">
             {{ item.description || 'Sem descrição disponível' }}
-            <span v-if="item.code" class="font-semibold text-blue-900 ml-2">
+            <span v-if="item.code" class="ml-2 font-semibold text-white">
               ({{ item.code }})
             </span>
           </p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
           <Link
             :href="route('vap-inventory.items.edit', item.id)"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            class="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
           >
             <PencilSquareIcon class="h-4 w-4" />
             Modificar Item
           </Link>
           <Link
             :href="route('vap-inventory.items.index')"
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+            class="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-semibold text-blue-950 shadow-sm transition hover:bg-blue-50"
           >
             <ArrowLeftIcon class="h-4 w-4" />
             Voltar para Itens
@@ -35,17 +40,17 @@
     </div>
 
     <section class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-      <article class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 class="text-lg font-semibold text-gray-900">Distribuição de stock</h2>
-            <p class="mt-1 text-sm text-gray-500">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Distribuição de stock</h2>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
               Leitura imediata do saldo por armazém antes de ajustar ou transferir.
             </p>
           </div>
-          <div class="rounded-2xl bg-slate-50 px-4 py-3 text-right">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Unidades monitorizadas</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900">{{ stockDistributionTotal }}</p>
+          <div class="rounded-2xl bg-slate-50 px-4 py-3 text-right dark:bg-white/5">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Unidades monitorizadas</p>
+            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ stockDistributionTotal }}</p>
           </div>
         </div>
 
@@ -55,13 +60,13 @@
       </article>
 
       <div class="grid gap-6">
-        <article class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h2 class="text-lg font-semibold text-gray-900">Mix operacional</h2>
-              <p class="mt-1 text-sm text-gray-500">Transações, pedidos, transferências e consumo recente.</p>
+              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Mix operacional</h2>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Transações, pedidos, transferências e consumo recente.</p>
             </div>
-            <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-800">
+            <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-800 dark:bg-blue-500/10 dark:text-blue-200">
               {{ activityMixTotal }} registos
             </span>
           </div>
@@ -71,11 +76,11 @@
           </div>
         </article>
 
-        <article class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h2 class="text-lg font-semibold text-gray-900">Pulso de conformidade</h2>
-              <p class="mt-1 text-sm text-gray-500">Sinal rápido sobre caducidade, criticidade de stock e prontidão técnica.</p>
+              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Pulso de conformidade</h2>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Sinal rápido sobre caducidade, criticidade de stock e prontidão técnica.</p>
             </div>
           </div>
 
@@ -91,7 +96,7 @@
       <!-- LEFT COLUMN -->
       <div class="lg:col-span-2 space-y-6">
         <!-- ITEM DETAILS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
             <h2 class="text-lg font-semibold text-white flex items-center gap-2">
               <InformationCircleIcon class="h-5 w-5" />
@@ -102,19 +107,19 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Categoria</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.category?.name || 'N/A' }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Categoria</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.category?.name || 'N/A' }}</div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Tipo</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.type?.name || 'N/A' }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Tipo</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.type?.name || 'N/A' }}</div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Unidade</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.unit?.code || 'N/A' }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Unidade</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.unit?.code || 'N/A' }}</div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Estado</label>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Estado</label>
                   <div class="mt-1">
                     <span :class="getStatusClasses(item.status)">
                       {{ item.status?.name || 'N/A' }}
@@ -124,25 +129,25 @@
               </div>
               <div class="space-y-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Fornecedor</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.supplier?.name || 'N/A' }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Fornecedor</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.supplier?.name || 'N/A' }}</div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Quantidade de Reabastecimento</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.reorder_qty }} {{ item.unit?.code || 'units' }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Quantidade de Reabastecimento</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.reorder_qty }} {{ item.unit?.code || 'unidades' }}</div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Documentação de Segurança</label>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Documentação de Segurança</label>
                   <div class="mt-1">
-                    <span :class="item.has_safety_documentation ? 'text-green-900' : 'text-gray-900'">
+                    <span :class="item.has_safety_documentation ? 'text-green-900 dark:text-emerald-300' : 'text-slate-900 dark:text-slate-300'">
                       {{ item.has_safety_documentation ? 'Disponível' : 'Não Disponível' }}
                     </span>
                   </div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Refrigerado</label>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Refrigerado</label>
                   <div class="mt-1">
-                    <span :class="item.refrigerated ? 'text-blue-900' : 'text-gray-900'">
+                    <span :class="item.refrigerated ? 'text-blue-900 dark:text-blue-300' : 'text-slate-900 dark:text-slate-300'">
                       {{ item.refrigerated ? 'Sim' : 'Não' }}
                     </span>
                   </div>
@@ -151,50 +156,50 @@
             </div>
 
             <!-- IDENTIFICATION -->
-            <div class="mt-8 pt-8 border-t border-gray-200">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Identificação</h3>
+            <div class="mt-8 border-t border-slate-200 pt-8 dark:border-slate-800">
+              <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Identificação</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Código de Barras</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.barcode || 'N/A' }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Código de Barras</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.barcode || 'N/A' }}</div>
                 </div>
                 <div v-if="isEquipment">
-                  <label class="block text-sm font-medium text-gray-700">Número de Série</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.serial_number || 'N/A' }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Número de Série</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.serial_number || 'N/A' }}</div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Código Interno</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.internal_code || 'N/A' }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Código Interno</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.internal_code || 'N/A' }}</div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Marca</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.brand || 'N/A' }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Marca</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.brand || 'N/A' }}</div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Modelo</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.model || 'N/A' }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Modelo</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.model || 'N/A' }}</div>
                 </div>
                 
                 <div v-if="isReagent">
-                  <label class="block text-sm font-medium text-gray-700">Lote</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.lot || 'N/A' }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Lote</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.lot || 'N/A' }}</div>
                 </div>
               </div>
             </div>
 
             <!-- ITEM PRICES -->
-            <div class="mt-8 pt-8 border-t border-gray-200">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Custos de Compra</h3>
+            <div class="mt-8 border-t border-slate-200 pt-8 dark:border-slate-800">
+              <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Custos de Compra</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Preço Padrão</label>
-                  <div class="mt-1">
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Preço Padrão</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
                     {{ item.standard_cost }}
                   </div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Último Preço de Compra</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.last_purchase_price }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Último Preço de Compra</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.last_purchase_price }}</div>
                 </div>
                 <!-- <div>
                   <label class="block text-sm font-medium text-gray-700">Dias para Caducidade</label>
@@ -208,48 +213,48 @@
             </div>
 
             <!-- TECHNICAL SPECIFICATIONS -->
-            <div v-if="hasTechnicalSpecs" class="mt-8 pt-8 border-t border-gray-200">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Especificações Técnicas</h3>
+            <div v-if="hasTechnicalSpecs" class="mt-8 border-t border-slate-200 pt-8 dark:border-slate-800">
+              <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Especificações Técnicas</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div v-if="item.resolution">
-                  <label class="block text-sm font-medium text-gray-700">Resolução</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.resolution }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Resolução</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.resolution }}</div>
                 </div>
                 <div v-if="item.precision">
-                  <label class="block text-sm font-medium text-gray-700">Precisão</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.precision }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Precisão</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.precision }}</div>
                 </div>
                 <div v-if="item.range">
-                  <label class="block text-sm font-medium text-gray-700">Alcance / Gama</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.range }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Alcance / Gama</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.range }}</div>
                 </div>
                 <div v-if="item.firmware">
-                  <label class="block text-sm font-medium text-gray-700">Firmware</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.firmware }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Firmware</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.firmware }}</div>
                 </div>
                 <div v-if="item.software">
-                  <label class="block text-sm font-medium text-gray-700">Software</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.software }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Software</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.software }}</div>
                 </div>
                 <div v-if="item.metrological_uncertainty_value">
-                  <label class="block text-sm font-medium text-gray-700">Incerteza Metrológica</label>
-                  <div class="mt-1 text-sm text-gray-900">
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Incerteza Metrológica</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
                     {{ item.metrological_uncertainty_value }} {{ item.metrological_uncertainty_unit || '' }}
                   </div>
                 </div>
                 <div v-if="item.metrological_traceability_reference">
-                  <label class="block text-sm font-medium text-gray-700">Rastreabilidade Metrológica</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.metrological_traceability_reference }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Rastreabilidade Metrológica</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.metrological_traceability_reference }}</div>
                 </div>
               </div>
             </div>
 
             <!-- REAGENT SPECIFIC -->
-            <div v-if="item.is_reagent" class="mt-8 pt-8 border-t border-gray-200">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Informação do Reagente</h3>
+            <div v-if="item.is_reagent" class="mt-8 border-t border-slate-200 pt-8 dark:border-slate-800">
+              <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Informação do Reagente</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Data de Validade</label>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Data de Validade</label>
                   <div class="mt-1">
                     <span :class="getExpiryDateColor(item)">
                       {{ formatDate(item.reagent_expiry_date) || 'N/A' }}
@@ -257,11 +262,11 @@
                   </div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Data de Abertura</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ formatDate(item.reagent_open_date) || 'Não Aberto' }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Data de Abertura</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ formatDate(item.reagent_open_date) || 'Não Aberto' }}</div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Dias para Caducidade</label>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Dias para Caducidade</label>
                   <div class="mt-1">
                     <span :class="getDaysColor(daysToExpiry)">
                       {{ daysToExpiry.toFixed(0) || 'N/A' }}
@@ -272,15 +277,15 @@
             </div>
 
             <!-- CALIBRATION INFO -->
-            <div v-if="item.next_calibration_date" class="mt-8 pt-8 border-t border-gray-200">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Informação de Calibração</h3>
+            <div v-if="item.next_calibration_date" class="mt-8 border-t border-slate-200 pt-8 dark:border-slate-800">
+              <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Informação de Calibração</h3>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Última Calibração</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ formatDate(item.last_calibration_date) || 'Nunca' }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Última Calibração</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ formatDate(item.last_calibration_date) || 'Nunca' }}</div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Próxima Calibração</label>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Próxima Calibração</label>
                   <div class="mt-1">
                     <span :class="getCalibrationDateColor(item)">
                       {{ formatDate(item.next_calibration_date) }}
@@ -288,7 +293,7 @@
                   </div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Estado de Calibração</label>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Estado de Calibração</label>
                   <div class="mt-1">
                     <span :class="getCalibrationStatusClasses(item)">
                       {{ getCalibrationStatusText(item) }}
@@ -296,7 +301,7 @@
                   </div>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-gray-700">Estado Metrológico</label>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Estado Metrológico</label>
                   <div class="mt-1">
                     <span :class="getMetrologyStatusClasses(item.metrology_status)">
                       {{ getMetrologyStatusText(item.metrology_status) }}
@@ -304,12 +309,12 @@
                   </div>
                 </div>
                 <div v-if="item.metrology_review_due_at">
-                  <label class="block text-sm font-medium text-gray-700">Próxima Revisão Metrológica</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ formatDate(item.metrology_review_due_at) }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Próxima Revisão Metrológica</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ formatDate(item.metrology_review_due_at) }}</div>
                 </div>
                 <div v-if="item.metrology_notes" class="md:col-span-2 lg:col-span-3">
-                  <label class="block text-sm font-medium text-gray-700">Notas Metrológicas</label>
-                  <div class="mt-1 text-sm text-gray-900">{{ item.metrology_notes }}</div>
+                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Notas Metrológicas</label>
+                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.metrology_notes }}</div>
                 </div>
               </div>
             </div>
@@ -317,7 +322,7 @@
         </div>
 
         <!-- STOCK ACROSS WAREHOUSES -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
             <h2 class="text-lg font-semibold text-white flex items-center gap-2">
               <BuildingLibraryIcon class="h-5 w-5" />
@@ -326,51 +331,51 @@
           </div>
           <div class="p-6">
             <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+              <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+                <thead class="bg-slate-50 dark:bg-slate-900/80">
                   <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th :class="tableHeadClass">
                       Armazém
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th :class="tableHeadClass">
                       Estoque Disponível
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th :class="tableHeadClass">
                       Nível Mínimo de Estoque
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th :class="tableHeadClass">
                       Ponto de Reabastecimento
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th :class="tableHeadClass">
                       Estado de Estoque
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th :class="tableHeadClass">
                       Acções
                     </th>
                   </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
                   <tr
                     v-for="inv in inventory"
                     :key="inv?.id"
-                    class="hover:bg-gray-50"
+                    class="hover:bg-blue-50/60 dark:hover:bg-blue-950/20"
                   >
                     <td class="px-6 py-4">
-                      <div class="text-sm font-medium text-gray-900">{{ inv?.warehouse?.name }}</div>
-                      <div class="text-sm text-gray-500">{{ inv?.warehouse?.location?.name || 'No location' }}</div>
+                      <div class="text-sm font-medium text-slate-900 dark:text-white">{{ inv?.warehouse?.name }}</div>
+                      <div class="text-sm text-slate-500 dark:text-slate-400">{{ inv?.warehouse?.location?.name || 'Sem localização' }}</div>
                       <div v-if="inv?.warehouse?.is_refrigerated" class="mt-1">
-                        <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                        <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-500/10 dark:text-blue-200">
                           <SunIcon class="mr-1 h-3 w-3" />
                           Refrigerado
                         </span>
                       </div>
                     </td>
                     <td class="px-6 py-4">
-                      <div class="text-2xl font-bold text-blue-900">{{ inv.qty_available }}</div>
-                      <div class="text-xs text-gray-500">{{ item.unit?.code || 'unidades' }}</div>
+                      <div class="text-2xl font-bold text-blue-900 dark:text-blue-300">{{ inv.qty_available }}</div>
+                      <div class="text-xs text-slate-500 dark:text-slate-400">{{ item.unit?.code || 'unidades' }}</div>
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ inv.min_stock_level }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900">{{ inv.reorder_point }}</td>
+                    <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">{{ inv.min_stock_level }}</td>
+                    <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">{{ inv.reorder_point }}</td>
                     <td class="px-6 py-4">
                       <span :class="getStockStatusClasses(inv)">
                         {{ inv.stock_status_label }}
@@ -380,14 +385,14 @@
                       <div class="flex items-center gap-2">
                         <button
                           @click="adjustStock(inv)"
-                          class="inline-flex items-center rounded-lg bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-900 hover:bg-blue-100"
+                          class="inline-flex items-center rounded-xl bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-900 transition hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-200 dark:hover:bg-blue-500/20"
                         >
                           <ArrowsUpDownIcon class="h-4 w-4 mr-1" />
                           Ajustar
                         </button>
                         <button
                           @click="transferStock(inv)"
-                          class="inline-flex items-center rounded-lg bg-green-50 px-3 py-1.5 text-sm font-medium text-green-900 hover:bg-green-100"
+                          class="inline-flex items-center rounded-xl bg-green-50 px-3 py-1.5 text-sm font-semibold text-green-900 transition hover:bg-green-100 dark:bg-emerald-500/10 dark:text-emerald-200 dark:hover:bg-emerald-500/20"
                         >
                           <ArrowsRightLeftIcon class="h-4 w-4 mr-1" />
                         Transferir
@@ -399,15 +404,15 @@
               </table>
             </div>
             <div v-if="inventory.length === 0" class="text-center py-8">
-              <BuildingLibraryIcon class="mx-auto h-12 w-12 text-gray-300" />
-              <h3 class="mt-4 text-sm font-semibold text-gray-900">Não há Estoque Disponível</h3>
-              <p class="mt-2 text-sm text-gray-500">Este item não está disponível em nenhum armazém</p>
+              <BuildingLibraryIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
+              <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">Não há Estoque Disponível</h3>
+              <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Este item não está disponível em nenhum armazém</p>
             </div>
           </div>
         </div>
 
         <!-- RECENT TRANSACTIONS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
             <h2 class="text-lg font-semibold text-white flex items-center gap-2">
               <ClockIcon class="h-5 w-5" />
@@ -416,36 +421,36 @@
           </div>
           <div class="p-6">
             <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+              <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+                <thead class="bg-slate-50 dark:bg-slate-900/80">
                   <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th :class="tableHeadClass">
                       Data
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th :class="tableHeadClass">
                       Tipo
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th :class="tableHeadClass">
                       Quantidade
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th :class="tableHeadClass">
                       Armazém
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th :class="tableHeadClass">
                       Usuário
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th :class="tableHeadClass">
                       Motivo
                     </th>
                   </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
                   <tr
                     v-for="transaction in recentTransactions"
                     :key="transaction.id"
-                    class="hover:bg-gray-50"
+                    class="hover:bg-blue-50/60 dark:hover:bg-blue-950/20"
                   >
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
                       {{ formatDateTime(transaction.created_at) }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -454,17 +459,17 @@
                       </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <span :class="transaction.is_addition ? 'text-green-900' : 'text-red-900'">
+                      <span :class="transaction.is_addition ? 'text-green-900 dark:text-emerald-300' : 'text-red-900 dark:text-red-300'">
                         {{ transaction.is_addition ? '+' : '-' }}{{ transaction.qty }}
                       </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
                       {{ transaction.warehouse?.name }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
                       {{ transaction.user?.name }}
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-900">
+                    <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
                       {{ transaction.reason }}
                     </td>
                   </tr>
@@ -472,20 +477,20 @@
               </table>
             </div>
             <div v-if="recentTransactions.length === 0" class="text-center py-8">
-              <ClockIcon class="mx-auto h-12 w-12 text-gray-300" />
-              <h3 class="mt-4 text-sm font-semibold text-gray-900">Nenhuma Transação Recente</h3>
-              <p class="mt-2 text-sm text-gray-500">Nenhuma transação registrada para este item ainda</p>
+              <ClockIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
+              <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">Nenhuma Transação Recente</h3>
+              <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Nenhuma transação registrada para este item ainda</p>
             </div>
           </div>
         </div>
 
         <!-- LIST DOCUMENTS -->
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="border-b border-gray-200 px-6 py-4">
+        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
             <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <DocumentTextIcon class="h-5 w-5 text-blue-900" />
+              <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
+                <DocumentTextIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
                 Documentos
               </h2>
             </div>
@@ -493,11 +498,11 @@
 
           <!-- EMPTY STATE -->
           <div v-if="documents.length === 0" class="p-12 text-center">
-            <DocumentTextIcon class="mx-auto h-12 w-12 text-gray-300" />
-            <h3 class="mt-4 text-sm font-semibold text-gray-900">
+            <DocumentTextIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
+            <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
               Nenhum documento adicionado
             </h3>
-            <p class="mt-2 text-sm text-gray-500">
+            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
               Adicione um documento para o item
             </p>
           </div>
@@ -507,29 +512,30 @@
             <div
               v-for="(document, index) in documents"
               :key="document.name"
-              class="group relative bg-white rounded-lg border border-gray-200 hover:border-blue-900 transition-all duration-200 overflow-hidden shadow-sm m-4"
+              class="group relative m-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:border-blue-900 dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-blue-400"
               v-motion
               :initial="{ opacity: 0, y: 20 }"
               :enter="{ opacity: 1, y: 0 }"
               :delay="index * 50"
             >
               <!-- Document Header -->
-              <div class="bg-gradient-to-r from-blue-50 to-white px-4 py-3 border-b border-gray-200">
-                <div class="flex items-center justify-start">
+              <div class="border-b border-slate-200 bg-gradient-to-r from-blue-50 to-white px-4 py-3 dark:border-slate-800 dark:from-blue-500/10 dark:to-slate-900">
+                <div class="flex items-center justify-between gap-3">
                   <div>
-                    <h3 class="text-sm font-semibold text-gray-900">
+                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white">
                       {{ document.name }}
                     </h3>
-                    <p class="text-xs text-gray-500">
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
                       {{ document.extension || document.name.split('.').pop() }}
                     </p>
                   </div>
                   
                   <!-- Download File -->
+                  <div class="flex items-center gap-1">
                     <button
                       @click="downloadAttachment(document)"
                       type="button"
-                      class="text-gray-400 hover:text-red-600 transition-colors duration-200 p-2 rounded-full hover:bg-red-50"
+                      class="rounded-full p-2 text-slate-400 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-500 dark:hover:bg-blue-500/10 dark:hover:text-blue-200"
                       :title="'Download'"
                     >
                       <CloudArrowDownIcon class="h-5 w-5" />
@@ -537,11 +543,12 @@
                   <button
                     @click="deleteAttachment(item.id, document.id, index)"
                     type="button"
-                    class="text-gray-400 hover:text-red-600 transition-colors duration-200 p-2 rounded-full hover:bg-red-50"
+                    class="rounded-full p-2 text-slate-400 transition-colors duration-200 hover:bg-red-50 hover:text-red-600 dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-200"
                     :title="'Remover documento'"
                   >
                     <TrashIcon class="h-5 w-5" />
                   </button>
+                  </div>
                 </div>
               </div>
 
@@ -551,15 +558,15 @@
                  
                   <div class="flex items-center gap-3">
                     <div class="flex-shrink-0">
-                      <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <DocumentTextIcon class="h-5 w-5 text-blue-900" />
+                      <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/10">
+                        <DocumentTextIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
                       </div>
                     </div>
                     <div>
-                      <div class="text-sm font-semibold text-gray-900">
+                      <div class="text-sm font-semibold text-slate-900 dark:text-white">
                         {{ document.extension || document.name.split('.').pop() }}
                       </div>
-                      <div class="text-xs text-gray-500">
+                      <div class="text-xs text-slate-500 dark:text-slate-400">
                         {{ readableFileSize(document.size) }}
                       </div>
                     </div>
@@ -575,48 +582,48 @@
       <!-- RIGHT COLUMN -->
       <div class="space-y-6">
         <!-- QUICK STATS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <ChartBarIcon class="h-5 w-5 text-blue-900" />
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+          <h3 class="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
+            <ChartBarIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
             Estatísticas Rápidas
           </h3>
           <div class="space-y-4">
-            <div class="bg-gradient-to-r from-blue-50 to-white rounded-lg border border-blue-100 p-4">
+            <div class="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-white p-4 dark:border-blue-500/20 dark:from-blue-500/10 dark:to-slate-900/60">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm font-medium text-gray-600">Estoque Total</p>
-                  <p class="text-2xl font-bold text-blue-900">{{ totalStock }}</p>
+                  <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Estoque Total</p>
+                  <p class="text-2xl font-bold text-blue-900 dark:text-blue-300">{{ totalStock }}</p>
                 </div>
-                <CubeIcon class="h-8 w-8 text-blue-900/20" />
+                <CubeIcon class="h-8 w-8 text-blue-900/20 dark:text-blue-300/30" />
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-              <div class="bg-gradient-to-r from-green-50 to-white rounded-lg border border-green-100 p-4">
-                <p class="text-sm font-medium text-gray-600">Armazéns</p>
-                <p class="text-xl font-bold text-green-900">{{ inventory.length }}</p>
+              <div class="rounded-2xl border border-green-100 bg-gradient-to-r from-green-50 to-white p-4 dark:border-emerald-500/20 dark:from-emerald-500/10 dark:to-slate-900/60">
+                <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Armazéns</p>
+                <p class="text-xl font-bold text-green-900 dark:text-emerald-300">{{ inventory.length }}</p>
               </div>
-              <div class="bg-gradient-to-r from-yellow-50 to-white rounded-lg border border-yellow-100 p-4">
-                <p class="text-sm font-medium text-gray-600">Usos Recentes</p>
-                <p class="text-xl font-bold text-yellow-900">{{ recentTransactions.length }}</p>
+              <div class="rounded-2xl border border-yellow-100 bg-gradient-to-r from-yellow-50 to-white p-4 dark:border-amber-500/20 dark:from-amber-500/10 dark:to-slate-900/60">
+                <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Usos Recentes</p>
+                <p class="text-xl font-bold text-yellow-900 dark:text-amber-300">{{ recentTransactions.length }}</p>
               </div>
             </div>
 
             <div class="space-y-3">
               <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">Estado</span>
+                <span class="text-sm text-slate-600 dark:text-slate-400">Estado</span>
                 <span :class="getStatusClasses(item.status)">
                   {{ item.status?.name || 'N/A' }}
                 </span>
               </div>
               <div v-if="item.is_reagent" class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">Estado de Validade</span>
+                <span class="text-sm text-slate-600 dark:text-slate-400">Estado de Validade</span>
                 <span :class="getExpiryStatusClasses(item)">
                   {{ getExpiryStatusText(item) }}
                 </span>
               </div>
               <div v-if="item.next_calibration_date" class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">Calibração</span>
+                <span class="text-sm text-slate-600 dark:text-slate-400">Calibração</span>
                 <span :class="getCalibrationStatusClasses(item)">
                   {{ getCalibrationStatusText(item) }}
                 </span>
@@ -626,98 +633,98 @@
         </div>
 
         <!-- QUICK ACTIONS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+          <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
             Acções Rápidas
           </h3>
           <div class="space-y-3">
             <button
               @click="adjustStockModal = true"
-              class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 transition-colors"
+              class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-blue-300 hover:bg-blue-50/60 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-blue-500/40 dark:hover:bg-blue-500/10"
             >
               <div class="flex items-center gap-3">
-                <div class="rounded-lg bg-blue-100 p-2">
-                  <ArrowsUpDownIcon class="h-5 w-5 text-blue-900" />
+                <div class="rounded-xl bg-blue-100 p-2 dark:bg-blue-500/10">
+                  <ArrowsUpDownIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
                 </div>
                 <div>
-                  <div class="font-medium text-gray-900">Ajustar Estoque</div>
-                  <div class="text-sm text-gray-500">Adicione ou remova estoque</div>
+                  <div class="font-medium text-slate-900 dark:text-white">Ajustar Estoque</div>
+                  <div class="text-sm text-slate-500 dark:text-slate-400">Adicione ou remova estoque</div>
                 </div>
               </div>
-              <ChevronRightIcon class="h-5 w-5 text-gray-400" />
+              <ChevronRightIcon class="h-5 w-5 text-slate-400 dark:text-slate-500" />
             </button>
 
             <button
               @click="transferStockModal = true"
-              class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 transition-colors"
+              class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-green-300 hover:bg-green-50/60 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-emerald-500/40 dark:hover:bg-emerald-500/10"
             >
               <div class="flex items-center gap-3">
-                <div class="rounded-lg bg-green-100 p-2">
-                  <ArrowsRightLeftIcon class="h-5 w-5 text-green-900" />
+                <div class="rounded-xl bg-green-100 p-2 dark:bg-emerald-500/10">
+                  <ArrowsRightLeftIcon class="h-5 w-5 text-green-900 dark:text-emerald-300" />
                 </div>
                 <div>
-                  <div class="font-medium text-gray-900">Transferir Estoque</div>
-                  <div class="text-sm text-gray-500">Mover entre armazéns</div>
+                  <div class="font-medium text-slate-900 dark:text-white">Transferir Estoque</div>
+                  <div class="text-sm text-slate-500 dark:text-slate-400">Mover entre armazéns</div>
                 </div>
               </div>
-              <ChevronRightIcon class="h-5 w-5 text-gray-400" />
+              <ChevronRightIcon class="h-5 w-5 text-slate-400 dark:text-slate-500" />
             </button>
 
             <button
               v-if="item.is_reagent"
               @click="consumeReagentModal = true"
-              class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 transition-colors"
+              class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-red-300 hover:bg-red-50/60 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-red-500/40 dark:hover:bg-red-500/10"
             >
               <div class="flex items-center gap-3">
-                <div class="rounded-lg bg-red-100 p-2">
-                  <BeakerIcon class="h-5 w-5 text-red-900" />
+                <div class="rounded-xl bg-red-100 p-2 dark:bg-red-500/10">
+                  <BeakerIcon class="h-5 w-5 text-red-900 dark:text-red-300" />
                 </div>
                 <div>
-                  <div class="font-medium text-gray-900">Registrar Consumo</div>
-                  <div class="text-sm text-gray-500">Registrar uso de reagente</div>
+                  <div class="font-medium text-slate-900 dark:text-white">Registrar Consumo</div>
+                  <div class="text-sm text-slate-500 dark:text-slate-400">Registrar uso de reagente</div>
                 </div>
               </div>
-              <ChevronRightIcon class="h-5 w-5 text-gray-400" />
+              <ChevronRightIcon class="h-5 w-5 text-slate-400 dark:text-slate-500" />
             </button>
 
             <button
               v-if="item.next_calibration_date"
               @click="recordCalibrationModal = true"
-              class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 transition-colors"
+              class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-indigo-300 hover:bg-indigo-50/60 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-indigo-500/40 dark:hover:bg-indigo-500/10"
             >
               <div class="flex items-center gap-3">
-                <div class="rounded-lg bg-purple-100 p-2">
-                  <WrenchScrewdriverIcon class="h-5 w-5 text-purple-900" />
+                <div class="rounded-xl bg-indigo-100 p-2 dark:bg-indigo-500/10">
+                  <WrenchScrewdriverIcon class="h-5 w-5 text-indigo-900 dark:text-indigo-300" />
                 </div>
                 <div>
-                  <div class="font-medium text-gray-900">Registrar Calibração</div>
-                  <div class="text-sm text-gray-500">Atualizar status de calibração</div>
+                  <div class="font-medium text-slate-900 dark:text-white">Registrar Calibração</div>
+                  <div class="text-sm text-slate-500 dark:text-slate-400">Atualizar status de calibração</div>
                 </div>
               </div>
-              <ChevronRightIcon class="h-5 w-5 text-gray-400" />
+              <ChevronRightIcon class="h-5 w-5 text-slate-400 dark:text-slate-500" />
             </button>
 
             <Link
               :href="route('vap-inventory.orders.create', { item_id: item.id })"
-              class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 transition-colors"
+              class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 transition-colors hover:border-amber-300 hover:bg-amber-50/60 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-amber-500/40 dark:hover:bg-amber-500/10"
             >
               <div class="flex items-center gap-3">
-                <div class="rounded-lg bg-yellow-100 p-2">
-                  <ShoppingCartIcon class="h-5 w-5 text-yellow-900" />
+                <div class="rounded-xl bg-yellow-100 p-2 dark:bg-amber-500/10">
+                  <ShoppingCartIcon class="h-5 w-5 text-yellow-900 dark:text-amber-300" />
                 </div>
                 <div>
-                  <div class="font-medium text-gray-900">Criar Pedido</div>
-                  <div class="text-sm text-gray-500">Pedir em mais de um fornecedor</div>
+                  <div class="font-medium text-slate-900 dark:text-white">Criar Pedido</div>
+                  <div class="text-sm text-slate-500 dark:text-slate-400">Pedir em mais de um fornecedor</div>
                 </div>
               </div>
-              <ChevronRightIcon class="h-5 w-5 text-gray-400" />
+              <ChevronRightIcon class="h-5 w-5 text-slate-400 dark:text-slate-500" />
             </Link>
           </div>
         </div>
 
         <!-- RECENT ACTIVITY -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+          <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
             Atividade Recente
           </h3>
           <div class="space-y-4">
@@ -736,10 +743,10 @@
                 />
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900">
+                <p class="text-sm font-medium text-slate-900 dark:text-white">
                   {{ activity.description }}
                 </p>
-                <p class="text-xs text-gray-500 mt-1">
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   {{ formatTimeAgo(activity.timestamp) }}
                 </p>
               </div>
@@ -790,7 +797,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { Link, useForm } from '@inertiajs/vue3'
 import {
   CubeIcon,
@@ -841,17 +849,32 @@ const props = defineProps({
 })
 
 const isReagent = computed(() => {
-  return (props.item.category?.name).toLowerCase().includes('reagente');
+  return (props.item.category?.name || '').toLowerCase().includes('reagente');
 })
 
 const isEquipment = computed(() => {
-  return (props.item.category?.name).toLowerCase().includes('equipamento');
+  return (props.item.category?.name || '').toLowerCase().includes('equipamento');
 })
 
 const adjustStockModal = ref(false)
 const transferStockModal = ref(false)
 const consumeReagentModal = ref(false)
 const recordCalibrationModal = ref(false)
+const tableHeadClass = 'px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300'
+const isDarkMode = ref(false)
+let themeObserver
+
+const chartTextColor = computed(() => isDarkMode.value ? '#cbd5e1' : '#475569')
+const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#e2e8f0')
+const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
+
+const syncDarkMode = () => {
+  if (typeof document === 'undefined') {
+    return
+  }
+
+  isDarkMode.value = document.documentElement.classList.contains('dark')
+}
 
 const hasTechnicalSpecs = computed(() => {
   return props.item.resolution || props.item.precision || props.item.range ||
@@ -886,8 +909,11 @@ const compliancePulseChartSeries = computed(() => [
 const stockDistributionChartOptions = computed(() => ({
   chart: {
     toolbar: { show: false },
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    background: 'transparent',
   },
+  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
+  foreColor: chartTextColor.value,
   plotOptions: {
     bar: {
       borderRadius: 8,
@@ -899,16 +925,22 @@ const stockDistributionChartOptions = computed(() => ({
   dataLabels: { enabled: false },
   xaxis: {
     categories: props.charts?.stock_distribution?.labels || [],
-    labels: { style: { fontSize: '12px' } }
+    axisBorder: { color: chartGridColor.value },
+    axisTicks: { color: chartGridColor.value },
+    labels: { style: { colors: chartTextColor.value, fontSize: '12px' } }
   },
   yaxis: {
     labels: {
-      formatter: (value) => Number(value || 0).toFixed(0)
+      formatter: (value) => Number(value || 0).toFixed(0),
+      style: { colors: chartTextColor.value },
     }
   },
   grid: {
-    borderColor: '#e5e7eb',
+    borderColor: chartGridColor.value,
     strokeDashArray: 4
+  },
+  tooltip: {
+    theme: chartTooltipTheme.value,
   },
   legend: { show: false }
 }))
@@ -916,8 +948,11 @@ const stockDistributionChartOptions = computed(() => ({
 const activityMixChartOptions = computed(() => ({
   chart: {
     toolbar: { show: false },
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    background: 'transparent',
   },
+  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
+  foreColor: chartTextColor.value,
   labels: props.charts?.activity_mix?.labels || [],
   colors: ['#2563eb', '#f59e0b', '#14b8a6', '#dc2626'],
   dataLabels: {
@@ -925,18 +960,27 @@ const activityMixChartOptions = computed(() => ({
     formatter: (value) => `${Math.round(value)}%`
   },
   legend: {
-    position: 'bottom'
+    position: 'bottom',
+    labels: {
+      colors: chartTextColor.value,
+    },
   },
   stroke: {
-    colors: ['#ffffff']
-  }
+    colors: [isDarkMode.value ? '#020617' : '#ffffff']
+  },
+  tooltip: {
+    theme: chartTooltipTheme.value,
+  },
 }))
 
 const compliancePulseChartOptions = computed(() => ({
   chart: {
     toolbar: { show: false },
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    background: 'transparent',
   },
+  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
+  foreColor: chartTextColor.value,
   plotOptions: {
     bar: {
       borderRadius: 8,
@@ -948,16 +992,22 @@ const compliancePulseChartOptions = computed(() => ({
   dataLabels: { enabled: false },
   xaxis: {
     categories: props.charts?.compliance_pulse?.labels || [],
-    labels: { style: { fontSize: '12px' } }
+    axisBorder: { color: chartGridColor.value },
+    axisTicks: { color: chartGridColor.value },
+    labels: { style: { colors: chartTextColor.value, fontSize: '12px' } }
   },
   yaxis: {
     labels: {
-      formatter: (value) => Number(value || 0).toFixed(0)
+      formatter: (value) => Number(value || 0).toFixed(0),
+      style: { colors: chartTextColor.value },
     }
   },
   grid: {
-    borderColor: '#e5e7eb',
+    borderColor: chartGridColor.value,
     strokeDashArray: 4
+  },
+  tooltip: {
+    theme: chartTooltipTheme.value,
   },
   legend: { show: false }
 }))
@@ -1033,43 +1083,43 @@ const formatTimeAgo = (timestamp) => {
 }
 
 const getStatusClasses = (status) => {
-  if (!status) return 'inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800'
+  if (!status) return 'inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-200'
   
   const statusName = status.name.toLowerCase()
   if (statusName.includes('active')) {
-    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
+    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200'
   } else if (statusName.includes('inactive') || statusName.includes('out')) {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800'
+    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
   } else if (statusName.includes('maintenance') || statusName.includes('calibration')) {
-    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'
+    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 dark:bg-amber-500/10 dark:text-amber-200'
   } else {
-    return 'inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800'
+    return 'inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-200'
   }
 }
 
 const getExpiryDateColor = (item) => {
-  if (item.is_expired) return 'text-red-900'
-  if (item.days_to_expiry <= 30) return 'text-orange-900'
-  if (item.days_to_expiry <= 60) return 'text-yellow-900'
-  return 'text-green-900'
+  if (item.is_expired) return 'text-red-900 dark:text-red-200'
+  if (item.days_to_expiry <= 30) return 'text-orange-900 dark:text-orange-200'
+  if (item.days_to_expiry <= 60) return 'text-yellow-900 dark:text-amber-200'
+  return 'text-green-900 dark:text-emerald-200'
 }
 
 const getDaysColor = (days) => {
-  if (days <= 0) return 'text-red-900'
-  if (days <= 30) return 'text-orange-900'
-  if (days <= 60) return 'text-yellow-900'
-  return 'text-green-900'
+  if (days <= 0) return 'text-red-900 dark:text-red-200'
+  if (days <= 30) return 'text-orange-900 dark:text-orange-200'
+  if (days <= 60) return 'text-yellow-900 dark:text-amber-200'
+  return 'text-green-900 dark:text-emerald-200'
 }
 
 const getExpiryStatusClasses = (item) => {
   if (item.is_expired) {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800'
+    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
   } else if (item.days_to_expiry <= 30) {
-    return 'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800'
+    return 'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-200'
   } else if (item.days_to_expiry <= 60) {
-    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'
+    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 dark:bg-amber-500/10 dark:text-amber-200'
   } else {
-    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
+    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200'
   }
 }
 
@@ -1081,21 +1131,21 @@ const getExpiryStatusText = (item) => {
 }
 
 const getCalibrationDateColor = (item) => {
-  if (item.needs_calibration) return 'text-red-900'
-  if (item.days_to_calibration <= 30) return 'text-orange-900'
-  if (item.days_to_calibration <= 90) return 'text-yellow-900'
-  return 'text-green-900'
+  if (item.needs_calibration) return 'text-red-900 dark:text-red-200'
+  if (item.days_to_calibration <= 30) return 'text-orange-900 dark:text-orange-200'
+  if (item.days_to_calibration <= 90) return 'text-yellow-900 dark:text-amber-200'
+  return 'text-green-900 dark:text-emerald-200'
 }
 
 const getCalibrationStatusClasses = (item) => {
   if (item.needs_calibration) {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800'
+    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
   } else if (item.days_to_calibration <= 30) {
-    return 'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800'
+    return 'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-200'
   } else if (item.days_to_calibration <= 90) {
-    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'
+    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 dark:bg-amber-500/10 dark:text-amber-200'
   } else {
-    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
+    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200'
   }
 }
 
@@ -1107,11 +1157,11 @@ const getCalibrationStatusText = (item) => {
 }
 
 const getMetrologyStatusClasses = (status) => {
-  if (status === 'hold') return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800'
-  if (status === 'incomplete') return 'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800'
-  if (status === 'review_due') return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'
-  if (status === 'validated') return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
-  return 'inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800'
+  if (status === 'hold') return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
+  if (status === 'incomplete') return 'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-200'
+  if (status === 'review_due') return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 dark:bg-amber-500/10 dark:text-amber-200'
+  if (status === 'validated') return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200'
+  return 'inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-200'
 }
 
 const getMetrologyStatusText = (status) => {
@@ -1125,26 +1175,26 @@ const getMetrologyStatusText = (status) => {
 const getStockStatusClasses = (inventory) => {
   const status = inventory.stock_status
   if (status === 'out_of_stock') {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800'
+    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
   } else if (status === 'critical_stock') {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800'
+    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
   } else if (status === 'low_stock') {
-    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'
+    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 dark:bg-amber-500/10 dark:text-amber-200'
   } else {
-    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
+    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200'
   }
 }
 
 const getTransactionTypeClasses = (transaction) => {
   const type = transaction.type?.code
   if (type === 'stock_in' || type === 'stock_adjustment_add') {
-    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
+    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200'
   } else if (type === 'stock_out' || type === 'consumption') {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800'
+    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
   } else if (type === 'stock_transfer') {
-    return 'inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800'
+    return 'inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800 dark:bg-blue-500/10 dark:text-blue-200'
   } else {
-    return 'inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-800'
+    return 'inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-200'
   }
 }
 
@@ -1153,9 +1203,9 @@ const getActivityColor = (type) => {
     transaction: 'bg-blue-900',
     consumption: 'bg-red-900',
     transfer: 'bg-green-900',
-    calibration: 'bg-purple-900',
+    calibration: 'bg-indigo-900 dark:bg-indigo-500',
   }
-  return colors[type] || 'bg-gray-900'
+  return colors[type] || 'bg-slate-900 dark:bg-slate-600'
 }
 
 const getActivityIcon = (type) => {
@@ -1229,4 +1279,16 @@ function downloadAttachment(file) {
     window.open(route('vap-inventory.items.attachments.download-single', { model_id: file.id }), '_blank');
 }
 
+onMounted(() => {
+  syncDarkMode()
+
+  if (typeof MutationObserver !== 'undefined') {
+    themeObserver = new MutationObserver(syncDarkMode)
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+  }
+})
+
+onBeforeUnmount(() => {
+  themeObserver?.disconnect()
+})
 </script>

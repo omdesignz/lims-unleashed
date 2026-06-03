@@ -1,5 +1,6 @@
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { Head, Link, router, useForm } from '@inertiajs/vue3'
 import {
   BeakerIcon,
@@ -135,7 +136,7 @@ const statusLabel = (status) => {
 <template>
   <Head title="Condições Ambientais" />
 
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>

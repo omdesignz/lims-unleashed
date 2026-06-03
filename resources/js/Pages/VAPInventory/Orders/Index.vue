@@ -1,45 +1,36 @@
 <template>
-  <div class="space-y-8">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ShoppingCartIcon class="h-7 w-7 text-blue-900" />
-            Pedidos de Inventário / Compra
-          </h1>
-          <p class="mt-2 text-gray-600">
-            Gerenciar pedidos de compra para itens de inventário
-          </p>
-        </div>
+  <div class="procurement-index-shell space-y-8" :class="commercialDocumentThemeClasses">
+    <ModuleHero
+      eyebrow="Procurement control"
+      title="Pedidos de Inventário / Compra"
+      description="Gerencie pedidos de compra, receções parciais, avaliação de fornecedores e evidências de não conformidade na receção."
+    >
+      <template #actions>
         <div class="flex flex-wrap items-center gap-3">
-          <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900 ring-1 ring-inset ring-blue-700/10">
+          <span class="inline-flex items-center rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-900 ring-1 ring-inset ring-primary-700/10 dark:bg-primary-500/10 dark:text-primary-200 dark:ring-primary-400/20">
             {{ stats.total_orders || 0 }} pedidos
           </span>
           <a
             :href="route('vap-inventory.orders.create')"
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
+            class="inline-flex items-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
           >
             <PlusIcon class="h-5 w-5" />
             Novo Pedido
           </a>
         </div>
-      </div>
-    </div>
+      </template>
+    </ModuleHero>
 
     <!-- FILTERS SECTION -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <ModuleCard title="Filtros de procurement" description="Refine por estado, fornecedor, datas e referência antes de executar receções ou revisões.">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <!-- Status Filter -->
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+          <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
             <CheckCircleIcon class="h-4 w-4" />
             Estado
           </label>
-          <select
-            v-model="filters.status"
-            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900"
-          >
+          <BaseSelect v-model="filters.status">
             <option value="">Todos os Estados</option>
             <option value="pending">Pendentes</option>
             <option value="approved">Aprovados</option>
@@ -47,84 +38,66 @@
             <option value="partially_received">Recebidos Parcialmente</option>
             <option value="received">Recebidos</option>
             <option value="cancelled">Cancelados</option>
-          </select>
+          </BaseSelect>
         </div>
 
         <!-- Supplier Filter -->
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+          <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
             <TruckIcon class="h-4 w-4" />
             Fornecedor
           </label>
-          <select
-            v-model="filters.supplier_id"
-            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900"
-          >
-            <option value="">Todos os Fornecedores</option>
-            <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">
-              {{ supplier.name }}
-            </option>
-          </select>
+          <comboboxEnhanced
+            v-model="selectedSupplierFilter"
+            :options="supplierOptions"
+            placeholder="Todos os fornecedores"
+          />
         </div>
 
         <!-- Date Range -->
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+          <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
             <CalendarIcon class="h-4 w-4" />
             Intervalo de Datas
           </label>
           <div class="flex gap-2">
-            <input
-              type="date"
-              v-model="filters.date_from"
-              class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900"
-            />
-            <input
-              type="date"
-              v-model="filters.date_to"
-              class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900"
-            />
+            <BaseInput v-model="filters.date_from" type="date" />
+            <BaseInput v-model="filters.date_to" type="date" />
           </div>
         </div>
 
         <!-- Search -->
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700">
+          <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
             Pesquisar
           </label>
-          <input
-            type="text"
-            v-model="filters.search"
-            placeholder="Pesquisar por número de pedido, referência ou item..."
-            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900"
-            @keyup.enter="applyFilters"
-          />
+          <BaseInput v-model="filters.search" placeholder="Pesquisar por número de pedido, referência ou item..." @keyup.enter="applyFilters" />
         </div>
       </div>
 
       <!-- Action Buttons -->
-      <div class="mt-6 flex flex-col gap-3 border-t border-gray-200 pt-6 sm:flex-row sm:justify-end">
+      <div class="mt-6 flex flex-col gap-3 border-t border-slate-200 pt-6 dark:border-slate-800 sm:flex-row sm:justify-end">
         <button
           @click="resetFilters"
-          class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
         >
           Redefinir
         </button>
         <button
           @click="applyFilters"
-          class="rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800"
+          class="rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
         >
           Aplicar Filtros
         </button>
       </div>
-    </div>
+    </ModuleCard>
 
     <!-- STATS CARDS -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Pedidos Pendentes</p>
+            <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Pedidos Pendentes</p>
             <p class="mt-2 text-3xl font-bold text-yellow-600">{{ stats.pending_orders || 0 }}</p>
           </div>
           <div class="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center">
@@ -132,10 +105,10 @@
           </div>
         </div>
       </div>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Pedidos Hoje</p>
+            <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Pedidos Hoje</p>
             <p class="mt-2 text-3xl font-bold text-blue-600">{{ stats.orders_today || 0 }}</p>
           </div>
           <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
@@ -143,10 +116,10 @@
           </div>
         </div>
       </div>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Valor Total</p>
+            <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Valor Total</p>
             <p class="mt-2 text-3xl font-bold text-green-600">{{ formatCurrency(stats.total_value || 0) }}</p>
           </div>
           <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
@@ -154,10 +127,10 @@
           </div>
         </div>
       </div>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-600">Itens Abertos</p>
+            <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Itens Abertos</p>
             <p class="mt-2 text-3xl font-bold text-red-600">{{ stats.open_items || 0 }}</p>
           </div>
           <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
@@ -420,7 +393,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import BaseInput from '@/Components/base/BaseInput.vue'
+import BaseSelect from '@/Components/base/BaseSelect.vue'
+import ModuleCard from '@/Components/base/ModuleCard.vue'
+import ModuleHero from '@/Components/base/ModuleHero.vue'
+import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { ref, computed, onMounted, watch } from 'vue'
 import { router, useForm } from '@inertiajs/vue3'
 import {
   ShoppingCartIcon,
@@ -455,6 +434,7 @@ const props = defineProps({
 })
 
 const loading = ref(false)
+const selectedSupplierFilter = ref(null)
 const filters = useForm({
   status: '',
   supplier_id: '',
@@ -463,6 +443,15 @@ const filters = useForm({
   search: '',
   sort_by: 'created_at',
   sort_direction: 'desc'
+})
+
+const supplierOptions = computed(() => props.suppliers.map((supplier) => ({
+  value: supplier.id,
+  label: supplier.address ? `${supplier.name} - ${supplier.address.substring(0, 30)}...` : supplier.name,
+})))
+
+watch(selectedSupplierFilter, (supplier) => {
+  filters.supplier_id = supplier?.value || ''
 })
 
 function formatCurrency(value) {
@@ -582,6 +571,7 @@ function applyFilters() {
 
 function resetFilters() {
   filters.reset()
+  selectedSupplierFilter.value = null
   applyFilters()
 }
 
@@ -615,6 +605,110 @@ onMounted(() => {
         filters[key] = props.filters[key]
       }
     })
+
+    if (filters.supplier_id) {
+      const supplier = props.suppliers.find((supplier) => supplier.id == filters.supplier_id)
+      if (supplier) {
+        selectedSupplierFilter.value = {
+          value: supplier.id,
+          label: supplier.address ? `${supplier.name} - ${supplier.address.substring(0, 30)}...` : supplier.name,
+        }
+      }
+    }
   }
 })
 </script>
+
+<style scoped>
+.procurement-index-shell :deep(.bg-white.rounded-xl),
+.procurement-index-shell :deep(.rounded-xl.border.border-gray-200) {
+  border-color: rgb(226 232 240);
+  border-radius: 1.5rem;
+  background: rgb(255 255 255);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+}
+
+.procurement-index-shell :deep(select) {
+  border-color: rgb(203 213 225);
+  border-radius: 0.75rem;
+  background: rgb(255 255 255);
+  color: rgb(15 23 42);
+}
+
+.procurement-index-shell :deep(.bg-gray-50) {
+  border-color: rgb(226 232 240);
+  background: rgb(248 250 252 / 0.82);
+}
+
+.procurement-index-shell :deep(.text-blue-900) {
+  color: rgb(var(--color-primary-900, 30 58 138));
+}
+
+.procurement-index-shell :deep(.bg-blue-900) {
+  background-color: rgb(var(--color-primary-600, 37 99 235));
+}
+
+.procurement-index-shell :deep(.bg-blue-50) {
+  background-color: rgb(var(--color-primary-50, 239 246 255));
+}
+
+.procurement-index-shell :deep(.border-gray-200),
+.procurement-index-shell :deep(.border-gray-300),
+.procurement-index-shell :deep(.divide-gray-200 > :not([hidden]) ~ :not([hidden])) {
+  border-color: rgb(226 232 240);
+}
+
+:global(.dark) .procurement-index-shell :deep(.bg-white.rounded-xl),
+:global(.dark) .procurement-index-shell :deep(.rounded-xl.border.border-gray-200) {
+  border-color: rgb(30 41 59);
+  background: rgb(2 6 23);
+}
+
+:global(.dark) .procurement-index-shell :deep(select) {
+  border-color: rgb(51 65 85);
+  background: rgb(2 6 23 / 0.72);
+  color: rgb(241 245 249);
+}
+
+:global(.dark) .procurement-index-shell :deep(.bg-gray-50),
+:global(.dark) .procurement-index-shell :deep(.hover\:bg-gray-50:hover),
+:global(.dark) .procurement-index-shell :deep(tr:hover) {
+  border-color: rgb(51 65 85);
+  background: rgb(15 23 42 / 0.72);
+}
+
+:global(.dark) .procurement-index-shell :deep(.bg-white),
+:global(.dark) .procurement-index-shell :deep(tbody.bg-white) {
+  background: rgb(2 6 23);
+}
+
+:global(.dark) .procurement-index-shell :deep(.text-gray-900),
+:global(.dark) .procurement-index-shell :deep(.text-gray-700),
+:global(.dark) .procurement-index-shell :deep(.text-gray-600) {
+  color: rgb(226 232 240);
+}
+
+:global(.dark) .procurement-index-shell :deep(.text-gray-500),
+:global(.dark) .procurement-index-shell :deep(.text-gray-400) {
+  color: rgb(148 163 184);
+}
+
+:global(.dark) .procurement-index-shell :deep(.border-gray-200),
+:global(.dark) .procurement-index-shell :deep(.border-gray-300),
+:global(.dark) .procurement-index-shell :deep(.divide-gray-200 > :not([hidden]) ~ :not([hidden])) {
+  border-color: rgb(30 41 59);
+}
+
+:global(.dark) .procurement-index-shell :deep(.text-blue-900) {
+  color: rgb(var(--color-primary-200, 191 219 254));
+}
+
+:global(.dark) .procurement-index-shell :deep(.bg-blue-50) {
+  background-color: rgb(var(--color-primary-500, 59 130 246) / 0.1);
+}
+
+:global(.dark) .procurement-index-shell :deep(.bg-gray-100),
+:global(.dark) .procurement-index-shell :deep(.bg-gray-200) {
+  background-color: rgb(30 41 59);
+}
+</style>

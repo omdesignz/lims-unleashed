@@ -9,6 +9,7 @@ import { TrashIcon, PlusCircleIcon, ClipboardDocumentCheckIcon, ChevronUpIcon } 
 import { trans } from 'laravel-vue-i18n';
 import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/vue";
 import confirmDialog from "@/Components/confirm-dialog.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
 defineOptions({
@@ -417,6 +418,7 @@ const onSelectedItem = (item) => {
 </script>
 
 <template>
+<div class="space-y-6" :class="commercialDocumentThemeClasses">
 <div class="border-gray-200 pb-5">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.proposals.page_title') }}</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500">{{ $t('gestlab.general.labels.proposals.page_create_description') }} {{ form?.customer_id?.label }}</p>
@@ -752,4 +754,5 @@ const onSelectedItem = (item) => {
     </div>
   </confirm-dialog>
 
+</div>
 </template>

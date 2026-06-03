@@ -8,23 +8,23 @@ use App\Models\Complaint;
 use App\Models\CounterAnalysis;
 use App\Models\CreditNote;
 use App\Models\CreditNoteItem;
+use App\Models\CustomerRequest;
 use App\Models\Department;
 use App\Models\DirectCollection;
 use App\Models\InventoryItem;
+use App\Models\InventoryOrder;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceReceipt;
 use App\Models\LabCode;
-use App\Models\Matrix;
+use App\Models\MaintenanceTask;
 use App\Models\ManagementReview;
+use App\Models\Matrix;
 use App\Models\PackagingCategory;
 use App\Models\PaidService;
 use App\Models\Parameter;
 use App\Models\Profile;
 use App\Models\ProgrammedCollection;
-use App\Models\VAPProposal;
-use App\Models\VAPProposalItem;
-use App\Models\VAPFile;
 use App\Models\QualityCertificate;
 use App\Models\QualityCertificateRevision;
 use App\Models\Quote;
@@ -34,11 +34,16 @@ use App\Models\Receipt;
 use App\Models\Result;
 use App\Models\Sample;
 use App\Models\User;
+use App\Models\VAPFile;
+use App\Models\VAPNonConformity;
+use App\Models\VAPProposal;
+use App\Models\VAPProposalItem;
+use App\Models\VAPSampleEntry;
 use App\Models\Warehouse;
-use Illuminate\Foundation\Vite as FoundationVite;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Foundation\Vite as FoundationVite;
 use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\ServiceProvider;
 use ReflectionClass;
 
 class AppServiceProvider extends ServiceProvider
@@ -87,10 +92,15 @@ class AppServiceProvider extends ServiceProvider
             'parameter' => Parameter::class,
             'warehouse' => Warehouse::class,
             'matrix' => Matrix::class,
+            'order' => InventoryOrder::class,
+            'customer_request' => CustomerRequest::class,
+            'sample_entry' => VAPSampleEntry::class,
+            'maintenance_task' => MaintenanceTask::class,
             'management_review' => ManagementReview::class,
             'packaging_category' => PackagingCategory::class,
             'inventoryitem' => InventoryItem::class,
             'vap_file' => VAPFile::class,
+            'vap_non_conformity' => VAPNonConformity::class,
             'reagent_consumption' => ReagentConsumption::class,
             'quality_certificate_revision' => QualityCertificateRevision::class,
             'paid_service' => PaidService::class,

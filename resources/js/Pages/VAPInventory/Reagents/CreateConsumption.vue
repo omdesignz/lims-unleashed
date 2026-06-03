@@ -1,52 +1,36 @@
 <template>
-  <div class="space-y-8">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <BeakerIcon class="h-7 w-7 text-blue-900" />
-            Registrar Consumo de Reagentes
-          </h1>
-          <p class="mt-2 text-gray-600">
-            Registre o consumo de reagentes a partir do inventário
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <button
-            @click="goBack"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-          >
-            <ArrowLeftIcon class="h-5 w-5" />
-            
-            Voltar
-          </button>
-        </div>
-      </div>
-    </div>
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
+    <ModuleHero
+      eyebrow="Reagent usage"
+      title="Registrar Consumo de Reagentes"
+      description="Registre consumo com stock disponível, armazém, responsável e evidência operacional em uma única tela."
+    >
+      <template #actions>
+        <button
+          @click="goBack"
+          class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+        >
+          <ArrowLeftIcon class="h-5 w-5" />
+          Voltar
+        </button>
+      </template>
+    </ModuleHero>
 
     <form @submit.prevent="submit" class="space-y-6">
       <!-- CONSUMPTION DETAILS -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <ClipboardDocumentListIcon class="h-5 w-5 text-blue-900" />
-          Detalhes de Consumo
-        </h2>
+      <ModuleCard title="Detalhes de Consumo" description="Escolha o reagente, confirme o armazém e registre a quantidade consumida.">
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Reagent Selection -->
           <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700">
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
               Reagente
               <span class="text-red-500">*</span>
             </label>
-            <select
+            <BaseSelect
               v-model="form.reagent_id"
               @change="onReagentChange"
-              :class="[
-                'block w-full rounded-lg shadow-sm focus:border-blue-900 focus:ring-blue-900',
-                form.errors.reagent_id ? 'border-red-300' : 'border-gray-300'
-              ]"
+              :error="form.errors.reagent_id"
               required
             >
               <option value="">Seleccione um Reagente</option>
@@ -60,7 +44,7 @@
                   - Estoque Total: {{ reagent.total_stock }}
                 </template>
               </option>
-            </select>
+            </BaseSelect>
             <p v-if="form.errors.reagent_id" class="text-xs text-red-600">
               {{ form.errors.reagent_id }}
             </p>
@@ -68,17 +52,14 @@
 
           <!-- Warehouse Selection -->
           <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700">
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
               Armazém
               <span class="text-red-500">*</span>
             </label>
-            <select
+            <BaseSelect
               v-model="form.warehouse_id"
               @change="onWarehouseChange"
-              :class="[
-                'block w-full rounded-lg shadow-sm focus:border-blue-900 focus:ring-blue-900',
-                form.errors.warehouse_id ? 'border-red-300' : 'border-gray-300'
-              ]"
+              :error="form.errors.warehouse_id"
               required
               :disabled="!form.reagent_id"
             >
@@ -93,7 +74,7 @@
                   (Disponível: {{ warehouse.available_stock }})
                 </template>
               </option>
-            </select>
+            </BaseSelect>
             <p v-if="form.errors.warehouse_id" class="text-xs text-red-600">
               {{ form.errors.warehouse_id }}
             </p>
@@ -101,25 +82,22 @@
 
           <!-- Quantity Used -->
           <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700">
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
               Quantidade Usada
               <span class="text-red-500">*</span>
             </label>
             <div class="flex items-center gap-2">
-              <input
+              <BaseInput
                 type="number"
                 v-model="form.quantity_used"
                 :min="0.01"
                 :max="maxQuantity"
                 :step="0.01"
-                :class="[
-                  'block w-full rounded-lg shadow-sm focus:border-blue-900 focus:ring-blue-900',
-                  form.errors.quantity_used ? 'border-red-300' : 'border-gray-300'
-                ]"
+                :error="form.errors.quantity_used"
                 placeholder="Digite a quantidade"
                 required
               />
-              <span class="text-sm text-gray-500 whitespace-nowrap">
+              <span class="whitespace-nowrap rounded-2xl bg-slate-100 px-3 py-2 text-sm font-medium text-slate-600 dark:bg-white/5 dark:text-slate-300">
                 Máx: {{ maxQuantity }}
               </span>
             </div>
@@ -130,17 +108,14 @@
 
           <!-- Used By -->
           <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700">
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
               Usado Por
               <span class="text-red-500">*</span>
             </label>
-            <input
+            <BaseInput
               type="text"
               v-model="form.used_by"
-              :class="[
-                'block w-full rounded-lg shadow-sm focus:border-blue-900 focus:ring-blue-900',
-                form.errors.used_by ? 'border-red-300' : 'border-gray-300'
-              ]"
+              :error="form.errors.used_by"
               placeholder="Digite o nome da pessoa que usou o reagente"
               required
             />
@@ -151,18 +126,15 @@
 
           <!-- Date -->
           <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700">
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
               Data
               <span class="text-red-500">*</span>
             </label>
-            <input
+            <BaseInput
               type="date"
               v-model="form.date"
               :max="maxDate"
-              :class="[
-                'block w-full rounded-lg shadow-sm focus:border-blue-900 focus:ring-blue-900',
-                form.errors.date ? 'border-red-300' : 'border-gray-300'
-              ]"
+              :error="form.errors.date"
               required
             />
             <p v-if="form.errors.date" class="text-xs text-red-600">
@@ -172,52 +144,45 @@
 
           <!-- Remarks -->
           <div class="space-y-2 md:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
               Observações
             </label>
-            <textarea
+            <BaseTextarea
               v-model="form.remarks"
               rows="3"
-              :class="[
-                'block w-full rounded-lg shadow-sm focus:border-blue-900 focus:ring-blue-900',
-                form.errors.remarks ? 'border-red-300' : 'border-gray-300'
-              ]"
+              :error="form.errors.remarks"
               placeholder="Qualquer observação adicional sobre o consumo..."
-            ></textarea>
+            />
             <p v-if="form.errors.remarks" class="text-xs text-red-600">
               {{ form.errors.remarks }}
             </p>
           </div>
         </div>
-      </div>
+      </ModuleCard>
 
       <!-- REAGENT INFORMATION -->
-      <div v-if="selectedReagent" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <InformationCircleIcon class="h-5 w-5 text-blue-900" />
-          Informações do Reagente
-        </h2>
+      <ModuleCard v-if="selectedReagent" title="Informações do Reagente" description="Valide stock, validade e impacto antes de registrar o consumo.">
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Reagent Details -->
           <div class="space-y-2">
-            <div class="p-4 bg-gray-50 rounded-lg">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50">
               <div class="space-y-2">
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Nome:</span>
-                  <span class="font-medium text-gray-900">{{ selectedReagent.name }}</span>
+                  <span class="text-slate-500 dark:text-slate-400">Nome:</span>
+                  <span class="font-medium text-slate-900 dark:text-white">{{ selectedReagent.name }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Código:</span>
-                  <span class="font-medium text-gray-900">{{ selectedReagent.code }}</span>
+                  <span class="text-slate-500 dark:text-slate-400">Código:</span>
+                  <span class="font-medium text-slate-900 dark:text-white">{{ selectedReagent.code }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Categoria:</span>
-                  <span class="font-medium text-gray-900">{{ selectedReagent.category?.name || 'N/A' }}</span>
+                  <span class="text-slate-500 dark:text-slate-400">Categoria:</span>
+                  <span class="font-medium text-slate-900 dark:text-white">{{ selectedReagent.category?.name || 'N/A' }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Unidade:</span>
-                  <span class="font-medium text-gray-900">{{ selectedReagent.unit?.code || 'N/A' }}</span>
+                  <span class="text-slate-500 dark:text-slate-400">Unidade:</span>
+                  <span class="font-medium text-slate-900 dark:text-white">{{ selectedReagent.unit?.code || 'N/A' }}</span>
                 </div>
                 <div v-if="selectedReagent.reagent_expiry_date" class="flex justify-between text-sm">
                   <span class="text-gray-600">Data de Validade:</span>
@@ -234,10 +199,10 @@
 
           <!-- Stock Information -->
           <div class="space-y-2">
-            <div class="p-4 bg-gray-50 rounded-lg">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/50">
               <div class="space-y-2">
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Disponível na Armazém Seleccionado:</span>
+                  <span class="text-slate-500 dark:text-slate-400">Disponível na Armazém Seleccionado:</span>
                   <span :class="[
                     'font-bold',
                     currentStock >= form.quantity_used ? 'text-green-600' : 'text-red-600'
@@ -246,12 +211,12 @@
                   </span>
                 </div>
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Quantidade a Consumir:</span>
-                  <span class="font-medium text-gray-900">{{ form.quantity_used || 0 }}</span>
+                  <span class="text-slate-500 dark:text-slate-400">Quantidade a Consumir:</span>
+                  <span class="font-medium text-slate-900 dark:text-white">{{ form.quantity_used || 0 }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Restante após o Consumo:</span>
-                  <span class="font-medium text-gray-900">{{ remainingAfterConsumption }}</span>
+                  <span class="text-slate-500 dark:text-slate-400">Restante após o Consumo:</span>
+                  <span class="font-medium text-slate-900 dark:text-white">{{ remainingAfterConsumption }}</span>
                 </div>
               </div>
               
@@ -281,11 +246,11 @@
             </div>
           </div>
         </div>
-      </div>
+      </ModuleCard>
 
       <!-- ACTIONS -->
-      <div class="flex items-center justify-between pt-6">
-        <div class="text-sm text-gray-500">
+      <div class="flex flex-col gap-4 pt-2 sm:flex-row sm:items-center sm:justify-between">
+        <div class="text-sm text-slate-500 dark:text-slate-400">
           <p v-if="form.reagent_id && form.warehouse_id">
             Consumindo de <span class="font-semibold">{{ getWarehouseName(form.warehouse_id) }}</span>
           </p>
@@ -294,7 +259,7 @@
           <button
             type="button"
             @click="goBack"
-            class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
           >
             Cancelar
           </button>
@@ -302,7 +267,7 @@
             type="submit"
             :disabled="form.processing || !isFormValid"
             :class="[
-              'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200',
+              'inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200',
               form.processing || !isFormValid
                 ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                 : 'bg-gradient-to-r from-blue-900 to-blue-800 text-white hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2'
@@ -321,11 +286,15 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useForm, router } from '@inertiajs/vue3'
+import BaseInput from '@/Components/base/BaseInput.vue'
+import BaseSelect from '@/Components/base/BaseSelect.vue'
+import BaseTextarea from '@/Components/base/BaseTextarea.vue'
+import ModuleCard from '@/Components/base/ModuleCard.vue'
+import ModuleHero from '@/Components/base/ModuleHero.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import {
   BeakerIcon,
   ArrowLeftIcon,
-  ClipboardDocumentListIcon,
-  InformationCircleIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon
 } from '@heroicons/vue/24/outline'

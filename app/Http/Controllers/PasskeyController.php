@@ -2,17 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Passkey;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Spatie\LaravelPasskeys\Actions\GeneratePasskeyRegisterOptionsAction;
 use Spatie\LaravelPasskeys\Actions\StorePasskeyAction;
-use Spatie\LaravelPasskeys\Models\Passkey;
+use Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys as HasPasskeysContract;
 
 class PasskeyController extends Controller
 {
     public function registrationOptions(Request $request, GeneratePasskeyRegisterOptionsAction $generatePasskeyRegisterOptionsAction): JsonResponse
     {
-        $options = $generatePasskeyRegisterOptionsAction->execute($request->user());
+        $authenticatable = $this->authenticatable($request);
+
+        abort_unless($authenticatable instanceof HasPasskeysContract, 403);
+
+        $options = $generatePasskeyRegisterOptionsAction->execute($authenticatable);
 
         $request->session()->put('passkeys.registration_options', $options);
 
@@ -34,8 +39,12 @@ class PasskeyController extends Controller
             ], 422);
         }
 
+        $authenticatable = $this->authenticatable($request);
+
+        abort_unless($authenticatable instanceof HasPasskeysContract, 403);
+
         $storePasskeyAction->execute(
-            $request->user(),
+            $authenticatable,
             $validated['passkey'],
             $passkeyOptionsJson,
             $request->getHost(),
@@ -49,12 +58,25 @@ class PasskeyController extends Controller
 
     public function destroy(Request $request, Passkey $passkey): JsonResponse
     {
-        abort_unless((int) $passkey->authenticatable_id === (int) $request->user()->getKey(), 404);
+        $authenticatable = $this->authenticatable($request);
+
+        abort_unless($authenticatable instanceof HasPasskeysContract, 403);
+        abort_unless($passkey->authenticatable_type === $authenticatable::class, 404);
+        abort_unless((int) $passkey->authenticatable_id === (int) $authenticatable->getKey(), 404);
 
         $passkey->delete();
 
         return response()->json([
             'message' => 'Passkey removida com sucesso.',
         ]);
+    }
+
+    private function authenticatable(Request $request)
+    {
+        if ($request->routeIs('portal.*')) {
+            return $request->user('portal');
+        }
+
+        return $request->user();
     }
 }

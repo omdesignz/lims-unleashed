@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed, onMounted } from "vue";
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import { router, useForm, usePage } from "@inertiajs/vue3";
@@ -509,11 +510,11 @@ const removeResult = (index) => {
 </script>
 
 <template>
-<div class="border-b border-gray-200 pb-5">
+<div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
     {{ form.cl_id?.label }} - {{ form.department_id?.label }}
     </div>
 
-<form @submit.prevent>
+<form :class="commercialDocumentThemeClasses" @submit.prevent>
     <div class="space-y-6">
       
         <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-10">

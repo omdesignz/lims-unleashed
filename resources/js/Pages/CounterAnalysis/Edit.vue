@@ -1,12 +1,12 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed, onMounted } from "vue";
-import { router, useForm, usePage } from "@inertiajs/vue3";
-import combobox from '@/Components/combobox.vue';
+import { useForm } from "@inertiajs/vue3";
+import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
+import combobox from '@/Components/combobox-enhanced.vue';
 import ResultsDataService from '@/Services/ResultsDataService';
-import {throttle} from "lodash";
 import { TrashIcon, PlusCircleIcon, ClipboardDocumentCheckIcon } from "@heroicons/vue/24/outline";
-import { trans } from 'laravel-vue-i18n';
 
 
 defineOptions({
@@ -22,8 +22,6 @@ const props = defineProps({
       default: null,
     },
 });
-
-const resuls = ref([]);
 
 const form = useForm({
     action: props.action,
@@ -107,197 +105,75 @@ const executionControl = computed(() => {
 });
 
 async function loadResultParameters() {
-  const response = await axios.get('/results/getCounterAnalysisDefaultResultsData?action=' + props.action + '&sample_id=' + props.record?.sample_id.value);
-  form.results = response.data;
+  const searchParams = new URLSearchParams({
+    action: props.action ?? '',
+    sample_id: props.record?.sample_id?.value ?? '',
+  });
 
-  // router.get('/results/getDefaultResultsData', {
-  //   action: 'create',
-  //   sample_id: 1
-  // }, {
-  //   onBefore: (visit) => {},
-  //   onStart: (visit) => {},
-  //   onProgress: (progress) => {},
-  //   onSuccess: (data) => {
-  //     console.log(data);
-  //   },
-  //   onError: (errors) => {},
-  //   onCancel: () => {},
-  //   onFinish: visit => {},
-  // })
+  try {
+    const response = await fetch(`/results/getCounterAnalysisDefaultResultsData?${searchParams.toString()}`, {
+      credentials: 'same-origin',
+      headers: {
+        Accept: 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    });
+
+    if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) {
+      form.results = [];
+
+      return;
+    }
+
+    form.results = await response.json();
+  } catch {
+    form.results = [];
+  }
 }
 
 function loadParameters(query, setOptions) {
-    fetch('/parameters/getParameter?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.code,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/parameters/getParameter', query, setOptions, optionMappers.code);
 }
 
 function loadResultCategories(query, setOptions) {
-    fetch('/resultcategories/getResultCategory?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.name,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/resultcategories/getResultCategory', query, setOptions, optionMappers.name);
 }
 
 function loadDepartments(query, setOptions) {
-    fetch('/departments/getDepartment?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.name,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/departments/getDepartment', query, setOptions, optionMappers.name);
 }
 
 function loadProfiles(query, setOptions) {
-    fetch('/profiles/getProfile?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.name,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/profiles/getProfile', query, setOptions, optionMappers.name);
 }
 
 function loadSamples(query, setOptions) {
-    fetch('/samples/getCode?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.code,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/samples/getCode', query, setOptions, optionMappers.code);
 }
 
 function loadLabCodes(query, setOptions) {
-    fetch('/labcodes/getCode?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.code,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/labcodes/getCode', query, setOptions, optionMappers.code);
 }
 
 function loadAnalysisCategories(query, setOptions) {
-    fetch('/analysiscategories/getAnalysisCategory?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.name,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/analysiscategories/getAnalysisCategory', query, setOptions, optionMappers.name);
 }
 
 function loadUnits(query, setOptions) {
-    fetch('/units/getUnit?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.code,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/units/getUnit', query, setOptions, optionMappers.code);
 }
 
 function loadProtocols(query, setOptions) {
-    fetch('/protocols/getProtocol?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.code,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/protocols/getProtocol', query, setOptions, optionMappers.code);
 }
 
 function loadNwps(query, setOptions) {
-    fetch('/nwps/getNwp?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.code,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/nwps/getNwp', query, setOptions, optionMappers.code);
 }
 
 function loadStandards(query, setOptions) {
-    fetch('/standards/getStandard?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.code,
-            };
-        })
-        );
-    });
+    return loadSelectOptions('/standards/getStandard', query, setOptions, optionMappers.code);
 }
-
-const onSearchAnalysisCategoryChange = throttle(function (term) {
-    router.get(route('profiles.create'), {term}, {
-    preserveState: true,
-    preserveScroll: true,
-    replace: true
-    })
-}, 300)
 
 let requestCounterAnalysis = (data) =>{
   if (counterAnalysisRequestForm.processing) {
@@ -320,7 +196,7 @@ if(!form.id) {
       },
   });
 } else {
-  form.put(route('analysis.update',{analysis: form.id}), {
+  form.put(route('counteranalysis.update',{analysis: form.id}), {
       preserveScroll: true,
       preserveState: false,
       onSuccess: () => {
@@ -347,11 +223,11 @@ let submitResults = () => {
 </script>
 
 <template>
-<div class="space-y-6">
-  <section class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(30,64,175,0.16),_transparent_28%),linear-gradient(135deg,_#ffffff,_#f8fafc)] shadow-sm dark:border-slate-700 dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),_transparent_28%),linear-gradient(135deg,_#0f172a,_#111827)]">
+<div class="counter-analysis-editor space-y-6" :class="commercialDocumentThemeClasses">
+  <section class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(20,184,166,0.16),_transparent_28%),linear-gradient(135deg,_#fffaf0,_#ffffff)] shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-700 dark:bg-[radial-gradient(circle_at_top_left,_rgba(20,184,166,0.18),_transparent_28%),linear-gradient(135deg,_#0f172a,_#111827)]">
     <div class="flex flex-col gap-5 px-6 py-6 md:flex-row md:items-end md:justify-between">
       <div class="max-w-3xl">
-        <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-700 dark:text-blue-300">Fluxo controlado</p>
+        <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary-700 dark:text-primary-300">Fluxo controlado</p>
         <h3 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Contra-análises</h3>
         <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
           Ajuste o escopo da contra-análise, lance os resultados e mantenha a rastreabilidade desta repetição analítica.
@@ -411,7 +287,7 @@ let submitResults = () => {
           </div>
 
           <div class="sm:col-span-full inline-flex items-center justify-end">
-            <button v-if="form.isDirty" @click="submit" class="inline-flex justify-center rounded-xl bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-900">Atualizar contra-análise</button>
+            <button v-if="form.isDirty" @click="submit" class="inline-flex justify-center rounded-2xl bg-primary-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-700/20 transition hover:bg-primary-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400">Atualizar contra-análise</button>
           </div>
         </div>
         </section>
@@ -420,7 +296,7 @@ let submitResults = () => {
       <div class="border-b border-gray-900/10 pb-6 dark:border-slate-700">
         <h2 class="flex items-center text-base font-semibold leading-7 text-gray-900 dark:text-gray-100">
           {{ actionText[props.action] }}
-          <button @click="addResult" class="ml-auto rounded-full bg-slate-100 p-2 text-slate-600 transition hover:scale-105 hover:bg-slate-200 hover:text-blue-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-blue-300">
+          <button @click="addResult" class="ml-auto rounded-full bg-primary-50 p-2 text-primary-700 transition hover:scale-105 hover:bg-primary-100 dark:bg-primary-500/10 dark:text-primary-300 dark:hover:bg-primary-500/20">
             <PlusCircleIcon class="h-5 w-5" />
           </button>
         </h2>
@@ -435,15 +311,15 @@ let submitResults = () => {
           <div class="text-xs font-medium uppercase tracking-wide text-emerald-700">Variáveis de entrada</div>
           <div class="mt-2 text-2xl font-semibold text-emerald-900">{{ executionControl.inputVariables }}</div>
         </div>
-        <div class="rounded-xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-900/40 dark:bg-violet-950/30">
-          <div class="text-xs font-medium uppercase tracking-wide text-violet-700">Parâmetros calculados</div>
-          <div class="mt-2 text-2xl font-semibold text-violet-900">{{ executionControl.calculated }}</div>
+        <div class="rounded-xl border border-primary-200 bg-primary-50 p-4 dark:border-primary-500/30 dark:bg-primary-500/10">
+          <div class="text-xs font-medium uppercase tracking-wide text-primary-700 dark:text-primary-300">Parâmetros calculados</div>
+          <div class="mt-2 text-2xl font-semibold text-primary-900 dark:text-primary-100">{{ executionControl.calculated }}</div>
         </div>
-        <div class="rounded-xl border p-4" :class="executionControl.blocked.length ? 'border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/30' : 'border-sky-200 bg-sky-50 dark:border-sky-900/40 dark:bg-sky-950/30'">
-          <div class="text-xs font-medium uppercase tracking-wide" :class="executionControl.blocked.length ? 'text-amber-700' : 'text-sky-700'">
+        <div class="rounded-xl border p-4" :class="executionControl.blocked.length ? 'border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/30' : 'border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/30'">
+          <div class="text-xs font-medium uppercase tracking-wide" :class="executionControl.blocked.length ? 'text-amber-700 dark:text-amber-200' : 'text-emerald-700 dark:text-emerald-200'">
             Cálculos bloqueados
           </div>
-          <div class="mt-2 text-2xl font-semibold" :class="executionControl.blocked.length ? 'text-amber-900' : 'text-sky-900'">
+          <div class="mt-2 text-2xl font-semibold" :class="executionControl.blocked.length ? 'text-amber-900 dark:text-amber-100' : 'text-emerald-900 dark:text-emerald-100'">
             {{ executionControl.blocked.length }}
           </div>
         </div>
@@ -477,7 +353,7 @@ let submitResults = () => {
               </div>
               {{ index + 1 }}º Resultado
                           
-            <button @click="removeResult(index)" class="ml-auto rounded-full bg-white p-2 text-slate-500 shadow-sm transition hover:scale-105 hover:text-blue-900 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-blue-300">
+            <button @click="removeResult(index)" class="ml-auto rounded-full bg-white p-2 text-slate-500 shadow-sm transition hover:scale-105 hover:text-rose-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-rose-300">
               <TrashIcon class="h-5 w-5" />
             </button>
           </div>
@@ -624,8 +500,85 @@ let submitResults = () => {
     </div>
     
     <div class="mt-6 flex items-center justify-end gap-x-6">
-      <button @click="submitResults" type="button" class="inline-flex justify-center rounded-xl bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-900">{{ props.action == 'analyze' ? 'Inserir Resultados' : props.action == 'verify' ? 'Verificar Resultados' : 'Validar Resultados' }}</button>
+      <button @click="submitResults" type="button" class="inline-flex justify-center rounded-2xl bg-primary-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-700/20 transition hover:bg-primary-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400">{{ props.action == 'analyze' ? 'Inserir Resultados' : props.action == 'verify' ? 'Verificar Resultados' : 'Validar Resultados' }}</button>
     </div>
   </form>
 </div>
 </template>
+
+<style scoped>
+.counter-analysis-editor {
+  --analysis-ink: #17231f;
+  --analysis-muted: #647067;
+  --analysis-border: #d9d1bf;
+  --analysis-primary: #123f38;
+}
+
+.counter-analysis-editor :is(label, dt) {
+  color: var(--analysis-ink);
+  font-weight: 700;
+}
+
+.counter-analysis-editor :is(input:not([type="checkbox"]), textarea, select) {
+  width: 100%;
+  border: 1px solid var(--analysis-border);
+  border-radius: 1rem;
+  background: rgba(255, 250, 240, 0.94);
+  color: var(--analysis-ink);
+  box-shadow: 0 12px 32px -24px rgba(23, 35, 31, 0.35);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.counter-analysis-editor :is(input:not([type="checkbox"]), textarea, select):focus {
+  border-color: var(--analysis-primary);
+  box-shadow: 0 0 0 4px rgba(18, 63, 56, 0.14);
+  outline: none;
+}
+
+.counter-analysis-editor :is([class~="text-gray-900"], [class~="text-gray-800"], [class~="text-gray-700"]) {
+  color: var(--analysis-ink) !important;
+}
+
+.counter-analysis-editor :is([class~="text-gray-600"], [class~="text-gray-500"], [class~="text-gray-400"]) {
+  color: var(--analysis-muted) !important;
+}
+
+.counter-analysis-editor :is([class~="text-blue-900"], [class~="text-blue-800"]) {
+  color: var(--analysis-primary) !important;
+}
+
+.counter-analysis-editor :is([class~="bg-blue-900"], [class~="bg-blue-800"]) {
+  background-color: var(--analysis-primary) !important;
+}
+
+.counter-analysis-editor :is([class~="border-gray-100"], [class~="border-gray-200"], [class~="border-gray-300"], [class~="ring-gray-300"]) {
+  border-color: var(--analysis-border) !important;
+  --tw-ring-color: var(--analysis-border) !important;
+}
+
+:global(.dark) .counter-analysis-editor {
+  --analysis-ink: #f8fafc;
+  --analysis-muted: #cbd5e1;
+  --analysis-border: rgba(148, 163, 184, 0.28);
+  --analysis-primary: #7dd3c7;
+}
+
+:global(.dark) .counter-analysis-editor :is(input:not([type="checkbox"]), textarea, select) {
+  background: rgba(15, 23, 42, 0.86);
+  color: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.28);
+  box-shadow: 0 18px 42px -28px rgba(0, 0, 0, 0.85);
+}
+
+:global(.dark) .counter-analysis-editor :is(input:not([type="checkbox"]), textarea, select)::placeholder {
+  color: #94a3b8;
+}
+
+:global(.dark) .counter-analysis-editor :is([class~="bg-white"], [class~="bg-gray-50"]) {
+  background-color: rgba(15, 23, 42, 0.88) !important;
+}
+
+:global(.dark) .counter-analysis-editor :is([class~="bg-blue-900"], [class~="bg-blue-800"]) {
+  background-color: #0f766e !important;
+}
+</style>

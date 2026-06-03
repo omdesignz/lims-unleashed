@@ -1,6 +1,6 @@
 <template>
       <!-- Card Headings: Search with Filter -->
-  <form @submit.prevent>
+  <form @submit.prevent :class="commercialDocumentThemeClasses">
     <div
       class="flex flex-col overflow-hidden rounded-lg bg-white shadow-xs dark:bg-gray-800 dark:text-gray-100 mt-2"
     >
@@ -69,6 +69,7 @@
   import axios from "axios";
   import combobox from '@/Components/combobox.vue';
   import datePicker from '@/Components/date-picker.vue'
+  import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
   const chartData = ref(null);
     const alerts = ref([]);
@@ -182,8 +183,8 @@
 
         watch(selectedReagentId, (newReagent) => {
             updateChartTitle(newReagent?.label);
-        });  
-  
-      onMounted(fetchChartData);  
-  
-  </script>  
+        });
+
+      onMounted(fetchChartData);
+
+  </script>

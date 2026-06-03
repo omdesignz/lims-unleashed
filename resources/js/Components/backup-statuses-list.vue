@@ -1,78 +1,78 @@
 <template>
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950/80">
     <!-- Card Header -->
-    <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-      <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+    <div class="bg-gradient-to-r from-primary-950 via-primary-900 to-primary-700 px-6 py-4">
+      <h2 class="flex items-center gap-2 text-lg font-semibold text-white">
         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         {{ $t('gestlab.general.labels.backups.status.overview') }}
       </h2>
-      <p class="mt-1 text-sm text-blue-100">
+      <p class="mt-1 text-sm text-primary-100">
         {{ $t('gestlab.general.labels.backups.status.monitor_backup_systems') }}
       </p>
     </div>
 
     <!-- Status Table -->
     <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+      <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+        <thead class="bg-slate-50 dark:bg-slate-900">
           <tr>
-            <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+            <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               <div class="flex items-center gap-1">
                 {{ $t('gestlab.general.labels.backups.status.name') }}
               </div>
             </th>
-            <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+            <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               <div class="flex items-center gap-1">
                 {{ $t('gestlab.general.labels.backups.status.disk') }}
               </div>
             </th>
-            <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+            <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               <div class="flex items-center gap-1">
                 {{ $t('gestlab.general.labels.backups.status.health') }}
               </div>
             </th>
-            <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+            <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               <div class="flex items-center gap-1">
                 {{ $t('gestlab.general.labels.backups.status.amount_of_backups') }}
               </div>
             </th>
-            <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+            <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               <div class="flex items-center gap-1">
                 {{ $t('gestlab.general.labels.backups.status.newest_backup') }}
               </div>
             </th>
-            <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+            <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               <div class="flex items-center gap-1">
                 {{ $t('gestlab.general.labels.backups.status.used_storage') }}
               </div>
             </th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-200 bg-white">
+        <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
           <tr 
             v-for="backupStatus in backupStatuses" 
             :key="backupStatus.disk"
-            class="hover:bg-gray-50 transition-colors duration-200 group"
+            class="group transition-colors duration-200 hover:bg-primary-50/70 dark:hover:bg-slate-800/70"
           >
             <!-- Name -->
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center gap-3">
-                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 group-hover:bg-blue-100 transition-colors duration-200">
-                  <svg class="h-4 w-4 text-blue-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="flex h-8 w-8 items-center justify-center rounded-2xl bg-primary-50 transition-colors duration-200 group-hover:bg-primary-100 dark:bg-primary-500/10 dark:group-hover:bg-primary-500/15">
+                  <svg class="h-4 w-4 text-primary-700 dark:text-primary-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
                   </svg>
                 </div>
                 <div>
-                  <span class="text-sm font-medium text-gray-900">{{ backupStatus.name }}</span>
+                  <span class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ backupStatus.name }}</span>
                 </div>
               </div>
             </td>
 
             <!-- Disk -->
             <td class="px-6 py-4 whitespace-nowrap">
-              <span class="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+              <span class="inline-flex items-center rounded-xl bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-800 dark:bg-slate-900 dark:text-slate-200">
                 {{ backupStatus.disk }}
               </span>
             </td>
@@ -84,25 +84,25 @@
                   :class="[
                     'flex h-8 w-8 items-center justify-center rounded-full',
                     backupStatus.healthy 
-                      ? 'bg-green-100' 
-                      : 'bg-red-100'
+                        ? 'bg-green-100 dark:bg-green-500/10'
+                        : 'bg-red-100 dark:bg-red-500/10'
                   ]"
                 >
                   <CheckCircleIcon 
                     v-if="backupStatus.healthy" 
-                    class="h-4 w-4 text-green-600" 
+                    class="h-4 w-4 text-green-600 dark:text-green-300"
                   />
                   <XCircleIcon 
                     v-else 
-                    class="h-4 w-4 text-red-600" 
+                    class="h-4 w-4 text-red-600 dark:text-red-300"
                   />
                 </div>
                 <span 
                   :class="[
                     'text-sm font-medium',
                     backupStatus.healthy 
-                      ? 'text-green-700' 
-                      : 'text-red-700'
+                      ? 'text-green-700 dark:text-green-300'
+                      : 'text-red-700 dark:text-red-300'
                   ]"
                 >
                   {{ backupStatus.healthy 
@@ -116,15 +116,15 @@
             <!-- Amount of Backups -->
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center gap-2">
-                <div class="text-sm font-semibold text-blue-900">
+                <div class="text-sm font-semibold text-primary-700 dark:text-primary-300">
                   {{ backupStatus.amount }}
                 </div>
                 <div 
                   :class="[
                     'h-2 flex-1 rounded-full',
                     backupStatus.amount > 0 
-                      ? 'bg-green-200' 
-                      : 'bg-gray-200'
+                      ? 'bg-green-200 dark:bg-green-500/20'
+                      : 'bg-slate-200 dark:bg-slate-800'
                   ]"
                 >
                   <div 
@@ -146,10 +146,10 @@
             <!-- Newest Backup -->
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center gap-2">
-                <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span class="text-sm text-gray-700">
+                <span class="text-sm text-slate-700 dark:text-slate-300">
                   {{ backupStatus.newest }}
                 </span>
               </div>
@@ -158,16 +158,16 @@
             <!-- Used Storage -->
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center gap-2">
-                <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 <div>
-                  <div class="text-sm font-medium text-gray-900">
+                  <div class="text-sm font-medium text-slate-900 dark:text-slate-100">
                     {{ backupStatus.usedStorage }}
                   </div>
-                  <div class="h-1.5 w-20 rounded-full bg-gray-200 overflow-hidden">
+                  <div class="h-1.5 w-20 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                     <div 
-                      class="h-full bg-blue-600 transition-all duration-500"
+                      class="h-full bg-primary-600 transition-all duration-500"
                       :style="{ width: getStoragePercentage(backupStatus.usedStorage) }"
                     ></div>
                   </div>
@@ -180,16 +180,16 @@
           <tr v-if="backupStatuses.length === 0">
             <td colspan="6" class="px-6 py-12 text-center">
               <div class="flex flex-col items-center gap-3">
-                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-                  <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-900">
+                  <svg class="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 class="text-sm font-semibold text-gray-900">
+                  <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {{ $t('gestlab.general.labels.backups.status.no_status_data') }}
                   </h3>
-                  <p class="mt-1 text-sm text-gray-500">
+                  <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     {{ $t('gestlab.general.labels.backups.status.waiting_for_backup_data') }}
                   </p>
                 </div>
@@ -201,23 +201,23 @@
     </div>
 
     <!-- Summary Footer -->
-    <div v-if="backupStatuses.length > 0" class="border-t border-gray-200 px-6 py-4 bg-gray-50">
+    <div v-if="backupStatuses.length > 0" class="border-t border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/70">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-2">
             <div class="h-3 w-3 rounded-full bg-green-500"></div>
-            <span class="text-xs text-gray-600">
+            <span class="text-xs text-slate-600 dark:text-slate-400">
               {{ healthyCount }} {{ $t('gestlab.general.labels.backups.status.healthy_systems') }}
             </span>
           </div>
           <div class="flex items-center gap-2">
             <div class="h-3 w-3 rounded-full bg-red-500"></div>
-            <span class="text-xs text-gray-600">
+            <span class="text-xs text-slate-600 dark:text-slate-400">
               {{ unhealthyCount }} {{ $t('gestlab.general.labels.backups.status.requires_attention') }}
             </span>
           </div>
         </div>
-        <div class="text-xs text-gray-500">
+        <div class="text-xs text-slate-500 dark:text-slate-400">
           {{ $t('gestlab.general.labels.backups.status.last_updated') }}: {{ currentTime }}
         </div>
       </div>

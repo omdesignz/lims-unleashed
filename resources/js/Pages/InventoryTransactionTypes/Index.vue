@@ -11,6 +11,7 @@ import { DatePicker } from 'v-calendar'
 import { TrashIcon, PencilIcon, ArrowPathRoundedSquareIcon } from '@heroicons/vue/24/outline';
 import VapTable from '@/Components/vap-table/table.vue';
 import { usePermission } from "@/Composables/usePermissions";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
 const { hasRole, hasPermission } = usePermission();
@@ -297,6 +298,7 @@ const updateRange = (e) => {
 
 </script>
 <template>
+<div class="space-y-6" :class="commercialDocumentThemeClasses">
 <div class="border-b border-gray-200 pb-5">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.maintenance_categories.page_title') }}</h3>
 </div>
@@ -509,4 +511,5 @@ const updateRange = (e) => {
     </div>
   </confirm-dialog>
 
+</div>
 </template>

@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <p class="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-700">Metrology</p>
       <h1 class="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Registo de fontes de incerteza</h1>
@@ -74,6 +74,7 @@
 <script setup>
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { router, useForm } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
 

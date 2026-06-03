@@ -1,4 +1,5 @@
 <template>
+  <div class="space-y-6" :class="commercialDocumentThemeClasses">
   <div class="border-b border-gray-200 pb-5">
     <h3 class="text-base font-semibold leading-6 text-gray-900">
       {{ $t("gestlab.general.labels.equipment_connection_test.page_title") }}
@@ -82,6 +83,7 @@
   <div v-if="errorMessage" style="color: red">
     <p>Error: {{ errorMessage }}</p>
   </div>
+  </div>
 </template>
 
 <script setup>
@@ -90,6 +92,7 @@ import { ref, watch, reactive } from "vue";
 import { RadioGroup, RadioGroupOption } from "@headlessui/vue";
 import { useForm, router } from "@inertiajs/vue3";
 import { CheckCircleIcon } from "@heroicons/vue/24/outline";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { usePermission } from "@/Composables/usePermissions";
 
 const props = defineProps({

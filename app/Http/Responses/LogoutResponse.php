@@ -2,29 +2,24 @@
 
 namespace App\Http\Responses;
 
-use Laravel\Fortify\Contracts\LogoutResponse as LogoutResponseContract;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
-use Inertia\Inertia;
+use Laravel\Fortify\Contracts\LogoutResponse as LogoutResponseContract;
 
 class LogoutResponse implements LogoutResponseContract
 {
-    /**
-     * @param $request
-     * @return mixed
-     */
-
-     public function toResponse($request)
-     {  
-        
-        if($request->is('portal/*')) {
-            // $home = '/portal/home';
-            return Redirect::intended(route('portal.home'));
-        } else {
-            // $home = '/dashboard';
-            return Redirect::intended(route('dashboard'));
+    public function toResponse($request): RedirectResponse
+    {
+        if ($this->requestIsPortal($request)) {
+            return Redirect::to(route('portal.login'));
         }
-         
 
-        //  return Redirect::intended($home);
-     }
+        return Redirect::to(route('login'));
+    }
+
+    private function requestIsPortal(Request $request): bool
+    {
+        return $request->is('portal') || $request->is('portal/*');
+    }
 }

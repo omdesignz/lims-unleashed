@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6" :class="commercialDocumentThemeClasses">
     <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.14),_transparent_34%),linear-gradient(135deg,_#f8fafc,_#ffffff)] p-6 shadow-sm">
       <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-700">Arquivo documental</p>
       <h1 class="mt-3 text-3xl font-semibold tracking-tight text-slate-900">Novo documento arquivado</h1>
@@ -63,6 +63,7 @@
 
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { Link, useForm } from '@inertiajs/vue3'
 
 defineOptions({ layout: Layout })

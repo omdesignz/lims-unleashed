@@ -1,29 +1,22 @@
 <template>
-  <div class="space-y-8">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <TruckIcon class="h-7 w-7 text-blue-900" />
-            Criar Transferência
-          </h1>
-          <p class="mt-2 text-gray-600">
-            Registe uma transferência de stock entre armazéns com rastreabilidade
-          </p>
-        </div>
+  <div class="transfer-create-shell space-y-8" :class="commercialDocumentThemeClasses">
+    <ModuleHero
+      :icon="TruckIcon"
+      title="Criar Transferência"
+      subtitle="Registe uma transferência de stock entre armazéns com rastreabilidade, datas e validação de disponibilidade."
+    >
+      <template #actions>
         <div class="flex items-center gap-3">
           <button
             @click="goBack"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
+            class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
           >
             <ArrowLeftIcon class="h-5 w-5" />
-            
             Voltar
           </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </ModuleHero>
 
     <form @submit.prevent="submit" class="space-y-6">
       <!-- TRANSFER DETAILS -->
@@ -40,28 +33,12 @@
               Item
               <span class="text-red-500">*</span>
             </label>
-            <select
-              v-model="form.item_id"
-              @change="onItemChange"
-              :class="[
-                'block w-full rounded-lg shadow-sm focus:border-blue-900 focus:ring-blue-900',
-                form.errors.item_id ? 'border-red-300' : 'border-gray-300'
-              ]"
-              required
-            >
-              <option value="">Seleccione um Item</option>
-              <option 
-                v-for="item in items" 
-                :key="item.id" 
-                :value="item.id"
-                :disabled="!hasStockInAnyWarehouse(item)"
-              >
-                {{ item.name }} ({{ item.code }})
-                <template v-if="!hasStockInAnyWarehouse(item)">
-                  - Sem Estoque Disponível
-                </template>
-              </option>
-            </select>
+            <comboboxEnhanced
+              v-model="selectedItemOption"
+              :has-error="form.errors.item_id"
+              :options="itemOptions"
+              placeholder="Pesquisar item com stock disponível"
+            />
             <p v-if="form.errors.item_id" class="text-xs text-red-600">
               {{ form.errors.item_id }}
             </p>
@@ -73,28 +50,13 @@
               Armazém de Origem
               <span class="text-red-500">*</span>
             </label>
-            <select
-              v-model="form.source_id"
-              @change="onSourceChange"
-              :class="[
-                'block w-full rounded-lg shadow-sm focus:border-blue-900 focus:ring-blue-900',
-                form.errors.source_id ? 'border-red-300' : 'border-gray-300'
-              ]"
-              required
+            <comboboxEnhanced
+              v-model="selectedSourceWarehouseOption"
               :disabled="!form.item_id"
-            >
-              <option value="">Seleccione um Armazém</option>
-              <option 
-                v-for="warehouse in sourceWarehouses" 
-                :key="warehouse.id" 
-                :value="warehouse.id"
-              >
-                {{ warehouse.name }} 
-                <template v-if="warehouse.available_stock !== undefined">
-                  (Disponível: {{ warehouse.available_stock }})
-                </template>
-              </option>
-            </select>
+              :has-error="form.errors.source_id"
+              :options="sourceWarehouseOptions"
+              placeholder="Pesquisar armazém de origem"
+            />
             <p v-if="form.errors.source_id" class="text-xs text-red-600">
               {{ form.errors.source_id }}
             </p>
@@ -106,24 +68,12 @@
               Armazém de Destino
               <span class="text-red-500">*</span>
             </label>
-            <select
-              v-model="form.destination_id"
-              :class="[
-                'block w-full rounded-lg shadow-sm focus:border-blue-900 focus:ring-blue-900',
-                form.errors.destination_id ? 'border-red-300' : 'border-gray-300'
-              ]"
-              required
-            >
-              <option value="">Seleccione um Armazém</option>
-              <option 
-                v-for="warehouse in destinationWarehouses" 
-                :key="warehouse.id" 
-                :value="warehouse.id"
-                :disabled="warehouse.id === form.source_id"
-              >
-                {{ warehouse.name }}
-              </option>
-            </select>
+            <comboboxEnhanced
+              v-model="selectedDestinationWarehouseOption"
+              :has-error="form.errors.destination_id"
+              :options="destinationWarehouseOptions"
+              placeholder="Pesquisar armazém de destino"
+            />
             <p v-if="form.errors.destination_id" class="text-xs text-red-600">
               {{ form.errors.destination_id }}
             </p>
@@ -321,7 +271,10 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { useForm, router, usePage } from '@inertiajs/vue3'
+import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
+import ModuleHero from '@/Components/base/ModuleHero.vue'
 import {
   TruckIcon,
   ArrowLeftIcon,
@@ -368,6 +321,9 @@ const form = useForm({
 // const stockInfo = ref({})
 const stockInfo = ref(props.initialStockInfo || {})
 const loadingStock = ref(false)
+const selectedItemOption = ref(null)
+const selectedSourceWarehouseOption = ref(null)
+const selectedDestinationWarehouseOption = ref(null)
 const minDate = new Date().toISOString().split('T')[0]
 
 const selectedItem = computed(() => {
@@ -400,6 +356,22 @@ const destinationWarehouses = computed(() => {
   return props.warehouses.filter(warehouse => warehouse.id !== form.source_id)
 })
 
+const itemOptions = computed(() => props.items.map((item) => ({
+  value: item.id,
+  label: `${item.name}${item.internal_code || item.code ? ` (${item.internal_code || item.code})` : ''}${!hasStockInAnyWarehouse(item) ? ' - Sem stock disponível' : ''}`,
+  disabled: !hasStockInAnyWarehouse(item),
+})))
+
+const sourceWarehouseOptions = computed(() => sourceWarehouses.value.map((warehouse) => ({
+  value: warehouse.id,
+  label: `${warehouse.name}${warehouse.available_stock !== undefined ? ` (Disponível: ${warehouse.available_stock})` : ''}`,
+})))
+
+const destinationWarehouseOptions = computed(() => destinationWarehouses.value.map((warehouse) => ({
+  value: warehouse.id,
+  label: warehouse.location?.name ? `${warehouse.name} (${warehouse.location.name})` : warehouse.name,
+})))
+
 const isFormValid = computed(() => {
   return form.item_id && 
          form.source_id && 
@@ -423,6 +395,24 @@ function hasStockInAnyWarehouse(item) {
   })
 }
 
+watch(selectedItemOption, async (item) => {
+  form.item_id = item?.value || ''
+  await onItemChange()
+})
+
+watch(selectedSourceWarehouseOption, async (warehouse) => {
+  form.source_id = warehouse?.value || ''
+  await onSourceChange()
+
+  if (selectedDestinationWarehouseOption.value?.value === form.source_id) {
+    selectedDestinationWarehouseOption.value = null
+  }
+})
+
+watch(selectedDestinationWarehouseOption, (warehouse) => {
+  form.destination_id = warehouse?.value || ''
+})
+
 function getWarehouseName(id) {
   const warehouse = props.warehouses.find(w => w.id == id)
   return warehouse ? warehouse.name : 'N/A'
@@ -439,7 +429,10 @@ function getWarehouseName(id) {
 
 async function onItemChange() {
   form.source_id = ''
+  form.destination_id = ''
   form.qty = 1
+  selectedSourceWarehouseOption.value = null
+  selectedDestinationWarehouseOption.value = null
   
   // Optional: Fetch fresh data when item changes
   if (form.item_id) {
@@ -584,6 +577,28 @@ function goBack() {
 
 onMounted(() => {
   if (props.defaultItem) {
+    const item = props.items.find((item) => item.id == props.defaultItem)
+
+    if (item) {
+      selectedItemOption.value = {
+        value: item.id,
+        label: `${item.name}${item.internal_code || item.code ? ` (${item.internal_code || item.code})` : ''}`,
+      }
+    }
+  }
+
+  if (props.defaultSource) {
+    const warehouse = props.warehouses.find((warehouse) => warehouse.id == props.defaultSource)
+
+    if (warehouse) {
+      selectedSourceWarehouseOption.value = {
+        value: warehouse.id,
+        label: warehouse.location?.name ? `${warehouse.name} (${warehouse.location.name})` : warehouse.name,
+      }
+    }
+  }
+
+  if (props.defaultItem) {
     // You might still want to fetch fresh data for the default item
     fetchRealTimeStock()
   }
@@ -595,3 +610,128 @@ watch(() => form.source_id, () => {
   }
 })
 </script>
+
+<style scoped>
+.transfer-create-shell :deep(.bg-white.rounded-xl),
+.transfer-create-shell :deep(.rounded-xl.border.border-gray-200) {
+  border-color: rgb(226 232 240);
+  border-radius: 1.5rem;
+  background: rgb(255 255 255);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+}
+
+.transfer-create-shell :deep(.bg-gray-50) {
+  border-color: rgb(226 232 240);
+  background: rgb(248 250 252 / 0.84);
+}
+
+.transfer-create-shell :deep(.bg-red-50) {
+  background: rgb(254 242 242 / 0.86);
+}
+
+.transfer-create-shell :deep(.text-blue-900) {
+  color: rgb(var(--color-primary-900, 30 58 138));
+}
+
+.transfer-create-shell :deep(input),
+.transfer-create-shell :deep(select),
+.transfer-create-shell :deep(textarea) {
+  border-color: rgb(203 213 225);
+  border-radius: 0.875rem;
+  background: rgb(255 255 255);
+  color: rgb(15 23 42);
+}
+
+.transfer-create-shell :deep(input:focus),
+.transfer-create-shell :deep(select:focus),
+.transfer-create-shell :deep(textarea:focus) {
+  border-color: rgb(var(--color-primary-500, 59 130 246));
+  box-shadow: 0 0 0 3px rgb(var(--color-primary-500, 59 130 246) / 0.16);
+}
+
+.transfer-create-shell :deep(input::placeholder),
+.transfer-create-shell :deep(textarea::placeholder) {
+  color: rgb(148 163 184);
+}
+
+.transfer-create-shell :deep(.border-gray-200),
+.transfer-create-shell :deep(.border-gray-300) {
+  border-color: rgb(226 232 240);
+}
+
+.transfer-create-shell :deep(.hover\:bg-gray-50:hover) {
+  background: rgb(var(--color-primary-50, 239 246 255) / 0.58);
+}
+
+:global(.dark) .transfer-create-shell :deep(.bg-white.rounded-xl),
+:global(.dark) .transfer-create-shell :deep(.rounded-xl.border.border-gray-200) {
+  border-color: rgb(30 41 59);
+  background:
+    radial-gradient(circle at top right, rgb(var(--color-primary-500, 59 130 246) / 0.1), transparent 30%),
+    rgb(2 6 23);
+}
+
+:global(.dark) .transfer-create-shell :deep(.bg-white) {
+  background: rgb(2 6 23);
+}
+
+:global(.dark) .transfer-create-shell :deep(.bg-gray-50),
+:global(.dark) .transfer-create-shell :deep(.hover\:bg-gray-50:hover) {
+  border-color: rgb(51 65 85);
+  background: rgb(15 23 42 / 0.72);
+}
+
+:global(.dark) .transfer-create-shell :deep(.bg-red-50) {
+  border-color: rgb(248 113 113 / 0.28);
+  background: rgb(239 68 68 / 0.1);
+}
+
+:global(.dark) .transfer-create-shell :deep(.bg-gray-200) {
+  background-color: rgb(30 41 59);
+}
+
+:global(.dark) .transfer-create-shell :deep(.text-gray-900),
+:global(.dark) .transfer-create-shell :deep(.text-gray-800),
+:global(.dark) .transfer-create-shell :deep(.text-gray-700) {
+  color: rgb(226 232 240);
+}
+
+:global(.dark) .transfer-create-shell :deep(.text-gray-600),
+:global(.dark) .transfer-create-shell :deep(.text-gray-500) {
+  color: rgb(148 163 184);
+}
+
+:global(.dark) .transfer-create-shell :deep(.border-gray-200),
+:global(.dark) .transfer-create-shell :deep(.border-gray-300) {
+  border-color: rgb(30 41 59);
+}
+
+:global(.dark) .transfer-create-shell :deep(.text-blue-900) {
+  color: rgb(var(--color-primary-200, 191 219 254));
+}
+
+:global(.dark) .transfer-create-shell :deep(input),
+:global(.dark) .transfer-create-shell :deep(select),
+:global(.dark) .transfer-create-shell :deep(textarea) {
+  border-color: rgb(51 65 85);
+  background: rgb(2 6 23 / 0.78);
+  color: rgb(241 245 249);
+}
+
+:global(.dark) .transfer-create-shell :deep(input[type='date']) {
+  color-scheme: dark;
+}
+
+:global(.dark) .transfer-create-shell :deep(input::placeholder),
+:global(.dark) .transfer-create-shell :deep(textarea::placeholder) {
+  color: rgb(100 116 139);
+}
+
+:global(.dark) .transfer-create-shell :deep(.text-green-600) {
+  color: rgb(110 231 183);
+}
+
+:global(.dark) .transfer-create-shell :deep(.text-red-600) {
+  color: rgb(252 165 165);
+}
+</style>

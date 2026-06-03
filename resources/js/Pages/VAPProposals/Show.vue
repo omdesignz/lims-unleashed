@@ -1,723 +1,493 @@
 <template>
-  <div class="space-y-8">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <div class="flex items-center gap-3">
-            <h1 class="text-2xl font-bold text-gray-900">
+  <div :class="commercialDocumentThemeClasses" class="space-y-8 text-[#18241f] dark:text-slate-100">
+    <section class="overflow-hidden rounded-[34px] border border-[#ded2bb] bg-[#fbfaf6] shadow-[0_26px_70px_-44px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950">
+      <div class="relative border-b border-[#ded2bb] bg-[radial-gradient(circle_at_top_left,rgba(199,154,67,0.2),transparent_34%),linear-gradient(135deg,#fffaf0,#f6efe1_48%,#143d37_48%,#143d37)] px-6 py-7 dark:border-white/10 dark:bg-[radial-gradient(circle_at_top_left,rgba(199,154,67,0.18),transparent_34%),linear-gradient(135deg,#17231f,#101815_52%,#0b1210_52%,#0b1210)] sm:px-8">
+        <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <div class="max-w-3xl">
+            <div class="flex flex-wrap items-center gap-3">
+              <span class="inline-flex items-center gap-2 rounded-full border border-[#c79a43]/40 bg-white/80 px-3 py-1 text-xs font-bold uppercase tracking-[0.24em] text-[#143d37] shadow-sm dark:bg-white/10 dark:text-amber-100">
+                <DocumentTextIcon class="h-4 w-4 text-[#c79a43]" />
+                Proposta comercial
+              </span>
+              <span :class="['inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.18em]', statusBadgeClasses]">
+                {{ proposal.status_badge?.text || proposal.status }}
+              </span>
+              <span v-if="!proposal.is_original" class="inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-200">
+                <ExclamationTriangleIcon class="h-4 w-4" />
+                {{ $t('gestlab.general.labels.vap_proposals.show.revision') }}
+              </span>
+            </div>
+            <h1 class="mt-5 text-3xl font-black tracking-[-0.04em] text-[#10221d] dark:text-white sm:text-5xl">
               {{ proposal.proposal_number }}
             </h1>
-            <span 
-              :class="[
-                'inline-flex items-center rounded-full px-3 py-1 text-sm font-medium',
-                proposal.status_badge.class
-              ]"
-            >
-              {{ proposal.status_badge.text }}
-            </span>
+            <p class="mt-4 max-w-2xl text-base font-medium leading-7 text-[#59665f] dark:text-slate-300">
+              {{ $t('gestlab.general.labels.vap_proposals.show.description') }}
+              <span class="font-black text-[#143d37] dark:text-emerald-100">{{ proposal.customer?.name || 'Cliente por identificar' }}</span>
+            </p>
           </div>
-          <p class="mt-2 text-gray-600">
-            {{ $t('gestlab.general.labels.vap_proposals.show.description') }}
-            <span class="font-semibold text-blue-900">
-              {{ proposal.customer.name }}
-            </span>
-          </p>
-          <div class="mt-2 flex items-center gap-2 text-sm text-gray-500">
-            <span v-if="!proposal.is_original" class="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
-              <ExclamationTriangleIcon class="h-3 w-3" />
-              {{ $t('gestlab.general.labels.vap_proposals.show.revision') }}
-            </span>
-            <span v-if="proposal.use_matrix_price" class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-              <Cog6ToothIcon class="h-3 w-3" />
+
+          <div class="grid gap-3 sm:grid-cols-3 xl:min-w-[34rem]">
+            <div class="rounded-[24px] border border-white/35 bg-white/80 p-4 shadow-[0_18px_50px_-34px_rgba(20,61,55,0.45)] backdrop-blur dark:border-white/10 dark:bg-white/10">
+              <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#78847c] dark:text-slate-400">Valor</p>
+              <p class="mt-2 text-xl font-black text-[#143d37] dark:text-emerald-100">{{ formatCurrency(proposal.total) }}</p>
+            </div>
+            <div class="rounded-[24px] border border-white/35 bg-white/80 p-4 shadow-[0_18px_50px_-34px_rgba(20,61,55,0.45)] backdrop-blur dark:border-white/10 dark:bg-white/10">
+              <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#78847c] dark:text-slate-400">Validade</p>
+              <p class="mt-2 text-xl font-black text-[#143d37] dark:text-emerald-100">{{ proposal.days_until_expiry ?? proposal.tolerance_days }} dias</p>
+            </div>
+            <div class="rounded-[24px] border border-white/35 bg-white/80 p-4 shadow-[0_18px_50px_-34px_rgba(20,61,55,0.45)] backdrop-blur dark:border-white/10 dark:bg-white/10">
+              <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#78847c] dark:text-slate-400">Itens</p>
+              <p class="mt-2 text-xl font-black text-[#143d37] dark:text-emerald-100">{{ proposalItems.length }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid gap-4 px-6 py-5 sm:grid-cols-2 xl:grid-cols-4 sm:px-8">
+        <a
+          v-if="proposal.file_path"
+          :href="route('vap-proposals.download.pdf', proposal.id)"
+          class="inline-flex items-center justify-center gap-2 rounded-[20px] bg-[#143d37] px-5 py-3 text-sm font-black text-white shadow-[0_18px_42px_-24px_rgba(20,61,55,0.7)] transition hover:bg-[#0f302b] focus:outline-none focus:ring-2 focus:ring-[#c79a43] focus:ring-offset-2 dark:ring-offset-slate-950"
+        >
+          <ArrowDownTrayIcon class="h-5 w-5" />
+          {{ $t('gestlab.general.labels.vap_proposals.show.download_pdf') }}
+        </a>
+        <button
+          v-if="canSend"
+          type="button"
+          @click="sendProposal"
+          class="inline-flex items-center justify-center gap-2 rounded-[20px] bg-[#c79a43] px-5 py-3 text-sm font-black text-[#10221d] shadow-[0_18px_42px_-24px_rgba(199,154,67,0.75)] transition hover:bg-[#b88930] focus:outline-none focus:ring-2 focus:ring-[#143d37] focus:ring-offset-2 dark:ring-offset-slate-950"
+        >
+          <PaperAirplaneIcon class="h-5 w-5" />
+          {{ $t('gestlab.general.labels.vap_proposals.show.send_to_client') }}
+        </button>
+        <Link
+          v-if="canRevise"
+          :href="route('vap-proposals.edit', proposal.id)"
+          class="inline-flex items-center justify-center gap-2 rounded-[20px] border border-[#ded2bb] bg-white px-5 py-3 text-sm font-black text-[#143d37] transition hover:border-[#c79a43] hover:bg-[#fff7e5] dark:border-white/10 dark:bg-white/5 dark:text-emerald-100 dark:hover:bg-white/10"
+        >
+          <PencilSquareIcon class="h-5 w-5" />
+          {{ $t('gestlab.general.labels.vap_proposals.show.revise') }}
+        </Link>
+        <button
+          type="button"
+          @click="generatePdf"
+          class="inline-flex items-center justify-center gap-2 rounded-[20px] border border-[#ded2bb] bg-white px-5 py-3 text-sm font-black text-[#143d37] transition hover:border-[#c79a43] hover:bg-[#fff7e5] dark:border-white/10 dark:bg-white/5 dark:text-emerald-100 dark:hover:bg-white/10"
+        >
+          <DocumentArrowDownIcon class="h-5 w-5" />
+          {{ $t('gestlab.general.labels.vap_proposals.show.actions.generate_pdf') }}
+        </button>
+      </div>
+    </section>
+
+    <div class="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_24rem]">
+      <main class="space-y-8">
+        <section class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90 sm:p-7">
+          <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.28em] text-[#c79a43]">Informação base</p>
+              <h2 class="mt-2 text-2xl font-black tracking-[-0.03em] text-[#10221d] dark:text-white">
+                {{ $t('gestlab.general.labels.vap_proposals.show.details.title') }}
+              </h2>
+            </div>
+            <span v-if="proposal.use_matrix_price" class="inline-flex items-center gap-2 self-start rounded-full border border-[#ded2bb] bg-[#f7f1e6] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#143d37] dark:border-white/10 dark:bg-white/10 dark:text-emerald-100">
+              <Cog6ToothIcon class="h-4 w-4 text-[#c79a43]" />
               {{ $t('gestlab.general.labels.vap_proposals.show.matrix_pricing') }}
             </span>
           </div>
-        </div>
-        <div class="flex items-center gap-3">
-          <a 
-            v-if="proposal.file_path"
-            :href="route('vap-proposals.download.pdf', proposal.id)"
-            class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-all duration-200"
-          >
-            <ArrowDownTrayIcon class="h-5 w-5" />
-            {{ $t('gestlab.general.labels.vap_proposals.show.download_pdf') }}
-          </a>
-          <button 
-            v-if="canSend"
-            @click="sendProposal"
-            class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 transition-all duration-200"
-          >
-            <PaperAirplaneIcon class="h-5 w-5" />
-            {{ $t('gestlab.general.labels.vap_proposals.show.send_to_client') }}
-          </button>
-          <Link 
-            v-if="canRevise"
-            :href="route('vap-proposals.edit', proposal.id)"
-            class="inline-flex items-center gap-2 rounded-lg bg-yellow-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:ring-offset-2 transition-all duration-200"
-          >
-            <PencilSquareIcon class="h-5 w-5" />
-            {{ $t('gestlab.general.labels.vap_proposals.show.revise') }}
-          </Link>
-        </div>
-      </div>
-    </div>
 
-    <!-- MAIN CONTENT GRID -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- LEFT COLUMN (2/3) -->
-      <div class="lg:col-span-2 space-y-6">
-        <!-- PROPOSAL DETAILS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <DocumentTextIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.vap_proposals.show.details.title') }}
-            </h2>
+          <div class="mt-7 grid gap-5 lg:grid-cols-2">
+            <InfoPanel :title="$t('gestlab.general.labels.vap_proposals.show.details.client_info')" icon="client">
+              <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.details.customer')" :value="proposal.customer?.name" strong />
+              <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.details.customer_code')" :value="proposal.customer?.code || '—'" />
+              <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.details.service_location')" :value="proposal.service_location || '—'" />
+              <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.details.withhold_tax')" :value="proposal.withhold_tax ? $t('gestlab.general.status.yes') : $t('gestlab.general.status.no')" />
+            </InfoPanel>
+
+            <InfoPanel :title="$t('gestlab.general.labels.vap_proposals.show.details.lab_info')" icon="lab">
+              <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.details.department')" :value="proposal.department?.name || '—'" strong />
+              <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.details.warehouse')" :value="proposal.warehouse?.address || proposal.warehouse?.name || '—'" />
+              <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.details.created_by')" :value="proposal.user?.name || '—'" />
+              <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.details.pricing_mode')" :value="proposal.use_matrix_price ? $t('gestlab.general.labels.vap_proposals.show.matrix') : $t('gestlab.general.labels.vap_proposals.show.parameter')" />
+            </InfoPanel>
           </div>
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 class="text-sm font-medium text-gray-700 mb-2">
-                  {{ $t('gestlab.general.labels.vap_proposals.show.details.client_info') }}
-                </h3>
-                <div class="space-y-2">
-                  <div class="flex justify-between">
-                    <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.details.customer') }}</span>
-                    <span class="text-sm font-medium text-gray-900">{{ proposal.customer.name }}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.details.customer_code') }}</span>
-                    <span class="text-sm text-gray-900">{{ proposal.customer.code }}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.details.service_location') }}</span>
-                    <span class="text-sm text-gray-900">{{ proposal.service_location }}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.details.withhold_tax') }}</span>
-                    <span class="text-sm font-medium" :class="proposal.withhold_tax ? 'text-green-600' : 'text-gray-900'">
-                      {{ proposal.withhold_tax ? $t('gestlab.general.status.yes') : $t('gestlab.general.status.no') }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h3 class="text-sm font-medium text-gray-700 mb-2">
-                  {{ $t('gestlab.general.labels.vap_proposals.show.details.lab_info') }}
-                </h3>
-                <div class="space-y-2">
-                  <div class="flex justify-between">
-                    <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.details.department') }}</span>
-                    <span class="text-sm font-medium text-gray-900">{{ proposal?.department?.name }}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.details.warehouse') }}</span>
-                    <span class="text-sm text-gray-900">{{ proposal?.warehouse?.address }}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.details.created_by') }}</span>
-                    <span class="text-sm text-gray-900">{{ proposal?.user?.name }}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.details.pricing_mode') }}</span>
-                    <span class="text-sm font-medium" :class="proposal.use_matrix_price ? 'text-blue-600' : 'text-gray-900'">
-                      {{ proposal.use_matrix_price ? $t('gestlab.general.labels.vap_proposals.show.matrix') : $t('gestlab.general.labels.vap_proposals.show.parameter') }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <!-- TIMELINE -->
-            <div class="mt-8">
-              <h3 class="text-sm font-medium text-gray-700 mb-4">
-                {{ $t('gestlab.general.labels.vap_proposals.show.details.timeline') }}
-              </h3>
-              <div class="space-y-4">
-                <div class="flex items-start gap-3">
-                  <div class="flex-shrink-0">
-                    <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                      <CalendarIcon class="h-4 w-4 text-blue-900" />
-                    </div>
-                  </div>
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-gray-900">
-                      {{ $t('gestlab.general.labels.vap_proposals.show.details.created_on') }}
-                    </p>
-                    <p class="text-sm text-gray-500">
-                      {{ formatDate(proposal.created_at) }}
-                    </p>
-                  </div>
-                </div>
-                <div class="flex items-start gap-3" v-if="proposal.expiry_date">
-                  <div class="flex-shrink-0">
-                    <div :class="[
-                      'h-8 w-8 rounded-full flex items-center justify-center',
-                      proposal.days_until_expiry <= 3 ? 'bg-red-100' : 'bg-yellow-100'
-                    ]">
-                      <ClockIcon :class="[
-                        'h-4 w-4',
-                        proposal.days_until_expiry <= 3 ? 'text-red-900' : 'text-yellow-900'
-                      ]" />
-                    </div>
-                  </div>
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-gray-900">
-                      {{ $t('gestlab.general.labels.vap_proposals.show.details.expires_on') }}
-                    </p>
-                    <p class="text-sm" :class="proposal.days_until_expiry <= 3 ? 'text-red-600' : 'text-gray-500'">
-                      {{ formatDate(proposal.expiry_date) }}
-                      ({{ proposal.days_until_expiry }} {{ $t('gestlab.general.labels.vap_proposals.show.details.days_left') }})
-                    </p>
-                  </div>
-                </div>
-                <div class="flex items-start gap-3" v-if="proposal.tolerance_days">
-                  <div class="flex-shrink-0">
-                    <div class="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
-                      <ClockIcon class="h-4 w-4 text-gray-900" />
-                    </div>
-                  </div>
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-gray-900">
-                      {{ $t('gestlab.general.labels.vap_proposals.show.details.tolerance_days') }}
-                    </p>
-                    <p class="text-sm text-gray-500">
-                      {{ proposal.tolerance_days }} {{ $t('gestlab.general.labels.vap_proposals.show.details.days') }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- OBSERVATIONS -->
-            <div class="mt-8" v-if="proposal.obs">
-              <h3 class="text-sm font-medium text-gray-700 mb-2">
-                {{ $t('gestlab.general.labels.vap_proposals.show.details.observations') }}
-              </h3>
-              <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ proposal.obs }}</p>
-              </div>
-            </div>
+          <div class="mt-7 grid gap-4 md:grid-cols-3">
+            <TimelineItem
+              :title="$t('gestlab.general.labels.vap_proposals.show.details.created_on')"
+              :value="formatDate(proposal.created_at)"
+              tone="green"
+            />
+            <TimelineItem
+              v-if="proposal.expiry_date"
+              :title="$t('gestlab.general.labels.vap_proposals.show.details.expires_on')"
+              :value="`${formatDate(proposal.expiry_date)} (${proposal.days_until_expiry} ${$t('gestlab.general.labels.vap_proposals.show.details.days_left')})`"
+              :tone="proposal.days_until_expiry <= 3 ? 'red' : 'gold'"
+            />
+            <TimelineItem
+              v-if="proposal.tolerance_days"
+              :title="$t('gestlab.general.labels.vap_proposals.show.details.tolerance_days')"
+              :value="`${proposal.tolerance_days} ${$t('gestlab.general.labels.vap_proposals.show.details.days')}`"
+              tone="neutral"
+            />
           </div>
-        </div>
 
-        <!-- ITEMS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="border-b border-gray-200 px-6 py-4">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <ListBulletIcon class="h-5 w-5 text-blue-900" />
+          <div v-if="proposal.obs" class="mt-7 rounded-[24px] border border-[#ded2bb] bg-[#fbfaf6] p-5 dark:border-white/10 dark:bg-white/5">
+            <p class="text-xs font-black uppercase tracking-[0.22em] text-[#78847c] dark:text-slate-400">
+              {{ $t('gestlab.general.labels.vap_proposals.show.details.observations') }}
+            </p>
+            <p class="mt-3 whitespace-pre-wrap text-sm font-medium leading-7 text-[#33413a] dark:text-slate-300">{{ proposal.obs }}</p>
+          </div>
+        </section>
+
+        <section class="overflow-hidden rounded-[30px] border border-[#ded2bb] bg-white/90 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
+          <div class="flex flex-col gap-4 border-b border-[#ded2bb] px-6 py-6 dark:border-white/10 sm:flex-row sm:items-end sm:justify-between sm:px-7">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.28em] text-[#c79a43]">Escopo comercial</p>
+              <h2 class="mt-2 flex items-center gap-2 text-2xl font-black tracking-[-0.03em] text-[#10221d] dark:text-white">
+                <ListBulletIcon class="h-6 w-6 text-[#143d37] dark:text-emerald-100" />
                 {{ $t('gestlab.general.labels.vap_proposals.show.items.title') }}
-                <span class="text-sm font-normal text-gray-500 ml-2">
-                  ({{ proposal.items.length }} {{ $t('gestlab.general.labels.vap_proposals.items') }})
-                </span>
               </h2>
-              <div class="text-lg font-bold text-blue-900">
-                {{ formatCurrency(proposal.total) }}
-              </div>
+              <p class="mt-1 text-sm font-medium text-[#78847c] dark:text-slate-400">
+                {{ proposalItems.length }} {{ $t('gestlab.general.labels.vap_proposals.items') }}
+              </p>
+            </div>
+            <div class="rounded-[20px] bg-[#143d37] px-5 py-3 text-right text-white shadow-[0_18px_42px_-26px_rgba(20,61,55,0.75)]">
+              <p class="text-xs font-bold uppercase tracking-[0.18em] text-white/70">{{ $t('gestlab.general.labels.vap_proposals.show.items.grand_total') }}</p>
+              <p class="mt-1 text-2xl font-black">{{ formatCurrency(proposal.total) }}</p>
             </div>
           </div>
-          <div class="p-6">
-            <div class="space-y-4">
-              <div 
-                v-for="(item, index) in proposal.items"
-                :key="item.id"
-                class="border border-gray-200 rounded-lg p-4 hover:border-blue-900 transition-colors duration-200"
-              >
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <div class="flex items-start gap-3">
-                      <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-900 font-semibold">
-                        {{ index + 1 }}
-                      </div>
-                      <div class="flex-1">
-                        <h3 class="text-sm font-semibold text-gray-900">
-                          {{ item.item_description }}
-                        </h3>
-                        <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                          <div>
-                            <span class="text-gray-500">{{ $t('gestlab.general.labels.vap_proposals.show.items.quantity') }}</span>
-                            <p class="font-medium">{{ item.qty }} {{ item.unit?.code || item.unit?.symbol || '' }}</p>
-                          </div>
-                          <div v-if="item.standard">
-                            <span class="text-gray-500">{{ $t('gestlab.general.labels.vap_proposals.show.items.standard') }}</span>
-                            <p class="font-medium">{{ item.standard.code || item.standard.name }}</p>
-                          </div>
-                          <div v-if="item.tax_percentage > 0">
-                            <span class="text-gray-500">{{ $t('gestlab.general.labels.vap_proposals.show.items.tax') }}</span>
-                            <p class="font-medium">{{ item.tax_percentage }}%</p>
-                          </div>
-                          <div v-if="item.charge_tax !== null">
-                            <span class="text-gray-500">{{ $t('gestlab.general.labels.vap_proposals.show.items.charge_tax') }}</span>
-                            <p class="font-medium" :class="item.charge_tax ? 'text-green-600' : 'text-gray-900'">
-                              {{ item.charge_tax ? $t('gestlab.general.status.yes') : $t('gestlab.general.status.no') }}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <!-- Item Type Information -->
-                        <div v-if="item.itemable_type" class="mt-2">
-                          <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
-                            {{ getItemableTypeLabel(item.itemable_type) }}
-                            <span class="ml-1 text-gray-600">#{{ item.itemable_id }}</span>
-                          </span>
-                        </div>
 
-                        <!-- Discount Information -->
-                        <div v-if="item.discount_amount > 0 || item.discount_percentage > 0" class="mt-2">
-                          <div class="text-xs">
-                            <span class="text-gray-500">{{ $t('gestlab.general.labels.vap_proposals.show.items.discount') }}:</span>
-                            <span v-if="item.discount_id === 1" class="ml-1 font-medium text-green-600">
-                              {{ item.discount_percentage }}% (-{{ formatCurrency(item.discount_amount) }})
-                            </span>
-                            <span v-else class="ml-1 font-medium text-green-600">
-                              -{{ formatCurrency(item.discount_amount) }}
-                            </span>
-                          </div>
-                        </div>
-
-                        <!-- Tax Exemption Information -->
-                        <div v-if="item.exemption_code" class="mt-1 text-xs">
-                          <span class="text-gray-500">{{ $t('gestlab.general.labels.vap_proposals.show.items.exemption') }}:</span>
-                          <span class="ml-1 font-medium">{{ item.exemption_code }}</span>
-                        </div>
-
-                        <!-- Item Observations -->
-                        <div v-if="item.obs" class="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                          {{ item.obs }}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="text-right ml-4">
-                    <div class="text-sm text-gray-500">
-                      {{ $t('gestlab.general.labels.vap_proposals.show.items.unit_price') }}
-                    </div>
-                    <div class="text-sm font-semibold text-gray-900">
-                      {{ formatCurrency(item.unit_price) }}
-                    </div>
-                    <div class="mt-2 text-sm text-gray-500">
-                      {{ $t('gestlab.general.labels.vap_proposals.show.items.total') }}
-                    </div>
-                    <div class="text-sm font-bold text-blue-900">
-                      {{ formatCurrency(item.total) }}
-                    </div>
-                    <div v-if="item.tax_amount > 0" class="mt-1 text-xs text-blue-600">
-                      +{{ formatCurrency(item.tax_amount) }} {{ $t('gestlab.general.labels.vap_proposals.show.items.tax') }}
-                    </div>
-                  </div>
+          <div class="divide-y divide-[#ebe1cf] dark:divide-white/10">
+            <article
+              v-for="(item, index) in proposalItems"
+              :key="item.id || index"
+              class="grid gap-5 px-6 py-6 transition hover:bg-[#fbfaf6] dark:hover:bg-white/5 sm:px-7 lg:grid-cols-[minmax(0,1fr)_14rem]"
+            >
+              <div class="flex gap-4">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] bg-[#f7f1e6] text-sm font-black text-[#143d37] ring-1 ring-[#ded2bb] dark:bg-white/10 dark:text-emerald-100 dark:ring-white/10">
+                  {{ index + 1 }}
                 </div>
-              </div>
-            </div>
-
-            <!-- TOTALS -->
-            <div class="mt-8 border-t border-gray-200 pt-6">
-              <div class="max-w-md ml-auto space-y-3">
-                <div class="flex justify-between">
-                  <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.items.subtotal') }}</span>
-                  <span class="text-sm font-medium text-gray-900">{{ formatCurrency(proposal.sub_total) }}</span>
-                </div>
-                
-                <!-- Discount Summary -->
-                <div v-if="proposal.discount > 0" class="flex justify-between">
-                  <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.items.total_discount') }}</span>
-                  <span class="text-sm font-medium text-green-600">-{{ formatCurrency(proposal.discount) }}</span>
-                </div>
-                
-                <!-- Tax Summary -->
-                <div v-if="proposal.tax > 0" class="flex justify-between">
-                  <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.items.total_tax') }}</span>
-                  <span class="text-sm font-medium text-gray-900">{{ formatCurrency(proposal.tax) }}</span>
-                </div>
-                
-                <!-- Global Discount (if exists) -->
-                <div v-if="proposal.global_discount_amount > 0" class="flex justify-between">
-                  <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.items.global_discount') }}</span>
-                  <span class="text-sm font-medium text-green-600">-{{ formatCurrency(proposal.global_discount_amount) }}</span>
-                </div>
-                
-                <!-- Withholding Tax (if exists) -->
-                <div v-if="proposal.withholding_tax_amount > 0" class="flex justify-between">
-                  <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.items.withholding_tax') }}</span>
-                  <span class="text-sm font-medium text-gray-900">{{ formatCurrency(proposal.withholding_tax_amount) }}</span>
-                </div>
-                
-                <!-- Total -->
-                <div class="flex justify-between border-t border-gray-200 pt-3">
-                  <span class="text-base font-semibold text-gray-900">{{ $t('gestlab.general.labels.vap_proposals.show.items.grand_total') }}</span>
-                  <span class="text-lg font-bold text-blue-900">{{ formatCurrency(proposal.total) }}</span>
-                </div>
-                
-                <!-- Summary -->
-                <div class="mt-4 grid grid-cols-2 gap-2 text-xs text-gray-500">
-                  <div>
-                    <span>{{ proposal.items.length }} {{ $t('gestlab.general.labels.vap_proposals.show.items.items') }}</span>
-                  </div>
-                  <div class="text-right">
-                    <span>{{ proposal.items.filter(i => i.tax_amount > 0).length }} {{ $t('gestlab.general.labels.vap_proposals.show.items.taxable_items') }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- COMPLIANCE AGREEMENT CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" v-if="proposal.compliance_agreement">
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <ShieldCheckIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.vap_proposals.show.compliance.title') }}
-            </h2>
-          </div>
-          <div class="p-6">
-            <div class="space-y-4">
-              <div v-if="proposal.compliance_agreement.acknowledged_at" class="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div class="flex items-center gap-3">
-                  <CheckCircleIcon class="h-6 w-6 text-green-600" />
-                  <div>
-                    <h3 class="text-sm font-semibold text-green-900">
-                      {{ $t('gestlab.general.labels.vap_proposals.show.compliance.signed') }}
-                    </h3>
-                    <p class="text-sm text-green-700 mt-1">
-                      {{ $t('gestlab.general.labels.vap_proposals.show.compliance.signed_on') }} {{ formatDateTime(proposal.compliance_agreement.acknowledged_at) }}
-                    </p>
-                    <p class="text-xs text-green-600 mt-1">
-                      IP: {{ proposal.compliance_agreement.client_ip }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="space-y-3">
-                <div class="flex items-center">
-                  <input
-                    type="checkbox"
-                    :checked="proposal.compliance_agreement.confidentiality"
-                    disabled
-                    class="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
-                  />
-                  <label class="ml-2 text-sm text-gray-700">
-                    {{ $t('gestlab.general.labels.vap_proposals.show.compliance.confidentiality') }}
-                  </label>
-                </div>
-                <div class="flex items-center">
-                  <input
-                    type="checkbox"
-                    :checked="proposal.compliance_agreement.impartiality"
-                    disabled
-                    class="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
-                  />
-                  <label class="ml-2 text-sm text-gray-700">
-                    {{ $t('gestlab.general.labels.vap_proposals.show.compliance.impartiality') }}
-                  </label>
-                </div>
-                <div class="flex items-center">
-                  <input
-                    type="checkbox"
-                    :checked="proposal.compliance_agreement.nondisclosure"
-                    disabled
-                    class="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
-                  />
-                  <label class="ml-2 text-sm text-gray-700">
-                    {{ $t('gestlab.general.labels.vap_proposals.show.compliance.nondisclosure') }}
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- REVISION HISTORY CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" v-if="revisions.length > 0">
-          <div class="border-b border-gray-200 px-6 py-4">
-            <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <ClockIcon class="h-5 w-5 text-blue-900" />
-              {{ $t('gestlab.general.labels.vap_proposals.show.revisions.title') }}
-              <span class="text-sm font-normal text-gray-500 ml-2">
-                ({{ revisions.length }} {{ $t('gestlab.general.labels.vap_proposals.changes') }})
-              </span>
-            </h2>
-          </div>
-          <div class="p-6">
-            <div class="space-y-6">
-              <div 
-                v-for="revision in revisions"
-                :key="revision.id"
-                class="border-l-2 border-blue-900 pl-4 py-2"
-              >
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <UserIcon class="h-4 w-4 text-gray-400" />
-                    <span class="text-sm font-medium text-gray-900">
-                      {{ revision.causer?.name || 'System' }}
+                <div class="min-w-0 flex-1">
+                  <h3 class="text-base font-black text-[#10221d] dark:text-white">{{ item.item_description }}</h3>
+                  <div class="mt-3 flex flex-wrap gap-2">
+                    <span class="rounded-full bg-[#f7f1e6] px-3 py-1 text-xs font-bold text-[#59665f] dark:bg-white/10 dark:text-slate-300">
+                      {{ $t('gestlab.general.labels.vap_proposals.show.items.quantity') }}: {{ item.qty }} {{ item.unit?.code || item.unit?.symbol || '' }}
+                    </span>
+                    <span v-if="item.standard" class="rounded-full bg-[#f7f1e6] px-3 py-1 text-xs font-bold text-[#59665f] dark:bg-white/10 dark:text-slate-300">
+                      {{ $t('gestlab.general.labels.vap_proposals.show.items.standard') }}: {{ item.standard.code || item.standard.name || item.standard.description }}
+                    </span>
+                    <span v-if="item.tax_percentage > 0" class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-400/10 dark:text-amber-200">
+                      {{ $t('gestlab.general.labels.vap_proposals.show.items.tax') }}: {{ item.tax_percentage }}%
+                    </span>
+                    <span v-if="item.itemable_type" class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200">
+                      {{ getItemableTypeLabel(item.itemable_type) }} #{{ item.itemable_id }}
                     </span>
                   </div>
-                  <span class="text-xs text-gray-500">
-                    {{ formatDateTime(revision.created_at) }}
-                  </span>
-                </div>
-                <p class="mt-1 text-sm text-gray-700">
-                  {{ revision.description }}
-                </p>
-                <div v-if="revision.properties?.reason" class="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                  <strong>{{ $t('gestlab.general.labels.vap_proposals.show.revisions.reason') }}:</strong> {{ revision.properties.reason }}
-                </div>
-                <!-- Show detailed changes for revisions -->
-                <div v-if="revision.event === 'revised' && revision.properties?.old_values" class="mt-2 text-xs">
-                  <div class="grid grid-cols-2 gap-2">
-                    <div v-if="revision.properties.old_values.total !== revision.properties.new_values.total" class="bg-gray-50 p-2 rounded">
-                      <span class="text-gray-500">Total:</span>
-                      <div class="flex items-center gap-1">
-                        <span class="text-red-600 line-through">{{ formatCurrency(revision.properties.old_values.total) }}</span>
-                        <ArrowRightIcon class="h-3 w-3 text-gray-400" />
-                        <span class="text-green-600">{{ formatCurrency(revision.properties.new_values.total) }}</span>
-                      </div>
-                    </div>
-                    <div v-if="revision.properties.old_values.items_count !== revision.properties.new_values.items_count" class="bg-gray-50 p-2 rounded">
-                      <span class="text-gray-500">Items:</span>
-                      <div class="flex items-center gap-1">
-                        <span class="text-red-600 line-through">{{ revision.properties.old_values.items_count }}</span>
-                        <ArrowRightIcon class="h-3 w-3 text-gray-400" />
-                        <span class="text-green-600">{{ revision.properties.new_values.items_count }}</span>
-                      </div>
-                    </div>
+
+                  <div v-if="item.discount_amount > 0 || item.discount_percentage > 0" class="mt-3 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                    {{ $t('gestlab.general.labels.vap_proposals.show.items.discount') }}:
+                    <span v-if="item.discount_id === 1">{{ item.discount_percentage }}% (-{{ formatCurrency(item.discount_amount) }})</span>
+                    <span v-else>-{{ formatCurrency(item.discount_amount) }}</span>
+                  </div>
+
+                  <div v-if="item.exemption_code" class="mt-2 text-sm font-semibold text-[#59665f] dark:text-slate-300">
+                    {{ $t('gestlab.general.labels.vap_proposals.show.items.exemption') }}: {{ item.exemption_code }}
+                  </div>
+
+                  <div v-if="item.obs" class="mt-4 rounded-[18px] border border-[#ded2bb] bg-[#fbfaf6] p-4 text-sm font-medium leading-6 text-[#59665f] dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+                    {{ item.obs }}
                   </div>
                 </div>
               </div>
+
+              <div class="rounded-[22px] border border-[#ded2bb] bg-[#fbfaf6] p-4 dark:border-white/10 dark:bg-white/5">
+                <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.items.unit_price')" :value="formatCurrency(item.unit_price)" />
+                <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.items.total')" :value="formatCurrency(item.total)" strong />
+                <DefinitionRow v-if="item.tax_amount > 0" :label="$t('gestlab.general.labels.vap_proposals.show.items.tax')" :value="`+${formatCurrency(item.tax_amount)}`" />
+                <DefinitionRow v-if="item.charge_tax !== null" :label="$t('gestlab.general.labels.vap_proposals.show.items.charge_tax')" :value="item.charge_tax ? $t('gestlab.general.status.yes') : $t('gestlab.general.status.no')" />
+              </div>
+            </article>
+          </div>
+
+          <div class="border-t border-[#ded2bb] bg-[#fbfaf6] px-6 py-6 dark:border-white/10 dark:bg-white/5 sm:px-7">
+            <div class="ml-auto max-w-md space-y-3">
+              <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.items.subtotal')" :value="formatCurrency(proposal.sub_total)" />
+              <DefinitionRow v-if="proposal.discount > 0" :label="$t('gestlab.general.labels.vap_proposals.show.items.total_discount')" :value="`-${formatCurrency(proposal.discount)}`" />
+              <DefinitionRow v-if="proposal.tax > 0" :label="$t('gestlab.general.labels.vap_proposals.show.items.total_tax')" :value="formatCurrency(proposal.tax)" />
+              <DefinitionRow v-if="proposal.global_discount_amount > 0" :label="$t('gestlab.general.labels.vap_proposals.show.items.global_discount')" :value="`-${formatCurrency(proposal.global_discount_amount)}`" />
+              <DefinitionRow v-if="proposal.withholding_tax_amount > 0" :label="$t('gestlab.general.labels.vap_proposals.show.items.withholding_tax')" :value="formatCurrency(proposal.withholding_tax_amount)" />
+              <div class="flex items-center justify-between border-t border-[#ded2bb] pt-4 dark:border-white/10">
+                <span class="text-base font-black text-[#10221d] dark:text-white">{{ $t('gestlab.general.labels.vap_proposals.show.items.grand_total') }}</span>
+                <span class="text-2xl font-black text-[#143d37] dark:text-emerald-100">{{ formatCurrency(proposal.total) }}</span>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <!-- RIGHT COLUMN (1/3) -->
-      <div class="space-y-6">
-        <!-- ACTIONS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+        <section v-if="proposal.compliance_agreement" class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90 sm:p-7">
+          <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.28em] text-[#c79a43]">ISO 17025</p>
+              <h2 class="mt-2 flex items-center gap-2 text-2xl font-black tracking-[-0.03em] text-[#10221d] dark:text-white">
+                <ShieldCheckIcon class="h-6 w-6 text-[#143d37] dark:text-emerald-100" />
+                {{ $t('gestlab.general.labels.vap_proposals.show.compliance.title') }}
+              </h2>
+            </div>
+            <span v-if="proposal.compliance_agreement.acknowledged_at" class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200">
+              <CheckCircleIcon class="h-4 w-4" />
+              {{ $t('gestlab.general.labels.vap_proposals.show.compliance.signed') }}
+            </span>
+          </div>
+
+          <div v-if="proposal.compliance_agreement.acknowledged_at" class="mt-6 rounded-[24px] border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-400/20 dark:bg-emerald-400/10">
+            <p class="text-sm font-black text-emerald-900 dark:text-emerald-100">
+              {{ $t('gestlab.general.labels.vap_proposals.show.compliance.signed_on') }} {{ formatDateTime(proposal.compliance_agreement.acknowledged_at) }}
+            </p>
+            <p class="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">IP: {{ proposal.compliance_agreement.client_ip || '—' }}</p>
+          </div>
+
+          <div class="mt-6 grid gap-3 md:grid-cols-3">
+            <ComplianceCheck :checked="proposal.compliance_agreement.confidentiality" :label="$t('gestlab.general.labels.vap_proposals.show.compliance.confidentiality')" />
+            <ComplianceCheck :checked="proposal.compliance_agreement.impartiality" :label="$t('gestlab.general.labels.vap_proposals.show.compliance.impartiality')" />
+            <ComplianceCheck :checked="proposal.compliance_agreement.nondisclosure" :label="$t('gestlab.general.labels.vap_proposals.show.compliance.nondisclosure')" />
+          </div>
+        </section>
+
+        <section v-if="revisions.length > 0" class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90 sm:p-7">
+          <p class="text-xs font-black uppercase tracking-[0.28em] text-[#c79a43]">Histórico</p>
+          <h2 class="mt-2 flex items-center gap-2 text-2xl font-black tracking-[-0.03em] text-[#10221d] dark:text-white">
+            <ClockIcon class="h-6 w-6 text-[#143d37] dark:text-emerald-100" />
+            {{ $t('gestlab.general.labels.vap_proposals.show.revisions.title') }}
+            <span class="text-sm font-bold text-[#78847c] dark:text-slate-400">({{ revisions.length }} {{ $t('gestlab.general.labels.vap_proposals.changes') }})</span>
+          </h2>
+
+          <div class="mt-6 space-y-5">
+            <article
+              v-for="revision in revisions"
+              :key="revision.id"
+              class="rounded-[24px] border border-[#ded2bb] bg-[#fbfaf6] p-5 dark:border-white/10 dark:bg-white/5"
+            >
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-center gap-2">
+                  <UserIcon class="h-4 w-4 text-[#c79a43]" />
+                  <span class="text-sm font-black text-[#10221d] dark:text-white">{{ revision.causer?.name || 'Sistema' }}</span>
+                </div>
+                <span class="text-xs font-bold text-[#78847c] dark:text-slate-400">{{ formatDateTime(revision.created_at) }}</span>
+              </div>
+              <p class="mt-3 text-sm font-medium leading-6 text-[#59665f] dark:text-slate-300">{{ revision.description }}</p>
+              <div v-if="revision.properties?.reason" class="mt-3 rounded-[18px] bg-white p-3 text-xs font-semibold text-[#59665f] dark:bg-slate-950 dark:text-slate-300">
+                <strong>{{ $t('gestlab.general.labels.vap_proposals.show.revisions.reason') }}:</strong> {{ revision.properties.reason }}
+              </div>
+              <div v-if="revision.event === 'revised' && revision.properties?.old_values" class="mt-4 grid gap-3 text-xs md:grid-cols-2">
+                <div v-if="revision.properties.old_values.total !== revision.properties.new_values.total" class="rounded-[18px] bg-white p-3 dark:bg-slate-950">
+                  <span class="font-bold text-[#78847c] dark:text-slate-400">Total</span>
+                  <div class="mt-2 flex items-center gap-2">
+                    <span class="font-bold text-red-600 line-through dark:text-red-300">{{ formatCurrency(revision.properties.old_values.total) }}</span>
+                    <ArrowRightIcon class="h-3 w-3 text-[#78847c]" />
+                    <span class="font-bold text-emerald-700 dark:text-emerald-300">{{ formatCurrency(revision.properties.new_values.total) }}</span>
+                  </div>
+                </div>
+                <div v-if="revision.properties.old_values.items_count !== revision.properties.new_values.items_count" class="rounded-[18px] bg-white p-3 dark:bg-slate-950">
+                  <span class="font-bold text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.items') }}</span>
+                  <div class="mt-2 flex items-center gap-2">
+                    <span class="font-bold text-red-600 line-through dark:text-red-300">{{ revision.properties.old_values.items_count }}</span>
+                    <ArrowRightIcon class="h-3 w-3 text-[#78847c]" />
+                    <span class="font-bold text-emerald-700 dark:text-emerald-300">{{ revision.properties.new_values.items_count }}</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <aside class="space-y-6 xl:sticky xl:top-6 xl:self-start">
+        <section class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
+          <h3 class="text-lg font-black tracking-[-0.02em] text-[#10221d] dark:text-white">
             {{ $t('gestlab.general.labels.vap_proposals.show.actions.title') }}
           </h3>
-          <div class="space-y-4">
-            <button 
+          <div class="mt-5 space-y-3">
+            <button
+              type="button"
               @click="generatePdf"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-all duration-200"
+              class="inline-flex w-full items-center justify-center gap-2 rounded-[20px] bg-[#143d37] px-4 py-3 text-sm font-black text-white transition hover:bg-[#0f302b] focus:outline-none focus:ring-2 focus:ring-[#c79a43] focus:ring-offset-2 dark:ring-offset-slate-950"
             >
               <DocumentArrowDownIcon class="h-5 w-5" />
               {{ $t('gestlab.general.labels.vap_proposals.show.actions.generate_pdf') }}
             </button>
-            
-            <a 
+            <a
               :href="route('vap-proposals.public.show', proposal.unique_hash)"
               target="_blank"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-blue-900 bg-white px-4 py-3 text-sm font-semibold text-blue-900 shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-all duration-200"
+              class="inline-flex w-full items-center justify-center gap-2 rounded-[20px] border border-[#ded2bb] bg-[#fbfaf6] px-4 py-3 text-sm font-black text-[#143d37] transition hover:border-[#c79a43] hover:bg-[#fff7e5] dark:border-white/10 dark:bg-white/5 dark:text-emerald-100 dark:hover:bg-white/10"
             >
               <LinkIcon class="h-5 w-5" />
               {{ $t('gestlab.general.labels.vap_proposals.show.actions.view_public_link') }}
             </a>
+          </div>
 
-            <div class="border-t border-gray-200 pt-4">
-              <h4 class="text-sm font-medium text-gray-900 mb-2">
-                {{ $t('gestlab.general.labels.vap_proposals.show.actions.share') }}
-              </h4>
-              <div class="flex gap-2">
-                <input
-                  :value="publicLink"
-                  readonly
-                  class="flex-1 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-                />
-                <button
-                  @click="copyToClipboard"
-                  class="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                >
-                  <DocumentDuplicateIcon class="h-4 w-4" />
-                  {{ copied ? $t('gestlab.general.labels.vap_proposals.show.copied') : $t('gestlab.general.labels.vap_proposals.show.copy') }}
-                </button>
-              </div>
+          <div class="mt-6 border-t border-[#ded2bb] pt-5 dark:border-white/10">
+            <p class="text-xs font-black uppercase tracking-[0.22em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.show.actions.share') }}</p>
+            <div class="mt-3 flex gap-2">
+              <input
+                :value="publicLink"
+                readonly
+                class="min-w-0 flex-1 rounded-[18px] border border-[#ded2bb] bg-[#fbfaf6] px-3 py-2 text-sm font-semibold text-[#33413a] outline-none focus:border-[#c79a43] focus:ring-2 focus:ring-[#c79a43]/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+              />
+              <button
+                type="button"
+                @click="copyToClipboard"
+                class="rounded-[18px] bg-[#f7f1e6] px-3 py-2 text-sm font-black text-[#143d37] transition hover:bg-[#efe3cf] dark:bg-white/10 dark:text-emerald-100 dark:hover:bg-white/15"
+              >
+                {{ copied ? $t('gestlab.general.labels.vap_proposals.show.copied') : $t('gestlab.general.labels.vap_proposals.show.copy') }}
+              </button>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- STATUS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Cog6ToothIcon class="h-5 w-5 text-blue-900" />
+        <section class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
+          <h3 class="flex items-center gap-2 text-lg font-black tracking-[-0.02em] text-[#10221d] dark:text-white">
+            <Cog6ToothIcon class="h-5 w-5 text-[#c79a43]" />
             {{ $t('gestlab.general.labels.vap_proposals.show.status.title') }}
           </h3>
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.status.current') }}</span>
-              <span :class="[
-                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                proposal.status_badge.class
-              ]">
-                {{ proposal.status_badge.text }}
-              </span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.status.is_original') }}</span>
-              <span :class="[
-                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                proposal.is_original ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-              ]">
-                {{ proposal.is_original ? $t('gestlab.general.status.yes') : $t('gestlab.general.status.no') }}
-              </span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.status.use_matrix_price') }}</span>
-              <span :class="[
-                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                proposal.use_matrix_price ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-              ]">
-                {{ proposal.use_matrix_price ? $t('gestlab.general.status.yes') : $t('gestlab.general.status.no') }}
-              </span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.status.tolerance_days') }}</span>
-              <span class="text-sm font-medium text-gray-900">{{ proposal.tolerance_days }} {{ $t('gestlab.general.labels.vap_proposals.show.days') }}</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.status.converted') }}</span>
-              <span :class="[
-                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                proposal.converted_to_invoice ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-              ]">
-                {{ proposal.converted_to_invoice ? $t('gestlab.general.status.yes') : $t('gestlab.general.status.no') }}
-              </span>
-            </div>
+          <div class="mt-5 space-y-3">
+            <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.status.current')" :value="proposal.status_badge?.text || proposal.status" strong />
+            <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.status.is_original')" :value="proposal.is_original ? $t('gestlab.general.status.yes') : $t('gestlab.general.status.no')" />
+            <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.status.use_matrix_price')" :value="proposal.use_matrix_price ? $t('gestlab.general.status.yes') : $t('gestlab.general.status.no')" />
+            <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.status.tolerance_days')" :value="`${proposal.tolerance_days} ${$t('gestlab.general.labels.vap_proposals.show.days')}`" />
+            <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.status.converted')" :value="proposal.converted_to_invoice ? $t('gestlab.general.status.yes') : $t('gestlab.general.status.no')" />
           </div>
-        </div>
+        </section>
 
-        <!-- FINANCIAL SUMMARY CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <CurrencyDollarIcon class="h-5 w-5 text-blue-900" />
+        <section class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
+          <h3 class="flex items-center gap-2 text-lg font-black tracking-[-0.02em] text-[#10221d] dark:text-white">
+            <CurrencyDollarIcon class="h-5 w-5 text-[#c79a43]" />
             {{ $t('gestlab.general.labels.vap_proposals.show.financial_summary.title') }}
           </h3>
-          <div class="space-y-3">
-            <div class="flex justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.financial_summary.subtotal') }}</span>
-              <span class="text-sm font-medium text-gray-900">{{ formatCurrency(proposal.sub_total) }}</span>
-            </div>
-            <div v-if="proposal.discount > 0" class="flex justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.financial_summary.discount') }}</span>
-              <span class="text-sm font-medium text-green-600">-{{ formatCurrency(proposal.discount) }}</span>
-            </div>
-            <div v-if="proposal.tax > 0" class="flex justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.show.financial_summary.tax') }}</span>
-              <span class="text-sm font-medium text-gray-900">{{ formatCurrency(proposal.tax) }}</span>
-            </div>
-            <div class="pt-3 border-t border-gray-200 flex justify-between">
-              <span class="text-base font-semibold text-gray-900">{{ $t('gestlab.general.labels.vap_proposals.show.financial_summary.total') }}</span>
-              <span class="text-lg font-bold text-blue-900">{{ formatCurrency(proposal.total) }}</span>
+          <div class="mt-5 space-y-3">
+            <DefinitionRow :label="$t('gestlab.general.labels.vap_proposals.show.financial_summary.subtotal')" :value="formatCurrency(proposal.sub_total)" />
+            <DefinitionRow v-if="proposal.discount > 0" :label="$t('gestlab.general.labels.vap_proposals.show.financial_summary.discount')" :value="`-${formatCurrency(proposal.discount)}`" />
+            <DefinitionRow v-if="proposal.tax > 0" :label="$t('gestlab.general.labels.vap_proposals.show.financial_summary.tax')" :value="formatCurrency(proposal.tax)" />
+            <div class="flex items-center justify-between border-t border-[#ded2bb] pt-4 dark:border-white/10">
+              <span class="text-base font-black text-[#10221d] dark:text-white">{{ $t('gestlab.general.labels.vap_proposals.show.financial_summary.total') }}</span>
+              <span class="text-xl font-black text-[#143d37] dark:text-emerald-100">{{ formatCurrency(proposal.total) }}</span>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- TEMPLATE INFO CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6" v-if="proposal.template">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <DocumentDuplicateIcon class="h-5 w-5 text-blue-900" />
+        <section v-if="proposal.template" class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
+          <h3 class="flex items-center gap-2 text-lg font-black tracking-[-0.02em] text-[#10221d] dark:text-white">
+            <DocumentDuplicateIcon class="h-5 w-5 text-[#c79a43]" />
             {{ $t('gestlab.general.labels.vap_proposals.show.template.title') }}
           </h3>
-          <div class="space-y-2">
-            <div>
-              <h4 class="text-sm font-medium text-gray-700">{{ proposal.template.name }}</h4>
-              <p class="text-xs text-gray-500 mt-1">
-                {{ $t('gestlab.general.labels.vap_proposals.show.template.created_by') }} {{ proposal.template?.user?.name }}
-              </p>
-            </div>
-            <div class="mt-4 text-sm text-gray-600 line-clamp-3">
-              {{ stripHtml(proposal.template.content) }}
-            </div>
-            <button 
+          <div class="mt-5 rounded-[22px] border border-[#ded2bb] bg-[#fbfaf6] p-4 dark:border-white/10 dark:bg-white/5">
+            <h4 class="text-sm font-black text-[#10221d] dark:text-white">{{ proposal.template.name }}</h4>
+            <p class="mt-1 text-xs font-semibold text-[#78847c] dark:text-slate-400">
+              {{ $t('gestlab.general.labels.vap_proposals.show.template.created_by') }} {{ proposal.template?.user?.name || '—' }}
+            </p>
+            <p class="mt-4 line-clamp-4 text-sm font-medium leading-6 text-[#59665f] dark:text-slate-300">{{ resolvedTemplateSummary }}</p>
+            <button
+              type="button"
               @click="showTemplatePreview = true"
-              class="mt-2 text-xs text-blue-900 hover:text-blue-800 font-medium"
+              class="mt-4 text-sm font-black text-[#143d37] underline decoration-[#c79a43]/60 underline-offset-4 hover:text-[#0f302b] dark:text-emerald-100"
             >
               {{ $t('gestlab.general.labels.vap_proposals.show.view_full_template') }}
             </button>
           </div>
+        </section>
+      </aside>
+    </div>
+
+    <ConfirmationModal :show="showSendModal" @close="showSendModal = false" @confirm="confirmSend">
+      <template #title>
+        {{ $t('gestlab.general.labels.vap_proposals.show.send_modal.title') }}
+      </template>
+      <template #content>
+        <div class="space-y-4 text-sm font-medium text-[#59665f] dark:text-slate-300">
+          <p>{{ $t('gestlab.general.labels.vap_proposals.show.send_modal.message') }}</p>
+          <label class="flex items-center gap-3 rounded-[18px] border border-[#ded2bb] bg-[#fbfaf6] p-3 dark:border-white/10 dark:bg-white/5">
+            <input v-model="sendOptions.generatePdf" type="checkbox" class="h-4 w-4 rounded border-[#ded2bb] text-[#143d37] focus:ring-[#c79a43]" />
+            <span>{{ $t('gestlab.general.labels.vap_proposals.show.send_modal.generate_pdf') }}</span>
+          </label>
+          <label class="flex items-center gap-3 rounded-[18px] border border-[#ded2bb] bg-[#fbfaf6] p-3 dark:border-white/10 dark:bg-white/5">
+            <input v-model="sendOptions.sendEmail" type="checkbox" class="h-4 w-4 rounded border-[#ded2bb] text-[#143d37] focus:ring-[#c79a43]" />
+            <span>{{ $t('gestlab.general.labels.vap_proposals.show.send_modal.send_email') }}</span>
+          </label>
+        </div>
+      </template>
+    </ConfirmationModal>
+
+    <Modal :show="showTemplatePreview" @close="showTemplatePreview = false" max-width="4xl">
+      <div class="bg-[#fbfaf6] p-6 text-[#18241f] dark:bg-slate-950 dark:text-slate-100">
+        <div class="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.24em] text-[#c79a43]">Pré-visualização resolvida</p>
+            <h2 class="mt-2 text-xl font-black tracking-[-0.02em] text-[#10221d] dark:text-white">{{ proposal.template?.name }}</h2>
+            <p class="mt-2 text-sm font-semibold text-[#78847c] dark:text-slate-400">
+              Conteúdo com variáveis, dados bancários, escopo e assinaturas aplicados a esta proposta.
+            </p>
+          </div>
+          <button type="button" @click="showTemplatePreview = false" class="rounded-full p-2 text-[#78847c] transition hover:bg-white hover:text-[#143d37] dark:hover:bg-white/10 dark:hover:text-white">
+            <XMarkIcon class="h-6 w-6" />
+          </button>
+        </div>
+        <div class="max-h-[65vh] overflow-y-auto rounded-[26px] border border-[#ded2bb] bg-white p-6 text-[#33413a] dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+          <div class="prose max-w-none dark:prose-invert" v-html="resolvedTemplateContent"></div>
         </div>
       </div>
-    </div>
+    </Modal>
   </div>
-
-  <!-- SEND CONFIRMATION MODAL -->
-  <ConfirmationModal
-    :show="showSendModal"
-    @close="showSendModal = false"
-    @confirm="confirmSend"
-  >
-    <template #title>
-      {{ $t('gestlab.general.labels.vap_proposals.show.send_modal.title') }}
-    </template>
-    <template #content>
-      <p class="text-sm text-gray-600">
-        {{ $t('gestlab.general.labels.vap_proposals.show.send_modal.message') }}
-      </p>
-      <div class="mt-4 space-y-3">
-        <label class="flex items-center">
-          <input
-            type="checkbox"
-            v-model="sendOptions.generatePdf"
-            class="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
-          />
-          <span class="ml-2 text-sm text-gray-700">
-            {{ $t('gestlab.general.labels.vap_proposals.show.send_modal.generate_pdf') }}
-          </span>
-        </label>
-        <label class="flex items-center">
-          <input
-            type="checkbox"
-            v-model="sendOptions.sendEmail"
-            class="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
-          />
-          <span class="ml-2 text-sm text-gray-700">
-            {{ $t('gestlab.general.labels.vap_proposals.show.send_modal.send_email') }}
-          </span>
-        </label>
-      </div>
-    </template>
-  </ConfirmationModal>
-
-  <!-- TEMPLATE PREVIEW MODAL -->
-  <Modal :show="showTemplatePreview" @close="showTemplatePreview = false" max-width="4xl">
-    <div class="p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-lg font-semibold text-gray-900">
-          {{ proposal.template?.name }}
-        </h2>
-        <button @click="showTemplatePreview = false" class="text-gray-400 hover:text-gray-600">
-          <XMarkIcon class="h-6 w-6" />
-        </button>
-      </div>
-      <div class="prose max-w-none border border-gray-200 rounded-lg p-6 max-h-[60vh] overflow-y-auto">
-        <div v-html="proposal.template?.content"></div>
-      </div>
-    </div>
-  </Modal>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, defineComponent, h, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import { trans } from 'laravel-vue-i18n'
 import {
-  DocumentTextIcon, ArrowDownTrayIcon, PaperAirplaneIcon,
-  PencilSquareIcon, ListBulletIcon, ShieldCheckIcon,
-  ClockIcon, UserIcon, DocumentArrowDownIcon,
-  LinkIcon, DocumentDuplicateIcon, Cog6ToothIcon,
-  CalendarIcon, CheckCircleIcon, XMarkIcon,
-  ExclamationTriangleIcon, ArrowRightIcon,
-  CurrencyDollarIcon
+  ArrowDownTrayIcon,
+  ArrowRightIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  Cog6ToothIcon,
+  CurrencyDollarIcon,
+  DocumentArrowDownIcon,
+  DocumentDuplicateIcon,
+  DocumentTextIcon,
+  ExclamationTriangleIcon,
+  LinkIcon,
+  ListBulletIcon,
+  PaperAirplaneIcon,
+  PencilSquareIcon,
+  ShieldCheckIcon,
+  UserIcon,
+  XMarkIcon,
 } from '@heroicons/vue/24/outline'
 import ConfirmationModal from '@/Components/dialog-modal.vue'
 import Modal from '@/Components/modal.vue'
-import { trans } from "laravel-vue-i18n";
+import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 
 const props = defineProps({
-  proposal: Object,
-  revisions: Array,
-  canSend: Boolean,
-  canRevise: Boolean,
+  proposal: {
+    type: Object,
+    required: true,
+  },
+  revisions: {
+    type: Array,
+    default: () => [],
+  },
+  canSend: {
+    type: Boolean,
+    default: false,
+  },
+  canRevise: {
+    type: Boolean,
+    default: false,
+  },
+  parsedTemplateContent: {
+    type: String,
+    default: '',
+  },
 })
 
 const showSendModal = ref(false)
@@ -728,46 +498,206 @@ const sendOptions = ref({
 })
 const copied = ref(false)
 
-const publicLink = computed(() => {
-  return route('vap-proposals.public.show', props.proposal.unique_hash)
+const proposalItems = computed(() => props.proposal.items || [])
+const resolvedTemplateContent = computed(() => props.parsedTemplateContent || props.proposal.template?.content || '')
+const resolvedTemplateSummary = computed(() => stripHtml(resolvedTemplateContent.value) || 'Modelo sem conteúdo configurado.')
+
+const publicLink = computed(() => route('vap-proposals.public.show', props.proposal.unique_hash))
+
+const statusBadgeClasses = computed(() => {
+  const classes = {
+    PENDING: 'bg-amber-50 text-amber-800 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-200 dark:ring-amber-300/20',
+    SENT: 'bg-[#f7f1e6] text-[#143d37] ring-1 ring-[#ded2bb] dark:bg-white/10 dark:text-emerald-100 dark:ring-white/10',
+    VIEWED: 'bg-cyan-50 text-cyan-800 ring-1 ring-cyan-200 dark:bg-cyan-400/10 dark:text-cyan-200 dark:ring-cyan-300/20',
+    ACCEPTED: 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-400/10 dark:text-emerald-200 dark:ring-emerald-300/20',
+    REJECTED: 'bg-red-50 text-red-800 ring-1 ring-red-200 dark:bg-red-400/10 dark:text-red-200 dark:ring-red-300/20',
+    REVISED: 'bg-orange-50 text-orange-800 ring-1 ring-orange-200 dark:bg-orange-400/10 dark:text-orange-200 dark:ring-orange-300/20',
+    EXPIRED: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-white/10',
+  }
+
+  return classes[props.proposal.status] || classes.PENDING
+})
+
+const DefinitionRow = defineComponent({
+  name: 'ProposalDefinitionRow',
+  props: {
+    label: {
+      type: String,
+      required: true,
+    },
+    value: {
+      type: [String, Number, Boolean],
+      default: '—',
+    },
+    strong: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  setup(rowProps) {
+    return () => h('div', { class: 'flex items-start justify-between gap-4 py-1.5' }, [
+      h('span', { class: 'text-sm font-semibold text-[#78847c] dark:text-slate-400' }, rowProps.label),
+      h('span', {
+        class: [
+          'text-right text-sm text-[#33413a] dark:text-slate-200',
+          rowProps.strong ? 'font-black' : 'font-semibold',
+        ],
+      }, rowProps.value || '—'),
+    ])
+  },
+})
+
+const InfoPanel = defineComponent({
+  name: 'ProposalInfoPanel',
+  props: {
+    title: {
+      type: String,
+      required: true,
+    },
+    icon: {
+      type: String,
+      default: 'client',
+    },
+  },
+  setup(panelProps, { slots }) {
+    const Icon = panelProps.icon === 'lab' ? ShieldCheckIcon : UserIcon
+
+    return () => h('div', { class: 'rounded-[26px] border border-[#ded2bb] bg-[#fbfaf6] p-5 dark:border-white/10 dark:bg-white/5' }, [
+      h('div', { class: 'mb-4 flex items-center gap-3' }, [
+        h('span', { class: 'flex h-10 w-10 items-center justify-center rounded-[16px] bg-[#143d37] text-white shadow-[0_16px_34px_-22px_rgba(20,61,55,0.75)]' }, [
+          h(Icon, { class: 'h-5 w-5 text-[#e7c16b]' }),
+        ]),
+        h('h3', { class: 'text-sm font-black uppercase tracking-[0.18em] text-[#10221d] dark:text-white' }, panelProps.title),
+      ]),
+      h('div', { class: 'space-y-1' }, slots.default?.()),
+    ])
+  },
+})
+
+const TimelineItem = defineComponent({
+  name: 'ProposalTimelineItem',
+  props: {
+    title: {
+      type: String,
+      required: true,
+    },
+    value: {
+      type: String,
+      required: true,
+    },
+    tone: {
+      type: String,
+      default: 'neutral',
+    },
+  },
+  setup(itemProps) {
+    const toneClasses = {
+      green: 'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-400/10 dark:text-emerald-200 dark:ring-emerald-300/20',
+      gold: 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-200 dark:ring-amber-300/20',
+      red: 'bg-red-50 text-red-800 ring-red-200 dark:bg-red-400/10 dark:text-red-200 dark:ring-red-300/20',
+      neutral: 'bg-[#f7f1e6] text-[#143d37] ring-[#ded2bb] dark:bg-white/10 dark:text-emerald-100 dark:ring-white/10',
+    }
+
+    return () => h('div', { class: ['rounded-[24px] p-4 ring-1', toneClasses[itemProps.tone] || toneClasses.neutral] }, [
+      h('div', { class: 'mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/70 dark:bg-white/10' }, [
+        h(itemProps.tone === 'green' ? CalendarIcon : ClockIcon, { class: 'h-5 w-5' }),
+      ]),
+      h('p', { class: 'text-xs font-black uppercase tracking-[0.18em] opacity-75' }, itemProps.title),
+      h('p', { class: 'mt-2 text-sm font-black' }, itemProps.value),
+    ])
+  },
+})
+
+const ComplianceCheck = defineComponent({
+  name: 'ProposalComplianceCheck',
+  props: {
+    checked: {
+      type: Boolean,
+      default: false,
+    },
+    label: {
+      type: String,
+      required: true,
+    },
+  },
+  setup(checkProps) {
+    return () => h('div', {
+      class: [
+        'flex items-center gap-3 rounded-[22px] border p-4',
+        checkProps.checked
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-300/20 dark:bg-emerald-400/10 dark:text-emerald-100'
+          : 'border-[#ded2bb] bg-[#fbfaf6] text-[#59665f] dark:border-white/10 dark:bg-white/5 dark:text-slate-300',
+      ],
+    }, [
+      h('span', {
+        class: [
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
+          checkProps.checked ? 'bg-emerald-600 text-white' : 'bg-[#f0e7d6] text-[#78847c] dark:bg-white/10 dark:text-slate-400',
+        ],
+      }, [
+        h(CheckCircleIcon, { class: 'h-5 w-5' }),
+      ]),
+      h('span', { class: 'text-sm font-black leading-5' }, checkProps.label),
+    ])
+  },
 })
 
 const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('en-US', {
+  if (!date) {
+    return '—'
+  }
+
+  return new Intl.DateTimeFormat('pt-AO', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
-  })
+    day: 'numeric',
+  }).format(new Date(date))
 }
 
 const formatDateTime = (date) => {
-  return new Date(date).toLocaleString('en-US', {
+  if (!date) {
+    return '—'
+  }
+
+  return new Intl.DateTimeFormat('pt-AO', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
-  })
+    minute: '2-digit',
+  }).format(new Date(date))
 }
 
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('pt-BR', {
+  return new Intl.NumberFormat('pt-AO', {
     style: 'currency',
-    currency: 'BRL'
-  }).format(amount)
+    currency: 'AOA',
+  }).format(Number(amount || 0))
 }
 
 const stripHtml = (html) => {
-  if (!html) return ''
-  return html.replace(/<[^>]*>/g, '').substring(0, 200) + '...'
+  if (!html) {
+    return ''
+  }
+
+  const text = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+
+  return text.length > 220 ? `${text.substring(0, 220)}...` : text
 }
 
 const getItemableTypeLabel = (itemableType) => {
+  if (!itemableType) {
+    return '—'
+  }
+
   if (itemableType.includes('Matrix')) {
     return trans('gestlab.general.labels.vap_proposals.show.matrix')
-  } else if (itemableType.includes('Parameter')) {
+  }
+
+  if (itemableType.includes('Parameter')) {
     return trans('gestlab.general.labels.vap_proposals.show.parameter')
   }
+
   return itemableType.split('\\').pop()
 }
 
@@ -777,11 +707,11 @@ const sendProposal = () => {
 
 const confirmSend = () => {
   router.post(route('vap-proposals.send', props.proposal.id), {
-    options: sendOptions.value
+    options: sendOptions.value,
   }, {
     onSuccess: () => {
       showSendModal.value = false
-    }
+    },
   })
 }
 
@@ -796,8 +726,8 @@ const copyToClipboard = async () => {
     setTimeout(() => {
       copied.value = false
     }, 2000)
-  } catch (err) {
-    console.error('Failed to copy:', err)
+  } catch {
+    copied.value = false
   }
 }
 </script>

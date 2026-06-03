@@ -1,31 +1,31 @@
 <template>
   <div class="space-y-6">
     <!-- Disk Selector -->
-    <div v-if="props?.disks?.length > 1" class="bg-gradient-to-r from-blue-50 to-white rounded-lg border border-gray-200 p-4">
-      <div class="flex items-center justify-between">
+    <div v-if="props?.disks?.length > 1" class="rounded-3xl border border-primary-100 bg-gradient-to-r from-primary-50 via-white to-white p-4 shadow-sm dark:border-primary-500/20 dark:from-primary-500/10 dark:via-slate-900 dark:to-slate-950">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm">
-            <CloudArrowDownIcon class="h-5 w-5 text-blue-900" />
+          <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-primary-100 dark:bg-slate-900 dark:ring-primary-500/20">
+            <CloudArrowDownIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
           </div>
           <div>
-            <h3 class="text-sm font-semibold text-gray-900">
+            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
               {{ $t('gestlab.general.labels.backups.storage_disk') }}
             </h3>
-            <p class="text-xs text-gray-500">
+            <p class="text-xs text-slate-500 dark:text-slate-400">
               {{ $t('gestlab.general.labels.backups.select_storage_location') }}
             </p>
           </div>
         </div>
         
         <select
-          v-model="props.activeDisk"
-          class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900/20"
+          v-model="selectedDisk"
+          class="rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
         >
           <option 
             v-for="disk in props.disks" 
             :key="disk" 
             :value="disk"
-            class="text-gray-700"
+            class="text-slate-700 dark:text-slate-100"
           >
             {{ disk }}
           </option>
@@ -34,14 +34,14 @@
     </div>
 
     <!-- Backups Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950/80">
       <!-- Table Header -->
-      <div class="border-b border-gray-200 px-6 py-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <CloudArrowDownIcon class="h-5 w-5 text-blue-900" />
+      <div class="border-b border-slate-200 bg-slate-50/80 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/70">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h3 class="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <CloudArrowDownIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
             {{ $t('gestlab.general.labels.backups.stored_backups') }}
-            <span class="text-sm font-normal text-gray-500 ml-2">
+            <span class="ml-2 text-sm font-normal text-slate-500 dark:text-slate-400">
               ({{ props.backups?.length || 0 }} {{ $t('gestlab.general.labels.backups.items') }})
             </span>
           </h3>
@@ -50,20 +50,20 @@
 
       <!-- Table -->
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+          <thead class="bg-slate-50 dark:bg-slate-900">
             <tr>
-              <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+              <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 <div class="flex items-center gap-1">
                   {{ $t('gestlab.general.labels.backups.status.path') }}
                 </div>
               </th>
-              <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+              <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 <div class="flex items-center gap-1">
                   {{ $t('gestlab.general.labels.backups.status.created_at') }}
                 </div>
               </th>
-              <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+              <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                 <div class="flex items-center gap-1">
                   {{ $t('gestlab.general.labels.backups.status.size') }}
                 </div>
@@ -73,31 +73,30 @@
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 bg-white">
+          <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
             <!-- Backup Rows -->
             <backup-row
-              v-for="(backup, recordIdx) in props.backups"
+              v-for="backup in props.backups"
               v-bind="backup"
               :disk="props.activeDisk"
               :deletable="props.backups?.length > 1"
               :deleting="!deleteModalOpen && deletingBackup && backup?.path === deletingBackup?.path"
               :key="backup.id"
               @delete="openDeleteModal(backup)"
-              class="hover:bg-gray-50 transition-colors duration-200"
             />
 
             <!-- Empty State -->
             <tr v-if="props.backups?.length === 0">
               <td colspan="4" class="px-6 py-12 text-center">
                 <div class="flex flex-col items-center gap-3">
-                  <div class="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-                    <CloudArrowDownIcon class="h-6 w-6 text-gray-400" />
+                  <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-900">
+                    <CloudArrowDownIcon class="h-6 w-6 text-slate-400" />
                   </div>
                   <div>
-                    <h3 class="text-sm font-semibold text-gray-900">
+                    <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
                       {{ $t('gestlab.general.labels.backups.no_backups_found') }}
                     </h3>
-                    <p class="mt-1 text-sm text-gray-500">
+                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
                       {{ $t('gestlab.general.labels.backups.create_backup_to_get_started') }}
                     </p>
                   </div>
@@ -109,16 +108,16 @@
       </div>
 
       <!-- Table Footer -->
-      <div v-if="props.backups?.length > 0" class="border-t border-gray-200 px-6 py-4">
+      <div v-if="props.backups?.length > 0" class="border-t border-slate-200 bg-slate-50/70 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/50">
         <div class="flex items-center justify-between">
-          <div class="text-sm text-gray-500">
+          <div class="text-sm text-slate-500 dark:text-slate-400">
             {{ $t('gestlab.general.labels.backups.showing') }}
-            <span class="font-semibold text-gray-700">{{ props.backups?.length }}</span>
+            <span class="font-semibold text-slate-700 dark:text-slate-200">{{ props.backups?.length }}</span>
             {{ $t('gestlab.general.labels.backups.backups') }}
           </div>
-          <div class="text-xs text-gray-500">
+          <div class="text-xs text-slate-500 dark:text-slate-400">
             {{ $t('gestlab.general.labels.backups.disk') }}:
-            <span class="font-semibold text-blue-900">{{ props.activeDisk }}</span>
+            <span class="font-semibold text-primary-700 dark:text-primary-300">{{ props.activeDisk }}</span>
           </div>
         </div>
       </div>
@@ -135,20 +134,20 @@
       :cancel="$t('gestlab.general.buttons.no')"
     >
       <template v-if="deletingBackup" #icon>
-        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/10">
           <TrashIcon class="h-6 w-6 text-red-600" />
         </div>
       </template>
       
       <template v-if="deletingBackup" #content>
-        <div class="mt-3 bg-red-50 rounded-lg p-4">
+        <div class="mt-3 rounded-2xl bg-red-50 p-4 dark:bg-red-500/10">
           <div class="flex items-start gap-3">
             <CloudArrowDownIcon class="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div class="text-sm">
-              <p class="font-medium text-red-900">
+              <p class="font-medium text-red-900 dark:text-red-100">
                 {{ $t('gestlab.general.labels.backups.backup_to_delete') }}:
               </p>
-              <p class="mt-1 text-red-700 font-mono text-sm bg-red-100 px-3 py-1.5 rounded">
+              <p class="mt-1 rounded bg-red-100 px-3 py-1.5 font-mono text-sm text-red-700 dark:bg-red-500/10 dark:text-red-200">
                 {{ deletingBackup.path }}
               </p>
             </div>
@@ -181,9 +180,14 @@ const emit = defineEmits([
 const deletingBackup = ref(null);
 const deleteModalOpen = ref(false);
 
-const getDiscs = () => {
-  return props.disks?.map(val => ({ value: val, label: val }));
-}
+const selectedDisk = computed({
+  get() {
+    return props.activeDisk
+  },
+  set(value) {
+    emit('update:activeDisk', value)
+  },
+})
 
 const openDeleteModal = (backup) => {
   emit('setModalVisibility', true);
@@ -230,16 +234,16 @@ tbody tr {
 }
 
 .overflow-x-auto::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: rgb(241 245 249 / 0.7);
   border-radius: 4px;
 }
 
 .overflow-x-auto::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: rgb(148 163 184 / 0.8);
   border-radius: 4px;
 }
 
 .overflow-x-auto::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: rgb(100 116 139 / 0.95);
 }
 </style>

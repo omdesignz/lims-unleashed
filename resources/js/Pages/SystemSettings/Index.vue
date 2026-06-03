@@ -1,10 +1,10 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div class="bg-gradient-to-r from-slate-950 via-blue-950 to-cyan-900 px-6 py-8 text-white sm:px-8">
+      <div class="bg-gradient-to-r from-primary-950 via-primary-900 to-primary-700 px-6 py-8 text-white sm:px-8">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div class="max-w-3xl space-y-3">
-            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-200">Configuração operacional</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-primary-100">Configuração operacional</p>
             <h1 class="text-3xl font-semibold tracking-tight">{{ form.app_name || settings.app_name || 'Configurações gerais' }}</h1>
             <p class="text-sm leading-7 text-slate-200 sm:text-base">
               Centralize identidade institucional, assinatura documental e dados do laboratório para manter os fluxos coerentes em certificados,
@@ -15,7 +15,7 @@
           <div class="flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              class="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:border-cyan-300 hover:bg-white/10"
+              class="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:border-primary-300 hover:bg-white/10"
               @click="toggleEdit"
             >
               <PencilSquareIcon class="h-4 w-4" />
@@ -24,7 +24,7 @@
             <button
               v-if="editSettings"
               type="button"
-              class="inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+              class="inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-primary-100 disabled:cursor-not-allowed disabled:opacity-60"
               :disabled="form.processing"
               @click="submit"
             >
@@ -88,7 +88,7 @@
         <section v-if="selectedTab === '#general'" class="space-y-8">
           <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div class="flex items-center gap-3">
-              <Cog6ToothIcon class="h-5 w-5 text-blue-900" />
+              <Cog6ToothIcon class="h-5 w-5 text-primary-700" />
               <div>
                 <h2 class="text-xl font-semibold text-slate-900">Identidade da plataforma</h2>
                 <p class="mt-1 text-sm text-slate-600">Dados usados no backoffice, documentos emitidos e comunicação institucional.</p>
@@ -102,7 +102,7 @@
                   v-if="editSettings"
                   v-model="form[field.key]"
                   :type="field.type || 'text'"
-                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"
+                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
                 />
                 <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
                   {{ settings[field.key] || '—' }}
@@ -117,7 +117,7 @@
                     v-model:pure-color="form.app_primary_color"
                     format="hex"
                     shape="circle"
-                    lang="En"
+                    lang="Pt"
                     picker-type="chrome"
                     disable-history="true"
                     disable-alpha="true"
@@ -135,7 +135,7 @@
 
           <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div class="flex items-center gap-3">
-              <BuildingOfficeIcon class="h-5 w-5 text-blue-900" />
+              <BuildingOfficeIcon class="h-5 w-5 text-primary-700" />
               <div>
                 <h2 class="text-xl font-semibold text-slate-900">Informação institucional do laboratório</h2>
                 <p class="mt-1 text-sm text-slate-600">Dados usados em portal, certificados, propostas e identificação externa.</p>
@@ -149,7 +149,7 @@
                   v-if="editSettings"
                   v-model="form[field.key]"
                   :type="field.type || 'text'"
-                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"
+                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
                 />
                 <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
                   {{ settings[field.key] || '—' }}
@@ -161,7 +161,41 @@
 
           <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div class="flex items-center gap-3">
-              <PhotoIcon class="h-5 w-5 text-blue-900" />
+              <CreditCardIcon class="h-5 w-5 text-primary-700" />
+              <div>
+                <h2 class="text-xl font-semibold text-slate-900">Dados bancários e palavras-chave documentais</h2>
+                <p class="mt-1 text-sm text-slate-600">Informação usada nos documentos comerciais, propostas e rodapés de controlo documental.</p>
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-5 md:grid-cols-2">
+              <div v-for="field in bankingFields" :key="field.key" class="space-y-2" :class="field.multiline ? 'md:col-span-2' : ''">
+                <label class="block text-sm font-medium text-slate-700">{{ field.label }}</label>
+                <textarea
+                  v-if="editSettings && field.multiline"
+                  v-model="form[field.key]"
+                  rows="3"
+                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
+                  :placeholder="field.placeholder"
+                ></textarea>
+                <input
+                  v-else-if="editSettings"
+                  v-model="form[field.key]"
+                  type="text"
+                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
+                  :placeholder="field.placeholder"
+                />
+                <div v-else class="whitespace-pre-line rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
+                  {{ settings[field.key] || '—' }}
+                </div>
+                <p v-if="form.errors[field.key]" class="text-xs text-red-600">{{ form.errors[field.key] }}</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <div class="flex items-center gap-3">
+              <PhotoIcon class="h-5 w-5 text-primary-700" />
               <div>
                 <h2 class="text-xl font-semibold text-slate-900">Ativos da marca e experiência de entrada</h2>
                 <p class="mt-1 text-sm text-slate-600">Logo, headline e mensagem de entrada usados na landing e no ecrã de login.</p>
@@ -176,7 +210,7 @@
                     v-if="editSettings"
                     v-model="form.app_logo_url"
                     type="text"
-                    class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"
+                    class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
                     placeholder="https://.../logo.svg"
                   />
                   <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
@@ -191,7 +225,7 @@
                     v-if="editSettings"
                     v-model="form.app_login_headline"
                     type="text"
-                    class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"
+                    class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
                   />
                   <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
                     {{ settings.app_login_headline || '—' }}
@@ -205,7 +239,7 @@
                     v-if="editSettings"
                     v-model="form.app_login_subheadline"
                     rows="3"
-                    class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"
+                    class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
                   ></textarea>
                   <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
                     {{ settings.app_login_subheadline || '—' }}
@@ -247,7 +281,7 @@
 
           <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div class="flex items-center gap-3">
-              <LanguageIcon class="h-5 w-5 text-blue-900" />
+              <LanguageIcon class="h-5 w-5 text-primary-700" />
               <div>
                 <h2 class="text-xl font-semibold text-slate-900">Idioma e apresentação</h2>
                 <p class="mt-1 text-sm text-slate-600">O idioma ativo do utilizador continua disponível no cabeçalho do sistema.</p>
@@ -268,7 +302,7 @@
 
           <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div class="flex items-center gap-3">
-              <BuildingOfficeIcon class="h-5 w-5 text-blue-900" />
+              <BuildingOfficeIcon class="h-5 w-5 text-primary-700" />
               <div>
                 <h2 class="text-xl font-semibold text-slate-900">White label e modo operacional</h2>
                 <p class="mt-1 text-sm text-slate-600">Defina a paleta institucional, o preset visual e se a operação é apenas para clientes, interna ou híbrida.</p>
@@ -279,7 +313,7 @@
               <div class="space-y-2">
                 <label class="block text-sm font-medium text-slate-700">Cor secundária</label>
                 <div v-if="editSettings" class="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <ColorPicker v-model:pure-color="form.app_secondary_color" format="hex" shape="circle" lang="En" picker-type="chrome" disable-history="true" disable-alpha="true" />
+                  <ColorPicker v-model:pure-color="form.app_secondary_color" format="hex" shape="circle" lang="Pt" picker-type="chrome" disable-history="true" disable-alpha="true" />
                   <span class="text-sm text-slate-700">{{ form.app_secondary_color || '#0f172a' }}</span>
                 </div>
                 <div v-else class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
@@ -292,7 +326,7 @@
               <div class="space-y-2">
                 <label class="block text-sm font-medium text-slate-700">Cor de destaque</label>
                 <div v-if="editSettings" class="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <ColorPicker v-model:pure-color="form.app_accent_color" format="hex" shape="circle" lang="En" picker-type="chrome" disable-history="true" disable-alpha="true" />
+                  <ColorPicker v-model:pure-color="form.app_accent_color" format="hex" shape="circle" lang="Pt" picker-type="chrome" disable-history="true" disable-alpha="true" />
                   <span class="text-sm text-slate-700">{{ form.app_accent_color || '#14b8a6' }}</span>
                 </div>
                 <div v-else class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
@@ -307,7 +341,7 @@
                 <select
                   v-if="editSettings"
                   v-model="form.app_theme_preset"
-                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"
+                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
                 >
                   <option v-for="preset in themePresets" :key="preset.value" :value="preset.value">{{ preset.label }}</option>
                 </select>
@@ -322,7 +356,7 @@
                 <select
                   v-if="editSettings"
                   v-model="form.app_operation_mode"
-                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"
+                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
                 >
                   <option v-for="mode in operationModes" :key="mode.value" :value="mode.value">{{ mode.label }}</option>
                 </select>
@@ -355,7 +389,7 @@
         <section v-else-if="selectedTab === '#messaging'" class="space-y-8">
           <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div class="flex items-center gap-3">
-              <EnvelopeIcon class="h-5 w-5 text-blue-900" />
+              <EnvelopeIcon class="h-5 w-5 text-primary-700" />
               <div>
                 <h2 class="text-xl font-semibold text-slate-900">Emails e notificações geridos</h2>
                 <p class="mt-1 text-sm text-slate-600">Defina a voz base da plataforma para o shell dos emails e para os defaults usados em notificações.</p>
@@ -369,14 +403,14 @@
                   <div class="mt-4 grid gap-5">
                     <div class="space-y-2">
                       <label class="block text-sm font-medium text-slate-700">Saudação principal</label>
-                      <input v-if="editSettings" v-model="form.app_mail_greeting" type="text" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20" />
+                      <input v-if="editSettings" v-model="form.app_mail_greeting" type="text" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20" />
                       <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">{{ settings.app_mail_greeting || '—' }}</div>
                       <p v-if="form.errors.app_mail_greeting" class="text-xs text-red-600">{{ form.errors.app_mail_greeting }}</p>
                     </div>
 
                     <div class="space-y-2">
                       <label class="block text-sm font-medium text-slate-700">Rodapé contextual</label>
-                      <textarea v-if="editSettings" v-model="form.app_mail_footer" rows="3" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"></textarea>
+                      <textarea v-if="editSettings" v-model="form.app_mail_footer" rows="3" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"></textarea>
                       <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">{{ settings.app_mail_footer || '—' }}</div>
                       <p v-if="form.errors.app_mail_footer" class="text-xs text-red-600">{{ form.errors.app_mail_footer }}</p>
                     </div>
@@ -384,14 +418,14 @@
                     <div class="grid gap-5 md:grid-cols-2">
                       <div class="space-y-2">
                         <label class="block text-sm font-medium text-slate-700">Fecho do email</label>
-                        <textarea v-if="editSettings" v-model="form.app_mail_salutation" rows="3" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"></textarea>
+                        <textarea v-if="editSettings" v-model="form.app_mail_salutation" rows="3" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"></textarea>
                         <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">{{ settings.app_mail_salutation || '—' }}</div>
                         <p v-if="form.errors.app_mail_salutation" class="text-xs text-red-600">{{ form.errors.app_mail_salutation }}</p>
                       </div>
 
                       <div class="space-y-2">
                         <label class="block text-sm font-medium text-slate-700">Nome da assinatura</label>
-                        <input v-if="editSettings" v-model="form.app_mail_signature_name" type="text" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20" />
+                        <input v-if="editSettings" v-model="form.app_mail_signature_name" type="text" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20" />
                         <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">{{ settings.app_mail_signature_name || '—' }}</div>
                         <p v-if="form.errors.app_mail_signature_name" class="text-xs text-red-600">{{ form.errors.app_mail_signature_name }}</p>
                       </div>
@@ -399,7 +433,7 @@
 
                     <div class="space-y-2">
                       <label class="block text-sm font-medium text-slate-700">Texto auxiliar do botão/link</label>
-                      <textarea v-if="editSettings" v-model="form.app_mail_subcopy" rows="3" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"></textarea>
+                      <textarea v-if="editSettings" v-model="form.app_mail_subcopy" rows="3" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"></textarea>
                       <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">{{ settings.app_mail_subcopy || '—' }}</div>
                       <p v-if="form.errors.app_mail_subcopy" class="text-xs text-red-600">{{ form.errors.app_mail_subcopy }}</p>
                     </div>
@@ -411,7 +445,7 @@
                   <div class="mt-4 grid gap-5">
                     <div class="space-y-2">
                       <label class="block text-sm font-medium text-slate-700">Nome do remetente</label>
-                      <input v-if="editSettings" v-model="form.app_notification_sender_alias" type="text" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20" />
+                      <input v-if="editSettings" v-model="form.app_notification_sender_alias" type="text" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20" />
                       <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">{{ settings.app_notification_sender_alias || '—' }}</div>
                       <p v-if="form.errors.app_notification_sender_alias" class="text-xs text-red-600">{{ form.errors.app_notification_sender_alias }}</p>
                     </div>
@@ -419,14 +453,14 @@
                     <div class="grid gap-5 md:grid-cols-2">
                       <div class="space-y-2">
                         <label class="block text-sm font-medium text-slate-700">Título padrão</label>
-                        <input v-if="editSettings" v-model="form.app_notification_default_title" type="text" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20" />
+                        <input v-if="editSettings" v-model="form.app_notification_default_title" type="text" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20" />
                         <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">{{ settings.app_notification_default_title || '—' }}</div>
                         <p v-if="form.errors.app_notification_default_title" class="text-xs text-red-600">{{ form.errors.app_notification_default_title }}</p>
                       </div>
 
                       <div class="space-y-2">
                         <label class="block text-sm font-medium text-slate-700">Mensagem padrão</label>
-                        <textarea v-if="editSettings" v-model="form.app_notification_default_message" rows="3" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"></textarea>
+                        <textarea v-if="editSettings" v-model="form.app_notification_default_message" rows="3" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"></textarea>
                         <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">{{ settings.app_notification_default_message || '—' }}</div>
                         <p v-if="form.errors.app_notification_default_message" class="text-xs text-red-600">{{ form.errors.app_notification_default_message }}</p>
                       </div>
@@ -434,14 +468,14 @@
 
                     <div class="space-y-2">
                       <label class="block text-sm font-medium text-slate-700">Introdução do email de notificação</label>
-                      <textarea v-if="editSettings" v-model="form.app_notification_email_intro" rows="3" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"></textarea>
+                      <textarea v-if="editSettings" v-model="form.app_notification_email_intro" rows="3" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"></textarea>
                       <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">{{ settings.app_notification_email_intro || '—' }}</div>
                       <p v-if="form.errors.app_notification_email_intro" class="text-xs text-red-600">{{ form.errors.app_notification_email_intro }}</p>
                     </div>
 
                     <div class="space-y-2">
                       <label class="block text-sm font-medium text-slate-700">Fecho do email de notificação</label>
-                      <textarea v-if="editSettings" v-model="form.app_notification_email_outro" rows="3" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"></textarea>
+                      <textarea v-if="editSettings" v-model="form.app_notification_email_outro" rows="3" class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"></textarea>
                       <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">{{ settings.app_notification_email_outro || '—' }}</div>
                       <p v-if="form.errors.app_notification_email_outro" class="text-xs text-red-600">{{ form.errors.app_notification_email_outro }}</p>
                     </div>
@@ -484,7 +518,7 @@
         <section v-else class="space-y-8">
           <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <div class="flex items-center gap-3">
-              <ShieldCheckIcon class="h-5 w-5 text-blue-900" />
+              <ShieldCheckIcon class="h-5 w-5 text-primary-700" />
               <div>
                 <h2 class="text-xl font-semibold text-slate-900">Assinatura e validação documental</h2>
                 <p class="mt-1 text-sm text-slate-600">Controle os elementos usados para assinar faturas, recibos, propostas e documentos oficiais.</p>
@@ -513,7 +547,7 @@
                   v-if="editSettings"
                   v-model="form.app_agt_valid_name"
                   type="text"
-                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"
+                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
                 />
                 <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
                   {{ settings.app_agt_valid_name || '—' }}
@@ -527,7 +561,7 @@
                   v-if="editSettings"
                   v-model="form.app_agt_validation_number"
                   type="text"
-                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"
+                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
                 />
                 <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
                   {{ settings.app_agt_validation_number || '—' }}
@@ -541,7 +575,7 @@
                   v-if="editSettings"
                   v-model="form.app_public_key"
                   rows="5"
-                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"
+                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
                   placeholder="Cole aqui a chave pública usada para validação."
                 ></textarea>
                 <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
@@ -556,7 +590,7 @@
                   v-if="editSettings"
                   v-model="form.app_private_key"
                   rows="7"
-                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20"
+                  class="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:ring-2 focus:ring-primary-600/20"
                   placeholder="Cole aqui a chave privada usada para assinar documentos."
                 ></textarea>
                 <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900">
@@ -574,6 +608,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { useForm, usePage } from '@inertiajs/vue3'
 import { ColorPicker } from 'vue3-colorpicker'
 import {
@@ -582,6 +617,7 @@ import {
   BellIcon,
   ChevronRightIcon,
   Cog6ToothIcon,
+  CreditCardIcon,
   EnvelopeIcon,
   LanguageIcon,
   PencilSquareIcon,
@@ -650,6 +686,26 @@ const organizationFields = [
   { key: 'app_client_lab_province', label: 'Província' },
   { key: 'app_client_lab_director', label: 'Direção técnica' },
   { key: 'app_client_lab_slogan', label: 'Slogan do laboratório' },
+]
+
+const bankingFields = [
+  { key: 'app_bank_name', label: 'Banco', placeholder: 'Banco emissor / banco de recebimento' },
+  { key: 'app_bank_account_name', label: 'Titular da conta', placeholder: 'Nome legal do titular' },
+  { key: 'app_bank_account_number', label: 'Número de conta', placeholder: 'Conta bancária local' },
+  { key: 'app_bank_iban', label: 'IBAN', placeholder: 'AO06...' },
+  { key: 'app_bank_swift', label: 'SWIFT/BIC', placeholder: 'Código SWIFT/BIC, quando aplicável' },
+  {
+    key: 'app_bank_details',
+    label: 'Observações bancárias',
+    placeholder: 'Instruções de pagamento, referência obrigatória, moeda, comprovativo, etc.',
+    multiline: true,
+  },
+  {
+    key: 'app_document_keywords',
+    label: 'Palavras-chave documentais',
+    placeholder: 'ISO 17025; rastreabilidade; controlo documental; ensaios laboratoriais',
+    multiline: true,
+  },
 ]
 
 const form = useForm({ ...props.settings })

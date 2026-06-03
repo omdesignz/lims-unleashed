@@ -1,16 +1,19 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+      <div class="relative isolate flex flex-col gap-5 overflow-hidden p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div class="absolute inset-x-0 top-0 -z-10 h-28 bg-gradient-to-r from-primary-600/15 via-rose-400/10 to-amber-400/10 dark:from-primary-500/20 dark:via-rose-500/10 dark:to-amber-500/10"></div>
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ExclamationTriangleIcon class="h-7 w-7 text-blue-900" />
+          <h1 class="flex items-center gap-3 text-2xl font-bold text-slate-950 dark:text-white">
+            <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-600/20">
+              <ExclamationTriangleIcon class="h-6 w-6" />
+            </span>
             {{ $t('gestlab.general.labels.vap_non_conformities.edit_title') }}
           </h1>
-          <p class="mt-2 text-gray-600">
+          <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
             {{ $t('gestlab.general.labels.vap_non_conformities.edit_description') }}
-            <span class="font-semibold text-blue-900">
+            <span class="font-semibold text-primary-700 dark:text-primary-300">
               #{{ nonConformity.nc_number }}
             </span>
           </p>
@@ -40,6 +43,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { useForm } from '@inertiajs/vue3'
 import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import NonConformityForm from '@/Pages/VAPNonConformities/NonConformityForm.vue'
@@ -87,6 +91,7 @@ const form = useForm({
   preventive_actions: props.nonConformity.preventive_actions || '',
   comments: props.nonConformity.comments || '',
   attachments: props.nonConformity.attachments || [],
+  media_attachments: props.nonConformity.media_attachments || [],
   actions: props.nonConformity.actions || [],
 })
 
@@ -96,10 +101,10 @@ const actions = ref(props.nonConformity.actions || [])
 // Computed
 const statusClasses = computed(() => {
   const classes = {
-    opened: 'bg-blue-50 text-blue-700 ring-blue-700/10',
-    in_progress: 'bg-yellow-50 text-yellow-700 ring-yellow-700/10',
-    resolved: 'bg-green-50 text-green-700 ring-green-700/10',
-    closed: 'bg-gray-50 text-gray-700 ring-gray-700/10'
+    opened: 'bg-blue-50 text-blue-700 ring-blue-700/10 dark:bg-blue-500/10 dark:text-blue-200 dark:ring-blue-400/20',
+    in_progress: 'bg-yellow-50 text-yellow-700 ring-yellow-700/10 dark:bg-yellow-500/10 dark:text-yellow-200 dark:ring-yellow-400/20',
+    resolved: 'bg-green-50 text-green-700 ring-green-700/10 dark:bg-green-500/10 dark:text-green-200 dark:ring-green-400/20',
+    closed: 'bg-slate-50 text-slate-700 ring-slate-700/10 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-600'
   }
   return classes[form.status] || classes.opened
 })

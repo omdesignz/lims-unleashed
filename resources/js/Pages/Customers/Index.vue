@@ -5,6 +5,7 @@ import confirmDialog from "@/Components/confirm-dialog.vue";
 import { ref, computed } from "vue";
 import { router, Link } from "@inertiajs/vue3";
 import { trans } from 'laravel-vue-i18n';
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { EyeIcon } from "@heroicons/vue/24/outline";
 
 
@@ -99,6 +100,7 @@ const showDeleteConfirmation = ref(false);
 }  
 </script>
 <template>
+<div class="space-y-6" :class="commercialDocumentThemeClasses">
 <div class="mb-6 border-b border-gray-200 dark:border-gray-700 pb-5">
     <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-gray-100">{{ $t('gestlab.general.labels.customers.page_title') }}</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500 dark:text-gray-400"></p>
@@ -117,4 +119,5 @@ const showDeleteConfirmation = ref(false);
 </records-table> <br>
 
 <confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
+</div>
 </template>

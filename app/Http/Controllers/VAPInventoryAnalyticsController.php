@@ -3,21 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Exports\InventoryReportExport;
-use App\Http\Controllers\Controller;
-use App\Models\ReagentConsumption;
-use App\Models\InventoryItem;
 use App\Models\Inventory;
-use App\Models\ItemCategory;
+use App\Models\InventoryItem;
 use App\Models\InventoryItemWarehouse;
 use App\Models\InventoryOrder;
 use App\Models\InventoryOrderDetail;
+use App\Models\ItemCategory;
+use App\Models\ReagentConsumption;
+use App\Settings\GeneralSettings;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
-use PDF;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
 use Maatwebsite\Excel\Facades\Excel;
+use Mpdf\Mpdf;
+use PDF;
 
 class VAPInventoryAnalyticsController extends Controller
 {
@@ -25,21 +26,20 @@ class VAPInventoryAnalyticsController extends Controller
     {
         $categories = ItemCategory::active()->get();
         $warehouses = InventoryItemWarehouse::with('location')->active()->get();
-        
+
         // Call the internal logic method instead of the Request-bound one
         $initialData = $this->fetchAnalyticsData([
             'dateRange' => '30d',
             'categoryId' => $request->category_id,
             'warehouseId' => $request->warehouse_id,
         ]);
-        
+
         return inertia('VAPInventory/Analytics/Index', [
             'categories' => $categories,
             'warehouses' => $warehouses,
             'initialData' => $initialData,
         ]);
     }
-    
 
     /**
      * Public API endpoint for AJAX/Inertia refreshes
@@ -48,24 +48,39 @@ class VAPInventoryAnalyticsController extends Controller
     {
         // Pass the request input as an array to the logic method
         $data = $this->fetchAnalyticsData($request->all());
-        
+
         return response()->json($data);
     }
 
+    public function getRealtimeData(Request $request): JsonResponse
+    {
+        $data = $this->fetchAnalyticsData([
+            'dateRange' => $request->input('dateRange', '30d'),
+            'startDate' => $request->input('startDate'),
+            'endDate' => $request->input('endDate'),
+            'categoryId' => $request->input('categoryId', $request->input('category_id')),
+            'warehouseId' => $request->input('warehouseId', $request->input('warehouse_id')),
+        ]);
+
+        return response()->json([
+            ...$data,
+            'refreshedAt' => now()->toIso8601String(),
+        ]);
+    }
 
     /**
      * Internal logic method that handles the actual data processing
      */
     private function fetchAnalyticsData(array $filters)
     {
-        // Wrap filters in a collection or object for easier access if preferred, 
+        // Wrap filters in a collection or object for easier access if preferred,
         // or just access the array keys.
         $dateRange = $this->getDateRange(
             $filters['dateRange'] ?? '30d',
             $filters['startDate'] ?? null,
             $filters['endDate'] ?? null
         );
-        
+
         $catId = $filters['categoryId'] ?? null;
         $whId = $filters['warehouseId'] ?? null;
 
@@ -78,24 +93,24 @@ class VAPInventoryAnalyticsController extends Controller
             'metrics' => $this->getMetrics($dateRange, $catId, $whId),
         ];
     }
-    
+
     private function getDateRange($range, $startDate = null, $endDate = null)
     {
         $end = $endDate ? Carbon::parse($endDate) : Carbon::now();
-        $start = $startDate ? Carbon::parse($startDate) : match($range) {
+        $start = $startDate ? Carbon::parse($startDate) : match ($range) {
             '7d' => $end->copy()->subDays(7),
             '30d' => $end->copy()->subDays(30),
             '90d' => $end->copy()->subDays(90),
             '1y' => $end->copy()->subYear(),
             default => $end->copy()->subDays(30),
         };
-        
+
         return [
             'start' => $start,
             'end' => $end,
         ];
     }
-    
+
     private function getConsumptionTrendData($dateRange, $categoryId = null, $warehouseId = null)
     {
         $query = ReagentConsumption::with(['item', 'warehouse'])
@@ -108,21 +123,21 @@ class VAPInventoryAnalyticsController extends Controller
             ->when($warehouseId, function ($query) use ($warehouseId) {
                 $query->where('warehouse_id', $warehouseId);
             });
-        
+
         // Group by day
         return $query->select(
             DB::raw('DATE(date) as date'),
             DB::raw('SUM(quantity_used) as quantity')
         )
-        ->groupBy(DB::raw('DATE(date)'))
-        ->orderBy('date')
-        ->get()
-        ->map(function ($item) {
-            return [
-                'date' => $item->date,
-                'quantity' => (float) $item->quantity,
-            ];
-        });
+            ->groupBy(DB::raw('DATE(date)'))
+            ->orderBy('date')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'date' => $item->date,
+                    'quantity' => (float) $item->quantity,
+                ];
+            });
     }
 
     private function getStockDistributionData($categoryId = null, $warehouseId = null)
@@ -130,7 +145,7 @@ class VAPInventoryAnalyticsController extends Controller
         return Inventory::query()
             // Join with categories to get the names for the chart labels
             ->leftJoin('item_categories', 'inventory.category_id', '=', 'item_categories.id')
-            
+
             // Filter by parameters
             ->when($categoryId, function ($query) use ($categoryId) {
                 $query->where('inventory.category_id', $categoryId);
@@ -138,13 +153,13 @@ class VAPInventoryAnalyticsController extends Controller
             ->when($warehouseId, function ($query) use ($warehouseId) {
                 $query->where('inventory.warehouse_id', $warehouseId);
             })
-            
+
             // Select only what the chart needs
             ->select(
                 'item_categories.name as category_name',
                 DB::raw('SUM(inventory.qty_available) as total_quantity')
             )
-            
+
             // Group by name and ID (ID ensures uniqueness, name is for the label)
             ->groupBy('item_categories.name', 'item_categories.id')
             ->orderByDesc('total_quantity')
@@ -156,19 +171,19 @@ class VAPInventoryAnalyticsController extends Controller
                 ];
             });
     }
-    
+
     private function getMonthlyComparisonData($dateRange, $categoryId = null)
     {
         $currentYear = $dateRange['end']->year;
         $previousYear = $currentYear - 1;
-        
+
         $query = ReagentConsumption::query()
             ->when($categoryId, function ($query) use ($categoryId) {
                 $query->whereHas('item', function ($q) use ($categoryId) {
                     $q->where('category_id', $categoryId);
                 });
             });
-        
+
         // Current year data
         $currentYearData = $query->clone()
             ->whereYear('date', $currentYear)
@@ -180,7 +195,7 @@ class VAPInventoryAnalyticsController extends Controller
             ->orderBy('month')
             ->get()
             ->keyBy('month');
-        
+
         // Previous year data
         $previousYearData = $query->clone()
             ->whereYear('date', $previousYear)
@@ -192,23 +207,23 @@ class VAPInventoryAnalyticsController extends Controller
             ->orderBy('month')
             ->get()
             ->keyBy('month');
-        
+
         $months = [];
         for ($i = 1; $i <= 12; $i++) {
             $monthName = Carbon::create()->month($i)->format('M');
             $current = $currentYearData->get($i)->total ?? 0;
             $previous = $previousYearData->get($i)->total ?? 0;
-            
+
             $months[] = [
                 'month' => $monthName,
                 'current' => (float) $current,
                 'previous' => (float) $previous,
             ];
         }
-        
+
         return $months;
     }
-    
+
     private function getTopReagentsData($dateRange, $warehouseId = null)
     {
         $query = ReagentConsumption::with(['item'])
@@ -216,25 +231,25 @@ class VAPInventoryAnalyticsController extends Controller
             ->when($warehouseId, function ($query) use ($warehouseId) {
                 $query->where('warehouse_id', $warehouseId);
             });
-        
+
         return $query->select(
             'reagent_id',
             'reagent_name',
             DB::raw('SUM(quantity_used) as consumption')
         )
-        ->groupBy('reagent_id', 'reagent_name')
-        ->orderByDesc('consumption')
-        ->limit(20)
-        ->get()
-        ->map(function ($item) {
-            return [
-                'id' => $item->reagent_id,
-                'name' => $item->reagent_name,
-                'consumption' => (float) $item->consumption,
-            ];
-        });
+            ->groupBy('reagent_id', 'reagent_name')
+            ->orderByDesc('consumption')
+            ->limit(20)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->reagent_id,
+                    'name' => $item->reagent_name,
+                    'consumption' => (float) $item->consumption,
+                ];
+            });
     }
-    
+
     private function getConsumptionHistory($dateRange, $categoryId = null, $warehouseId = null)
     {
         return ReagentConsumption::with(['item.inventory', 'warehouse'])
@@ -259,8 +274,8 @@ class VAPInventoryAnalyticsController extends Controller
                     ->whereBetween('date', [now()->subDays(7), now()])
                     ->orderBy('date')
                     ->get()
-                    ->groupBy(fn($c) => $c->date->format('Y-m-d'))
-                    ->map(fn($group) => $group->sum('quantity_used'))
+                    ->groupBy(fn ($c) => $c->date->format('Y-m-d'))
+                    ->map(fn ($group) => $group->sum('quantity_used'))
                     ->values()
                     ->toArray();
 
@@ -286,7 +301,7 @@ class VAPInventoryAnalyticsController extends Controller
                     'warehouse' => $item->warehouse,
                     'current_stock' => $stockRecord?->qty_available ?? 0,
                     'min_level' => $stockRecord?->min_stock_level ?? 1,
-                    'sparkline' => $sparklineData ?: [0,0,0,0,0,0,0],
+                    'sparkline' => $sparklineData ?: [0, 0, 0, 0, 0, 0, 0],
                     'daily_avg' => $dailyAvg,
                     'days_remaining' => $daysRemaining,
                     'predicted_out_date' => $daysRemaining !== null ? now()->addDays($daysRemaining)->format('Y-m-d') : null,
@@ -298,8 +313,8 @@ class VAPInventoryAnalyticsController extends Controller
     {
         // 1. BASE QUERY
         $inventoryBase = Inventory::query()
-            ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
-            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId));
+            ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
+            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId));
 
         // 2. REORDER ALERTS (Low Stock)
         $reorderItems = (clone $inventoryBase)
@@ -322,17 +337,17 @@ class VAPInventoryAnalyticsController extends Controller
         $criticalItems = (clone $inventoryBase)
             ->where(function ($q) {
                 $q->where('qty_available', 0)
-                ->orWhereHas('item', function ($query) {
-                    $query->whereNotNull('reagent_expiry_date')
+                    ->orWhereHas('item', function ($query) {
+                        $query->whereNotNull('reagent_expiry_date')
                             ->where('reagent_expiry_date', '<=', now());
-                });
+                    });
             })
             ->with('item')
             ->get();
 
         // 5. CONSUMPTION TRENDS
         $currentConsumption = ReagentConsumption::whereBetween('date', [$dateRange['start'], $dateRange['end']])
-            ->when($warehouseId, fn($q) => $q->where('warehouse_id', $warehouseId))
+            ->when($warehouseId, fn ($q) => $q->where('warehouse_id', $warehouseId))
             ->sum('quantity_used');
 
         $daysDiff = $dateRange['start']->diffInDays($dateRange['end']);
@@ -342,42 +357,44 @@ class VAPInventoryAnalyticsController extends Controller
         $previousConsumption = ReagentConsumption::whereBetween('date', [$prevStart, $prevEnd])
             ->sum('quantity_used');
 
-        $usageChange = $previousConsumption > 0 
-            ? (($currentConsumption - $previousConsumption) / $previousConsumption) * 100 
+        $usageChange = $previousConsumption > 0
+            ? (($currentConsumption - $previousConsumption) / $previousConsumption) * 100
             : 0;
 
         // 6. FINANCIAL VALUE
         $totalValue = (clone $inventoryBase)
             ->join('i_items', 'inventory.item_id', '=', 'i_items.id')
-            ->select(DB::raw('SUM(inventory.qty_available * i_items.unit_cost) as total_val'))
-            ->first()->total_val ?? 0;
+            ->value(DB::raw('SUM(inventory.qty_available * i_items.unit_cost)')) ?? 0;
 
         return [
-            'totalConsumption'   => (float) $currentConsumption,
+            'totalConsumption' => (float) $currentConsumption,
             'monthlyConsumption' => (float) ReagentConsumption::whereMonth('date', now()->month)->sum('quantity_used'),
-            'dailyAverage'       => $daysDiff > 0 ? round($currentConsumption / $daysDiff, 2) : $currentConsumption,
-            'usageChange'        => round($usageChange, 1),
-            
-            'reorderAlerts'      => $reorderItems->count(),
-            'criticalAlerts'     => $criticalItems->count(),
-            'expiringAlerts'     => $expiringItems->count(),
-            
-            'inventoryValue'     => (float) $totalValue,
+            'dailyAverage' => $daysDiff > 0 ? round($currentConsumption / $daysDiff, 2) : $currentConsumption,
+            'usageChange' => round($usageChange, 1),
 
-            'reagentsValue'     => (float) $totalValue,
+            'reorderAlerts' => $reorderItems->count(),
+            'criticalAlerts' => $criticalItems->count(),
+            'expiringAlerts' => $expiringItems->count(),
 
-            'equipmentValue'     => (float) $totalValue,
-            
-            
+            'inventoryValue' => (float) $totalValue,
+
+            'reagentsValue' => (float) $totalValue,
+
+            'equipmentValue' => (float) $totalValue,
+            'itemsNeedingCalibration' => InventoryItem::query()
+                ->whereNotNull('next_calibration_date')
+                ->where('next_calibration_date', '<=', now())
+                ->count(),
+
             'alertDetails' => [
-                'reorder'  => $reorderItems->map(fn($i) => $i->item->name)->take(5),
-                'expiring' => $expiringItems->map(fn($i) => $i->item->name . ' (' . $i->item->reagent_expiry_date->format('d M') . ')')->take(5),
-                'critical' => $criticalItems->map(fn($i) => $i->item->name)->take(5),
+                'reorder' => $reorderItems->map(fn ($i) => $i->item->name)->take(5),
+                'expiring' => $expiringItems->map(fn ($i) => $i->item->name.' ('.$i->item->reagent_expiry_date->format('d M').')')->take(5),
+                'critical' => $criticalItems->map(fn ($i) => $i->item->name)->take(5),
             ],
 
             'total_items' => Inventory::count(),
 
-            'supplierPerformance' =>  collect($this->getSupplierPerformanceData())->map(function($item) {
+            'supplierPerformance' => collect($this->getSupplierPerformanceData())->map(function ($item) {
                 return [
                     'supplier' => $item->supplier,
                     'on_time_rate' => (float) $item->on_time_rate,
@@ -387,43 +404,46 @@ class VAPInventoryAnalyticsController extends Controller
         ];
     }
 
-    
     public function exportChart(Request $request)
     {
         $request->validate([
             'chartType' => 'required|in:consumption,stock,monthly,topReagents',
             'format' => 'required|in:png,pdf,csv',
         ]);
-        
-        $data = $this->getAnalyticsData($request);
-        $filename = 'chart_export_' . time() . '.' . $request->format;
-        
+
+        $data = $this->fetchAnalyticsData($request->all());
+        $filename = 'chart_export_'.time().'.'.$request->format;
+
         switch ($request->format) {
             case 'pdf':
                 $pdf = PDF::loadView('exports.chart', [
                     'chartType' => $request->chartType,
                     'data' => $data,
                     'filters' => $request->all(),
+                    'settings' => app(GeneralSettings::class),
+                    'generated_at' => now(),
                 ]);
+
                 return $pdf->download($filename);
-                
+
             case 'csv':
                 $csvData = $this->convertToCsv($data, $request->chartType);
+
                 return response($csvData)
                     ->header('Content-Type', 'text/csv')
-                    ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
-                    
+                    ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
+
             default:
                 // For PNG, you would need a server-side chart generation library
                 // This is a placeholder - you might want to use something like mPDF with charts
                 return response()->json(['message' => 'PNG export not implemented'], 501);
         }
     }
-    
+
     private function convertToCsv($data, $chartType)
     {
         $rows = [];
-        
+
         switch ($chartType) {
             case 'consumption':
                 $rows[] = ['Date', 'Quantity'];
@@ -431,21 +451,21 @@ class VAPInventoryAnalyticsController extends Controller
                     $rows[] = [$item['date'], $item['quantity']];
                 }
                 break;
-                
+
             case 'stock':
                 $rows[] = ['Category', 'Quantity'];
                 foreach ($data['stockDistribution'] as $item) {
                     $rows[] = [$item['category'], $item['quantity']];
                 }
                 break;
-                
+
             case 'monthly':
                 $rows[] = ['Month', 'Current Year', 'Previous Year'];
                 foreach ($data['monthlyComparison'] as $item) {
                     $rows[] = [$item['month'], $item['current'], $item['previous']];
                 }
                 break;
-                
+
             case 'topReagents':
                 $rows[] = ['Reagent', 'Consumption'];
                 foreach ($data['topReagents'] as $item) {
@@ -453,7 +473,7 @@ class VAPInventoryAnalyticsController extends Controller
                 }
                 break;
         }
-        
+
         $output = fopen('php://temp', 'w');
         foreach ($rows as $row) {
             fputcsv($output, $row);
@@ -461,50 +481,50 @@ class VAPInventoryAnalyticsController extends Controller
         rewind($output);
         $csv = stream_get_contents($output);
         fclose($output);
-        
+
         return $csv;
     }
-    
+
     // public function generateReport(Request $request)
     // {
     //     $request->validate([
     //         'reportType' => 'required|in:consumption,stock,expiry',
     //         'format' => 'required|in:pdf,excel',
     //     ]);
-        
+
     //     $dateRange = $this->getDateRange(
     //         $request->dateRange,
     //         $request->startDate,
     //         $request->endDate
     //     );
-        
+
     //     switch ($request->reportType) {
     //         case 'consumption':
     //             $data = $this->getConsumptionReportData($dateRange, $request->categoryId, $request->warehouseId);
     //             $view = 'reports.consumption';
     //             break;
-                
+
     //         case 'stock':
     //             $data = $this->getStockReportData($request->categoryId, $request->warehouseId);
     //             $view = 'reports.stock';
     //             break;
-                
+
     //         case 'expiry':
     //             $data = $this->getExpiryReportData();
     //             $view = 'reports.expiry';
     //             break;
     //     }
-        
+
     //     if ($request->format === 'pdf') {
     //         $pdf = PDF::loadView($view, [
     //             'data' => $data,
     //             'filters' => $request->all(),
     //             'dateRange' => $dateRange,
     //         ])->setPaper('a4', 'landscape');
-            
+
     //         return $pdf->download($request->reportType . '_report_' . date('Y-m-d') . '.pdf');
     //     }
-        
+
     //     // For Excel, you would use Laravel Excel package
     //     return response()->json(['message' => 'Excel export not implemented'], 501);
     // }
@@ -515,24 +535,24 @@ class VAPInventoryAnalyticsController extends Controller
             'reportType' => 'required|in:consumption,stock,expiry,calibration,comprehensive',
             'format' => 'required|in:pdf,excel,csv',
         ]);
-        
+
         $dateRange = $this->getDateRange($request->dateRange, $request->startDate, $request->endDate);
-        
+
         // Get data based on type (using your existing methods)
         $data = match ($request->reportType) {
             'consumption' => $this->getConsumptionReportData($dateRange, $request->categoryId, $request->warehouseId),
-            'stock'       => $this->getStockReportData($request->categoryId, $request->warehouseId),
-            'expiry'      => $this->getExpiryReportData(),
+            'stock' => $this->getStockReportData($request->categoryId, $request->warehouseId),
+            'expiry' => $this->getExpiryReportData(),
             'calibration' => $this->getCalibrationReportData(),
             'comprehensive' => $this->getComprehensiveReportData($dateRange, $request->categoryId, $request->warehouseId),
         };
 
-        $filename = $request->reportType . '_report_' . now()->format('Y-m-d');
+        $filename = $request->reportType.'_report_'.now()->format('Y-m-d');
 
         if ($request->format === 'excel') {
             return Excel::download(
-                new InventoryReportExport($data, $request->reportType), 
-                $filename . '.xlsx'
+                new InventoryReportExport($data, $request->reportType),
+                $filename.'.xlsx'
             );
         }
 
@@ -540,12 +560,12 @@ class VAPInventoryAnalyticsController extends Controller
             return response(
                 $this->convertReportDataToCsv($data, $request->reportType)
             )->header('Content-Type', 'text/csv')
-                ->header('Content-Disposition', 'attachment; filename="' . $filename . '.csv"');
+                ->header('Content-Disposition', 'attachment; filename="'.$filename.'.csv"');
         }
 
         if ($request->format === 'pdf') {
-            $view = View::exists('reports.' . $request->reportType)
-                ? 'reports.' . $request->reportType
+            $view = View::exists('reports.'.$request->reportType)
+                ? 'reports.'.$request->reportType
                 : 'reports.inventory-generic';
 
             $html = View::make($view, [
@@ -555,20 +575,20 @@ class VAPInventoryAnalyticsController extends Controller
                 'reportType' => $request->reportType,
             ])->render();
 
-            $pdf = new \Mpdf\Mpdf([
+            $pdf = new Mpdf([
                 'margin_left' => 15,
                 'margin_right' => 15,
                 'margin_top' => 45, // Enough room for the fixed header
                 'margin_bottom' => 20,
-                'format' => 'A4'
+                'format' => 'A4',
             ]);
 
             $pdf->SetTitle('VAP Inventory Report');
             $pdf->WriteHTML($html);
-            
-            return response()->streamDownload(function() use ($pdf) {
+
+            return response()->streamDownload(function () use ($pdf) {
                 echo $pdf->Output('', 'S');
-            }, $request->reportType . '_report.pdf');
+            }, $request->reportType.'_report.pdf');
         }
     }
 
@@ -678,7 +698,7 @@ class VAPInventoryAnalyticsController extends Controller
             fputcsv($output, [$key, $value]);
         }
     }
-    
+
     private function getConsumptionReportData($dateRange, $categoryId = null, $warehouseId = null)
     {
         return [
@@ -688,7 +708,7 @@ class VAPInventoryAnalyticsController extends Controller
             'metrics' => $this->getMetrics($dateRange, $categoryId, $warehouseId),
         ];
     }
-    
+
     private function getStockReportData($categoryId = null, $warehouseId = null)
     {
         return [
@@ -713,7 +733,7 @@ class VAPInventoryAnalyticsController extends Controller
                 ->get(),
         ];
     }
-    
+
     private function getExpiryReportData()
     {
         return [
@@ -747,7 +767,7 @@ class VAPInventoryAnalyticsController extends Controller
         }
 
         // 2. Group by Supplier to create separate orders
-        $groupedBySupplier = $lowStockInventory->groupBy(fn($inv) => $inv->item->supplier_id);
+        $groupedBySupplier = $lowStockInventory->groupBy(fn ($inv) => $inv->item->supplier_id);
 
         DB::transaction(function () use ($groupedBySupplier) {
             foreach ($groupedBySupplier as $supplierId => $items) {
@@ -781,7 +801,6 @@ class VAPInventoryAnalyticsController extends Controller
         return back()->with('success', 'Procurement drafts created successfully.');
     }
 
-
     private function getSupplierPerformanceData()
     {
         return DB::table('i_order_details as od')
@@ -806,7 +825,7 @@ class VAPInventoryAnalyticsController extends Controller
     {
         // Items physically out of stock or expired
         $critical = Inventory::where('qty_available', 0)
-            ->orWhereHas('item', fn($q) => $q->where('reagent_expiry_date', '<=', now()))
+            ->orWhereHas('item', fn ($q) => $q->where('reagent_expiry_date', '<=', now()))
             ->count();
 
         // Items below reorder point
@@ -823,7 +842,7 @@ class VAPInventoryAnalyticsController extends Controller
         return response()->json([
             'critical' => $critical,
             'toOrder' => $toOrder,
-            'delayed' => $delayedOrders
+            'delayed' => $delayedOrders,
         ]);
     }
 }

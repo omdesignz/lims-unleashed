@@ -1,33 +1,36 @@
 <!-- resources/js/Components/results/CalculationResultEntry.vue - Updated with additional inputs -->
 <template>
-  <div class="result-entry-modal space-y-8">
+  <div class="result-entry-modal space-y-8 text-[#17231f] dark:text-[#f7f1e7]">
     <!-- MODAL HEADER -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
+    <div class="rounded-[1.75rem] border border-[#ded3bf] bg-[#fffdf7] p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.32)] dark:border-[#25443c] dark:bg-slate-950/85">
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <CalculatorIcon class="h-7 w-7 text-blue-900" />
+          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-700 dark:text-primary-300">Cálculo rastreável</p>
+          <h1 class="mt-2 flex items-center gap-3 text-2xl font-bold text-[#17231f] dark:text-[#f7f1e7]">
+            <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-900 text-white shadow-lg shadow-primary-900/20 dark:bg-primary-400 dark:text-slate-950">
+              <CalculatorIcon class="h-6 w-6" />
+            </span>
             Resultados de Parâmetros Calculados
-            <span class="text-lg font-normal text-gray-600">({{ calculationMode === 'single' ? 'Individual' : 'Em Lote' }})</span>
+            <span class="rounded-full bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-900 dark:bg-primary-500/15 dark:text-primary-100">{{ calculationMode === 'single' ? 'Individual' : 'Em Lote' }}</span>
           </h1>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-3">
           <button @click="calculationMode = 'single'"
                   :class="[
-                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                    'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all',
                     calculationMode === 'single'
-                      ? 'bg-blue-900 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-primary-900 text-white shadow-lg shadow-primary-900/20 dark:bg-primary-400 dark:text-slate-950'
+                      : 'border border-slate-200 bg-white text-slate-700 hover:bg-primary-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-primary-500/10'
                   ]">
             <DocumentPlusIcon class="h-4 w-4" />
             Individual
           </button>
           <button @click="calculationMode = 'batch'"
                   :class="[
-                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                    'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all',
                     calculationMode === 'batch'
-                      ? 'bg-blue-900 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-primary-900 text-white shadow-lg shadow-primary-900/20 dark:bg-primary-400 dark:text-slate-950'
+                      : 'border border-slate-200 bg-white text-slate-700 hover:bg-primary-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-primary-500/10'
                   ]">
             <DocumentTextIcon class="h-4 w-4" />
             Em Lote
@@ -39,20 +42,20 @@
     <!-- SINGLE PARAMETER CALCULATION MODE -->
     <div v-if="calculationMode === 'single'" class="space-y-6">
       <!-- PARAMETER SELECTION -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+      <div class="rounded-[1.75rem] border border-slate-200 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950/75">
+        <h3 class="mb-4 text-lg font-semibold text-[#17231f] dark:text-[#f7f1e7]">
           Calcular Parâmetro Individual
         </h3>
         
         <div class="space-y-4">
           <!-- Parameter Selector -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
               Seleccione um parâmetro para calcular
             </label>
             <select v-model="selectedSingleParameter"
                     @change="onSingleParameterChange"
-                    class="block w-full rounded-md border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6">
+                    class="block w-full rounded-2xl border border-slate-300/90 bg-white/95 py-3 pl-4 pr-10 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-white/50 transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-800/60">
               <option value="">Seleccione um parâmetro</option>
               <option v-for="param in availableSingleParameters" 
                       :key="param.parameter_id.code"
@@ -64,24 +67,24 @@
           </div>
 
           <!-- Selected Parameter Info -->
-          <div v-if="selectedSingleParameterObj" class="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div class="flex items-start justify-between">
+          <div v-if="selectedSingleParameterObj" class="rounded-2xl border border-primary-200 bg-primary-50/70 p-4 dark:border-primary-500/25 dark:bg-primary-500/10">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h4 class="font-semibold text-gray-900">{{ selectedSingleParameterObj.parameter_id.name }}</h4>
-                <p class="text-sm text-gray-600">{{ selectedSingleParameterObj.parameter_id.code }}</p>
-                <div v-if="selectedSingleParameterObj.formula?.output_unit" class="mt-1 text-sm text-blue-700">
+                <h4 class="font-semibold text-[#17231f] dark:text-[#f7f1e7]">{{ selectedSingleParameterObj.parameter_id.name }}</h4>
+                <p class="text-sm text-slate-600 dark:text-slate-400">{{ selectedSingleParameterObj.parameter_id.code }}</p>
+                <div v-if="selectedSingleParameterObj.formula?.output_unit" class="mt-1 text-sm font-medium text-primary-700 dark:text-primary-300">
                   Unidade: {{ selectedSingleParameterObj.formula.output_unit }}
                 </div>
               </div>
-              <span class="text-sm text-blue-900 font-medium">
+              <span class="rounded-full bg-white px-3 py-1 text-sm font-semibold text-primary-900 shadow-sm ring-1 ring-primary-200 dark:bg-slate-900 dark:text-primary-100 dark:ring-primary-500/25">
                 {{ getSingleCalculationStatus().complete ? 'Pronto para calcular' : 'A aguardar variáveis' }}
               </span>
             </div>
             
             <!-- Formula Display -->
-            <div v-if="selectedSingleParameterObj.formula" class="mt-3 pt-3 border-t border-blue-200">
-              <p class="text-xs text-gray-600 mb-1">Fórmula:</p>
-              <code class="text-sm font-mono bg-white p-2 rounded border border-gray-300 block">
+            <div v-if="selectedSingleParameterObj.formula" class="mt-3 border-t border-primary-200 pt-3 dark:border-primary-500/25">
+              <p class="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600 dark:text-slate-400">Fórmula:</p>
+              <code class="block rounded-xl border border-slate-200 bg-white/90 p-3 font-mono text-sm text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
                 {{ selectedSingleParameterObj.formula.expression }}
               </code>
             </div>
@@ -91,9 +94,9 @@
 
       <!-- INPUT VARIABLES SECTION -->
       <div v-if="selectedSingleParameterObj && singleParameterInputs.length > 0" 
-           class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-          <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+           class="overflow-hidden rounded-[1.75rem] border border-[#25443c] bg-slate-950/90 shadow-sm">
+        <div class="bg-gradient-to-r from-primary-950 via-primary-900 to-primary-700 px-6 py-4">
+          <h3 class="flex items-center gap-2 text-lg font-semibold text-white">
             <VariableIcon class="h-5 w-5" />
             Variáveis de Entrada
             <span class="text-sm font-normal">({{ getSingleCalculationStatus().complete ? `${singleParameterInputs.length}/${singleParameterInputs.length}` : `${filledInputCount}/${singleParameterInputs.length}` }})</span>
@@ -102,10 +105,10 @@
         
         <div class="p-6 space-y-4">
           <div v-for="variableName in singleParameterInputs" :key="variableName"
-              class="group bg-gray-50 rounded-lg border border-gray-200 hover:border-blue-900 transition-all duration-200 p-4">
+              class="group rounded-2xl border border-slate-200 bg-white/95 p-4 transition-all duration-200 hover:border-primary-400 dark:border-slate-800 dark:bg-slate-900/80 dark:hover:border-primary-500/40">
             
-            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-              <HashtagIcon class="h-4 w-4 text-blue-900" />
+            <label class="mb-2 flex items-center gap-1 text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
+              <HashtagIcon class="h-4 w-4 text-primary-700 dark:text-primary-300" />
               {{ variableName }}
             </label>
             
@@ -115,22 +118,22 @@
                 type="number" 
                 step="0.0001"
                 @input="onSingleInputChange"
-                class="block w-full rounded-md border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
+                class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-950/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
                 :class="{
-                  'ring-orange-500 bg-orange-50': !singleCalcInputs[variableName] || singleCalcInputs[variableName] === '',
-                  'ring-green-500 bg-green-50': singleCalcInputs[variableName] && singleCalcInputs[variableName] !== ''
+                  'ring-amber-500 bg-amber-50 dark:bg-amber-500/10': !singleCalcInputs[variableName] || singleCalcInputs[variableName] === '',
+                  'ring-emerald-500 bg-emerald-50 dark:bg-emerald-500/10': singleCalcInputs[variableName] && singleCalcInputs[variableName] !== ''
                 }"
                 placeholder="Introduza o valor..."
               />
               <div v-if="singleCalcInputs[variableName] && singleCalcInputs[variableName] !== ''"
                   class="absolute inset-y-0 right-0 flex items-center pr-3">
-                <CheckCircleIcon class="h-5 w-5 text-green-600" />
+                <CheckCircleIcon class="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
               </div>
             </div>
             
             <!-- Show existing value from main results -->
             <div v-if="results[variableName] && singleCalcInputs[variableName] !== results[variableName]"
-                 class="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                 class="mt-2 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
               <InformationCircleIcon class="h-3 w-3" />
               Valor pré-existente: {{ results[variableName] }}
             </div>
@@ -139,9 +142,9 @@
       </div>
 
       <!-- ADDITIONAL PARAMETER FIELDS -->
-      <div v-if="selectedSingleParameterObj" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-          <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+      <div v-if="selectedSingleParameterObj" class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-950/75">
+        <div class="border-b border-slate-200 bg-gradient-to-r from-primary-50 to-white px-6 py-4 dark:border-slate-800 dark:from-primary-500/10 dark:to-transparent">
+          <h3 class="flex items-center gap-2 text-lg font-semibold text-primary-900 dark:text-primary-100">
             <Cog6ToothIcon class="h-5 w-5" />
             Configurações do Parâmetro
           </h3>
@@ -150,10 +153,10 @@
         <div class="p-6 space-y-6">
           <!-- Uncertainty Input -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-              <ScaleIcon class="h-4 w-4 text-blue-900" />
+            <label class="mb-2 flex items-center gap-2 text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
+              <ScaleIcon class="h-4 w-4 text-primary-700 dark:text-primary-300" />
               Incerteza do Resultado
-              <span v-if="selectedSingleParameterObj.formula?.output_unit" class="text-gray-500">
+              <span v-if="selectedSingleParameterObj.formula?.output_unit" class="text-slate-500 dark:text-slate-400">
                 ({{ selectedSingleParameterObj.formula.output_unit }})
               </span>
             </label>
@@ -162,30 +165,30 @@
                 v-model="singleParameterUncertainty"
                 type="number"
                 step="0.0001"
-                class="block w-full rounded-md border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
+                class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
                 placeholder="Ex.: 0,1"
               />
               <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <span class="text-gray-500">±</span>
+                <span class="text-slate-500 dark:text-slate-400">±</span>
               </div>
             </div>
-            <p class="mt-1 text-xs text-gray-500">
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Incerteza padrão associada ao resultado calculado
             </p>
           </div>
 
           <!-- Reference Range Section -->
           <div class="space-y-4">
-            <h4 class="text-sm font-medium text-gray-900 flex items-center gap-2">
-              <ChartBarIcon class="h-4 w-4 text-blue-900" />
+            <h4 class="flex items-center gap-2 text-sm font-semibold text-[#17231f] dark:text-[#f7f1e7]">
+              <ChartBarIcon class="h-4 w-4 text-primary-700 dark:text-primary-300" />
               Valores de Referência
             </h4>
             
             <!-- Min Reference Value -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
+              <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
                 Valor Mínimo de Referência
-                <span v-if="selectedSingleParameterObj.formula?.output_unit" class="text-gray-500">
+                <span v-if="selectedSingleParameterObj.formula?.output_unit" class="text-slate-500 dark:text-slate-400">
                   ({{ selectedSingleParameterObj.formula.output_unit }})
                 </span>
               </label>
@@ -194,20 +197,20 @@
                   v-model="singleParameterMinRef"
                   type="number"
                   step="0.0001"
-                  class="block w-full rounded-md border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
+                  class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
                   placeholder="Valor mínimo aceitável"
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <span class="text-gray-500">≥</span>
+                  <span class="text-slate-500 dark:text-slate-400">≥</span>
                 </div>
               </div>
             </div>
 
             <!-- Max Reference Value -->
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
+              <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
                 Valor Máximo de Referência
-                <span v-if="selectedSingleParameterObj.formula?.output_unit" class="text-gray-500">
+                <span v-if="selectedSingleParameterObj.formula?.output_unit" class="text-slate-500 dark:text-slate-400">
                   ({{ selectedSingleParameterObj.formula.output_unit }})
                 </span>
               </label>
@@ -216,20 +219,20 @@
                   v-model="singleParameterMaxRef"
                   type="number"
                   step="0.0001"
-                  class="block w-full rounded-md border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
+                  class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
                   placeholder="Valor máximo aceitável"
                 />
                 <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <span class="text-gray-500">≤</span>
+                  <span class="text-slate-500 dark:text-slate-400">≤</span>
                 </div>
               </div>
             </div>
 
             <!-- Reference Range Display -->
             <div v-if="singleParameterMinRef || singleParameterMaxRef" 
-                 class="p-3 bg-gray-50 rounded-lg border border-gray-200">
-              <p class="text-sm font-medium text-gray-700 mb-1">Intervalo de Referência:</p>
-              <p class="text-lg font-bold text-blue-900">
+                 class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/75">
+              <p class="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-300">Intervalo de Referência:</p>
+              <p class="text-lg font-bold text-primary-900 dark:text-primary-200">
                 <span v-if="singleParameterMinRef && singleParameterMaxRef">
                   {{ singleParameterMinRef }} - {{ singleParameterMaxRef }}
                 </span>
@@ -248,17 +251,17 @@
 
           <!-- Notes Section -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-              <ChatBubbleLeftRightIcon class="h-4 w-4 text-blue-900" />
+            <label class="mb-2 flex items-center gap-2 text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
+              <ChatBubbleLeftRightIcon class="h-4 w-4 text-primary-700 dark:text-primary-300" />
               Observações
             </label>
             <textarea 
               v-model="singleParameterNotes"
               rows="3"
-              class="block w-full rounded-md border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
+              class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
               :placeholder="`Observações sobre ${selectedSingleParameterObj.parameter_id.code}...`"
             ></textarea>
-            <p class="mt-1 text-xs text-gray-500">
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Observações sobre o cálculo ou resultado
             </p>
           </div>
@@ -266,17 +269,17 @@
       </div>
 
       <!-- CALCULATION RESULT -->
-      <div v-if="selectedSingleParameterObj" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900">Resultado Final</h3>
+      <div v-if="selectedSingleParameterObj" class="rounded-[1.75rem] border border-slate-200 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950/75">
+        <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h3 class="text-lg font-semibold text-[#17231f] dark:text-[#f7f1e7]">Resultado Final</h3>
           
           <!-- Override Toggle -->
-          <label class="flex items-center gap-2 text-sm">
+          <label class="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
             <input 
               v-model="singleParameterOverride" 
               type="checkbox" 
               @change="onOverrideToggle"
-              class="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
+              class="h-4 w-4 rounded border-slate-300 text-primary-900 focus:ring-primary-600 dark:border-slate-700 dark:bg-slate-900"
             >
             <span>Inserir valor manualmente</span>
           </label>
@@ -285,16 +288,16 @@
         <!-- Manual Input when overridden -->
         <div v-if="singleParameterOverride" class="mb-6 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
               Valor Manual
-              <span v-if="selectedSingleParameterObj.formula?.output_unit" class="text-gray-500">
+              <span v-if="selectedSingleParameterObj.formula?.output_unit" class="text-slate-500 dark:text-slate-400">
                 ({{ selectedSingleParameterObj.formula.output_unit }})
               </span>
             </label>
             <input 
               v-model="singleCalcManualValue"
               type="text"
-              class="block w-full rounded-md border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
+              class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
               placeholder="Introduza o valor manual"
             />
           </div>
@@ -302,51 +305,57 @@
         
         <!-- Calculated Result Display -->
         <div v-else-if="singleCalculationResult !== null" 
-             class="p-6 bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg mb-6">
+             class="mb-6 rounded-[1.5rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-primary-50 p-6 dark:border-emerald-500/25 dark:from-emerald-500/10 dark:to-primary-500/10">
           <div class="text-center">
-            <p class="text-sm text-gray-600 mb-2">Resultado Calculado</p>
-            <p class="text-3xl font-bold text-green-900">
+            <p class="mb-2 text-sm font-semibold text-slate-600 dark:text-slate-300">Resultado Calculado</p>
+            <p class="text-3xl font-bold text-emerald-900 dark:text-emerald-100">
               {{ singleCalculationResult }}
               <span v-if="selectedSingleParameterObj.formula?.output_unit" 
-                    class="text-xl font-normal text-gray-600">
+                    class="text-xl font-normal text-slate-600 dark:text-slate-300">
                 {{ selectedSingleParameterObj.formula.output_unit }}
               </span>
             </p>
             
             <!-- Uncertainty Display -->
             <div v-if="singleParameterUncertainty" 
-                 class="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-green-200 text-green-900 rounded-full">
+                 class="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-emerald-900 dark:bg-emerald-500/15 dark:text-emerald-100">
               <span class="text-sm">± {{ singleParameterUncertainty }}</span>
             </div>
             
             <!-- Reference Range Check -->
             <div v-if="singleParameterMinRef || singleParameterMaxRef" class="mt-4">
               <div v-if="isWithinReferenceRange()"
-                   class="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-900 rounded-full">
+                   class="inline-flex items-center gap-2 rounded-full bg-primary-100 px-3 py-1 text-primary-900 dark:bg-primary-500/15 dark:text-primary-100">
                 <CheckCircleIcon class="h-4 w-4" />
                 <span class="text-sm">Dentro do intervalo de referência</span>
               </div>
               <div v-else
-                   class="inline-flex items-center gap-2 px-3 py-1 bg-red-100 text-red-900 rounded-full">
+                   class="inline-flex items-center gap-2 rounded-full bg-red-100 px-3 py-1 text-red-900 dark:bg-red-500/15 dark:text-red-100">
                 <ExclamationTriangleIcon class="h-4 w-4" />
                 <span class="text-sm">Fora do intervalo de referência</span>
               </div>
             </div>
             
-            <div v-if="selectedSingleParameterObj.formula" class="mt-4 text-xs text-gray-500">
+            <div v-if="selectedSingleParameterObj.formula" class="mt-4 text-xs text-slate-500 dark:text-slate-400">
               Usando fórmula: {{ selectedSingleParameterObj.formula.expression }}
             </div>
           </div>
         </div>
+
+        <div v-if="singleCalculationError" class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-500/25 dark:bg-red-500/10">
+          <p class="text-sm font-semibold text-red-900 dark:text-red-100">
+            {{ singleCalculationError }}
+          </p>
+        </div>
         
         <!-- Missing Inputs Warning -->
         <div v-if="getSingleCalculationStatus().missing.length > 0 && !singleParameterOverride"
-             class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-6">
+             class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/25 dark:bg-amber-500/10">
           <div class="flex items-start gap-3">
-            <ExclamationTriangleIcon class="h-5 w-5 text-yellow-600 mt-0.5" />
+            <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 text-amber-600 dark:text-amber-300" />
             <div>
-              <p class="text-sm font-medium text-yellow-900">A aguardar variáveis</p>
-              <p class="text-sm text-yellow-700 mt-1">
+              <p class="text-sm font-semibold text-amber-900 dark:text-amber-100">A aguardar variáveis</p>
+              <p class="mt-1 text-sm text-amber-700 dark:text-amber-200">
                 Introduza valores para: {{ getSingleCalculationStatus().missing.join(', ') }}
               </p>
             </div>
@@ -354,19 +363,19 @@
         </div>
         
         <!-- Action Buttons -->
-        <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        <div class="flex justify-end gap-3 border-t border-slate-200 pt-4 dark:border-slate-800">
           <button @click="clearSingleCalculation"
-                  class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2">
+                  class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:ring-offset-slate-950">
             Limpar
           </button>
           
           <button @click="applySingleCalculation"
                   :disabled="!canApplySingleCalculation"
                   :class="[
-                    'inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
+                    'inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
                     !canApplySingleCalculation
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-900 text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2'
+                      ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500'
+                      : 'bg-primary-900 text-white hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:focus:ring-offset-slate-950'
                   ]">
             <CheckIcon class="h-5 w-5" />
             {{ singleParameterOverride ? 'Aplicar Valor Manual' : 'Aplicar Resultado Calculado' }}
@@ -375,14 +384,14 @@
       </div>
 
       <!-- NEXT PARAMETER SUGGESTION -->
-      <div v-if="nextAvailableParameter && selectedSingleParameter" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
+      <div v-if="nextAvailableParameter && selectedSingleParameter" class="rounded-[1.5rem] border border-slate-200 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950/75">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 class="text-sm font-semibold text-gray-900">Próximo parâmetro sugerido</h3>
-            <p class="text-sm text-gray-600">{{ nextAvailableParameter.parameter_id.name }} ({{ nextAvailableParameter.parameter_id.code }})</p>
+            <h3 class="text-sm font-semibold text-[#17231f] dark:text-[#f7f1e7]">Próximo parâmetro sugerido</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-400">{{ nextAvailableParameter.parameter_id.name }} ({{ nextAvailableParameter.parameter_id.code }})</p>
           </div>
           <button @click="selectNextParameter"
-                  class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800">
+                  class="inline-flex items-center gap-2 rounded-full bg-primary-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-800">
             Calcular Agora
           </button>
         </div>
@@ -396,12 +405,12 @@
     </div>
 
     <!-- FOOTER ACTIONS -->
-    <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-      <div class="text-sm text-gray-500">
+    <div class="flex flex-col gap-4 border-t border-slate-200 pt-6 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+      <div class="text-sm text-slate-500 dark:text-slate-400">
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-2">
             <div class="h-3 w-3 rounded-full" 
-                 :class="canSave ? 'bg-green-500' : 'bg-yellow-500'"></div>
+                 :class="canSave ? 'bg-emerald-500' : 'bg-amber-500'"></div>
             <span>
               {{ calculationMode === 'single' ? 'Parâmetro individual' : `${calculatedCount} de ${allCalculatedParameters.length} calculados` }}
             </span>
@@ -411,7 +420,7 @@
       <div class="flex items-center gap-4">
         <button 
           @click="closeModal"
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
+          class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:ring-offset-slate-950"
         >
           <XMarkIcon class="h-5 w-5" />
           Fechar
@@ -453,6 +462,7 @@ const calculationMode = ref('single') // 'single' or 'batch'
 const selectedSingleParameter = ref('')
 const singleCalcInputs = ref({})
 const singleCalculationResult = ref(null)
+const singleCalculationError = ref('')
 const singleParameterOverride = ref(false)
 const singleCalcManualValue = ref('')
 
@@ -635,6 +645,7 @@ const onOverrideToggle = () => {
 const calculateSingleParameter = async () => {
   if (!selectedSingleParameterObj.value || singleParameterOverride.value) {
     singleCalculationResult.value = null
+    singleCalculationError.value = ''
     return
   }
   
@@ -648,10 +659,12 @@ const calculateSingleParameter = async () => {
   
   if (missing.length > 0) {
     singleCalculationResult.value = null
+    singleCalculationError.value = ''
     return
   }
   
   calculationInProgress.value = true
+  singleCalculationError.value = ''
   
   try {
     const vars = {}
@@ -690,8 +703,8 @@ const calculateSingleParameter = async () => {
     const decimalPlaces = param.formula.decimal_places || 2
     singleCalculationResult.value = parseFloat(numericValue).toFixed(decimalPlaces)
     
-  } catch (error) {
-    console.error(`❌ Error calculating ${param.parameter_id.code}:`, error)
+  } catch {
+    singleCalculationError.value = `Não foi possível calcular ${param.parameter_id.code}. Reveja a fórmula e as variáveis de entrada.`
     singleCalculationResult.value = null
   } finally {
     calculationInProgress.value = false

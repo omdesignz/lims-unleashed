@@ -21,7 +21,7 @@
         </li>
       </ul>
     </div> -->
-    <div>
+    <div :class="commercialDocumentThemeClasses">
         <Filemanager />
     </div>
   </template>
@@ -33,6 +33,7 @@
 //   import FolderItem from './folder-item.vue';
 //   import Filemanager from './dd-filemanager.vue';
 import Filemanager from "@/Components/file-manager/manager.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
   const folders = ref([]);
@@ -55,6 +56,5 @@ import Filemanager from "@/Components/file-manager/manager.vue";
   onMounted(() => {
     fetchFilesAndFolders();
   });
-  
+
   </script>
-  

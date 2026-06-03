@@ -2,17 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\InventoryItemTransfer;
-use App\Models\InventoryItem;
-use App\Models\InventoryItemWarehouse;
 use App\Models\Inventory;
+use App\Models\InventoryItem;
+use App\Models\InventoryItemTransfer;
+use App\Models\InventoryItemWarehouse;
 use App\Models\InventoryTransaction;
 use App\Models\InventoryTransactionType;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Inertia\Inertia;
 
 class VAPInventoryTransferController extends Controller
 {
@@ -22,30 +21,30 @@ class VAPInventoryTransferController extends Controller
             'item.category',
             'source',
             'destination',
-            'item'
+            'item',
         ])
-        ->when($request->search, function ($query, $search) {
-            $query->whereHas('item', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%");
-            });
-        })
-        ->when($request->status, function ($query, $status) {
-            if ($status === 'pending') {
-                $query->whereNull('received_date');
-            } elseif ($status === 'received') {
-                $query->whereNotNull('received_date');
-            } elseif ($status === 'sent') {
-                $query->whereNotNull('sent_date')->whereNull('received_date');
-            }
-        })
-        ->when($request->source_id, function ($query, $sourceId) {
-            $query->where('source_id', $sourceId);
-        })
-        ->when($request->destination_id, function ($query, $destinationId) {
-            $query->where('destination_id', $destinationId);
-        })
-        ->orderBy($request->sort_by ?? 'created_at', $request->sort_direction ?? 'desc');
+            ->when($request->search, function ($query, $search) {
+                $query->whereHas('item', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->status, function ($query, $status) {
+                if ($status === 'pending') {
+                    $query->whereNull('received_date');
+                } elseif ($status === 'received') {
+                    $query->whereNotNull('received_date');
+                } elseif ($status === 'sent') {
+                    $query->whereNotNull('sent_date')->whereNull('received_date');
+                }
+            })
+            ->when($request->source_id, function ($query, $sourceId) {
+                $query->where('source_id', $sourceId);
+            })
+            ->when($request->destination_id, function ($query, $destinationId) {
+                $query->where('destination_id', $destinationId);
+            })
+            ->orderBy($request->sort_by ?? 'created_at', $request->sort_direction ?? 'desc');
 
         return Inertia::render('VAPInventory/Transfers/Index', [
             'transfers' => $query->paginate($request->per_page ?? 20)->withQueryString(),
@@ -74,26 +73,26 @@ class VAPInventoryTransferController extends Controller
     {
         $items = InventoryItem::with(['inventory.warehouse'])->active()->get();
         $warehouses = InventoryItemWarehouse::with('location')->active()->get();
-        
+
         // Pre-calculate all stock information
         $stockInfo = [];
-        
+
         // Get all inventory records for these items and warehouses
         $inventory = Inventory::whereIn('item_id', $items->pluck('id'))
             ->whereIn('warehouse_id', $warehouses->pluck('id'))
             ->get(['item_id', 'warehouse_id', 'qty_available']);
-        
+
         // Create lookup array
         foreach ($inventory as $stock) {
             $key = "{$stock->item_id}_{$stock->warehouse_id}";
             $stockInfo[$key] = $stock->qty_available;
         }
-        
+
         // Set defaults to 0 for missing combinations
         foreach ($items as $item) {
             foreach ($warehouses as $warehouse) {
                 $key = "{$item->id}_{$warehouse->id}";
-                if (!isset($stockInfo[$key])) {
+                if (! isset($stockInfo[$key])) {
                     $stockInfo[$key] = 0;
                 }
             }
@@ -134,7 +133,7 @@ class VAPInventoryTransferController extends Controller
             ->where('warehouse_id', $request->source_id)
             ->first();
 
-        if (!$sourceInventory || $sourceInventory->qty_available < $request->qty) {
+        if (! $sourceInventory || $sourceInventory->qty_available < $request->qty) {
             return redirect()->back()
                 ->with('error', 'Stock insuficiente no armazém de origem.')
                 ->withInput();
@@ -142,6 +141,8 @@ class VAPInventoryTransferController extends Controller
 
         try {
             DB::beginTransaction();
+
+            $destination = InventoryItemWarehouse::findOrFail($request->destination_id);
 
             $transfer = InventoryItemTransfer::create([
                 'item_id' => $request->item_id,
@@ -158,20 +159,18 @@ class VAPInventoryTransferController extends Controller
             $sourceInventory->decrement('qty_available', $request->qty);
 
             // Create transaction for source (stock out)
-            $outType = InventoryTransactionType::where('code', 'stock_out')->first();
-            if ($outType) {
-                InventoryTransaction::create([
-                    'inventory_id' => $sourceInventory->id,
-                    'user_id' => auth()->id(),
-                    'warehouse_id' => $request->source_id,
-                    'item_id' => $request->item_id,
-                    'type_id' => $outType->id,
-                    'qty' => $request->qty,
-                    'reason' => 'Transfer to ' . InventoryItemWarehouse::find($request->destination_id)->name,
-                    'notes' => $request->obs,
-                    'batch_id' => $request->batch_id ?? null,
-                ]);
-            }
+            $outType = $this->transactionType('stock_out');
+            InventoryTransaction::create([
+                'inventory_id' => $sourceInventory->id,
+                'user_id' => auth()->id(),
+                'warehouse_id' => $request->source_id,
+                'item_id' => $request->item_id,
+                'type_id' => $outType->id,
+                'qty' => $request->qty,
+                'reason' => 'Transfer to '.$destination->name,
+                'notes' => $request->obs,
+                'batch_id' => $request->batch_id ?? null,
+            ]);
 
             DB::commit();
 
@@ -180,6 +179,7 @@ class VAPInventoryTransferController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()->back()
                 ->with('error', 'Não foi possível criar a transferência.')
                 ->withInput();
@@ -214,8 +214,8 @@ class VAPInventoryTransferController extends Controller
             'transfer' => $transfer,
             'sourceStock' => $sourceStock,
             'destinationStock' => $destinationStock,
-            'canReceive' => !$transfer->received_date && $transfer->sent_date,
-            'canCancel' => !$transfer->received_date,
+            'canReceive' => ! $transfer->received_date && $transfer->sent_date,
+            'canCancel' => ! $transfer->received_date,
             'charts' => [
                 'quantity_flow' => [
                     'labels' => ['Quantidade transferida', 'Stock origem', 'Stock destino'],
@@ -237,8 +237,8 @@ class VAPInventoryTransferController extends Controller
                     'labels' => ['Gap destino', 'Pode receber', 'Pode cancelar'],
                     'series' => [
                         $transferGap,
-                        !$transfer->received_date && $transfer->sent_date ? 1 : 0,
-                        !$transfer->received_date ? 1 : 0,
+                        ! $transfer->received_date && $transfer->sent_date ? 1 : 0,
+                        ! $transfer->received_date ? 1 : 0,
                     ],
                 ],
             ],
@@ -253,7 +253,7 @@ class VAPInventoryTransferController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'actual_qty' => 'required|integer|min:1|max:' . $transfer->qty,
+            'actual_qty' => 'required|integer|min:1|max:'.$transfer->qty,
             'received_date' => 'required|date',
             'notes' => 'nullable|string|max:1000',
         ]);
@@ -270,8 +270,8 @@ class VAPInventoryTransferController extends Controller
             // Update transfer
             $transfer->update([
                 'received_date' => $request->received_date,
-                'obs' => ($transfer->obs ? $transfer->obs . "\n" : '') . 
-                         "Received: " . $request->notes . 
+                'obs' => ($transfer->obs ? $transfer->obs."\n" : '').
+                         'Received: '.$request->notes.
                          " (Qty: {$request->actual_qty})",
             ]);
 
@@ -295,25 +295,23 @@ class VAPInventoryTransferController extends Controller
             $destinationInventory->increment('qty_available', $request->actual_qty);
 
             // Create transaction for destination (stock in)
-            $inType = InventoryTransactionType::where('code', 'stock_in')->first();
-            if ($inType) {
-                InventoryTransaction::create([
-                    'inventory_id' => $destinationInventory->id,
-                    'user_id' => auth()->id(),
-                    'warehouse_id' => $transfer->destination_id,
-                    'item_id' => $transfer->item_id,
-                    'type_id' => $inType->id,
-                    'qty' => $request->actual_qty,
-                    'reason' => 'Transfer from ' . $transfer->source->name,
-                    'notes' => $request->notes,
-                    'batch_id' => $request->batch_id ?? null,
-                ]);
-            }
+            $inType = $this->transactionType('stock_in');
+            InventoryTransaction::create([
+                'inventory_id' => $destinationInventory->id,
+                'user_id' => auth()->id(),
+                'warehouse_id' => $transfer->destination_id,
+                'item_id' => $transfer->item_id,
+                'type_id' => $inType->id,
+                'qty' => $request->actual_qty,
+                'reason' => 'Transfer from '.$transfer->source->name,
+                'notes' => $request->notes,
+                'batch_id' => $request->batch_id ?? null,
+            ]);
 
             // If actual quantity differs from expected, adjust source inventory
             if ($request->actual_qty != $transfer->qty) {
                 $difference = $transfer->qty - $request->actual_qty;
-                
+
                 // Return difference to source
                 $sourceInventory = Inventory::where('item_id', $transfer->item_id)
                     ->where('warehouse_id', $transfer->source_id)
@@ -323,20 +321,18 @@ class VAPInventoryTransferController extends Controller
                     $sourceInventory->increment('qty_available', $difference);
 
                     // Create adjustment transaction
-                    $adjType = InventoryTransactionType::where('code', 'stock_adjustment_add')->first();
-                    if ($adjType) {
-                        InventoryTransaction::create([
-                            'inventory_id' => $sourceInventory->id,
-                            'user_id' => auth()->id(),
-                            'warehouse_id' => $transfer->source_id,
-                            'item_id' => $transfer->item_id,
-                            'type_id' => $adjType->id,
-                            'qty' => $difference,
-                            'reason' => 'Adjustment - Transfer quantity difference',
-                            'notes' => 'Expected: ' . $transfer->qty . ', Received: ' . $request->actual_qty,
-                            'batch_id' => $request->batch_id ?? null,
-                        ]);
-                    }
+                    $adjType = $this->transactionType('stock_adjustment_add');
+                    InventoryTransaction::create([
+                        'inventory_id' => $sourceInventory->id,
+                        'user_id' => auth()->id(),
+                        'warehouse_id' => $transfer->source_id,
+                        'item_id' => $transfer->item_id,
+                        'type_id' => $adjType->id,
+                        'qty' => $difference,
+                        'reason' => 'Adjustment - Transfer quantity difference',
+                        'notes' => 'Expected: '.$transfer->qty.', Received: '.$request->actual_qty,
+                        'batch_id' => $request->batch_id ?? null,
+                    ]);
                 }
             }
 
@@ -347,6 +343,7 @@ class VAPInventoryTransferController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()->back()
                 ->with('error', 'Não foi possível registar a receção da transferência.');
         }
@@ -371,26 +368,24 @@ class VAPInventoryTransferController extends Controller
                 $sourceInventory->increment('qty_available', $transfer->qty);
 
                 // Create adjustment transaction
-                $adjType = InventoryTransactionType::where('code', 'stock_adjustment_add')->first();
-                if ($adjType) {
-                    InventoryTransaction::create([
-                        'inventory_id' => $sourceInventory->id,
-                        'user_id' => auth()->id(),
-                        'warehouse_id' => $transfer->source_id,
-                        'item_id' => $transfer->item_id,
-                        'type_id' => $adjType->id,
-                        'qty' => $transfer->qty,
-                        'reason' => 'Transfer cancelled',
-                        'notes' => $request->notes ?? 'Transfer #' . $transfer->id . ' cancelled',
-                        'batch_id' => $request->batch_id ?? null,
-                    ]);
-                }
+                $adjType = $this->transactionType('stock_adjustment_add');
+                InventoryTransaction::create([
+                    'inventory_id' => $sourceInventory->id,
+                    'user_id' => auth()->id(),
+                    'warehouse_id' => $transfer->source_id,
+                    'item_id' => $transfer->item_id,
+                    'type_id' => $adjType->id,
+                    'qty' => $transfer->qty,
+                    'reason' => 'Transfer cancelled',
+                    'notes' => $request->notes ?? 'Transfer #'.$transfer->id.' cancelled',
+                    'batch_id' => $request->batch_id ?? null,
+                ]);
             }
 
             // Mark transfer as cancelled
             $transfer->update([
-                'obs' => ($transfer->obs ? $transfer->obs . "\n" : '') . 
-                         "CANCELLED: " . ($request->notes ?? 'No reason provided'),
+                'obs' => ($transfer->obs ? $transfer->obs."\n" : '').
+                         'CANCELLED: '.($request->notes ?? 'No reason provided'),
                 'deleted_at' => now(),
             ]);
 
@@ -401,6 +396,7 @@ class VAPInventoryTransferController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()->back()
                 ->with('error', 'Não foi possível cancelar a transferência.');
         }
@@ -448,17 +444,21 @@ class VAPInventoryTransferController extends Controller
             $errors = [];
 
             foreach ($request->transfers as $index => $transferData) {
+                $item = InventoryItem::findOrFail($transferData['item_id']);
+                $destination = InventoryItemWarehouse::findOrFail($transferData['destination_id']);
+
                 // Check stock availability
                 $sourceInventory = Inventory::where('item_id', $transferData['item_id'])
                     ->where('warehouse_id', $transferData['source_id'])
                     ->first();
 
-                if (!$sourceInventory || $sourceInventory->qty_available < $transferData['qty']) {
+                if (! $sourceInventory || $sourceInventory->qty_available < $transferData['qty']) {
                     $errors[] = [
                         'index' => $index,
-                        'item' => InventoryItem::find($transferData['item_id'])->name,
+                        'item' => $item->name,
                         'error' => 'Insufficient stock',
                     ];
+
                     continue;
                 }
 
@@ -477,20 +477,18 @@ class VAPInventoryTransferController extends Controller
                 $sourceInventory->decrement('qty_available', $transferData['qty']);
 
                 // Create transaction
-                $outType = InventoryTransactionType::where('code', 'stock_out')->first();
-                if ($outType) {
-                    InventoryTransaction::create([
-                        'inventory_id' => $sourceInventory->id,
-                        'user_id' => auth()->id(),
-                        'warehouse_id' => $transferData['source_id'],
-                        'item_id' => $transferData['item_id'],
-                        'type_id' => $outType->id,
-                        'qty' => $transferData['qty'],
-                        'reason' => 'Bulk transfer',
-                        'notes' => 'Transfer to ' . InventoryItemWarehouse::find($transferData['destination_id'])->name,
-                        'batch_id' => $request->batch_id ?? null,
-                    ]);
-                }
+                $outType = $this->transactionType('stock_out');
+                InventoryTransaction::create([
+                    'inventory_id' => $sourceInventory->id,
+                    'user_id' => auth()->id(),
+                    'warehouse_id' => $transferData['source_id'],
+                    'item_id' => $transferData['item_id'],
+                    'type_id' => $outType->id,
+                    'qty' => $transferData['qty'],
+                    'reason' => 'Bulk transfer',
+                    'notes' => 'Transfer to '.$destination->name,
+                    'batch_id' => $request->batch_id ?? null,
+                ]);
 
                 $createdTransfers[] = $transfer;
             }
@@ -499,13 +497,14 @@ class VAPInventoryTransferController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => count($createdTransfers) . ' transferências criadas com sucesso.',
+                'message' => count($createdTransfers).' transferências criadas com sucesso.',
                 'transfers' => $createdTransfers,
                 'errors' => $errors,
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => 'Não foi possível criar a transferência em massa.',
@@ -518,20 +517,20 @@ class VAPInventoryTransferController extends Controller
         // Get all active items
         $items = InventoryItem::active()->get(['id', 'name', 'code']);
         $warehouses = InventoryItemWarehouse::active()->get(['id', 'name']);
-        
+
         $stockInfo = [];
-        
+
         // Query all stock at once
         $inventory = Inventory::whereIn('item_id', $items->pluck('id'))
             ->whereIn('warehouse_id', $warehouses->pluck('id'))
             ->get(['item_id', 'warehouse_id', 'qty_available']);
-        
+
         // Format as item_warehouse => stock
         foreach ($inventory as $stock) {
             $key = "{$stock->item_id}_{$stock->warehouse_id}";
             $stockInfo[$key] = $stock->qty_available;
         }
-        
+
         return response()->json([
             'stock_info' => $stockInfo,
             'items' => $items,
@@ -547,12 +546,12 @@ class VAPInventoryTransferController extends Controller
 
         $warehouses = InventoryItemWarehouse::active()->get();
         $stocks = [];
-        
+
         foreach ($warehouses as $warehouse) {
             $stock = Inventory::where('item_id', $request->item_id)
                 ->where('warehouse_id', $warehouse->id)
                 ->first();
-            
+
             $stocks[$warehouse->id] = $stock ? $stock->qty_available : 0;
         }
 
@@ -561,5 +560,16 @@ class VAPInventoryTransferController extends Controller
             'stocks' => $stocks,
             'warehouses' => $warehouses,
         ]);
+    }
+
+    private function transactionType(string $code): InventoryTransactionType
+    {
+        return InventoryTransactionType::firstOrCreate(
+            ['code' => $code],
+            [
+                'name' => ucfirst(str_replace('_', ' ', $code)),
+                'description' => 'Automatically registered inventory transaction type.',
+            ]
+        );
     }
 }

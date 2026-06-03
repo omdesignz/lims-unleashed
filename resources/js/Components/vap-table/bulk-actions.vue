@@ -1,6 +1,6 @@
 <template>
-    <div class="absolute left-14 top-0 flex h-12 items-center space-x-3 bg-white dark:bg-gray-900 sm:left-12">
-    <button @click="bulkAction(action.id)" type="button" class="inline-flex items-center rounded bg-primary-900 dark:bg-gray-800 px-2 py-1 text-sm font-semibold text-white dark:text-gray-400 shadow-sm ring-1 ring-inset ring-primary-900 dark:ring-gray-700 hover:bg-primary-800 dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-primary-900 dark:hover:text-white" 
+    <div class="static flex min-h-12 flex-wrap items-center gap-2 rounded-2xl border border-[#d8cbb8] bg-[#fffdf7]/95 p-1.5 shadow-sm dark:border-[#315149] dark:bg-[#07110f]/95 sm:absolute sm:left-12 sm:top-0">
+    <button @click="bulkAction(action.id)" type="button" class="inline-flex items-center rounded-xl bg-[rgb(var(--primary-800-rgb))] px-3 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-inset ring-[rgb(var(--primary-800-rgb))] transition hover:bg-[rgb(var(--primary-700-rgb))] disabled:cursor-not-allowed disabled:opacity-30 dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f] dark:ring-[rgb(var(--primary-500-rgb))] dark:hover:bg-[rgb(var(--primary-300-rgb))]" 
         v-for="(action, index) in props.actions" 
         :key="index"
                 v-motion

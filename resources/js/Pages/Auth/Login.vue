@@ -1,38 +1,38 @@
 <template>
   <Head title="Login" />
-  <div class="min-h-screen bg-gradient-to-br from-primary-50 to-white dark:from-gray-900 dark:to-gray-800">
+  <div class="relative min-h-screen overflow-hidden bg-[#07110f] text-[#f7f1e7]" :class="commercialDocumentThemeClasses">
     <!-- Decorative Background Elements -->
     <div class="absolute inset-0 overflow-hidden">
-      <div class="absolute top-0 left-1/4 w-96 h-96 bg-primary-100 dark:bg-primary-900/20 rounded-full mix-blend-multiply filter blur-3xl opacity-70"></div>
-      <div class="absolute top-1/4 right-1/4 w-96 h-96 bg-primary-200 dark:bg-primary-800/20 rounded-full mix-blend-multiply filter blur-3xl opacity-50"></div>
-      <div class="absolute bottom-0 left-1/2 w-96 h-96 bg-primary-100 dark:bg-primary-900/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+      <div class="absolute -left-24 top-0 h-[32rem] w-[32rem] rounded-full bg-[#1f7a68]/25 blur-3xl"></div>
+      <div class="absolute bottom-0 right-0 h-[36rem] w-[36rem] rounded-full bg-accent-300/18 blur-3xl"></div>
+      <div class="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-[#fffaf0]/10 to-transparent"></div>
     </div>
 
     <div class="relative min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <!-- Login Container -->
       <div class="max-w-6xl w-full mx-auto">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.8fr)] gap-10 lg:gap-14">
           
           <!-- Left Column - Brand & Welcome -->
           <div class="flex flex-col justify-center">
-            <div class="max-w-lg mx-auto lg:mx-0">
+            <div class="mx-auto max-w-xl rounded-[2rem] border border-[#ded3bf]/15 bg-[#fffaf0]/[0.07] p-6 shadow-2xl shadow-black/30 backdrop-blur-xl lg:mx-0 lg:p-8">
               <!-- Logo -->
               <div class="flex items-center gap-4 mb-8">
-                <!-- <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-900 to-primary-700 dark:from-primary-700 dark:to-primary-600 shadow-lg">
+                <!-- <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#143d37] to-[#1f7a68] shadow-lg">
                   <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div> -->
                 <img
                   v-if="brandLogoUrl"
-                  class="relative inset-0 max-h-24 object-contain"
+                  class="relative inset-0 max-h-20 object-contain"
                   :src="brandLogoUrl"
                   :alt="brandAppName"
                   width="50%"
                 />
                 <img
                   v-else
-                  class="relative inset-0"
+                  class="relative inset-0 max-h-20"
                   src="../../../images/sncqa_logo.svg"
                   alt=""
                   width="50%"
@@ -46,10 +46,13 @@
 
               <!-- Welcome Message -->
               <div class="mb-10">
-                <h2 class="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                <p class="mb-4 inline-flex rounded-full border border-[#ded3bf]/15 bg-[#fffaf0]/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.24em] text-accent-100">
+                  ISO 17025 workspace
+                </p>
+                <h2 class="text-4xl font-black tracking-tight text-white mb-4 lg:text-5xl">
                   {{ brandLoginHeadline }}
                 </h2>
-                <p class="text-lg text-gray-600 dark:text-gray-400">
+                <p class="text-lg leading-8 text-slate-300">
                   {{ brandLoginSubheadline }}
                 </p>
               </div>
@@ -57,48 +60,48 @@
               <!-- Features -->
               <div class="space-y-6">
                 <div class="flex items-start gap-4">
-                  <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 dark:bg-gray-800 flex-shrink-0">
-                    <svg class="h-6 w-6 text-primary-800 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[#fffaf0]/10 text-accent-100">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
                   </div>
                   <div>
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                    <h3 class="text-lg font-semibold text-white mb-1">
                       {{ $t('gestlab.pages.login.feature1_title') }}
                     </h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <p class="text-sm leading-6 text-slate-300">
                       {{ $t('gestlab.pages.login.feature1_description') }}
                     </p>
                   </div>
                 </div>
 
                 <div class="flex items-start gap-4">
-                  <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 dark:bg-gray-800 flex-shrink-0">
-                    <svg class="h-6 w-6 text-primary-800 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[#fffaf0]/10 text-accent-100">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                     </svg>
                   </div>
                   <div>
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                    <h3 class="text-lg font-semibold text-white mb-1">
                       {{ $t('gestlab.pages.login.feature2_title') }}
                     </h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <p class="text-sm leading-6 text-slate-300">
                       {{ $t('gestlab.pages.login.feature2_description') }}
                     </p>
                   </div>
                 </div>
 
                 <div class="flex items-start gap-4">
-                  <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 dark:bg-gray-800 flex-shrink-0">
-                    <svg class="h-6 w-6 text-primary-800 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[#fffaf0]/10 text-accent-100">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
                   <div>
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                    <h3 class="text-lg font-semibold text-white mb-1">
                       {{ $t('gestlab.pages.login.feature3_title') }}
                     </h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                    <p class="text-sm leading-6 text-slate-300">
                       {{ $t('gestlab.pages.login.feature3_description') }}
                     </p>
                   </div>
@@ -111,12 +114,12 @@
           <div class="flex items-center justify-center">
             <div class="w-full max-w-md">
               <!-- Login Card -->
-              <div class="bg-white dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-8">
+              <div class="rounded-[2rem] border border-[#ded3bf] bg-[#fffaf0]/96 p-8 shadow-2xl shadow-black/30 backdrop-blur-xl dark:border-[#25443c] dark:bg-[#0c1714]/95">
                 <div class="text-center mb-8">
-                  <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                  <h2 class="mb-2 text-2xl font-extrabold text-[#15231f] dark:text-[#f7f1e7]">
                     {{ $t('gestlab.pages.login.sign_in') }}
                   </h2>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                  <p class="text-sm font-medium text-slate-600 dark:text-slate-300">
                     {{ $t('gestlab.pages.login.sign_in_description') }}
                   </p>
                 </div>
@@ -130,7 +133,7 @@
 
                   <!-- Email Input -->
                   <div class="space-y-2">
-                    <label for="email" class="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    <label for="email" class="block text-sm font-bold text-[#15231f] dark:text-[#f7f1e7]">
                       {{ $t('gestlab.pages.login.email_input_title') }}
                     </label>
                     <div class="relative">
@@ -146,7 +149,7 @@
                         type="email"
                         autocomplete="email"
                         :class="[
-                          'block w-full rounded-xl border border-gray-300 dark:border-gray-700 pl-10 pr-4 py-3 text-sm bg-white dark:bg-gray-900/50 backdrop-blur-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:border-primary-500 dark:border-primary-400 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200',
+                        'block w-full rounded-2xl border border-[#d8cfbe] bg-[#fffdf7] py-3 pl-10 pr-4 text-sm font-medium text-[#15231f] placeholder:text-slate-400 backdrop-blur-sm transition-all duration-200 focus:border-[#1f7a68] focus:ring-2 focus:ring-[#1f7a68]/20 dark:border-[#25443c] dark:bg-[#07110f]/70 dark:text-[#f7f1e7]',
                           form.errors.email ? 'border-red-300 focus:border-red-300 focus:ring-2 focus:ring-red-500/20' : ''
                         ]"
                         :placeholder="$t('gestlab.pages.login.email_placeholder')"
@@ -160,12 +163,12 @@
                   <!-- Password Input -->
                   <div class="space-y-2">
                     <div class="flex items-center justify-between">
-                      <label for="password" class="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      <label for="password" class="block text-sm font-bold text-[#15231f] dark:text-[#f7f1e7]">
                         {{ $t('gestlab.pages.login.password_input_title') }}
                       </label>
                       <Link 
                         :href="route('password.request')" 
-                        class="text-xs font-medium text-primary-800 dark:text-primary-400 hover:text-primary-600 dark:text-primary-400 transition-colors duration-200"
+                        class="text-xs font-bold text-[#143d37] transition-colors duration-200 hover:text-[#1f7a68] dark:text-accent-200"
                       >
                         {{ $t('gestlab.pages.login.forgot_password') }}
                       </Link>
@@ -183,7 +186,7 @@
                         name="password"
                         autocomplete="current-password"
                         :class="[
-                          'block w-full rounded-xl border border-gray-300 dark:border-gray-700 pl-10 pr-12 py-3 text-sm bg-white dark:bg-gray-900/50 backdrop-blur-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:border-primary-500 dark:border-primary-400 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200',
+                        'block w-full rounded-2xl border border-[#d8cfbe] bg-[#fffdf7] py-3 pl-10 pr-12 text-sm font-medium text-[#15231f] placeholder:text-slate-400 backdrop-blur-sm transition-all duration-200 focus:border-[#1f7a68] focus:ring-2 focus:ring-[#1f7a68]/20 dark:border-[#25443c] dark:bg-[#07110f]/70 dark:text-[#f7f1e7]',
                           form.errors.password ? 'border-red-300 focus:border-red-300 focus:ring-2 focus:ring-red-500/20' : ''
                         ]"
                         :placeholder="$t('gestlab.pages.login.password_placeholder')"
@@ -192,7 +195,7 @@
                         <button
                           type="button"
                           @click="togglePasswordVisibility"
-                          class="text-gray-400 hover:text-primary-800 dark:text-primary-400 transition-colors duration-200 p-1 rounded-lg hover:bg-gray-100"
+                          class="rounded-lg p-1 text-slate-400 transition-colors duration-200 hover:bg-[#ede5d6] hover:text-[#143d37] dark:text-accent-200 dark:hover:bg-[#10231f]"
                           :title="showPassword ? $t('gestlab.pages.login.hide_password') : $t('gestlab.pages.login.show_password')"
                         >
                           <svg v-if="showPassword" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -217,15 +220,15 @@
                       id="remember-me"
                       name="remember-me"
                       type="checkbox"
-                      class="h-4 w-4 rounded border-gray-300 dark:border-gray-700 text-primary-800 dark:text-primary-400 focus:ring-2 focus:ring-primary-500/20 focus:ring-offset-0 transition-colors duration-200"
+                      class="h-4 w-4 rounded border-[#d8cfbe] text-[#143d37] transition-colors duration-200 focus:ring-2 focus:ring-[#1f7a68]/20 focus:ring-offset-0 dark:border-[#25443c] dark:text-accent-200"
                     />
-                    <label for="remember-me" class="ml-3 text-sm text-gray-700">
+                    <label for="remember-me" class="ml-3 text-sm font-medium text-slate-700 dark:text-slate-300">
                       {{ $t('gestlab.pages.login.remember_input_title') }}
                     </label>
                   </div>
 
                   <!-- Error Messages -->
-                  <div v-if="form.hasErrors" class="bg-red-50 rounded-xl p-4 border border-red-200">
+                  <div v-if="form.hasErrors" class="bg-red-50 rounded-xl p-4 border border-red-200 dark:border-red-900/60 dark:bg-red-950/30">
                     <div class="flex items-center gap-3">
                       <svg class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.998-.833-2.732 0L4.346 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -246,10 +249,10 @@
                     type="submit"
                     :disabled="form.processing"
                     :class="[
-                      'w-full inline-flex justify-center items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-semibold shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                      'inline-flex w-full items-center justify-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-bold shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#1f7a68] focus:ring-offset-2',
                       form.processing
                         ? 'bg-gray-100 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-primary-900 to-primary-700 dark:from-primary-700 dark:to-primary-600 text-white hover:from-primary-800 hover:to-primary-600 dark:hover:from-primary-600 dark:hover:to-primary-500 hover:shadow-xl active:scale-[0.98]'
+                        : 'bg-gradient-to-r from-[#143d37] to-[#1f7a68] text-white hover:from-[#0d2a25] hover:to-[#176452] hover:shadow-xl active:scale-[0.98]'
                     ]"
                   >
                     <svg v-if="form.processing" class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -266,7 +269,7 @@
                     type="button"
                     @click="loginWithPasskey"
                     :disabled="passkeyProcessing"
-                    class="w-full inline-flex justify-center items-center gap-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-gray-900 px-4 py-3.5 text-sm font-semibold text-slate-900 dark:text-slate-100 shadow-sm transition hover:bg-slate-50 dark:hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    class="inline-flex w-full items-center justify-center gap-3 rounded-2xl border border-[#d8cfbe] bg-[#fffdf7] px-4 py-3.5 text-sm font-bold text-[#15231f] shadow-sm transition hover:bg-[#ede5d6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#25443c] dark:bg-[#07110f]/80 dark:text-[#f7f1e7] dark:hover:bg-[#10231f]"
                   >
                     <svg v-if="passkeyProcessing" class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -291,16 +294,16 @@
 
                 <div v-if="socialProviders.length" class="mt-6 space-y-3">
                   <div class="flex items-center gap-3">
-                    <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
-                    <span class="text-xs font-medium uppercase tracking-[0.2em] text-gray-400">SSO</span>
-                    <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
+                    <div class="h-px flex-1 bg-[#ded3bf] dark:bg-[#25443c]"></div>
+                    <span class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">SSO</span>
+                    <div class="h-px flex-1 bg-[#ded3bf] dark:bg-[#25443c]"></div>
                   </div>
                   <div class="grid gap-3">
                     <a
                       v-for="provider in socialProviders"
                       :key="provider.service"
                       :href="route('auth.redirect', provider.service)"
-                      class="inline-flex items-center justify-center gap-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 shadow-sm transition hover:bg-gray-50 dark:hover:bg-gray-800"
+                      class="inline-flex items-center justify-center gap-3 rounded-2xl border border-[#d8cfbe] bg-[#fffdf7] px-4 py-3 text-sm font-bold text-[#15231f] shadow-sm transition hover:bg-[#ede5d6] dark:border-[#25443c] dark:bg-[#07110f]/80 dark:text-[#f7f1e7] dark:hover:bg-[#10231f]"
                     >
                       <span>Entrar com {{ provider.label }}</span>
                     </a>
@@ -310,10 +313,10 @@
                 <!-- Divider -->
                 <div class="relative my-8">
                   <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                    <div class="w-full border-t border-gray-300 dark:border-gray-700" />
+                    <div class="w-full border-t border-[#ded3bf] dark:border-[#25443c]" />
                   </div>
                   <div class="relative flex justify-center text-sm">
-                    <span class="px-4 bg-white dark:bg-gray-900/80 text-gray-500 dark:text-gray-400">
+                    <span class="bg-[#fffaf0] px-4 font-semibold text-slate-500 dark:bg-[#0c1714] dark:text-slate-400">
                       {{ $t('gestlab.pages.login.or') }}
                     </span>
                   </div>
@@ -321,10 +324,10 @@
 
                 <!-- Client Portal Button -->
                 <Link 
-                  :href="route('portal.home')"
+                  :href="route('portal.login')"
                   :class="[
-                    'w-full inline-flex justify-center items-center gap-3 rounded-xl border px-4 py-3.5 text-sm font-medium shadow-sm transition-all duration-300 hover:shadow-md active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-                    'border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 hover:bg-gray-50 hover:border-blue-200 hover:text-primary-800 dark:text-primary-400'
+                    'inline-flex w-full items-center justify-center gap-3 rounded-2xl border px-4 py-3.5 text-sm font-bold shadow-sm transition-all duration-300 hover:shadow-md active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#1f7a68] focus:ring-offset-2',
+                    'border-[#d8cfbe] bg-[#fffdf7] text-[#15231f] hover:border-[#b8ad97] hover:bg-[#ede5d6] hover:text-[#143d37] dark:border-[#25443c] dark:bg-[#07110f]/80 dark:text-[#f7f1e7] dark:hover:bg-[#10231f]'
                   ]"
                 >
                   <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -334,15 +337,15 @@
                 </Link>
 
                 <!-- Footer -->
-                <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div class="mt-8 border-t border-[#ded3bf] pt-6 dark:border-[#25443c]">
                   <div class="text-center">
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    <p class="mb-2 text-xs font-medium text-slate-500 dark:text-slate-400">
                       {{ $t('gestlab.pages.login.need_help') }}
-                      <Link href="#" class="font-medium text-primary-800 dark:text-primary-400 hover:text-primary-600 dark:text-primary-400 transition-colors duration-200">
+                      <Link href="/help" class="font-bold text-[#143d37] transition-colors duration-200 hover:text-[#1f7a68] dark:text-accent-200">
                         {{ $t('gestlab.pages.login.contact_support') }}
                       </Link>
                     </p>
-                    <p class="text-xs text-gray-400">
+                    <p class="text-xs font-medium text-slate-400">
                       {{ $t('gestlab.pages.login.copyright') }} • 
                       {{ $t('gestlab.pages.login.version') }}
                     </p>
@@ -351,8 +354,8 @@
               </div>
 
               <!-- Security Badge -->
-              <div class="mt-6 flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                <svg class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div class="mt-6 flex items-center justify-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                <svg class="h-4 w-4 text-accent-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
                 <span>
@@ -379,6 +382,7 @@ export default {
 import { startAuthentication } from '@simplewebauthn/browser';
 import { computed, ref } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 const showPassword = ref(false);
 const passkeyProcessing = ref(false);

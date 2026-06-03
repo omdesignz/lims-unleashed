@@ -8,10 +8,15 @@ use App\Http\Resources\UserResource;
 use App\Models\Permission;
 use App\Models\PersonnelQualification;
 use App\Models\Role;
-use Illuminate\Support\Facades\DB;
 use App\Models\User;
+use App\Settings\GeneralSettings;
+use App\Support\PdfResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use Mpdf\Config\ConfigVariables;
+use Mpdf\Config\FontVariables;
+use PDF;
 
 class UserController extends Controller
 {
@@ -56,9 +61,9 @@ class UserController extends Controller
             ],
             'model' => User::MENU_NAME,
             'abilities' => method_exists(User::class, 'getAbilities') ? collect(User::ABILITIES)->map(function ($item) {
-                return $item . '_' . User::MENU_NAME;
+                return $item.'_'.User::MENU_NAME;
             }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
-                return $item . '_' . User::MENU_NAME;
+                return $item.'_'.User::MENU_NAME;
             }),
             'query' => request()->only(['search', 'trashed']),
             'competenceSummary' => [
@@ -70,35 +75,33 @@ class UserController extends Controller
             ],
         ];
     }
+
     /**
      * Display a listing of the resource.
-     *
      */
     public function index()
     {
-        abort_if( !auth()->user()->can('view_users'), 403, '');
+        abort_if(! auth()->user()->can('view_users'), 403, '');
 
         return Inertia::render('Users/Index', $this->indexPayload());
     }
 
     /**
      * Show the form for creating a new resource.
-     *
      */
     public function create()
     {
-        abort_if( !auth()->user()->can('add_users'), 403, '');
+        abort_if(! auth()->user()->can('add_users'), 403, '');
 
         return Inertia::render('Users/Index', $this->indexPayload(true));
     }
 
     /**
      * Store a newly created resource in storage.
-     *
      */
     public function store(UserRequest $request)
     {
-        abort_if( !auth()->user()->can('add_users'), 403, '');
+        abort_if(! auth()->user()->can('add_users'), 403, '');
 
         // dd($request->all());
 
@@ -111,20 +114,17 @@ class UserController extends Controller
 
         });
 
-
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_created')
-            ]
+                'message' => trans('gestlab.toasts.record_successfully_created'),
+            ],
         ]);
-
 
     }
 
     /**
      * Display the specified resource.
-     *
      */
     public function show($id)
     {
@@ -133,14 +133,13 @@ class UserController extends Controller
 
     /**
      * Show the form for editing the specified resource.
-     *
      */
     public function edit($id)
     {
-        abort_if( !auth()->user()->can('edit_users'), 403, '');
+        abort_if(! auth()->user()->can('edit_users'), 403, '');
 
         // Find the record
-            $record = User::with(['departments', 'permissions', 'roles', 'personnelQualifications.department', 'personnelQualifications.qualifiedBy:id,name'])->findOrFail($id);
+        $record = User::with(['departments', 'permissions', 'roles', 'personnelQualifications.department', 'personnelQualifications.qualifiedBy:id,name'])->findOrFail($id);
 
         $qualifications = $record->personnelQualifications
             ->sortBy([
@@ -163,22 +162,22 @@ class UserController extends Controller
                 'primary_phone' => $record->primary_phone,
                 'secondary_phone' => $record->secondary_phone,
                 'id_number' => $record->id_number,
-                'departments' => collect($record->departments)->map(function($item) {
+                'departments' => collect($record->departments)->map(function ($item) {
                     return [
                         'value' => $item['id'],
-                        'label' => $item['name']
+                        'label' => $item['name'],
                     ];
                 })->toArray(),
-                'permissions' => collect($record->permissions)->map(function($item) {
+                'permissions' => collect($record->permissions)->map(function ($item) {
                     return [
                         'value' => $item['id'],
-                        'label' => $item['label']
+                        'label' => $item['label'],
                     ];
                 })->toArray(),
-                'roles' => collect($record->roles)->map(function($item) {
+                'roles' => collect($record->roles)->map(function ($item) {
                     return [
                         'value' => $item['id'],
-                        'label' => $item['label']
+                        'label' => $item['label'],
                     ];
                 })->toArray(),
                 'personnel_qualifications' => $qualifications->map(function ($qualification) {
@@ -205,34 +204,33 @@ class UserController extends Controller
                 })->values()->toArray(),
             ],
             'competenceSummary' => $record->competenceSummary(),
-            'permissions' => collect(Permission::all())->map(function($item) {
+            'permissions' => collect(Permission::all())->map(function ($item) {
                 return [
                     'value' => $item['id'],
-                    'label' => $item['label']
+                    'label' => $item['label'],
                 ];
             })->toArray(),
-            'roles' => collect(Role::all())->map(function($item) {
+            'roles' => collect(Role::all())->map(function ($item) {
                 return [
                     'value' => $item['id'],
-                    'label' => $item['label']
+                    'label' => $item['label'],
                 ];
-            })->toArray()
+            })->toArray(),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
-     *
      */
     public function update(UserRequest $request, $id)
     {
-        abort_if( !auth()->user()->can('edit_users'), 403, '');
+        abort_if(! auth()->user()->can('edit_users'), 403, '');
 
         // dd(collect($request->departments)->pluck('department_id')->unique()->toArray());
 
         DB::transaction(function () use ($request, $id): void {
 
-            tap(User::findOrFail($id), function($record) use($request) {
+            tap(User::findOrFail($id), function ($record) use ($request) {
 
                 $record->update($request->safe()->except(['departments']));
 
@@ -252,7 +250,7 @@ class UserController extends Controller
                         'qualified_by_id' => auth()->id(),
                     ]));
                 }
-    
+
             });
 
         });
@@ -261,13 +259,12 @@ class UserController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
     /**
      * Update the specified resource in storage.
-     *
      */
     public function setPass(UserPasswordRequest $request, $id)
     {
@@ -275,7 +272,7 @@ class UserController extends Controller
         DB::transaction(function () use ($request, $id): void {
 
             User::findOrFail($id)->forceFill([
-                'password' => Hash::make($request->password)
+                'password' => Hash::make($request->password),
             ])->save();
 
         });
@@ -284,13 +281,12 @@ class UserController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
     /**
      * Update the specified resource in storage.
-     *
      */
     public function setSignature()
     {
@@ -298,20 +294,19 @@ class UserController extends Controller
         // dd(auth()->user()->id);
 
         User::findOrFail(auth()->user()->id)->addMediaFromBase64(request()->signature)
-                    ->usingFileName(auth()->user()->id . '_signature.png')
-                    ->toMediaCollection('signature');
+            ->usingFileName(auth()->user()->id.'_signature.png')
+            ->toMediaCollection('signature');
 
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
-     /**
+    /**
      * Update the specified resource in storage.
-     *
      */
     public function setDashboardHeader()
     {
@@ -320,51 +315,47 @@ class UserController extends Controller
 
         request()->validate([
             'photo' => 'required|file|image|max:5120',
-          ]);
+        ]);
 
         User::findOrFail(auth()->user()->id)->addMedia(request()->photo)
-        ->preservingOriginal()
-        ->toMediaCollection('dashboard_header_image');
-
-                
+            ->preservingOriginal()
+            ->toMediaCollection('dashboard_header_image');
 
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
     /**
      * Update the specified resource in storage.
-     *
      */
     public function unsetSignature()
     {
 
         // dd(request()->all());
 
-        User::findOrFail(auth()->user()->id)->getMedia('signature')?->first()->delete();
+        User::findOrFail(auth()->user()->id)->getMedia('signature')->first()?->delete();
 
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ]
+            ],
         ]);
     }
 
     /**
      * Remove the specified resource from storage.
-     *
      */
     public function destroy()
     {
-        abort_if( !auth()->user()->can('delete_users'), 403, '');
+        abort_if(! auth()->user()->can('delete_users'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and delete the record
         foreach (User::withTrashed()->findOrFail(request('recordIds')) as $record) {
@@ -375,32 +366,31 @@ class UserController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ]
+            ],
         ]);
     }
 
     /**
      * restore the specified resource from storage.
-     *
      */
     public function restore()
     {
-        abort_if( !auth()->user()->can('restore_users'), 403, '');
+        abort_if(! auth()->user()->can('restore_users'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and restore the record
         foreach (User::withTrashed()->findOrFail(request('recordIds')) as $record) {
             $record->restore();
         }
 
-       return redirect()->back()->with([
+        return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ]
-       ]);
+            ],
+        ]);
     }
 
     public function toggleActiveStatus(Request $request, $id)
@@ -408,43 +398,42 @@ class UserController extends Controller
         $user = User::findOrFail($id);
 
         $user->update([
-            'is_active' => !$user->is_active
+            'is_active' => ! $user->is_active,
         ]);
-        
-        if($user->is_active) {
+
+        if ($user->is_active) {
             activity()
                 ->performedOn($user)
                 ->causedBy(auth()->user())
-                ->log('Activou o usuário ' . $user->name);
+                ->log('Activou o usuário '.$user->name);
 
-                return redirect()->back()->with([
-                    'toast' => [
-                        'title' => trans('gestlab.toasts.notification'),
-                        'message' => trans('gestlab.toasts.record_successfully_activated'),
-                    ]
-               ]);
+            return redirect()->back()->with([
+                'toast' => [
+                    'title' => trans('gestlab.toasts.notification'),
+                    'message' => trans('gestlab.toasts.record_successfully_activated'),
+                ],
+            ]);
 
         } else {
             activity()
                 ->performedOn($user)
                 ->causedBy(auth()->user())
-                ->log('Desactivou o usuário ' . $user->full_name);
+                ->log('Desactivou o usuário '.$user->full_name);
 
-                return redirect()->back()->with([
-                    'toast' => [
-                        'title' => trans('gestlab.toasts.notification'),
-                        'message' => trans('gestlab.toasts.record_successfully_deactivated'),
-                    ]
-               ]);
+            return redirect()->back()->with([
+                'toast' => [
+                    'title' => trans('gestlab.toasts.notification'),
+                    'message' => trans('gestlab.toasts.record_successfully_deactivated'),
+                ],
+            ]);
 
         }
-         
+
         return back();
     }
 
     /**
      * Display a listing of the resource.
-     *
      */
     public function profile()
     {
@@ -466,7 +455,6 @@ class UserController extends Controller
 
     /**
      * Display a listing of the resource.
-     *
      */
     public function help()
     {
@@ -478,8 +466,99 @@ class UserController extends Controller
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    private function userManualFontOptions(): array
+    {
+        $regularFont = $this->firstExistingFont([
+            resource_path('fonts/Century Gothic.ttf'),
+            storage_path('app/fonts/Century Gothic.ttf'),
+            $this->homeFontPath('Library/Fonts/Century Gothic.ttf'),
+            '/Library/Fonts/Century Gothic.ttf',
+            '/System/Library/Fonts/Supplemental/Century Gothic.ttf',
+            '/usr/share/fonts/truetype/msttcorefonts/Century_Gothic.ttf',
+        ]);
+
+        if ($regularFont === null) {
+            return [];
+        }
+
+        $boldFont = $this->firstExistingFont([
+            resource_path('fonts/Century Gothic Bold.ttf'),
+            storage_path('app/fonts/Century Gothic Bold.ttf'),
+            $this->homeFontPath('Library/Fonts/Century Gothic Bold.ttf'),
+            $this->homeFontPath('Library/Fonts/ufonts.com_century-gothic-bold.ttf'),
+            '/Library/Fonts/Century Gothic Bold.ttf',
+            '/System/Library/Fonts/Supplemental/Century Gothic Bold.ttf',
+            '/usr/share/fonts/truetype/msttcorefonts/Century_Gothic_Bold.ttf',
+        ]) ?? $regularFont;
+
+        $fontDirectories = (new ConfigVariables)->getDefaults()['fontDir'];
+        $fontData = (new FontVariables)->getDefaults()['fontdata'];
+
+        return [
+            'fontDir' => array_values(array_unique([
+                ...$fontDirectories,
+                dirname($regularFont),
+                dirname($boldFont),
+            ])),
+            'fontdata' => $fontData + [
+                'centurygothic' => [
+                    'R' => basename($regularFont),
+                    'B' => basename($boldFont),
+                ],
+            ],
+            'default_font' => 'centurygothic',
+        ];
+    }
+
+    private function homeFontPath(string $relativePath): ?string
+    {
+        $homeDirectory = rtrim((string) ($_SERVER['HOME'] ?? getenv('HOME') ?: ''), DIRECTORY_SEPARATOR);
+
+        return $homeDirectory !== '' ? $homeDirectory.DIRECTORY_SEPARATOR.$relativePath : null;
+    }
+
+    /**
+     * @param  array<int, string|null>  $paths
+     */
+    private function firstExistingFont(array $paths): ?string
+    {
+        foreach ($paths as $path) {
+            if (is_string($path) && $path !== '' && is_file($path)) {
+                return str_replace('\\', '/', $path);
+            }
+        }
+
+        return null;
+    }
+
+    public function manualPdf(GeneralSettings $settings)
+    {
+        $pdf = PDF::loadView('PDFs.user-manual', [
+            'settings' => $settings,
+            'generatedAt' => now(),
+        ], [], [
+            ...[
+                'format' => 'A4',
+                'orientation' => 'P',
+                'margin_top' => 14,
+                'margin_bottom' => 18,
+                'margin_left' => 12,
+                'margin_right' => 12,
+                'margin_footer' => 8,
+                'title' => 'Manual do Utilizador',
+                'author' => auth()->user()?->name,
+                'display_mode' => 'fullpage',
+            ],
+            ...$this->userManualFontOptions(),
+        ]);
+
+        return PdfResponse::download($pdf, 'manual-do-utilizador-gestlab.pdf');
+    }
+
+    /**
      * Display a listing of the resource.
-     *
      */
     public function security()
     {
@@ -492,11 +571,10 @@ class UserController extends Controller
 
     /**
      * Display the specified resource.
-     *
      */
     public function impersonate()
     {
-        abort_if( !auth()->user()->can('impersonate_users'), 403, '');
+        abort_if(! auth()->user()->can('impersonate_users'), 403, '');
 
         // dd(collect(request()->id)->first()['id']);
         // dd(request()->id);
@@ -504,7 +582,7 @@ class UserController extends Controller
         $originalId = auth()->user()->id;
 
         session()->put('impersonate', $originalId);
-        
+
         auth()->loginUsingId(request()->id);
 
         return to_route('dashboard');
@@ -512,34 +590,32 @@ class UserController extends Controller
 
     /**
      * Display the specified resource.
-     *
      */
     public function leave()
     {
 
-        if(! session()->has('impersonate')) {
+        if (! session()->has('impersonate')) {
             abort(403);
         }
 
-        
         auth()->loginUsingId(session('impersonate'));
 
         session()->forget('impersonate');
 
-
         return to_route('dashboard');
     }
 
-    public function getUser() {
+    public function getUser()
+    {
         $data = [];
 
-        if(request()->has('q')){
+        if (request()->has('q')) {
             $search = request()->q;
-            
-            $data = DB::table("users")
+
+            $data = DB::table('users')
                 ->select('users.*')
-                ->where('name','LIKE',"%$search%")
-                ->orWhere('email','LIKE',"%$search%")
+                ->where('name', 'LIKE', "%$search%")
+                ->orWhere('email', 'LIKE', "%$search%")
                 ->get();
         }
 

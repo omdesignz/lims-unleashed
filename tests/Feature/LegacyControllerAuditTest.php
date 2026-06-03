@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\InventoryItem;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -60,5 +61,31 @@ class LegacyControllerAuditTest extends TestCase
         }
 
         $this->assertSame([], $failures, implode(PHP_EOL, $failures));
+    }
+
+    public function test_missing_quality_certificate_show_returns_not_found_instead_of_null_page(): void
+    {
+        $user = $this->verifiedAdmin();
+
+        $this->actingAs($user)
+            ->get(route('qualitycertificates.show', ['certificate' => 999999999]))
+            ->assertNotFound();
+    }
+
+    public function test_missing_inventory_attachment_deletes_return_not_found_instead_of_server_errors(): void
+    {
+        $user = $this->verifiedAdmin();
+        $item = InventoryItem::query()->firstOrFail();
+        $missingMediaId = 999999999;
+
+        foreach ([
+            route('iitems.delete-attachment', ['model_id' => $item->id, 'id' => $missingMediaId]),
+            route('iequipments.delete-attachment', ['model_id' => $item->id, 'id' => $missingMediaId]),
+            route('vap-inventory.items.attachments.delete', ['id' => $missingMediaId, 'model_id' => $item->id]),
+        ] as $url) {
+            $this->actingAs($user)
+                ->delete($url)
+                ->assertNotFound();
+        }
     }
 }

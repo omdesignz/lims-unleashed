@@ -4,13 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Exports\NonConformitiesExport;
 use App\Exports\NonConformityDetailsExport;
+use App\Models\Department;
+use App\Models\VAPLab;
 use App\Models\VAPNonConformity;
 use App\Models\VAPNonConformityAction;
-use App\Models\VAPLab;
-use App\Models\Department;
-use Inertia\Inertia;
+use App\Support\PdfResponse;
+use App\Support\QualityModuleNotifier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 use PDF;
 
@@ -25,23 +28,23 @@ class VAPNonConformityController extends Controller
             ->orderBy('created_at', 'desc');
 
         // Apply filters
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->has('severity')) {
+        if ($request->filled('severity')) {
             $query->where('severity', $request->severity);
         }
 
-        if ($request->has('category')) {
+        if ($request->filled('category')) {
             $query->where('category', $request->category);
         }
 
-        if ($request->has('lab_id')) {
+        if ($request->filled('lab_id')) {
             $query->where('lab_id', $request->lab_id);
         }
 
-        if ($request->has('search')) {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('nc_number', 'like', "%{$search}%")
@@ -56,8 +59,9 @@ class VAPNonConformityController extends Controller
             'nonConformities' => $nonConformities,
             'filters' => $request->only(['search', 'status', 'severity', 'category', 'lab_id']),
             'stats' => $this->getStats(),
+            'charts' => $this->getCharts(),
             'labs' => VAPLab::all(['id', 'name']),
-            'departments' => Department::all(['id', 'name'])
+            'departments' => Department::all(['id', 'name']),
         ]);
     }
 
@@ -69,7 +73,7 @@ class VAPNonConformityController extends Controller
         return Inertia::render('VAPNonConformities/Create', [
             'labs' => VAPLab::all(['id', 'name']),
             'departments' => Department::all(['id', 'name']),
-            'defaultNcNumber' => (new VAPNonConformity())->generateNcNumber()
+            'defaultNcNumber' => (new VAPNonConformity)->generateNcNumber(),
         ]);
     }
 
@@ -103,23 +107,31 @@ class VAPNonConformityController extends Controller
             'preventive_actions' => 'nullable|string',
             'comments' => 'nullable|string',
             'attachments' => 'nullable|array',
+            'attachment_files' => 'nullable|array',
+            'attachment_files.*' => 'file|mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,csv,txt|max:10240',
             'actions' => 'nullable|array',
             'actions.*.correction' => 'nullable|string',
             'actions.*.corrective_action' => 'nullable|string',
-            'actions.*.due_at' => 'nullable|date'
+            'actions.*.due_at' => 'nullable|date',
         ]);
 
-        DB::transaction(function () use ($validated) {
-            $nonConformity = VAPNonConformity::create($validated);
+        $nonConformity = DB::transaction(function () use ($validated) {
+            $nonConformity = VAPNonConformity::create(Arr::except($validated, ['actions', 'attachment_files']));
 
             // Save actions if provided
-            if (!empty($validated['actions'])) {
+            if (! empty($validated['actions'])) {
                 foreach ($validated['actions'] as $actionData) {
                     $actionData['nc_id'] = $nonConformity->id;
                     VAPNonConformityAction::create($actionData);
                 }
             }
+
+            return $nonConformity->load(['assignedToUser', 'reportedByUser']);
         });
+
+        $this->storeAttachments($request, $nonConformity);
+
+        app(QualityModuleNotifier::class)->notifyNonConformityCreated($nonConformity);
 
         return redirect()->route('vap_non_conformities.index')
             ->with('success', 'Non-conformity created successfully.');
@@ -130,12 +142,12 @@ class VAPNonConformityController extends Controller
      */
     public function show(VAPNonConformity $nonConformity)
     {
-        $nonConformity->load(['lab', 'department', 'actions', 'reportedByUser', 'assignedToUser']);
+        $nonConformity->load(['lab', 'department', 'actions', 'reportedByUser', 'assignedToUser', 'media']);
 
         return Inertia::render('VAPNonConformities/Show', [
-            'nonConformity' => $nonConformity,
+            'nonConformity' => $this->serializeNonConformity($nonConformity),
             'labs' => VAPLab::all(['id', 'name']),
-            'departments' => Department::all(['id', 'name'])
+            'departments' => Department::all(['id', 'name']),
         ]);
     }
 
@@ -144,12 +156,12 @@ class VAPNonConformityController extends Controller
      */
     public function edit(VAPNonConformity $nonConformity)
     {
-        $nonConformity->load(['lab', 'department', 'actions']);
+        $nonConformity->load(['lab', 'department', 'actions', 'media']);
 
         return Inertia::render('VAPNonConformities/Edit', [
-            'nonConformity' => $nonConformity,
+            'nonConformity' => $this->serializeNonConformity($nonConformity),
             'labs' => VAPLab::all(['id', 'name']),
-            'departments' => Department::all(['id', 'name'])
+            'departments' => Department::all(['id', 'name']),
         ]);
     }
 
@@ -161,7 +173,7 @@ class VAPNonConformityController extends Controller
         $validated = $request->validate([
             'lab_id' => 'nullable|exists:labs,id',
             'department_id' => 'nullable|exists:departments,id',
-            'nc_number' => 'required|string|max:255|unique:v_non_conformities,nc_number,' . $nonConformity->id,
+            'nc_number' => 'required|string|max:255|unique:v_non_conformities,nc_number,'.$nonConformity->id,
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'status' => 'required|in:opened,in_progress,resolved,closed',
@@ -183,45 +195,83 @@ class VAPNonConformityController extends Controller
             'preventive_actions' => 'nullable|string',
             'comments' => 'nullable|string',
             'attachments' => 'nullable|array',
+            'attachment_files' => 'nullable|array',
+            'attachment_files.*' => 'file|mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,csv,txt|max:10240',
             'actions' => 'nullable|array',
             'actions.*.id' => 'nullable|exists:v_non_conformity_actions,id',
             'actions.*.correction' => 'nullable|string',
             'actions.*.corrective_action' => 'nullable|string',
-            'actions.*.due_at' => 'nullable|date'
+            'actions.*.due_at' => 'nullable|date',
         ]);
 
-        DB::transaction(function () use ($nonConformity, $validated) {
-            $nonConformity->update($validated);
+        $before = $nonConformity->only(['status', 'severity']);
 
-            // Update or create actions
-            if (!empty($validated['actions'])) {
-                $existingActionIds = [];
-                
-                foreach ($validated['actions'] as $actionData) {
-                    if (isset($actionData['id'])) {
-                        // Update existing action
-                        $action = VAPNonConformityAction::find($actionData['id']);
-                        if ($action) {
-                            $action->update($actionData);
-                            $existingActionIds[] = $action->id;
-                        }
-                    } else {
-                        // Create new action
-                        $actionData['nc_id'] = $nonConformity->id;
-                        $action = VAPNonConformityAction::create($actionData);
-                        $existingActionIds[] = $action->id;
-                    }
+        DB::transaction(function () use ($nonConformity, $validated) {
+            $nonConformity->update(Arr::except($validated, ['actions', 'attachment_files']));
+
+            $existingActionIds = [];
+
+            foreach ($validated['actions'] ?? [] as $actionData) {
+                if (isset($actionData['id'])) {
+                    $action = $nonConformity->actions()
+                        ->whereKey($actionData['id'])
+                        ->firstOrFail();
+                    $action->update($actionData);
+                    $existingActionIds[] = $action->id;
+
+                    continue;
                 }
 
-                // Delete actions not in the request
-                VAPNonConformityAction::where('nc_id', $nonConformity->id)
-                    ->whereNotIn('id', $existingActionIds)
-                    ->delete();
+                $actionData['nc_id'] = $nonConformity->id;
+                $action = VAPNonConformityAction::create($actionData);
+                $existingActionIds[] = $action->id;
             }
+
+            VAPNonConformityAction::query()
+                ->where('nc_id', $nonConformity->id)
+                ->when($existingActionIds !== [], fn ($query) => $query->whereNotIn('id', $existingActionIds))
+                ->delete();
         });
+
+        $this->storeAttachments($request, $nonConformity);
+
+        $nonConformity->refresh()->load(['assignedToUser', 'reportedByUser']);
+        app(QualityModuleNotifier::class)->notifyNonConformityUpdated($nonConformity, $before);
 
         return redirect()->route('vap_non_conformities.show', $nonConformity)
             ->with('success', 'Non-conformity updated successfully.');
+    }
+
+    private function storeAttachments(Request $request, VAPNonConformity $nonConformity): void
+    {
+        if (! $request->hasFile('attachment_files')) {
+            return;
+        }
+
+        foreach ($request->file('attachment_files', []) as $file) {
+            $nonConformity
+                ->addMedia($file)
+                ->toMediaCollection('attachments');
+        }
+    }
+
+    private function serializeNonConformity(VAPNonConformity $nonConformity): array
+    {
+        $payload = $nonConformity->toArray();
+        $payload['media_attachments'] = $nonConformity
+            ->getMedia('attachments')
+            ->map(fn ($media) => [
+                'id' => $media->id,
+                'name' => $media->name,
+                'file_name' => $media->file_name,
+                'mime_type' => $media->mime_type,
+                'size' => $media->size,
+                'human_readable_size' => $media->human_readable_size,
+                'url' => $media->getUrl(),
+            ])
+            ->values();
+
+        return $payload;
     }
 
     /**
@@ -256,7 +306,84 @@ class VAPNonConformityController extends Controller
                 ->pluck('count', 'severity'),
             'by_category' => VAPNonConformity::groupBy('category')
                 ->selectRaw('category, count(*) as count')
-                ->pluck('count', 'category')
+                ->pluck('count', 'category'),
+        ];
+    }
+
+    private function getCharts(): array
+    {
+        return [
+            'status' => $this->distributionChart('status', [
+                'opened' => 'Aberta',
+                'in_progress' => 'Em progresso',
+                'resolved' => 'Resolvida',
+                'closed' => 'Fechada',
+            ]),
+            'severity' => $this->distributionChart('severity', [
+                'low' => 'Baixa',
+                'medium' => 'Média',
+                'high' => 'Alta',
+                'critical' => 'Crítica',
+            ]),
+            'category' => $this->distributionChart('category', [
+                'quality' => 'Qualidade',
+                'safety' => 'Segurança',
+                'environmental' => 'Ambiental',
+                'regulatory' => 'Regulatório',
+                'other' => 'Outro',
+            ]),
+            'trend' => $this->monthlyTrendChart(),
+        ];
+    }
+
+    private function distributionChart(string $column, array $labels): array
+    {
+        $distribution = VAPNonConformity::query()
+            ->selectRaw("{$column}, count(*) as aggregate")
+            ->groupBy($column)
+            ->pluck('aggregate', $column);
+
+        $items = collect($labels)->map(fn (string $label, string $key) => [
+            'label' => $label,
+            'value' => (int) ($distribution[$key] ?? 0),
+        ]);
+
+        return [
+            'labels' => $items->pluck('label')->values()->all(),
+            'series' => $items->pluck('value')->values()->all(),
+        ];
+    }
+
+    private function monthlyTrendChart(): array
+    {
+        $months = collect(range(5, 0))->map(fn (int $monthsAgo) => now()->startOfMonth()->subMonths($monthsAgo));
+        $firstMonth = $months->first()->copy();
+        $lastMonth = $months->last()->copy()->endOfMonth();
+
+        $created = VAPNonConformity::query()
+            ->whereBetween('created_at', [$firstMonth, $lastMonth])
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month_key, count(*) as aggregate")
+            ->groupBy('month_key')
+            ->pluck('aggregate', 'month_key');
+
+        $closed = VAPNonConformity::query()
+            ->whereBetween('resolved_at', [$firstMonth, $lastMonth])
+            ->selectRaw("DATE_FORMAT(resolved_at, '%Y-%m') as month_key, count(*) as aggregate")
+            ->groupBy('month_key')
+            ->pluck('aggregate', 'month_key');
+
+        return [
+            'categories' => $months->map(fn ($month) => $month->translatedFormat('M Y'))->values()->all(),
+            'series' => [
+                [
+                    'name' => 'Registadas',
+                    'data' => $months->map(fn ($month) => (int) ($created[$month->format('Y-m')] ?? 0))->values()->all(),
+                ],
+                [
+                    'name' => 'Resolvidas',
+                    'data' => $months->map(fn ($month) => (int) ($closed[$month->format('Y-m')] ?? 0))->values()->all(),
+                ],
+            ],
         ];
     }
 
@@ -266,9 +393,9 @@ class VAPNonConformityController extends Controller
     public function exportExcel(Request $request)
     {
         $filters = $request->only(['status', 'severity', 'category', 'lab_id', 'start_date', 'end_date']);
-        
-        $fileName = 'non_conformities_' . now()->format('Y_m_d_His') . '.xlsx';
-        
+
+        $fileName = 'non_conformities_'.now()->format('Y_m_d_His').'.xlsx';
+
         return Excel::download(new NonConformitiesExport($filters), $fileName);
     }
 
@@ -277,8 +404,8 @@ class VAPNonConformityController extends Controller
      */
     public function exportDetailsExcel(VAPNonConformity $nonConformity)
     {
-        $fileName = 'nc_details_' . $nonConformity->nc_number . '_' . now()->format('Y_m_d_His') . '.xlsx';
-        
+        $fileName = 'nc_details_'.$nonConformity->nc_number.'_'.now()->format('Y_m_d_His').'.xlsx';
+
         return Excel::download(new NonConformityDetailsExport($nonConformity), $fileName);
     }
 
@@ -288,19 +415,19 @@ class VAPNonConformityController extends Controller
     public function exportPdf(Request $request)
     {
         $filters = $request->only(['status', 'severity', 'category', 'lab_id', 'start_date', 'end_date']);
-        
+
         $nonConformities = $this->getFilteredNonConformities($filters);
-        
+
         $pdf = PDF::loadView('exports.non-conformities.pdf', [
             'nonConformities' => $nonConformities,
             'filters' => $filters,
             'title' => 'Relatório de Não Conformidades',
-            'exportDate' => now()->format('d/m/Y H:i:s')
+            'exportDate' => now()->format('d/m/Y H:i:s'),
         ]);
-        
-        $fileName = 'non_conformities_' . now()->format('Y_m_d_His') . '.pdf';
-        
-        return $pdf->download($fileName);
+
+        $fileName = 'non_conformities_'.now()->format('Y_m_d_His').'.pdf';
+
+        return PdfResponse::download($pdf, $fileName);
     }
 
     /**
@@ -309,16 +436,16 @@ class VAPNonConformityController extends Controller
     public function exportDetailsPdf(VAPNonConformity $nonConformity)
     {
         $nonConformity->load(['lab', 'department', 'actions', 'reportedByUser', 'assignedToUser']);
-        
+
         $pdf = PDF::loadView('exports.non-conformities.details-pdf', [
             'nonConformity' => $nonConformity,
-            'title' => 'Detalhes da Não Conformidade ' . $nonConformity->nc_number,
-            'exportDate' => now()->format('d/m/Y H:i:s')
+            'title' => 'Detalhes da Não Conformidade '.$nonConformity->nc_number,
+            'exportDate' => now()->format('d/m/Y H:i:s'),
         ]);
-        
-        $fileName = 'nc_details_' . $nonConformity->nc_number . '_' . now()->format('Y_m_d_His') . '.pdf';
-        
-        return $pdf->download($fileName);
+
+        $fileName = 'nc_details_'.$nonConformity->nc_number.'_'.now()->format('Y_m_d_His').'.pdf';
+
+        return PdfResponse::download($pdf, $fileName);
     }
 
     /**
@@ -329,27 +456,27 @@ class VAPNonConformityController extends Controller
         $query = VAPNonConformity::with(['lab', 'department'])
             ->orderBy('created_at', 'desc');
 
-        if (!empty($filters['status'])) {
+        if (! empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
 
-        if (!empty($filters['severity'])) {
+        if (! empty($filters['severity'])) {
             $query->where('severity', $filters['severity']);
         }
 
-        if (!empty($filters['category'])) {
+        if (! empty($filters['category'])) {
             $query->where('category', $filters['category']);
         }
 
-        if (!empty($filters['lab_id'])) {
+        if (! empty($filters['lab_id'])) {
             $query->where('lab_id', $filters['lab_id']);
         }
 
-        if (!empty($filters['start_date'])) {
+        if (! empty($filters['start_date'])) {
             $query->whereDate('reported_at', '>=', $filters['start_date']);
         }
 
-        if (!empty($filters['end_date'])) {
+        if (! empty($filters['end_date'])) {
             $query->whereDate('reported_at', '<=', $filters['end_date']);
         }
 

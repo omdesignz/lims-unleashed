@@ -35,7 +35,7 @@
           v-if="!tags.length"
           class="flex w-full items-center rounded-2xl border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-500 dark:border-slate-600 dark:text-slate-400"
         >
-          Ainda não existem etiquetas atribuídas a este ficheiro.
+          {{ $t('gestlab.general.labels.vap_filemanager.tags_empty') }}
         </div>
       </div>
     </div>
@@ -53,7 +53,7 @@
             v-model="newTag"
             type="text"
             @keydown.enter.prevent="addTag"
-            placeholder="Ex.: procedimento, certificado, revisão anual"
+            :placeholder="$t('gestlab.general.labels.vap_filemanager.tag_placeholder')"
             class="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-900/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-blue-500 dark:focus:bg-slate-900 dark:focus:ring-blue-500/20"
           />
         </div>

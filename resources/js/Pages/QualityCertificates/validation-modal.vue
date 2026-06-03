@@ -4,10 +4,10 @@
     maxWidth="2xl"
     @close="closeModal"
   >
-    <div class="space-y-6 p-6 sm:p-8">
+    <div class="quality-certificate-validation space-y-6 p-6 sm:p-8" :class="commercialDocumentThemeClasses">
       <div class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
         <div class="text-center">
-          <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-blue-950 to-blue-800 shadow-lg shadow-blue-950/20 dark:from-blue-500 dark:to-cyan-400 dark:text-slate-950">
+          <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[rgb(var(--primary-900-rgb))] to-[rgb(var(--primary-700-rgb))] shadow-lg shadow-[rgb(var(--primary-900-rgb)/0.2)] dark:from-[rgb(var(--primary-300-rgb))] dark:to-[rgb(var(--primary-500-rgb))] dark:text-[#07110f]">
           <CheckBadgeIcon class="h-6 w-6 text-white" />
           </div>
           <h3 class="mt-4 text-xl font-semibold text-slate-900 dark:text-white">
@@ -48,9 +48,9 @@
               type="button"
               @click="toggleOnBehalfOf"
               :class="[
-                'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2',
+                'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-700-rgb))] focus:ring-offset-2 dark:focus:ring-[rgb(var(--primary-300-rgb))]',
                 isOnBehalfOf 
-                  ? 'bg-gradient-to-r from-blue-900 to-blue-800' 
+                  ? 'bg-gradient-to-r from-[rgb(var(--primary-900-rgb))] to-[rgb(var(--primary-700-rgb))] dark:from-[rgb(var(--primary-300-rgb))] dark:to-[rgb(var(--primary-500-rgb))]'
                   : 'bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-600'
               ]"
               :aria-label="isOnBehalfOf ? 'Desativar assinatura por outrem' : 'Ativar assinatura por outrem'"
@@ -115,7 +115,7 @@
               <button
                 type="button"
                 @click="closeModal"
-                class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-950"
+                class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors duration-200 hover:border-[rgb(var(--primary-700-rgb))] hover:bg-slate-50 hover:text-[rgb(var(--primary-900-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-700-rgb))] focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-[rgb(var(--primary-300-rgb))] dark:hover:bg-slate-800 dark:hover:text-[rgb(var(--primary-100-rgb))] dark:focus:ring-[rgb(var(--primary-300-rgb))] dark:focus:ring-offset-slate-950"
               >
                 {{ $t('gestlab.general.buttons.cancel') }}
               </button>
@@ -124,10 +124,10 @@
                 type="submit"
                 :disabled="form.processing || !form.signature"
                 :class="[
-                  'inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-950',
+                  'inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-700-rgb))] focus:ring-offset-2 dark:focus:ring-[rgb(var(--primary-300-rgb))] dark:focus:ring-offset-slate-950',
                   form.processing || !form.signature
                     ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-                    : 'bg-gradient-to-r from-blue-950 to-blue-800 text-white hover:from-blue-900 hover:to-blue-700'
+                    : 'bg-gradient-to-r from-[rgb(var(--primary-900-rgb))] to-[rgb(var(--primary-700-rgb))] text-white hover:from-[rgb(var(--primary-800-rgb))] hover:to-[rgb(var(--primary-600-rgb))] dark:from-[rgb(var(--primary-300-rgb))] dark:to-[rgb(var(--primary-500-rgb))] dark:text-[#07110f]'
                 ]"
               >
                 <template v-if="form.processing">
@@ -153,11 +153,13 @@ import { watch, computed } from 'vue'
 import Modal from "@/Components/modal.vue";
 import ComboboxEnhanced from "@/Components/combobox-enhanced.vue";
 import DocumentValidationSignature from '@/Components/document-validation-signature.vue';
+import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
 import {
   CheckBadgeIcon,
   CheckCircleIcon,
   ArrowPathIcon,
 } from '@heroicons/vue/24/outline';
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 const props = defineProps({
   record: Object,
@@ -266,20 +268,7 @@ const updateRecord = () => {
 }
 
 const loadUsers = (query, setOptions) => {
-  fetch(`/users/getUser?q=${query}`)
-    .then(response => response.json())
-    .then(results => {
-      setOptions(
-        results.map(result => ({
-          value: result.id,
-          label: result.name,
-          ...(result.email && { subtitle: result.email })
-        }))
-      );
-    })
-    .catch(() => {
-      setOptions([]);
-    });
+  return loadSelectOptions('/users/getUser', query, setOptions, optionMappers.name);
 }
 </script>
 
@@ -301,13 +290,13 @@ const loadUsers = (query, setOptions) => {
 }
 
 /* Focus states for accessibility */
-button:focus-visible {
-  outline: 2px solid #1e3a8a;
+.quality-certificate-validation button:focus-visible {
+  outline: 2px solid rgb(var(--primary-700-rgb));
   outline-offset: 2px;
 }
 
 /* Disabled state styling */
-button:disabled {
+.quality-certificate-validation button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

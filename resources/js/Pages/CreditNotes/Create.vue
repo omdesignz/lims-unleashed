@@ -1,5 +1,7 @@
 <script setup>
+import '../CommercialDocumentSurface.css';
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed, reactive, watch } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue';
@@ -369,7 +371,7 @@ const onSelectedItem = (item) => {
 </script>
 
 <template>
-    <div class="space-y-8">
+    <div class="commercial-document-page space-y-8" :class="commercialDocumentThemeClasses">
         <!-- Header -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="flex items-center justify-between">
@@ -413,7 +415,7 @@ const onSelectedItem = (item) => {
                             v-model="form.invoice_id" 
                             :load-options="loadInvoices" 
                             @update:model-value="(e) => loadInvoiceBasedOnId(e)"
-                            placeholder="Select invoice..."
+                            :placeholder="$t('gestlab.general.labels.credit_notes.placeholders.select_invoice')"
                         />
                         <p v-if="form.errors.invoice_id" class="text-xs text-red-600">
                             {{ form.errors.invoice_id }}
@@ -430,7 +432,7 @@ const onSelectedItem = (item) => {
                             :hasError="form.errors.customer_id" 
                             v-model="form.customer_id" 
                             :load-options="loadCustomers"
-                            placeholder="Select customer..."
+                            :placeholder="$t('gestlab.general.labels.credit_notes.placeholders.select_customer')"
                         />
                         <p v-if="form.errors.customer_id" class="text-xs text-red-600">
                             {{ form.errors.customer_id }}
@@ -449,7 +451,7 @@ const onSelectedItem = (item) => {
                             :hasError="form.errors.warehouse_id" 
                             v-model="form.warehouse_id" 
                             :load-options="loadWarehouses"
-                            placeholder="Select warehouse..."
+                            :placeholder="$t('gestlab.general.labels.credit_notes.placeholders.select_warehouse')"
                         />
                         <p v-if="form.errors.warehouse_id" class="text-xs text-red-600">
                             {{ form.errors.warehouse_id }}
@@ -465,7 +467,7 @@ const onSelectedItem = (item) => {
                             v-model="form.internal_ref" 
                             type="text" 
                             class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
-                            placeholder="Enter reference..."
+                            :placeholder="$t('gestlab.general.labels.credit_notes.placeholders.enter_reference')"
                         />
                         <p v-if="form.errors.internal_ref" class="text-xs text-red-600">
                             {{ form.errors.internal_ref }}
@@ -483,7 +485,7 @@ const onSelectedItem = (item) => {
                             <comboboxEnhanced
                                 :options="props.reasons"
                                 v-model="form.reason"
-                                placeholder="Select reason..."
+                                :placeholder="$t('gestlab.general.labels.credit_notes.placeholders.select_reason')"
                             />
                             <p v-if="form.errors.reason" class="text-xs text-red-600">
                                 {{ form.errors.reason }}
@@ -615,7 +617,7 @@ const onSelectedItem = (item) => {
                                         v-model="item.item.item_id" 
                                         :load-options="loadMatrixes" 
                                         @update:model-value="onSelectedItem(item)"
-                                        placeholder="Select matrix..."
+                                        :placeholder="$t('gestlab.general.labels.credit_notes.placeholders.select_matrix')"
                                         class="min-w-[250px]"
                                     />
                                     <comboboxEnhanced 
@@ -623,7 +625,7 @@ const onSelectedItem = (item) => {
                                         v-model="item.item.item_id" 
                                         :load-options="loadParameters" 
                                         @update:model-value="onSelectedItem(item)"
-                                        placeholder="Select parameter..."
+                                        :placeholder="$t('gestlab.general.labels.credit_notes.placeholders.select_parameter')"
                                         class="min-w-[250px]"
                                     />
                                     <textarea 
@@ -648,7 +650,7 @@ const onSelectedItem = (item) => {
                                     <comboboxEnhanced 
                                         v-model="item.item.unit_id" 
                                         :load-options="loadUnits"
-                                        placeholder="Unit"
+                                        :placeholder="$t('gestlab.general.labels.credit_notes.placeholders.unit')"
                                         class="w-32"
                                     />
                                 </div>
@@ -845,8 +847,8 @@ const onSelectedItem = (item) => {
         v-if="showDeleteConfirmation" 
         :title="$t('gestlab.actions.confirmation_dialog_title.default')" 
         :description="$t('gestlab.actions.confirmation_dialog_description.default')" 
-        confirm="Sim" 
-        cancel="Não"
+        :confirm="$t('gestlab.general.buttons.yes')"
+        :cancel="$t('gestlab.general.buttons.no')"
     >
         <div class="mt-4">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900 text-white text-xs font-semibold mb-4">

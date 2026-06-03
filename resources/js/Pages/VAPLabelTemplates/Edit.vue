@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between">
@@ -494,6 +494,7 @@
 </template>
 
 <script setup>
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { useForm, Link, router } from '@inertiajs/vue3'
 import { 
   DocumentTextIcon, 

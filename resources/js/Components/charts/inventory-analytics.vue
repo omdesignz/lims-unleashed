@@ -1,18 +1,18 @@
 <template>
   <div class="space-y-6">
     <!-- FILTER CONTROLS -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div :class="panelClass">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <!-- DATE RANGE -->
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700">
+          <label :class="labelClass">
             <CalendarIcon class="h-4 w-4 inline mr-1" />
             Intervalo de Datas
           </label>
           <select
             v-model="filters.dateRange"
             @change="updateCharts"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-900 focus:ring-blue-900"
+            :class="inputClass"
           >
             <option value="7d">Últimos 7 Dias</option>
             <option value="30d">Últimos 30 Dias</option>
@@ -24,14 +24,14 @@
 
         <!-- CATEGORY FILTER -->
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700">
+          <label :class="labelClass">
             <TagIcon class="h-4 w-4 inline mr-1" />
             Categoria
           </label>
           <select
             v-model="filters.categoryId"
             @change="updateCharts"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-900 focus:ring-blue-900"
+            :class="inputClass"
           >
             <option value="">Todas</option>
             <option v-for="category in categories" :key="category.id" :value="category.id">
@@ -42,14 +42,14 @@
 
         <!-- WAREHOUSE FILTER -->
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700">
+          <label :class="labelClass">
             <BuildingLibraryIcon class="h-4 w-4 inline mr-1" />
             Armazém
           </label>
           <select
             v-model="filters.warehouseId"
             @change="updateCharts"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-900 focus:ring-blue-900"
+            :class="inputClass"
           >
             <option value="">Todos os Armazéns</option>
             <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
@@ -60,7 +60,7 @@
 
         <!-- CUSTOM DATE RANGE -->
         <div v-if="filters.dateRange === 'custom'" class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700">
+          <label :class="labelClass">
             Período Personalizado
           </label>
           <div class="grid grid-cols-2 gap-2">
@@ -68,13 +68,13 @@
               v-model="filters.startDate"
               type="date"
               @change="updateCharts"
-              class="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              :class="inputClass"
             />
             <input
               v-model="filters.endDate"
               type="date"
               @change="updateCharts"
-              class="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              :class="inputClass"
             />
           </div>
         </div>
@@ -84,19 +84,19 @@
     <!-- CHARTS GRID -->
     <div :class="['grid grid-cols-1 lg:grid-cols-2 gap-6 transition-opacity duration-300', isLoading ? 'opacity-50 pointer-events-none' : 'opacity-100']">
       <!-- REAGENT CONSUMPTION TREND -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div :class="panelClass">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <ArrowTrendingUpIcon class="h-5 w-5 text-blue-900" />
+            <h3 :class="titleClass">
+              <ArrowTrendingUpIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
               Tendência de Consumo de Reagentes
             </h3>
-            <p class="text-sm text-gray-500 mt-1">Tendência de consumo de reagentes por dia</p>
+            <p :class="mutedClass">Tendência de consumo de reagentes por dia</p>
           </div>
           <div class="flex items-center gap-2">
             <button
               @click="downloadChart('consumption')"
-              class="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              :class="smallButtonClass"
             >
               <ArrowDownTrayIcon class="h-3 w-3" />
               Exportar
@@ -110,25 +110,25 @@
           :options="consumptionChartOptions"
           :series="consumptionSeries"
         />
-        <div v-else class="h-[300px] flex items-center justify-center text-gray-400">
+        <div v-else class="flex h-[300px] items-center justify-center text-slate-400 dark:text-slate-500">
           Nenhuma informação de consumo disponível
         </div>
       </div>
 
       <!-- STOCK LEVELS BY CATEGORY -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div :class="panelClass">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <ChartPieIcon class="h-5 w-5 text-blue-900" />
+            <h3 :class="titleClass">
+              <ChartPieIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
               Distribuição de Estoque por Categoria
             </h3>
-            <p class="text-sm text-gray-500 mt-1">Níveis de estoque atuais em todas as categorias</p>
+            <p :class="mutedClass">Níveis de estoque atuais em todas as categorias</p>
           </div>
           <div class="flex items-center gap-2">
             <button
               @click="toggleStockChartType"
-              class="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              :class="smallButtonClass"
             >
               <ArrowsRightLeftIcon class="h-3 w-3" />
               {{ stockChartType === 'pie' ? 'Visão de Barras' : 'Visão de Pizza' }}
@@ -143,20 +143,20 @@
           :options="stockChartOptions"
           :series="stockSeries"
         />
-        <div v-else class="h-[300px] flex items-center justify-center text-gray-400">
+        <div v-else class="flex h-[300px] items-center justify-center text-slate-400 dark:text-slate-500">
           Sem Dados Disponíveis
         </div>
       </div>
 
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+      <div :class="panelClass">
 
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <ArchiveBoxIcon class="h-5 w-5 text-blue-900" />
+            <h3 :class="titleClass">
+              <ArchiveBoxIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
               Desempenho do Fornecedor
             </h3>
-            <p class="text-sm text-gray-500 mt-1">
+            <p :class="mutedClass">
                 Desempenho de Entrega do Fornecedor ao longo do tempo
             </p>
           </div>
@@ -170,21 +170,21 @@
                     :series="supplierSeries"
                 />
             </div>
-            <div v-else class="h-[350px] flex flex-col items-center justify-center text-gray-400">
+            <div v-else class="flex h-[350px] flex-col items-center justify-center text-slate-400 dark:text-slate-500">
                 <ChartBarIcon class="h-12 w-12 mb-2 opacity-20" />
                 <p class="text-sm">Nenhuma entrega encontrada para os filtros selecionados.</p>
             </div>
         </div>
 
       <!-- MONTHLY CONSUMPTION COMPARISON -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div :class="panelClass">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <ChartBarIcon class="h-5 w-5 text-blue-900" />
+            <h3 :class="titleClass">
+              <ChartBarIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
               Comparação Mensal de Consumo
             </h3>
-            <p class="text-sm text-gray-500 mt-1">Padrões de uso mensais</p>
+            <p :class="mutedClass">Padrões de uso mensais</p>
           </div>
         </div>
         <apexchart
@@ -194,25 +194,25 @@
           :options="monthlyChartOptions"
           :series="monthlySeries"
         />
-        <div v-else class="h-[300px] flex items-center justify-center text-gray-400">
+        <div v-else class="flex h-[300px] items-center justify-center text-slate-400 dark:text-slate-500">
           Sem Dados Disponíveis
         </div>
       </div>
 
       <!-- TOP CONSUMED REAGENTS -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div :class="panelClass">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <TrophyIcon class="h-5 w-5 text-blue-900" />
+            <h3 :class="titleClass">
+              <TrophyIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
               Reagentos Mais Consumidos
             </h3>
-            <p class="text-sm text-gray-500 mt-1">Reagentos mais frequentemente consumidos</p>
+            <p :class="mutedClass">Reagentos mais frequentemente consumidos</p>
           </div>
           <div class="flex items-center gap-2">
             <button
               @click="toggleTopReagentsLimit"
-              class="inline-flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              :class="smallButtonClass"
             >
               {{ topReagentsLimit === 5 ? 'Mostrar 10' : 'Mostrar 5' }}
             </button>
@@ -225,7 +225,7 @@
           :options="topReagentsChartOptions"
           :series="topReagentsSeries"
         />
-        <div v-else class="h-[300px] flex items-center justify-center text-gray-400">
+        <div v-else class="flex h-[300px] items-center justify-center text-slate-400 dark:text-slate-500">
           Sem Dados Disponíveis
         </div>
       </div>
@@ -297,8 +297,8 @@
             </div>
         </div>
 
-        <div class="invisible group-hover:visible absolute z-50 top-0 left-full ml-4 w-64 bg-white rounded-lg shadow-xl border border-gray-200 p-4 text-gray-900 transition-all">
-            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Atenção de Prioridade</h4>
+        <div class="invisible absolute top-0 left-full z-50 ml-4 w-64 rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 shadow-xl transition-all group-hover:visible dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+            <h4 class="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Atenção de Prioridade</h4>
             
             <div v-if="alertDetails.critical.length" class="mb-3">
             <p class="text-[10px] font-bold text-red-600 uppercase mb-1">Crítico / Sem Estoque</p>
@@ -321,13 +321,13 @@
             </ul>
             </div>
             
-            <p v-if="reorderAlerts + expiringAlerts + criticalAlerts === 0" class="text-xs text-gray-500 italic">
+            <p v-if="reorderAlerts + expiringAlerts + criticalAlerts === 0" class="text-xs italic text-slate-500 dark:text-slate-400">
             Todos os níveis de estoque estão saudáveis.
             </p>
 
             <button 
                 @click="generateDrafts"
-                class="inline-flex items-center gap-2 bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors shadow-sm"
+                class="inline-flex items-center gap-2 rounded-xl bg-blue-900 px-4 py-2 text-white shadow-sm transition-colors hover:bg-blue-800 dark:bg-blue-500 dark:hover:bg-blue-400"
                 >
                 <ShoppingCartIcon class="h-4 w-4" />
                 Gerar Rascunhos de Reabastecimento
@@ -359,79 +359,79 @@
     </div>
 
     <!-- DETAILED CONSUMPTION TABLE -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div class="border-b border-gray-200 px-6 py-4">
-        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-          <TableCellsIcon class="h-5 w-5 text-blue-900" />
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+        <h3 class="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
+          <TableCellsIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
           Histórico de Consumo Detalhado
         </h3>
       </div>
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+          <thead class="bg-slate-50 dark:bg-slate-900/80">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Data
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Reagente
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Quantidade Usada
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Usado Por
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Armazém
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Observações
               </th>
 
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Saúde do Estoque
                 </th>
 
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">7-Dias Tendência</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th :class="tableHeadClass">7-Dias Tendência</th>
+                <th :class="tableHeadClass">
                 Est. de Desgaste
                 </th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
             <tr
               v-for="consumption in consumptionHistory"
               :key="consumption.id"
-              class="hover:bg-blue-50/50"
-              :class="{'bg-red-50/50': isUrgent(consumption)}"
+              class="hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
+              :class="{'bg-red-50/50 dark:bg-red-950/20': isUrgent(consumption)}"
             >
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <td :class="tableCellClass">
                 {{ formatDate(consumption.date) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">{{ consumption.reagent_name }}</div>
-                <div class="text-sm text-gray-500">{{ consumption.item?.code || 'N/A' }}</div>
+                <div class="text-sm font-medium text-slate-950 dark:text-white">{{ consumption.reagent_name }}</div>
+                <div class="text-sm text-slate-500 dark:text-slate-400">{{ consumption.item?.code || 'N/A' }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   {{ consumption.quantity_used }} unidades
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
                 {{ consumption.used_by || 'N/A' }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
                 {{ consumption.warehouse?.name || 'N/A' }}
               </td>
-              <td class="px-6 py-4 text-sm text-gray-500">
+              <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
                 {{ consumption.remarks || '-' }}
               </td>
 
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="w-full max-w-[120px]">
                     <div class="flex items-center justify-between mb-1">
-                    <span class="text-[10px] font-medium text-gray-500">
+                    <span class="text-[10px] font-medium text-slate-500 dark:text-slate-400">
                         {{ consumption.current_stock }} / {{ consumption.min_level * 2 }} 
                     </span>
                     <span :class="[
@@ -441,7 +441,7 @@
                         {{ getStockStatusLabel(consumption) }}
                     </span>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-1.5">
+                    <div class="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-800">
                     <div 
                         :class="['h-1.5 rounded-full transition-all duration-500', getProgressBarColor(consumption)]"
                         :style="{ width: getStockPercentage(consumption) + '%' }"
@@ -466,15 +466,15 @@
                 <div v-if="consumption.days_remaining !== null" class="flex flex-col">
                     <span :class="[
                     'font-bold',
-                    consumption.days_remaining < 7 ? 'text-red-600' : 'text-gray-900'
+                    consumption.days_remaining < 7 ? 'text-red-600 dark:text-red-300' : 'text-slate-900 dark:text-slate-100'
                     ]">
                     {{ consumption.days_remaining }} dias restantes
                     </span>
-                    <span class="text-[10px] text-gray-500">
+                    <span class="text-[10px] text-slate-500 dark:text-slate-400">
                     Est: {{ formatDate(consumption.predicted_out_date) }}
                     </span>
                 </div>
-                <div v-else class="text-gray-400 italic text-xs">
+                <div v-else class="text-xs italic text-slate-400 dark:text-slate-500">
                     Nenhuma utilização recente
                 </div>
                 </td>
@@ -484,16 +484,16 @@
         </table>
       </div>
       <div v-if="consumptionHistory?.length === 0" class="p-12 text-center">
-        <BeakerIcon class="mx-auto h-12 w-12 text-gray-300" />
-        <h3 class="mt-4 text-sm font-semibold text-gray-900">Nenhum registro de consumo encontrado</h3>
-        <p class="mt-2 text-sm text-gray-500">Comece a usar reagentes para ver o histórico de consumo</p>
+        <BeakerIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
+        <h3 class="mt-4 text-sm font-semibold text-slate-950 dark:text-white">Nenhum registro de consumo encontrado</h3>
+        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Comece a usar reagentes para ver o histórico de consumo</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { router } from '@inertiajs/vue3'
 import {
   CalendarIcon,
@@ -519,6 +519,39 @@ const props = defineProps({
   categories: Array,
   warehouses: Array,
 })
+
+const panelClass = 'rounded-3xl border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 dark:border-slate-800 dark:bg-slate-950 dark:ring-white/10'
+const labelClass = 'block text-sm font-semibold text-slate-700 dark:text-slate-200'
+const inputClass = 'w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400 dark:focus:ring-blue-400'
+const titleClass = 'flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white'
+const mutedClass = 'mt-1 text-sm text-slate-500 dark:text-slate-400'
+const smallButtonClass = 'inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-500 dark:hover:text-blue-200'
+const tableHeadClass = 'px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400'
+const tableCellClass = 'whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100'
+
+const isDarkMode = ref(false)
+let themeObserver = null
+
+const syncDarkMode = () => {
+  isDarkMode.value = document.documentElement.classList.contains('dark')
+}
+
+const chartTheme = computed(() => ({
+  theme: {
+    mode: isDarkMode.value ? 'dark' : 'light',
+  },
+  chart: {
+    background: 'transparent',
+    foreColor: isDarkMode.value ? '#cbd5e1' : '#475569',
+  },
+  grid: {
+    borderColor: isDarkMode.value ? '#1e293b' : '#e2e8f0',
+    strokeDashArray: 5,
+  },
+  tooltip: {
+    theme: isDarkMode.value ? 'dark' : 'light',
+  },
+}))
 
 const filters = ref({
   dateRange: '30d',
@@ -568,7 +601,9 @@ const equipmentValue = ref(0)
 
 // Chart Options
 const consumptionChartOptions = computed(() => ({
+  ...chartTheme.value,
   chart: {
+    ...chartTheme.value.chart,
     type: 'line',
     height: 300,
     toolbar: {
@@ -623,7 +658,7 @@ const consumptionChartOptions = computed(() => ({
     }
   },
   grid: {
-    borderColor: '#f1f5f9',
+    ...chartTheme.value.grid,
     strokeDashArray: 5
   },
   fill: {
@@ -639,7 +674,9 @@ const consumptionChartOptions = computed(() => ({
 
 
 const stockChartOptions = computed(() => ({
+  ...chartTheme.value,
   chart: {
+    ...chartTheme.value.chart,
     type: stockChartType.value,
     height: 300,
     toolbar: { show: true }
@@ -686,7 +723,9 @@ const stockChartOptions = computed(() => ({
 
 
 const monthlyChartOptions = computed(() => ({
+  ...chartTheme.value,
   chart: {
+    ...chartTheme.value.chart,
     type: 'bar',
     height: 300,
     toolbar: { show: true }
@@ -714,7 +753,9 @@ const monthlyChartOptions = computed(() => ({
 }))
 
 const topReagentsChartOptions = computed(() => ({
+  ...chartTheme.value,
   chart: {
+    ...chartTheme.value.chart,
     type: 'bar',
     height: 300,
     toolbar: {
@@ -801,7 +842,9 @@ const topReagentsChartOptions = computed(() => ({
 // }));
 
 const supplierChartOptions = computed(() => ({
+  ...chartTheme.value,
   chart: { 
+    ...chartTheme.value.chart,
     type: 'bar', 
     height: 350 
   },
@@ -837,11 +880,15 @@ const supplierChartOptions = computed(() => ({
     max: 100,
   },
   colors: ['#1e3a8a', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
-  legend: { show: false }
+  legend: { show: false },
+  grid: chartTheme.value.grid,
+  tooltip: chartTheme.value.tooltip,
 }));
 
-const sparklineOptions = {
+const sparklineOptions = computed(() => ({
+  ...chartTheme.value,
   chart: {
+    ...chartTheme.value.chart,
     type: 'area',
     sparkline: { enabled: true },
     animations: { enabled: false } // Disable for smoother table scrolling
@@ -856,8 +903,8 @@ const sparklineOptions = {
     }
   },
   colors: ['#3b82f6'], // Matching your blue theme
-  tooltip: { fixed: { enabled: false }, x: { show: false }, marker: { show: false } }
-};
+  tooltip: { ...chartTheme.value.tooltip, fixed: { enabled: false }, x: { show: false }, marker: { show: false } }
+}));
 
 // Helper functions
 const formatNumber = (num) => {
@@ -891,7 +938,7 @@ const downloadChart = async (chartType) => {
     const chartData = {
       chartType,
       filters: filters.value,
-      format: 'png'
+      format: 'pdf'
     }
     
     const response = await axios.post(route('vap-inventory.analytics.export'), chartData, {
@@ -901,7 +948,7 @@ const downloadChart = async (chartType) => {
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `${chartType}_chart_${new Date().toISOString().split('T')[0]}.png`)
+    link.setAttribute('download', `${chartType}_chart_${new Date().toISOString().split('T')[0]}.pdf`)
     document.body.appendChild(link)
     link.click()
     link.remove()
@@ -1115,6 +1162,13 @@ const getStockStatusLabel = (item) => {
 };
 
 onMounted(() => {
+  syncDarkMode()
+  themeObserver = new MutationObserver(syncDarkMode)
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class'],
+  })
+
   // Set default date range
   const endDate = new Date()
   const startDate = new Date()
@@ -1124,6 +1178,10 @@ onMounted(() => {
   filters.value.endDate = endDate.toISOString().split('T')[0]
   
   updateCharts()
+})
+
+onUnmounted(() => {
+  themeObserver?.disconnect()
 })
 
 const generateDrafts = () => {

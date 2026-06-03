@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Http\Requests\ResultRequest;
-use App\Http\Resources\ResultResource;
 use App\Jobs\ApproveAnalysisResults;
 use App\Jobs\ApproveCounterAnalysisResults;
 use App\Jobs\ApproveIndividualResult;
@@ -14,49 +12,69 @@ use App\Jobs\InsertIndividualResult;
 use App\Jobs\VerifyAnalysisResults;
 use App\Jobs\VerifyCounterAnalysisResults;
 use App\Jobs\VerifyIndividualResult;
-use Illuminate\Support\Facades\DB;
 use App\Models\Result;
 use App\Models\Sample;
-use App\Models\User;
 use App\Support\DuplicateSubmissionGuard;
 use App\Support\EquipmentMetrologyGate;
 use App\Support\PersonnelQualificationGate;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
 class ResultController extends Controller
 {
-
     public function getDefaultResultsData()
     {
-        abort_if( !auth()->user()->can('view_results'), 403, '');
+        abort_if(! auth()->user()->can('view_results'), 403, '');
+
+        $action = request()->input('action');
+        $sampleId = request()->input('sample_id');
+
+        if (! in_array($action, ['analyze', 'verify', 'approve'], true)) {
+            return response()->json([
+                'message' => 'A etapa do fluxo de resultados é inválida.',
+            ], 422);
+        }
+
+        if (blank($sampleId)) {
+            return response()->json([
+                'message' => 'A amostra é obrigatória para carregar os resultados.',
+            ], 422);
+        }
 
         // dd(Sample::with('analysis.profile.parameters.pivot.protocol', 'collection.collection.product', 'results')->findOrFail(request()->sample_id));
 
-        if(request()->action == 'analyze') {
+        if ($action == 'analyze') {
             $sample = Sample::with(
-                'analysis.profile.parameters.formula', 
+                'analysis.profile.parameters.formula',
                 'analysis.profile.parameters.pivot.protocol',
                 'analysis.profile.parameters.pivot.nwp',
                 'analysis.profile.parameters.pivot.standard',
                 'analysis.profile.parameters.pivot.category',
                 'analysis.profile.parameters.pivot.formula',
                 'analysis.profile.parameters.pivot.unit',
-                'collection.collection.product', 
+                'collection.collection.product',
                 'results'
-                )->findOrFail(request()->sample_id);
+            )->findOrFail($sampleId);
 
-            return collect($sample->analysis->profile->parameters)->map(function($item) use ($sample) {
+            if (! $sample->analysis?->profile || ! $sample->collection?->collection?->product) {
+                return response()->json([
+                    'message' => 'A amostra ainda não tem análise, perfil ou produto suficientes para lançar resultados.',
+                ], 422);
+            }
+
+            return collect($sample->analysis->profile->parameters)->map(function ($item) use ($sample) {
                 return [
                     'sample_id' => request()->sample_id,
                     'code_id' => [
                         'value' => $sample->cl_id,
-                        'label' => $sample->collection->code
+                        'label' => $sample->collection->code,
                     ],
                     'code_label' => $sample->collection->code,
                     'product_id' => [
                         'value' => $sample->collection->collection->product_id,
-                        'label' => $sample->collection->collection->product->name
+                        'label' => $sample->collection->collection->product->name,
                     ],
                     'parameter_id' => [
                         'value' => $item->id,
@@ -74,7 +92,7 @@ class ResultController extends Controller
                     ],
                     'formula' => $item->formula,
 
-                    // Added    
+                    // Added
                     'decimal_places' => $item->decimal_places,
                     'requires_calculation' => $item->requires_calculation,
                     'formula_expression' => $item->formula_expression,
@@ -93,19 +111,19 @@ class ResultController extends Controller
                     'approved_by_id' => null,
                     'type_id' => [
                         'value' => $item->pivot->category_id,
-                        'label' => $item->pivot->category->name,
+                        'label' => $item->pivot->category?->name,
                     ],
-                    'category_label' => $item->pivot->category->name,
+                    'category_label' => $item->pivot->category?->name,
                     'nwp_id' => [
                         'value' => $item->pivot->nwp_id,
-                        'label' => $item->pivot->nwp->code,
+                        'label' => $item->pivot->nwp?->code,
                     ],
-                    'nwp_label' => $item->pivot->nwp->code,
+                    'nwp_label' => $item->pivot->nwp?->code,
                     'unit_id' => [
                         'value' => $item->pivot->unit_id,
-                        'label' => $item->pivot->unit->code,
+                        'label' => $item->pivot->unit?->code,
                     ],
-                    'unit_label' => $item->pivot->unit->code,
+                    'unit_label' => $item->pivot->unit?->code,
                     'protocol_id' => [
                         'value' => $item->pivot->protocol_id,
                         'label' => $item->pivot->protocol?->code,
@@ -153,53 +171,52 @@ class ResultController extends Controller
             });
         }
 
-
-        if(request()->action == 'verify') {
+        if ($action == 'verify') {
             $results = Result::with(
                 'parameter.profiles',
-                'sample.collection.collection.recollection', 
-                'sample.analysis.profile', 
-                'sample.collection.collection.product', 
+                'sample.collection.collection.recollection',
+                'sample.analysis.profile',
+                'sample.collection.collection.product',
                 'category'
-                )->where('sample_id', '=', request()->sample_id)->get();
+            )->where('sample_id', '=', $sampleId)->get();
 
-            return collect($results)->map(function($item) {
+            return collect($results)->map(function ($item) {
                 return [
                     'result_id' => $item->id,
                     'sample_id' => $item->sample_id,
                     'code_id' => [
                         'value' => $item->code_id,
-                        'label' => $item->code_label
+                        'label' => $item->code_label,
                     ],
                     'code_label' => $item->code_label,
                     'product_id' => [
                         'value' => $item->product_id,
-                        'label' => $item->product->name
+                        'label' => $item->product?->name ?? $item->product_label,
                     ],
                     'parameter_id' => [
                         'value' => $item->parameter_id,
                         'label' => $item->parameter_label,
-                        'name' => $item->parameter->name,
+                        'name' => $item->parameter?->name,
                         'result_is_qualitative' => $item->result_is_qualitative,
-                        'decimal_places' => $item->parameter->decimal_places,
-                        'requires_calculation' => $item->parameter->requires_calculation,
-                        'formula_expression' => $item->parameter->formula_expression,
-                        'formula_id' => $item->parameter->formula_id,
-                        'calculation_parameters' => $item->parameter->calculation_parameters,
-                        'result_type' => $item->parameter->result_type,
-                        'active' => $item->parameter->active,
-                        'code' => $item->parameter->code,
+                        'decimal_places' => $item->parameter?->decimal_places,
+                        'requires_calculation' => $item->parameter?->requires_calculation ?? false,
+                        'formula_expression' => $item->parameter?->formula_expression,
+                        'formula_id' => $item->parameter?->formula_id,
+                        'calculation_parameters' => $item->parameter?->calculation_parameters,
+                        'result_type' => $item->parameter?->result_type,
+                        'active' => $item->parameter?->active ?? true,
+                        'code' => $item->parameter?->code,
                     ],
                     'formula' => $item->parameter?->formula,
 
-                    // Added    
-                    'decimal_places' => $item->parameter->decimal_places,
-                    'requires_calculation' => $item->parameter->requires_calculation,
-                    'formula_expression' => $item->parameter->formula_expression,
-                    'formula_id' => $item->parameter->formula_id,
-                    'calculation_parameters' => $item->parameter->calculation_parameters,
-                    'result_type' => $item->parameter->result_type,
-                    'active' => $item->parameter->active,
+                    // Added
+                    'decimal_places' => $item->parameter?->decimal_places,
+                    'requires_calculation' => $item->parameter?->requires_calculation ?? false,
+                    'formula_expression' => $item->parameter?->formula_expression,
+                    'formula_id' => $item->parameter?->formula_id,
+                    'calculation_parameters' => $item->parameter?->calculation_parameters,
+                    'result_type' => $item->parameter?->result_type,
+                    'active' => $item->parameter?->active ?? true,
                     // End Added
 
                     'parameter_label' => $item->parameter_label,
@@ -270,34 +287,33 @@ class ResultController extends Controller
             });
         }
 
-
-        if(request()->action == 'approve') {
+        if ($action == 'approve') {
             $results = Result::with(
                 'parameter.profiles',
-                'sample.collection.collection.recollection', 
-                'sample.analysis.profile', 
-                'sample.collection.collection.product', 
+                'sample.collection.collection.recollection',
+                'sample.analysis.profile',
+                'sample.collection.collection.product',
                 'category'
-                )->where('sample_id', '=', request()->sample_id)->get();
+            )->where('sample_id', '=', $sampleId)->get();
 
-            return collect($results)->map(function($item) {
+            return collect($results)->map(function ($item) {
                 return [
                     'result_id' => $item->id,
                     'sample_id' => $item->sample_id,
                     'code_id' => [
                         'value' => $item->code_id,
-                        'label' => $item->code_label
+                        'label' => $item->code_label,
                     ],
                     'code_label' => $item->code_label,
                     'product_id' => [
                         'value' => $item->product_id,
-                        'label' => $item->product->name
+                        'label' => $item->product?->name ?? $item->product_label,
                     ],
                     'product_label' => $item->product_label,
                     'parameter_id' => [
                         'value' => $item->parameter_id,
                         'label' => $item->parameter_label,
-                        'name' => $item->parameter->name,
+                        'name' => $item->parameter?->name,
                         'result_is_qualitative' => $item->result_is_qualitative,
                         'decimal_places' => $item->decimal_places,
                         'requires_calculation' => $item->requires_calculation ?? false,
@@ -305,21 +321,21 @@ class ResultController extends Controller
                         'formula_id' => $item->formula_id,
                         'calculation_parameters' => $item->calculation_parameters,
                         'result_type' => $item->result_type,
-                        'active' => $item->parameter->active,
-                        'code' => $item->parameter->code,
+                        'active' => $item->parameter?->active ?? true,
+                        'code' => $item->parameter?->code,
                     ],
                     'formula' => $item->formula,
 
-                    // Added    
+                    // Added
                     'decimal_places' => $item->decimal_places,
                     'requires_calculation' => $item->requires_calculation ?? false,
                     'formula_expression' => $item->formula_expression,
                     'formula_id' => $item->formula_id,
-                    'calculation_parameters' => $item->parameter->calculation_parameters,
+                    'calculation_parameters' => $item->parameter?->calculation_parameters,
                     'result_type' => $item->result_type,
-                    'active' => $item->parameter->active,
+                    'active' => $item->parameter?->active ?? true,
                     // End Added
-                    
+
                     'parameter_label' => $item->parameter_label,
                     'profile_id' => $item->profile_id,
                     'matrix_id' => $item->matrix_id,
@@ -387,16 +403,29 @@ class ResultController extends Controller
                 ];
             });
         }
-        
 
     }
 
-
     public function getCounterAnalysisDefaultResultsData()
     {
-        abort_if( !auth()->user()->can('view_results'), 403, '');
+        abort_if(! auth()->user()->can('view_results'), 403, '');
 
-        if(request()->action == 'analyze') {
+        $action = request()->input('action');
+        $sampleId = request()->input('sample_id');
+
+        if (! in_array($action, ['analyze', 'verify', 'approve'], true)) {
+            return response()->json([
+                'message' => 'A etapa do fluxo de resultados da contra-análise é inválida.',
+            ], 422);
+        }
+
+        if (blank($sampleId)) {
+            return response()->json([
+                'message' => 'A amostra é obrigatória para carregar os resultados da contra-análise.',
+            ], 422);
+        }
+
+        if ($action == 'analyze') {
             $sample = Sample::with(
                 'counteranalysis.profile.parameters.formula',
                 'counteranalysis.profile.parameters.pivot.protocol',
@@ -405,21 +434,27 @@ class ResultController extends Controller
                 'counteranalysis.profile.parameters.pivot.category',
                 'counteranalysis.profile.parameters.pivot.formula',
                 'counteranalysis.profile.parameters.pivot.unit',
-                'collection.collection.product', 
+                'collection.collection.product',
                 'results'
-                )->findOrFail(request()->sample_id);
+            )->findOrFail($sampleId);
 
-            return collect($sample->counteranalysis->profile->parameters)->map(function($item) use ($sample) {
+            if (! $sample->counteranalysis?->profile || ! $sample->collection?->collection?->product) {
+                return response()->json([
+                    'message' => 'A amostra ainda não tem contra-análise, perfil ou produto suficientes para lançar resultados.',
+                ], 422);
+            }
+
+            return collect($sample->counteranalysis->profile->parameters)->map(function ($item) use ($sample) {
                 return [
-                    'sample_id' => request()->sample_id, 
+                    'sample_id' => request()->sample_id,
                     'code_id' => [
                         'value' => $sample->cl_id,
-                        'label' => $sample->collection->code
+                        'label' => $sample->collection->code,
                     ],
                     'code_label' => $sample->collection->code,
                     'product_id' => [
                         'value' => $sample->collection->collection->product_id,
-                        'label' => $sample->collection->collection->product->name
+                        'label' => $sample->collection->collection->product->name,
                     ],
                     'parameter_id' => [
                         'value' => $item->id,
@@ -452,29 +487,29 @@ class ResultController extends Controller
                     'approved_by_id' => null,
                     'type_id' => [
                         'value' => $item->pivot->category_id,
-                        'label' => $item->pivot->category->name,
+                        'label' => $item->pivot->category?->name,
                     ],
-                    'category_label' => $item->pivot->category->name,
+                    'category_label' => $item->pivot->category?->name,
                     'nwp_id' => [
                         'value' => $item->pivot->nwp_id,
-                        'label' => $item->pivot->nwp->code,
+                        'label' => $item->pivot->nwp?->code,
                     ],
-                    'nwp_label' => $item->pivot->nwp->code,
+                    'nwp_label' => $item->pivot->nwp?->code,
                     'unit_id' => [
                         'value' => $item->pivot->unit_id,
-                        'label' => $item->pivot->unit->code,
+                        'label' => $item->pivot->unit?->code,
                     ],
-                    'unit_label' => $item->pivot->unit->code,
+                    'unit_label' => $item->pivot->unit?->code,
                     'protocol_id' => [
                         'value' => $item->pivot->protocol_id,
-                        'label' => $item->pivot->protocol->code,
+                        'label' => $item->pivot->protocol?->code,
                     ],
-                    'protocol_label' => $item->pivot->protocol->code,
+                    'protocol_label' => $item->pivot->protocol?->code,
                     'standard_id' => [
                         'value' => $item->pivot->standard_id,
-                        'label' => $item->pivot->standard->code,
+                        'label' => $item->pivot->standard?->code,
                     ],
-                    'standard_label' => $item->pivot->standard->code,
+                    'standard_label' => $item->pivot->standard?->code,
                     'status' => false,
                     'count' => true,
                     'requested_counter_analysis' => false,
@@ -508,28 +543,27 @@ class ResultController extends Controller
             });
         }
 
-
-        if(request()->action == 'verify') {
+        if ($action == 'verify') {
             $results = Result::with(
                 'parameter.profiles',
-                'sample.collection.collection.recollection', 
-                'sample.counteranalysis.profile', 
-                'sample.collection.collection.product', 
+                'sample.collection.collection.recollection',
+                'sample.counteranalysis.profile',
+                'sample.collection.collection.product',
                 'category'
-                )->where('sample_id', '=', request()->sample_id)->get();
+            )->where('sample_id', '=', $sampleId)->get();
 
-            return collect($results)->map(function($item) {
+            return collect($results)->map(function ($item) {
                 return [
                     'result_id' => $item->id,
                     'sample_id' => $item->sample_id,
                     'code_id' => [
                         'value' => $item->code_id,
-                        'label' => $item->code_label
+                        'label' => $item->code_label,
                     ],
                     'code_label' => $item->code_label,
                     'product_id' => [
                         'value' => $item->product_id,
-                        'label' => $item->product->name
+                        'label' => $item->product?->name ?? $item->product_label,
                     ],
                     'parameter_id' => [
                         'value' => $item->parameter_id,
@@ -617,28 +651,27 @@ class ResultController extends Controller
             });
         }
 
-
-        if(request()->action == 'approve') {
+        if ($action == 'approve') {
             $results = Result::with(
                 'parameter.profiles',
-                'sample.collection.collection.recollection', 
-                'sample.counteranalysis.profile', 
-                'sample.collection.collection.product', 
+                'sample.collection.collection.recollection',
+                'sample.counteranalysis.profile',
+                'sample.collection.collection.product',
                 'category'
-                )->where('sample_id', '=', request()->sample_id)->get();
+            )->where('sample_id', '=', $sampleId)->get();
 
-            return collect($results)->map(function($item) {
+            return collect($results)->map(function ($item) {
                 return [
                     'result_id' => $item->id,
                     'sample_id' => $item->sample_id,
                     'code_id' => [
                         'value' => $item->code_id,
-                        'label' => $item->code_label
+                        'label' => $item->code_label,
                     ],
                     'code_label' => $item->code_label,
                     'product_id' => [
                         'value' => $item->product_id,
-                        'label' => $item->product->name
+                        'label' => $item->product?->name ?? $item->product_label,
                     ],
                     'product_label' => $item->product_label,
                     'parameter_id' => [
@@ -726,13 +759,11 @@ class ResultController extends Controller
                 ];
             });
         }
-        
 
     }
 
     /**
      * Show the form for creating a new resource.
-     *
      */
     public function create()
     {
@@ -745,24 +776,37 @@ class ResultController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     *
      */
     public function store(ResultRequest $request, DuplicateSubmissionGuard $duplicateSubmissionGuard)
     {
         $validated = $request->validated();
+        $action = (string) $request->action;
         $qualificationGate = app(PersonnelQualificationGate::class);
-        $results = $this->prepareResultsForWorkflow(collect($validated['results'] ?? [])->values()->all(), (string) $request->action);
-        app(EquipmentMetrologyGate::class)->ensureResultsReady($results);
         $signature = $request->input('signature');
-        $departmentId = Sample::query()
-            ->whereKey($validated['sample_id'])
-            ->with('analysis')
-            ->first()?->analysis?->department_id;
+        $sample = Sample::with('analysis.profile.parameters', 'collection.collection')
+            ->findOrFail($validated['sample_id']);
+        $analysisId = $sample->analysis?->id;
+        $departmentId = $sample->analysis?->department_id;
+
+        if (! in_array($action, ['analyze', 'verify', 'approve'], true)) {
+            return back()->withErrors([
+                'action' => 'A etapa do fluxo de resultados é inválida.',
+            ]);
+        }
+
+        if (! $analysisId) {
+            return $this->missingWorkflowRedirect('analysis.index', [
+                'category' => $this->analysisCategoryForAction($action),
+            ], 'A amostra selecionada ainda não tem uma análise associada.');
+        }
+
+        $results = $this->prepareResultsForWorkflow(collect($validated['results'] ?? [])->values()->all(), $action);
+        app(EquipmentMetrologyGate::class)->ensureResultsReady($results);
 
         // Persiste data to DB
-        if ($request->action == 'analyze') {
+        if ($action === 'analyze') {
 
-            abort_if( !auth()->user()->can('insert_results'), 403, '');
+            abort_if(! auth()->user()->can('insert_results'), 403, '');
             $qualificationGate->ensure(auth()->user(), 'insert_results', $departmentId);
 
             if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'analysis-results-analyze', [
@@ -773,25 +817,24 @@ class ResultController extends Controller
                 return $this->duplicateRedirectResponse('analysis.index', ['category' => 'insert']);
             }
 
-            dispatch( new InsertAnalysisResults(
+            dispatch(new InsertAnalysisResults(
                 $results,
-                Sample::with('analysis.profile.parameters', 'collection.collection')->find($validated['sample_id'])->analysis()->first()->id,
-                User::find(auth()->user()->id),
+                $analysisId,
+                auth()->user(),
             ));
-            
+
             return to_route('analysis.index', ['category' => 'insert'])->with([
                 'toast' => [
                     'title' => trans('gestlab.toasts.notification_insert'),
                     'message' => trans('gestlab.toasts.notification_results'),
-                ]
+                ],
             ]);
-            
-        };
 
+        }
 
-        if ($request->action == 'verify') {
+        if ($action === 'verify') {
 
-            abort_if( !auth()->user()->can('verify_results'), 403, '');
+            abort_if(! auth()->user()->can('verify_results'), 403, '');
             $qualificationGate->ensure(auth()->user(), 'verify_results', $departmentId);
 
             if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'analysis-results-verify', [
@@ -802,10 +845,10 @@ class ResultController extends Controller
                 return $this->duplicateRedirectResponse('analysis.index', ['category' => 'verify']);
             }
 
-            dispatch( new VerifyAnalysisResults(
+            dispatch(new VerifyAnalysisResults(
                 $results,
-                Sample::with('analysis.profile.parameters', 'collection.collection')->find($validated['sample_id'])->analysis()->first()->id,
-                User::find(auth()->user()->id),
+                $analysisId,
+                auth()->user(),
                 $signature,
             ));
 
@@ -813,15 +856,14 @@ class ResultController extends Controller
                 'toast' => [
                     'title' => trans('gestlab.toasts.notification_verify'),
                     'message' => trans('gestlab.toasts.notification_results'),
-                ]
+                ],
             ]);
-            
-        };
 
+        }
 
-        if ($request->action == 'approve') {
+        if ($action === 'approve') {
 
-            abort_if( !auth()->user()->can('approve_results'), 403, '');
+            abort_if(! auth()->user()->can('approve_results'), 403, '');
             $qualificationGate->ensure(auth()->user(), 'approve_results', $departmentId);
 
             if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'analysis-results-approve', [
@@ -832,10 +874,10 @@ class ResultController extends Controller
                 return $this->duplicateRedirectResponse('analysis.index', ['category' => 'approve']);
             }
 
-            dispatch( new ApproveAnalysisResults(
+            dispatch(new ApproveAnalysisResults(
                 $results,
-                Sample::with('analysis.profile.parameters', 'collection.collection')->find($validated['sample_id'])->analysis()->first()->id,
-                User::find(auth()->user()->id),
+                $analysisId,
+                auth()->user(),
                 $signature,
             ));
 
@@ -843,35 +885,44 @@ class ResultController extends Controller
                 'toast' => [
                     'title' => trans('gestlab.toasts.notification_approve'),
                     'message' => trans('gestlab.toasts.notification_results'),
-                ]
+                ],
             ]);
-            
-        };
 
+        }
 
     }
 
-
     /**
      * Store a newly created resource in storage.
-     *
      */
     public function storeCounterAnalysisResults(ResultRequest $request, DuplicateSubmissionGuard $duplicateSubmissionGuard)
     {
         $validated = $request->validated();
+        $action = (string) $request->action;
         $qualificationGate = app(PersonnelQualificationGate::class);
-        $results = $this->prepareResultsForWorkflow(collect($validated['results'] ?? [])->values()->all(), (string) $request->action);
-        app(EquipmentMetrologyGate::class)->ensureResultsReady($results);
         $signature = $request->input('signature');
-        $departmentId = Sample::query()
-            ->whereKey($validated['sample_id'])
-            ->with('counteranalysis')
-            ->first()?->counteranalysis?->department_id;
+        $sample = Sample::with('counteranalysis.profile.parameters', 'collection.collection')
+            ->findOrFail($validated['sample_id']);
+        $counterAnalysisId = $sample->counteranalysis?->id;
+        $departmentId = $sample->counteranalysis?->department_id;
+
+        if (! in_array($action, ['analyze', 'verify', 'approve'], true)) {
+            return back()->withErrors([
+                'action' => 'A etapa do fluxo de contra-análise é inválida.',
+            ]);
+        }
+
+        if (! $counterAnalysisId) {
+            return $this->missingWorkflowRedirect('counteranalysis.index', [], 'A amostra selecionada ainda não tem uma contra-análise associada.');
+        }
+
+        $results = $this->prepareResultsForWorkflow(collect($validated['results'] ?? [])->values()->all(), $action);
+        app(EquipmentMetrologyGate::class)->ensureResultsReady($results);
 
         // Persiste data to DB
-        if ($request->action == 'analyze') {
+        if ($action === 'analyze') {
 
-            abort_if( !auth()->user()->can('insert_results'), 403, '');
+            abort_if(! auth()->user()->can('insert_results'), 403, '');
             $qualificationGate->ensure(auth()->user(), 'insert_results', $departmentId);
 
             if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'counter-analysis-results-analyze', [
@@ -882,25 +933,24 @@ class ResultController extends Controller
                 return $this->duplicateRedirectResponse('counteranalysis.index');
             }
 
-            dispatch( new InsertCounterAnalysisResults(
+            dispatch(new InsertCounterAnalysisResults(
                 $results,
-                Sample::with('counteranalysis.profile.parameters', 'collection.collection')->find($validated['sample_id'])->counteranalysis()->first()->id,
-                User::find(auth()->user()->id),
+                $counterAnalysisId,
+                auth()->user(),
             ));
-            
+
             return to_route('counteranalysis.index')->with([
                 'toast' => [
                     'title' => trans('gestlab.toasts.notification_insert'),
                     'message' => trans('gestlab.toasts.notification_results'),
-                ]
+                ],
             ]);
-            
-        };
 
+        }
 
-        if ($request->action == 'verify') {
+        if ($action === 'verify') {
 
-            abort_if( !auth()->user()->can('verify_results'), 403, '');
+            abort_if(! auth()->user()->can('verify_results'), 403, '');
             $qualificationGate->ensure(auth()->user(), 'verify_results', $departmentId);
 
             if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'counter-analysis-results-verify', [
@@ -911,10 +961,10 @@ class ResultController extends Controller
                 return $this->duplicateRedirectResponse('counteranalysis.index');
             }
 
-            dispatch( new VerifyCounterAnalysisResults(
+            dispatch(new VerifyCounterAnalysisResults(
                 $results,
-                Sample::with('counteranalysis.profile.parameters', 'collection.collection')->find($validated['sample_id'])->counteranalysis()->first()->id,
-                User::find(auth()->user()->id),
+                $counterAnalysisId,
+                auth()->user(),
                 $signature,
             ));
 
@@ -922,15 +972,14 @@ class ResultController extends Controller
                 'toast' => [
                     'title' => trans('gestlab.toasts.notification_verify'),
                     'message' => trans('gestlab.toasts.notification_results'),
-                ]
+                ],
             ]);
-            
-        };
 
+        }
 
-        if ($request->action == 'approve') {
+        if ($action === 'approve') {
 
-            abort_if( !auth()->user()->can('approve_results'), 403, '');
+            abort_if(! auth()->user()->can('approve_results'), 403, '');
             $qualificationGate->ensure(auth()->user(), 'approve_results', $departmentId);
 
             if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'counter-analysis-results-approve', [
@@ -941,10 +990,10 @@ class ResultController extends Controller
                 return $this->duplicateRedirectResponse('counteranalysis.index');
             }
 
-            dispatch( new ApproveCounterAnalysisResults(
+            dispatch(new ApproveCounterAnalysisResults(
                 $results,
-                Sample::with('counteranalysis.profile.parameters', 'collection.collection')->find($validated['sample_id'])->counteranalysis()->first()->id,
-                User::find(auth()->user()->id),
+                $counterAnalysisId,
+                auth()->user(),
                 $signature,
             ));
 
@@ -952,33 +1001,32 @@ class ResultController extends Controller
                 'toast' => [
                     'title' => trans('gestlab.toasts.notification_approve'),
                     'message' => trans('gestlab.toasts.notification_results'),
-                ]
+                ],
             ]);
-            
-        };
 
+        }
 
     }
 
-
-    public function getCode() {
+    public function getCode()
+    {
         $data = [];
 
-        if(request()->has('q')){
+        if (request()->has('q')) {
             $search = request()->q;
-            
-            $data = DB::table("samples")
+
+            $data = DB::table('samples')
                 ->select('samples.*')
-                ->where('code','LIKE',"%$search%")
+                ->where('code', 'LIKE', "%$search%")
                 ->get();
         }
 
         return response()->json($data);
     }
 
-
-    public function getInsert() {
-        abort_if( !auth()->user()->can('insert_results'), 403, '');
+    public function getInsert()
+    {
+        abort_if(! auth()->user()->can('insert_results'), 403, '');
 
         return to_route('analysis.edit', [
             'category' => 'insert',
@@ -993,7 +1041,7 @@ class ResultController extends Controller
     {
         $validated = $request->validated();
         $action = $request->input('action', 'analyze');
-        
+
         // Validate individual result
         $validator = Validator::make($validated, [
             'sample_id' => 'required|exists:samples,id',
@@ -1002,17 +1050,24 @@ class ResultController extends Controller
             'verified_value' => 'required_if:action,verify',
             'approved_value' => 'required_if:action,approve',
         ]);
-        
+
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
-        
+
         // Get analysis ID from sample
         $sample = Sample::with('analysis')->findOrFail($validated['sample_id']);
-        $analysisId = $sample->analysis->id;
+        $analysisId = $sample->analysis?->id;
+
+        if (! $analysisId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A amostra selecionada ainda não tem uma análise associada.',
+            ], 422);
+        }
         $preparedResult = $this->prepareIndividualResultForWorkflow($validated, $action);
 
         app(EquipmentMetrologyGate::class)->ensureResultsReady([$preparedResult]);
@@ -1031,54 +1086,54 @@ class ResultController extends Controller
                 'message' => 'Uma submissão idêntica do resultado já está a ser processada.',
             ], 429);
         }
-        
+
         // Dispatch appropriate job based on action
         if ($action === 'analyze') {
-            abort_if(!auth()->user()->can('insert_results'), 403);
+            abort_if(! auth()->user()->can('insert_results'), 403);
             app(PersonnelQualificationGate::class)->ensure(auth()->user(), 'insert_results', $sample->analysis?->department_id);
-            
+
             dispatch(new InsertIndividualResult(
                 $preparedResult,
                 $analysisId,
                 auth()->user()
             ));
-            
+
             $message = 'Resultado inserido individualmente com sucesso';
         } elseif ($action === 'verify') {
-            abort_if(!auth()->user()->can('verify_results'), 403);
+            abort_if(! auth()->user()->can('verify_results'), 403);
             app(PersonnelQualificationGate::class)->ensure(auth()->user(), 'verify_results', $sample->analysis?->department_id);
-            
+
             dispatch(new VerifyIndividualResult(
                 $preparedResult,
                 $analysisId,
                 auth()->user(),
                 $request->input('signature'),
             ));
-            
+
             $message = 'Resultado verificado individualmente com sucesso';
         } elseif ($action === 'approve') {
-            abort_if(!auth()->user()->can('approve_results'), 403);
+            abort_if(! auth()->user()->can('approve_results'), 403);
             app(PersonnelQualificationGate::class)->ensure(auth()->user(), 'approve_results', $sample->analysis?->department_id);
-            
+
             dispatch(new ApproveIndividualResult(
                 $preparedResult,
                 $analysisId,
                 auth()->user(),
                 $request->input('signature'),
             ));
-            
+
             $message = 'Resultado aprovado individualmente com sucesso';
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'Ação inválida'
+                'message' => 'Ação inválida',
             ], 400);
         }
-        
+
         return response()->json([
             'success' => true,
             'message' => $message,
-            'data' => $validated
+            'data' => $validated,
         ]);
     }
 
@@ -1145,4 +1200,18 @@ class ResultController extends Controller
         ]);
     }
 
+    private function analysisCategoryForAction(string $action): string
+    {
+        return match ($action) {
+            'verify', 'approve' => $action,
+            default => 'insert',
+        };
+    }
+
+    private function missingWorkflowRedirect(string $route, array $parameters, string $message)
+    {
+        return to_route($route, $parameters)->withErrors([
+            'sample_id' => $message,
+        ]);
+    }
 }

@@ -35,6 +35,28 @@ class QmsModuleTest extends TestCase
         $this->actingAs($user)->get(route('uncertainty-sources.index'))->assertOk();
     }
 
+    public function test_qms_related_breadcrumbs_use_professional_module_labels(): void
+    {
+        $user = $this->verifiedAdmin();
+
+        $checks = [
+            route('qms.index') => 'QMS',
+            route('supplier-assessments.index') => 'Supplier Assessments',
+            route('responsibility-matrix.index') => 'Responsibility Matrix',
+            route('uncertainty-sources.index') => 'Sources of Uncertainty',
+            route('report-studios.index') => 'Report Studios',
+        ];
+
+        foreach ($checks as $url => $expectedTitle) {
+            $response = $this->actingAs($user)->get($url);
+
+            $response->assertOk();
+
+            $this->assertSame($expectedTitle, data_get($response->viewData('page'), 'props.breadcrumbs.0.title'));
+            $this->assertTrue(data_get($response->viewData('page'), 'props.breadcrumbs.0.current'));
+        }
+    }
+
     public function test_admin_can_create_proposal_report_studio_template(): void
     {
         $user = $this->verifiedAdmin();
@@ -74,7 +96,7 @@ class QmsModuleTest extends TestCase
 
         PersonnelQualification::query()->create([
             'user_id' => $user->id,
-            'capability' => 'Verificação de resultados ' . Str::upper(Str::random(5)),
+            'capability' => 'Verificação de resultados '.Str::upper(Str::random(5)),
             'department_id' => $department->id,
             'qualified_by_id' => $user->id,
             'authorized_from' => now()->subMonths(10)->toDateString(),

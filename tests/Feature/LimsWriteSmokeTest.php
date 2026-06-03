@@ -2,33 +2,34 @@
 
 namespace Tests\Feature;
 
+use App\Models\AnalysisCategory;
+use App\Models\CollectionProduct;
+use App\Models\Complaint;
+use App\Models\CounterAnalysis;
 use App\Models\Customer;
+use App\Models\CustomerRequest;
 use App\Models\Department;
+use App\Models\Formula;
 use App\Models\Inventory;
 use App\Models\InventoryItem;
 use App\Models\InventoryItemWarehouse;
 use App\Models\InventoryTransaction;
-use App\Models\Formula;
 use App\Models\LabCode;
+use App\Models\ManagementReview;
 use App\Models\NormativeWorkProcedure;
 use App\Models\PackagingCategory;
 use App\Models\Parameter;
-use App\Models\CounterAnalysis;
-use App\Models\CollectionProduct;
+use App\Models\PersonnelQualification;
+use App\Models\Product;
+use App\Models\Profile;
+use App\Models\Proposal;
+use App\Models\ProposalTemplate;
 use App\Models\Protocol;
 use App\Models\QualityCertificate;
 use App\Models\QualityCertificateRevision;
-use App\Models\CustomerRequest;
-use App\Models\Complaint;
-use App\Models\ManagementReview;
-use App\Models\PersonnelQualification;
-use App\Models\Proposal;
-use App\Models\ProposalTemplate;
-use App\Models\Product;
-use App\Models\Profile;
-use App\Models\ResultCategory;
 use App\Models\ReagentConsumption;
 use App\Models\Result;
+use App\Models\ResultCategory;
 use App\Models\Role;
 use App\Models\Sample;
 use App\Models\Standard;
@@ -40,7 +41,6 @@ use App\Models\VAPLab;
 use App\Models\VAPSampleDiscard;
 use App\Models\VAPSampleEntry;
 use App\Models\Warehouse;
-use App\Models\AnalysisCategory;
 use App\Models\Worksheet;
 use App\Settings\GeneralSettings;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -98,7 +98,7 @@ class LimsWriteSmokeTest extends TestCase
                     'authorized_from' => now()->subDay()->toDateString(),
                     'authorized_until' => now()->addYear()->toDateString(),
                     'training_completed_at' => now()->subDay()->toDateString(),
-                    'training_reference' => 'SMOKE-' . strtoupper($capability),
+                    'training_reference' => 'SMOKE-'.strtoupper($capability),
                     'is_active' => true,
                 ]
             );
@@ -120,7 +120,7 @@ class LimsWriteSmokeTest extends TestCase
         $template = ProposalTemplate::query()->first();
 
         if (! $template) {
-            $template = new ProposalTemplate();
+            $template = new ProposalTemplate;
             $template->forceFill([
                 'name' => 'Smoke Proposal Template',
                 'content' => '<p>Smoke proposal content</p>',
@@ -156,7 +156,7 @@ class LimsWriteSmokeTest extends TestCase
         $warehouse = Warehouse::query()->firstOrFail();
         $packaging = PackagingCategory::query()->firstOrFail();
         $this->qualifyUser($user, ['sample_intake_validation'], $department);
-        $code = 'SMK-' . Str::upper(Str::random(8));
+        $code = 'SMK-'.Str::upper(Str::random(8));
 
         $storePayload = [
             'name' => 'Codex Smoke Sample',
@@ -208,6 +208,26 @@ class LimsWriteSmokeTest extends TestCase
             'status' => 'EN_PROGRESO',
             'obs' => 'Updated by transactional smoke test',
         ]);
+    }
+
+    public function test_verified_admin_can_open_vap_sample_show_view_with_workflow_context(): void
+    {
+        $user = $this->verifiedAdmin();
+        $sample = VAPSampleEntry::query()
+            ->whereNotNull('code')
+            ->latest('id')
+            ->firstOrFail();
+
+        $this->actingAs($user)
+            ->get(route('vap_samples.show', $sample))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('VAPSamples/Show')
+                ->where('sample.id', $sample->id)
+                ->where('sample.code', $sample->code)
+                ->has('workflowSummary')
+                ->has('linkedSampleIds')
+                ->has('analyses'));
     }
 
     public function test_verified_admin_can_create_sample_intake_with_generated_code(): void
@@ -284,7 +304,7 @@ class LimsWriteSmokeTest extends TestCase
                     'packaging_id' => $packaging->id,
                     'requested_profile_ids' => $profileIds->all(),
                     'quantity' => '1',
-                    'lot' => 'LINK-' . now()->format('His'),
+                    'lot' => 'LINK-'.now()->format('His'),
                 ],
             ])
             ->assertRedirect()
@@ -485,6 +505,9 @@ class LimsWriteSmokeTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Analysis/ResultsWorkflow')
+                ->where('record.sample_entry.id', $sampleEntry->id)
+                ->where('record.entry_origin.is_sample_entry_first', true)
+                ->where('record.links.sample_entry_show_path', route('vap_samples.show', $sampleEntry))
                 ->where('scope_audit.conditioning_status', 'accepted')
                 ->where('scope_audit.expected_count', $profile->parameters->unique('id')->count())
                 ->where('scope_audit.reception_count', $profile->parameters->unique('id')->count())
@@ -599,8 +622,8 @@ class LimsWriteSmokeTest extends TestCase
 
         $suffix = Str::upper(Str::random(6));
         $calculatedParameter = Parameter::query()->create([
-            'name' => 'Payload Calc Parameter ' . $suffix,
-            'code' => 'PCP-' . $suffix,
+            'name' => 'Payload Calc Parameter '.$suffix,
+            'code' => 'PCP-'.$suffix,
             'description' => 'Calculated parameter for results payload smoke test.',
             'price' => 0,
             'charge_tax' => false,
@@ -990,7 +1013,7 @@ class LimsWriteSmokeTest extends TestCase
             ->actingAs($user)
             ->post(route('profiles.store'), [
                 'name' => 'Invalid Controlled Scope Profile',
-                'code' => 'PRF-' . Str::upper(Str::random(6)),
+                'code' => 'PRF-'.Str::upper(Str::random(6)),
                 'description' => 'Should be rejected because of duplicate inactive parameters.',
                 'category_id' => [
                     'value' => $category->id,
@@ -1079,14 +1102,14 @@ class LimsWriteSmokeTest extends TestCase
 
             $analysisCategory = AnalysisCategory::query()->create([
                 'name' => 'Smoke Alt Category',
-                'code' => 'SMK-ALT-' . Str::upper(Str::random(4)),
+                'code' => 'SMK-ALT-'.Str::upper(Str::random(4)),
                 'description' => 'Alternate department category for matrix validation smoke test',
                 'department_id' => $alternateDepartment->id,
             ]);
 
             $alternateProfile = Profile::query()->create([
                 'name' => 'Smoke Alt Profile',
-                'code' => 'SMK-PROF-' . Str::upper(Str::random(4)),
+                'code' => 'SMK-PROF-'.Str::upper(Str::random(4)),
                 'description' => 'Alternate department profile for matrix validation smoke test',
                 'price' => 0,
                 'category_id' => $analysisCategory->id,
@@ -1125,7 +1148,7 @@ class LimsWriteSmokeTest extends TestCase
         $response = $this->from(route('matrixes.create'))
             ->actingAs($user)
             ->post(route('matrixes.store'), [
-                'code' => 'MAT-' . Str::upper(Str::random(6)),
+                'code' => 'MAT-'.Str::upper(Str::random(6)),
                 'description' => 'Should be rejected for mixed departments.',
                 'price' => 0,
                 'fixed_price' => 0,
@@ -1168,8 +1191,8 @@ class LimsWriteSmokeTest extends TestCase
         $suffix = Str::upper(Str::random(6));
 
         $formula = Formula::query()->create([
-            'name' => 'Scope Calc Formula ' . $suffix,
-            'code' => 'SCF-' . $suffix,
+            'name' => 'Scope Calc Formula '.$suffix,
+            'code' => 'SCF-'.$suffix,
             'description' => 'Formula for parameter governance validation.',
             'formula_expression' => '({density} * {mass}) / {volume}',
             'expression' => '(density * mass) / volume',
@@ -1188,8 +1211,8 @@ class LimsWriteSmokeTest extends TestCase
         $response = $this->from(route('parameters.index'))
             ->actingAs($user)
             ->post(route('parameters.store'), [
-                'name' => 'Invalid Calculated Parameter ' . $suffix,
-                'code' => 'ICP-' . $suffix,
+                'name' => 'Invalid Calculated Parameter '.$suffix,
+                'code' => 'ICP-'.$suffix,
                 'description' => 'Should be rejected for inconsistent calculation metadata.',
                 'price' => 1000,
                 'charge_tax' => false,
@@ -1213,7 +1236,7 @@ class LimsWriteSmokeTest extends TestCase
             ->assertSessionHasErrors(['requires_calculation', 'calculation_parameters']);
 
         $this->assertDatabaseMissing('parameters', [
-            'name' => 'Invalid Calculated Parameter ' . $suffix,
+            'name' => 'Invalid Calculated Parameter '.$suffix,
         ]);
     }
 
@@ -1230,7 +1253,7 @@ class LimsWriteSmokeTest extends TestCase
             ->actingAs($user)
             ->post(route('vap_samples.samples.store'), [
                 'name' => 'Blocked Smoke Sample',
-                'code' => 'SMK-BLOCK-' . Str::upper(Str::random(5)),
+                'code' => 'SMK-BLOCK-'.Str::upper(Str::random(5)),
                 'sample_type' => 'ROTINA',
                 'customer_id' => $customer->id,
                 'lab_id' => $lab->id,
@@ -1262,7 +1285,7 @@ class LimsWriteSmokeTest extends TestCase
         /** @var GeneralSettings $settings */
         $settings = app(GeneralSettings::class);
         $originalMode = $settings->app_operation_mode;
-        $code = 'INT-' . Str::upper(Str::random(8));
+        $code = 'INT-'.Str::upper(Str::random(8));
 
         try {
             $settings->app_operation_mode = 'hybrid';
@@ -1307,7 +1330,7 @@ class LimsWriteSmokeTest extends TestCase
         $warehouse = Warehouse::query()->firstOrFail();
         $this->qualifyUser($user, ['sample_intake_validation'], $department);
         $proposal = $this->acceptedProposal($customer, $warehouse, $department, $user);
-        $code = 'SMK-EXEC-' . Str::upper(Str::random(5));
+        $code = 'SMK-EXEC-'.Str::upper(Str::random(5));
 
         $this->actingAs($user)
             ->post(route('vap_samples.samples.store'), [
@@ -1345,7 +1368,7 @@ class LimsWriteSmokeTest extends TestCase
         $this->qualifyUser($user, ['sample_intake_validation'], $department);
 
         $portalRequest = CustomerRequest::query()->create([
-            'reference' => 'REQ-' . Str::upper(Str::random(6)),
+            'reference' => 'REQ-'.Str::upper(Str::random(6)),
             'title' => 'Portal prefilling smoke request',
             'request_type' => 'analysis_request',
             'status' => 'pending',
@@ -1354,7 +1377,7 @@ class LimsWriteSmokeTest extends TestCase
             'submitted_at' => now(),
             'description' => 'Portal request ready for lab validation.',
             'contact' => $warehouse->primary_phone ?: '900000321',
-            'email' => $warehouse->email ?: ('portal.' . $warehouse->id . '@lims-unleashed.test'),
+            'email' => $warehouse->email ?: ('portal.'.$warehouse->id.'@lims-unleashed.test'),
             'customer_id' => $customer->id,
             'warehouse_id' => $warehouse->id,
             'answered' => false,
@@ -1488,7 +1511,7 @@ class LimsWriteSmokeTest extends TestCase
         $this->actingAs($user)
             ->post(route('vap_samples.samples.store'), [
                 'name' => 'Non-discardable Smoke Sample',
-                'code' => 'SMK-NODISC-' . Str::upper(Str::random(4)),
+                'code' => 'SMK-NODISC-'.Str::upper(Str::random(4)),
                 'sample_type' => 'ROTINA',
                 'customer_id' => $customer->id,
                 'lab_id' => $lab->id,
@@ -1911,6 +1934,42 @@ class LimsWriteSmokeTest extends TestCase
         $this->assertSame($result->sample->analysis->id, $counterAnalysis->analysis_id);
         $this->assertSame($originalSampleId, data_get($counterAnalysis->extra_data, 'source_sample_id'));
 
+        $indexResponse = $this->actingAs($user)
+            ->get(route('counteranalysis.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('CounterAnalysis/Index'));
+
+        $counterAnalysisRow = collect(data_get($indexResponse->viewData('page'), 'props.record.data', []))
+            ->firstWhere('id', $counterAnalysis->id);
+
+        $this->assertNotNull($counterAnalysisRow);
+        $this->assertSame($result->id, data_get($counterAnalysisRow, 'source_result.id'));
+        $this->assertSame($originalSampleId, data_get($counterAnalysisRow, 'entry_origin.source_sample_id'));
+        $this->assertSame(route('analysis.edit', $counterAnalysis->analysis_id), data_get($counterAnalysisRow, 'links.original_analysis_path'));
+
+        $counterAnalysis->loadMissing('code', 'sample');
+        $counterAnalysisSearch = collect([$counterAnalysis->code?->code, $counterAnalysis->sample?->code])
+            ->filter()
+            ->first();
+
+        $this->actingAs($user)
+            ->get(route('counteranalysis.getAnalysis', ['q' => $counterAnalysisSearch ?? '']))
+            ->assertOk()
+            ->assertJsonFragment(['id' => $counterAnalysis->id]);
+
+        $this->actingAs($user)
+            ->get(route('counteranalysis.edit', $counterAnalysis))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Analysis/ResultsWorkflow')
+                ->where('action', 'analyze')
+                ->where('record.result_id.value', $result->id)
+                ->where('record.source_result.id', $result->id)
+                ->where('workflow_kind', 'counter_analysis')
+                ->where('result_data_url', route('results.getCounterAnalysisDefaultResultsData'))
+                ->where('store_results_url', route('results.storeCounterAnalysisResults'))
+            );
+
         $result->refresh();
         $this->assertTrue($result->requested_counter_analysis);
     }
@@ -2111,6 +2170,87 @@ class LimsWriteSmokeTest extends TestCase
             ]);
 
         $response->assertSessionHasErrors('signature');
+    }
+
+    public function test_result_submission_rejects_sample_without_analysis_link(): void
+    {
+        $user = $this->verifiedAdmin();
+        $source = Result::query()
+            ->whereNotNull('collection_id')
+            ->whereNotNull('matrix_id')
+            ->whereNotNull('parameter_id')
+            ->whereNotNull('product_id')
+            ->whereNotNull('protocol_id')
+            ->whereNotNull('profile_id')
+            ->whereNotNull('unit_id')
+            ->whereNotNull('standard_id')
+            ->whereNotNull('code_id')
+            ->whereNotNull('nwp_id')
+            ->whereNotNull('type_id')
+            ->firstOrFail();
+        $orphanSample = Sample::query()->doesntHave('analysis')->first()
+            ?? Sample::query()->create([
+                'sample_month' => now()->format('m/Y'),
+                'seq' => 0,
+            ]);
+
+        $this->from(route('analysis.index', ['category' => 'insert']))
+            ->actingAs($user)
+            ->post(route('results.store'), [
+                'action' => 'analyze',
+                'sample_id' => ['value' => $orphanSample->id, 'label' => (string) $orphanSample->id],
+                'results' => [[
+                    'result_id' => null,
+                    'approved_by' => null,
+                    'approved_by_id' => null,
+                    'verified_by_id' => null,
+                    'approved_date' => null,
+                    'verified_date' => null,
+                    'approved_value' => null,
+                    'approval_notes' => null,
+                    'collection_id' => $source->collection_id,
+                    'count' => (bool) $source->count,
+                    'inserted_by' => $user->name,
+                    'inserted_by_id' => $user->id,
+                    'inserted_date' => null,
+                    'inserted_value' => is_numeric($source->inserted_value) ? (string) $source->inserted_value : '1.0',
+                    'insertion_notes' => null,
+                    'verified_value' => null,
+                    'verification_notes' => null,
+                    'matrix_id' => $source->matrix_id,
+                    'max_ref_value' => $source->max_ref_value,
+                    'min_ref_value' => $source->min_ref_value,
+                    'parameter_id' => ['value' => $source->parameter_id, 'label' => $source->parameter_label],
+                    'product_id' => ['value' => $source->product_id, 'label' => $source->product_label],
+                    'protocol_id' => ['value' => $source->protocol_id, 'label' => $source->protocol_label],
+                    'profile_id' => $source->profile_id,
+                    'unit_id' => ['value' => $source->unit_id, 'label' => $source->unit_label],
+                    'standard_id' => ['value' => $source->standard_id, 'label' => $source->standard_label],
+                    'code_id' => ['value' => $source->code_id, 'label' => $source->code_label],
+                    'nwp_id' => ['value' => $source->nwp_id, 'label' => $source->nwp_label],
+                    'requested_counter_analysis' => false,
+                    'sample_id' => $orphanSample->id,
+                    'status' => (bool) $source->status,
+                    'type_id' => ['value' => $source->type_id, 'label' => $source->category_label],
+                    'category_label' => $source->category_label,
+                    'uncertainty_value' => '0.05',
+                    'sumC' => 0,
+                    'volume' => 1,
+                    'n1' => 0,
+                    'n2' => 0,
+                    'dilution' => 0,
+                    'd1' => 0,
+                    'd2' => 0,
+                    'cfu1' => 0,
+                    'cfu2' => 0,
+                    'is_calculated' => false,
+                    'is_override' => false,
+                    'calculation_metadata' => null,
+                    'calculated_at' => now()->toDateTimeString(),
+                ]],
+            ])
+            ->assertRedirect(route('analysis.index', ['category' => 'insert']))
+            ->assertSessionHasErrors('sample_id');
     }
 
     public function test_result_verification_rejects_partial_scope_submission(): void

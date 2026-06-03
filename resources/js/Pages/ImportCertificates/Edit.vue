@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between">
@@ -79,7 +79,7 @@
               :hasError="form.errors.trans_type_id" 
               v-model="form.trans_type_id" 
               :load-options="loadTransportTypes"
-              placeholder="Select transport type..."
+              :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.transport_type')"
             />
             <p v-if="form.errors.trans_type_id" class="text-xs text-red-600">
               {{ form.errors.trans_type_id }}
@@ -102,7 +102,7 @@
                 v-model="form.port_exit" 
                 type="text" 
                 class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
-                placeholder="Enter port of exit..."
+                :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.port_exit')"
               />
               <p v-if="form.errors.port_exit" class="text-xs text-red-600">
                 {{ form.errors.port_exit }}
@@ -118,7 +118,7 @@
                 v-model="form.port_entry" 
                 type="text" 
                 class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
-                placeholder="Enter port of entry..."
+                :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.port_entry')"
               />
               <p v-if="form.errors.port_entry" class="text-xs text-red-600">
                 {{ form.errors.port_entry }}
@@ -134,7 +134,7 @@
                 :hasError="form.errors.destination_country_id" 
                 v-model="form.destination_country_id" 
                 :load-options="loadCountries"
-                placeholder="Select destination country..."
+                :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.destination_country')"
               />
               <p v-if="form.errors.destination_country_id" class="text-xs text-red-600">
                 {{ form.errors.destination_country_id }}
@@ -161,7 +161,7 @@
                   :hasError="form.errors.importer_id" 
                   v-model="form.importer_id" 
                   :load-options="loadImporters"
-                  placeholder="Select importer..."
+                  :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.importer')"
                 />
                 <p v-if="form.errors.importer_id" class="text-xs text-red-600">
                   {{ form.errors.importer_id }}
@@ -180,7 +180,7 @@
                   :hasError="form.errors.importer_warehouse_id" 
                   v-model="form.importer_warehouse_id" 
                   :load-options="loadImporterWarehouses"
-                  placeholder="Select importer warehouse..."
+                  :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.importer_warehouse')"
                 />
                 <p v-if="form.errors.importer_warehouse_id" class="text-xs text-red-600">
                   {{ form.errors.importer_warehouse_id }}
@@ -200,7 +200,7 @@
                   :hasError="form.errors.exporter_id" 
                   v-model="form.exporter_id" 
                   :load-options="loadExporters"
-                  placeholder="Select exporter..."
+                  :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.exporter')"
                 />
                 <p v-if="form.errors.exporter_id" class="text-xs text-red-600">
                   {{ form.errors.exporter_id }}
@@ -219,7 +219,7 @@
                   :hasError="form.errors.exporter_warehouse_id" 
                   v-model="form.exporter_warehouse_id" 
                   :load-options="loadExporterWarehouses"
-                  placeholder="Select exporter warehouse..."
+                  :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.exporter_warehouse')"
                 />
                 <p v-if="form.errors.exporter_warehouse_id" class="text-xs text-red-600">
                   {{ form.errors.exporter_warehouse_id }}
@@ -244,7 +244,7 @@
                 :hasError="form.errors.currency_id" 
                 v-model="form.currency_id" 
                 :load-options="loadCurrencies"
-                placeholder="Select currency..."
+                :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.currency')"
               />
               <p v-if="form.errors.currency_id" class="text-xs text-red-600">
                 {{ form.errors.currency_id }}
@@ -383,7 +383,7 @@
                   :hasError="form.errors.invoice_id" 
                   v-model="form.invoice_id" 
                   :load-options="loadInvoices"
-                  placeholder="Select invoice (optional)..."
+                  :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.invoice')"
                   class="w-64"
                 />
               </div>
@@ -416,7 +416,7 @@
                 v-model="form.authorized_personnel" 
                 type="text" 
                 class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
-                placeholder="Enter name..."
+                :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.authorized_personnel')"
               />
               <p v-if="form.errors.authorized_personnel" class="text-xs text-red-600">
                 {{ form.errors.authorized_personnel }}
@@ -513,7 +513,7 @@
                 <comboboxEnhanced 
                   v-model="item.product_id" 
                   :load-options="loadProducts"
-                  placeholder="Select product..."
+                  :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.product')"
                   class="min-w-[200px]"
                 />
               </td>
@@ -529,7 +529,7 @@
                     class="w-32 rounded-md border border-gray-300 px-3 py-1.5 text-center text-sm focus:border-blue-900 focus:ring-blue-900"
                     placeholder="0.00"
                   />
-                  <span class="text-sm text-gray-500">units</span>
+                  <span class="text-sm text-gray-500">{{ $t('gestlab.general.labels.import_certificates.units') }}</span>
                 </div>
               </td>
 
@@ -539,7 +539,7 @@
                   v-model="item.origin" 
                   type="text" 
                   class="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                  placeholder="Origin..."
+                  :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.origin')"
                 />
               </td>
 
@@ -553,7 +553,7 @@
                   :masks="masks"
                   class="w-32"
                   :popover-placement="'bottom-start'"
-                  placeholder="Validity..."
+                  :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.validity')"
                 />
               </td>
 
@@ -563,7 +563,7 @@
                   v-model="item.lot" 
                   type="text" 
                   class="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                  placeholder="Lot number..."
+                  :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.lot')"
                 />
               </td>
 
@@ -573,7 +573,7 @@
                   v-model="item.bl_no" 
                   type="text" 
                   class="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                  placeholder="BL number..."
+                  :placeholder="$t('gestlab.general.labels.import_certificates.placeholders.bl_no')"
                 />
               </td>
 
@@ -725,6 +725,7 @@
 
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed, watch } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue';

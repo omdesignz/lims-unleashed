@@ -1,14 +1,13 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { ref, reactive, watch } from "vue";
-import { router, useForm } from "@inertiajs/vue3";
-import datePicker from '@/Components/date-picker.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { ref, watch } from "vue";
+import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
+import { Link, router, useForm } from "@inertiajs/vue3";
 import datePickerEnhanced from '@/Components/date-picker-enhanced.vue'
-import combobox from '@/Components/combobox.vue';
 import comboboxEnhanced from "@/Components/combobox-enhanced.vue";
-import ComboboxMultiple from '@/Components/combobox-multiple.vue';
 import ComboboxMultipleEnhanced from '@/Components/combobox-multiple-enhanced.vue';
-import { has, throttle } from "lodash";
+import { throttle } from "lodash";
 import { 
   TrashIcon, 
   PlusCircleIcon, 
@@ -24,7 +23,6 @@ import {
   DocumentTextIcon,
   Cog6ToothIcon
 } from "@heroicons/vue/24/outline";
-import { trans } from 'laravel-vue-i18n';
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/vue";
 
@@ -40,7 +38,8 @@ const props = defineProps({
     analysis_categories: {
       type: Array,
       default: () => []
-    }
+    },
+    entrypoint: { type: Object, default: () => ({}) },
 });
 
 const showDeleteConfirmation = ref(false);
@@ -65,24 +64,20 @@ const updateDate = (e) => {
   form.collection_date = e;
 }
 
-watch(() => [form.customer_id.value], (currentValue, oldValue) => {
+watch(() => [form.customer_id?.value], () => {
     if (!form.customer_id?.value) return;
     
     loadingWarehouses.value = true;
-    fetch('/warehouses/getWarehouse?q=' + '&customer_id=' + form.customer_id?.value)
-    .then(response => response.json())
-    .then(results => {
-        const warehouses = results.map(result => ({
-            value: result.id,
-            label: result.address,
-        }));
-        
+    loadSelectOptions(
+        '/warehouses/getWarehouse',
+        '',
+        warehouses => {
         form.warehouse_id = warehouses[0] || '';
         loadingWarehouses.value = false;
-    })
-    .catch(() => {
-        loadingWarehouses.value = false;
-    });
+        },
+        optionMappers.address,
+        { customer_id: form.customer_id.value }
+    );
 });
 
 const addProduct = () => {
@@ -123,9 +118,7 @@ const addProduct = () => {
 }
 
 const removeProduct = (index) => {
-    if (confirm(trans('gestlab.actions.confirm_delete_product'))) {
-        form.products.splice(index, 1);
-    }
+    form.products.splice(index, 1);
 }
 
 const onSearchAnalysisCategoryChange = throttle(function (term) {
@@ -136,135 +129,46 @@ const onSearchAnalysisCategoryChange = throttle(function (term) {
     })
 }, 300)
 
-// API loading functions (unchanged from original)
 function loadCustomers(query, setOptions) {
-    fetch('/customers/getCustomer?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => ({
-            value: result.id,
-            label: result.name,
-        }))
-        );
-    });
+    return loadSelectOptions('/customers/getCustomer', query, setOptions, optionMappers.name);
 }
 
 function loadVehicles(query, setOptions) {
-    fetch('/vehicles/getVehicle?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => ({
-            value: result.id,
-            label: result.number_plate,
-        }))
-        );
-    });
+    return loadSelectOptions('/vehicles/getVehicle', query, setOptions, optionMappers.numberPlate);
 }
 
 function loadWarehouses(query, setOptions) {
-    fetch('/warehouses/getWarehouse?q=' + query + '&customer_id=' + form.customer_id?.value)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => ({
-            value: result.id,
-            label: result.address,
-        }))
-        );
+    return loadSelectOptions('/warehouses/getWarehouse', query, setOptions, optionMappers.address, {
+        customer_id: form.customer_id?.value,
     });
 }
 
 function loadProducts(query, setOptions) {
-    fetch('/products/getProduct?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => ({
-            value: result.id,
-            label: result.name,
-        }))
-        );
-    });
+    return loadSelectOptions('/products/getProduct', query, setOptions, optionMappers.name);
 }
 
 function loadPackagingCategories(query, setOptions) {
-    fetch('/packagingcategories/getPackagingCategory?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => ({
-            value: result.id,
-            label: result.name,
-        }))
-        );
-    });
+    return loadSelectOptions('/packagingcategories/getPackagingCategory', query, setOptions, optionMappers.name);
 }
 
 function loadEndResults(query, setOptions) {
-    fetch('/collectionendresults/getCollectionEndResult?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => ({
-            value: result.id,
-            label: result.name,
-        }))
-        );
-    });
+    return loadSelectOptions('/collectionendresults/getCollectionEndResult', query, setOptions, optionMappers.name);
 }
 
 function loadCollectionCollaboration(query, setOptions) {
-    fetch('/collectioncollaborations/getCollectionCollaboration?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => ({
-            value: result.id,
-            label: result.name,
-        }))
-        );
-    });
+    return loadSelectOptions('/collectioncollaborations/getCollectionCollaboration', query, setOptions, optionMappers.name);
 }
 
 function loadCollectionReason(query, setOptions) {
-    fetch('/collectionreasons/getCollectionReason?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => ({
-            value: result.id,
-            label: result.name,
-        }))
-        );
-    });
+    return loadSelectOptions('/collectionreasons/getCollectionReason', query, setOptions, optionMappers.name);
 }
 
 function loadUsers(query, setOptions) {
-    fetch('/users/getUser?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => ({
-            value: result.id,
-            label: result.name,
-        }))
-        );
-    });
+    return loadSelectOptions('/users/getUser', query, setOptions, optionMappers.name);
 }
 
 function loadTemperatures(query, setOptions) {
-    fetch('/temperatures/getTemperature?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => ({
-            value: result.id,
-            label: result.name,
-        }))
-        );
-    });
+    return loadSelectOptions('/temperatures/getTemperature', query, setOptions, optionMappers.name);
 }
 
 let submit = () => {
@@ -292,37 +196,61 @@ let submit = () => {
 </script>
 
 <template>
-    <div class="space-y-8">
+    <div class="direct-collection-form space-y-8" :class="commercialDocumentThemeClasses">
         <!-- Header -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center justify-between">
+        <div class="overflow-hidden rounded-[28px] border border-slate-200 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <ClipboardDocumentCheckIcon class="h-7 w-7 text-blue-900" />
+                    <h1 class="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
+                        <ClipboardDocumentCheckIcon class="h-7 w-7 text-primary-900 dark:text-primary-300" />
                         {{ $t('gestlab.general.labels.direct_collections.page_title') }}
                     </h1>
-                    <p class="mt-2 text-gray-600">
+                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
                         {{ $t('gestlab.general.labels.direct_collections.page_create_description') }}
-                        <span v-if="form.customer_id?.label" class="font-semibold text-blue-900">
+                        <span v-if="form.customer_id?.label" class="font-semibold text-primary-900 dark:text-primary-300">
                             {{ form.customer_id.label }}
                         </span>
                     </p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900 ring-1 ring-inset ring-blue-700/10">
+                    <span class="inline-flex items-center rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-900 ring-1 ring-inset ring-primary-700/10 dark:bg-primary-500/10 dark:text-primary-200 dark:ring-primary-400/20">
                         {{ form.products.length }} {{ $t('gestlab.general.labels.direct_collections.products') }}
                     </span>
                 </div>
             </div>
         </div>
 
+        <section class="rounded-[28px] border border-primary-100 bg-gradient-to-br from-white via-primary-50/70 to-white p-5 shadow-[0_18px_50px_-26px_rgba(15,23,42,0.25)] dark:border-primary-500/20 dark:from-slate-950 dark:via-primary-500/10 dark:to-slate-900/80">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.22em] text-primary-700 dark:text-primary-300">
+                        Fluxo recomendado
+                    </p>
+                    <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">
+                        {{ props.entrypoint?.label || 'Use Sample Entry para novos fluxos' }}
+                    </h2>
+                    <p class="mt-1 max-w-4xl text-sm text-slate-600 dark:text-slate-300">
+                        {{ props.entrypoint?.description || 'Para novos processos, comece pela receção da amostra para manter produto, matriz, lab code, análises e evidências ligados.' }}
+                    </p>
+                </div>
+
+                <Link
+                    :href="props.entrypoint?.create_sample_url || route('vap_samples.index', { collection_type: 'direct' })"
+                    class="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
+                >
+                    <ClipboardDocumentCheckIcon class="size-5" aria-hidden="true" />
+                    Criar via Sample Entry
+                </Link>
+            </div>
+        </section>
+
         <!-- Main Form -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Left Column - Collection Details -->
             <div class="lg:col-span-2 space-y-8">
                 <!-- Collection Information Card -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
+                <div class="overflow-hidden rounded-[26px] border border-slate-200 bg-white/95 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
+                    <div class="bg-gradient-to-r from-primary-900 to-primary-700 px-6 py-4 dark:from-slate-950 dark:to-primary-950">
                         <h2 class="text-lg font-semibold text-white flex items-center gap-2">
                             <CalendarIcon class="h-5 w-5" />
                             {{ $t('gestlab.general.labels.direct_collections.collection_information') }}
@@ -332,7 +260,7 @@ let submit = () => {
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <!-- Collection Date -->
                             <div class="space-y-2">
-                                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                                <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-300">
                                     <CalendarIcon class="h-4 w-4" />
                                     {{ $t('gestlab.general.labels.direct_collections.collection_date') }}
                                 </label>
@@ -341,7 +269,7 @@ let submit = () => {
                                     v-model="form.collection_date"
                                     :has-error="form.errors.collection_date"
                                     :error-message="form.errors.collection_date"
-                                    placeholder="Select a date"
+                                    :placeholder="$t('gestlab.general.labels.direct_collections.collection_date')"
                                 />
                                 <p v-if="form.errors.collection_date" class="text-xs text-red-600">
                                     {{ form.errors.collection_date }}
@@ -350,7 +278,7 @@ let submit = () => {
 
                             <!-- Customer -->
                             <div class="space-y-2">
-                                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                                <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-300">
                                     <UserIcon class="h-4 w-4" />
                                     {{ $t('gestlab.general.labels.direct_collections.customer_id') }}
                                 </label>
@@ -358,7 +286,7 @@ let submit = () => {
                                     :hasError="form.errors.customer_id" 
                                     v-model="form.customer_id" 
                                     :load-options="loadCustomers"
-                                    placeholder="Seleccionar cliente..."
+                                    :placeholder="$t('gestlab.general.labels.direct_collections.customer_id')"
                                 />
                                 <p v-if="form.errors.customer_id" class="text-xs text-red-600">
                                     {{ form.errors.customer_id }}
@@ -367,7 +295,7 @@ let submit = () => {
 
                             <!-- Warehouse -->
                             <div class="space-y-2">
-                              <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                              <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-300">
                                 <BuildingOfficeIcon class="h-4 w-4" />
                                 {{ $t('gestlab.general.labels.direct_collections.warehouse_id') }}
                               </label>
@@ -378,11 +306,11 @@ let submit = () => {
                                   v-model="form.warehouse_id" 
                                   :load-options="loadWarehouses"
                                   :loading="loadingWarehouses"
-                                  placeholder="Seleccionar armazém..."
+                                  :placeholder="$t('gestlab.general.labels.direct_collections.warehouse_id')"
                                 />
                                 <!-- Loading indicator -->
                                 <div v-if="loadingWarehouses" class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                  <svg class="animate-spin h-5 w-5 text-blue-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <svg class="animate-spin h-5 w-5 text-primary-700 dark:text-primary-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                   </svg>
@@ -395,14 +323,14 @@ let submit = () => {
 
                             <!-- Collaborations -->
                             <div class="md:col-span-2 lg:col-span-1 space-y-2">
-                                <label class="block text-sm font-medium text-gray-700">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
                                     {{ $t('gestlab.general.labels.direct_collections.collaborations') }}
                                 </label>
                                 <ComboboxMultipleEnhanced 
                                     v-model="form.collaborations"
                                     :load-options="loadCollectionCollaboration" 
                                     multiple
-                                    placeholder="Select collaborations..."
+                                    :placeholder="$t('gestlab.general.labels.direct_collections.collaborations')"
                                 />
                                 <p v-if="form.errors.collaborations" class="text-xs text-red-600">
                                     {{ form.errors.collaborations }}
@@ -411,14 +339,14 @@ let submit = () => {
 
                             <!-- Collection Reasons -->
                             <div class="md:col-span-2 lg:col-span-1 space-y-2">
-                                <label class="block text-sm font-medium text-gray-700">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
                                     {{ $t('gestlab.general.labels.direct_collections.collectionreasons') }}
                                 </label>
                                 <ComboboxMultipleEnhanced 
                                     v-model="form.collectionreasons" 
                                     :load-options="loadCollectionReason" 
                                     :multiple="true"
-                                    placeholder="Select reasons..."
+                                    :placeholder="$t('gestlab.general.labels.direct_collections.collectionreasons')"
                                 />
                                 <p v-if="form.errors.collectionreasons" class="text-xs text-red-600">
                                     {{ form.errors.collectionreasons }}
@@ -429,7 +357,7 @@ let submit = () => {
                 </div>
 
                 <!-- Products Section -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="overflow-hidden rounded-[26px] border border-slate-200 bg-white/95 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
                     <div class="border-b border-gray-200 px-6 py-4">
                         <div class="flex items-center justify-between">
                             <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -562,7 +490,7 @@ let submit = () => {
                                           :hasError="form.errors[`products.${index}.product_id`]" 
                                           v-model="product.product_id" 
                                           :load-options="loadProducts"
-                                          placeholder="Seleccionar produto..."
+                                          :placeholder="$t('gestlab.general.labels.direct_collections.product_id')"
                                         />
                                       </div>
                                       <p v-if="form.errors[`products.${index}.product_id`]" class="text-xs text-red-600">
@@ -629,7 +557,7 @@ let submit = () => {
                                                 :hasError="form.errors[`products.${index}.pack_id`]" 
                                                 v-model="product.pack_id" 
                                                 :load-options="loadPackagingCategories"
-                                                placeholder="Seleccionar embalagem..."
+                                                :placeholder="$t('gestlab.general.labels.direct_collections.pack_id')"
                                             />
                                         </div>
                                     </div>
@@ -694,7 +622,7 @@ let submit = () => {
                                                 :hasError="form.errors[`products.${index}.vehicle_id`]" 
                                                 v-model="product.vehicle_id" 
                                                 :load-options="loadVehicles"
-                                                placeholder="Select vehicle..."
+                                                :placeholder="$t('gestlab.general.labels.direct_collections.vehicle_id')"
                                             />
                                         </div>
 
@@ -707,7 +635,7 @@ let submit = () => {
                                                 :hasError="form.errors[`products.${index}.temperature_id`]" 
                                                 v-model="product.temperature_id" 
                                                 :load-options="loadTemperatures"
-                                                placeholder="Select temperature..."
+                                                :placeholder="$t('gestlab.general.labels.direct_collections.temperature_id')"
                                             />
                                         </div>
 
@@ -813,7 +741,7 @@ let submit = () => {
                                                 :hasError="form.errors[`products.${index}.result_id`]" 
                                                 v-model="product.result_id" 
                                                 :load-options="loadEndResults"
-                                                placeholder="Select result..."
+                                                :placeholder="$t('gestlab.general.labels.direct_collections.result_id')"
                                             />
                                         </div>
 
@@ -826,7 +754,7 @@ let submit = () => {
                                                 :hasError="form.errors[`products.${index}.owner_id`]" 
                                                 v-model="product.owner_id" 
                                                 :load-options="loadUsers"
-                                                placeholder="Select owner..."
+                                                :placeholder="$t('gestlab.general.labels.direct_collections.owner_id')"
                                             />
                                         </div>
 
@@ -865,7 +793,7 @@ let submit = () => {
                                             v-model="product.obs" 
                                             rows="3"
                                             class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900 sm:text-sm"
-                                            placeholder="Add observations..."
+                                            :placeholder="$t('gestlab.general.labels.direct_collections.obs')"
                                         />
                                     </div>
                                 </div>
@@ -890,7 +818,7 @@ let submit = () => {
                                 'w-full inline-flex justify-center items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
                                 form.processing || form.products.length === 0
                                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-blue-900 to-blue-800 text-white hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2'
+                                    : 'bg-gradient-to-r from-primary-800 to-primary-600 text-white hover:from-primary-900 hover:to-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 dark:from-primary-600 dark:to-primary-500 dark:hover:from-primary-500 dark:hover:to-primary-400'
                             ]"
                         >
                             <CheckCircleIcon class="h-5 w-5" />
@@ -965,7 +893,7 @@ let submit = () => {
     >
         
 
-    <div class="mt-4">
+    <div class="direct-collection-form mt-4">
       <div class="font-semibold inline-flex px-2 py-1 leading-4 text-xs rounded-full text-white bg-blue-900 sm:text-xs mb-2"><p class="text-xs">{{ $t('gestlab.general.labels.summary') }}</p></div>
       <div>
         <div class="px-4 sm:px-0 rounded-full text-white bg-blue-900">
@@ -1106,3 +1034,154 @@ let submit = () => {
 
     </confirm-dialog>
 </template>
+
+<style scoped>
+.direct-collection-form {
+  --collection-ink: #17231f;
+  --collection-muted: #647067;
+  --collection-border: #d9d1bf;
+  --collection-surface: #fffaf0;
+  --collection-primary: #123f38;
+  --collection-primary-soft: #e5f3ec;
+}
+
+.direct-collection-form :is(label, dt) {
+  color: var(--collection-ink);
+  font-weight: 700;
+}
+
+.direct-collection-form :is(input:not([type="checkbox"]), textarea, select) {
+  width: 100%;
+  border: 1px solid var(--collection-border);
+  border-radius: 1rem;
+  background: rgba(255, 250, 240, 0.94);
+  color: var(--collection-ink);
+  box-shadow: 0 12px 32px -24px rgba(23, 35, 31, 0.35);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.direct-collection-form :is(input:not([type="checkbox"]), textarea, select)::placeholder {
+  color: #8b948d;
+}
+
+.direct-collection-form :is(input:not([type="checkbox"]), textarea, select):focus {
+  border-color: var(--collection-primary);
+  box-shadow: 0 0 0 4px rgba(18, 63, 56, 0.14);
+  outline: none;
+}
+
+.direct-collection-form input[type="checkbox"] {
+  border-color: var(--collection-primary);
+  color: var(--collection-primary);
+}
+
+.direct-collection-form :is([class~="text-gray-900"], [class~="text-gray-800"], [class~="text-gray-700"]) {
+  color: var(--collection-ink) !important;
+}
+
+.direct-collection-form :is([class~="text-gray-600"], [class~="text-gray-500"], [class~="text-gray-400"]) {
+  color: var(--collection-muted) !important;
+}
+
+.direct-collection-form :is([class~="text-blue-900"], [class~="text-blue-800"]) {
+  color: var(--collection-primary) !important;
+}
+
+.direct-collection-form :is([class~="bg-blue-900"], [class~="bg-blue-800"]) {
+  background-color: var(--collection-primary) !important;
+}
+
+.direct-collection-form :is([class~="from-blue-900"], [class~="from-blue-50"]) {
+  --tw-gradient-from: var(--collection-primary-soft) var(--tw-gradient-from-position) !important;
+}
+
+.direct-collection-form :is([class~="border-gray-100"], [class~="border-gray-200"], [class~="border-gray-300"]) {
+  border-color: var(--collection-border) !important;
+}
+
+.direct-collection-form :is([class~="bg-white"], [class~="bg-gray-50"]) {
+  background-color: rgba(255, 250, 240, 0.92) !important;
+}
+
+.direct-collection-form :is([class~="bg-green-100"]) {
+  background-color: #dcfce7 !important;
+}
+
+.direct-collection-form :is([class~="text-green-800"]) {
+  color: #166534 !important;
+}
+
+.direct-collection-form :is([class~="bg-yellow-100"]) {
+  background-color: #fef3c7 !important;
+}
+
+.direct-collection-form :is([class~="text-yellow-800"]) {
+  color: #92400e !important;
+}
+
+.direct-collection-form :is([class~="bg-red-100"]) {
+  background-color: #ffe4e6 !important;
+}
+
+.direct-collection-form :is([class~="text-red-800"], [class~="text-red-600"]) {
+  color: #be123c !important;
+}
+
+.direct-collection-form :deep(.vc-container),
+.direct-collection-form :deep(.combobox-enhanced),
+.direct-collection-form :deep(.combobox-multiple-enhanced) {
+  color-scheme: light;
+}
+
+:global(.dark) .direct-collection-form {
+  --collection-ink: #f8fafc;
+  --collection-muted: #cbd5e1;
+  --collection-border: rgba(148, 163, 184, 0.28);
+  --collection-surface: rgba(15, 23, 42, 0.92);
+  --collection-primary: #7dd3c7;
+  --collection-primary-soft: rgba(20, 184, 166, 0.12);
+}
+
+:global(.dark) .direct-collection-form :is(input:not([type="checkbox"]), textarea, select) {
+  background: rgba(15, 23, 42, 0.86);
+  color: #f8fafc;
+  border-color: rgba(148, 163, 184, 0.28);
+  box-shadow: 0 18px 42px -28px rgba(0, 0, 0, 0.85);
+}
+
+:global(.dark) .direct-collection-form :is(input:not([type="checkbox"]), textarea, select)::placeholder {
+  color: #94a3b8;
+}
+
+:global(.dark) .direct-collection-form :is([class~="bg-white"], [class~="bg-gray-50"]) {
+  background-color: rgba(15, 23, 42, 0.88) !important;
+}
+
+:global(.dark) .direct-collection-form :is([class~="bg-blue-900"], [class~="bg-blue-800"]) {
+  background-color: #0f766e !important;
+}
+
+:global(.dark) .direct-collection-form :is([class~="bg-green-100"]) {
+  background-color: rgba(22, 101, 52, 0.24) !important;
+}
+
+:global(.dark) .direct-collection-form :is([class~="text-green-800"]) {
+  color: #bbf7d0 !important;
+}
+
+:global(.dark) .direct-collection-form :is([class~="bg-yellow-100"]) {
+  background-color: rgba(146, 64, 14, 0.24) !important;
+}
+
+:global(.dark) .direct-collection-form :is([class~="text-yellow-800"]) {
+  color: #fde68a !important;
+}
+
+:global(.dark) .direct-collection-form :is([class~="bg-red-100"]) {
+  background-color: rgba(190, 18, 60, 0.22) !important;
+}
+
+:global(.dark) .direct-collection-form :is([class~="text-red-800"], [class~="text-red-600"]) {
+  color: #fecdd3 !important;
+}
+</style>

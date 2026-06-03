@@ -2,9 +2,12 @@
 
 namespace App\Http\Requests;
 
+use HeadlessChromium\BrowserFactory;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
+use Spatie\Browsershot\Browsershot;
 
 class ReportStudioTemplateRequest extends FormRequest
 {
@@ -23,20 +26,122 @@ class ReportStudioTemplateRequest extends FormRequest
      */
     public function rules(): array
     {
+        $cssColorRule = 'regex:/\A(?:#[0-9a-fA-F]{3,8}|(?:rgb|rgba|hsl|hsla)\([0-9\s,.%+\-]+\)|[a-zA-Z][a-zA-Z0-9-]{2,32})\z/';
+        $cssPositionRule = 'regex:/\A(?:left|right|top|bottom|center|(?:100|[1-9]?\d)(?:\.\d{1,2})?%)(?:\s+(?:left|right|top|bottom|center|(?:100|[1-9]?\d)(?:\.\d{1,2})?%))?\z/i';
+
         return [
             'name' => ['required', 'string', 'max:255'],
-            'studio_type' => ['required', Rule::in(['analysis', 'executive', 'proposal'])],
-            'renderer' => ['required', Rule::in(['internal', 'canva'])],
+            'studio_type' => ['required', Rule::in(['analysis', 'executive', 'proposal', 'export_certificate', 'import_certificate', 'quote', 'invoice', 'receipt', 'credit_note'])],
+            'renderer' => ['required', Rule::in(['internal', 'chrome', 'browsershot', 'canva'])],
             'status' => ['required', Rule::in(['draft', 'active', 'archived'])],
             'is_default' => ['sometimes', 'boolean'],
             'theme_preset' => ['nullable', 'string', 'max:100'],
             'canva_design_url' => ['nullable', 'url', 'max:2048'],
             'description' => ['nullable', 'string', 'max:5000'],
             'layout_schema' => ['nullable', 'array'],
-            'layout_schema.header' => ['nullable', 'array'],
+            'layout_schema.first_page_header_html' => ['nullable', 'string'],
+            'layout_schema.default_header_html' => ['nullable', 'string'],
+            'layout_schema.footer_html' => ['nullable', 'string'],
+            'layout_schema.body_html' => ['nullable', 'string'],
+            'layout_schema.styles_css' => ['nullable', 'string'],
             'layout_schema.sections' => ['nullable', 'array'],
-            'layout_schema.footer' => ['nullable', 'array'],
+            'layout_schema.variable_catalog' => ['nullable', 'array'],
+            'layout_schema.variable_catalog.*.value' => ['nullable', 'string', 'max:255'],
+            'layout_schema.variable_catalog.*.label' => ['nullable', 'string', 'max:255'],
+            'layout_schema.canvas_blocks' => ['nullable', 'array'],
+            'layout_schema.document_font_family' => ['nullable', 'string', 'max:150'],
+            'layout_schema.canvas_blocks.*.id' => ['nullable', 'string', 'max:100'],
+            'layout_schema.canvas_blocks.*.title' => ['nullable', 'string', 'max:255'],
+            'layout_schema.canvas_blocks.*.surface' => ['nullable', 'string', 'max:100'],
+            'layout_schema.canvas_blocks.*.block_kind' => ['nullable', Rule::in(['rich_text', 'signature', 'image', 'stamp', 'qr_code', 'chart_snapshot'])],
+            'layout_schema.canvas_blocks.*.asset_id' => ['nullable', 'string', 'max:100'],
+            'layout_schema.canvas_blocks.*.asset_label' => ['nullable', 'string', 'max:255'],
+            'layout_schema.canvas_blocks.*.asset_source' => ['nullable', 'string', 'max:255'],
+            'layout_schema.canvas_blocks.*.asset_mime_type' => ['nullable', 'string', 'max:255'],
+            'layout_schema.canvas_blocks.*.asset_size' => ['nullable', 'numeric', 'min:0'],
+            'layout_schema.canvas_blocks.*.content_html' => ['nullable', 'string'],
+            'layout_schema.canvas_blocks.*.image_url' => ['nullable', 'string', 'max:2048'],
+            'layout_schema.canvas_blocks.*.image_alt' => ['nullable', 'string', 'max:255'],
+            'layout_schema.canvas_blocks.*.image_fit' => ['nullable', Rule::in(['cover', 'contain', 'auto'])],
+            'layout_schema.canvas_blocks.*.image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
+            'layout_schema.canvas_blocks.*.qr_content' => ['nullable', 'string', 'max:2048'],
+            'layout_schema.canvas_blocks.*.qr_label' => ['nullable', 'string', 'max:255'],
+            'layout_schema.canvas_blocks.*.qr_foreground_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'layout_schema.canvas_blocks.*.qr_background_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'layout_schema.canvas_blocks.*.qr_error_correction' => ['nullable', Rule::in(['low', 'medium', 'quartile', 'high'])],
+            'layout_schema.canvas_blocks.*.qr_margin' => ['nullable', 'integer', 'min:0', 'max:32'],
+            'layout_schema.canvas_blocks.*.chart_title' => ['nullable', 'string', 'max:255'],
+            'layout_schema.canvas_blocks.*.chart_caption' => ['nullable', 'string', 'max:1000'],
+            'layout_schema.canvas_blocks.*.chart_svg' => ['nullable', 'string'],
+            'layout_schema.canvas_blocks.*.chart_image_url' => ['nullable', 'string', 'max:65535'],
+            'layout_schema.canvas_blocks.*.chart_type' => ['nullable', Rule::in(['bar', 'line', 'doughnut'])],
+            'layout_schema.canvas_blocks.*.chart_labels' => ['nullable'],
+            'layout_schema.canvas_blocks.*.chart_labels.*' => ['nullable', 'string', 'max:120'],
+            'layout_schema.canvas_blocks.*.chart_values' => ['nullable'],
+            'layout_schema.canvas_blocks.*.chart_values.*' => ['nullable', 'numeric'],
+            'layout_schema.canvas_blocks.*.chart_colors' => ['nullable'],
+            'layout_schema.canvas_blocks.*.chart_colors.*' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'layout_schema.canvas_blocks.*.chart_primary_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'layout_schema.canvas_blocks.*.chart_background_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'layout_schema.canvas_blocks.*.chart_show_values' => ['sometimes', 'boolean'],
+            'layout_schema.canvas_blocks.*.x' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'layout_schema.canvas_blocks.*.y' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'layout_schema.canvas_blocks.*.width' => ['nullable', 'numeric', 'min:1', 'max:100'],
+            'layout_schema.canvas_blocks.*.min_height' => ['nullable', 'numeric', 'min:0', 'max:4000'],
+            'layout_schema.canvas_blocks.*.z_index' => ['nullable', 'numeric', 'min:0', 'max:999'],
+            'layout_schema.canvas_blocks.*.padding' => ['nullable', 'numeric', 'min:0', 'max:400'],
+            'layout_schema.canvas_blocks.*.background_color' => ['nullable', 'string', 'max:100', $cssColorRule],
+            'layout_schema.canvas_blocks.*.background_image' => ['nullable', 'string', 'max:2048'],
+            'layout_schema.canvas_blocks.*.background_image_fit' => ['nullable', Rule::in(['cover', 'contain', 'auto'])],
+            'layout_schema.canvas_blocks.*.background_image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
+            'layout_schema.canvas_blocks.*.overlay_color' => ['nullable', 'string', 'max:100', $cssColorRule],
+            'layout_schema.canvas_blocks.*.overlay_opacity' => ['nullable', 'numeric', 'min:0', 'max:1'],
+            'layout_schema.canvas_blocks.*.text_color' => ['nullable', 'string', 'max:100', $cssColorRule],
+            'layout_schema.canvas_blocks.*.border_width' => ['nullable', 'numeric', 'min:0', 'max:40'],
+            'layout_schema.canvas_blocks.*.border_color' => ['nullable', 'string', 'max:100', $cssColorRule],
+            'layout_schema.canvas_blocks.*.border_radius' => ['nullable', 'numeric', 'min:0', 'max:2000'],
+            'layout_schema.canvas_blocks.*.opacity' => ['nullable', 'numeric', 'min:0.05', 'max:1'],
+            'layout_schema.canvas_blocks.*.rotation_deg' => ['nullable', 'numeric', 'min:-45', 'max:45'],
+            'layout_schema.canvas_blocks.*.shadow_preset' => ['nullable', Rule::in(['none', 'soft', 'elevated', 'stamp', 'glow'])],
+            'layout_schema.canvas_blocks.*.text_align' => ['nullable', Rule::in(['left', 'center', 'right', 'justify'])],
+            'layout_schema.canvas_blocks.*.font_size' => ['nullable', 'numeric', 'min:8', 'max:72'],
+            'layout_schema.canvas_blocks.*.line_height' => ['nullable', 'numeric', 'min:0.8', 'max:3'],
+            'layout_schema.canvas_blocks.*.signature_label' => ['nullable', 'string', 'max:255'],
+            'layout_schema.canvas_blocks.*.signature_name' => ['nullable', 'string', 'max:255'],
+            'layout_schema.canvas_blocks.*.signature_title' => ['nullable', 'string', 'max:255'],
+            'layout_schema.canvas_blocks.*.signature_image' => ['nullable', 'string', 'max:2048'],
+            'layout_schema.canvas_blocks.*.signature_line_style' => ['nullable', Rule::in(['solid', 'dashed'])],
+            'layout_schema.canvas_blocks.*.signature_align' => ['nullable', Rule::in(['left', 'center', 'right'])],
+            'layout_schema.canvas_blocks.*.signature_show_date' => ['sometimes', 'boolean'],
+            'layout_schema.canvas_blocks.*.signature_date_label' => ['nullable', 'string', 'max:255'],
+            'layout_schema.canvas_blocks.*.is_locked' => ['sometimes', 'boolean'],
+            'layout_schema.canvas_blocks.*.is_hidden' => ['sometimes', 'boolean'],
+            'layout_schema.canvas_blocks.*.page_scope' => ['nullable', Rule::in(['first', 'all', 'following', 'specific'])],
+            'layout_schema.canvas_blocks.*.page_number' => ['nullable', 'integer', 'min:1', 'max:999'],
+            'layout_schema.background_image_path' => ['nullable', 'string', 'max:2048'],
+            'layout_schema.background_size' => ['nullable', Rule::in(['cover', 'contain', 'auto'])],
+            'layout_schema.background_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
+            'layout_schema.background_repeat' => ['nullable', Rule::in(['no-repeat', 'repeat', 'repeat-x', 'repeat-y'])],
+            'layout_schema.table_header_background' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_header_text_color' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_border_color' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_font_size' => ['nullable', 'numeric', 'min:8', 'max:16'],
+            'layout_schema.table_cell_padding' => ['nullable', 'numeric', 'min:2', 'max:24'],
+            'layout_schema.show_canvas_grid' => ['sometimes', 'boolean'],
+            'layout_schema.show_canvas_rulers' => ['sometimes', 'boolean'],
+            'layout_schema.snap_to_grid' => ['sometimes', 'boolean'],
+            'layout_schema.snap_grid_size' => ['nullable', 'numeric', 'min:1', 'max:24'],
+            'layout_schema.page_safe_area' => ['sometimes', 'boolean'],
             'export_settings' => ['nullable', 'array'],
+            'export_settings.paper_size' => ['nullable', 'string', 'max:20'],
+            'export_settings.orientation' => ['nullable', 'string', 'max:5'],
+            'export_settings.custom_page_width' => ['nullable', 'numeric', 'min:50', 'max:2000'],
+            'export_settings.custom_page_height' => ['nullable', 'numeric', 'min:50', 'max:2000'],
+            'export_settings.margin_top' => ['nullable', 'numeric', 'min:0', 'max:200'],
+            'export_settings.margin_right' => ['nullable', 'numeric', 'min:0', 'max:200'],
+            'export_settings.margin_bottom' => ['nullable', 'numeric', 'min:0', 'max:200'],
+            'export_settings.margin_left' => ['nullable', 'numeric', 'min:0', 'max:200'],
+            'export_settings.first_page_margin_top' => ['nullable', 'numeric', 'min:0', 'max:250'],
         ];
     }
 
@@ -47,5 +152,35 @@ class ReportStudioTemplateRequest extends FormRequest
             'layout_schema' => $this->input('layout_schema', []),
             'export_settings' => $this->input('export_settings', []),
         ]);
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $renderer = $this->input('renderer');
+
+            if ($renderer === 'chrome' && ! class_exists(BrowserFactory::class)) {
+                $validator->errors()->add(
+                    'renderer',
+                    'O renderizador Chrome requer o pacote opcional chrome-php/chrome e um Chrome/Chromium disponível no servidor.'
+                );
+            }
+
+            $chromeBinary = config('laravel-pdf.chrome.chrome_binary');
+
+            if ($renderer === 'chrome' && is_string($chromeBinary) && $chromeBinary !== '' && ! is_executable($chromeBinary)) {
+                $validator->errors()->add(
+                    'renderer',
+                    'O binário Chrome configurado para gerar PDFs não existe ou não é executável: '.$chromeBinary
+                );
+            }
+
+            if ($renderer === 'browsershot' && ! class_exists(Browsershot::class)) {
+                $validator->errors()->add(
+                    'renderer',
+                    'O renderizador Browsershot requer o pacote opcional spatie/browsershot, Node e Chrome/Chromium no servidor.'
+                );
+            }
+        });
     }
 }

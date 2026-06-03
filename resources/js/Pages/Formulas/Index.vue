@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <!-- Header Card -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between">
@@ -278,6 +278,7 @@
 
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { TransitionRoot } from '@headlessui/vue'
 import slideOver from '@/Components/slide-over.vue';

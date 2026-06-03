@@ -1,6 +1,6 @@
 <template>
   <Modal :show="show" @close="closeModal" max-width="7xl">
-    <div class="p-6">
+    <div class="iso-revision-comparison-modal p-6">
       <!-- HEADER -->
       <div class="flex items-center justify-between mb-6">
         <div>
@@ -254,7 +254,7 @@ const formatDate = (date) => {
 
 const exportComparison = async () => {
   // Use the export-comparison route
-  const url = route('qualitycertificates.iso-revisions.export-comparison', {
+  const url = route('iso-revisions.export-comparison', {
     certificate: props.certificate.id,
     revision_a: props.revisionIds[0],
     revision_b: props.revisionIds[1]
@@ -262,3 +262,38 @@ const exportComparison = async () => {
   window.open(url, '_blank')
 }
 </script>
+
+<style scoped>
+.iso-revision-comparison-modal :deep(.text-blue-900),
+.iso-revision-comparison-modal :deep(.text-blue-800) {
+  color: rgb(var(--primary-800-rgb)) !important;
+}
+
+.iso-revision-comparison-modal :deep(.bg-blue-900) {
+  background-color: rgb(var(--primary-900-rgb)) !important;
+}
+
+.iso-revision-comparison-modal :deep(.bg-blue-50),
+.iso-revision-comparison-modal :deep(.bg-blue-100) {
+  background-color: rgb(var(--primary-50-rgb) / 0.82) !important;
+}
+
+:global(.dark) .iso-revision-comparison-modal {
+  background-color: rgb(2 6 23 / 0.92);
+}
+
+:global(.dark) .iso-revision-comparison-modal :deep(.bg-white),
+:global(.dark) .iso-revision-comparison-modal :deep(.bg-gray-50),
+:global(.dark) .iso-revision-comparison-modal :deep(.bg-blue-50) {
+  background-color: rgb(15 23 42 / 0.86) !important;
+}
+
+:global(.dark) .iso-revision-comparison-modal :deep(.text-gray-900) {
+  color: #f8fafc !important;
+}
+
+:global(.dark) .iso-revision-comparison-modal :deep(.text-gray-700),
+:global(.dark) .iso-revision-comparison-modal :deep(.text-gray-600) {
+  color: #cbd5e1 !important;
+}
+</style>

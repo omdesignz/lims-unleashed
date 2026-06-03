@@ -14,15 +14,21 @@ class CollectionProductResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $code = $this->whenLoaded('code');
-        $collection = $this->whenLoaded('collection');
-        $collectionType = $collection?->collectionable_type;
-        $totalSamples = $code?->samples?->count() ?? 0;
-        $completedAnalysis = $code?->completed_analysis?->count() ?? 0;
-        $pendingAnalysis = $code?->pending_analysis?->count() ?? 0;
-        $inProgressAnalysis = $code?->in_progress_analysis?->count() ?? 0;
-        $certificateAvailable = (bool) $this->quality_certificate;
+        $code = $this->resource->relationLoaded('code') ? $this->code : null;
+        $collection = $this->resource->relationLoaded('collection') ? $this->collection : null;
+        $collectionType = $collection?->collectionable_type ?: data_get($this->extra_data, 'collection_type', 'direct');
+        $collectionType = in_array($collectionType, ['direct', 'programmed'], true) ? $collectionType : 'direct';
+        $totalSamples = $code?->relationLoaded('samples') ? $code->samples->count() : 0;
+        $completedAnalysis = $code?->relationLoaded('completed_analysis') ? $code->completed_analysis->count() : 0;
+        $pendingAnalysis = $code?->relationLoaded('pending_analysis') ? $code->pending_analysis->count() : 0;
+        $inProgressAnalysis = $code?->relationLoaded('in_progress_analysis') ? $code->in_progress_analysis->count() : 0;
+        $certificateAvailable = $this->resource->relationLoaded('quality_certificate') && (bool) $this->quality_certificate;
         $submittedPayload = data_get($this->extra_data, 'submitted_payload', []);
+        $sampleEntry = $this->resource->relationLoaded('sampleEntry') ? $this->sampleEntry : null;
+        $sampleEntryId = $sampleEntry?->id ?? data_get($this->extra_data, 'sample_entry_id');
+        $entryLineage = $sampleEntryId
+            ? collect([$sampleEntry?->code, $sampleEntry?->name])->filter()->join(' / ')
+            : 'Registo legado de colheita';
         $trackingStatus = 'awaiting_collection';
         $trackingLabel = 'Aguarda colheita';
 
@@ -99,11 +105,28 @@ class CollectionProductResource extends JsonResource
             'completed_analysis' => $completedAnalysis,
             'pending_analysis' => $pendingAnalysis,
             'in_progress_analysis' => $inProgressAnalysis,
-            'verified_date' => $code?->results?->count() > 0 ? $code?->latest_verified_result?->first()?->verified_date : null,
-            'approved_date' => $code?->results?->count() > 0 ? $code?->latest_approved_result?->first()?->approved_date : null,
-            'analysis_results' => $code?->results?->count() > 0 ? $code?->results : [],
-            'quality_certificate' => $this->quality_certificate ?? null,
-            'samples' => $this->samples ?? [],
+            'entry_lineage' => $entryLineage,
+            'tracking_label' => $trackingLabel,
+            'verified_date' => $code?->relationLoaded('results') && $code->results->count() > 0 && $code->relationLoaded('latest_verified_result') ? $code->latest_verified_result->first()?->verified_date : null,
+            'approved_date' => $code?->relationLoaded('results') && $code->results->count() > 0 && $code->relationLoaded('latest_approved_result') ? $code->latest_approved_result->first()?->approved_date : null,
+            'analysis_results' => $code?->relationLoaded('results') && $code->results->count() > 0 ? $code->results : [],
+            'quality_certificate' => $this->resource->relationLoaded('quality_certificate') ? $this->quality_certificate : null,
+            'samples' => $this->resource->relationLoaded('samples') ? $this->samples : [],
+            'sample_entry' => $sampleEntryId ? [
+                'id' => $sampleEntryId,
+                'code' => $sampleEntry?->code,
+                'name' => $sampleEntry?->name,
+                'status' => $sampleEntry?->status,
+                'sample_type' => $sampleEntry?->sample_type,
+                'request_origin' => data_get($submittedPayload, 'request_origin'),
+                'show_url' => route('vap_samples.show', $sampleEntryId),
+            ] : null,
+            'entry_origin' => [
+                'source' => $sampleEntryId ? 'sample_entry' : 'legacy_collection',
+                'label' => $sampleEntryId ? 'Entrada de amostra' : 'Registo legado de colheita',
+                'is_sample_entry_first' => (bool) $sampleEntryId,
+                'collection_type' => $collectionType,
+            ],
             'scope_control' => [
                 'conditioning_status' => data_get($submittedPayload, 'conditioning_status'),
                 'packaging_condition' => data_get($submittedPayload, 'packaging_condition'),
@@ -125,8 +148,10 @@ class CollectionProductResource extends JsonResource
                 'in_progress_analysis' => $inProgressAnalysis,
             ],
             'links' => [
+                'show_path' => route("{$collectionType}collections.show", $this->id),
                 'edit_path' => route("{$collectionType}collections.edit", $this->id),
                 'collection_type' => $collectionType,
+                'sample_entry_show_path' => $sampleEntryId ? route('vap_samples.show', $sampleEntryId) : null,
                 'place_analysis_path' => $collectionType == 'programmed' ? route('programmedcollections.PlaceProductsInAnalysis', [
                     'collection_product_id' => $this->id,
                 ]) : null,
@@ -136,13 +161,13 @@ class CollectionProductResource extends JsonResource
                 'pdf_collection_term' => route("{$collectionType}collections.getCollectionTermPDF", ['id' => $this->id]),
                 'pdf_collection_labels' => route("{$collectionType}collections.getCollectionLabels", ['id' => $this->id]),
                 'delete_path' => route("{$collectionType}collections.destroy", [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route("{$collectionType}collections.restore", [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
             ],
-            // 'links' => function(){ 
+            // 'links' => function(){
             //     $collection_type = $this->collection->collectionable_type;
 
             //     if($collection_type == 'programmed') {
@@ -189,7 +214,7 @@ class CollectionProductResource extends JsonResource
             //                     'recordIds' => [$this->id]
             //                 ]),
             //             ];
-                    
+
             //         default:
             //             # code...
             //             break;

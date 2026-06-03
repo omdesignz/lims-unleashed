@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between">
@@ -85,7 +85,7 @@
               :hasError="form.errors.exporter_id" 
               v-model="form.exporter_id" 
               :load-options="loadExporters"
-              placeholder="Select exporter..."
+              :placeholder="$t('gestlab.general.labels.export_certificates.placeholders.exporter')"
             />
             <p v-if="form.errors.exporter_id" class="text-xs text-red-600">
               {{ form.errors.exporter_id }}
@@ -104,7 +104,7 @@
               :hasError="form.errors.exporter_warehouse_id" 
               v-model="form.exporter_warehouse_id" 
               :load-options="loadWarehouses"
-              placeholder="Select warehouse..."
+              :placeholder="$t('gestlab.general.labels.export_certificates.placeholders.warehouse')"
             />
             <p v-if="form.errors.exporter_warehouse_id" class="text-xs text-red-600">
               {{ form.errors.exporter_warehouse_id }}
@@ -120,7 +120,7 @@
               :hasError="form.errors.trans_type_id" 
               v-model="form.trans_type_id" 
               :load-options="loadTransportTypes"
-              placeholder="Select transport type..."
+              :placeholder="$t('gestlab.general.labels.export_certificates.placeholders.transport_type')"
             />
             <p v-if="form.errors.trans_type_id" class="text-xs text-red-600">
               {{ form.errors.trans_type_id }}
@@ -143,7 +143,7 @@
                 :hasError="form.errors.country_origin_id" 
                 v-model="form.country_origin_id" 
                 :load-options="loadCountries"
-                placeholder="Select country..."
+                :placeholder="$t('gestlab.general.labels.export_certificates.placeholders.country')"
               />
               <p v-if="form.errors.country_origin_id" class="text-xs text-red-600">
                 {{ form.errors.country_origin_id }}
@@ -159,7 +159,7 @@
                 v-model="form.origin_city" 
                 type="text" 
                 class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
-                placeholder="Enter city..."
+                :placeholder="$t('gestlab.general.labels.export_certificates.placeholders.enter_origin_city')"
               />
               <p v-if="form.errors.origin_city" class="text-xs text-red-600">
                 {{ form.errors.origin_city }}
@@ -175,7 +175,7 @@
                 :hasError="form.errors.country_destination_id" 
                 v-model="form.country_destination_id" 
                 :load-options="loadCountries"
-                placeholder="Select country..."
+                :placeholder="$t('gestlab.general.labels.export_certificates.placeholders.country')"
               />
               <p v-if="form.errors.country_destination_id" class="text-xs text-red-600">
                 {{ form.errors.country_destination_id }}
@@ -191,7 +191,7 @@
                 v-model="form.destination_city" 
                 type="text" 
                 class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
-                placeholder="Enter city..."
+                :placeholder="$t('gestlab.general.labels.export_certificates.placeholders.enter_destination_city')"
               />
               <p v-if="form.errors.destination_city" class="text-xs text-red-600">
                 {{ form.errors.destination_city }}
@@ -212,7 +212,7 @@
                 v-model="form.expedition_location" 
                 type="text" 
                 class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
-                placeholder="Enter location..."
+                :placeholder="$t('gestlab.general.labels.export_certificates.placeholders.enter_expedition_location')"
               />
               <p v-if="form.errors.expedition_location" class="text-xs text-red-600">
                 {{ form.errors.expedition_location }}
@@ -228,7 +228,7 @@
                 v-model="form.authorized_personnel" 
                 type="text" 
                 class="block w-full rounded-md border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
-                placeholder="Enter name..."
+                :placeholder="$t('gestlab.general.labels.export_certificates.placeholders.authorized_personnel')"
               />
               <p v-if="form.errors.authorized_personnel" class="text-xs text-red-600">
                 {{ form.errors.authorized_personnel }}
@@ -246,7 +246,7 @@
                 :hasError="form.errors.invoice_id" 
                 v-model="form.invoice_id" 
                 :load-options="loadInvoices"
-                placeholder="Select invoice (optional)..."
+                :placeholder="$t('gestlab.general.labels.export_certificates.placeholders.invoice')"
                 class="flex-1"
               />
               <div class="flex items-center gap-2">
@@ -342,7 +342,7 @@
                 <comboboxEnhanced 
                   v-model="item.product_id" 
                   :load-options="loadProducts"
-                  placeholder="Select product..."
+                  :placeholder="$t('gestlab.general.labels.export_certificates.placeholders.product')"
                   class="min-w-[300px]"
                 />
               </td>
@@ -358,7 +358,7 @@
                     class="w-32 rounded-md border border-gray-300 px-3 py-1.5 text-center text-sm focus:border-blue-900 focus:ring-blue-900"
                     placeholder="0.00"
                   />
-                  <span class="text-sm text-gray-500">units</span>
+                  <span class="text-sm text-gray-500">{{ $t('gestlab.general.labels.export_certificates.units') }}</span>
                 </div>
               </td>
 
@@ -504,6 +504,7 @@
 
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed, reactive, watch } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue';

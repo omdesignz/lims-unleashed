@@ -197,7 +197,7 @@ const mobileMenuOpen = ref(false)
 
 const sidebarOpen = ref(false)
 
-const formatted = useDateFormat(useNow(), 'YYYY-MM-DD (ddd) HH:mm:ss', { locales: 'pt-BR' })
+const formatted = useDateFormat(useNow(), 'YYYY-MM-DD (ddd) HH:mm:ss', { locales: 'pt-Pt' })
 
 defineProps({
   auth: Object

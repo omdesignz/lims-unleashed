@@ -1,14 +1,17 @@
 <!-- resources/js/Components/results/IndividualResultEntry.vue -->
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-auto">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+    <div class="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_30px_120px_rgba(7,17,15,0.45)] dark:border-[#25443c] dark:bg-[#07110f]">
       <div class="p-6">
-        <div class="flex justify-between items-center mb-6">
-          <h3 class="text-lg font-semibold text-gray-900">
-            {{ actionText }} Individual
-          </h3>
+        <div class="mb-6 flex items-center justify-between gap-4 border-b border-[#ded3bf] pb-4 dark:border-[#25443c]">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-700 dark:text-primary-300">Resultado individual</p>
+            <h3 class="mt-1 text-xl font-bold text-[#17231f] dark:text-[#f7f1e7]">
+              {{ actionText }} Individual
+            </h3>
+          </div>
           <button @click="$emit('close')" 
-                  class="text-gray-400 hover:text-gray-600">
+                  class="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
@@ -18,23 +21,23 @@
         <div class="space-y-6">
           <!-- Parameter Selection -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
               Selecionar Parâmetro
             </label>
             <select v-model="selectedParameterId" 
-                    class="block w-full rounded-md border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6">
+                    class="block w-full rounded-2xl border border-slate-300/90 bg-white/95 py-3 pl-4 pr-10 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-white/50 transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-800/60">
               <option value="">Selecione um parâmetro</option>
               <option v-for="param in filteredParameters" 
                       :key="getParameterUniqueId(param)"
                       :value="getParameterUniqueId(param)"
                       :disabled="param.inserted_value && props.action === 'analyze'">
                 {{ param.parameter_id?.code || 'N/A' }} - {{ param.parameter_id?.name || 'Sem nome' }}
-                <span v-if="hasExistingValue(param)" class="text-gray-500">
+                <span v-if="hasExistingValue(param)" class="text-slate-500 dark:text-slate-400">
                   ({{ getExistingValueText(param) }})
                 </span>
               </option>
             </select>
-            <p v-if="selectedParameter?.requires_calculation" class="mt-2 text-sm text-purple-600 flex items-center gap-1">
+            <p v-if="selectedParameter?.requires_calculation" class="mt-2 flex items-center gap-1 text-sm font-medium text-amber-700 dark:text-amber-300">
               <CalculatorIcon class="h-4 w-4" />
               Este parâmetro requer cálculo automático
             </p>
@@ -43,15 +46,15 @@
           <!-- Result Input -->
           <div v-if="selectedParameter" class="space-y-4">
             <!-- Parameter Info Card -->
-            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <div class="flex justify-between items-start">
+            <div class="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+              <div class="flex items-start justify-between gap-4">
                 <div>
-                  <h4 class="font-semibold text-gray-900">{{ selectedParameter.parameter_id?.name }}</h4>
-                  <p class="text-sm text-gray-600">{{ selectedParameter.parameter_id?.code }}</p>
+                  <h4 class="font-semibold text-[#17231f] dark:text-[#f7f1e7]">{{ selectedParameter.parameter_id?.name }}</h4>
+                  <p class="text-sm text-slate-600 dark:text-slate-400">{{ selectedParameter.parameter_id?.code }}</p>
                   
                   <!-- Reference Range -->
                   <div v-if="selectedParameter.min_ref_value || selectedParameter.max_ref_value"
-                       class="mt-2 text-xs text-blue-600 flex items-center gap-1">
+                       class="mt-2 flex items-center gap-1 text-xs font-medium text-primary-700 dark:text-primary-300">
                     <ScaleIcon class="h-3 w-3" />
                     <span>
                       Referência: 
@@ -70,14 +73,14 @@
                 </div>
                 
                 <span v-if="selectedParameter.requires_calculation" 
-                      class="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                      class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900 dark:bg-amber-500/15 dark:text-amber-100">
                   <CalculatorIcon class="h-3 w-3" />
                   Calculado
                 </span>
               </div>
               
               <!-- Unit Info -->
-              <div v-if="selectedParameter.unit_label" class="mt-2 text-sm text-gray-500">
+              <div v-if="selectedParameter.unit_label" class="mt-2 text-sm text-slate-500 dark:text-slate-400">
                 Unidade: {{ selectedParameter.unit_label }}
               </div>
             </div>
@@ -86,9 +89,9 @@
             <div class="space-y-4">
               <!-- Value Input -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
                   {{ valueLabel }}
-                  <span v-if="selectedParameter.unit_label" class="text-gray-500 ml-1">
+                  <span v-if="selectedParameter.unit_label" class="ml-1 text-slate-500 dark:text-slate-400">
                     ({{ selectedParameter.unit_label }})
                   </span>
                 </label>
@@ -96,40 +99,40 @@
                   <input v-model="resultValue"
                          type="text"
                          :disabled="selectedParameter.requires_calculation"
-                         class="block w-full rounded-md border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6 disabled:bg-gray-100 disabled:text-gray-500"
+                         class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 disabled:bg-slate-100 disabled:text-slate-500 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500 dark:disabled:bg-slate-800"
                          :placeholder="selectedParameter.requires_calculation ? 'Valor calculado automaticamente' : `Insira valor para ${selectedParameter.parameter_id?.code}`">
                   <div v-if="selectedParameter.requires_calculation" 
                        class="absolute inset-y-0 right-0 flex items-center pr-3">
-                    <CalculatorIcon class="h-5 w-5 text-purple-600" />
+                    <CalculatorIcon class="h-5 w-5 text-amber-600 dark:text-amber-300" />
                   </div>
                 </div>
-                <p v-if="selectedParameter.requires_calculation" class="mt-1 text-xs text-purple-600">
+                <p v-if="selectedParameter.requires_calculation" class="mt-1 text-xs font-medium text-amber-700 dark:text-amber-300">
                   Use a calculadora para determinar este valor
                 </p>
               </div>
 
               <!-- Uncertainty Input -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
                   Incerteza (±)
-                  <span v-if="selectedParameter.unit_label" class="text-gray-500 ml-1">
+                  <span v-if="selectedParameter.unit_label" class="ml-1 text-slate-500 dark:text-slate-400">
                     ({{ selectedParameter.unit_label }})
                   </span>
                 </label>
                 <input v-model="uncertaintyValue"
                        type="text"
-                       class="block w-full rounded-md border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
+                       class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
                        placeholder="Ex: 0.1">
               </div>
 
               <!-- Notes -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
+                <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
                   Observações
                 </label>
                 <textarea v-model="notes"
                           rows="3"
-                          class="block w-full rounded-md border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
+                          class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
                           :placeholder="`Observações sobre ${selectedParameter.parameter_id?.code}...`"></textarea>
               </div>
 
@@ -137,7 +140,7 @@
               <div v-if="selectedParameter.requires_calculation" class="pt-2">
                 <button @click="openCalculationForParameter"
                         type="button"
-                        class="w-full inline-flex justify-center items-center gap-2 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2">
+                        class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-amber-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2 dark:focus:ring-offset-[#07110f]">
                   <CalculatorIcon class="h-5 w-5" />
                   Calcular Parâmetro
                 </button>
@@ -146,18 +149,18 @@
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex justify-end gap-3 pt-6 border-t border-gray-200">
+          <div class="flex justify-end gap-3 border-t border-[#ded3bf] pt-6 dark:border-[#25443c]">
             <button @click="$emit('close')"
-                    class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2">
+                    class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:ring-offset-[#07110f]">
               Cancelar
             </button>
             
             <button @click="saveIndividualResult"
                     :disabled="!canSave"
                     :class="[
-                      'inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
+                      'inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
                       !canSave
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500'
                         : actionButtonClass
                     ]">
               <CheckIcon class="h-5 w-5" />
@@ -223,10 +226,10 @@ const saveButtonText = computed(() => {
 
 const actionButtonClass = computed(() => {
   switch (props.action) {
-    case 'analyze': return 'bg-blue-900 text-white hover:bg-blue-800 focus:ring-blue-900'
-    case 'verify': return 'bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-600'
-    case 'approve': return 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-600'
-    default: return 'bg-blue-900 text-white hover:bg-blue-800 focus:ring-blue-900'
+    case 'analyze': return 'rounded-full bg-primary-900 text-white hover:bg-primary-800 focus:ring-primary-600'
+    case 'verify': return 'rounded-full bg-amber-600 text-white hover:bg-amber-700 focus:ring-amber-600'
+    case 'approve': return 'rounded-full bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-600'
+    default: return 'rounded-full bg-primary-900 text-white hover:bg-primary-800 focus:ring-primary-600'
   }
 })
 
@@ -363,7 +366,6 @@ const saveIndividualResult = () => {
     cfu2: selectedParameter.value.cfu2 || 0,
   }
 
-  console.log('Saving individual result:', resultData)
   emit('saved', resultData)
   emit('close')
 }

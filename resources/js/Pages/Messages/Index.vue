@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6" :class="commercialDocumentThemeClasses">
     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div class="flex items-center justify-between">
         <div>
@@ -36,6 +36,7 @@
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link } from '@inertiajs/vue3'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 defineOptions({ layout: Layout })
 

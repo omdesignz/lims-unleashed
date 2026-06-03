@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import RecordsTable from '@/Components/records-table.vue';
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { TransitionRoot } from '@headlessui/vue'
@@ -310,7 +311,7 @@ function loadCustomers(query, setOptions) {
 }
 </script>
 <template>
-<div class="border-b border-gray-200 pb-5">
+<div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.customer_categories.page_title') }}</h3>
 </div>
 
@@ -433,7 +434,7 @@ function loadCustomers(query, setOptions) {
         </template>
 </vap-table>
 
-<slide-over v-if="openslideover" @close="close" :title="slideOverTitle" :description="slideOverDescription">
+<slide-over v-if="openslideover" :class="commercialDocumentThemeClasses" @close="close" :title="slideOverTitle" :description="slideOverDescription">
     <template #content>
         <div class="space-y-6 py-6 sm:space-y-0 sm:divide-y sm:divide-gray-200 sm:py-0">
               <!-- Name -->

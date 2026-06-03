@@ -2,8 +2,9 @@
 
 namespace App\Console;
 
-use App\Jobs\CheckPastDueOccurrences;
 use App\Jobs\CheckLaboratoryWorkflowStaleness;
+use App\Jobs\CheckPastDueOccurrences;
+use App\Jobs\CheckProficiencyTestDeadlines;
 use App\Jobs\CheckSampleRetentionDeadlines;
 use App\Jobs\CheckSupplierAssessmentDeadlines;
 use Illuminate\Console\Scheduling\Schedule;
@@ -23,6 +24,7 @@ class Kernel extends ConsoleKernel
 
         $schedule->job(new CheckPastDueOccurrences)->dailyAt('05:00');
         $schedule->job(new CheckSampleRetentionDeadlines)->dailyAt('06:00');
+        $schedule->job(new CheckProficiencyTestDeadlines)->dailyAt('07:30');
         $schedule->job(new CheckSupplierAssessmentDeadlines)->dailyAt('08:00');
         $schedule->job(new CheckLaboratoryWorkflowStaleness)->twiceDaily(9, 15);
 

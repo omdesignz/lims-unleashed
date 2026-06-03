@@ -4,7 +4,7 @@
     maxWidth="4xl"
     @close="closeModal"
   >
-    <div class="space-y-6">
+    <div class="space-y-6" :class="commercialDocumentThemeClasses">
       <!-- Modal Header -->
       <div class="text-center">
         <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-blue-900 to-blue-800">
@@ -35,7 +35,7 @@
                             :hasError="form.errors.type_id" 
                             v-model="form.type_id" 
                             :load-options="loadInvoiceCategories"
-                            placeholder="Select type..."
+                            :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_type')"
                         />
                         <p v-if="form.errors.type_id" class="text-xs text-red-600">
                             {{ form.errors.type_id }}
@@ -52,7 +52,7 @@
                             :hasError="form.errors.customer_id" 
                             v-model="form.customer_id" 
                             :load-options="loadCustomers"
-                            placeholder="Select customer..."
+                            :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_customer')"
                             :disableInput="true"
                         />
                         <p v-if="form.errors.customer_id" class="text-xs text-red-600">
@@ -71,7 +71,7 @@
                             :hasError="form.errors.warehouse_id" 
                             v-model="form.warehouse_id" 
                             :load-options="loadWarehouses"
-                            placeholder="Select warehouse..."
+                            :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_warehouse')"
                             :disableInput="true"
                         />
                         <p v-if="form.errors.warehouse_id" class="text-xs text-red-600">
@@ -88,7 +88,7 @@
                             v-model="form.internal_ref" 
                             type="text" 
                             class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
-                            placeholder="Enter reference..."
+                            :placeholder="$t('gestlab.general.labels.invoices.placeholders.enter_reference')"
                         />
                         <p v-if="form.errors.internal_ref" class="text-xs text-red-600">
                             {{ form.errors.internal_ref }}
@@ -161,7 +161,7 @@
                                         v-model="item.item.item_id" 
                                         :load-options="loadPaidServices" 
                                         @update:model-value="onSelectedItem(item)"
-                                        placeholder="Select service..."
+                                        :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_product')"
                                         class="min-w-[250px]"
                                     />
                                     
@@ -187,7 +187,7 @@
                                     <comboboxEnhanced 
                                         v-model="item.item.unit_id" 
                                         :load-options="loadUnits"
-                                        placeholder="Unit"
+                                        :placeholder="$t('gestlab.general.labels.invoices.placeholders.unit')"
                                         class="w-32"
                                     />
                                 </div>
@@ -393,6 +393,7 @@
 <script setup>
 import { useForm, usePage } from '@inertiajs/vue3'
 import { watch, computed, onMounted } from 'vue'
+import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import Modal from "@/Components/modal.vue";
 import comboboxEnhanced from "@/Components/combobox-enhanced.vue";
 import {

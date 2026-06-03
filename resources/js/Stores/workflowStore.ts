@@ -23,6 +23,12 @@ export const useWorkflowStore = defineStore('workflow', () => {
   const tasks = ref<WorkflowTask[]>([])
   const isLoading = ref(false)
 
+  function reportDevError(message: string, error: unknown): void {
+    if (import.meta.env.DEV) {
+      console.error(message, error)
+    }
+  }
+
   const pendingTasks = computed(() => 
     tasks.value.filter(task => task.status === 'pending')
   )
@@ -46,7 +52,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
     } catch (error) {
     //   toast.error('Failed to fetch workflow tasks')
       toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_fetching_workflow_tasks'))
-      console.error('Error fetching tasks:', error)
+      reportDevError('Error fetching tasks:', error)
     } finally {
       isLoading.value = false
     }
@@ -74,7 +80,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
     } catch (error) {
     //   toast.error('Failed to create task')
       toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_creating_task'))
-      console.error('Error creating task:', error)
+      reportDevError('Error creating task:', error)
     }
   }
 
@@ -91,7 +97,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
     } catch (error) {
     //   toast.error('Failed to update task status')
       toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_updating_task'))
-      console.error('Error updating task status:', error)
+      reportDevError('Error updating task status:', error)
     }
   }
 
@@ -107,7 +113,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
     } catch (error) {
     //   toast.error('Failed to add comment')
       toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_adding_task_comment'))
-      console.error('Error adding comment:', error)
+      reportDevError('Error adding comment:', error)
     }
   }
 

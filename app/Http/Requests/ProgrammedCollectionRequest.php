@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class ProgrammedCollectionRequest extends FormRequest
 {
@@ -17,7 +19,7 @@ class ProgrammedCollectionRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
@@ -33,7 +35,7 @@ class ProgrammedCollectionRequest extends FormRequest
                 'collection_date' => 'nullable|date_format:Y-m-d',
                 'entry_date' => 'nullable|date_format:Y-m-d',
                 'collaborations.*.collaboration_id' => 'required|exists:collection_collaborations,id',
-                'products' => 'array|min:1|max:5',            
+                'products' => 'array|min:1|max:5',
                 'products.*.product_id' => 'required|exists:products,id',
                 'products.*.owner_id' => 'nullable|exists:users,id',
                 'products.*.comercial_brand' => 'nullable',
@@ -153,98 +155,103 @@ class ProgrammedCollectionRequest extends FormRequest
     }
 
     /**
- * Get the error messages for the defined validation rules.
- *
- * @return array<string, string>
- */
-public function messages(): array
-{
-    return [
-        'products.*.product_id.required' => 'É obrigatória a indicação de um valor para o campo produto',
-    ];
-}
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'products.*.product_id.required' => 'É obrigatória a indicação de um valor para o campo produto',
+        ];
+    }
 
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
+     * @param  Validator  $validator
      * @return void
      */
     public function prepareForValidation()
     {
         // dd(request()->all());
 
-        if($this->isMethod('post')) {
-            
+        if ($this->isMethod('post')) {
+
             $this->merge([
-                'customer_id' => !is_null(request()->customer_id) ? request()->customer_id['value'] : null,
+                'customer_id' => data_get(request()->customer_id, 'value'),
                 'collection_date' => request()->collection_date,
                 'entry_date' => now()->format('Y-m-d'),
-                'warehouse_id' => !is_null(request()->warehouse_id) ? request()->warehouse_id['value'] : null,
-                'vehicle_id' => !is_null(request()->vehicle_id) ? request()->vehicle_id['value'] : null,
+                'warehouse_id' => data_get(request()->warehouse_id, 'value'),
+                'vehicle_id' => data_get(request()->vehicle_id, 'value'),
                 'vehicle_reference' => request()->vehicle_reference,
                 'collection_location' => request()->collection_location,
-                'collaborations' => collect(request()->collaborations)->map(function($item) { return [ 'collaboration_id' => $item['value']]; })->toArray(),
-                'collectionreasons' => collect(request()->collectionreasons)->map(function($item) { return [ 'reason_id' => $item['value']]; })->toArray(),
-                'products' => is_null(request()->products) ? [] : collect(request()->products)->map(function($item) {
+                'collaborations' => collect(request()->collaborations)->map(function ($item) {
+                    return ['collaboration_id' => data_get($item, 'value')];
+                })->toArray(),
+                'collectionreasons' => collect(request()->collectionreasons)->map(function ($item) {
+                    return ['reason_id' => data_get($item, 'value')];
+                })->toArray(),
+                'products' => is_null(request()->products) ? [] : collect(request()->products)->map(function ($item) {
                     return [
-                        'product_id' => $item['product_id']['value'] ?? null,
-                        'temperature_id' => $item['temperature_id']['value'] ?? null,
-                        'vehicle_id' => $item['vehicle_id']['value'] ?? null,
-                        'collection_id' => $item['collection_id'] ?? null,
-                        'owner_id' => $item['owner_id']['value'] ?? null,
-                        'pack_id' => $item['pack_id']['value'] ?? null,
-                        'result_id' => $item['result_id']['value'] ?? null,
-                        'vehicle_id' => $item['vehicle_id']['value'] ?? null,
-                        'invoice_id' => $item['invoice_id']['value'] ?? null,
-                        'comercial_brand' => $item['comercial_brand'],
-                        'du_no' => $item['du_no'],
-                        'origin' => $item['origin'],
-                        'location' => $item['location'],
-                        'term_no' => $item['term_no'],
-                        'container_no' => $item['container_no'],
-                        'recollection' => $item['recollection'],
-                        'obs' => $item['obs'],
-                        'sample_status' => $item['sample_status'],
-                        'sampling_plan_ref' => $item['sampling_plan_ref'],
-                        'customer_submitted_info' => $item['customer_submitted_info'],
-                        'temperature_value' => $item['temperature_value'] ?? null,
-                        'processed' => $item['processed'],
-                        'collected_by_lab' => $item['collected_by_lab'],
-                        'expiry_date' => $item['expiry_date'] ?? null,
-                        'production_date' => $item['production_date'] ?? null,
-                        'collection_date' => $item['collection_date'] ?? null,
-                        'qty' => $item['qty'] ?? null,
-                        'collected_qty' => $item['collected_qty'] ?? null,
-                        'lot' => $item['lot'] ?? null,
-                        'bl' => $item['bl'] ?? null,
-                        'invoiced' => $item['invoiced'],
-                        'status' => $item['status'],
+                        'product_id' => data_get($item, 'product_id.value'),
+                        'temperature_id' => data_get($item, 'temperature_id.value'),
+                        'vehicle_id' => data_get($item, 'vehicle_id.value'),
+                        'collection_id' => data_get($item, 'collection_id'),
+                        'owner_id' => data_get($item, 'owner_id.value'),
+                        'pack_id' => data_get($item, 'pack_id.value'),
+                        'result_id' => data_get($item, 'result_id.value'),
+                        'invoice_id' => data_get($item, 'invoice_id.value'),
+                        'comercial_brand' => data_get($item, 'comercial_brand'),
+                        'du_no' => data_get($item, 'du_no'),
+                        'origin' => data_get($item, 'origin'),
+                        'location' => data_get($item, 'location'),
+                        'term_no' => data_get($item, 'term_no'),
+                        'container_no' => data_get($item, 'container_no'),
+                        'recollection' => data_get($item, 'recollection'),
+                        'obs' => data_get($item, 'obs'),
+                        'sample_status' => data_get($item, 'sample_status'),
+                        'sampling_plan_ref' => data_get($item, 'sampling_plan_ref'),
+                        'customer_submitted_info' => data_get($item, 'customer_submitted_info'),
+                        'temperature_value' => data_get($item, 'temperature_value'),
+                        'processed' => data_get($item, 'processed'),
+                        'collected_by_lab' => data_get($item, 'collected_by_lab'),
+                        'expiry_date' => data_get($item, 'expiry_date'),
+                        'production_date' => data_get($item, 'production_date'),
+                        'collection_date' => data_get($item, 'collection_date'),
+                        'qty' => data_get($item, 'qty'),
+                        'collected_qty' => data_get($item, 'collected_qty'),
+                        'lot' => data_get($item, 'lot'),
+                        'bl' => data_get($item, 'bl'),
+                        'invoiced' => data_get($item, 'invoiced'),
+                        'status' => data_get($item, 'status'),
                     ];
-                })->toArray()
+                })->toArray(),
             ]);
 
         } else {
-            
+
             $this->merge([
-                'customer_id' => !is_null(request()->customer_id) ? request()->customer_id['value'] : null,
-                'owner_id' => !is_null(request()->owner_id) ? request()->owner_id['value'] : null,
+                'customer_id' => data_get(request()->customer_id, 'value'),
+                'owner_id' => data_get(request()->owner_id, 'value'),
                 'collection_date' => request()->collection_date,
                 'entry_date' => now()->format('Y-m-d'),
-                'warehouse_id' => !is_null(request()->warehouse_id) ? request()->warehouse_id['value'] : null,
-                'vehicle_id' => !is_null(request()->vehicle_id) ? request()->vehicle_id['value'] : null,
+                'warehouse_id' => data_get(request()->warehouse_id, 'value'),
+                'vehicle_id' => data_get(request()->vehicle_id, 'value'),
                 'vehicle_reference' => request()->vehicle_reference,
                 'collection_location' => request()->collection_location,
-                'collaborations' => collect(request()->collaborations)->map(function($item) { return [ 'collaboration_id' => $item['value']]; })->toArray(),
-                'collectionreasons' => collect(request()->collectionreasons)->map(function($item) { return [ 'reason_id' => $item['value']]; })->toArray(),
-                'product_id' => request()->product_id['value'],
-                'temperature_id' => request()->temperature_id['value'] ?? null,
-                'vehicle_id' => request()->vehicle_id['value'] ?? null,
+                'collaborations' => collect(request()->collaborations)->map(function ($item) {
+                    return ['collaboration_id' => data_get($item, 'value')];
+                })->toArray(),
+                'collectionreasons' => collect(request()->collectionreasons)->map(function ($item) {
+                    return ['reason_id' => data_get($item, 'value')];
+                })->toArray(),
+                'product_id' => data_get(request()->product_id, 'value'),
+                'temperature_id' => data_get(request()->temperature_id, 'value'),
                 'collection_id' => request()->collection_id ?? null,
-                'pack_id' => request()->pack_id['value'],
-                'result_id' => request()->result_id['value'],
-                'vehicle_id' => request()->vehicle_id['value'] ?? null,
-                'invoice_id' => request()->invoice_id['value'] ?? null,
+                'pack_id' => data_get(request()->pack_id, 'value'),
+                'result_id' => data_get(request()->result_id, 'value'),
+                'invoice_id' => data_get(request()->invoice_id, 'value'),
                 'comercial_brand' => request()->comercial_brand ?? null,
                 'du_no' => request()->du_no ?? null,
                 'term_no' => request()->term_no ?? null,

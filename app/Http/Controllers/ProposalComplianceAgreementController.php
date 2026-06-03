@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProposalComplianceAgreementRequest;
 use App\Http\Resources\ProposalComplianceAgreementResource;
 use App\Models\ProposalComplianceAgreement;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -19,9 +18,10 @@ class ProposalComplianceAgreementController extends Controller
         // abort_if( !auth()->user()->can('view_maintenance_categories'), 403, '');
 
         $records = QueryBuilder::for(ProposalComplianceAgreement::class)
-                                ->allowedFilters(ProposalComplianceAgreement::getAllowedFilters())
-                                ->allowedSorts(ProposalComplianceAgreement::getAllowedSorts())
-                                ->paginate(request()->query('per_page', 10));
+            ->with('proposal')
+            ->allowedFilters(ProposalComplianceAgreement::getAllowedFilters())
+            ->allowedSorts(ProposalComplianceAgreement::getAllowedSorts())
+            ->paginate(request()->query('per_page', 10));
 
         return Inertia::render('ProposalComplianceAgreements/Index', [
             'record' => ProposalComplianceAgreementResource::collection($records),
@@ -31,17 +31,17 @@ class ProposalComplianceAgreementController extends Controller
             'initialIncludes' => request()->query('includes', []),
             'initialGlobalFilter' => request()->query('globalFilter', ''),
             'per_page' => request()->query('per_page', 2),
-            'slideOverEdit' => true,  
+            'slideOverEdit' => true,
             'trashedFilter' => true,
             'trashedOptions' => ProposalComplianceAgreement::getTrashedOptions(),
             'fields' => ProposalComplianceAgreement::getColumns(),
             'model' => ProposalComplianceAgreement::MENU_NAME,
-            'abilities' => method_exists(ProposalComplianceAgreement::class, 'getAbilities') ? collect(ProposalComplianceAgreement::ABILITIES)->map(function($item){
-                return $item . '_' . ProposalComplianceAgreement::MENU_NAME;
-            }) : collect(config('gestlab.default_abilities'))->map(function($item){
-                return $item . '_' . ProposalComplianceAgreement::MENU_NAME;
-            }),                           
-            'query' => request()->only(['search', 'trashed', 'date', 'orderBy'])
+            'abilities' => method_exists(ProposalComplianceAgreement::class, 'getAbilities') ? collect(ProposalComplianceAgreement::ABILITIES)->map(function ($item) {
+                return $item.'_'.ProposalComplianceAgreement::MENU_NAME;
+            }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
+                return $item.'_'.ProposalComplianceAgreement::MENU_NAME;
+            }),
+            'query' => request()->only(['search', 'trashed', 'date', 'orderBy']),
         ]);
     }
 
@@ -64,7 +64,7 @@ class ProposalComplianceAgreementController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
     }
 
@@ -75,17 +75,17 @@ class ProposalComplianceAgreementController extends Controller
 
     public function update(ProposalComplianceAgreementRequest $request, $id)
     {
-         // Find the record
-         $record = ProposalComplianceAgreement::findOrFail($id);
+        // Find the record
+        $record = ProposalComplianceAgreement::findOrFail($id);
 
-         $record->update($request->validated());
- 
-         return redirect()->back()->with([
-             'toast' => [
-                 'title' => trans('gestlab.toasts.notification'),
-                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-             ]
-         ]);
+        $record->update($request->validated());
+
+        return redirect()->back()->with([
+            'toast' => [
+                'title' => trans('gestlab.toasts.notification'),
+                'message' => trans('gestlab.toasts.record_successfully_updated'),
+            ],
+        ]);
     }
 
     public function destroy()
@@ -93,7 +93,7 @@ class ProposalComplianceAgreementController extends Controller
         // abort_if( !auth()->user()->can('delete_maintenance_categories'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and delete the record
         foreach (ProposalComplianceAgreement::withTrashed()->findOrFail(request('recordIds')) as $record) {
@@ -104,7 +104,7 @@ class ProposalComplianceAgreementController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ]
+            ],
         ]);
     }
 
@@ -113,30 +113,31 @@ class ProposalComplianceAgreementController extends Controller
         // abort_if( !auth()->user()->can('restore_maintenance_categories'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and restore the record
         foreach (ProposalComplianceAgreement::withTrashed()->findOrFail(request('recordIds')) as $record) {
             $record->restore();
         }
 
-       return redirect()->back()->with([
+        return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ]
-       ]);
+            ],
+        ]);
     }
 
-    public function getProposalComplianceAgreement() {
+    public function getProposalComplianceAgreement()
+    {
         $data = [];
 
-        if(request()->has('q')){
+        if (request()->has('q')) {
             $search = request()->q;
-            
-            $data = DB::table("proposal_compliance_agreements")
+
+            $data = DB::table('proposal_compliance_agreements')
                 ->select('proposal_compliance_agreements.*')
-                ->where('proposal_id','LIKE',"%$search%")
+                ->where('proposal_id', 'LIKE', "%$search%")
                 ->get();
         }
 

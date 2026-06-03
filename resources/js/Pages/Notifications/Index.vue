@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -411,6 +411,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { router } from '@inertiajs/vue3'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import Pagination from '@/Components/pagination.vue'

@@ -47,20 +47,20 @@ function onSubmit() {
       v-model="form.title"
       rows="3"
       @keydown.enter.prevent="onSubmit()"
-      class="block w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+      class="block w-full rounded-2xl border border-[#d8cbb8] bg-white px-3 py-3 text-sm font-medium text-[#15231f] shadow-sm placeholder:text-[#8d9b94] focus:border-[rgb(var(--primary-500-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.22)] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:placeholder:text-[#657970]"
       :placeholder="$t('gestlab.general.labels.kanban.card_title_placeholder')"
     ></textarea>
     <div class="flex items-center gap-2">
       <button
         type="submit"
-        class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-900 to-sky-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:from-sky-800 hover:to-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-800 focus:ring-offset-2"
+        class="inline-flex items-center gap-2 rounded-2xl bg-[rgb(var(--primary-800-rgb))] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[rgb(var(--primary-700-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.28)] focus:ring-offset-2 dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f] dark:hover:bg-[rgb(var(--primary-300-rgb))]"
       >
         {{ $t('gestlab.general.labels.kanban.add_card') }}
       </button>
       <button
         type="button"
         @click="store.listCreatingCardId = null"
-        class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors duration-200 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+        class="rounded-2xl border border-[#d8cbb8] px-4 py-2.5 text-sm font-semibold text-[#5f6f68] transition-colors duration-200 hover:bg-[#f7f1e7] hover:text-[#15231f] dark:border-[#315149] dark:text-[#a9bbb4] dark:hover:bg-[#10231f] dark:hover:text-[#f7f1e7]"
       >
         {{ $t('gestlab.general.buttons.cancel') }}
       </button>
@@ -70,7 +70,7 @@ function onSubmit() {
   <button
     v-else
     @click="showForm()"
-    class="flex w-full items-center gap-2 rounded-2xl bg-white/80 px-3 py-3 text-sm font-medium text-slate-600 transition-colors duration-200 hover:bg-white hover:text-slate-900 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+    class="flex w-full items-center gap-2 rounded-2xl border border-[#e8ddcd] bg-[#fffdf7]/85 px-3 py-3 text-sm font-semibold text-[#5f6f68] transition-colors duration-200 hover:bg-white hover:text-[#15231f] dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#a9bbb4] dark:hover:bg-[#10231f] dark:hover:text-[#f7f1e7]"
   >
     <PlusIcon class="h-5 w-5" />
     <span>{{ $t('gestlab.general.labels.kanban.add_card') }}</span>

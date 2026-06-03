@@ -1,32 +1,25 @@
 <template>
-  <div class="space-y-8">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <PencilSquareIcon class="h-7 w-7 text-blue-900" />
-            Editar Item: {{ item.name }}
-          </h1>
-          <p class="mt-2 text-gray-600">
-            Atualizar detalhes do item de inventário e informações de estoque
-            <span v-if="item.code" class="font-semibold text-blue-900 ml-2">
-              ({{ item.code }})
-            </span>
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
+  <div class="inventory-item-form-shell space-y-8" :class="commercialDocumentThemeClasses">
+    <ModuleHero
+      eyebrow="Inventário laboratorial"
+      :title="`Editar item: ${item.name}`"
+      description="Atualize dados técnicos, stock por armazém, anexos e controlos metrológicos mantendo a rastreabilidade do item."
+    >
+      <template #actions>
+        <div class="flex flex-wrap items-center gap-3">
+          <span v-if="item.code" class="inline-flex items-center rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary-900 ring-1 ring-primary-700/10 dark:bg-primary-500/10 dark:text-primary-200 dark:ring-primary-400/20">
+            {{ item.code }}
+          </span>
           <Link
             :href="route('vap-inventory.items.show', item.id)"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             <ArrowLeftIcon class="h-4 w-4" />
-            
             Voltar ao Item
           </Link>
         </div>
-      </div>
-    </div>
+      </template>
+    </ModuleHero>
 
     <form @submit.prevent="submit">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -1191,7 +1184,8 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useForm, router } from '@inertiajs/vue3'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { Link, useForm } from '@inertiajs/vue3'
 import { 
   PencilSquareIcon,
   ArrowLeftIcon,
@@ -1218,6 +1212,7 @@ import {
 } from '@heroicons/vue/24/outline'
 import datePickerEnhanced from '@/Components/date-picker-enhanced.vue'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
+import ModuleHero from '@/Components/base/ModuleHero.vue'
 
 const props = defineProps({
   item: Object,
@@ -1598,3 +1593,148 @@ function deleteAttachment(model_id, id, index) {
     });
 }
 </script>
+
+<style scoped>
+.inventory-item-form-shell :deep(.bg-white.rounded-xl) {
+  border-color: rgb(226 232 240);
+  border-radius: 1.5rem;
+  background: rgb(255 255 255);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+}
+
+.inventory-item-form-shell :deep(.bg-gradient-to-r.from-blue-900.to-blue-800) {
+  --tw-gradient-from: rgb(var(--color-primary-700, 29 78 216)) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(var(--color-primary-900, 30 58 138)) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+:global(.dark) .inventory-item-form-shell :deep(.bg-gradient-to-r.from-blue-900.to-blue-800) {
+  --tw-gradient-from: rgb(15 23 42) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(23 37 84) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), rgb(15 23 42) var(--tw-gradient-via-position), var(--tw-gradient-to);
+}
+
+.inventory-item-form-shell :deep(label) {
+  color: rgb(51 65 85);
+}
+
+.inventory-item-form-shell :deep(input:not([type='checkbox']):not([type='radio']):not([type='file'])),
+.inventory-item-form-shell :deep(textarea),
+.inventory-item-form-shell :deep(select) {
+  border-color: rgb(203 213 225);
+  border-radius: 1rem;
+  background: rgb(255 255 255);
+  color: rgb(15 23 42);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.inventory-item-form-shell :deep(input[type='checkbox']) {
+  border-color: rgb(203 213 225);
+  border-radius: 0.25rem;
+  color: rgb(var(--color-primary-600, 37 99 235));
+}
+
+.inventory-item-form-shell :deep(.bg-gradient-to-r.from-blue-50.to-white) {
+  --tw-gradient-from: rgb(var(--color-primary-50, 239 246 255)) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(255 255 255) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.inventory-item-form-shell :deep(.border-blue-100) {
+  border-color: rgb(var(--color-primary-100, 219 234 254));
+}
+
+.inventory-item-form-shell :deep(.bg-blue-900) {
+  background-color: rgb(var(--color-primary-600, 37 99 235));
+}
+
+.inventory-item-form-shell :deep(.text-blue-900) {
+  color: rgb(var(--color-primary-900, 30 58 138));
+}
+
+.inventory-item-form-shell :deep(.border-dashed) {
+  border-color: rgb(203 213 225);
+  border-radius: 1.5rem;
+  background: rgb(248 250 252 / 0.72);
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.inventory-item-form-shell :deep(input:not([type='checkbox']):not([type='radio']):not([type='file']):focus),
+.inventory-item-form-shell :deep(textarea:focus),
+.inventory-item-form-shell :deep(select:focus) {
+  border-color: rgb(var(--color-primary-500, 59 130 246));
+  box-shadow: 0 0 0 3px rgb(var(--color-primary-500, 59 130 246) / 0.18);
+  outline: none;
+}
+
+.inventory-item-form-shell :deep(input::placeholder),
+.inventory-item-form-shell :deep(textarea::placeholder) {
+  color: rgb(148 163 184);
+}
+
+:global(.dark) .inventory-item-form-shell :deep(.bg-white.rounded-xl) {
+  border-color: rgb(30 41 59);
+  background: rgb(2 6 23);
+}
+
+:global(.dark) .inventory-item-form-shell :deep(label),
+:global(.dark) .inventory-item-form-shell :deep(.text-gray-900),
+:global(.dark) .inventory-item-form-shell :deep(.text-gray-700),
+:global(.dark) .inventory-item-form-shell :deep(.text-gray-600) {
+  color: rgb(226 232 240);
+}
+
+:global(.dark) .inventory-item-form-shell :deep(.text-gray-500) {
+  color: rgb(148 163 184);
+}
+
+:global(.dark) .inventory-item-form-shell :deep(.text-blue-900) {
+  color: rgb(var(--color-primary-200, 191 219 254));
+}
+
+:global(.dark) .inventory-item-form-shell :deep(.bg-blue-900) {
+  background-color: rgb(var(--color-primary-500, 59 130 246));
+}
+
+:global(.dark) .inventory-item-form-shell :deep(.border-gray-200),
+:global(.dark) .inventory-item-form-shell :deep(.border-gray-300),
+:global(.dark) .inventory-item-form-shell :deep(.border-gray-400),
+:global(.dark) .inventory-item-form-shell :deep(.border-blue-100) {
+  border-color: rgb(51 65 85);
+}
+
+:global(.dark) .inventory-item-form-shell :deep(.bg-gray-200) {
+  background-color: rgb(30 41 59);
+}
+
+:global(.dark) .inventory-item-form-shell :deep(input:not([type='checkbox']):not([type='radio']):not([type='file'])),
+:global(.dark) .inventory-item-form-shell :deep(textarea),
+:global(.dark) .inventory-item-form-shell :deep(select) {
+  border-color: rgb(51 65 85);
+  background: rgb(2 6 23 / 0.72);
+  color: rgb(241 245 249);
+}
+
+:global(.dark) .inventory-item-form-shell :deep(input::placeholder),
+:global(.dark) .inventory-item-form-shell :deep(textarea::placeholder) {
+  color: rgb(100 116 139);
+}
+
+:global(.dark) .inventory-item-form-shell :deep(input[type='checkbox']) {
+  border-color: rgb(71 85 105);
+  background: rgb(15 23 42);
+  color: rgb(var(--color-primary-400, 96 165 250));
+}
+
+:global(.dark) .inventory-item-form-shell :deep(.bg-gradient-to-r.from-blue-50.to-white) {
+  --tw-gradient-from: rgb(var(--color-primary-500, 59 130 246) / 0.1) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(2 6 23) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+:global(.dark) .inventory-item-form-shell :deep(.border-dashed) {
+  border-color: rgb(51 65 85);
+  background: rgb(15 23 42 / 0.68);
+}
+</style>

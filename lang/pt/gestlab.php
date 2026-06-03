@@ -17,7 +17,7 @@ return [
         'copyright' => '© 2025 GestLab',
         'version' => 'Versão 3.0.0',
     ],
-    'greeting'   => 'Bem-vindo(a)',
+    'greeting' => 'Bem-vindo(a)',
 
     'pagination' => [
         'showing' => 'Apresentando',
@@ -44,22 +44,22 @@ return [
             'steps' => [
                 'PLACED' => [
                     'name' => 'COLOCADO',
-                    'description' => 'O pedido de compra foi colocado.'
+                    'description' => 'O pedido de compra foi colocado.',
                 ],
                 'PROCESS_IN_PROGRESS' => [
                     'name' => 'EM ANDAMENTO',
-                    'description' => 'O pedido de compra está em andamento.'
+                    'description' => 'O pedido de compra está em andamento.',
                 ],
                 'COMPLETED' => [
                     'name' => 'CONCLUÍDO',
-                    'description' => 'O pedido de compra foi completado.'
+                    'description' => 'O pedido de compra foi completado.',
                 ],
                 'DELIVERED' => [
                     'name' => 'ENTREGUE',
-                    'description' => 'O pedido de compra foi entregue.'
-                ]
-            ]
-        ]
+                    'description' => 'O pedido de compra foi entregue.',
+                ],
+            ],
+        ],
     ],
 
     'toasts' => [
@@ -83,7 +83,7 @@ return [
             'command_description' => 'Create authorization permissions for default models',
             'permissions_successfully_created' => 'Permissões criadas com êxito!',
             'admin_permissions_successfully_updated' => 'Permissões da função ADMIN modificadas com êxito!',
-        ]
+        ],
     ],
 
     'actions' => [
@@ -133,9 +133,9 @@ return [
             'impersonate' => 'Tem a certeza que pretende personificar este(s) registro(s)?',
             'mark_as_paid' => 'Tem a certeza que pretende assinalar este(s) registro(s) como PAGO?',
             'default' => 'Tem a certeza que pretende continuar?',
-            'multiple_sample_worksheet' => 'Tem a certeza que pretende processar a folha de trabalho de amostras múltiplas?'
+            'multiple_sample_worksheet' => 'Tem a certeza que pretende processar a folha de trabalho de amostras múltiplas?',
         ],
-        'multiple_sample_worksheet' => 'Processar Folha de Trabalho de Amostras Múltiplas'
+        'multiple_sample_worksheet' => 'Processar Folha de Trabalho de Amostras Múltiplas',
     ],
 
     'slideover' => [
@@ -154,6 +154,17 @@ return [
         'calendar_input_placeholder' => 'Data',
         'calendar_input_start_placeholder' => 'Início',
         'calendar_input_end_placeholder' => 'Fim',
+        'chart' => [
+            'loading' => 'A carregar dados...',
+            'tasks' => 'Tarefas',
+            'task_count' => 'Número de tarefas',
+            'statuses' => [
+                'overdue' => 'Atrasada',
+                'due_soon' => 'A vencer',
+                'scheduled' => 'Agendada',
+                'executed' => 'Concluída',
+            ],
+        ],
         'buttons' => [
             'actions' => 'Acções',
             'new_record' => 'Novo Registo',
@@ -179,8 +190,8 @@ return [
             'save_changes' => 'Guardar Modificações',
             'calculate' => 'Calcular',
             'connect_equipment' => 'Clique Aqui para Conectar',
-            'leave_impersonation' => 'Sair Agora', # Leave Now
-            'enter_impersonation' => 'Personificar', # Impersonate
+            'leave_impersonation' => 'Sair Agora', // Leave Now
+            'enter_impersonation' => 'Personificar', // Impersonate
             'move' => 'Mover',
             'clear_results' => 'Limpar Resultados',
             'search_again' => 'Pesquisar Novamente',
@@ -226,8 +237,9 @@ return [
         ],
 
         'titles' => [
-            'records_list' => 'Lista de Registros',
-            'no_records' => 'Sem Registros',
+            'search_and_filters' => 'Pesquisa e filtros',
+            'records_list' => 'Lista de Registos',
+            'no_records' => 'Sem Registos',
             'start_creating' => 'Comece a Criar',
             'data_table' => 'Tabela de Dados',
 
@@ -236,77 +248,91 @@ return [
             'select_action' => 'Selecione uma acção',
         ],
         'status' => [
-          'idle' => 'Inactivo',
-          'no' => 'Não',
-          'yes' => 'Sim',
-          'searching' => 'Pesquisando',
-          'error' => 'Erro',
-          'found' => 'Encontrado',
-          'incomplete' => 'Incompleto',
-          'none' => 'Nenhum',
-          'complete' => 'Completo',
-          'partial' => 'Parcial',
-          'unchanged' => 'Inalterado',
-          'changed' => 'Alterado',
-          'empty' => 'Vazio',
-          'all_selected' => 'Todo(a) Selecionado(a)',
-          'none_selected' => 'Nenhum(a) Selecionado(a)',
-          'viewing' => 'A visualizar',
-          'editing' => 'A editar',
-          'changes_pending' => 'Alterações Pendentes',
-          'online' => 'Online',
-          'offline' => 'Offline',
-          'signed' => 'Assinado',
-          'draft' => 'Rascunho',
-          'empty' => 'Vazio',
-          'ready' => 'Pronto',
-          'valid' => 'Válido',
-          'invalid' => 'Inválido',
-          'unsaved' => 'Por Guardar',
-          'configured' => 'Configurada',
-          'saved' => 'Guardado',
-          'active' => 'Activo',
-          'inactive' => 'Inactivo',
-          'unsaved_changes' => 'Alterações Por Guardar',
-          'primary' => 'Primário',
-          'secondary' => 'Secundário',
-          'set' => 'Definido',
-          'processed' => 'Processado',
-          'pending' => 'Pendente',
-          'validated' => 'Validados',
-          'answered' => 'Respondidos',
-          'paid' => 'Pago'
+            'idle' => 'Inactivo',
+            'no' => 'Não',
+            'yes' => 'Sim',
+            'searching' => 'Pesquisando',
+            'error' => 'Erro',
+            'found' => 'Encontrado',
+            'incomplete' => 'Incompleto',
+            'none' => 'Nenhum',
+            'complete' => 'Completo',
+            'partial' => 'Parcial',
+            'unchanged' => 'Inalterado',
+            'changed' => 'Alterado',
+            'empty' => 'Vazio',
+            'all_selected' => 'Todo(a) Selecionado(a)',
+            'none_selected' => 'Nenhum(a) Selecionado(a)',
+            'viewing' => 'A visualizar',
+            'editing' => 'A editar',
+            'changes_pending' => 'Alterações Pendentes',
+            'online' => 'Online',
+            'offline' => 'Offline',
+            'signed' => 'Assinado',
+            'draft' => 'Rascunho',
+            'empty' => 'Vazio',
+            'ready' => 'Pronto',
+            'valid' => 'Válido',
+            'invalid' => 'Inválido',
+            'unsaved' => 'Por Guardar',
+            'configured' => 'Configurada',
+            'saved' => 'Guardado',
+            'active' => 'Activo',
+            'inactive' => 'Inactivo',
+            'unsaved_changes' => 'Alterações Por Guardar',
+            'primary' => 'Primário',
+            'secondary' => 'Secundário',
+            'set' => 'Definido',
+            'processed' => 'Processado',
+            'pending' => 'Pendente',
+            'validated' => 'Validados',
+            'answered' => 'Respondidos',
+            'paid' => 'Pago',
         ],
         'placeholders' => [
-          'enter_tax_number' => 'Digite o número de identificação fiscal (NIF)',
+            'enter_tax_number' => 'Digite o número de identificação fiscal (NIF)',
+            'search_responsibles' => 'Pesquisar e seleccionar responsáveis',
         ],
         'messages' => [
-          'no_results' => 'Nenhum resultado encontrado',
-          'press_enter_to_search' => 'Pressione Enter para pesquisar',
-          'no_tax_data' => 'Nenhum dado de identificação fiscal (NIF) encontrado',
-          'enter_tax_number_to_search' => 'Digite o número de identificação fiscal (NIF) para pesquisar',
-          'how_to_use' => 'Como usar',
-          'enter_valid_nif' => 'Digite um número de identificação fiscal (NIF) válido',
-          'data_source' => 'Fonte de Dados',
-          'tax_data_source' => 'Dados de Identificação Fiscal (NIF)',
-          'tax_authority_data' => 'Dados de Autoridade Fiscal',
-          'not_available' => 'Não Disponível',
-          'search_failed' => 'Falha na Pesquisa',
-          'no_items' => 'Nenhum item encontrado',
-          'add_items_description' => 'Adicione itens ao formulário.',
-          'no_items' => 'Nenhum item',
+            'no_results' => 'Nenhum resultado encontrado',
+            'press_enter_to_search' => 'Pressione Enter para pesquisar',
+            'no_tax_data' => 'Nenhum dado de identificação fiscal (NIF) encontrado',
+            'enter_tax_number_to_search' => 'Digite o número de identificação fiscal (NIF) para pesquisar',
+            'how_to_use' => 'Como usar',
+            'enter_valid_nif' => 'Digite um número de identificação fiscal (NIF) válido',
+            'data_source' => 'Fonte de Dados',
+            'tax_data_source' => 'Dados de Identificação Fiscal (NIF)',
+            'tax_authority_data' => 'Dados de Autoridade Fiscal',
+            'not_available' => 'Não Disponível',
+            'search_failed' => 'Falha na Pesquisa',
+            'no_items' => 'Nenhum item encontrado',
+            'add_items_description' => 'Adicione itens ao formulário.',
+            'no_items' => 'Nenhum item',
         ],
         'labels' => [
-            'records' => 'Registros',
-            'records_found' => 'Registros encontrados',
-            'no_records' => 'Nenhum registro encontrado',
+            'records' => 'Registos',
+            'assigned_to' => 'Atribuído a',
+            'responsibles' => 'Responsáveis',
+            'records_found' => 'Registos encontrados',
+            'no_records' => 'Nenhum registo encontrado',
+            'all' => 'Todos',
+            'select_period' => 'Seleccione o período',
             'start_creating' => 'Comece a Criar',
             'select' => 'Seleccione',
+            'select_date' => 'Seleccione uma data',
+            'date_placeholder' => 'AAAA-MM-DD',
+            'invalid_date' => 'Data inválida',
             'trashed' => 'Registros Removidos',
             'trashed_only' => 'Apenas',
             'trashed_with' => 'Incluir',
             'columns' => 'Colunas',
             'toggle_column_visibility' => 'Alternar Visibilidade',
+            'visible' => 'Visível',
+            'hidden' => 'Oculto',
+            'per_page_short' => 'página',
+            'clear_selection' => 'Limpar selecção',
+            'selected_records' => 'registos seleccionados',
+            'collection_term' => 'Termo de Recolha',
             'created_at' => 'Criado em',
             'updated_at' => 'Atualizado em',
             'deleted_at' => 'Excluído em',
@@ -347,7 +373,20 @@ return [
                 'create_first' => 'Criar Primeira Proposta',
                 'items' => 'Itens',
                 'changes' => 'Alterações',
-                
+
+                'surface' => [
+                    'new_proposal' => 'Nova proposta',
+                    'commercial_revision' => 'Revisão comercial',
+                    'expected_code' => 'Código previsto',
+                    'items' => 'Itens',
+                    'total' => 'Total',
+                    'expiry' => 'Validade',
+                    'commercial_base' => 'Base comercial',
+                    'decision' => 'Decisão',
+                    'readiness' => 'Prontidão',
+                    'status' => 'Estado',
+                ],
+
                 'stats' => [
                     'title' => 'Estatísticas de Propostas',
                     'total_items' => 'Total de Itens',
@@ -358,23 +397,37 @@ return [
                     'expired' => 'Vencidas',
                     'total_value' => 'Valor Total',
                 ],
-                
+
                 'chart' => [
                     'title' => 'Atividade de Proposta',
                     'last_7_days' => 'Últimos 7 Dias',
                     'last_30_days' => 'Últimos 30 Dias',
                     'last_90_days' => 'Últimos 90 Dias',
                 ],
-                
+
                 'list' => [
                     'title' => 'Lista de Propostas',
                 ],
-                
+
+                'filters' => [
+                    'indicators' => 'Indicadores',
+                    'title' => 'Filtros',
+                    'search' => 'Pesquisar',
+                    'search_placeholder' => 'Número, cliente ou código',
+                    'status' => 'Estado',
+                    'all_statuses' => 'Todos os estados',
+                    'active_template' => 'Filtro por modelo activo',
+                    'clear_template' => 'Limpar modelo',
+                    'clear_search' => 'Limpar pesquisa',
+                    'pipeline' => 'Pipeline',
+                    'proposals_count' => ':from-:to de :total propostas',
+                ],
+
                 'empty_state' => [
                     'title' => 'Sem Propostas',
                     'description' => 'Comece criando uma nova proposta de serviço.',
                 ],
-                
+
                 'table' => [
                     'proposal_no' => 'Número da Proposta',
                     'customer' => 'Cliente',
@@ -384,8 +437,12 @@ return [
                     'expiry' => 'Data de Vencimento',
                     'actions' => 'Acções',
                 ],
-                
+
                 'status' => [
+                    'title' => 'Estado',
+                    'incomplete' => 'Incompleto',
+                    'complete' => 'Completo',
+                    'required' => 'Obrigatório',
                     'pending' => 'Pendente',
                     'sent' => 'Enviado',
                     'viewed' => 'Visualizada',
@@ -394,596 +451,730 @@ return [
                     'revised' => 'Revisada',
                     'expired' => 'Vencida',
                 ],
-                
+
                 'delete' => [
                     'title' => 'Excluir Proposta',
                     'message' => 'Tem certeza que deseja excluir a proposta :number?',
                     'warning' => 'Esta acção não pode ser desfeita.',
                 ],
-                
+
+                'row' => [
+                    'no_customer_code' => 'Sem código',
+                    'single_item' => 'item',
+                    'multiple_items' => 'itens',
+                    'view' => 'Ver proposta',
+                    'revise' => 'Rever proposta',
+                    'download_pdf' => 'Descarregar PDF',
+                    'delete' => 'Eliminar proposta',
+                ],
+
                 'show' => [
-                'description' => 'Proposta de serviço para',
-                'download_pdf' => 'Baixar PDF',
-                'send_to_client' => 'Enviar para Cliente',
-                'revise' => 'Revisar Proposta',
-                "revision" => "Revisão",
-                'matrix_pricing' => 'Preço de Matriz',
-                'matrix' => 'Matriz',
-                'parameter' => 'Parâmetro',
-                'days' => 'dias',
-                'copy' => 'Copiar',
-                'copied' => 'Copiado',
-                
-                'details' => [
-                    'title' => 'Detalhes da Proposta',
-                    'client_info' => 'Informações do Cliente',
-                    'lab_info' => 'Informações do Laboratório',
+                    'description' => 'Proposta de serviço para',
+                    'download_pdf' => 'Baixar PDF',
+                    'send_to_client' => 'Enviar para Cliente',
+                    'revise' => 'Revisar Proposta',
+                    'revision' => 'Revisão',
+                    'matrix_pricing' => 'Preço de Matriz',
+                    'matrix' => 'Matriz',
+                    'parameter' => 'Parâmetro',
+                    'days' => 'dias',
+                    'copy' => 'Copiar',
+                    'copied' => 'Copiado',
+
+                    'details' => [
+                        'title' => 'Detalhes da Proposta',
+                        'client_info' => 'Informações do Cliente',
+                        'lab_info' => 'Informações do Laboratório',
+                        'customer' => 'Cliente',
+                        'customer_code' => 'Código do Cliente',
+                        'service_location' => 'Local do Serviço',
+                        'department' => 'Departamento',
+                        'warehouse' => 'Armazém',
+                        'created_by' => 'Criado Por',
+                        'timeline' => 'Linha do Tempo',
+                        'created_on' => 'Criado',
+                        'expires_on' => 'Expira',
+                        'days_left' => 'dias restantes',
+                        'observations' => 'Observações',
+                        'withhold_tax' => 'Reter Imposto',
+                        'pricing_mode' => 'Modo de Precificação',
+                        'tolerance_days' => 'Dias de Tolerância',
+                        'days' => 'dias',
+                    ],
+
+                    'items' => [
+                        'title' => 'Serviços Propostos',
+                        'discount' => 'Desconto',
+                        'subtotal' => 'Subtotal',
+                        'global_discount' => 'Desconto Global',
+                        'tax' => 'Imposto',
+                        'total' => 'Valor Total',
+                        'quantity' => 'Quantidade',
+                        'standard' => 'Padrão',
+                        'tax' => 'Taxa',
+                        'charge_tax' => 'Cobrar Taxa',
+                        'unit_price' => 'Preço Unitário',
+                        'total' => 'Total',
+                        'discount' => 'Desconto',
+                        'exemption' => 'Isenção',
+                        'total_discount' => 'Total Desconto',
+                        'total_tax' => 'Total Taxa',
+                        'withholding_tax' => 'Imposto Retido',
+                        'grand_total' => 'Total Geral',
+                        'items' => 'itens',
+                        'taxable_items' => 'itens tributáveis',
+                    ],
+
+                    'financial_summary' => [
+                        'title' => 'Resumo Financeiro',
+                        'subtotal' => 'Subtotal',
+                        'discount' => 'Desconto',
+                        'tax' => 'Taxa',
+                        'total' => 'Total',
+                    ],
+
+                    'view_full_template' => 'Ver Template Completo',
+
+                    'compliance' => [
+                        'title' => 'Acordo de Conformidade',
+                        'signed' => 'Acordo Assinado',
+                        'signed_on' => 'Assinado em',
+                        'confidentiality' => 'Concordo em manter a confidencialidade de todos os resultados de teste',
+                        'impartiality' => 'Confirmo o compromisso do laboratório com a imparcialidade',
+                        'nondisclosure' => 'Concordo com os termos de não divulgação',
+                    ],
+
+                    'revisions' => [
+                        'title' => 'Histórico de Revisões',
+                        'reason' => 'Motivo da alteração',
+                    ],
+
+                    'actions' => [
+                        'title' => 'Acções',
+                        'generate_pdf' => 'Gerar PDF',
+                        'view_public_link' => 'Ver Link Público',
+                        'share' => 'Compartilhar Link',
+                    ],
+
+                    'status' => [
+                        'title' => 'Informações de Status',
+                        'current' => 'Status Atual',
+                        'is_original' => 'Versão Original',
+                        'tolerance_days' => 'Dias de Tolerância',
+                        'converted' => 'Convertido para Fatura',
+                        'complete' => 'Completo',
+                        'incomplete' => 'Incompleto',
+                        'use_matrix_price' => 'Utilizar Preço da Matriz',
+                    ],
+
+                    'template' => [
+                        'title' => 'Informações do Template',
+                        'created_by' => 'Criado por',
+                    ],
+
+                    'send_modal' => [
+                        'title' => 'Enviar Proposta para Cliente',
+                        'message' => 'Isso marcará a proposta como enviada e notificará o cliente.',
+                        'generate_pdf' => 'Gerar e anexar PDF',
+                        'send_email' => 'Enviar notificação por e-mail',
+                    ],
+                ],
+
+                'create' => [
+                    'title' => 'Criar Nova Proposta',
+                    'description' => 'Preencha os detalhes abaixo para criar uma nova proposta de serviço.',
+                    'basic_info' => 'Informações Básicas',
+                    'customer' => 'Cliente',
+                    'select_customer' => 'Selecione um cliente',
+                    'warehouse' => 'Armazém',
+                    'select_warehouse' => 'Selecione um armazém',
+                    'department' => 'Departamento',
+                    'select_department' => 'Selecione um departamento',
+                    'template' => 'Template de Proposta',
+                    'select_template' => 'Selecione um template',
+                    'service_location' => 'Local do Serviço',
+                    'tolerance_days' => 'Período de Validade (Dias)',
+                    'withhold_tax' => 'Reter Imposto',
+                    'observations' => 'Observações',
+                    'observations_placeholder' => 'Notas adicionais ou instruções especiais...',
+                    'tolerance_days_placeholder' => 'Ex.: 7',
+                    'footer_note' => 'Todos os itens de serviço serão incluídos na proposta.',
+                    'quick_add' => 'Adicionar Itens Rápidos',
+                    'save_draft' => 'Salvar Rascunho',
+                    'template_preview' => 'Prévia',
+                    'view_full_template' => 'Ver Template Completo',
+
+                    'use_matrix_price' => 'Usar Preço da Matriz?',
+                    'labcode' => 'CL',
+                    'loading_parameters' => 'Crregando Parâmetros',
+                    'select_labcode' => 'Seleccionar CL',
+                    'assign_lab_code' => 'Atribuir CL',
+
+                    'items' => [
+                        'title' => 'Itens de Serviço',
+                        'description' => 'Adicione serviços para incluir nesta proposta',
+                        'add_item' => 'Adicionar Item de Serviço',
+                        'item_description' => 'Descrição',
+                        'item_description_placeholder' => 'Descrição do serviço...',
+                        'standard' => 'Padrão/Método de Teste',
+                        'select_standard' => 'Selecione padrão',
+                        'unit' => 'Unidade',
+                        'select_unit' => 'Selecione unidade',
+                        'quantity' => 'Quantidade',
+                        'unit_price' => 'Preço Unitário',
+                        'discount' => 'Desconto %',
+                        'total' => 'Total',
+                        'remove_item' => 'Remover Item',
+                        'subtotal' => 'Subtotal',
+                        'charge_tax' => 'Cobrar IVA',
+                        'tax' => 'IVA',
+                        'select_matrix' => 'Seleccione Matriz',
+                        'select_parameter' => 'Seleccione Parâmetro',
+                        'item' => 'Item',
+                        'item_total' => 'Total do item',
+                        'observations' => 'Observações',
+                        'observations_placeholder' => '',
+                    ],
+
+                    'submit' => 'Criar Proposta',
+                    'success' => 'Proposta criada com sucesso!',
+                ],
+
+                'edit' => [
+                    'title' => 'Editar Proposta',
+                    'editing_proposal' => 'Editando proposta',
+                    'basic_info' => 'Informações Básicas',
+                    'customer' => 'Cliente',
+                    'customer_locked' => 'Cliente não pode ser alterado em revisões',
+                    'warehouse' => 'Armazém',
+                    'department' => 'Departamento',
+                    'template' => 'Template',
+                    'select_template' => 'Selecione um template',
+                    'labcode' => 'Código de Laboratório',
+                    'select_labcode' => 'Selecione um código',
+                    'loading_parameters' => 'Carregando parâmetros...',
+                    'service_location' => 'Local de Serviço',
+                    'tolerance_days' => 'Dias de Tolerância',
+                    'use_matrix_price' => 'Usar Preço de Matriz',
+                    'withhold_tax' => 'Reter Imposto',
+                    'revision_reason' => 'Motivo da Revisão',
+                    'revision_reason_placeholder' => 'Descreva o motivo da revisão desta proposta...',
+                    'observations' => 'Observações',
+                    'observations_placeholder' => 'Observações adicionais...',
+                    'tolerance_days_placeholder' => 'Ex.: 7',
+                    'items' => [
+                        'title' => 'Itens de Serviço',
+                        'description' => 'Adicione ou edite os itens do serviço',
+                        'add_item' => 'Adicionar Item',
+                        'duplicate_item' => 'Duplicar Item',
+                        'remove_item' => 'Remover Item',
+                        'item' => 'Item',
+                        'select_matrix' => 'Selecione uma matriz',
+                        'select_parameter' => 'Selecione um parâmetro',
+                        'item_description' => 'Descrição do Item',
+                        'item_description_placeholder' => 'Digite a descrição do item',
+                        'standard' => 'Padrão',
+                        'select_standard' => 'Selecione um padrão',
+                        'unit' => 'Unidade',
+                        'select_unit' => 'Selecione uma unidade',
+                        'quantity' => 'Quantidade',
+                        'unit_price' => 'Preço Unitário',
+                        'discount' => 'Desconto',
+                        'tax' => 'Taxa (%)',
+                        'charge_tax' => 'Cobrar Taxa',
+                        'total' => 'Total',
+                        'item_total' => 'Total do item',
+                        'observations' => 'Observações do Item',
+                        'observations_placeholder' => 'Observações específicas do item...',
+                        'subtotal' => 'Subtotal',
+                        'total' => 'Total',
+                    ],
+                    'actions' => [
+                        'title' => 'Ações',
+                    ],
+                    'submit' => 'Salvar Revisão',
+                    'reset_changes' => 'Descartar Alterações',
+                    'stats' => [
+                        'title' => 'Estatísticas',
+                        'total_items' => 'Total de Itens',
+                    ],
+                    'status' => [
+                        'title' => 'Status da Proposta',
+                        'current' => 'Status Atual',
+                        'original' => 'Original',
+                        'created_by' => 'Criado por',
+                        'created_at' => 'Criado em',
+                    ],
+                    'template_preview' => 'Preview do Template',
+                    'view_full_template' => 'Ver Template Completo',
+                    'quick_add' => 'Adicionar Rápido',
+                    'footer_note' => 'Esta proposta será marcada como revisão. O cliente será notificado.',
+                    'revision_warning' => 'Esta é uma revisão da proposta original. Alguns campos não podem ser alterados.',
+                    'not_available' => 'Indisponível',
+                    'customer_locked' => 'Cliente Bloqueado',
+
+                ],
+
+                'public' => [
+                    'proposal' => 'Proposta',
+                    'expired_warning' => 'Esta proposta expirou e não pode mais ser aceita.',
+                    'proposal_for' => 'Proposta para',
+                    'created_on' => 'Criada em',
+                    'valid_until' => 'Válida até',
+                    'days_left' => 'dias restantes',
+                    'download_pdf' => 'Baixar PDF',
+                    'customer_info' => 'Informações do Cliente',
                     'customer' => 'Cliente',
                     'customer_code' => 'Código do Cliente',
-                    'service_location' => 'Local do Serviço',
+                    'service_location' => 'Local de Serviço',
+                    'withhold_tax' => 'Reter Imposto',
+                    'lab_info' => 'Informações do Laboratório',
                     'department' => 'Departamento',
                     'warehouse' => 'Armazém',
-                    'created_by' => 'Criado Por',
-                    'timeline' => 'Linha do Tempo',
-                    'created_on' => 'Criado',
-                    'expires_on' => 'Expira',
-                    'days_left' => 'dias restantes',
-                    'observations' => 'Observações',
-                    'withhold_tax' =>  'Reter Imposto',
-                    'pricing_mode' =>  'Modo de Precificação',
-                    'tolerance_days' =>  'Dias de Tolerância',
-                    'days' =>  'dias'
-                ],
-                
-                'items' => [
-                    'title' => 'Serviços Propostos',
-                    'discount' => 'Desconto',
-                    'subtotal' => 'Subtotal',
-                    'global_discount' => 'Desconto Global',
-                    'tax' => 'Imposto',
-                    'total' => 'Valor Total',
-                    'quantity' => 'Quantidade',
+                    'tolerance_days' => 'Dias de Tolerância',
+                    'days' => 'dias',
+                    'pricing_mode' => 'Modo de Precificação',
+                    'matrix' => 'Matriz',
+                    'parameter' => 'Parâmetro',
+                    'service_items' => 'Itens de Serviço',
+                    'item_description' => 'Descrição do Item',
                     'standard' => 'Padrão',
-                    'tax' => 'Taxa',
-                    'charge_tax' => 'Cobrar Taxa',
+                    'quantity' => 'Quantidade',
                     'unit_price' => 'Preço Unitário',
-                    'total' => 'Total',
-                    'discount' => 'Desconto',
-                    'exemption' => 'Isenção',
-                    'total_discount' => 'Total Desconto',
-                    'total_tax' => 'Total Taxa',
-                    'withholding_tax' => 'Imposto Retido',
-                    'grand_total' => 'Total Geral',
-                    'items' => 'itens',
-                    'taxable_items' => 'itens tributáveis'
-                ],
-
-                'financial_summary' => [
-                    'title' => 'Resumo Financeiro',
-                    'subtotal' => 'Subtotal',
                     'discount' => 'Desconto',
                     'tax' => 'Taxa',
-                    'total' => 'Total'
+                    'by' => 'Por',
+                    'unknown' => 'Desconhecido',
+                    'items' => 'Itens',
+                    'taxable_items' => 'Itens Taxados',
+                    'total' => 'Total',
+                    'subtotal' => 'Subtotal',
+                    'total_discount' => 'Desconto Total',
+                    'total_tax' => 'Taxa Total',
+                    'total_amount' => 'Valor Total',
+                    'observations' => 'Observações',
+                    'compliance_agreement' => 'Acordo de Conformidade',
+                    'agreement_signed' => 'Acordo assinado',
+                    'signed_on' => 'Assinado em',
+                    'confidentiality_text' => 'Concordo em manter confidencialidade sobre todas as informações técnicas, processos e resultados fornecidos pelo laboratório.',
+                    'impartiality_text' => 'Declaro que esta proposta foi elaborada de forma imparcial, sem conflitos de interesse que possam comprometer a qualidade do serviço.',
+                    'nondisclosure_text' => 'Concordo em não divulgar informações confidenciais a terceiros sem autorização prévia por escrito.',
+                    'accept_proposal' => 'Aceitar Proposta',
+                    'reject_proposal' => 'Rejeitar Proposta',
+                    'proposal_accepted' => 'Proposta Aceita',
+                    'accepted_on' => 'Aceita em',
+                    'proposal_rejected' => 'Proposta Rejeitada',
+                    'proposal_expired' => 'Proposta Expirada',
+                    'expired_on' => 'Expirada em',
+                    'reject_reason' => 'Motivo da Rejeição',
+                    'reject_reason_placeholder' => 'Por favor, descreva o motivo da rejeição desta proposta...',
+                    'confirm_reject' => 'Confirmar Rejeição',
                 ],
 
-                'view_full_template' => 'Ver Template Completo',
-                
-                'compliance' => [
-                    'title' => 'Acordo de Conformidade',
-                    'signed' => 'Acordo Assinado',
-                    'signed_on' => 'Assinado em',
-                    'confidentiality' => 'Concordo em manter a confidencialidade de todos os resultados de teste',
-                    'impartiality' => 'Confirmo o compromisso do laboratório com a imparcialidade',
-                    'nondisclosure' => 'Concordo com os termos de não divulgação',
+                'delete' => [
+                    'title' => 'Excluir Proposta',
+                    'message' => 'Tem certeza que deseja excluir a proposta :number?',
+                    'warning' => 'Esta ação não pode ser desfeita.',
                 ],
-                
-                'revisions' => [
-                    'title' => 'Histórico de Revisões',
-                    'reason' => 'Motivo da alteração',
-                ],
-                
+
                 'actions' => [
                     'title' => 'Acções',
-                    'generate_pdf' => 'Gerar PDF',
-                    'view_public_link' => 'Ver Link Público',
-                    'share' => 'Compartilhar Link',
                 ],
-                
-                'status' => [
-                    'title' => 'Informações de Status',
-                    'current' => 'Status Atual',
-                    'is_original' => 'Versão Original',
-                    'tolerance_days' => 'Dias de Tolerância',
-                    'converted' => 'Convertido para Fatura',
-                    'complete' => 'Completo',
-                    'incomplete' => 'Incompleto',
-                    'use_matrix_price' => 'Utilizar Preço da Matriz',
-                ],
-                
-                'template' => [
-                    'title' => 'Informações do Template',
-                    'created_by' => 'Criado por',
-                ],
-                
-                'send_modal' => [
-                    'title' => 'Enviar Proposta para Cliente',
-                    'message' => 'Isso marcará a proposta como enviada e notificará o cliente.',
-                    'generate_pdf' => 'Gerar e anexar PDF',
-                    'send_email' => 'Enviar notificação por e-mail',
-                ],
-            ],
-            
-            'create' => [
-                'title' => 'Criar Nova Proposta',
-                'description' => 'Preencha os detalhes abaixo para criar uma nova proposta de serviço.',
-                'basic_info' => 'Informações Básicas',
-                'customer' => 'Cliente',
-                'select_customer' => 'Selecione um cliente',
-                'warehouse' => 'Armazém',
-                'select_warehouse' => 'Selecione um armazém',
-                'department' => 'Departamento',
-                'select_department' => 'Selecione um departamento',
-                'template' => 'Template de Proposta',
-                'select_template' => 'Selecione um template',
-                'service_location' => 'Local do Serviço',
-                'tolerance_days' => 'Período de Validade (Dias)',
-                'withhold_tax' => 'Reter Imposto',
-                'observations' => 'Observações',
-                'observations_placeholder' => 'Notas adicionais ou instruções especiais...',
-                'footer_note' => 'Todos os itens de serviço serão incluídos na proposta.',
-                'quick_add' => 'Adicionar Itens Rápidos',
-                'save_draft' => 'Salvar Rascunho',
-                'template_preview' => 'Prévia',
-                'view_full_template' => 'Ver Template Completo',
-
-                'use_matrix_price' => 'Usar Preço da Matriz?',
-                'labcode' => 'CL',
-                'loading_parameters' => 'Crregando Parâmetros',
-                'select_labcode' => 'Seleccionar CL',
-                'assign_lab_code' => 'Atribuir CL',
-                
-                'items' => [
-                    'title' => 'Itens de Serviço',
-                    'description' => 'Adicione serviços para incluir nesta proposta',
-                    'add_item' => 'Adicionar Item de Serviço',
-                    'item_description' => 'Descrição',
-                    'item_description_placeholder' => 'Descrição do serviço...',
-                    'standard' => 'Padrão/Método de Teste',
-                    'select_standard' => 'Selecione padrão',
-                    'unit' => 'Unidade',
-                    'select_unit' => 'Selecione unidade',
-                    'quantity' => 'Quantidade',
-                    'unit_price' => 'Preço Unitário',
-                    'discount' => 'Desconto %',
-                    'total' => 'Total',
-                    'remove_item' => 'Remover Item',
-                    'subtotal' => 'Subtotal',
-                    'charge_tax' => 'Cobrar IVA',
-                    'tax' => 'IVA',
-                    'select_matrix' => 'Seleccione Matriz',
-                    'select_parameter' => 'Seleccione Parâmetro',
-                    'item' => 'Item',
-                    'observations' => 'Observações',
-                    'observations_placeholder' => '',
-                ],
-                
-                'submit' => 'Criar Proposta',
-                'success' => 'Proposta criada com sucesso!',
-            ],
-            
-            'edit' => [
-                'title' => 'Editar Proposta',
-                'editing_proposal' => 'Editando proposta',
-                'basic_info' => 'Informações Básicas',
-                'customer' => 'Cliente',
-                'customer_locked' => 'Cliente não pode ser alterado em revisões',
-                'warehouse' => 'Armazém',
-                'department' => 'Departamento',
-                'template' => 'Template',
-                'select_template' => 'Selecione um template',
-                'labcode' => 'Código de Laboratório',
-                'select_labcode' => 'Selecione um código',
-                'loading_parameters' => 'Carregando parâmetros...',
-                'service_location' => 'Local de Serviço',
-                'tolerance_days' => 'Dias de Tolerância',
-                'use_matrix_price' => 'Usar Preço de Matriz',
-                'withhold_tax' => 'Reter Imposto',
-                'revision_reason' => 'Motivo da Revisão',
-                'revision_reason_placeholder' => 'Descreva o motivo da revisão desta proposta...',
-                'observations' => 'Observações',
-                'observations_placeholder' => 'Observações adicionais...',
-                'items' => [
-                'title' => 'Itens de Serviço',
-                'description' => 'Adicione ou edite os itens do serviço',
-                'add_item' => 'Adicionar Item',
-                'duplicate_item' => 'Duplicar Item',
-                'remove_item' => 'Remover Item',
-                'item' => 'Item',
-                'select_matrix' => 'Selecione uma matriz',
-                'select_parameter' => 'Selecione um parâmetro',
-                'item_description' => 'Descrição do Item',
-                'item_description_placeholder' => 'Digite a descrição do item',
-                'standard' => 'Padrão',
-                'select_standard' => 'Selecione um padrão',
-                'unit' => 'Unidade',
-                'select_unit' => 'Selecione uma unidade',
-                'quantity' => 'Quantidade',
-                'unit_price' => 'Preço Unitário',
-                'discount' => 'Desconto',
-                'tax' => 'Taxa (%)',
-                'charge_tax' => 'Cobrar Taxa',
-                'total' => 'Total',
-                'observations' => 'Observações do Item',
-                'observations_placeholder' => 'Observações específicas do item...',
-                'subtotal' => 'Subtotal',
-                'total' => 'Total'
-                ],
-                'actions' => [
-                'title' => 'Ações'
-                ],
-                'submit' => 'Salvar Revisão',
-                'reset_changes' => 'Descartar Alterações',
-                'stats' => [
-                'title' => 'Estatísticas',
-                'total_items' => 'Total de Itens'
-                ],
-                'status' => [
-                'title' => 'Status da Proposta',
-                'current' => 'Status Atual',
-                'original' => 'Original',
-                'created_by' => 'Criado por',
-                'created_at' => 'Criado em'
-                ],
-                'template_preview' => 'Preview do Template',
-                'view_full_template' => 'Ver Template Completo',
-                'quick_add' => 'Adicionar Rápido',
-                'footer_note' => 'Esta proposta será marcada como revisão. O cliente será notificado.',
-                'revision_warning' => 'Esta é uma revisão da proposta original. Alguns campos não podem ser alterados.',
-                'not_available' => 'Indisponível',
-                'customer_locked' => 'Cliente Bloqueado',
-
-            ],
-
-            'public' => [
-                'proposal' => 'Proposta',
-                'expired_warning' => 'Esta proposta expirou e não pode mais ser aceita.',
-                'proposal_for' => 'Proposta para',
-                'created_on' => 'Criada em',
-                'valid_until' => 'Válida até',
-                'days_left' => 'dias restantes',
-                'download_pdf' => 'Baixar PDF',
-                'customer_info' => 'Informações do Cliente',
-                'customer' => 'Cliente',
-                'customer_code' => 'Código do Cliente',
-                'service_location' => 'Local de Serviço',
-                'withhold_tax' => 'Reter Imposto',
-                'lab_info' => 'Informações do Laboratório',
-                'department' => 'Departamento',
-                'warehouse' => 'Armazém',
-                'tolerance_days' => 'Dias de Tolerância',
-                'days' => 'dias',
-                'pricing_mode' => 'Modo de Precificação',
-                'matrix' => 'Matriz',
-                'parameter' => 'Parâmetro',
-                'service_items' => 'Itens de Serviço',
-                'item_description' => 'Descrição do Item',
-                'standard' => 'Padrão',
-                'quantity' => 'Quantidade',
-                'unit_price' => 'Preço Unitário',
-                'discount' => 'Desconto',
-                'tax' => 'Taxa',
-                'by' => 'Por',
-                'unknown' => 'Desconhecido',
-                'items' => 'Itens',
-                'taxable_items' => 'Itens Taxados',
-                'total' => 'Total',
-                'subtotal' => 'Subtotal',
-                'total_discount' => 'Desconto Total',
-                'total_tax' => 'Taxa Total',
-                'total_amount' => 'Valor Total',
-                'observations' => 'Observações',
-                'compliance_agreement' => 'Acordo de Conformidade',
-                'agreement_signed' => 'Acordo assinado',
-                'signed_on' => 'Assinado em',
-                'confidentiality_text' => 'Concordo em manter confidencialidade sobre todas as informações técnicas, processos e resultados fornecidos pelo laboratório.',
-                'impartiality_text' => 'Declaro que esta proposta foi elaborada de forma imparcial, sem conflitos de interesse que possam comprometer a qualidade do serviço.',
-                'nondisclosure_text' => 'Concordo em não divulgar informações confidenciais a terceiros sem autorização prévia por escrito.',
-                'accept_proposal' => 'Aceitar Proposta',
-                'reject_proposal' => 'Rejeitar Proposta',
-                'proposal_accepted' => 'Proposta Aceita',
-                'accepted_on' => 'Aceita em',
-                'proposal_rejected' => 'Proposta Rejeitada',
-                'proposal_expired' => 'Proposta Expirada',
-                'expired_on' => 'Expirada em',
-                'reject_reason' => 'Motivo da Rejeição',
-                'reject_reason_placeholder' => 'Por favor, descreva o motivo da rejeição desta proposta...',
-                'confirm_reject' => 'Confirmar Rejeição'
-            ],
-            
-            'delete' => [
-                'title' => 'Excluir Proposta',
-                'message' => 'Tem certeza que deseja excluir a proposta :number?',
-                'warning' => 'Esta ação não pode ser desfeita.',
-            ],
-
-            'actions' => [
-                'title' => 'Acções'
-            ],
-
-            'status' => [
-                'title' => 'Estado',
-                'incomplete' => 'Incompleto',
-                'complete' => 'Completo',
-            ],
             ],
 
             'vap_proposal_templates' => [
-                'title' => 'Templates de Proposta',
-                'description' => 'Gerencie templates de proposta para criação rápida e padronizada.',
-                'total' => 'templates',
-                'create_new' => 'Novo Template',
-                'create_first' => 'Criar Primeiro Template',
+                'title' => 'Modelos de proposta',
+                'description' => 'Gerencie modelos de proposta para criação rápida, padronizada e auditável.',
+                'total' => 'modelos',
+                'create_new' => 'Novo modelo',
+                'create_first' => 'Criar primeiro modelo',
                 'proposals_using' => '',
-                
+
                 'stats' => [
-                    'total' => 'Total de Templates',
-                    'active' => 'Ativos',
-                    'inactive' => 'Inativos',
-                    'used' => 'Vezes Usados',
+                    'total' => 'Total de modelos',
+                    'active' => 'Activos',
+                    'inactive' => 'Inactivos',
+                    'used' => 'Vezes usados',
                 ],
 
                 'actions' => [
-                    'title' => 'Acções'
+                    'title' => 'Acções',
                 ],
-                
-                'search_placeholder' => 'Buscar templates por nome...',
-                'reset_filters' => 'Limpar Filtros',
+
+                'search_placeholder' => 'Pesquisar modelos por nome...',
+                'reset_filters' => 'Limpar filtros',
                 'sort_by' => 'Ordenar por',
-                
+
                 'filters' => [
                     'all' => 'Todos',
-                    'active' => 'Ativos',
-                    'inactive' => 'Inativos',
-                    'all_categories' => 'Todas Categorias',
+                    'active' => 'Activos',
+                    'inactive' => 'Inactivos',
+                    'all_categories' => 'Todas as categorias',
                 ],
-                
+
                 'categories' => [
                     'chemical' => 'Química',
                     'microbiology' => 'Microbiologia',
                     'physical' => 'Física',
                     'environmental' => 'Ambiental',
                     'food' => 'Alimentos',
+                    'compliance' => 'Conformidade ISO 17025',
+                    'field_services' => 'Recolha e logística',
                     'general' => 'Geral',
                 ],
-                
+
+                'surface' => [
+                    'library' => 'Biblioteca comercial',
+                    'search' => 'Pesquisa e filtros',
+                    'refine_library' => 'Refinar biblioteca',
+                    'presets' => 'Modelos pré-definidos',
+                    'presets_help' => 'Escolha uma base pronta para propostas comerciais, conformidade ISO ou serviços com recolha.',
+                    'export_format' => 'Formato de exportação',
+                ],
+
                 'sort' => [
                     'name' => 'Nome',
                     'newest' => 'Mais Recentes',
                     'most_used' => 'Mais Usados',
                 ],
-                
+
                 'list' => [
-                    'title' => 'Lista de Templates',
+                    'title' => 'Lista de modelos',
                 ],
-                
+
                 'empty_state' => [
-                    'title' => 'Nenhum template encontrado',
-                    'description' => 'Comece criando seu primeiro template de proposta.',
+                    'title' => 'Nenhum modelo encontrado',
+                    'description' => 'Comece criando o primeiro modelo de proposta.',
                 ],
-                
-                'active' => 'Ativo',
-                'inactive' => 'Inativo',
+
+                'active' => 'Activo',
+                'inactive' => 'Inactivo',
                 'used' => 'Usos',
                 'acceptance_rate' => 'Taxa de Aceitação',
                 'last_updated' => 'Atualizado',
                 'created_on' => 'Criado em',
-                
+
                 'view_details' => 'Ver detalhes',
                 'view' => 'Ver',
                 'edit' => 'Editar',
                 'delete' => 'Excluir',
-                'use_template' => 'Usar Template',
-                
+                'use_template' => 'Editar modelo',
+
                 'delete_modal' => [
-                    'title' => 'Excluir Template',
-                    'message' => 'Tem certeza que deseja excluir o template ":name"?',
-                    'warning_title' => 'Template em Uso',
-                    'warning_message' => 'Este template está sendo usado por :count proposta(s). Não é possível excluí-lo.',
+                    'title' => 'Eliminar modelo',
+                    'message' => 'Tem certeza que deseja eliminar o modelo ":name"?',
+                    'warning_title' => 'Modelo em uso',
+                    'warning_message' => 'Este modelo está sendo usado por :count proposta(s). Não é possível eliminá-lo.',
                     'confirm_warning' => 'Esta ação não pode ser desfeita.',
                 ],
-                
+
                 'quick_actions' => [
-                    'title' => 'Ações Rápidas',
-                    'import' => 'Importar Templates',
-                    'import_desc' => 'Importe templates de arquivo JSON',
-                    'export' => 'Exportar Todos',
-                    'export_desc' => 'Exporte todos os templates para backup',
-                    'report' => 'Relatório de Uso',
-                    'report_desc' => 'Veja estatísticas de uso dos templates',
+                    'title' => 'Acções rápidas',
+                    'import' => 'Importar modelos',
+                    'import_desc' => 'Importe modelos por ficheiro JSON, Excel ou CSV.',
+                    'export' => 'Exportar todos',
+                    'export_desc' => 'Exporte todos os modelos para backup.',
+                    'report' => 'Relatório de uso',
+                    'report_desc' => 'Veja estatísticas de uso dos modelos.',
                 ],
-                
+
                 'import' => [
-                    'title' => 'Importar Templates',
-                    'select_file' => 'Selecionar Arquivo',
+                    'title' => 'Importar modelos',
+                    'select_file' => 'Selecionar ficheiro',
                     'drag_drop' => 'Arraste e solte o arquivo aqui ou',
-                    'browse_files' => 'Procurar Arquivos',
-                    'file_types' => 'Arquivos JSON ou TXT',
-                    'process' => 'Processar Importação',
+                    'browse_files' => 'Procurar ficheiros',
+                    'file_types' => 'Ficheiros JSON, Excel ou CSV',
+                    'process' => 'Processar importação',
                 ],
-                
+
                 // Para o componente Show.vue (se existir)
                 'show' => [
-                'title' => 'Detalhes do Template',
-                'description' => 'Detalhes e uso do template',
-                'content' => 'Conteúdo do Template',
-                'variables' => 'Variáveis Disponíveis',
-                'usage' => 'Histórico de Uso',
-                'created_by' => 'Criado por',
-                'created_at' => 'Criado em',
-                'updated_at' => 'Atualizado em',
-                'proposals_using' => 'propostas usando este template',
-                'preview' => 'Prévia do Template',
-                'edit_template' => 'Editar Template',
-                'delete_template' => 'Excluir Template',
-                'use_this_template' => 'Usar Este Template',
-                'create_proposal' => 'Criar Proposta',
-                'activate' => 'Ativar Template',
-                'deactivate' => 'Desativar Template',
-                'export' => 'Exportar',
-                'export_json' => 'Exportar como JSON',
-                'export_pdf' => 'Exportar como PDF',
-                'variable_reference' => 'Referência de Variáveis',
-                'danger_zone' => 'Zona de Perigo',
-                'delete_warning' => 'Ações nesta seção são permanentes e não podem ser desfeitas.',
-                'cannot_delete' => 'Não é possível excluir: template está sendo usado por :count proposta(s).',
-                
-                'raw_content' => 'Conteúdo Bruto',
-                'show_raw' => 'Mostrar conteúdo bruto',
-                'hide_raw' => 'Ocultar conteúdo bruto',
-                
-                'accepted' => 'Aceitas',
-                'pending' => 'Pendentes',
-                'rejected' => 'Rejeitadas',
-                
-                'recent_proposals' => 'Propostas Recentes',
-                'view_proposal' => 'Ver Proposta',
-                'view_all_proposals' => 'Ver Todas as Propostas',
-                'no_proposals_yet' => 'Nenhuma proposta usando este template ainda',
-                
-                'variable_help' => 'Use estas variáveis no conteúdo do template. Elas serão substituídas automaticamente quando a proposta for gerada.',
-                
-                'delete_confirm_title' => 'Excluir Template',
-                'delete_confirm_message' => 'Tem certeza que deseja excluir o template ":name"?',
-                'delete_warning_title' => 'Atenção',
-                'delete_warning_detail' => 'Esta ação não pode ser desfeita. Todas as informações deste template serão permanentemente removidas.',
-            ],
-                
+                    'title' => 'Detalhes do modelo',
+                    'description' => 'Detalhes e uso do modelo',
+                    'content' => 'Conteúdo do modelo',
+                    'variables' => 'Variáveis disponíveis',
+                    'usage' => 'Histórico de uso',
+                    'created_by' => 'Criado por',
+                    'created_at' => 'Criado em',
+                    'updated_at' => 'Atualizado em',
+                    'metadata_status' => 'Metadados e estado',
+                    'category' => 'Categoria',
+                    'status' => 'Estado',
+                    'proposals_using' => 'propostas usando este modelo',
+                    'preview' => 'Pré-visualização do modelo',
+                    'edit_template' => 'Editar modelo',
+                    'delete_template' => 'Eliminar modelo',
+                    'use_this_template' => 'Usar este modelo',
+                    'create_proposal' => 'Criar proposta',
+                    'activate' => 'Activar modelo',
+                    'deactivate' => 'Desactivar modelo',
+                    'export' => 'Exportar',
+                    'export_json' => 'Exportar como JSON',
+                    'export_pdf' => 'Exportar como PDF',
+                    'variable_reference' => 'Referência de variáveis',
+                    'danger_zone' => 'Zona de perigo',
+                    'delete_warning' => 'Ações nesta seção são permanentes e não podem ser desfeitas.',
+                    'cannot_delete' => 'Não é possível eliminar: o modelo está sendo usado por :count proposta(s).',
+
+                    'raw_content' => 'Conteúdo bruto',
+                    'show_raw' => 'Mostrar conteúdo bruto',
+                    'hide_raw' => 'Ocultar conteúdo bruto',
+
+                    'accepted' => 'Aceitas',
+                    'pending' => 'Pendentes',
+                    'rejected' => 'Rejeitadas',
+
+                    'recent_proposals' => 'Propostas recentes',
+                    'view_proposal' => 'Ver proposta',
+                    'view_all_proposals' => 'Ver todas as propostas',
+                    'no_proposals_yet' => 'Nenhuma proposta usando este modelo ainda',
+
+                    'variable_help' => 'Use estas variáveis no conteúdo do modelo. Elas serão substituídas automaticamente quando a proposta for gerada.',
+
+                    'delete_confirm_title' => 'Eliminar modelo',
+                    'delete_confirm_message' => 'Tem certeza que deseja eliminar o modelo ":name"?',
+                    'delete_warning_title' => 'Atenção',
+                    'delete_warning_detail' => 'Esta ação não pode ser desfeita. Todas as informações deste modelo serão permanentemente removidas.',
+                    'customer_unknown' => 'Cliente não informado',
+                    'custom_variable' => 'Variável personalizada: :name',
+                    'exported_by_fallback' => 'Utilizador',
+                    'status_modal_activate_title' => 'Activar modelo de proposta',
+                    'status_modal_deactivate_title' => 'Desactivar modelo de proposta',
+                    'status_modal_activate_content' => 'Este modelo ficará novamente disponível para novas propostas comerciais.',
+                    'status_modal_deactivate_content' => 'Este modelo deixará de aparecer como opção para novas propostas, mas continuará associado às propostas existentes.',
+
+                    'notifications' => [
+                        'copy_success' => 'Conteúdo do modelo copiado.',
+                        'copy_error' => 'Não foi possível copiar o conteúdo do modelo.',
+                        'status_error' => 'Não foi possível alterar o estado do modelo.',
+                        'status_request_error' => 'Erro ao alterar o estado do modelo.',
+                        'activated' => 'Modelo activado com sucesso.',
+                        'deactivated' => 'Modelo desactivado com sucesso.',
+                        'export_json_success' => 'Modelo exportado em JSON.',
+                        'export_error' => 'Erro ao exportar o modelo.',
+                        'cannot_delete_in_use' => 'Não é possível eliminar modelos que estão em uso por propostas.',
+                    ],
+                ],
+
                 // Para o componente Create.vue (se existir)
                 'create' => [
-                'title' => 'Criar Novo Template',
-                'description' => 'Crie um novo template para propostas',
-                'name' => 'Nome do Template',
-                'name_placeholder' => 'Ex: Template de Análise Química Completa',
-                'category' => 'Categoria',
-                'select_category' => 'Selecione uma categoria',
-                'content' => 'Conteúdo',
-                'content_placeholder' => 'Digite o conteúdo do template aqui...',
-                'variables' => 'Variáveis',
-                'available_variables' => 'Variáveis Disponíveis',
-                'insert_variable' => 'Inserir Variável',
-                'save_template' => 'Salvar Template',
-                'success' => 'Template criado com sucesso!',
-                'quick_start' => 'Início Rápido',
-                'quick_start_description' => 'Escolha um dos templates pré-definidos para começar rapidamente',
-                
-                'format' => [
-                    'bold' => 'Negrito',
-                    'italic' => 'Itálico',
-                    'underline' => 'Sublinhado',
-                    'heading1' => 'Título 1',
-                    'heading2' => 'Título 2',
-                    'heading3' => 'Título 3',
-                    'bullet_list' => 'Lista com Marcadores',
-                    'numbered_list' => 'Lista Numerada',
-                    'insert_table' => 'Inserir Tabela',
+                    'title' => 'Criar Novo Template',
+                    'description' => 'Crie um novo template para propostas',
+                    'name' => 'Nome do Template',
+                    'name_placeholder' => 'Ex: Template de Análise Química Completa',
+                    'category' => 'Categoria',
+                    'select_category' => 'Selecione uma categoria',
+                    'content' => 'Conteúdo',
+                    'content_placeholder' => 'Digite o conteúdo do template aqui...',
+                    'variables' => 'Variáveis',
+                    'available_variables' => 'Variáveis Disponíveis',
+                    'insert_variable' => 'Inserir Variável',
+                    'save_template' => 'Salvar Template',
+                    'success' => 'Template criado com sucesso!',
+                    'quick_start' => 'Início Rápido',
+                    'quick_start_description' => 'Escolha um dos templates pré-definidos para começar rapidamente',
+                    'studio_title' => 'Studio de propostas',
+                    'studio_intro' => 'Crie um modelo flexível com um compositor interno mais visual, blocos prontos, cabeçalhos e rodapés por página e controlo de fundo para exportação premium.',
+                    'initial_draft_label' => 'Modelo base: :name',
+                    'preset_action_label' => 'Aplicar modelo base',
+                    'back_label' => 'Voltar à biblioteca',
+                    'submit_label' => 'Guardar modelo',
+
+                    'format' => [
+                        'bold' => 'Negrito',
+                        'italic' => 'Itálico',
+                        'underline' => 'Sublinhado',
+                        'heading1' => 'Título 1',
+                        'heading2' => 'Título 2',
+                        'heading3' => 'Título 3',
+                        'bullet_list' => 'Lista com Marcadores',
+                        'numbered_list' => 'Lista Numerada',
+                        'insert_table' => 'Inserir Tabela',
+                    ],
+
+                    'editor' => [
+                        'template_name' => 'Nome do Template',
+                        'template_content' => 'Conteúdo do Template',
+                        'active_template' => 'Template Ativo',
+                        'preview_title' => 'Prévia do Template',
+                        'hide_preview' => 'Ocultar Prévia',
+                        'show_preview' => 'Mostrar Prévia',
+                        'characters' => 'Caracteres',
+                        'variable_hint' => 'Use variáveis entre chaves [] para conteúdo dinâmico',
+                        'search_variables' => 'Buscar variáveis...',
+                    ],
+
+                    'variable_usage_tips' => 'Dicas de Uso de Variáveis',
+                    'tip1' => 'Use [client_name] para o nome do cliente',
+                    'tip2' => 'Use [proposal_number] para o número da proposta',
+                    'tip3' => 'Use [items_table] para a tabela de itens',
+
+                    'template_info' => 'Informações do Template',
+                    'danger_zone' => 'Zona de Perigo',
+                    'delete_template' => 'Excluir Template',
+                    'delete_warning' => 'A exclusão de um template é permanente e não pode ser desfeita.',
+                    'delete_warning_proposals' => 'Este template está sendo usado por propostas',
+                    'delete_warning_detail' => 'Existem :count proposta(s) usando este template. Se excluí-lo, essas propostas não serão afetadas, mas não poderão mais referenciar este template.',
+
+                    'usage_statistics' => 'Estatísticas de Uso',
+                    'total_proposals' => 'Total de Propostas',
+                    'acceptance_rate' => 'Taxa de Aceitação',
+                    'total_value' => 'Valor Total',
+
+                    'delete_confirm_title' => 'Confirmar Exclusão',
+                    'delete_confirm_message' => 'Tem certeza que deseja excluir o template ":name"?',
                 ],
-                
-                'editor' => [
-                    'template_name' => 'Nome do Template',
-                    'template_content' => 'Conteúdo do Template',
-                    'active_template' => 'Template Ativo',
-                    'preview_title' => 'Prévia do Template',
-                    'hide_preview' => 'Ocultar Prévia',
-                    'show_preview' => 'Mostrar Prévia',
-                    'characters' => 'Caracteres',
-                    'variable_hint' => 'Use variáveis entre chaves [] para conteúdo dinâmico',
-                    'search_variables' => 'Buscar variáveis...',
-                ],
-                
-                'variable_usage_tips' => 'Dicas de Uso de Variáveis',
-                'tip1' => 'Use [client_name] para o nome do cliente',
-                'tip2' => 'Use [proposal_number] para o número da proposta',
-                'tip3' => 'Use [items_table] para a tabela de itens',
-                
-                'template_info' => 'Informações do Template',
-                'danger_zone' => 'Zona de Perigo',
-                'delete_template' => 'Excluir Template',
-                'delete_warning' => 'A exclusão de um template é permanente e não pode ser desfeita.',
-                'delete_warning_proposals' => 'Este template está sendo usado por propostas',
-                'delete_warning_detail' => 'Existem :count proposta(s) usando este template. Se excluí-lo, essas propostas não serão afetadas, mas não poderão mais referenciar este template.',
-                
-                'usage_statistics' => 'Estatísticas de Uso',
-                'total_proposals' => 'Total de Propostas',
-                'acceptance_rate' => 'Taxa de Aceitação',
-                'total_value' => 'Valor Total',
-                
-                'delete_confirm_title' => 'Confirmar Exclusão',
-                'delete_confirm_message' => 'Tem certeza que deseja excluir o template ":name"?',
-            ],
-                
+
                 // Para o componente Edit.vue (se existir)
                 'edit' => [
-                'title' => 'Editar Template: :name',
-                'description' => 'Edite o template de proposta',
-                'content_editor' => 'Editor de Conteúdo',
-                'characters' => 'Caracteres',
-                'template_name' => 'Nome do Template',
-                'name_placeholder' => 'Digite o nome do template...',
-                'template_content' => 'Conteúdo do Template',
-                'content_placeholder' => 'Digite o conteúdo aqui...',
-                'insert_variable' => 'Inserir Variável',
-                'hide_preview' => 'Ocultar Prévia',
-                'show_preview' => 'Mostrar Prévia',
-                'preview_title' => 'Prévia do Template',
-                'active_template' => 'Template Ativo',
-                'update_template' => 'Atualizar Template',
-                'success' => 'Template atualizado com sucesso!',
-                
-                'format' => [
-                    'bold' => 'Negrito',
-                    'italic' => 'Itálico',
-                    'underline' => 'Sublinhado',
-                    'heading1' => 'Título 1',
-                    'heading2' => 'Título 2',
-                    'heading3' => 'Título 3',
-                    'bullet_list' => 'Lista com Marcadores',
-                    'numbered_list' => 'Lista Numerada',
-                    'insert_table' => 'Inserir Tabela',
+                    'title' => 'Editar Template: :name',
+                    'description' => 'Edite o template de proposta',
+                    'content_editor' => 'Editor de Conteúdo',
+                    'characters' => 'Caracteres',
+                    'template_name' => 'Nome do Template',
+                    'name_placeholder' => 'Digite o nome do template...',
+                    'template_content' => 'Conteúdo do Template',
+                    'content_placeholder' => 'Digite o conteúdo aqui...',
+                    'insert_variable' => 'Inserir Variável',
+                    'hide_preview' => 'Ocultar Prévia',
+                    'show_preview' => 'Mostrar Prévia',
+                    'preview_title' => 'Prévia do Template',
+                    'active_template' => 'Template Ativo',
+                    'update_template' => 'Atualizar Template',
+                    'success' => 'Template atualizado com sucesso!',
+
+                    'format' => [
+                        'bold' => 'Negrito',
+                        'italic' => 'Itálico',
+                        'underline' => 'Sublinhado',
+                        'heading1' => 'Título 1',
+                        'heading2' => 'Título 2',
+                        'heading3' => 'Título 3',
+                        'bullet_list' => 'Lista com Marcadores',
+                        'numbered_list' => 'Lista Numerada',
+                        'insert_table' => 'Inserir Tabela',
+                    ],
+
+                    'available_variables' => 'Variáveis Disponíveis',
+                    'variable_usage_tips' => 'Dicas de Uso de Variáveis',
+                    'tip1' => 'As variáveis são substituídas automaticamente quando a proposta é gerada',
+                    'tip2' => 'Use [client_name] para o nome do cliente',
+                    'tip3' => 'Use [items_table] para inserir a tabela de itens automaticamente',
+
+                    'template_info' => 'Informações do Template',
+                    'category' => 'Categoria',
+                    'select_category' => 'Selecione uma categoria',
+                    'created_by' => 'Criado por',
+                    'created_on' => 'Criado em',
+                    'last_updated' => 'Última Atualização',
+
+                    'variable_hint' => '',
+
+                    'search_variables' => 'Pesquisar Variáveis',
+
+                    'usage_statistics' => 'Estatísticas de Uso',
+                    'total_proposals' => 'Total de Propostas',
+                    'acceptance_rate' => 'Taxa de Aceitação',
+                    'total_value' => 'Valor Total',
+
+                    'danger_zone' => 'Zona de Perigo',
+                    'delete_warning' => 'A exclusão de um template é permanente e não pode ser desfeita.',
+                    'delete_template' => 'Excluir Template',
+                    'delete_confirm_title' => 'Confirmar Exclusão',
+                    'delete_confirm_message' => 'Tem certeza que deseja excluir o template ":name"?',
+                    'delete_warning_proposals' => 'Este template está sendo usado por propostas',
+                    'delete_warning_detail' => 'Existem :count proposta(s) usando este template. Se excluí-lo, essas propostas não serão afetadas, mas não poderão mais referenciar este template.',
+                    'studio_title' => 'Studio de propostas',
+                    'studio_intro' => 'Ajuste o modelo com um workbench interno mais visual, pronto para composição editorial, paginação e exportação consistente.',
+                    'back_label' => 'Ver detalhes',
+                    'preset_action_label' => 'Aplicar ao modelo',
+                    'submit_label' => 'Guardar alterações',
                 ],
-                
-                'available_variables' => 'Variáveis Disponíveis',
-                'variable_usage_tips' => 'Dicas de Uso de Variáveis',
-                'tip1' => 'As variáveis são substituídas automaticamente quando a proposta é gerada',
-                'tip2' => 'Use [client_name] para o nome do cliente',
-                'tip3' => 'Use [items_table] para inserir a tabela de itens automaticamente',
-                
-                'template_info' => 'Informações do Template',
-                'category' => 'Categoria',
-                'select_category' => 'Selecione uma categoria',
-                'created_by' => 'Criado por',
-                'created_on' => 'Criado em',
-                'last_updated' => 'Última Atualização',
 
-                'variable_hint' => '',
+                'notifications' => [
+                    'cannot_delete_in_use' => 'Não é possível eliminar modelos que estão em uso por propostas.',
+                    'import_success' => 'Modelos importados com sucesso.',
+                    'import_error' => 'Erro ao importar o modelo. Verifique o formato do ficheiro.',
+                    'import_request_error' => 'Não foi possível importar os modelos.',
+                    'export_success' => 'Exportação de modelos preparada com sucesso.',
+                    'export_error' => 'Erro ao exportar os modelos.',
+                    'export_request_error' => 'Não foi possível exportar os modelos.',
+                    'usage_report' => 'O relatório de uso será aberto a partir dos indicadores e propostas associadas ao modelo.',
+                ],
 
-                'search_variables' => 'Pesquisar Variáveis',
-                
-                'usage_statistics' => 'Estatísticas de Uso',
-                'total_proposals' => 'Total de Propostas',
-                'acceptance_rate' => 'Taxa de Aceitação',
-                'total_value' => 'Valor Total',
-                
-                'danger_zone' => 'Zona de Perigo',
-                'delete_warning' => 'A exclusão de um template é permanente e não pode ser desfeita.',
-                'delete_template' => 'Excluir Template',
-                'delete_confirm_title' => 'Confirmar Exclusão',
-                'delete_confirm_message' => 'Tem certeza que deseja excluir o template ":name"?',
-                'delete_warning_proposals' => 'Este template está sendo usado por propostas',
-                'delete_warning_detail' => 'Existem :count proposta(s) usando este template. Se excluí-lo, essas propostas não serão afetadas, mas não poderão mais referenciar este template.',
-            ],
-    
+                'studio' => [
+                    'media_picker' => [
+                        'title' => 'Biblioteca de media',
+                        'description' => 'Escolha imagens, carimbos ou assinaturas sem copiar URLs manualmente.',
+                        'close' => 'Fechar',
+                        'add_title' => 'Adicionar media ao documento',
+                        'add_description' => 'Arraste SVG, PNG, JPEG, WebP, GIF ou AVIF para usar como fundo, assinatura, carimbo ou imagem posicionável no canvas.',
+                        'allowed_types_error' => 'Use SVG, PNG, JPEG, WebP, GIF ou AVIF.',
+                        'upload_error' => 'Não foi possível carregar a imagem. Verifique o ficheiro e tente novamente.',
+                        'upload_progress' => 'A carregar :progress%',
+                        'choose_file' => 'Escolher ficheiro',
+                        'empty' => 'Ainda não existem imagens disponíveis para seleccionar.',
+                    ],
+                ],
+
             ],
 
+            'vap_report_studios' => [
+                'studio' => [
+                    'background_upload' => [
+                        'title' => 'Carregar fundo SVG/imagem',
+                        'description' => 'Arraste ou selecione SVG, PNG, JPEG, WebP, GIF ou AVIF. O ficheiro fica disponível na galeria e pode ser aplicado como fundo do documento.',
+                        'choose_from_gallery' => 'Escolher fundo da galeria',
+                    ],
+                    'media_picker' => [
+                        'title' => 'Biblioteca de media',
+                        'description' => 'Escolha fundos, imagens, gráficos, assinaturas e carimbos sem copiar URLs manualmente.',
+                        'close' => 'Fechar',
+                        'add_title' => 'Carregar e aplicar media',
+                        'add_description' => 'Arraste SVG, PNG, JPEG, WebP, GIF ou AVIF para aplicar directamente ao alvo actual: fundo do documento, URL de ficheiro ou bloco seleccionado.',
+                        'allowed_badge' => 'SVG · PNG · JPEG · WebP · AVIF',
+                        'allowed_types_error' => 'Use SVG, PNG, JPEG, WebP, GIF ou AVIF.',
+                        'upload_error' => 'Não foi possível carregar o ficheiro. Verifique o formato e tente novamente.',
+                        'upload_progress' => 'A carregar :progress%',
+                        'choose_file' => 'Escolher ficheiro',
+                        'search_placeholder' => 'Pesquisar por nome, origem, autor ou tipo',
+                        'manual_url_label' => 'URL manual',
+                        'manual_url_placeholder' => 'URL directa de imagem, assinatura, carimbo, gráfico ou fundo',
+                        'manual_source' => 'Inserido manualmente',
+                        'apply_url' => 'Aplicar URL',
+                        'target_label' => 'Alvo: :target',
+                        'empty' => 'Nenhum ficheiro encontrado. Cole uma URL acima para aplicar uma imagem externa, assinatura, gráfico ou carimbo.',
+                        'current_session' => 'Sessão actual',
+                        'target' => [
+                            'document_background' => 'Fundo do documento',
+                            'asset_url' => 'Ficheiro temporário do layout',
+                            'new_canvas_block' => 'Nova camada · :type',
+                            'selected_block' => 'Bloco seleccionado · :field',
+                            'selected' => 'Alvo seleccionado',
+                        ],
+                        'kinds' => [
+                            'all' => 'Todos',
+                            'gallery_image' => 'Galeria',
+                            'profile_signature' => 'Assinaturas',
+                            'uploaded_asset' => 'Uploads',
+                            'uploaded_background' => 'Fundos',
+                            'uploaded_chart' => 'Gráficos',
+                            'uploaded_image' => 'Imagens',
+                            'uploaded_signature' => 'Assinaturas',
+                            'uploaded_stamp' => 'Carimbos',
+                        ],
+                        'sources' => [
+                            'uploaded_asset' => 'Upload de ficheiro',
+                            'uploaded_background' => 'Fundos carregados',
+                            'uploaded_chart' => 'Gráficos carregados',
+                            'uploaded_stamp' => 'Carimbos carregados',
+                            'uploaded_signature' => 'Assinaturas carregadas',
+                            'uploaded_image' => 'Imagens carregadas',
+                            'default' => 'Upload do studio',
+                        ],
+                    ],
+                ],
+            ],
 
             'analysis' => [
                 'page_title' => 'Análises',
@@ -1004,6 +1195,9 @@ return [
                 'department_id' => 'Departamento',
                 'profile_id' => 'Perfil',
                 'sample_id' => 'Amostra',
+                'sample_entry' => 'Entrada de amostra',
+                'source_result' => 'Resultado original',
+                'legacy_record' => 'Registo legado',
                 'vehicle_id' => 'Transporte',
                 'comercial_brand' => 'Marca Comercial',
                 'du_no' => 'Nº DU',
@@ -1082,7 +1276,7 @@ return [
                 'showing' => 'Mostrando',
             ],
             'dashboard' => [
-                'change_header_image' => 'Clica no ícone da camera para alterar esta imagem (dimensões: 1280 x 400, tamanho: 5MB)'
+                'change_header_image' => 'Clica no ícone da camera para alterar esta imagem (dimensões: 1280 x 400, tamanho: 5MB)',
             ],
             'direct_collections' => [
                 'page_title' => 'Colheitas Directas',
@@ -1184,7 +1378,7 @@ return [
                 'last_update' => 'Última Actualização',
                 'quality_certificate' => 'Certificado de Qualidade',
                 'validated_by' => 'Validado Por',
-                'validated_at' => 'Validado Em'
+                'validated_at' => 'Validado Em',
             ],
             'metrics' => [
                 'page_title' => 'Métricas',
@@ -1280,6 +1474,15 @@ return [
                 'created_at' => 'Emissão',
                 'placeholders' => [
                     'observations' => 'Observações',
+                    'select_type' => 'Seleccione o tipo de documento',
+                    'select_customer' => 'Seleccione o cliente',
+                    'select_warehouse' => 'Seleccione o armazém',
+                    'enter_reference' => 'Informe uma referência interna',
+                    'select_lab_code' => 'Seleccione o código de laboratório',
+                    'select_matrix' => 'Seleccione a matriz',
+                    'select_product' => 'Seleccione o produto',
+                    'select_parameter' => 'Seleccione o parâmetro',
+                    'unit' => 'Unidade',
                 ],
                 'invoice_settings' => 'Configurações da Factura',
                 'created_by' => 'Criado Por',
@@ -1352,8 +1555,19 @@ return [
                 'assign_lab_code' => 'Clica aqui para Inserir itens a partir do código de laboratório.',
                 'created_at' => 'Emissão',
                 'convert_to_invoice' => 'Converter para Factura',
+                'convert_to_invoice_title' => 'Converter Proforma',
+                'convert_to_invoice_description' => 'Seleccione o tipo de factura para concluir a conversão.',
                 'placeholders' => [
                     'observations' => 'Observações',
+                    'select_invoice_type' => 'Seleccione o tipo de factura',
+                    'select_customer' => 'Seleccione o cliente',
+                    'select_warehouse' => 'Seleccione o armazém',
+                    'enter_reference' => 'Informe uma referência interna',
+                    'select_lab_code' => 'Seleccione o código de laboratório',
+                    'select_matrix' => 'Seleccione a matriz',
+                    'select_product' => 'Seleccione o produto',
+                    'select_parameter' => 'Seleccione o parâmetro',
+                    'unit' => 'Unidade',
                 ],
                 'quote_settings' => 'Configurações da Proforma',
                 'total_amount' => 'Valor Total',
@@ -1373,7 +1587,7 @@ return [
                 'download_pdf' => 'Baixar PDF',
                 'send_email' => 'Enviar Por Email',
                 'duplicate' => 'Duplicar',
-                'last_updated' => 'Última Actualização'
+                'last_updated' => 'Última Actualização',
             ],
             'credit_notes' => [
                 'page_title' => 'Notas de Crédito',
@@ -1416,6 +1630,14 @@ return [
                 'convert_to_invoice' => 'Converter em Factura',
                 'placeholders' => [
                     'observations' => 'Observações',
+                    'select_invoice' => 'Seleccione a factura',
+                    'select_customer' => 'Seleccione o cliente',
+                    'select_warehouse' => 'Seleccione o armazém',
+                    'enter_reference' => 'Informe uma referência interna',
+                    'select_reason' => 'Seleccione o motivo',
+                    'select_matrix' => 'Seleccione a matriz',
+                    'select_parameter' => 'Seleccione o parâmetro',
+                    'unit' => 'Unidade',
                 ],
                 'credit_note_settings' => 'Configurações da Nota de Crédito',
             ],
@@ -1566,13 +1788,13 @@ return [
                     'enter_lot' => 'Digite lote',
                     'enter_bl' => 'Digite BL',
                     'enter_collection_point' => 'Digite ponto de coleta',
-                  ],
-                  'auto_save' => 'Salvar Automáticamente',
-                  'select_customer_first' => 'Seleccione um cliente primeiro',
-                  'contact_info' => 'Informações de Contacto',
-                  'totals' => 'Totais',
-                  'products_added' => 'Produtos Adicionados',
-                  'guide_summary' => 'Resumo da Guia',
+                ],
+                'auto_save' => 'Salvar Automáticamente',
+                'select_customer_first' => 'Seleccione um cliente primeiro',
+                'contact_info' => 'Informações de Contacto',
+                'totals' => 'Totais',
+                'products_added' => 'Produtos Adicionados',
+                'guide_summary' => 'Resumo da Guia',
             ],
             'analysis_categories' => [
                 'page_title' => 'Tipos de Análises',
@@ -1663,8 +1885,8 @@ return [
                 'description' => 'Descrição',
             ],
             'impersonation' => [
-                'title' => 'Representação Activa', # Impersonation Active,
-                'description' => 'Você está atualmente a actuar como' # You are currently acting as,
+                'title' => 'Representação Activa', // Impersonation Active,
+                'description' => 'Você está atualmente a actuar como', // You are currently acting as,
             ],
             'item_categories' => [
                 'page_title' => 'Categoria de Itens',
@@ -1730,7 +1952,7 @@ return [
                 'placeholders' => [
                     'code' => '',
                     'description' => '',
-                    'customer_name' => 'Nome'
+                    'customer_name' => 'Nome',
                 ],
                 'add_warehouse' => 'Adicionar Armazém',
                 'add_first_warehouse' => 'Adicionar 1º Armazém',
@@ -1758,7 +1980,7 @@ return [
                 'copy_id' => 'Copiar ID',
                 'created_at' => 'Criado Em',
                 'updated_at' => 'Actualizado Em',
-                'primary_warehouse_set' => 'Armazém Primário Definido'
+                'primary_warehouse_set' => 'Armazém Primário Definido',
             ],
             'warehouses' => [
                 'page_title' => 'Armazéns',
@@ -1787,7 +2009,7 @@ return [
                     'warehouse_name' => '',
                     'new_password' => '',
                     'confirm_password' => '',
-                    'current_password' => ''
+                    'current_password' => '',
                 ],
                 'basic_info' => 'Informações Básicas',
                 'contact_info' => 'Informações de Contacto',
@@ -1809,13 +2031,14 @@ return [
                 'confirm_password' => 'Confirmar Senha',
                 'set_password' => 'Definir Senha',
                 'change_password' => 'Modificar Senha',
-                'password_last_updated' => 'Última Actualização',
+                'password_last_updated' => 'Credencial do portal activa',
                 'current_password' => 'Senha Actual',
                 'password_strength' => 'Complexidade da Senha',
-                'send_password_reset' => 'Redifinição de Senha',
-                'send_password_reset' => 'send_reset_email_info',
+                'send_password_reset' => 'Redefinição de Senha',
+                'send_reset_email_info' => 'Envia um link seguro para o cliente definir uma nova senha no portal.',
+                'email_required_for_password_reset' => 'Este cliente precisa de um email para receber o link de redefinição de senha.',
                 'sending' => 'A Enviar',
-                'send_reset_email' => 'Enviar Email Para Redifinição de Senha',
+                'send_reset_email' => 'Enviar Email Para Redefinição de Senha',
                 'update_password' => 'Actualizar Senha',
                 'invoices' => 'Facturas',
                 'collections' => 'Colheitas',
@@ -1879,9 +2102,9 @@ return [
                 'page_update_description' => 'A modificar o registro:',
                 'name' => 'Nome',
                 'file' => 'Ficheiro / Documento',
-                'upload_file' => 'Carregar Ficheiros', #Upload File
+                'upload_file' => 'Carregar Ficheiros', // Upload File
                 'or' => 'ou',
-                'up_to' => 'até', # up to
+                'up_to' => 'até', // up to
                 'drag_file' => 'Arrastar e Soltar Ficheiros',
                 'files' => 'Arquivos',
                 'file_name' => 'Nome do Ficheiro',
@@ -1891,7 +2114,7 @@ return [
                 'create_folder_description' => 'Crie pastas que permitirão uma organização dos seus arquivos.',
                 'upload_file' => 'Carregar Arquivo',
                 'update_file' => 'Modificar Arquivo',
-                'update_file_description' => 'Altere as propriedades deste arquivo.', 
+                'update_file_description' => 'Altere as propriedades deste arquivo.',
                 'move_file' => 'Mover Arquivo',
                 'move_file_description' => 'Mover este arquivo para outra localização.',
                 'move_folder' => 'Mover Pasta',
@@ -1916,7 +2139,7 @@ return [
                     'image' => 'Imagem',
                     'other' => 'Outro',
                     'archive' => 'Arquivo',
-                ]
+                ],
             ],
             'formulas' => [
                 'page_title' => 'Fórmulas',
@@ -2029,7 +2252,7 @@ return [
                 'refrigerated' => 'Refrigerado?',
                 'no_of_interventions' => 'Nº de Intervenções',
                 'created_at' => 'Criado Em',
-                'updated_at' => 'Actualizado Em'
+                'updated_at' => 'Actualizado Em',
             ],
             'iequipments' => [
                 'page_title' => 'Equipamentos',
@@ -2196,8 +2419,9 @@ return [
                 'description' => 'Descrição',
             ],
             'kanban' => [
-                'page_title' => 'Quadro KANBAN',
-                'page_description' => 'O quadro kanban é uma ferramenta de gestão visual que ajuda a organizar e acompanhar as tarefas de um projeto ou processo.',
+                'page_title' => 'Quadro operacional',
+                'page_description' => 'Acompanhe tarefas laboratoriais por etapa, responsável, prioridade e evidência, sem perder rastreabilidade.',
+                'board_description' => 'Organize tarefas laboratoriais por etapa, responsável e prioridade, mantendo a equipa alinhada e o trabalho rastreável.',
                 'page_create_description' => 'A criar o quadro:',
                 'page_update_description' => 'A modificar a quadro:',
                 'name' => 'Nome - Quadro',
@@ -2205,12 +2429,16 @@ return [
                 'bgcolor' => 'Cor do Fundo',
                 'iconcolor' => 'Cor do Ícone',
                 'icon' => 'Ícone',
-                'new_list' => 'Nova Lista', # Add Another List
-                'add_list' => 'Adicionar Lista', # Add List
-                'delete_list' => 'Remover Lista', # Delete List
-                'new_card' => 'Nova Actividade', # Add Card
-                'add_card' => 'Adicionar Actividade', # Add Card
+                'select_icon' => 'Seleccione um ícone',
+                'new_list' => 'Nova Lista', // Add Another List
+                'add_list' => 'Adicionar Lista', // Add List
+                'delete_list' => 'Remover Lista', // Delete List
+                'new_card' => 'Nova Actividade', // Add Card
+                'add_card' => 'Adicionar Actividade', // Add Card
                 'lists' => 'Lista(s)',
+                'board' => 'Quadro',
+                'cards_count' => 'Actividades',
+                'view' => 'Vista',
                 'user_id' => 'Usuário',
                 'board_id' => 'Quadro',
                 'card_list_id' => 'Lista',
@@ -2231,8 +2459,8 @@ return [
                     'lists' => [
                         'name' => 'Nome',
                         'user_id' => 'Usuário',
-                        'board_id' => 'Quadro'
-                    ]
+                        'board_id' => 'Quadro',
+                    ],
                 ],
             ],
             'maintenance_categories' => [
@@ -2370,7 +2598,7 @@ return [
                 'updated_at' => 'Actualizado Em',
                 'active' => 'Activa?',
                 'back' => 'Voltar',
-                'edit' => 'Modificar'
+                'edit' => 'Modificar',
             ],
             'messages' => [
                 'page_title' => 'Mensagens',
@@ -2422,8 +2650,7 @@ return [
                 'notification_settings' => 'Configurações',
                 'types_title' => 'Categoria',
                 'stats_title' => 'Estatística',
-                'notifications_found' => 'Notificações Encontradas'
-
+                'notifications_found' => 'Notificações Encontradas',
 
             ],
             'occurrence_categories' => [
@@ -2460,7 +2687,7 @@ return [
                 'barcode_width' => 'Largura',
                 'barcode_height' => 'Altura',
                 'logo_file' => 'Ficheiro',
-                
+
                 // Tipos
                 'types' => [
                     'equipment' => 'Equipamento',
@@ -2469,7 +2696,7 @@ return [
                     'custom' => 'Personalizado',
                     'all_types' => 'Todos os Tipos',
                 ],
-                
+
                 // Etiquetas
                 'name' => 'Nome',
                 'type' => 'Tipo',
@@ -2496,13 +2723,13 @@ return [
                 'inactive' => 'Inativo',
                 'created_at' => 'Criado em',
                 'updated_at' => 'Atualizado em',
-                
+
                 // Estatísticas
                 'total_labels' => 'Total de Etiquetas',
                 'active_labels' => 'Etiquetas Ativas',
                 'by_type' => 'Por Tipo',
                 'all_types' => 'Todos os Tipos',
-                
+
                 // Formulários
                 'basic_settings' => 'Configurações Básicas',
                 'appearance' => 'Aparência',
@@ -2514,7 +2741,7 @@ return [
                 // 'templates' => 'Modelos',
                 'features' => 'Funcionalidades',
                 'advanced' => 'Avançado',
-                
+
                 // Placeholders
                 'name_placeholder' => 'Insira o nome da etiqueta',
                 'width_placeholder' => 'Largura em mm',
@@ -2523,13 +2750,13 @@ return [
                 'select_lab' => 'Selecionar Laboratório',
                 'select_department' => 'Selecionar Departamento',
                 'preview_text' => 'Pré-visualização da Etiqueta',
-                
+
                 // Alinhamento
                 'align_left' => 'Alinhar à Esquerda',
                 'align_center' => 'Alinhar ao Centro',
                 'align_right' => 'Alinhar à Direita',
                 'align_justify' => 'Justificado',
-                
+
                 // Botões
                 'create_label' => 'Criar Etiqueta',
                 'create_first_label' => 'Criar Primeira Etiqueta',
@@ -2581,7 +2808,7 @@ return [
                 ],
 
                 'actions' => [
-                    'title' => 'Acções'
+                    'title' => 'Acções',
                 ],
 
                 // Estado vazio
@@ -2589,7 +2816,7 @@ return [
                     'title' => 'Nenhuma etiqueta encontrada',
                     'description' => 'Comece por criar o seu primeiro modelo de etiqueta.',
                 ],
-                
+
                 // Funcionalidades
                 'featured' => 'Destacado',
                 'qr_code' => 'Código QR',
@@ -2607,11 +2834,20 @@ return [
                 'created' => 'Etiqueta criada com sucesso.',
                 'updated' => 'Etiqueta atualizada com sucesso.',
                 'deleted' => 'Etiqueta eliminada com sucesso.',
+                'duplicated' => 'Etiqueta duplicada com sucesso.',
                 'status_updated' => 'Estado da etiqueta atualizado.',
                 'template_applied' => 'Modelo aplicado com sucesso.',
+                'generated_from_source' => 'Etiqueta gerada com sucesso a partir da origem.',
                 'pdf_generated' => 'PDF gerado com sucesso.',
+                'pdf_generation_error' => 'Não foi possível gerar o PDF. Verifique os dados da etiqueta e tente novamente.',
+                'print_settings_saved' => 'Configurações de impressão guardadas.',
                 'print_ready' => 'Pronto para imprimir.',
-                
+                'sample_label_content' => 'Conteúdo de exemplo da etiqueta',
+                'confirm_delete_label' => 'Tem certeza que deseja eliminar esta etiqueta?',
+                'confirm_delete_label_irreversible' => 'Tem certeza que deseja eliminar esta etiqueta? Esta ação não pode ser desfeita.',
+                'confirm_apply_template' => 'Aplicar este modelo? As configurações atuais serão substituídas.',
+                'confirm_duplicate_label' => 'Deseja duplicar esta etiqueta?',
+
                 // Configurações de impressão
                 'print_settings' => 'Configurações de Impressão',
                 'include_cutouts' => 'Incluir marcas de corte',
@@ -2628,22 +2864,23 @@ return [
                 'portrait' => 'Retrato',
                 'landscape' => 'Paisagem',
 
-                 // Informação
+                // Informação
                 'cutout_info' => 'Marcas de corte ajudam no alinhamento durante o processo de corte.',
                 'print_quality' => 'Qualidade de Impressão',
                 'high_quality' => 'Alta Qualidade',
                 'normal' => 'Normal',
                 'draft' => 'Rascunho',
-                
+
                 // Erros
                 'error_generating_pdf' => 'Erro ao gerar PDF',
                 'error_no_data' => 'Nenhum dado fornecido para geração',
                 'error_invalid_template' => 'Modelo de etiqueta inválido',
-                
+                'validation_error' => 'Existem campos inválidos nas configurações de impressão.',
+
                 // Sucesso
                 'success_operations' => 'Operações realizadas com sucesso',
                 'success_print_job' => 'Trabalho de impressão enviado',
-                
+
                 // Avisos
                 'warning_cutouts' => 'As marcas de corte podem não ser visíveis em todas as impressoras',
                 'warning_margin' => 'Verifique as margens da sua impressora',
@@ -2660,7 +2897,7 @@ return [
                 'bottom' => 'Base',
                 'right' => 'Direita',
                 'center' => 'Centro',
-                
+
                 // Variáveis dinâmicas
                 'dynamic_variables' => 'Variáveis Dinâmicas',
                 'variable_name' => '{nome} - Nome do item',
@@ -2679,7 +2916,7 @@ return [
                 'download_pdf' => 'Descarregar PDF',
                 'open_pdf' => 'Abrir PDF',
                 'print_pdf' => 'Imprimir PDF',
-                
+
                 // Template
                 'apply_template' => 'Aplicar Modelo',
                 'save_as_template' => 'Guardar como Modelo',
@@ -2696,7 +2933,7 @@ return [
                     'safety' => 'Segurança',
                     'general' => 'Geral',
                 ],
-                
+
                 // Informação do sistema
                 'system_info' => 'Informação do Sistema',
                 'last_used' => 'Última utilização',
@@ -2719,94 +2956,94 @@ return [
                     'font_size_max' => 'O tamanho máximo da fonte é 72',
                 ],
 
-                    'templates' => [
-                        'title' => 'Modelos de Etiquetas',
-                        'description' => 'Gerir modelos de etiquetas predefinidos',
-                        'create_title' => 'Criar Novo Modelo',
-                        'create_description' => 'Criar um novo modelo de etiqueta',
-                        'edit_title' => 'Editar Modelo',
-                        'edit_description' => 'Modificar o modelo',
-                        
-                        // Categories
-                        'categories' => [
-                            'equipment' => 'Equipamento',
-                            'consumables' => 'Consumíveis',
-                            'samples' => 'Amostras',
-                            'storage' => 'Armazenamento',
-                            'safety' => 'Segurança',
-                            'general' => 'Geral',
-                            'custom' => 'Personalizado',
-                        ],
-                        
-                        // Labels
-                        'name' => 'Nome',
-                        'description' => 'Descrição',
-                        'category' => 'Categoria',
-                        'status' => 'Estado',
-                        'active' => 'Ativo',
-                        'inactive' => 'Inativo',
-                        'featured' => 'Destacado',
-                        'list' => 'Lista de Modelos',
-                        'search' => 'Pesquisar',
-                        'search_placeholder' => 'Pesquisar modelos...',
-                        'all_categories' => 'Todas as Categorias',
-                        'all_status' => 'Todos os Estados',
-                        'all' => 'Todos',
-                        'featured_only' => 'Apenas Destacados',
-                        'not_featured' => 'Não Destacados',
-                        
-                        // Stats
-                        'total_templates' => 'Total de Modelos',
-                        'active_templates' => 'Modelos Ativos',
-                        'featured_templates' => 'Modelos Destacados',
-                        
-                        // Forms
-                        'basic_info' => 'Informação Básica',
-                        'template_data' => 'Dados do Modelo',
-                        'template_preview' => 'Pré-visualização',
-                        'settings' => 'Configurações',
-                        'stats' => 'Estatísticas',
-                        
-                        // Placeholders
-                        'name_placeholder' => 'Nome do modelo',
-                        'description_placeholder' => 'Descrição do modelo',
-                        'select_category' => 'Selecionar Categoria',
-                        'select_lab' => 'Selecionar Laboratório',
-                        'select_label' => 'Selecionar Etiqueta',
-                        'sample_content' => 'Conteúdo de exemplo...',
-                        
-                        // Actions
-                        'select_from_label' => 'Selecionar de Etiqueta Existente',
-                        'or_manual_entry' => 'Ou Introdução Manual',
-                        'apply_data' => 'Aplicar Dados',
-                        
-                        // Settings
-                        'is_active' => 'Ativo',
-                        'is_featured' => 'Destacado',
-                        'active_description' => 'Modelo disponível para utilização',
-                        'featured_description' => 'Destacar este modelo na lista',
-                        
-                        // Preview
-                        'preview' => 'Pré-visualização',
-                        'features' => 'Funcionalidades',
-                        'current_data' => 'Dados Atuais',
-                        'template_data_note' => 'Os dados do modelo não podem ser editados aqui',
-                        'usage_note' => 'Este modelo pode ser aplicado a qualquer etiqueta',
-                        
-                        // Dates
-                        'created_at' => 'Criado em',
-                        'updated_at' => 'Atualizado em',
-                        
-                        // Empty state
-                        'empty_state' => [
-                            'title' => 'Nenhum modelo encontrado',
-                            'description' => 'Comece por criar o seu primeiro modelo de etiqueta.',
-                        ],
-                        
-                        // Messages
-                        'no_description' => 'Sem descrição',
+                'templates' => [
+                    'title' => 'Modelos de Etiquetas',
+                    'description' => 'Gerir modelos de etiquetas predefinidos',
+                    'create_title' => 'Criar Novo Modelo',
+                    'create_description' => 'Criar um novo modelo de etiqueta',
+                    'edit_title' => 'Editar Modelo',
+                    'edit_description' => 'Modificar o modelo',
+
+                    // Categories
+                    'categories' => [
+                        'equipment' => 'Equipamento',
+                        'consumables' => 'Consumíveis',
+                        'samples' => 'Amostras',
+                        'storage' => 'Armazenamento',
+                        'safety' => 'Segurança',
+                        'general' => 'Geral',
+                        'custom' => 'Personalizado',
                     ],
 
+                    // Labels
+                    'name' => 'Nome',
+                    'description' => 'Descrição',
+                    'category' => 'Categoria',
+                    'status' => 'Estado',
+                    'active' => 'Ativo',
+                    'inactive' => 'Inativo',
+                    'featured' => 'Destacado',
+                    'list' => 'Lista de Modelos',
+                    'search' => 'Pesquisar',
+                    'search_placeholder' => 'Pesquisar modelos...',
+                    'all_categories' => 'Todas as Categorias',
+                    'all_status' => 'Todos os Estados',
+                    'all' => 'Todos',
+                    'featured_only' => 'Apenas Destacados',
+                    'not_featured' => 'Não Destacados',
+
+                    // Stats
+                    'total_templates' => 'Total de Modelos',
+                    'active_templates' => 'Modelos Ativos',
+                    'featured_templates' => 'Modelos Destacados',
+
+                    // Forms
+                    'basic_info' => 'Informação Básica',
+                    'template_data' => 'Dados do Modelo',
+                    'template_preview' => 'Pré-visualização',
+                    'settings' => 'Configurações',
+                    'stats' => 'Estatísticas',
+
+                    // Placeholders
+                    'name_placeholder' => 'Nome do modelo',
+                    'description_placeholder' => 'Descrição do modelo',
+                    'select_category' => 'Selecionar Categoria',
+                    'select_lab' => 'Selecionar Laboratório',
+                    'select_label' => 'Selecionar Etiqueta',
+                    'sample_content' => 'Conteúdo de exemplo...',
+
+                    // Actions
+                    'select_from_label' => 'Selecionar de Etiqueta Existente',
+                    'or_manual_entry' => 'Ou Introdução Manual',
+                    'apply_data' => 'Aplicar Dados',
+
+                    // Settings
+                    'is_active' => 'Ativo',
+                    'is_featured' => 'Destacado',
+                    'active_description' => 'Modelo disponível para utilização',
+                    'featured_description' => 'Destacar este modelo na lista',
+
+                    // Preview
+                    'preview' => 'Pré-visualização',
+                    'features' => 'Funcionalidades',
+                    'current_data' => 'Dados Atuais',
+                    'template_data_note' => 'Os dados do modelo não podem ser editados aqui',
+                    'usage_note' => 'Este modelo pode ser aplicado a qualquer etiqueta',
+
+                    // Dates
+                    'created_at' => 'Criado em',
+                    'updated_at' => 'Atualizado em',
+
+                    // Empty state
+                    'empty_state' => [
+                        'title' => 'Nenhum modelo encontrado',
+                        'description' => 'Comece por criar o seu primeiro modelo de etiqueta.',
+                    ],
+
+                    // Messages
+                    'no_description' => 'Sem descrição',
+                    'confirm_delete_template' => 'Tem certeza que deseja eliminar este modelo? Esta ação não pode ser desfeita.',
+                ],
 
             ],
             'vap_non_conformities' => [
@@ -2828,7 +3065,7 @@ return [
                 'all_severities' => 'Todas as severidades',
                 'all_categories' => 'Todas as categorias',
                 'status' => 'Estado',
-                
+
                 'nc_number' => 'Número da NC',
                 'nc_number_placeholder' => 'Ex => NC-202401-0001',
                 // 'title' => 'Título',
@@ -2867,14 +3104,14 @@ return [
                     'high' => 'Alta',
                     'critical' => 'Crítica',
                 ],
-                
+
                 'basic_info' => 'Informações Básicas',
                 'related_entities' => 'Entidades Relacionadas',
                 'related_info' => 'Informações Relacionadas',
                 'timeline_assignment' => 'Cronograma e Atribuição',
                 'timeline' => 'Cronograma',
                 'additional_info' => 'Informações Adicionais',
-                
+
                 'sample_id' => 'ID da Amostra',
                 'sample_id_placeholder' => 'ID da amostra relacionada',
                 'test_method' => 'Método de Teste',
@@ -2883,7 +3120,7 @@ return [
                 'equipment_id_placeholder' => 'ID do equipamento relacionado',
                 'batch_number' => 'Número do Lote',
                 'batch_number_placeholder' => 'Número do lote',
-                
+
                 'reported_by' => 'Reportado por',
                 'reported_by_placeholder' => 'Nome do responsável pelo relato',
                 'assigned_to' => 'Atribuído para',
@@ -2894,7 +3131,9 @@ return [
                 'closed_at' => 'Data de Fechamento',
                 'created_at' => 'Criado em',
                 'updated_at' => 'Atualizado em',
-                
+                'last_updated' => 'Última atualização',
+                'never' => 'Nunca',
+
                 'corrective_actions' => 'Ações Corretivas',
                 'action' => 'Ação',
                 'actions_count' => 'Ações',
@@ -2908,7 +3147,7 @@ return [
                 'due' => 'Vencimento',
                 'no_due_date' => 'Sem data de vencimento',
                 'approved' => 'Aprovado',
-                
+
                 'attachments_notes' => 'Anexos e Observações',
                 'root_cause' => 'Causa Raiz',
                 'root_cause_placeholder' => 'Descreva a causa raiz identificada',
@@ -2916,14 +3155,14 @@ return [
                 'preventive_actions_placeholder' => 'Descreva as ações preventivas tomadas',
                 'comments' => 'Comentários',
                 'comments_placeholder' => 'Observações adicionais',
-                
+
                 'stats' => [
                     'total' => 'Total de NCs',
                     'open' => 'NCs Abertas',
                     'critical' => 'NCs Críticas',
-                    'overdue' => 'NCs Atrasadas'
+                    'overdue' => 'NCs Atrasadas',
                 ],
-  
+
                 'buttons' => [
                     'new_non_conformity' => 'Nova Não Conformidade',
                     'apply_filters' => 'Aplicar Filtros',
@@ -2945,7 +3184,7 @@ return [
                     'actions' => 'Ações',
                     'processing' => 'Processando...',
                     'export' => 'Exportar',
-                    'download' => 'Download'
+                    'download' => 'Download',
                 ],
 
                 'export' => [
@@ -2957,37 +3196,37 @@ return [
                     'pdf_details' => 'PDF (Detalhes)',
                     'exporting' => 'Exportando...',
                     'export_success' => 'Exportação concluída com sucesso',
-                    'export_error' => 'Erro ao exportar'
+                    'export_error' => 'Erro ao exportar',
                 ],
-                
+
                 'actions' => [
-                    'title' => 'Acções'
+                    'title' => 'Acções',
                 ],
-                
+
                 'stats' => [
                     'title' => 'Estatísticas',
                     'total_items' => 'Total de Itens',
                     'open' => 'Aberta',
-                
+
                     'total' => 'Total',
                     'critical' => 'Crítico',
                     'overdue' => 'Fora do Prazo',
                 ],
-                
+
                 'general' => [
                     'items' => 'itens',
                     'item' => 'item',
                     'unnamed_item' => 'Item sem nome',
                     'new' => 'Nova',
                 ],
-                
+
                 'messages' => [
                     'empty_state' => [
-                    'title' => 'Nenhum item encontrado',
-                    'description' => 'Comece adicionando um novo item.'
-                    ]
+                        'title' => 'Nenhum item encontrado',
+                        'description' => 'Comece adicionando um novo item.',
+                    ],
                 ],
-                
+
                 'status' => [
                     'title' => 'Estado',
                     'field1' => 'Estado do Formulário',
@@ -2998,13 +3237,13 @@ return [
                     'in_progress' => 'Em Curso',
                     'resolved' => 'Resolvida',
                     'closed' => 'Fechada',
-                ]
+                ],
             ],
             'vap_labs' => [
                 'title' => 'Laboratórios',
                 'manage_labs_description' => 'Gerencie e organize informações, atribuições e configurações de laboratórios.',
                 'description' => 'Gerencie todos os laboratórios do sistema, incluindo informações de contato, pessoal e localização.',
-                
+
                 // Rótulos do Formulário
                 'basic_info' => 'Informações Básicas',
                 'name' => 'Nome do Laboratório',
@@ -3027,7 +3266,7 @@ return [
                 'select_technical_head' => 'Selecionar Chefe Técnico',
                 'department' => 'Departamento',
                 'select_department' => 'Selecionar Departamento',
-                
+
                 // Lista e Tabela
                 'list_title' => 'Lista de Laboratórios',
                 'items' => 'laboratórios',
@@ -3036,7 +3275,7 @@ return [
                 'lab_hierarchy' => 'Hierarquia de Laboratórios',
                 'parent_lab' => 'Laboratório Pai',
                 'sub_labs' => 'Sub-Laboratórios',
-                
+
                 // Status e Informações
                 'no_description' => 'Nenhuma descrição fornecida.',
                 'no_supervisor_assigned' => 'Nenhum supervisor atribuído',
@@ -3044,7 +3283,7 @@ return [
                 'created_at' => 'Criado em',
                 'updated_at' => 'Atualizado em',
                 'last_updated' => 'Última atualização',
-                
+
                 // Estatísticas
                 'stats' => [
                     'title' => 'Estatísticas',
@@ -3058,7 +3297,7 @@ return [
                     'last_updated' => 'Última Atualização',
                     'available_supervisors' => 'Supervisores Disponíveis',
                 ],
-                
+
                 // Mensagens de Estado Vazio
                 'messages' => [
                     'empty_labs' => [
@@ -3071,62 +3310,62 @@ return [
                     ],
                 ],
 
-                    'items' => 'itens',
-                    'item' => 'item',
-                    'unnamed_item' => 'Item Sem Nome',
-                    'not_specified' => 'Não especificado',
-                    'not_assigned' => 'Não atribuído',
-                    'no_department' => 'Sem departamento',
-                    
-                    // Status
-                    'status' => [
-                        'title' => 'Estado',
-                        'active' => 'Ativo',
-                        'inactive' => 'Inativo',
-                        'complete' => 'Completo',
-                        'incomplete' => 'Incompleto',
-                        'basic_info' => 'Informações Básicas',
-                        'contact_info' => 'Informações de Contacto',
-                        'staff_assignment' => 'Atribuição de Quadros',
+                'items' => 'itens',
+                'item' => 'item',
+                'unnamed_item' => 'Item Sem Nome',
+                'not_specified' => 'Não especificado',
+                'not_assigned' => 'Não atribuído',
+                'no_department' => 'Sem departamento',
+
+                // Status
+                'status' => [
+                    'title' => 'Estado',
+                    'active' => 'Ativo',
+                    'inactive' => 'Inativo',
+                    'complete' => 'Completo',
+                    'incomplete' => 'Incompleto',
+                    'basic_info' => 'Informações Básicas',
+                    'contact_info' => 'Informações de Contacto',
+                    'staff_assignment' => 'Atribuição de Quadros',
+                ],
+
+                // Tabela
+                'table' => [
+                    'name' => 'Nome',
+                    'code' => 'Código',
+                    'location' => 'Localização',
+                    'supervisor' => 'Supervisor',
+                    'status' => 'Status',
+                    'actions' => 'Ações',
+                ],
+
+                // Busca e Filtros
+                'search' => [
+                    'placeholder' => 'Buscar laboratórios...',
+                ],
+
+                'filters' => [
+                    'all_status' => 'Todos os Status',
+                    'active' => 'Ativos',
+                    'inactive' => 'Inativos',
+                ],
+
+                // Paginação
+                'pagination' => [
+                    'showing' => 'Mostrando',
+                    'of' => 'de',
+                    'previous' => 'Anterior',
+                    'next' => 'Próximo',
+                ],
+
+                // Modal
+                'modal' => [
+                    'delete_lab' => [
+                        'title' => 'Confirmar Exclusão',
+                        'message' => 'Tem certeza que deseja excluir este laboratório? Esta ação não pode ser desfeita.',
                     ],
-                    
-                    // Tabela
-                    'table' => [
-                        'name' => 'Nome',
-                        'code' => 'Código',
-                        'location' => 'Localização',
-                        'supervisor' => 'Supervisor',
-                        'status' => 'Status',
-                        'actions' => 'Ações',
-                    ],
-                    
-                    // Busca e Filtros
-                    'search' => [
-                        'placeholder' => 'Buscar laboratórios...',
-                    ],
-                    
-                    'filters' => [
-                        'all_status' => 'Todos os Status',
-                        'active' => 'Ativos',
-                        'inactive' => 'Inativos',
-                    ],
-                    
-                    // Paginação
-                    'pagination' => [
-                        'showing' => 'Mostrando',
-                        'of' => 'de',
-                        'previous' => 'Anterior',
-                        'next' => 'Próximo',
-                    ],
-                    
-                    // Modal
-                    'modal' => [
-                        'delete_lab' => [
-                            'title' => 'Confirmar Exclusão',
-                            'message' => 'Tem certeza que deseja excluir este laboratório? Esta ação não pode ser desfeita.',
-                        ],
-                    ],
-                
+                ],
+
                 // Botões
                 'buttons' => [
                     'add_lab' => 'Adicionar Laboratório',
@@ -3137,7 +3376,7 @@ return [
                     'view_details' => 'Ver Detalhes',
                     'back_to_labs' => 'Voltar para Laboratórios',
                     'reset' => 'Redefinir',
-                    'save_lab' => 'Registar'
+                    'save_lab' => 'Registar',
                 ],
 
                 'actions' => [
@@ -3202,6 +3441,16 @@ return [
                 'size' => 'Tamanho',
                 'modified' => 'Modificado',
                 'actions' => 'Acções',
+                'missing_document_number' => 'Sem número documental',
+                'missing_revision' => 'Sem revisão',
+                'select_single_document_hint' => 'Seleccione um único documento na lista para ver o resumo de controlo, o estado da revisão e os próximos passos operacionais.',
+                'select_document_workflow_hint' => 'Seleccione um documento para acompanhar revisão, aprovação, publicação e comentários operacionais.',
+                'no_active_workflow_tasks' => 'Nenhuma tarefa activa para o documento seleccionado.',
+                'no_due_date' => 'Sem prazo',
+                'document_type_placeholder' => 'SOP, IT, Procedimento...',
+                'tags_empty' => 'Ainda não existem etiquetas atribuídas a este ficheiro.',
+                'tag_placeholder' => 'Ex.: procedimento, certificado, revisão anual',
+                'no_versions_title' => 'Ainda não existem revisões',
                 'archived_items' => [
                     'page_title' => 'Itens Arquivados',
                     'no_items_found' => 'Nenhum item arquivado encontrado',
@@ -3305,6 +3554,10 @@ return [
                     'folder_override_confirmation' => 'Uma pasta com o mesmo nome já existe no destino. Deseja substituir a pasta existente?',
                     'task_updated' => 'Tarefa atualizada com sucesso',
                     'task_comment_added' => 'Comentário adicionado com sucesso',
+                    'metadata_updated' => 'Metadados documentais actualizados.',
+                    'document_submitted_for_review' => 'Documento submetido para revisão.',
+                    'document_approved' => 'Documento aprovado e efetivado.',
+                    'document_obsolete' => 'Documento marcado como obsoleto.',
                     'error_uploading_file' => 'Erro ao carregar o arquivo',
                     'error_uploading_folder' => 'Erro ao carregar a pasta',
                     'error_deleting_file' => 'Erro ao deletar o arquivo',
@@ -3366,7 +3619,12 @@ return [
                     'error_fetching_workflow_tasks' => 'Falha ao buscar tarefas de fluxo de trabalho',
                     'error_creating_task' => 'Falha ao criar tarefa',
                     'error_updating_task' => 'Falha ao atualizar tarefa',
-                    'error_adding_task_comment' => 'Erro ao adicionar comentário'
+                    'error_adding_task_comment' => 'Erro ao adicionar comentário',
+                    'error_updating_tags' => 'Erro ao atualizar as etiquetas',
+                    'error_updating_metadata' => 'Não foi possível atualizar os metadados documentais.',
+                    'error_submitting_review' => 'Não foi possível submeter o documento para revisão.',
+                    'error_approving_document' => 'Não foi possível aprovar o documento.',
+                    'error_marking_obsolete' => 'Não foi possível marcar o documento como obsoleto.',
 
                 ],
             ],
@@ -3624,7 +3882,7 @@ return [
                 'empty_state' => [
                     'parameters_title' => 'Parâmetro(s)',
                     'parameters_description' => 'Sem nenhum parâmetro para apresentar',
-                    'dilutions' => 'Sem Diluições'
+                    'dilutions' => 'Sem Diluições',
                 ],
                 'validation' => 'Validação',
                 'required_fields' => 'Campos Obrigatórios',
@@ -3639,7 +3897,7 @@ return [
                 'created_at' => 'Criado Em',
                 'updated_at' => 'Modificado Em',
                 'active' => 'Activo?',
-                'in_matrixes' => 'Em Matrizes'
+                'in_matrixes' => 'Em Matrizes',
 
             ],
             'proposals' => [
@@ -3754,7 +4012,7 @@ return [
                     'generate_new_version' => 'Gerar Nova Versão',
                     'documents' => 'Documentos',
                     'activity_history' => 'Histórico de Actividades',
-                    'certificate_details' => 'Dados do Certificado'
+                    'certificate_details' => 'Dados do Certificado',
                 ],
                 'actions' => 'Acções',
                 'documents' => 'Documentos',
@@ -3940,7 +4198,14 @@ return [
             'samples' => [
                 'page_title' => 'Amostras',
                 'cl_id' => 'Código de Laboratório',
+                'code' => 'Código da Amostra',
                 'parameters' => 'Parâmetros',
+                'legacy_description' => 'Fila legada de amostras laboratoriais. A criação e o planeamento operacional devem começar pela Entrada de Amostra para manter rastreabilidade entre cliente, colheita, análise e relatório.',
+                'records' => 'Registos',
+                'main_flow' => 'Fluxo principal',
+                'active_filters' => 'Filtros ativos',
+                'worksheet_title' => 'Folha de trabalho por parâmetros',
+                'worksheet_description' => 'Selecione parâmetros para gerar a folha operacional. As opções são carregadas por JSON seguro para evitar respostas HTML na consola.',
             ],
             'standards' => [
                 'page_title' => 'Normativas',
@@ -4085,7 +4350,7 @@ return [
                 'search_activity' => 'Pesquisar Actividade',
                 'department_id' => 'Departamento',
                 'number_plate' => 'Identificação',
-                'description' => 'Descrição', 
+                'description' => 'Descrição',
                 'no_activities_found' => 'Nenhuma atividade encontrada',
                 'adjust_filters_or_try_again' => 'Ajuste os filtros ou tente novamente',
                 'total' => 'Total',
@@ -4142,7 +4407,7 @@ return [
             ],
             'equipment_connection_test' => [
                 'page_title' => 'Teste de Conexão de Equipamentos',
-                'connection_type' => 'Seleccione o Tipo de Conexão'
+                'connection_type' => 'Seleccione o Tipo de Conexão',
             ],
             'tax_authority' => [
                 'page_title' => 'AGT',
@@ -4169,16 +4434,34 @@ return [
             ],
             'import_certificates' => [
                 'page_title' => 'Fitosanitários Para Importação',
+                'module_label' => 'Comercial',
+                'overview_description' => 'Gestão dos certificados de importação com rastreio documental, emissão fiscal e consulta rápida por estado.',
+                'visible_records' => 'Visíveis',
+                'selection' => 'Selecção',
+                'archived' => 'Arquivado',
+                'certificate_status' => 'Certificado',
                 'page_create_description' => 'A criar o certificado de fitossanitários para importação:',
                 'page_view_description' => 'A visualizar o certificado de fitossanitários para importação:',
                 'page_update_description' => 'A modificar o certificado de fitossanitários para importação:',
                 'certificate_settings' => 'Configurações do Certificado',
                 'placeholders' => [
                     'cert_no' => 'Digite o número do certificado',
+                    'transport_type' => 'Selecione o tipo de transporte',
                     'port_exit' => 'Digite o porto/posto de saída',
                     'port_entry' => 'Digite o porto/posto de entrada',
-                    'destination_country' => 'Digite o país de destino',
+                    'destination_country' => 'Selecione o país de destino',
+                    'importer' => 'Selecione o importador',
+                    'importer_warehouse' => 'Selecione o armazém do importador',
+                    'exporter' => 'Selecione o exportador',
+                    'exporter_warehouse' => 'Selecione o armazém do exportador',
+                    'currency' => 'Selecione a moeda',
+                    'invoice' => 'Selecione a fatura, se aplicável',
                     'authorized_personnel' => 'Digite o pessoal autorizado',
+                    'product' => 'Selecione o produto',
+                    'origin' => 'Digite a origem',
+                    'validity' => 'Digite a validade',
+                    'lot' => 'Digite o número do lote',
+                    'bl_no' => 'Digite o número BL',
                     'observations' => 'Digite as observações',
                 ],
                 'certificate_details' => 'Detalhes do Certificado',
@@ -4336,7 +4619,7 @@ return [
                     'CORRECTED' => 'CORRIGIDO',
                     'REISSUED' => 'REEMITIDO',
                     'WITHDRAWN' => 'RETIRADO',
-                    'CORRECTION' => 'CORRECÇÃO'
+                    'CORRECTION' => 'CORRECÇÃO',
                 ],
                 'change_types' => [
                     'UPDATED' => 'ACTUALIZADO',
@@ -4365,7 +4648,7 @@ return [
                     'change_summary' => 'Resumo das Modificações',
 
                     'impact' => [
-                        'undefined' => 'Não Definido'
+                        'undefined' => 'Não Definido',
                     ],
 
                     'total_differences' => 'Total de Diferenças',
@@ -4402,7 +4685,6 @@ return [
                 'apply_filters' => 'Aplicar Filtros',
                 'clear_filters' => 'Limpar Filtros',
                 'export_logs' => 'Exportar Registos',
-                
 
                 'restore' => [
                     'title' => 'Restaurar Revisão ISO',
@@ -4498,13 +4780,18 @@ return [
                 'expand_all' => 'Expandir Tudo',
                 'collapse_all' => 'Recolher Tudo',
                 'print' => 'Imprimir',
-                'save_comparison' => 'Guardar Comparação'
-
+                'save_comparison' => 'Guardar Comparação',
 
             ],
 
             'export_certificates' => [
                 'page_title' => 'Fitosanitários Para Exportação',
+                'module_label' => 'Comercial',
+                'overview_description' => 'Certificados de exportação com rastreio comercial, emissão controlada e consulta por estado num fluxo único.',
+                'visible_records' => 'Visíveis',
+                'selection' => 'Selecção',
+                'archived' => 'Arquivado',
+                'certificate_status' => 'Certificado',
                 'page_create_description' => 'A criar o certificado de fitossanitários para exportação:',
                 'page_view_description' => 'A visualizar o certificado de fitossanitários para exportação:',
                 'page_update_description' => 'A modificar o certificado de fitossanitários para exportação:',
@@ -4541,6 +4828,13 @@ return [
                     'enter_origin_city' => 'Digite a cidade de origem',
                     'enter_destination_city' => 'Digite a cidade de destino',
                     'enter_expedition_location' => 'Digite o local da expedição',
+                    'exporter' => 'Selecione o exportador',
+                    'warehouse' => 'Selecione o armazém',
+                    'transport_type' => 'Selecione o tipo de transporte',
+                    'country' => 'Selecione o país',
+                    'authorized_personnel' => 'Digite o pessoal autorizado',
+                    'invoice' => 'Selecione a fatura, se aplicável',
+                    'product' => 'Selecione o produto',
                     'observations' => 'Digite as observações',
                     'cert_no' => 'Digite o número do certificado',
                 ],
@@ -4599,17 +4893,17 @@ return [
                     'general' => [
                         'system' => [
                             'title' => 'Sistema',
-                            'description' => 'Informações relacionadas ao sistema GESTLAB'
+                            'description' => 'Informações relacionadas ao sistema GESTLAB',
                         ],
                         'customer' => [
                             'title' => 'Cliente',
-                            'description' => 'Informações relacionadas ao cliente.'
+                            'description' => 'Informações relacionadas ao cliente.',
                         ],
                         'lang_date' => [
                             'title' => 'Idioma e Data',
-                            'description' => 'Escolha o idioma e formato de data a usar em toda a sua conta.'
+                            'description' => 'Escolha o idioma e formato de data a usar em toda a sua conta.',
                         ],
-                    ]
+                    ],
                 ],
                 'app_name' => 'Nome',
                 'app_agt_valid_name' => 'Nome Reconhecido pela AGT',
@@ -4632,10 +4926,11 @@ return [
                 'date_format' => 'Formato da Data',
             ],
 
-        ]
+        ],
     ],
 
     'menu' => [
+        'navigation' => 'Navegação',
         'app_events' => 'Eventos do Sistema',
         'app_event_email_templates' => 'Modelos de Email do Sistema',
         'dashboard' => 'Dashboard',
@@ -4693,6 +4988,7 @@ return [
         'tax_types' => 'Tipos de Impostos',
         'tax_exemptions' => 'Motivos de Isenção',
         'tax_authority' => 'AGT',
+        'tax_identification' => 'Consulta de NIF',
         'analysis_reports' => 'Boletins',
         'quality_certificates' => 'Boletins de Análise',
         'samples' => 'Amostras',
@@ -4730,8 +5026,26 @@ return [
         'analysis' => 'Análises',
         'analysis_categories' => 'Tipos de Análises',
         'pending_samples' => 'Amostras Pendentes',
+        'sample_reports' => 'Relatórios de Amostras',
+        'internal_quality_control' => 'CQ interno / Matéria-prima',
         'proposals' => 'Propostas',
         'proposal_templates' => 'Modelos de Proposta',
+        'report_studios' => 'Studios de Relatório',
+        'environmental_conditions' => 'Condições Ambientais',
+        'lab_non_conformities' => 'Não Conformidades Laboratoriais',
+        'lab_needs' => 'Necessidades Laboratoriais',
+        'inventory_analytics' => 'Análise de Inventário',
+        'quality_compliance' => 'Qualidade e Conformidade',
+        'qms' => 'SGQ',
+        'staff_competence' => 'Competência do Pessoal',
+        'supplier_assessments' => 'Avaliação de Fornecedores',
+        'responsibility_matrix' => 'Matriz de Responsabilidades',
+        'uncertainty_sources' => 'Fontes de Incerteza',
+        'lab_operations' => 'Operações Laboratoriais',
+        'labs' => 'Laboratórios',
+        'labels' => 'Etiquetas',
+        'document_manager' => 'Gestor Documental',
+        'system' => 'Sistema',
         'proposal_compliance_agreements' => 'Acordos de Compliance de Propostas',
         'ratings' => 'Avaliações',
         'rating_requests' => 'Solicitações de Avaliação',
@@ -4747,7 +5061,7 @@ return [
         'cardlists' => 'Listas dos Quadros Kanban',
         'boardcards' => 'Cartões dos Quadros Kanban',
         'files' => 'Documentos / Ficheiros',
-        'temperatures' => 'Temperaturas'
+        'temperatures' => 'Temperaturas',
     ],
 
     'stats' => [
@@ -4782,8 +5096,8 @@ return [
             ],
             'profiles' => [
                 'title' => 'Perfís',
-            ]
             ],
+        ],
         'collections' => [
             'title' => 'Colheitas',
             'total_number_collections' => 'Total de colheitas',
@@ -4795,7 +5109,8 @@ return [
     ],
 
     'quick_menu' => [
-        'title' => 'MENU | ACESSO RÁPIDO',
+        'title' => 'Acesso rápido',
+        'description' => 'Atalhos para processos críticos do laboratório e gestão ISO 17025.',
         'access' => 'Aceder',
         'items' => 'Itens',
         'show' => 'Mostrar',
@@ -4805,155 +5120,168 @@ return [
         'boards' => [
             'customers' => [
                 'title' => 'Clientes',
-                'description' => 'Os clientes são a base de qualquer empresa. Sem eles, as empresas não existiriam. Eles são importantes porque ajudam a reduzir custos, aumentar as vendas e melhorar a reputação da marca.'
+                'description' => 'Gestão de entidades, contactos, propostas, portal e histórico comercial.',
             ],
             'collections' => [
                 'title' => 'Colheitas',
-                'description' => 'As colheitas de amostras ajudam a garantir que os resultados das análises sejam precisos e confiáveis. Por isso, é importante que as amostras sejam coletadas e preparadas corretamente antes de serem analisadas.'
+                'description' => 'Registo de recolhas directas ou programadas ligadas à entrada de amostras.',
             ],
             'standards' => [
                 'title' => 'Normas',
-                'description' => 'As normas são importantes porque permitem às pessoas estabelecerem os parâmetros que vão guiar os seus julgamentos, suas relações sociais e atividades profissionais, visando a adequação dos comportamentos individuais e os coletivos.'
+                'description' => 'Métodos, referências normativas e critérios técnicos usados nos ensaios.',
             ],
             'invoices' => [
                 'title' => 'Facturas',
-                'description' => 'As facturas são importantes porque são documentos que comprovam a compra ou venda de um produto ou serviço. Elas são usadas para fins fiscais e contábeis, e ajudam a manter um registro preciso das transações financeiras.'
+                'description' => 'Documentos comerciais, pagamentos, recibos e emissão fiscal controlada.',
             ],
             'proposals' => [
                 'title' => 'Propostas',
-                'description' => 'As propostas comerciais são fundamentais para comunicar o valor dos productos ou serviços oferecidos, alinhando expectativas, construindo credibilidade e servindo como um instrumento estratégico para conquistar a confiança e o comprometimento do cliente.'
+                'description' => 'Propostas técnicas com decisão, escopo, preços, aceitação e evidência.',
             ],
             'protocols' => [
                 'title' => 'Metodologias',
-                'description' => 'As metodologias são importantes porque permitem às pessoas estabelecerem os parâmetros que vão guiar os seus julgamentos, suas relações sociais e atividades profissionais, visando a adequação dos comportamentos individuais e os coletivos.'
+                'description' => 'Procedimentos técnicos que orientam preparação, análise e validação.',
             ],
             'matrixes' => [
                 'title' => 'Matrizes',
-                'description' => 'É importante que as matrizes analíticas sejam selecionadas cuidadosamente para garantir que os resultados das análises sejam precisos e confiáveis. As mesmas permitem agrupar perfis.'
+                'description' => 'Matrizes de análise associadas a produtos, parâmetros e perfis.',
             ],
             'analysis' => [
                 'title' => 'Análises',
-                'description' => 'As análises laboratoriais em amostras são importantes porque fornecem informações valiosas sobre as propriedades físicas e químicas de um material.'
+                'description' => 'Fluxo técnico de ensaios, resultados, validação, aprovação e contra-análise.',
             ],
             'products' => [
                 'title' => 'Produtos',
-                'description' => 'Fornecer produtos e serviços é importante porque permite que as empresas atendam às necessidades e desejos dos clientes. Quando as empresas fornecem produtos e serviços de alta qualidade, elas podem aumentar a satisfação do cliente e a lealdade à marca.'
+                'description' => 'Produtos, serviços pagos e relações com matrizes e parâmetros.',
             ],
             'departments' => [
                 'title' => 'Departamentos / Laboratórios',
-                'description' => 'Os departamentos / laboratórios dentro de uma empresa são importantes porque ajudam a organizar as atividades e funções da empresa. Cada departamento / laboratório tem uma função específica, como finanças, marketing, química, microbiologia, energias renováveis, recursos humanos, produção, vendas, entre outros.'
+                'description' => 'Estrutura organizacional, laboratórios, equipas e responsabilidades.',
             ],
             'formulas' => [
                 'title' => 'Fórmulas / Funções',
-                'description' => 'Criar e avaliar fórmulas antes do uso na análise garante precisão e confiabilidade nos resultados, evitando possíveis erros e interpretações incorretas.'
+                'description' => 'Cálculos controlados para parâmetros que dependem de resultados derivados.',
             ],
             'profiles' => [
                 'title' => 'Perfís',
-                'description' => 'Os perfis são importantes porque permitem agrupar parâmetros a serem analisados por área de análise. Uma amostra poderá necessitar de análises distintas, ex: físico-química e microbiologia.'
+                'description' => 'Agrupamento de parâmetros por matriz, método e necessidade técnica.',
             ],
             'samples' => [
                 'title' => 'Amostras',
-                'description' => 'As amostras são importantes em análises porque fornecem informações sobre as propriedades físicas e químicas de um material. Elas são usadas para determinar a composição, a pureza, a concentração e outras características de um material.'
+                'description' => 'Entrada, rastreabilidade, processamento, resultados e emissão de certificados.',
             ],
             'analysis_reports' => [
-                'title' => 'Boletins e Fitos',
-                'description' => 'Boletins analíticos são importantes porque fornecem informações valiosas sobre o desempenho de uma empresa ou a qualidade de um produto / amostra.'
+                'title' => 'Boletins e certificados',
+                'description' => 'Relatórios analíticos com paginação, assinaturas, QR e evidência técnica.',
             ],
             'kanban' => [
-                'title' => 'Quadro Kanban',
-                'description' => 'O quadro kanban é uma ferramenta de gestão visual que ajuda a organizar e acompanhar as tarefas de um projeto ou processo. Com o quadro kanban, é possível ver o status de cada tarefa, desde o planejamento até a conclusão, e identificar possíveis gargalos ou desperdícios.'
+                'title' => 'Quadro operacional',
+                'description' => 'Tarefas por etapa, responsável, prioridade e evidência de execução.',
             ],
             'media' => [
                 'title' => 'Ficheiros / Documentos',
-                'description' => 'Armazenar e partilhar ficheiros dentro de um sistema é uma forma eficiente de colaborar, trocar informações e aceder facilmente aos dados. Ao armazenar os ficheiros numa localização central, é possível garantir que todos os utilizadores tenham acesso à versão mais recente e evitar a duplicação ou a perda de ficheiros.'
+                'description' => 'Documentos, anexos, versões, validação documental e workflows.',
             ],
             'inventory' => [
                 'title' => 'Inventário',
-                'description' => 'O inventário é uma ferramenta essencial para o controle e a gestão de estoques, pois permite conhecer a quantidade e o valor dos produtos disponíveis, evitar perdas, desperdícios e fraudes, otimizar o atendimento ao cliente e reduzir custos operacionais.'
+                'description' => 'Stock multi-localização, reagentes, equipamentos, consumos e compras.',
             ],
             'metrics' => [
                 'title' => 'Métricas',
-                'description' => 'O monitoramento de métricas ajuda a identificar gargalhos nos processos, permitindo melhorias direcionadas e a alocação adequada de recursos. Além disso, manter tempos de resposta otimizados aumenta a satisfação do cliente e apoia a conformidade com padrões regulatórios, promovendo, em última instância, uma cultura de responsabilidade e excelência dentro do laboratório.'
+                'description' => 'Indicadores operacionais, tempos de resposta, risco e melhoria contínua.',
             ],
             'equipments' => [
                 'title' => 'Equipamentos',
-                'description' => 'Equipamentos devidamente conectados permitem uma transferência de dados perfeita, reduzindo o risco de erro humano e aumentando a eficiência dos fluxos de trabalho laboratoriais.'
+                'description' => 'Cadastro, estado operacional, manutenção, calibração e rastreabilidade.',
             ],
-        ]
+            'qms' => [
+                'title' => 'SGQ',
+                'description' => 'Gestão da qualidade, imparcialidade, confidencialidade e responsabilidades.',
+            ],
+            'labels' => [
+                'title' => 'Etiquetas',
+                'description' => 'Modelos, impressão e geração automática para amostras e inventário.',
+            ],
+        ],
     ],
 
     'pages' => [
         'login' => [
-            'title' => 'Faça login em sua conta',
+            'title' => 'Inicie sessão na sua conta',
             'subtitle' => 'Ou continue com',
             'email_input_title' => 'Endereço de Email',
-            'password_input_title' => 'Senha',
-            'remember_input_title' => 'Lembrar Acesso',
+            'password_input_title' => 'Palavra-passe',
+            'remember_input_title' => 'Manter sessão iniciada',
             'login_button_title' => 'Entrar',
             'client_portal_button_title' => 'Portal do Cliente',
-            'forgot_password' => 'Esqueceu a sua senha?',
+            'forgot_password' => 'Esqueceu a palavra-passe?',
             'or_continue_with' => 'Ou continue com',
             'invalid_credentials' => 'Credenciais inválidas',
             'secured_by' => 'Protegido por',
             'copyright' => '© 2025 GestLab',
             'version' => 'Versão 3.0.0',
             'welcome_back' => 'Bem-vindo de volta!',
-            'welcome_description' => 'Bem-vindo ao GESTLAB V3. Aqui você pode gerir seus clientes, amostras e resultados.',
+            'welcome_description' => 'Bem-vindo ao GestLab. Acompanhe clientes, amostras, resultados e evidências com rigor técnico.',
             'email_placeholder' => 'E-mail',
-            'password_placeholder' => 'Senha',
-            'sign_in' => 'Faça login em sua conta',
+            'password_placeholder' => 'Palavra-passe',
+            'sign_in' => 'Inicie sessão na sua conta',
             'sign_in_description' => 'Insira as suas credenciais para continuar.',
             'or' => 'ou',
-            'access_client_portal' => 'Acesse o portal do cliente',
+            'access_client_portal' => 'Aceder ao portal do cliente',
             'need_help' => 'Precisa de ajuda?',
-            'contact_support' => 'Clique aqui para entrar em contato com o suporte.',
-            'secure_connection' => 'Conexão Segura',
-            'feature1_title' => 'Gerenciamento de Clientes',
-            'feature1_description' => 'Crie, edite e gerencie seus clientes com facilidade.',
-            'feature3_title' => 'Análise de Produtos',
-            'feature3_description' => 'Analise seus produtos com facilidade.',
-            'feature2_title' => 'Análise de Resultados',
-            'feature2_description' => 'Analise seus resultados com facilidade.',
-            'invalid_credentials_title' => 'Credenciais Inválidas',
-            'invalid_credentials_description' => 'As credenciais que você informou não são válidas.',
-            'processing' => 'Processando...',
+            'contact_support' => 'Contacte o suporte.',
+            'secure_connection' => 'Ligação segura',
+            'feature1_title' => 'Gestão de clientes',
+            'feature1_description' => 'Centralize propostas, pedidos, amostras, certificados e comunicações.',
+            'feature3_title' => 'Controlo técnico',
+            'feature3_description' => 'Ligue produtos, matrizes, métodos, parâmetros e evidência do processo.',
+            'feature2_title' => 'Validação de resultados',
+            'feature2_description' => 'Registe resultados, incerteza, verificação, aprovação e contra-análise.',
+            'invalid_credentials_title' => 'Credenciais inválidas',
+            'invalid_credentials_description' => 'As credenciais introduzidas não são válidas.',
+            'processing' => 'A processar...',
         ],
         'portal_login' => [
             'portal_title' => 'Portal do Cliente',
-            'portal_subtitle' => 'Longe, porém Perto.',
-            'portal_slogan' => '“A conveniência é o objetivo final da tecnologia.”',
-            'title' => 'Inicie a sessão',
-            'subtitle' => '',
+            'portal_subtitle' => 'Acompanhe pedidos, propostas e certificados sem perder rastreabilidade.',
+            'portal_slogan' => 'Um espaço seguro para acompanhar propostas, pedidos de análise, documentos comerciais, resultados e certificados emitidos pelo laboratório.',
+            'title' => 'Aceder ao portal',
+            'subtitle' => 'Consulte o estado dos seus processos laboratoriais.',
             'or_continue_with' => 'Ou continue com',
-            'need_help' => 'Precisa de mais informações?',
-            'contact_support' => 'Clique aqui para entrar em contato com o suporte.',
+            'need_help' => 'Precisa de ajuda?',
+            'contact_support' => 'Contacte o suporte.',
             'login_processing' => 'A iniciar sessão...',
             'login_button_title' => 'Entrar',
-            'remember_hint' => 'Lembrar Acesso',
+            'remember_hint' => 'Mantenha a sessão iniciada apenas em dispositivos de confiança.',
+            'required' => 'Campo obrigatório',
+            'email_placeholder' => 'cliente@empresa.co.ao',
+            'password_placeholder' => 'Palavra-passe',
+            'forgot_password' => 'Recuperar acesso',
+            'passkey_processing' => 'A preparar passkey...',
+            'passkey_button' => 'Entrar com passkey',
             'points' => [
                 'first' => [
-                    'title' => 'Acessível.',
-                    'description' => 'Não importa o dispositivo que possui. Basta ter acesso à internet e poderá estar connosco.'
+                    'title' => 'Pedidos e propostas',
+                    'description' => 'Acompanhe propostas, pedidos de análise e estados de amostras num único lugar.',
                 ],
                 'second' => [
-                    'title' => 'Seguro',
-                    'description' => 'A sua segurança é a nossa prioridade. Fique descansado e deixe-nos cuidar dos teus dados.'
+                    'title' => 'Documentos controlados',
+                    'description' => 'Consulte facturas, recibos, certificados e relatórios com histórico e rastreabilidade.',
                 ],
                 'third' => [
-                    'title' => 'Prático',
-                    'description' => 'Os seus documentos, a distância de um clique.'
+                    'title' => 'Comunicação segura',
+                    'description' => 'Receba notificações e responda a solicitações do laboratório sem canais paralelos.',
                 ],
             ],
-            'email_input_title' => 'Endereço de Email / NIF',
-            'password_input_title' => 'Senha',
-            'remember_input_title' => 'Lembrar Acesso',
-            'login_button_title' => 'Entrar',
+            'email_input_title' => 'E-mail ou NIF',
+            'password_input_title' => 'Palavra-passe',
+            'remember_input_title' => 'Manter sessão iniciada',
             'employee_portal_button_title' => 'Portal do Colaborador',
         ],
         'portal_dashboard' => [
             'welcome_message' => 'Bem-vindo(a)',
             'stats' => [
-                'debt' => 'Dívida', 
+                'debt' => 'Dívida',
                 'invoices' => 'Fatura',
                 'quality_certificates' => 'Boletins Analíticos',
                 'contract_guides' => 'Guias de Contratação',
@@ -5013,8 +5341,8 @@ return [
                         'title' => 'O tempo é muito valioso',
                         'caption' => 'Tempo óptimo!',
                         'description' => 'Garantimos tempo de resposta competitivo e sem baixar a qualidade que nos é característico.',
-                    ]
-                ]
+                    ],
+                ],
             ],
             // 'stats' => [
             //     'debt' => 'Dívida',
@@ -5617,6 +5945,49 @@ return [
             ],
         ],
     ],
+    'rating' => [
+        'kicker' => 'Avaliação de serviço',
+        'title' => 'Como foi a sua experiência?',
+        'description' => 'A sua avaliação ajuda a melhorar a rastreabilidade, o atendimento e a qualidade operacional.',
+        'review' => 'Comentário',
+        'review_placeholder' => 'Partilhe observações relevantes sobre atendimento, prazos, comunicação ou qualidade.',
+        'cancel' => 'Cancelar',
+        'saving' => 'A guardar...',
+        'submit' => 'Enviar avaliação',
+        'empty_criteria' => 'Ainda não existem critérios configurados para este tipo de avaliação.',
+        'invalid_rateable' => 'O item a avaliar não foi encontrado.',
+        'no_criteria' => 'Ainda não existem critérios configurados para este tipo de avaliação.',
+        'criteria_mismatch' => 'Responda todos os critérios de avaliação apresentados.',
+        'already_rated' => 'Este item já foi avaliado por este utilizador.',
+        'thank_you' => 'Obrigado pelo seu feedback. A avaliação foi registada com sucesso.',
+        'labels' => [
+            'user' => 'Utilizador',
+            'rateable_type' => 'Tipo de item',
+            'rateable_id' => 'ID do item',
+            'criteria' => 'Critérios',
+            'review' => 'Comentário',
+            'status' => 'Estado',
+            'created_at' => 'Criado em',
+            'name' => 'Critério',
+            'description' => 'Descrição',
+            'type' => 'Tipo',
+            'channel' => 'Canal',
+        ],
+        'subjects' => [
+            'service' => 'Serviço ou processo',
+            'order' => 'Pedido de compra',
+            'proposal' => 'Proposta',
+            'sample_entry' => 'Entrada de amostra',
+            'customer_request' => 'Solicitação do cliente',
+            'quality_certificate' => 'Boletim analítico',
+            'maintenance_task' => 'Manutenção',
+            'paid_service' => 'Serviço',
+        ],
+        'status' => [
+            'pending' => 'Pendente',
+            'completed' => 'Concluído',
+        ],
+    ],
     'portal_menu' => [
         'title' => 'Painel de Navegação',
         'description' => 'Em que lhe podemos ser úteis?',
@@ -5632,5 +6003,5 @@ return [
         'faqs' => 'Perguntas Frequentes',
         'logout' => 'Terminar Sessão',
         'dashboard' => 'Dashboard',
-    ]
+    ],
 ];

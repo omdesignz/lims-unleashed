@@ -3,8 +3,9 @@ import Layout from "@/Shared/Layouts/Layout.vue";
 import RecordsTable from '@/Components/records-table.vue';
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { ref, computed } from "vue";
-import { router } from "@inertiajs/vue3";
+import { Link, router } from "@inertiajs/vue3";
 import { trans } from 'laravel-vue-i18n';
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { EyeIcon } from "@heroicons/vue/24/outline";
 
 
@@ -77,7 +78,7 @@ const showDeleteConfirmation = ref(false);
         preserveScroll: true,
         onSuccess: () => {
             showDeleteConfirmation.value = false;
-            actionId = null;
+            actionId.value = null;
         }
       });
       showDeleteConfirmation.value = false;
@@ -91,7 +92,7 @@ const showDeleteConfirmation = ref(false);
             preserveScroll: true,
             onSuccess: () => {
                 showDeleteConfirmation.value = false;
-                actionId = null;
+                actionId.value = null;
             }
         });
         showDeleteConfirmation.value = false;
@@ -99,6 +100,7 @@ const showDeleteConfirmation = ref(false);
 }  
 </script>
 <template>
+<div class="space-y-6" :class="commercialDocumentThemeClasses">
 <div class="border-b border-gray-200 pb-5">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.iorders.page_title') }}</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500"></p>
@@ -116,4 +118,5 @@ const showDeleteConfirmation = ref(false);
 </records-table> <br>
 
 <confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
+</div>
 </template>

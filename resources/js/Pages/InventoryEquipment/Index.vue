@@ -10,6 +10,7 @@ import { trans } from "laravel-vue-i18n";
 import combobox from "@/Components/combobox.vue";
 import datePicker from "@/Components/date-picker.vue";
 import CommentTextArea from "@/Components/comment-text-area.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ArrowLongRightIcon, ArrowPathRoundedSquareIcon, CheckIcon, PencilIcon, ChevronDownIcon, TrashIcon, ArrowDownTrayIcon, EyeIcon } from "@heroicons/vue/24/outline";
 import equipmentImportForm from "@/Pages/InventoryItems/equipments-import-form.vue";
 import equipmentExportForm from "@/Pages/InventoryEquipment/equipments-export.vue";
@@ -505,6 +506,7 @@ const downloadAttachment = (file) => {
     }
 </script>
 <template>
+<div class="space-y-6" :class="commercialDocumentThemeClasses">
   <div class="border-b border-gray-200 pb-5">
     <h3 class="text-base font-semibold leading-6 text-gray-900">
       {{ $t("gestlab.general.labels.iequipments.page_title") }}
@@ -2219,4 +2221,5 @@ const downloadAttachment = (file) => {
       </div>
     </div>
   </confirm-dialog>
+</div>
 </template>

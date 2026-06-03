@@ -7,6 +7,7 @@ import slideOver from '@/Components/slide-over.vue';
 import { ref, computed } from "vue";
 import { useForm, router } from "@inertiajs/vue3";
 import { trans } from 'laravel-vue-i18n';
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
 const props = defineProps({
@@ -162,6 +163,7 @@ let submit = () => {
 }  
 </script>
 <template>
+<div class="space-y-6" :class="commercialDocumentThemeClasses">
 <div class="border-b border-gray-200 pb-5">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.iunits.page_title') }}</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500"></p>
@@ -244,4 +246,5 @@ let submit = () => {
     </div>
   </confirm-dialog>
 
+</div>
 </template>

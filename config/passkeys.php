@@ -1,12 +1,12 @@
 <?php
 
+use App\Actions\Passkeys\FindPasskeyToAuthenticate;
+use App\Models\Passkey;
 use App\Models\User;
 use Spatie\LaravelPasskeys\Actions\ConfigureCeremonyStepManagerFactoryAction;
-use Spatie\LaravelPasskeys\Actions\FindPasskeyToAuthenticateAction;
 use Spatie\LaravelPasskeys\Actions\GeneratePasskeyAuthenticationOptionsAction;
 use Spatie\LaravelPasskeys\Actions\GeneratePasskeyRegisterOptionsAction;
 use Spatie\LaravelPasskeys\Actions\StorePasskeyAction;
-use Spatie\LaravelPasskeys\Models\Passkey;
 
 return [
     'redirect_to_after_login' => '/dashboard',
@@ -15,7 +15,7 @@ return [
         'generate_passkey_register_options' => GeneratePasskeyRegisterOptionsAction::class,
         'store_passkey' => StorePasskeyAction::class,
         'generate_passkey_authentication_options' => GeneratePasskeyAuthenticationOptionsAction::class,
-        'find_passkey' => FindPasskeyToAuthenticateAction::class,
+        'find_passkey' => FindPasskeyToAuthenticate::class,
         'configure_ceremony_step_manager_factory' => ConfigureCeremonyStepManagerFactoryAction::class,
     ],
 

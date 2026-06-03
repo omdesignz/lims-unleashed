@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @include('PDFs.partials.premium-document-style')
         
         /* Base Styles - Aligned with Visual System */
         body {
@@ -311,7 +312,7 @@
         }
     </style>
 </head>
-<body>
+<body class="pdf-document certificate-document">
 
 <htmlpageheader name="page-header">
     <!-- Official Letterhead -->

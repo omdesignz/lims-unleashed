@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="nc-form-surface space-y-8" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
     <!-- <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between">
@@ -34,9 +34,9 @@
       <div class="lg:col-span-2 space-y-6">
         
         <!-- BASIC INFORMATION SECTION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
           <!-- GRADIENT HEADER -->
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
+          <div class="bg-gradient-to-r from-primary-700 to-primary-600 px-6 py-4">
             <h2 class="text-lg font-semibold text-white flex items-center gap-2">
               <InformationCircleIcon class="h-5 w-5" />
               {{ $t('gestlab.general.labels.vap_non_conformities.basic_info') }}
@@ -98,20 +98,12 @@
                   {{ $t('gestlab.general.labels.vap_non_conformities.severity.title') }}
                   <span class="text-red-500">*</span>
                 </label>
-                <select
-                  v-model="form.severity"
-                  :class="[
-                    'block w-full rounded-lg border px-3 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900/50',
-                    form.errors.severity 
-                      ? 'border-red-300' 
-                      : 'border-gray-300'
-                  ]"
-                >
-                  <option value="low">{{ $t('gestlab.general.labels.vap_non_conformities.severity_low') }}</option>
-                  <option value="medium">{{ $t('gestlab.general.labels.vap_non_conformities.severity_medium') }}</option>
-                  <option value="high">{{ $t('gestlab.general.labels.vap_non_conformities.severity_high') }}</option>
-                  <option value="critical">{{ $t('gestlab.general.labels.vap_non_conformities.severity_critical') }}</option>
-                </select>
+                <ComboboxEnhanced
+                  v-model="selectedSeverity"
+                  :options="severityOptions"
+                  :has-error="Boolean(form.errors.severity)"
+                  :placeholder="$t('gestlab.general.labels.vap_non_conformities.severity.title')"
+                />
                 <p v-if="form.errors.severity" class="text-xs text-red-600">
                   {{ form.errors.severity }}
                 </p>
@@ -124,56 +116,37 @@
                   {{ $t('gestlab.general.labels.vap_non_conformities.category') }}
                   <span class="text-red-500">*</span>
                 </label>
-                <select
-                  v-model="form.category"
-                  :class="[
-                    'block w-full rounded-lg border px-3 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900/50',
-                    form.errors.category 
-                      ? 'border-red-300' 
-                      : 'border-gray-300'
-                  ]"
-                >
-                  <option value="quality">{{ $t('gestlab.general.labels.vap_non_conformities.category_quality') }}</option>
-                  <option value="safety">{{ $t('gestlab.general.labels.vap_non_conformities.category_safety') }}</option>
-                  <option value="environmental">{{ $t('gestlab.general.labels.vap_non_conformities.category_environmental') }}</option>
-                  <option value="regulatory">{{ $t('gestlab.general.labels.vap_non_conformities.category_regulatory') }}</option>
-                  <option value="other">{{ $t('gestlab.general.labels.vap_non_conformities.category_other') }}</option>
-                </select>
+                <ComboboxEnhanced
+                  v-model="selectedCategory"
+                  :options="categoryOptions"
+                  :has-error="Boolean(form.errors.category)"
+                  :placeholder="$t('gestlab.general.labels.vap_non_conformities.category')"
+                />
                 <p v-if="form.errors.category" class="text-xs text-red-600">
                   {{ form.errors.category }}
                 </p>
               </div>
 
               <!-- Description -->
-              <div class="md:col-span-2 space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <DocumentTextIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_non_conformities.description') }}
-                  <span class="text-red-500">*</span>
-                </label>
-                <textarea
+              <div class="md:col-span-2">
+                <BaseTextarea
                   v-model="form.description"
-                  rows="4"
-                  :class="[
-                    'block w-full rounded-lg border px-3 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900/50',
-                    form.errors.description 
-                      ? 'border-red-300' 
-                      : 'border-gray-300'
-                  ]"
+                  :label="$t('gestlab.general.labels.vap_non_conformities.description')"
+                  :required="true"
+                  :rows="4"
+                  :has-error="Boolean(form.errors.description)"
+                  :error="form.errors.description"
                   :placeholder="$t('gestlab.general.labels.vap_non_conformities.description_placeholder')"
                 />
-                <p v-if="form.errors.description" class="text-xs text-red-600">
-                  {{ form.errors.description }}
-                </p>
               </div>
             </div>
           </div>
         </div>
 
         <!-- RELATED ENTITIES SECTION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
           <!-- GRADIENT HEADER -->
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
+          <div class="bg-gradient-to-r from-primary-700 to-primary-600 px-6 py-4">
             <h2 class="text-lg font-semibold text-white flex items-center gap-2">
               <LinkIcon class="h-5 w-5" />
               {{ $t('gestlab.general.labels.vap_non_conformities.related_entities') }}
@@ -271,11 +244,11 @@
         </div>
 
         <!-- CORRECTIVE ACTIONS SECTION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="border-b border-gray-200 px-6 py-4">
+        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+          <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
             <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <WrenchScrewdriverIcon class="h-5 w-5 text-blue-900" />
+              <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
+                <WrenchScrewdriverIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
                 {{ $t('gestlab.general.labels.vap_non_conformities.corrective_actions') }}
                 <span class="text-sm font-normal text-gray-500 ml-2">
                   ({{ actions.length }} {{ $t('gestlab.general.labels.vap_non_conformities.general.items') }})
@@ -317,14 +290,14 @@
             <div 
               v-for="(action, index) in actions"
               :key="index"
-              class="group relative bg-white rounded-lg border border-gray-200 hover:border-blue-900 transition-all duration-200 overflow-hidden shadow-sm"
+              class="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:border-primary-600 dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-primary-400"
               v-motion
               :initial="{ opacity: 0, y: 20 }"
               :enter="{ opacity: 1, y: 0 }"
               :delay="index * 50"
             >
               <!-- ITEM HEADER -->
-              <div class="bg-gradient-to-r from-blue-50 to-white px-4 py-3 border-b border-gray-200">
+              <div class="border-b border-slate-200 bg-gradient-to-r from-primary-50 to-white px-4 py-3 dark:border-slate-800 dark:from-primary-500/10 dark:to-slate-950/70">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
                     <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-900 text-white font-semibold">
@@ -335,7 +308,7 @@
                         {{ $t('gestlab.general.labels.vap_non_conformities.action') }} #{{ index + 1 }}
                       </h3>
                       <p class="text-xs text-gray-500">
-                        {{ action.due_at ? `Due: ${formatDate(action.due_at)}` : 'No due date' }}
+                        {{ action.due_at ? $t('gestlab.general.labels.vap_non_conformities.due') + ': ' + formatDate(action.due_at) : $t('gestlab.general.labels.vap_non_conformities.no_due_date') }}
                       </p>
                     </div>
                   </div>
@@ -353,27 +326,21 @@
               <!-- ITEM CONTENT -->
               <div class="p-4 space-y-4">
                 <!-- Correction -->
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-gray-700">
-                    {{ $t('gestlab.general.labels.vap_non_conformities.correction') }}
-                  </label>
-                  <textarea
+                <div>
+                  <BaseTextarea
                     v-model="action.correction"
-                    rows="2"
-                    class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900/50"
+                    :label="$t('gestlab.general.labels.vap_non_conformities.correction')"
+                    :rows="2"
                     :placeholder="$t('gestlab.general.labels.vap_non_conformities.correction_placeholder')"
                   />
                 </div>
 
                 <!-- Corrective Action -->
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-gray-700">
-                    {{ $t('gestlab.general.labels.vap_non_conformities.corrective_action') }}
-                  </label>
-                  <textarea
+                <div>
+                  <BaseTextarea
                     v-model="action.corrective_action"
-                    rows="2"
-                    class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900/50"
+                    :label="$t('gestlab.general.labels.vap_non_conformities.corrective_action')"
+                    :rows="2"
                     :placeholder="$t('gestlab.general.labels.vap_non_conformities.corrective_action_placeholder')"
                   />
                 </div>
@@ -383,10 +350,10 @@
                   <label class="block text-sm font-medium text-gray-700">
                     {{ $t('gestlab.general.labels.vap_non_conformities.due_date') }}
                   </label>
-                  <input
+                  <DatePickerEnhanced
                     v-model="action.due_at"
-                    type="datetime-local"
-                    class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900/50"
+                    :is-dark="isDarkMode"
+                    :show-clear="true"
                   />
                 </div>
               </div>
@@ -398,8 +365,8 @@
       <!-- RIGHT COLUMN (1/3 width) -->
       <div class="space-y-6">
         <!-- TIMELINE & ASSIGNMENT CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+          <h3 class="mb-4 text-lg font-semibold text-slate-950 dark:text-white">
             {{ $t('gestlab.general.labels.vap_non_conformities.timeline_assignment') }}
           </h3>
           <div class="space-y-6">
@@ -448,15 +415,12 @@
               <label class="block text-sm font-medium text-gray-700">
                 {{ $t('gestlab.general.labels.vap_non_conformities.reported_at') }}
               </label>
-              <input
+              <DatePickerEnhanced
                 v-model="form.reported_at"
-                type="datetime-local"
-                :class="[
-                  'block w-full rounded-lg border px-3 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900/50',
-                  form.errors.reported_at 
-                    ? 'border-red-300' 
-                    : 'border-gray-300'
-                ]"
+                :is-dark="isDarkMode"
+                :has-error="Boolean(form.errors.reported_at)"
+                :error-message="form.errors.reported_at"
+                :show-clear="false"
               />
               <p v-if="form.errors.reported_at" class="text-xs text-red-600">
                 {{ form.errors.reported_at }}
@@ -468,15 +432,12 @@
               <label class="block text-sm font-medium text-gray-700">
                 {{ $t('gestlab.general.labels.vap_non_conformities.due_date') }}
               </label>
-              <input
+              <DatePickerEnhanced
                 v-model="form.due_date"
-                type="datetime-local"
-                :class="[
-                  'block w-full rounded-lg border px-3 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900/50',
-                  form.errors.due_date 
-                    ? 'border-red-300' 
-                    : 'border-gray-300'
-                ]"
+                :is-dark="isDarkMode"
+                :has-error="Boolean(form.errors.due_date)"
+                :error-message="form.errors.due_date"
+                :show-clear="true"
               />
               <p v-if="form.errors.due_date" class="text-xs text-red-600">
                 {{ form.errors.due_date }}
@@ -488,20 +449,12 @@
               <label class="block text-sm font-medium text-gray-700">
                 {{ $t('gestlab.general.labels.vap_non_conformities.status.title') }}
               </label>
-              <select
-                v-model="form.status"
-                :class="[
-                  'block w-full rounded-lg border px-3 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900/50',
-                  form.errors.status 
-                    ? 'border-red-300' 
-                    : 'border-gray-300'
-                ]"
-              >
-                <option value="opened">{{ $t('gestlab.general.labels.vap_non_conformities.status_opened') }}</option>
-                <option value="in_progress">{{ $t('gestlab.general.labels.vap_non_conformities.status_in_progress') }}</option>
-                <option value="resolved">{{ $t('gestlab.general.labels.vap_non_conformities.status_resolved') }}</option>
-                <option value="closed">{{ $t('gestlab.general.labels.vap_non_conformities.status_closed') }}</option>
-              </select>
+              <ComboboxEnhanced
+                v-model="selectedStatus"
+                :options="statusOptions"
+                :has-error="Boolean(form.errors.status)"
+                :placeholder="$t('gestlab.general.labels.vap_non_conformities.status.title')"
+              />
               <p v-if="form.errors.status" class="text-xs text-red-600">
                 {{ form.errors.status }}
               </p>
@@ -510,8 +463,8 @@
         </div>
 
         <!-- ACTIONS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+          <h3 class="mb-4 text-lg font-semibold text-slate-950 dark:text-white">
             {{ $t('gestlab.general.labels.vap_non_conformities.actions.title') }}
           </h3>
           <div class="space-y-4">
@@ -539,8 +492,8 @@
             </button>
 
             <!-- QUICK STATS -->
-            <div class="border-t border-gray-200 pt-4">
-              <h4 class="text-sm font-medium text-gray-900 mb-2">
+            <div class="border-t border-slate-200 pt-4 dark:border-slate-800">
+              <h4 class="mb-2 text-sm font-medium text-slate-950 dark:text-white">
                 {{ $t('gestlab.general.labels.vap_non_conformities.stats.title') }}
               </h4>
               <div class="space-y-2">
@@ -566,47 +519,97 @@
         </div>
 
         <!-- ATTACHMENTS & NOTES -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <PaperClipIcon class="h-5 w-5 text-blue-900" />
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+          <h3 class="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
+            <PaperClipIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
             {{ $t('gestlab.general.labels.vap_non_conformities.attachments_notes') }}
           </h3>
           <div class="space-y-4">
-            <!-- Root Cause -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                {{ $t('gestlab.general.labels.vap_non_conformities.root_cause') }}
+            <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/50">
+              <label class="flex cursor-pointer flex-col items-center justify-center gap-3 text-center">
+                <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-sm shadow-primary-600/20">
+                  <PaperClipIcon class="h-5 w-5" />
+                </span>
+                <span>
+                  <span class="block text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    {{ $t('gestlab.general.labels.vap_non_conformities.attachments_notes') }}
+                  </span>
+                  <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+                    PDF, imagens ou documentos de evidência até 10MB.
+                  </span>
+                </span>
+                <input
+                  type="file"
+                  multiple
+                  class="sr-only"
+                  @change="selectAttachmentFiles"
+                />
               </label>
-              <textarea
+
+              <div v-if="selectedAttachmentFiles.length" class="mt-4 space-y-2">
+                <div
+                  v-for="(file, index) in selectedAttachmentFiles"
+                  :key="`${file.name}-${file.size}-${index}`"
+                  class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900"
+                >
+                  <span class="truncate text-slate-700 dark:text-slate-200">{{ file.name }}</span>
+                  <button
+                    type="button"
+                    class="rounded-lg p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-300"
+                    @click="removeAttachmentFile(index)"
+                  >
+                    <TrashIcon class="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              <p v-if="form.errors.attachment_files" class="mt-2 text-xs font-medium text-red-600 dark:text-red-400">
+                {{ form.errors.attachment_files }}
+              </p>
+            </div>
+
+            <div v-if="existingAttachments.length" class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950/40">
+              <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Anexos já registados</p>
+              <div class="mt-3 space-y-2">
+                <a
+                  v-for="attachment in existingAttachments"
+                  :key="attachment.id"
+                  :href="attachment.url"
+                  target="_blank"
+                  class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-700 transition hover:bg-primary-50 hover:text-primary-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-primary-500/10 dark:hover:text-primary-200"
+                >
+                  <span class="truncate">{{ attachment.name || attachment.file_name }}</span>
+                  <span class="text-xs text-slate-500 dark:text-slate-400">{{ attachment.human_readable_size }}</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Root Cause -->
+            <div>
+              <BaseTextarea
                 v-model="form.root_cause"
-                rows="3"
-                class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900/50"
+                :label="$t('gestlab.general.labels.vap_non_conformities.root_cause')"
+                :rows="3"
                 :placeholder="$t('gestlab.general.labels.vap_non_conformities.root_cause_placeholder')"
               />
             </div>
 
             <!-- Preventive Actions -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                {{ $t('gestlab.general.labels.vap_non_conformities.preventive_actions') }}
-              </label>
-              <textarea
+            <div>
+              <BaseTextarea
                 v-model="form.preventive_actions"
-                rows="3"
-                class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900/50"
+                :label="$t('gestlab.general.labels.vap_non_conformities.preventive_actions')"
+                :rows="3"
                 :placeholder="$t('gestlab.general.labels.vap_non_conformities.preventive_actions_placeholder')"
               />
             </div>
 
             <!-- Comments -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                {{ $t('gestlab.general.labels.vap_non_conformities.comments') }}
-              </label>
-              <textarea
+            <div>
+              <BaseTextarea
                 v-model="form.comments"
-                rows="3"
-                class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900/50"
+                :label="$t('gestlab.general.labels.vap_non_conformities.comments')"
+                :rows="3"
                 :placeholder="$t('gestlab.general.labels.vap_non_conformities.comments_placeholder')"
               />
             </div>
@@ -618,7 +621,7 @@
     <!-- FOOTER ACTIONS -->
     <div class="flex items-center justify-between pt-6">
       <div class="text-sm text-gray-500">
-        Última Actualização: {{ nonConformity?.updated_at ? formatDate(nonConformity.updated_at) : 'Nunca' }}
+        {{ $t('gestlab.general.labels.vap_non_conformities.last_updated') }}: {{ nonConformity?.updated_at ? formatDate(nonConformity.updated_at) : $t('gestlab.general.labels.vap_non_conformities.never') }}
       </div>
       <div class="flex items-center gap-4">
         <button 
@@ -648,13 +651,17 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useForm } from '@inertiajs/vue3'
+import { trans } from 'laravel-vue-i18n'
+import BaseTextarea from '@/Components/base/BaseTextarea.vue'
+import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
+import DatePickerEnhanced from '@/Components/date-picker-enhanced.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import {
   ExclamationTriangleIcon,
   InformationCircleIcon,
   HashtagIcon,
   TagIcon,
   FolderIcon,
-  DocumentTextIcon,
   LinkIcon,
   BeakerIcon,
   ClipboardDocumentCheckIcon,
@@ -681,6 +688,10 @@ const props = defineProps({
   departments: {
     type: Array,
     default: () => []
+  },
+  isEditing: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -710,11 +721,61 @@ const form = useForm({
   preventive_actions: props.nonConformity?.preventive_actions || '',
   comments: props.nonConformity?.comments || '',
   attachments: props.nonConformity?.attachments || [],
+  attachment_files: [],
   actions: props.nonConformity?.actions || []
 })
 
 // Actions
 const actions = ref(props.nonConformity?.actions || [])
+const selectedAttachmentFiles = ref([])
+const existingAttachments = computed(() => props.nonConformity?.media_attachments || [])
+
+const isDarkMode = computed(() => {
+  if (typeof document === 'undefined') return false
+
+  return document.documentElement.classList.contains('dark')
+})
+
+const severityOptions = computed(() => [
+  { value: 'low', label: transLabel('severity_low') },
+  { value: 'medium', label: transLabel('severity_medium') },
+  { value: 'high', label: transLabel('severity_high') },
+  { value: 'critical', label: transLabel('severity_critical') },
+])
+
+const categoryOptions = computed(() => [
+  { value: 'quality', label: transLabel('category_quality') },
+  { value: 'safety', label: transLabel('category_safety') },
+  { value: 'environmental', label: transLabel('category_environmental') },
+  { value: 'regulatory', label: transLabel('category_regulatory') },
+  { value: 'other', label: transLabel('category_other') },
+])
+
+const statusOptions = computed(() => [
+  { value: 'opened', label: transLabel('status_opened') },
+  { value: 'in_progress', label: transLabel('status_in_progress') },
+  { value: 'resolved', label: transLabel('status_resolved') },
+  { value: 'closed', label: transLabel('status_closed') },
+])
+
+const selectedSeverity = optionProxy('severity', severityOptions)
+const selectedCategory = optionProxy('category', categoryOptions)
+const selectedStatus = optionProxy('status', statusOptions)
+
+function transLabel(key) {
+  return trans(`gestlab.general.labels.vap_non_conformities.${key}`)
+}
+
+function optionProxy(field, options) {
+  return computed({
+    get() {
+      return options.value.find(option => option.value === form[field]) ?? null
+    },
+    set(option) {
+      form[field] = option?.value ?? ''
+    }
+  })
+}
 
 // Generate NC Number
 function generateNcNumber() {
@@ -740,13 +801,35 @@ function removeAction(index) {
   actions.value.splice(index, 1)
 }
 
+function selectAttachmentFiles(event) {
+  selectedAttachmentFiles.value = Array.from(event.target.files || [])
+  form.attachment_files = selectedAttachmentFiles.value
+}
+
+function removeAttachmentFile(index) {
+  selectedAttachmentFiles.value.splice(index, 1)
+  form.attachment_files = selectedAttachmentFiles.value
+}
+
 // Submit form
 function submit() {
   form.actions = actions.value
-  if (props.nonConformity) {
-    form.put(route('vap_non_conformities.update', props.nonConformity.id))
+  form.attachment_files = selectedAttachmentFiles.value
+
+  if (props.isEditing) {
+    form
+      .transform((data) => ({
+        ...data,
+        _method: 'put',
+      }))
+      .post(route('vap_non_conformities.update', props.nonConformity.id), {
+        forceFormData: true,
+        onFinish: () => form.transform((data) => data),
+      })
   } else {
-    form.post(route('vap_non_conformities.store'))
+    form.post(route('vap_non_conformities.store'), {
+      forceFormData: true,
+    })
   }
 }
 
@@ -754,6 +837,7 @@ function submit() {
 function reset() {
   form.reset()
   actions.value = []
+  selectedAttachmentFiles.value = []
 }
 
 // Cancel
@@ -786,17 +870,69 @@ function calculateDaysOpen() {
 
 // Status classes
 const statusClasses = {
-  opened: 'bg-blue-50 text-blue-700 ring-blue-700/10',
-  in_progress: 'bg-yellow-50 text-yellow-700 ring-yellow-700/10',
-  resolved: 'bg-green-50 text-green-700 ring-green-700/10',
-  closed: 'bg-gray-50 text-gray-700 ring-gray-700/10'
+  opened: 'bg-blue-50 text-blue-700 ring-blue-700/10 dark:bg-blue-500/10 dark:text-blue-200 dark:ring-blue-400/20',
+  in_progress: 'bg-yellow-50 text-yellow-700 ring-yellow-700/10 dark:bg-yellow-500/10 dark:text-yellow-200 dark:ring-yellow-400/20',
+  resolved: 'bg-green-50 text-green-700 ring-green-700/10 dark:bg-green-500/10 dark:text-green-200 dark:ring-green-400/20',
+  closed: 'bg-slate-50 text-slate-700 ring-slate-700/10 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-600'
 }
 
 // Severity classes
 const severityClasses = {
-  low: 'text-green-600',
-  medium: 'text-yellow-600',
-  high: 'text-orange-600',
-  critical: 'text-red-600'
+  low: 'text-green-600 dark:text-green-300',
+  medium: 'text-yellow-600 dark:text-yellow-300',
+  high: 'text-orange-600 dark:text-orange-300',
+  critical: 'text-red-600 dark:text-red-300'
 }
 </script>
+
+<style scoped>
+.nc-form-surface :deep(.bg-white) {
+  border-radius: 1.5rem;
+}
+
+:global(.dark) .nc-form-surface :deep(.bg-white) {
+  background-color: rgb(15 23 42 / 0.8);
+}
+
+:global(.dark) .nc-form-surface :deep(.bg-gray-50),
+:global(.dark) .nc-form-surface :deep(.from-blue-50) {
+  background-color: rgb(2 6 23 / 0.65);
+}
+
+:global(.dark) .nc-form-surface :deep(.border-gray-200),
+:global(.dark) .nc-form-surface :deep(.border-gray-300) {
+  border-color: rgb(51 65 85);
+}
+
+:global(.dark) .nc-form-surface :deep(.text-gray-900) {
+  color: rgb(248 250 252);
+}
+
+:global(.dark) .nc-form-surface :deep(.text-gray-700),
+:global(.dark) .nc-form-surface :deep(.text-gray-600) {
+  color: rgb(203 213 225);
+}
+
+:global(.dark) .nc-form-surface :deep(.text-gray-500),
+:global(.dark) .nc-form-surface :deep(.text-gray-400) {
+  color: rgb(148 163 184);
+}
+
+:global(.dark) .nc-form-surface :deep(input),
+:global(.dark) .nc-form-surface :deep(select),
+:global(.dark) .nc-form-surface :deep(textarea) {
+  border-color: rgb(51 65 85);
+  background-color: rgb(2 6 23);
+  color: rgb(241 245 249);
+}
+
+:global(.dark) .nc-form-surface :deep(input::placeholder),
+:global(.dark) .nc-form-surface :deep(textarea::placeholder) {
+  color: rgb(100 116 139);
+}
+
+:global(.dark) .nc-form-surface :deep(.bg-gradient-to-r.from-blue-900),
+.nc-form-surface :deep(.bg-gradient-to-r.from-blue-900) {
+  background-image: linear-gradient(90deg, rgb(var(--color-primary-700, 14 116 144)), rgb(var(--color-primary-600, 8 145 178)));
+}
+</style>

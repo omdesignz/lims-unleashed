@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @include('PDFs.partials.premium-document-style')
     
     /* Base Styles - Aligned with Visual System */
     body {
@@ -233,7 +234,7 @@
     }
 </style>
 </head>
-<body>
+<body class="pdf-document analysis-document">
 <sethtmlpagefooter name="page-footer" value="on" show-this-page="1" />
 <sethtmlpageheader name="page-header" value="on" show-this-page="1" />
 

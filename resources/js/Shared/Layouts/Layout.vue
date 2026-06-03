@@ -1,5 +1,5 @@
 <template>
-  <div :style="brandingCssVariables" :data-theme-preset="themePreset">
+  <div class="lims-app-shell min-h-screen bg-[#f4efe4] text-[#15231f] dark:bg-[#07110f] dark:text-[#f7f1e7]" :style="brandingCssVariables" :data-theme-preset="themePreset">
     <backend-modal />
     <ToastList />
 
@@ -80,7 +80,7 @@
               </TransitionChild>
 
               <div
-                class="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-900 px-4 pb-4 scrollbar-thin"
+                class="flex grow flex-col gap-y-5 overflow-y-auto bg-[#fffaf0] px-4 pb-4 text-[#15231f] scrollbar-thin dark:bg-[#07110f] dark:text-[#f7f1e7]"
               >
                 <div class="flex h-16 shrink-0 items-center">
 <Link :href="route('dashboard')">
@@ -98,111 +98,7 @@
                 />
             </Link>
                 </div>
-                <nav class="flex flex-1 flex-col">
-                  <ul role="list" class="flex flex-1 flex-col gap-y-7">
-                    <li>
-                      <ul role="list" class="-mx-2 space-y-1">
-                        <li v-for="item in navigation" :key="item.title">
-                          <!-- Single link -->
-                          <Link
-                            prefetch
-                            v-if="!item.children && item.show"
-                            :href="item.href"
-                            :class="[
-                              $page.url === item.name
-                                ? 'bg-primary-900 text-white dark:bg-primary-800/60 dark:text-white shadow-sm'
-                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800',
-                              'group flex gap-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150',
-                            ]"
-                          >
-                            <component
-                              :is="item.icon"
-                              :class="[
-                                $page.url === item.name
-                                  ? 'text-white/90'
-                                  : 'text-gray-400 group-hover:text-gray-600 dark:text-gray-500',
-                                'h-5 w-5 shrink-0 transition-colors duration-150',
-                              ]"
-                              aria-hidden="true"
-                            />
-                            {{ $t(item.title) }}
-                          </Link>
-
-                          <!-- Expandable group -->
-                          <Disclosure
-                            as="div"
-                            v-if="item.children && item.show"
-                            :default-open="hasActiveChild(item)"
-                            v-slot="{ open }"
-                          >
-                            <DisclosureButton
-                              :class="[
-                                hasActiveChild(item)
-                                  ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white'
-                                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800/50',
-                                'group flex w-full items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150',
-                              ]"
-                            >
-                              <component
-                                :is="item.icon"
-                                :class="[
-                                  hasActiveChild(item)
-                                    ? 'text-primary-600 dark:text-primary-400'
-                                    : 'text-gray-400 group-hover:text-gray-600 dark:text-gray-500',
-                                  'h-5 w-5 shrink-0 transition-colors duration-150',
-                                ]"
-                                aria-hidden="true"
-                              />
-                              <span class="flex-1 text-left">{{ $t(item.title) }}</span>
-                              <ChevronRightIcon
-                                :class="[
-                                  open ? 'rotate-90 text-gray-500' : 'text-gray-300 dark:text-gray-600',
-                                  'h-4 w-4 shrink-0 transition-transform duration-200',
-                                ]"
-                              />
-                            </DisclosureButton>
-
-                            <DisclosurePanel as="ul" class="mt-1 space-y-0.5">
-                              <li
-                                v-for="subItem in item.children"
-                                :key="subItem.title"
-                              >
-                                <Link
-                                  prefetch
-                                  v-if="subItem.show"
-                                  :href="subItem.href"
-                                  :class="[
-                                    $page.url === subItem.name
-                                      ? 'text-primary-700 bg-primary-50 font-semibold dark:text-primary-300 dark:bg-primary-900/20 border-l-2 border-primary-600'
-                                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-800/30 border-l-2 border-transparent',
-                                    'block w-full rounded-r-lg pl-10 pr-3 py-1.5 text-sm transition-all duration-150',
-                                  ]"
-                                >
-                                  {{ $t(subItem.title) }}
-                                </Link>
-                              </li>
-                            </DisclosurePanel>
-                          </Disclosure>
-                        </li>
-                      </ul>
-                    </li>
-                    <!-- Logout -->
-                    <li class="mt-auto">
-                      <Link
-                        :href="route('logout')"
-                        class="group flex gap-x-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-900/10 transition-all duration-150"
-                        method="post"
-                        as="button"
-                      >
-                        <PowerIcon
-                          class="h-5 w-5 shrink-0 text-gray-400 group-hover:text-red-500 dark:group-hover:text-red-400 transition-colors duration-150"
-                          aria-hidden="true"
-                        />
-                        {{ $t('gestlab.menu.logout') }}
-                      </Link>
-                    </li>
-                  </ul>
-                </nav>
+                <side-nav class="relative" />
               </div>
             </DialogPanel>
           </TransitionChild>
@@ -214,12 +110,13 @@
     <div
       :class="[
         desktopSidebarOpen ? 'translate-x-0 opacity-100' : '-translate-x-[110%] opacity-0 pointer-events-none',
-        'hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-80 lg:flex-col lg:px-4 lg:py-4 lg:transition-all lg:duration-300',
+      'hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-80 lg:flex-col lg:bg-[#f4efe4] lg:px-4 lg:py-4 lg:transition-all lg:duration-300 dark:lg:bg-[#07110f]',
       ]"
     >
       <div
-        class="flex grow flex-col gap-y-4 overflow-y-auto rounded-[2rem] border border-gray-200/80 bg-white/95 px-4 pb-4 pt-2 shadow-xl shadow-slate-900/5 backdrop-blur-md dark:border-gray-700/50 dark:bg-gray-900/95 scrollbar-thin"
+        class="relative flex grow flex-col gap-y-4 overflow-y-auto rounded-[2rem] border border-[#ded3bf]/80 bg-[#fffaf0]/92 px-4 pb-4 pt-2 shadow-[0_28px_90px_rgba(20,61,55,0.14)] ring-1 ring-[#143d37]/5 backdrop-blur-xl scrollbar-thin dark:border-[#25443c]/80 dark:bg-[#0c1714]/92 dark:shadow-black/35 dark:ring-white/5"
       >
+        <div class="pointer-events-none absolute inset-x-4 top-0 h-28 rounded-b-[2rem] bg-gradient-to-b from-primary-500/12 to-transparent dark:from-accent-300/10" />
         <div class="flex h-16 shrink-0 items-center px-2">
 <Link :href="route('dashboard')" class="flex items-center gap-3 transition-opacity hover:opacity-80">
                 <img
@@ -236,15 +133,15 @@
                 />
             </Link>
         </div>
-        <side-nav />
+        <side-nav class="relative" />
       </div>
     </div>
 
     <!-- Main content area -->
-    <div :class="desktopSidebarOpen ? 'lg:pl-80' : 'lg:pl-0'" class="transition-all duration-300">
+    <div :class="desktopSidebarOpen ? 'lg:pl-80' : 'lg:pl-0'" class="min-h-screen transition-all duration-300">
       <!-- Topbar -->
       <div
-        class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200/80 dark:border-gray-700/50 bg-white/95 backdrop-blur-md px-4 sm:gap-x-6 sm:px-6 lg:px-8 dark:bg-gray-900/95"
+        class="sticky top-0 z-40 mx-0 flex h-16 shrink-0 items-center gap-x-4 border-b border-[#ded3bf]/80 bg-[#fffaf0]/92 px-4 shadow-[0_18px_45px_rgba(20,61,55,0.06)] backdrop-blur-md dark:border-[#25443c]/80 dark:bg-[#0c1714]/92 dark:shadow-black/20 sm:gap-x-6 sm:px-6 lg:top-3 lg:mx-4 lg:rounded-[1.6rem] lg:border lg:px-6"
       >
         <button type="button" class="-m-2.5 p-2.5 text-gray-400 lg:hidden" @click="sidebarOpen = true">
           <span class="sr-only">Abrir menu lateral</span>
@@ -257,7 +154,7 @@
           <div class="relative flex flex-1 items-center">
             <button
               type="button"
-              class="hidden lg:inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:border-primary-300 hover:text-primary-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-primary-500 dark:hover:text-primary-300"
+              class="hidden items-center gap-2 rounded-full border border-[#ded3bf] bg-[#fffdf7] px-3 py-1.5 text-xs font-bold text-[#15231f] shadow-sm transition hover:border-primary-300 hover:text-primary-700 dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:hover:border-primary-400 dark:hover:text-accent-200 lg:inline-flex"
               :title="desktopSidebarOpen ? 'Ocultar menu lateral' : 'Mostrar menu lateral'"
               @click="toggleDesktopSidebar"
             >
@@ -268,7 +165,7 @@
             <!-- Clock -->
             <div class="hidden lg:block ml-4">
               <div
-                class="font-medium inline-flex items-center gap-1.5 px-3 py-1 leading-4 text-xs rounded-full text-primary-700 bg-primary-50 ring-1 ring-primary-200/50 dark:bg-primary-900/20 dark:text-primary-300 dark:ring-primary-700/30"
+                class="inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-3 py-1 text-xs font-bold leading-4 text-primary-700 ring-1 ring-primary-200/50 dark:bg-primary-400/10 dark:text-accent-200 dark:ring-primary-300/20"
               >
                 <p class="text-xs">{{ clockTime }}</p>
               </div>
@@ -280,7 +177,7 @@
             <div class="hidden lg:block ml-4">
               <div
                 v-if="!showSessionModal"
-                class="font-medium inline-flex items-center gap-1.5 px-3 py-1 leading-4 text-xs rounded-full text-gray-600 bg-gray-100 ring-1 ring-gray-200/50 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700/30"
+                class="inline-flex items-center gap-1.5 rounded-full bg-[#ede5d6] px-3 py-1 text-xs font-bold leading-4 text-slate-600 ring-1 ring-[#ded3bf]/80 dark:bg-[#10231f] dark:text-slate-300 dark:ring-[#25443c]"
               >
                 <p class="text-xs">{{ 'Sessão Expira Em: ' + formattedTime }}</p>
               </div>
@@ -290,7 +187,7 @@
             <Link
               prefetch
               :href="route('notifications.index')"
-              class="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500 relative"
+              class="relative rounded-full p-2.5 text-slate-500 transition hover:bg-[#ede5d6] hover:text-primary-700 dark:text-slate-300 dark:hover:bg-[#10231f] dark:hover:text-accent-200"
             >
               <span class="sr-only">Ver notificações</span>
               <BellIcon class="h-6 w-6" aria-hidden="true" />
@@ -306,7 +203,7 @@
             <!-- Theme toggle -->
             <button
               type="button"
-              class="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-150"
+              class="rounded-full p-2.5 text-slate-500 transition-colors duration-150 hover:bg-[#ede5d6] hover:text-primary-700 dark:text-slate-300 dark:hover:bg-[#10231f] dark:hover:text-accent-200"
               :title="isDark ? 'Mudar para modo claro' : 'Mudar para modo escuro'"
               @click="toggleTheme"
             >
@@ -324,7 +221,7 @@
                   viewBox="0 0 24 24"
                   stroke-width="1.5"
                   stroke="currentColor"
-                  class="w-6 h-6 text-primary-800 dark:text-gray-400"
+                  class="h-6 w-6 text-primary-800 dark:text-accent-200"
                 >
                   <path
                     stroke-linecap="round"
@@ -345,9 +242,9 @@
                     @click="switchLanguage(language.value)"
                     :class="[
                       language.value === $page.props.language
-                        ? 'bg-primary-900 text-white dark:bg-gray-700 dark:text-white'
-                        : 'text-gray-700 dark:text-gray-400',
-                      'block px-4 py-2 text-sm w-full text-left',
+                        ? 'bg-primary-700 text-white dark:bg-primary-400/12 dark:text-accent-100'
+                        : 'text-slate-700 hover:bg-[#ede5d6] dark:text-slate-300 dark:hover:bg-[#10231f]',
+                      'block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition',
                     ]"
                   >
                     {{ language.label }}
@@ -356,12 +253,12 @@
               </template>
             </Dropdown>
 
-            <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" aria-hidden="true" />
+            <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-[#ded3bf] dark:lg:bg-[#25443c]" aria-hidden="true" />
 
             <!-- Profile dropdown -->
             <Menu as="div" class="relative">
               <MenuButton class="-m-1.5 flex items-center p-1.5">
-                <span class="sr-only">Open user menu</span>
+                <span class="sr-only">Abrir menu do utilizador</span>
                 <img
                   v-if="auth?.user?.profile_photo_url"
                   :src="auth?.user?.profile_photo_url"
@@ -370,7 +267,7 @@
                 />
                 <span
                   v-else
-                  class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-800 to-primary-900 ring-2 ring-white/80 dark:ring-gray-700 dark:from-primary-700 dark:to-primary-800"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-700 to-primary-950 ring-2 ring-[#fffaf0]/90 dark:from-primary-600 dark:to-[#07110f] dark:ring-[#25443c]"
                 >
                   <span class="text-sm font-semibold leading-none text-white">
                     {{ auth?.user?.name?.charAt(0) }}
@@ -378,7 +275,7 @@
                 </span>
                 <span class="hidden lg:flex lg:items-center">
                   <span
-                    class="ml-4 text-sm font-semibold leading-6 text-gray-900 dark:text-gray-400"
+                    class="ml-4 text-sm font-bold leading-6 text-[#15231f] dark:text-[#f7f1e7]"
                     aria-hidden="true"
                   >
                     {{ auth?.user?.name }}
@@ -395,7 +292,7 @@
                 leave-to-class="transform opacity-0 scale-95"
               >
                 <MenuItems
-                  class="absolute right-0 z-10 mt-2.5 w-40 origin-top-right rounded-xl bg-white dark:bg-gray-800 py-1.5 shadow-lg ring-1 ring-gray-900/5 dark:ring-gray-700/50 focus:outline-none"
+                  class="absolute right-0 z-10 mt-2.5 w-44 origin-top-right rounded-2xl border border-[#ded3bf] bg-[#fffaf0] p-1.5 shadow-[0_20px_55px_rgba(20,61,55,0.16)] ring-1 ring-[#143d37]/5 focus:outline-none dark:border-[#25443c] dark:bg-[#0c1714] dark:ring-white/10"
                 >
                   <MenuItem
                     v-for="item in userNavigation"
@@ -407,13 +304,13 @@
                       as="button"
                       :class="[
                         active
-                          ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
-                          : 'text-gray-700 dark:text-gray-300',
-                        'block w-full text-left px-3 py-2 text-sm rounded-lg mx-1 transition-colors duration-150',
+                          ? 'bg-primary-50 text-primary-800 dark:bg-primary-400/10 dark:text-accent-100'
+                          : 'text-slate-700 dark:text-slate-300',
+                        'block w-full text-left px-3 py-2 text-sm font-semibold rounded-xl transition-colors duration-150',
                       ]"
                       :method="item.method"
                     >
-                      {{ $t(item.name) }}
+                      {{ item.label || $t(item.name) }}
                     </Link>
                   </MenuItem>
                 </MenuItems>
@@ -424,13 +321,13 @@
       </div>
 
 <!-- Page content -->
-  <main class="py-6 lg:py-8 animate-fade-in dark:bg-gray-900">
+  <main class="min-h-[calc(100vh-4rem)] py-5 animate-fade-in lg:py-8">
     <!-- Dashboard header image -->
 
     <!-- Dashboard header image -->
         <div v-if="route().current('dashboard')" class="-mt-12 pb-2">
           <div class="relative isolate overflow-hidden">
-            <div class="bg-transparent dark:bg-gray-800">
+            <div class="bg-transparent">
               <div
                 class="group relative overflow-hidden focus-within:ring-4 focus-within:ring-primary-500 focus-within:ring-opacity-50 focus-within:ring-offset-2 focus:outline-none focus:ring-4 focus:ring-primary-500 focus:ring-opacity-50 focus:ring-offset-2 dark:ring-offset-gray-900"
                 tabindex="0"
@@ -442,12 +339,10 @@
                   class="rounded-br-full object-cover w-full h-48"
                   loading="lazy"
                 />
-                <img
+                <div
                   v-else
-                  src="../../../../public/images/fruit3.jpg"
-                  alt=""
-                  class="rounded-br-full object-cover w-full h-48"
-                  loading="lazy"
+                  class="h-48 rounded-br-[5rem] bg-[radial-gradient(circle_at_18%_20%,rgba(var(--accent-300-rgb),0.35),transparent_24rem),linear-gradient(135deg,#143d37,#07110f)]"
+                  aria-hidden="true"
                 />
 
                 <div
@@ -489,7 +384,10 @@
           </div>
         </div>
 
-        <div class="px-4 sm:px-6 lg:px-8">
+        <div
+          class="px-4 sm:px-6 lg:px-8 lims-backoffice-content"
+          :data-module-family="moduleFamily"
+        >
           <breadcrumbs
             v-if="$page.props.breadcrumbs?.length"
             :pages="$page.props.breadcrumbs"
@@ -578,6 +476,7 @@ import { useTheme } from '@/Composables/useTheme'
 import { trans, loadLanguageAsync } from 'laravel-vue-i18n'
 import backendModal from '@/Components/backend-modal.vue'
 import { getEcho } from '@/lib/echo'
+import { buildBrandingCssVariables } from '@/Utils/brandingPalette'
 
 const { hasPermission } = usePermission()
 
@@ -586,15 +485,109 @@ const props = defineProps({
   impersonation: Boolean,
 })
 
-const { isDark, toggle: toggleTheme } = useTheme(props.auth?.user?.theme)
+const { isDark, toggle: toggleTheme } = useTheme(props.auth?.user?.theme, Boolean(props.auth?.user))
 const page = usePage()
 const settings = computed(() => page.props?.settings ?? {})
-const brandingCssVariables = computed(() => ({
-  '--brand-primary': settings.value.primary_color || '#1f87e8',
-  '--brand-secondary': settings.value.secondary_color || '#0f172a',
-  '--brand-accent': settings.value.accent_color || '#14b8a6',
-}))
+const brandingCssVariables = computed(() => buildBrandingCssVariables(settings.value))
 const themePreset = computed(() => settings.value.theme_preset || 'corporate')
+const moduleFamily = computed(() => {
+  const url = page.url || ''
+
+  if (
+    url.startsWith('/vap-inventory')
+    || url.startsWith('/inventory')
+    || url.startsWith('/itemcategories')
+    || url.startsWith('/equipmentcategories')
+    || url.startsWith('/itemstatuses')
+    || url.startsWith('/iunits')
+    || url.startsWith('/itypes')
+    || url.startsWith('/ilocations')
+    || url.startsWith('/ideliveries')
+    || url.startsWith('/isuppliers')
+    || url.startsWith('/supplier-assessments')
+    || url.startsWith('/iwarehouses')
+  ) {
+    return 'inventory'
+  }
+
+  if (
+    url.startsWith('/samples')
+    || url.startsWith('/vap-samples')
+    || url.startsWith('/directcollections')
+    || url.startsWith('/programmedcollections')
+    || url.startsWith('/analysis')
+    || url.startsWith('/counter-analysis')
+    || url.startsWith('/parameters')
+    || url.startsWith('/analysiscategories')
+    || url.startsWith('/profiles')
+    || url.startsWith('/matrixes')
+    || url.startsWith('/protocols')
+    || url.startsWith('/standards')
+    || url.startsWith('/nwps')
+    || url.startsWith('/units')
+    || url.startsWith('/temperatures')
+    || url.startsWith('/environmental-conditions')
+    || url.startsWith('/qualitycertificates')
+    || url.startsWith('/import-certificates')
+    || url.startsWith('/export-certificates')
+    || url.startsWith('/occurrence')
+    || url.startsWith('/vap-labs')
+  ) {
+    return 'sample-lifecycle'
+  }
+
+  if (
+    url.startsWith('/invoices')
+    || url.startsWith('/quotes')
+    || url.startsWith('/creditnotes')
+    || url.startsWith('/receipts')
+    || url.startsWith('/currencies')
+    || url.startsWith('/paymentcategories')
+    || url.startsWith('/discountcategories')
+    || url.startsWith('/taxtypes')
+    || url.startsWith('/taxexemptions')
+    || url.startsWith('/invoicecategories')
+    || url.startsWith('/vap-proposals')
+    || url.startsWith('/customers')
+    || url.startsWith('/customercategories')
+    || url.startsWith('/contactcategories')
+    || url.startsWith('/warehouses')
+  ) {
+    return 'commercial'
+  }
+
+  if (
+    url.startsWith('/products')
+    || url.startsWith('/phytosanitary-products')
+    || url.startsWith('/paid-services')
+    || url.startsWith('/transportcategories')
+    || url.startsWith('/vehicles')
+    || url.startsWith('/faq')
+    || url.startsWith('/contractguides')
+    || url.startsWith('/collection')
+    || url.startsWith('/packagingcategories')
+    || url.startsWith('/customerrequest')
+    || url.startsWith('/countries')
+  ) {
+    return 'operations'
+  }
+
+  if (
+    url.startsWith('/file-manager')
+    || url.startsWith('/users')
+    || url.startsWith('/departments')
+    || url.startsWith('/general-settings')
+    || url.startsWith('/roles')
+    || url.startsWith('/permissions')
+    || url.startsWith('/security')
+    || url.startsWith('/system-activity')
+    || url.startsWith('/system-backups')
+  ) {
+    return 'admin'
+  }
+
+  return 'general'
+})
 
 // --- Session timeout ---
 const timerDuration = 1500
@@ -636,7 +629,7 @@ const resetTimerOnActivity = () => {
 
 // --- Clock ---
 const clockTime = useDateFormat(useTimestamp({ interval: 1000 }), 'HH:mm:ss', {
-  locales: 'pt-BR',
+  locales: 'pt-Pt',
 })
 
 // --- Header image ---
@@ -706,8 +699,8 @@ const navigation = [
     title: 'gestlab.menu.invoicing', name: 'Invoicing', icon: BanknotesIcon, show: true,
     children: [
       { title: 'gestlab.menu.invoice_categories', name: '/invoicecategories', href: route('invoicecategories.index'), show: hasPermission('view_invoice_categories') },
-      { title: 'gestlab.menu.proposal_templates', name: '/proposaltemplates', href: route('proposaltemplates.index'), show: hasPermission('view_proposal_templates') },
-      { title: 'gestlab.menu.proposals', name: '/proposals', href: route('proposals.index'), show: hasPermission('view_proposals') },
+      { title: 'gestlab.menu.proposal_templates', name: '/vap-proposals/templates', href: route('vap-proposals.templates.index'), show: hasPermission('view_proposal_templates') },
+      { title: 'gestlab.menu.proposals', name: '/vap-proposals', href: route('vap-proposals.index'), show: hasPermission('view_proposals') },
       { title: 'gestlab.menu.invoices', name: '/invoices', href: route('invoices.index'), show: hasPermission('view_invoices') },
       { title: 'gestlab.menu.quotes', name: '/quotes', href: route('quotes.index'), show: hasPermission('view_quotes') },
       { title: 'gestlab.menu.credit_notes', name: '/creditnotes', href: route('creditnotes.index'), show: hasPermission('view_credit_notes') },
@@ -732,7 +725,9 @@ const navigation = [
       { title: 'gestlab.menu.parameters', name: '/parameters', href: route('parameters.index'), show: hasPermission('view_parameters') },
       { title: 'gestlab.menu.analysis', name: '/analysis', href: route('analysis.index'), show: hasPermission('view_analysis') },
       { title: 'gestlab.menu.analysis_categories', name: '/analysiscategories', href: route('analysiscategories.index'), show: hasPermission('view_analysis_categories') },
-      { title: 'gestlab.menu.pending_samples', name: '/samples', href: route('samples.index'), show: hasPermission('view_samples') },
+      { title: 'gestlab.menu.pending_samples', name: '/vap-samples', href: route('vap_samples.index'), show: hasPermission('view_samples') },
+      { title: 'gestlab.menu.sample_reports', name: '/vap-samples/reports', href: route('vap_samples.reports'), show: hasPermission('view_samples') },
+      { title: 'gestlab.menu.internal_quality_control', name: '/vap-samples/reports', href: route('vap_samples.reports', { sample_scope: 'internal_qc' }), show: hasPermission('view_samples') },
       { title: 'gestlab.menu.counter_analysis', name: '/counter-analysis', href: route('counteranalysis.index'), show: hasPermission('view_counter_analysis') },
       { title: 'gestlab.menu.profiles', name: '/profiles', href: route('profiles.index'), show: hasPermission('view_profiles') },
       { title: 'gestlab.menu.matrixes', name: '/matrixes', href: route('matrixes.index'), show: hasPermission('view_matrixes') },
@@ -750,6 +745,7 @@ const navigation = [
       { title: 'gestlab.menu.quality_certificates', name: '/quality-certificates', href: route('qualitycertificates.index'), show: hasPermission('view_quality_certificates') },
       { title: 'gestlab.menu.import_certificates', name: '/import-certificates', href: route('importcertificates.index'), show: hasPermission('view_import_certificates') },
       { title: 'gestlab.menu.export_certificates', name: '/export-certificates', href: route('exportcertificates.index'), show: hasPermission('view_export_certificates') },
+      { title: 'gestlab.menu.report_studios', name: '/report-studios', href: route('report-studios.index'), show: hasPermission('view_quality_certificates') || hasPermission('view_proposal_templates') || hasPermission('view_settings') },
     ],
   },
   {
@@ -804,6 +800,7 @@ const navigation = [
 ]
 
 const userNavigation = [
+  { label: 'Manual do utilizador', name: 'users.help', href: route('users.help') },
   { name: 'gestlab.menu.logout', href: route('logout'), method: 'POST' },
 ]
 

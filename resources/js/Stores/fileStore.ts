@@ -86,6 +86,12 @@ export const useFileStore = defineStore('files', () => {
     return message
   }
 
+  function reportDevError(message: string, error: unknown): void {
+    if (import.meta.env.DEV) {
+      console.error(message, error)
+    }
+  }
+
   function unwrapPayload<T>(payload: { data?: T } | T): T {
     if (payload && typeof payload === 'object' && 'data' in payload) {
       return (payload as { data: T }).data
@@ -188,7 +194,7 @@ export const useFileStore = defineStore('files', () => {
       const response = await axios.get(`/api/files/breadcrumbs/${folderId}`)
       breadcrumbs.value = response.data
     } catch (error) {
-      console.error('Error loading breadcrumbs:', error)
+      reportDevError('Error loading breadcrumbs:', error)
       toast.error(translatedMessage(
         'gestlab.general.labels.vap_filemanager.notifications.error_loading_breadcrumbs',
         'Não foi possível carregar o percurso da pasta.'
@@ -221,7 +227,7 @@ export const useFileStore = defineStore('files', () => {
 
       }
     } catch (error) {
-      console.error('Error loading files:', error)
+      reportDevError('Error loading files:', error)
       toast.error(translatedMessage(
         'gestlab.general.labels.vap_filemanager.notifications.error_loading_files',
         'Não foi possível carregar os ficheiros.'
@@ -272,7 +278,7 @@ async function initializeStore() {
 
       files.value = Array.from(updatedFiles.values())
     } catch (error) {
-      console.error('Error searching files:', error)
+      reportDevError('Error searching files:', error)
       toast.error(translatedMessage(
         'gestlab.general.labels.vap_filemanager.notifications.error_searching_files',
         'Não foi possível pesquisar os ficheiros.'
@@ -299,7 +305,7 @@ async function initializeStore() {
       }
 
     } catch (error) {
-      console.error('Error fetching files:', error)
+      reportDevError('Error fetching files:', error)
       toast.error(translatedMessage(
         'gestlab.general.labels.vap_filemanager.notifications.error_fetching_files',
         'Não foi possível actualizar a lista de ficheiros.'
@@ -315,7 +321,7 @@ async function initializeStore() {
         replaceFileCollection(response.data)
         filesLoaded.value = true;
     } catch (error) {
-        console.error('Initial data fetch failed:', error)
+        reportDevError('Initial data fetch failed:', error)
     }
 }
 
@@ -365,7 +371,7 @@ async function initializeStore() {
       const fileName = uploadedFile instanceof File ? uploadedFile.name : String(uploadedFile)
       // toast.error(`Failed to upload "${fileName}"`)
       toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_uploading_file') + ' - ' + fileName)
-      console.error('Error uploading file:', error)
+      reportDevError('Error uploading file:', error)
       throw error
     }
   }
@@ -414,8 +420,8 @@ async function uploadFolder(folderHandle: FileSystemDirectoryHandle) {
       // toast.success(`Folder "${folderHandle.name}" uploaded successfully`)
       toast.success(trans('gestlab.general.labels.vap_filemanager.notifications.folder_uploaded') + ' - ' + folderHandle.name)
     } catch (error) {
-      toast.error('Failed to upload folder')
-      console.error('Error uploading folder:', error)
+      toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_uploading_folder'))
+      reportDevError('Error uploading folder:', error)
     } finally {
       isLoading.value = false
     }
@@ -444,8 +450,8 @@ async function confirmOverride() {
         toast.success(trans('gestlab.general.labels.vap_filemanager.notifications.file_override'))
       }
     } catch (error) {
-      toast.error('Failed to override file')
-      console.error('Error overriding file:', error)
+      toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_uploading_file'))
+      reportDevError('Error overriding file:', error)
     } finally {
       showOverrideDialog.value = false
       pendingFile.value = null
@@ -469,10 +475,9 @@ async function confirmOverride() {
         // toast.error('An item with this name already exists')
         toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_item_already_exists'))
       } else {
-        toast.error('Failed to rename item')
         toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_renaming_item'))
       }
-      console.error('Error renaming item:', error)
+      reportDevError('Error renaming item:', error)
     }
   }
 
@@ -491,7 +496,7 @@ async function confirmOverride() {
         // toast.error('Failed to move item')
         toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_moving_item'))
       }
-      console.error('Error moving item:', error)
+      reportDevError('Error moving item:', error)
     }
   }
 
@@ -508,7 +513,7 @@ async function confirmOverride() {
     } catch (error) {
       // toast.error('Failed to archive item')
       toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_archiving_item'))
-      console.error('Error archiving item:', error)
+      reportDevError('Error archiving item:', error)
     }
   }
 
@@ -525,7 +530,7 @@ async function confirmOverride() {
     } catch (error) {
       // toast.error('Failed to restore item')
       toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_restoring_item'))
-      console.error('Error restoring item:', error)
+      reportDevError('Error restoring item:', error)
     }
   }
 
@@ -538,7 +543,7 @@ async function confirmOverride() {
     } catch (error) {
       // toast.error('Failed to delete item')
       toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_deleting_item'))
-      console.error('Error deleting item:', error)
+      reportDevError('Error deleting item:', error)
     }
   }
 
@@ -554,7 +559,7 @@ async function confirmOverride() {
     } catch (error) {
       // toast.error('Failed to share item')
       toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_sharing_item'))
-      console.error('Error sharing item:', error)
+      reportDevError('Error sharing item:', error)
     }
   }
 
@@ -567,7 +572,7 @@ async function confirmOverride() {
     } catch (error) {
       // toast.error('Failed to restore version')
       toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_restoring_version'))
-      console.error('Error restoring version:', error)
+      reportDevError('Error restoring version:', error)
     }
   }
 
@@ -591,7 +596,7 @@ async function confirmOverride() {
       if (error.response?.status !== 409) {
         // toast.error('Failed to create folder')
         toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_creating_folder'))
-        console.error('Error creating folder:', error)
+        reportDevError('Error creating folder:', error)
       }
       throw error
     }
@@ -622,7 +627,7 @@ async function confirmOverride() {
     } catch (error) {
       // toast.error('Failed to download file')
       toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_downloading_file'))
-      console.error('Error downloading file:', error)
+      reportDevError('Error downloading file:', error)
     }
   }
 
@@ -641,7 +646,7 @@ async function confirmOverride() {
     } catch (error) {
       // toast.error('Failed to update tags')
       toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_updating_tags'))
-      console.error('Error updating tags:', error)
+      reportDevError('Error updating tags:', error)
     }
   }
 
@@ -680,7 +685,7 @@ async function confirmOverride() {
       } else {
         // toast.error('Failed to move file')
         toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_moving_file'))
-        console.error('Error moving file:', error) 
+        reportDevError('Error moving file:', error)
       }
       throw error
     }

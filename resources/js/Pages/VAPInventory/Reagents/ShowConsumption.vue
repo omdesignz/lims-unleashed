@@ -1,37 +1,29 @@
 <template>
-  <div class="space-y-8">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <BeakerIcon class="h-7 w-7 text-blue-900" />
-            Registro de Consumo #{{ consumption.id }}
-          </h1>
-          <p class="mt-2 text-gray-600">
-            Visualizar detalhes do consumo de reagente
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
+  <div class="reagent-consumption-show-shell space-y-8" :class="commercialDocumentThemeClasses">
+    <ModuleHero
+      :icon="BeakerIcon"
+      :title="`Registo de Consumo #${consumption.id}`"
+      subtitle="Visualize o consumo de reagente, impacto em stock e rastreabilidade do registo."
+    >
+      <template #actions>
+        <div class="flex flex-wrap items-center gap-3">
           <button
             @click="goBack"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
+            class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
           >
             <ArrowLeftIcon class="h-5 w-5" />
-            
             Voltar
           </button>
           <button
             @click="deleteConsumption"
-            class="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            class="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-white/90 px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
           >
             <TrashIcon class="h-5 w-5" />
-            
             Excluir
           </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </ModuleHero>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- LEFT COLUMN (2/3 width) -->
@@ -98,7 +90,7 @@
                 </div>
                 <div>
                   <p class="text-sm font-medium text-gray-900">{{ consumption.used_by }}</p>
-                  <p class="text-xs text-gray-500">Recorded by: {{ consumption.user?.name || 'System' }}</p>
+                  <p class="text-xs text-gray-500">Registado por: {{ consumption.user?.name || 'Sistema' }}</p>
                 </div>
               </div>
             </div>
@@ -275,7 +267,7 @@
               <div class="ml-3">
                 <p class="text-sm font-medium text-gray-900">Registro de Consumo</p>
                 <p class="text-xs text-gray-500">{{ formatDateTime(consumption.created_at) }}</p>
-                <p class="text-xs text-gray-500">by {{ consumption.user?.name || 'System' }}</p>
+                <p class="text-xs text-gray-500">por {{ consumption.user?.name || 'Sistema' }}</p>
               </div>
             </div>
             
@@ -286,7 +278,7 @@
               <div class="ml-3">
                 <p class="text-sm font-medium text-gray-900">Estoque Atualizado</p>
                 <p class="text-xs text-gray-500">{{ formatDateTime(consumption.created_at) }}</p>
-                <p class="text-xs text-gray-500">Stock reduced by {{ consumption.quantity_used }}</p>
+                <p class="text-xs text-gray-500">Stock reduzido em {{ consumption.quantity_used }}</p>
               </div>
             </div>
           </div>
@@ -338,8 +330,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { router } from '@inertiajs/vue3'
+import ModuleHero from '@/Components/base/ModuleHero.vue'
 import {
   BeakerIcon,
   ArrowLeftIcon,
@@ -373,7 +367,7 @@ const isReagentExpired = computed(() => {
 
 function formatDate(dateString) {
   if (!dateString) return '-'
-  return new Date(dateString).toLocaleDateString('en-US', {
+  return new Date(dateString).toLocaleDateString('pt-PT', {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
@@ -382,7 +376,7 @@ function formatDate(dateString) {
 
 function formatDateTime(dateString) {
   if (!dateString) return '-'
-  return new Date(dateString).toLocaleString('en-US', {
+  return new Date(dateString).toLocaleString('pt-PT', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -402,7 +396,7 @@ function getCurrentStockInWarehouse() {
 }
 
 function deleteConsumption() {
-  if (!confirm('Are you sure you want to delete this consumption record? This will restore the stock.')) {
+  if (!confirm('Tem a certeza de que pretende eliminar este registo de consumo? O stock será restaurado.')) {
     return
   }
 
@@ -420,10 +414,107 @@ function printConsumption() {
 
 function exportConsumption() {
   // Implement export functionality
-  alert('Export functionality would be implemented here')
+  alert('A exportação deste registo ainda não está configurada.')
 }
 
 function goBack() {
   router.visit(route('vap-inventory.reagents.consumption.index'))
 }
 </script>
+
+<style scoped>
+.reagent-consumption-show-shell :deep(.bg-white.rounded-xl),
+.reagent-consumption-show-shell :deep(.rounded-xl.border.border-gray-200) {
+  border-color: rgb(226 232 240);
+  border-radius: 1.5rem;
+  background: rgb(255 255 255);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+}
+
+.reagent-consumption-show-shell :deep(.bg-gray-50) {
+  border-color: rgb(226 232 240);
+  background: rgb(248 250 252 / 0.84);
+}
+
+.reagent-consumption-show-shell :deep(.text-blue-900) {
+  color: rgb(var(--color-primary-900, 30 58 138));
+}
+
+.reagent-consumption-show-shell :deep(.bg-blue-100) {
+  background-color: rgb(var(--color-primary-100, 219 234 254));
+}
+
+.reagent-consumption-show-shell :deep(.border-gray-200),
+.reagent-consumption-show-shell :deep(.border-gray-300) {
+  border-color: rgb(226 232 240);
+}
+
+.reagent-consumption-show-shell :deep(.hover\:bg-gray-50:hover) {
+  background: rgb(var(--color-primary-50, 239 246 255) / 0.58);
+}
+
+:global(.dark) .reagent-consumption-show-shell :deep(.bg-white.rounded-xl),
+:global(.dark) .reagent-consumption-show-shell :deep(.rounded-xl.border.border-gray-200) {
+  border-color: rgb(30 41 59);
+  background:
+    radial-gradient(circle at top right, rgb(var(--color-primary-500, 59 130 246) / 0.1), transparent 30%),
+    rgb(2 6 23);
+}
+
+:global(.dark) .reagent-consumption-show-shell :deep(.bg-white) {
+  background: rgb(2 6 23);
+}
+
+:global(.dark) .reagent-consumption-show-shell :deep(.bg-gray-50),
+:global(.dark) .reagent-consumption-show-shell :deep(.hover\:bg-gray-50:hover) {
+  border-color: rgb(51 65 85);
+  background: rgb(15 23 42 / 0.72);
+}
+
+:global(.dark) .reagent-consumption-show-shell :deep(.bg-yellow-50) {
+  border-color: rgb(245 158 11 / 0.32);
+  background: rgb(245 158 11 / 0.1);
+}
+
+:global(.dark) .reagent-consumption-show-shell :deep(.bg-blue-100),
+:global(.dark) .reagent-consumption-show-shell :deep(.bg-green-100),
+:global(.dark) .reagent-consumption-show-shell :deep(.bg-purple-100) {
+  background-color: rgb(var(--color-primary-500, 59 130 246) / 0.1);
+}
+
+:global(.dark) .reagent-consumption-show-shell :deep(.text-gray-900),
+:global(.dark) .reagent-consumption-show-shell :deep(.text-gray-800),
+:global(.dark) .reagent-consumption-show-shell :deep(.text-gray-700) {
+  color: rgb(226 232 240);
+}
+
+:global(.dark) .reagent-consumption-show-shell :deep(.text-gray-600),
+:global(.dark) .reagent-consumption-show-shell :deep(.text-gray-500),
+:global(.dark) .reagent-consumption-show-shell :deep(.text-gray-400) {
+  color: rgb(148 163 184);
+}
+
+:global(.dark) .reagent-consumption-show-shell :deep(.border-gray-200),
+:global(.dark) .reagent-consumption-show-shell :deep(.border-gray-300) {
+  border-color: rgb(30 41 59);
+}
+
+:global(.dark) .reagent-consumption-show-shell :deep(.text-blue-900) {
+  color: rgb(var(--color-primary-200, 191 219 254));
+}
+
+:global(.dark) .reagent-consumption-show-shell :deep(.text-green-600) {
+  color: rgb(110 231 183);
+}
+
+:global(.dark) .reagent-consumption-show-shell :deep(.text-red-600),
+:global(.dark) .reagent-consumption-show-shell :deep(.text-red-700) {
+  color: rgb(252 165 165);
+}
+
+:global(.dark) .reagent-consumption-show-shell :deep(.text-yellow-800),
+:global(.dark) .reagent-consumption-show-shell :deep(.text-yellow-700),
+:global(.dark) .reagent-consumption-show-shell :deep(.text-yellow-600) {
+  color: rgb(253 230 138);
+}
+</style>

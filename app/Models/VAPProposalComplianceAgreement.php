@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class VAPProposalComplianceAgreement extends Model
 {
@@ -18,6 +18,8 @@ class VAPProposalComplianceAgreement extends Model
         'impartiality',
         'nondisclosure',
         'acknowledged_at',
+        'rejected_at',
+        'rejection_reason',
         'client_ip',
     ];
 
@@ -26,6 +28,7 @@ class VAPProposalComplianceAgreement extends Model
         'impartiality' => 'boolean',
         'nondisclosure' => 'boolean',
         'acknowledged_at' => 'datetime',
+        'rejected_at' => 'datetime',
         'deleted_at' => 'datetime',
     ];
 

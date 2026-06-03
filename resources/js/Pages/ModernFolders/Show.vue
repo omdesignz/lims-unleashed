@@ -40,6 +40,7 @@
   import axios from 'axios';
   import breadcrumbs from '@/Components/breadcrumbs.vue';
   import folderItem from '@/Pages/Folders/folder-item.vue';
+  import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
   defineOptions({
     layout: [Layout, FilemanagerLayout]
@@ -72,6 +73,5 @@ const props = defineProps({
   onMounted(() => {
     fetchFilesAndFolders();
   });
-  
+
   </script>
-  

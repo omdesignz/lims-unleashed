@@ -1,5 +1,8 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import ModuleCard from '@/Components/base/ModuleCard.vue'
+import ModuleHero from '@/Components/base/ModuleHero.vue'
 import RecordsTable from '@/Components/records-table.vue';
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { TransitionRoot } from '@headlessui/vue'
@@ -33,6 +36,7 @@ const props = defineProps({
     initialSortDirection: { type: String, default: 'asc' },
     initialIncludes: { type: Array, default: [] },
     initialGlobalFilter: { type: String, default: '' },
+    entrypoint: { type: Object, default: () => ({}) },
     slideOverEdit: {
       type: Boolean,
       default: false
@@ -299,7 +303,7 @@ function loadCustomers(query, setOptions) {
 }
 
 const handleCreateAction = () => {
-  router.get(route('directcollections.create'));
+  router.get(props.entrypoint?.create_sample_url || route('vap_samples.index', { collection_type: 'direct' }));
 }
 
 const exportSelectedAnalysisSheet = () => {
@@ -314,51 +318,92 @@ const exportSelectedAnalysisSheet = () => {
 
 </script>
 <template>
-<div class="border-b border-gray-200 pb-5">
-    <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.direct_collections.page_title') }}</h3>
-</div>
+<div class="space-y-8" :class="commercialDocumentThemeClasses">
+<ModuleHero
+    eyebrow="Sample collection"
+    :title="$t('gestlab.general.labels.direct_collections.page_title')"
+    description="Acompanhe colheitas diretas, escopo analítico, QR codes, parâmetros previstos e exportações operacionais para bancada."
+>
+  <template #actions>
+    <div class="flex flex-wrap gap-3">
+      <button
+        @click="changeCollectionCategory('pending')"
+        type="button"
+        :class="[
+          'inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition',
+          props.query.category == 'pending'
+            ? 'border-primary-600 bg-primary-600 text-white shadow-lg shadow-primary-600/20 dark:border-primary-500 dark:bg-primary-500'
+            : 'border-slate-300 bg-white/80 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-800'
+        ]"
+      >
+        <ClipboardDocumentListIcon class="size-5" aria-hidden="true" /> Pendentes
+      </button>
+      <button
+        @click="changeCollectionCategory('archived')"
+        type="button"
+        :class="[
+          'inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition',
+          props.query.category == 'archived'
+            ? 'border-primary-600 bg-primary-600 text-white shadow-lg shadow-primary-600/20 dark:border-primary-500 dark:bg-primary-500'
+            : 'border-slate-300 bg-white/80 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-800'
+        ]"
+      >
+        <DocumentCheckIcon class="size-5" aria-hidden="true" /> Processadas
+      </button>
+    </div>
+  </template>
+</ModuleHero>
 
 <!-- Statistics -->
 <Stats :data="props.stats" />
 
-<div class="flex flex-col items-end mt-4">
-  <span class="isolate inline-flex rounded-md shadow-sm">
-    <button @click="changeCollectionCategory('pending')" type="button" class="relative inline-flex items-center rounded-l-md px-2 py-1.5 text-sm text-gray-900 border border-gray-300 hover:bg-gray-50 hover:text-blue-900 focus:z-10" :class="[props.query.category == 'pending' ? 'text-white bg-blue-900' : 'bg-white']">
-      <span class="sr-only">Pendentes</span>
-      <ClipboardDocumentListIcon class="size-5" aria-hidden="true" /> Pendentes
+<ModuleCard
+  :title="props.entrypoint?.label || 'A entrada canónica é Sample Entry'"
+  :description="props.entrypoint?.description || 'Use a receção de amostra para iniciar novos fluxos; esta lista acompanha a etapa operacional depois da validação.'"
+>
+  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div>
+      <p class="text-sm font-semibold text-slate-900 dark:text-white">Novo fluxo recomendado</p>
+      <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
+        Produto, matriz, escopo, evidências, lab code e análise ficam ligados desde a receção.
+      </p>
+    </div>
+    <button
+      type="button"
+      class="inline-flex items-center justify-center rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
+      @click="handleCreateAction"
+    >
+      Criar via Sample Entry
     </button>
-    <button @click="changeCollectionCategory('archived')" type="button" class="relative -ml-px inline-flex items-center rounded-r-md px-2 py-1.5 text-sm text-gray-900 border border-gray-300 hover:bg-gray-50 hover:text-blue-900 focus:z-10" :class="[props.query.category == 'archived' ? 'text-white bg-blue-900' : 'bg-white']">
-      <span class="sr-only">Processadas</span>
-      <DocumentCheckIcon class="size-5" aria-hidden="true" /> Processadas
-    </button>
-  </span>
-</div>
+  </div>
+</ModuleCard>
 
-<div class="mt-4 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+<ModuleCard title="Acompanhamento operacional" description="Seleccione colheitas para exportar a folha XLSX com os parâmetros a analisar.">
+<div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
   <div>
-    <p class="text-sm font-semibold text-gray-900">Acompanhamento operacional</p>
-    <p class="text-sm text-gray-500">
+    <p class="text-sm text-slate-600 dark:text-slate-300">
       {{ selectedIDs.length ? `${selectedIDs.length} registo(s) seleccionados para exportação da folha de parâmetros.` : 'Seleccione uma ou mais colheitas para exportar a folha XLSX com os parâmetros a analisar.' }}
     </p>
   </div>
 
   <button
     type="button"
-    class="inline-flex items-center justify-center rounded-xl bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+    class="inline-flex items-center justify-center rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-slate-300 dark:bg-primary-500 dark:hover:bg-primary-400"
     :disabled="!selectedIDs.length"
     @click="exportSelectedAnalysisSheet"
   >
     Exportar folha XLSX
   </button>
 </div>
+</ModuleCard>
 
 <div v-if="scopeDashboard.scopedCount" class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,2fr),minmax(320px,1fr)]">
-  <section class="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 shadow-sm">
+  <section class="rounded-3xl border border-amber-200 bg-amber-50/70 p-5 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10">
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div>
         <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Escopo controlado</p>
-        <h2 class="mt-1 text-lg font-semibold text-gray-900">Visão rápida da fila técnica</h2>
-        <p class="mt-1 text-sm text-gray-600">
+        <h2 class="mt-1 text-lg font-semibold text-slate-900 dark:text-white">Visão rápida da fila técnica</h2>
+        <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
           Mostra quantas colheitas da lista já trazem parâmetros previstos e quais exigem maior atenção operacional.
         </p>
       </div>
@@ -368,38 +413,38 @@ const exportSelectedAnalysisSheet = () => {
     </div>
 
     <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <article class="rounded-xl border border-white/70 bg-white/80 px-4 py-3">
-        <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Colheitas com escopo</p>
-        <p class="mt-2 text-2xl font-semibold text-gray-900">{{ scopeDashboard.scopedCount }}</p>
+      <article class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-950/45">
+        <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Colheitas com escopo</p>
+        <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ scopeDashboard.scopedCount }}</p>
       </article>
-      <article class="rounded-xl border border-white/70 bg-white/80 px-4 py-3">
-        <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Com restrições ISO</p>
-        <p class="mt-2 text-2xl font-semibold text-gray-900">{{ scopeDashboard.restrictedCount }}</p>
+      <article class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-950/45">
+        <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Com restrições ISO</p>
+        <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ scopeDashboard.restrictedCount }}</p>
       </article>
-      <article class="rounded-xl border border-white/70 bg-white/80 px-4 py-3">
-        <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Parâmetros planeados</p>
-        <p class="mt-2 text-2xl font-semibold text-gray-900">{{ scopeDashboard.requiredParameterTotal }}</p>
+      <article class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-950/45">
+        <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Parâmetros planeados</p>
+        <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ scopeDashboard.requiredParameterTotal }}</p>
       </article>
-      <article class="rounded-xl border border-white/70 bg-white/80 px-4 py-3">
-        <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Ainda pendentes</p>
-        <p class="mt-2 text-2xl font-semibold text-gray-900">{{ scopeDashboard.pendingScopedCount }}</p>
+      <article class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 dark:border-slate-700 dark:bg-slate-950/45">
+        <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Ainda pendentes</p>
+        <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ scopeDashboard.pendingScopedCount }}</p>
       </article>
     </div>
   </section>
 
-  <aside class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-    <p class="text-sm font-semibold text-gray-900">Colheitas que pedem atenção</p>
+  <aside class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+    <p class="text-sm font-semibold text-slate-900 dark:text-white">Colheitas que pedem atenção</p>
     <div v-if="scopeDashboard.attentionRecords.length" class="mt-4 space-y-3">
       <a
         v-for="row in scopeDashboard.attentionRecords"
         :key="row.id"
         :href="route('directcollections.show', { collection: row.id })"
-        class="block rounded-xl border border-gray-200 bg-gray-50 p-3 transition hover:border-blue-200 hover:bg-blue-50"
+        class="block rounded-2xl border border-slate-200 bg-slate-50 p-3 transition hover:border-primary-200 hover:bg-primary-50 dark:border-slate-800 dark:bg-slate-950/45 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10"
       >
         <div class="flex items-start justify-between gap-3">
           <div>
-            <p class="text-sm font-semibold text-gray-900">{{ row.cl }} · {{ row.product }}</p>
-            <p class="mt-1 text-xs text-gray-600">{{ row.scope_control?.required_parameter_count || 0 }} parâmetros previstos</p>
+            <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ row.cl }} · {{ row.product }}</p>
+            <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">{{ row.scope_control?.required_parameter_count || 0 }} parâmetros previstos</p>
           </div>
           <span
             :class="[
@@ -412,17 +457,18 @@ const exportSelectedAnalysisSheet = () => {
             {{ conditioningLabels[row.scope_control?.conditioning_status] || 'Sem avaliação' }}
           </span>
         </div>
-        <p class="mt-2 text-xs text-gray-600">
+        <p class="mt-2 text-xs text-slate-600 dark:text-slate-300">
           {{ row.pending_analysis || 0 }} análises pendentes
         </p>
       </a>
     </div>
-    <p v-else class="mt-4 text-sm text-gray-500">
+    <p v-else class="mt-4 text-sm text-slate-500 dark:text-slate-400">
       Nenhuma colheita da lista atual requer atenção prioritária.
     </p>
   </aside>
 </div>
 
+<ModuleCard title="Fila de colheitas diretas">
 <vap-table
     hasQr
     :model="props.model" 
@@ -623,7 +669,9 @@ const exportSelectedAnalysisSheet = () => {
           </div>
         </template>
 </vap-table>
+</ModuleCard>
 
 <confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
 
+</div>
 </template>

@@ -1,6 +1,6 @@
 <template>
   <Modal :show="show" @close="closeModal" max-width="4xl">
-    <form @submit.prevent="restoreRevision" class="p-6">
+    <form @submit.prevent="restoreRevision" class="iso-revision-restore-modal p-6">
       <!-- HEADER -->
       <div class="flex items-center justify-between mb-6">
         <div>
@@ -506,7 +506,7 @@ const restoreRevision = () => {
   form.transform((data) => ({
     ...data,
     approval_data: approvalData
-  })).post(route('qualitycertificates.revisions.restore', {
+  })).post(route('qualitycertificates.iso-revisions.restore', {
     certificate: props.certificate.id,
     revision: props.revision.id
   }), {
@@ -521,3 +521,56 @@ const restoreRevision = () => {
   })
 }
 </script>
+
+<style scoped>
+.iso-revision-restore-modal :deep(.text-blue-900),
+.iso-revision-restore-modal :deep(.text-blue-800) {
+  color: rgb(var(--primary-800-rgb)) !important;
+}
+
+.iso-revision-restore-modal :deep(.bg-blue-900) {
+  background-color: rgb(var(--primary-900-rgb)) !important;
+}
+
+.iso-revision-restore-modal :deep(.bg-blue-50),
+.iso-revision-restore-modal :deep(.bg-blue-100) {
+  background-color: rgb(var(--primary-50-rgb) / 0.82) !important;
+}
+
+.iso-revision-restore-modal :deep(input),
+.iso-revision-restore-modal :deep(select),
+.iso-revision-restore-modal :deep(textarea) {
+  border-color: #d8cbb8;
+  background: #fffdf7;
+  color: #15231f;
+  border-radius: 0.875rem;
+}
+
+:global(.dark) .iso-revision-restore-modal {
+  background-color: rgb(2 6 23 / 0.92);
+}
+
+:global(.dark) .iso-revision-restore-modal :deep(.bg-white),
+:global(.dark) .iso-revision-restore-modal :deep(.bg-gray-50),
+:global(.dark) .iso-revision-restore-modal :deep(.bg-gray-100),
+:global(.dark) .iso-revision-restore-modal :deep(.bg-blue-50) {
+  background-color: rgb(15 23 42 / 0.86) !important;
+}
+
+:global(.dark) .iso-revision-restore-modal :deep(.text-gray-900) {
+  color: #f8fafc !important;
+}
+
+:global(.dark) .iso-revision-restore-modal :deep(.text-gray-700),
+:global(.dark) .iso-revision-restore-modal :deep(.text-gray-600) {
+  color: #cbd5e1 !important;
+}
+
+:global(.dark) .iso-revision-restore-modal :deep(input),
+:global(.dark) .iso-revision-restore-modal :deep(select),
+:global(.dark) .iso-revision-restore-modal :deep(textarea) {
+  border-color: #315149;
+  background: #10231f;
+  color: #f7f1e7;
+}
+</style>

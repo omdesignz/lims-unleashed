@@ -2,22 +2,25 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Notifications\PortalPasswordResetNotification;
+use App\Notifications\PortalVerifyEmailNotification;
+use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys as HasPasskeysContract;
 
-
-class Warehouse extends Authenticatable implements MustVerifyEmail
+class Warehouse extends Authenticatable implements HasPasskeysContract, MustVerifyEmail
 {
-    use HasFactory, SoftDeletes, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, MustVerifyEmailTrait, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
-    public CONST MENU_NAME = 'warehouses';
+    public const MENU_NAME = 'warehouses';
 
-    protected $guard = "portal";
+    protected $guard = 'portal';
 
     /**
      * The attributes that are mass assignable.
@@ -46,7 +49,6 @@ class Warehouse extends Authenticatable implements MustVerifyEmail
         'two_factor_confirmed_at',
     ];
 
-
     /**
      * The attributes that should be hidden for serialization.
      *
@@ -60,8 +62,8 @@ class Warehouse extends Authenticatable implements MustVerifyEmail
     ];
 
     protected $table = 'warehouses';
-    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
+    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     /**
      * The attributes that should be cast.
@@ -78,7 +80,8 @@ class Warehouse extends Authenticatable implements MustVerifyEmail
      *
      * @return Relationship
      */
-    public function customer() {
+    public function customer()
+    {
         return $this->belongsTo(Customer::class, 'customer_id');
     }
 
@@ -87,5 +90,40 @@ class Warehouse extends Authenticatable implements MustVerifyEmail
         return $query->whereNull('deleted_at');
     }
 
+    public function sendPasswordResetNotification($token): void
+    {
+        $url = route('portal.password.reset', [
+            'token' => $token,
+            'email' => $this->email,
+        ]);
 
+        $this->notify(new PortalPasswordResetNotification($url));
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new PortalVerifyEmailNotification);
+    }
+
+    public function passkeys(): HasMany
+    {
+        return $this->hasMany(Passkey::class, 'authenticatable_id')
+            ->where('authenticatable_type', self::class)
+            ->withAttributes(['authenticatable_type' => self::class]);
+    }
+
+    public function getPassKeyName(): string
+    {
+        return $this->email ?: $this->code ?: 'warehouse-'.$this->getKey();
+    }
+
+    public function getPassKeyId(): string
+    {
+        return 'warehouse-'.$this->getKey();
+    }
+
+    public function getPassKeyDisplayName(): string
+    {
+        return $this->customer?->name ?: $this->name ?: $this->email ?: 'Cliente '.$this->getKey();
+    }
 }

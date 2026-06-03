@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
       <div class="flex items-center justify-between">
@@ -28,6 +28,7 @@
         </div>
         <div class="flex items-center gap-4">
           <Link
+            v-if="hasPermission('edit_warehouses')"
             as="button" 
             :href="route('warehouses.edit', { warehouse: props.record.data?.id })"
             class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
@@ -38,7 +39,7 @@
           <Link
             as="button" 
             :href="route('customers.show', { customer: props.record.data?.customer_id })"
-            v-if="props.record.data?.customer_id"
+            v-if="props.record.data?.customer_id && hasPermission('view_customers')"
             class="inline-flex items-center gap-2 rounded-lg border border-blue-900 px-4 py-2.5 text-sm font-semibold text-blue-900 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
           >
             <ArrowLeftIcon class="h-5 w-5" />
@@ -276,46 +277,14 @@
 
             <!-- PASSWORD UPDATE FORM -->
             <div v-if="showPasswordForm" class="border border-gray-200 rounded-lg p-6 bg-gray-50">
-              <h3 class="text-sm font-semibold text-gray-900 mb-4">
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">
                 {{ hasPassword ? $t('gestlab.general.labels.warehouses.change_password') : $t('gestlab.general.labels.warehouses.set_new_password') }}
               </h3>
               
               <form @submit.prevent="updatePassword" class="space-y-4">
-                <!-- Current Password (only when changing password) -->
-                <div v-if="hasPassword" class="space-y-2">
-                  <label class="block text-sm font-medium text-gray-700">
-                    {{ $t('gestlab.general.labels.warehouses.current_password') }}
-                    <span class="text-red-500">*</span>
-                  </label>
-                  <div class="relative">
-                    <input
-                      v-model="passwordForm.current_password"
-                      :type="showCurrentPassword ? 'text' : 'password'"
-                      :class="[
-                        'block w-full rounded-lg border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200 pr-10',
-                        passwordForm.errors.current_password
-                          ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                          : 'ring-gray-300 focus:ring-blue-900'
-                      ]"
-                      :placeholder="$t('gestlab.general.labels.warehouses.placeholders.current_password')"
-                    />
-                    <button
-                      type="button"
-                      @click="showCurrentPassword = !showCurrentPassword"
-                      class="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    >
-                      <EyeIcon v-if="showCurrentPassword" class="h-5 w-5 text-gray-400" />
-                      <EyeSlashIcon v-else class="h-5 w-5 text-gray-400" />
-                    </button>
-                  </div>
-                  <p v-if="passwordForm.errors.current_password" class="text-xs text-red-600">
-                    {{ passwordForm.errors.current_password }}
-                  </p>
-                </div>
-
                 <!-- New Password -->
                 <div class="space-y-2">
-                  <label class="block text-sm font-medium text-gray-700">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-slate-200">
                     {{ $t('gestlab.general.labels.warehouses.new_password') }}
                     <span class="text-red-500">*</span>
                   </label>
@@ -324,10 +293,10 @@
                       v-model="passwordForm.password"
                       :type="showNewPassword ? 'text' : 'password'"
                       :class="[
-                        'block w-full rounded-lg border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200 pr-10',
+                        'block w-full rounded-lg border-0 py-2.5 px-3 text-gray-900 dark:text-slate-100 dark:bg-slate-950 shadow-sm ring-1 ring-inset placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200 pr-10',
                         passwordForm.errors.password
                           ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                          : 'ring-gray-300 focus:ring-blue-900'
+                          : 'ring-gray-300 dark:ring-slate-700 focus:ring-blue-900'
                       ]"
                       :placeholder="$t('gestlab.general.labels.warehouses.placeholders.new_password')"
                     />
@@ -348,7 +317,7 @@
                           passwordStrength.length ? 'text-green-500' : 'text-gray-300'
                         ]" 
                       />
-                      <span class="text-xs text-gray-600">{{ $t('gestlab.general.labels.warehouses.min_8_chars') }}</span>
+                      <span class="text-xs text-gray-600 dark:text-slate-300">{{ $t('gestlab.general.labels.warehouses.min_8_chars') }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                       <CheckCircleIcon 
@@ -357,7 +326,7 @@
                           passwordStrength.mixed ? 'text-green-500' : 'text-gray-300'
                         ]" 
                       />
-                      <span class="text-xs text-gray-600">{{ $t('gestlab.general.labels.warehouses.mixed_case') }}</span>
+                      <span class="text-xs text-gray-600 dark:text-slate-300">{{ $t('gestlab.general.labels.warehouses.mixed_case') }}</span>
                     </div>
                   </div>
                   <p v-if="passwordForm.errors.password" class="text-xs text-red-600 mt-2">
@@ -367,7 +336,7 @@
 
                 <!-- Confirm Password -->
                 <div class="space-y-2">
-                  <label class="block text-sm font-medium text-gray-700">
+                  <label class="block text-sm font-medium text-gray-700 dark:text-slate-200">
                     {{ $t('gestlab.general.labels.warehouses.confirm_password') }}
                     <span class="text-red-500">*</span>
                   </label>
@@ -376,10 +345,10 @@
                       v-model="passwordForm.password_confirmation"
                       :type="showConfirmPassword ? 'text' : 'password'"
                       :class="[
-                        'block w-full rounded-lg border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200 pr-10',
+                        'block w-full rounded-lg border-0 py-2.5 px-3 text-gray-900 dark:text-slate-100 dark:bg-slate-950 shadow-sm ring-1 ring-inset placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200 pr-10',
                         passwordForm.errors.password_confirmation
                           ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                          : 'ring-gray-300 focus:ring-blue-900'
+                          : 'ring-gray-300 dark:ring-slate-700 focus:ring-blue-900'
                       ]"
                       :placeholder="$t('gestlab.general.labels.warehouses.placeholders.confirm_password')"
                     />
@@ -400,12 +369,12 @@
                 <!-- Password Strength Indicator -->
                 <div v-if="passwordForm.password" class="space-y-2">
                   <div class="flex justify-between items-center">
-                    <span class="text-xs font-medium text-gray-700">{{ $t('gestlab.general.labels.warehouses.password_strength') }}</span>
+                    <span class="text-xs font-medium text-gray-700 dark:text-slate-300">{{ $t('gestlab.general.labels.warehouses.password_strength') }}</span>
                     <span class="text-xs font-medium" :class="passwordStrengthClass">
                       {{ passwordStrengthLabel }}
                     </span>
                   </div>
-                  <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div class="h-2 bg-gray-200 dark:bg-slate-800 rounded-full overflow-hidden">
                     <div 
                       class="h-full transition-all duration-300"
                       :class="passwordStrengthBarClass"
@@ -419,7 +388,7 @@
                   <button
                     type="button"
                     @click="cancelPasswordUpdate"
-                    class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 transition-colors duration-200"
+                    class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 transition-colors duration-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:bg-slate-900"
                   >
                     {{ $t('gestlab.general.buttons.cancel') }}
                   </button>
@@ -621,6 +590,7 @@
           </h3>
           <div class="space-y-3">
             <Link
+              v-if="hasPermission('view_invoices')"
                
               :href="route('invoices.index', { warehouse: props.record.data?.id })"
               class="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-900 hover:bg-blue-50 transition-colors duration-200 group"
@@ -640,6 +610,7 @@
             </Link>
 
             <Link
+              v-if="hasPermission('view_direct_collections')"
                
               :href="route('directcollections.index', { warehouse: props.record.data?.id })"
               class="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-900 hover:bg-blue-50 transition-colors duration-200 group"
@@ -659,6 +630,7 @@
             </Link>
 
             <Link
+              v-if="hasPermission('view_quality_certificates')"
                
               :href="route('qualitycertificates.index', { warehouse: props.record.data?.id })"
               class="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-900 hover:bg-blue-50 transition-colors duration-200 group"
@@ -678,6 +650,7 @@
             </Link>
 
             <Link
+              v-if="hasPermission('view_contract_guides')"
                
               :href="route('contractguides.index', { warehouse: props.record.data?.id })"
               class="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-900 hover:bg-blue-50 transition-colors duration-200 group"
@@ -819,6 +792,7 @@
 
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed, onMounted, reactive } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import { 
@@ -884,16 +858,11 @@ const props = defineProps({
   charts: {
     type: Object,
     default: () => ({})
-  },
-  auth: {
-    type: Object,
-    default: () => ({})
   }
 });
 
 // Password management
 const showPasswordForm = ref(false);
-const showCurrentPassword = ref(false);
 const showNewPassword = ref(false);
 const showConfirmPassword = ref(false);
 const resetEmailSending = ref(false);
@@ -903,16 +872,8 @@ const hasPassword = computed(() => {
   return !!props.record.data?.has_password;
 });
 
-// Check if current user can update password (admin check)
-const userCanUpdatePassword = computed(() => {
-  // You might want to implement a proper permission check here
-  // For now, assuming admins can update passwords
-  return props.auth?.user?.is_admin || false;
-});
-
 // Password form
 const passwordForm = useForm({
-  current_password: '',
   password: '',
   password_confirmation: '',
 });
@@ -945,7 +906,7 @@ const passwordStrengthLabel = computed(() => {
   if (score === 0) return 'Muito Fraca';
   if (score === 1) return 'Fraca';
   if (score === 2) return 'Normal';
-  if (score === 3) return 'Good';
+  if (score === 3) return 'Boa';
   return 'Forte';
 });
 
@@ -968,7 +929,6 @@ const passwordStrengthBarClass = computed(() => {
 });
 
 const isPasswordFormValid = computed(() => {
-  if (hasPassword.value && !passwordForm.current_password) return false;
   if (!passwordForm.password || passwordForm.password.length < 8) return false;
   if (passwordForm.password !== passwordForm.password_confirmation) return false;
   if (passwordStrength.value.score < 2) return false; // Require at least "Fair" strength
@@ -995,7 +955,6 @@ const updatePassword = () => {
 const cancelPasswordUpdate = () => {
   showPasswordForm.value = false;
   passwordForm.reset();
-  showCurrentPassword.value = false;
   showNewPassword.value = false;
   showConfirmPassword.value = false;
 };

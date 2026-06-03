@@ -1,6 +1,6 @@
 <template>
   <Modal :show="show" @close="closeModal" max-width="2xl">
-    <form @submit.prevent="createRevision" class="p-6">
+    <form @submit.prevent="createRevision" class="iso-revision-create-modal p-6">
       <!-- HEADER -->
       <div class="flex items-center justify-between mb-6">
         <div>
@@ -229,3 +229,58 @@ const createRevision = () => {
   })
 }
 </script>
+
+<style scoped>
+.iso-revision-create-modal :deep(.text-blue-900),
+.iso-revision-create-modal :deep(.text-blue-800) {
+  color: rgb(var(--primary-800-rgb)) !important;
+}
+
+.iso-revision-create-modal :deep(.bg-blue-900) {
+  background-color: rgb(var(--primary-900-rgb)) !important;
+}
+
+.iso-revision-create-modal :deep(.from-blue-900) {
+  --tw-gradient-from: rgb(var(--primary-900-rgb)) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(var(--primary-900-rgb) / 0) var(--tw-gradient-to-position) !important;
+}
+
+.iso-revision-create-modal :deep(.to-blue-800) {
+  --tw-gradient-to: rgb(var(--primary-700-rgb)) var(--tw-gradient-to-position) !important;
+}
+
+.iso-revision-create-modal :deep(input),
+.iso-revision-create-modal :deep(select),
+.iso-revision-create-modal :deep(textarea) {
+  border-color: #d8cbb8;
+  background: #fffdf7;
+  color: #15231f;
+  border-radius: 0.875rem;
+}
+
+:global(.dark) .iso-revision-create-modal {
+  background-color: rgb(2 6 23 / 0.92);
+}
+
+:global(.dark) .iso-revision-create-modal :deep(.bg-white),
+:global(.dark) .iso-revision-create-modal :deep(.bg-gray-50) {
+  background-color: rgb(15 23 42 / 0.86) !important;
+}
+
+:global(.dark) .iso-revision-create-modal :deep(.text-gray-900) {
+  color: #f8fafc !important;
+}
+
+:global(.dark) .iso-revision-create-modal :deep(.text-gray-700),
+:global(.dark) .iso-revision-create-modal :deep(.text-gray-600) {
+  color: #cbd5e1 !important;
+}
+
+:global(.dark) .iso-revision-create-modal :deep(input),
+:global(.dark) .iso-revision-create-modal :deep(select),
+:global(.dark) .iso-revision-create-modal :deep(textarea) {
+  border-color: #315149;
+  background: #10231f;
+  color: #f7f1e7;
+}
+</style>

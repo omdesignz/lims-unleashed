@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import RecordsTable from '@/Components/records-table.vue';
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { TransitionRoot } from '@headlessui/vue'
@@ -73,6 +74,9 @@ function uploadFiles(files) {
             form.append('file', media.file);
  
             axios.post(route('media.store'), form, {
+              headers: {
+                Accept: 'application/json',
+              },
               onUploadProgress: (event) => {
                 media.progress = Math.round(event.loaded * 100 / event.total);
               },
@@ -83,7 +87,7 @@ function uploadFiles(files) {
                   media.preview_url = data.preview_url;
                 })
                 .catch(error => {
-                  media.error = `Upload fail. Please try again later.`;
+                  media.error = `Não foi possível carregar o ficheiro. Tente novamente.`;
  
                   if (error?.response.status === 422) {
                     media.error = error.response.data.errors.file[0];
@@ -94,12 +98,12 @@ function uploadFiles(files) {
 
 </script>
 <template>
-<div class="border-b border-gray-200 pb-5">
+<div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.files.page_title') }}</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500"></p>
 </div>
 
-<div class="space-y-12">
+<div class="space-y-12" :class="commercialDocumentThemeClasses">
       <div class="border-b border-gray-900/10 pb-12">
         <h2 class="text-base font-semibold leading-7 text-gray-900"></h2>
         <p class="mt-1 text-sm leading-6 text-gray-600"></p>

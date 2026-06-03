@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed, onMounted } from "vue";
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import { router, useForm, usePage } from "@inertiajs/vue3";
@@ -291,12 +292,12 @@ let submitResults = () => {
 </script>
 
 <template>
-<div class="border-b border-gray-200 pb-5">
+<div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
     <h3 class="text-base font-semibold leading-6 text-gray-900">Análises</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500">A modificar a análise pertencente ao CL: {{ form.cl }}</p>
 </div>
 
-<form @submit.prevent>
+<form :class="commercialDocumentThemeClasses" @submit.prevent>
     <div class="space-y-6">
       
         <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-10">

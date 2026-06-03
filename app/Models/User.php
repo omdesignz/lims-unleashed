@@ -2,36 +2,32 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Traits\HasProfilePhoto;
+use Carbon\Carbon;
+use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Image\Enums\Fit;
+use Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys as HasPasskeysContract;
+use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use App\Traits\HasProfilePhoto;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Spatie\Image\Enums\BorderType;
-use Spatie\Image\Enums\CropPosition;
-use Spatie\Image\Enums\Fit;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\MediaCollections\File;
 use Spatie\Permission\Traits\HasPermissions;
 use Spatie\Permission\Traits\HasRoles;
-use Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys as HasPasskeysContract;
-use Spatie\LaravelPasskeys\Models\Passkey;
 
-class User extends Authenticatable implements MustVerifyEmail, HasMedia, HasPasskeysContract
+class User extends Authenticatable implements HasMedia, HasPasskeysContract, MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable, InteractsWithMedia, HasProfilePhoto, SoftDeletes, HasRoles, HasPermissions;
+    use HasApiTokens, HasFactory, HasPermissions, HasProfilePhoto, HasRoles, InteractsWithMedia, MustVerifyEmailTrait, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
-    public CONST MENU_NAME = 'users';
-    public CONST ABILITIES = ['view', 'add', 'edit', 'delete', 'restore', 'ban', 'reset-password', 'impersonate'];
+    public const MENU_NAME = 'users';
 
+    public const ABILITIES = ['view', 'add', 'edit', 'delete', 'restore', 'ban', 'reset-password', 'impersonate'];
 
     /**
      * The attributes that are mass assignable.
@@ -78,6 +74,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia, HasPass
     ];
 
     protected $table = 'users';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at', 'last_login_at'];
 
     /**
@@ -129,7 +126,8 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia, HasPass
         return $this?->getMedia('signature')->count() ? $this?->getMedia('signature')?->first()->getFullUrl() : '';
     }
 
-    public function scopeIsBirthday() {
+    public function scopeIsBirthday()
+    {
         return $this->dob->isBirthday();
     }
 
@@ -143,7 +141,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia, HasPass
         return $this->belongsToMany(CollectionCollaboration::class, 'col_collab', 'collection_id', 'collaboration_id');
     }
 
-     /**
+    /**
      * Departments
      *
      * @return Relationship
@@ -160,7 +158,9 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia, HasPass
 
     public function passkeys(): HasMany
     {
-        return $this->hasMany(Passkey::class, 'authenticatable_id');
+        return $this->hasMany(Passkey::class, 'authenticatable_id')
+            ->where('authenticatable_type', self::class)
+            ->withAttributes(['authenticatable_type' => self::class]);
     }
 
     public function getPassKeyName(): string
@@ -196,48 +196,48 @@ class User extends Authenticatable implements MustVerifyEmail, HasMedia, HasPass
                     'text/csv',
                     'text/xml',
                     'application/vnd.ms-excel',
-                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                 ])
             ->useDisk('public');
 
-
-            $this->addMediaCollection('avatar')
+        $this->addMediaCollection('avatar')
             ->acceptsMimeTypes([
                 'image/jpeg',
-                'image/png'
-                ])
+                'image/png',
+            ])
             ->useFallbackUrl('/images/avatar-1.jpg')
             ->useFallbackPath(public_path('/images/avatar-1.jpg'))
-            ->singleFile();  
-
-            $this->addMediaCollection('signature')
-            ->acceptsMimeTypes([
-                'image/jpeg',
-                'image/png'
-                ])
             ->singleFile();
 
-            $this->addMediaCollection('dashboard_header_image')
+        $this->addMediaCollection('signature')
             ->acceptsMimeTypes([
                 'image/jpeg',
-                'image/png'
-                ])
+                'image/png',
+            ])
+            ->singleFile();
+
+        $this->addMediaCollection('dashboard_header_image')
+            ->acceptsMimeTypes([
+                'image/jpeg',
+                'image/png',
+            ])
             ->singleFile();
 
     }
 
-    public function registerMediaConversions(Media $media = null): void
+    public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('dashboard_header_image')
-              ->performOnCollections('dashboard_header_image')
-              ->fit(Fit::Crop, 1280, 400)
-              ->nonQueued();
+            ->performOnCollections('dashboard_header_image')
+            ->fit(Fit::Crop, 1280, 400)
+            ->nonQueued();
     }
 
-    public function getAbilities() {
+    public function getAbilities()
+    {
 
         return self::ABILITIES;
-        
+
     }
 
     public function reagentConsumptions()

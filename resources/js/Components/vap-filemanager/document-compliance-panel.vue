@@ -25,8 +25,8 @@
           <div class="min-w-0">
             <h3 class="truncate text-base font-semibold text-slate-900 dark:text-slate-100">{{ selectedFile.name }}</h3>
             <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {{ selectedFile.document_number || "Sem número documental" }} •
-              {{ selectedFile.revision_code || "Sem revisão" }}
+              {{ selectedFile.document_number || $t('gestlab.general.labels.vap_filemanager.missing_document_number') }} •
+              {{ selectedFile.revision_code || $t('gestlab.general.labels.vap_filemanager.missing_revision') }}
             </p>
           </div>
           <span
@@ -65,7 +65,7 @@
           v-for="alert in complianceAlerts"
           :key="alert.title"
           class="rounded-2xl border px-4 py-3"
-          :class="alert.tone === 'warning' ? 'border-amber-200 bg-amber-50 text-amber-900' : 'border-rose-200 bg-rose-50 text-rose-900'"
+          :class="alert.tone === 'warning' ? 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200' : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200'"
         >
           <p class="text-sm font-semibold">{{ alert.title }}</p>
           <p class="mt-1 text-sm leading-6">{{ alert.description }}</p>
@@ -81,7 +81,7 @@
             v-for="item in checklist"
             :key="item.label"
             class="flex items-start gap-3 rounded-2xl border px-4 py-3"
-            :class="item.ok ? 'border-emerald-200 bg-emerald-50/80' : 'border-slate-200 bg-slate-50'"
+            :class="item.ok ? 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/40' : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/70'"
           >
             <div
               class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
@@ -105,7 +105,7 @@
 
         <label class="block text-sm">
           <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Tipo documental</span>
-          <input v-model="form.document_type" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400" placeholder="SOP, IT, Procedimento..." />
+          <input v-model="form.document_type" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400" :placeholder="$t('gestlab.general.labels.vap_filemanager.document_type_placeholder')" />
         </label>
 
         <label class="block text-sm">
@@ -157,16 +157,16 @@
       </label>
 
       <div class="grid gap-3 sm:grid-cols-2">
-        <button class="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50" :disabled="busy || !canWrite" @click="saveMetadata">
+        <button class="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800" :disabled="busy || !canWrite" @click="saveMetadata">
           Guardar metadados
         </button>
-        <button class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-800 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50" :disabled="busy || !canWrite" @click="submitReview">
+        <button class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-800 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200 dark:hover:bg-sky-950/60" :disabled="busy || !canWrite" @click="submitReview">
           Submeter para revisão
         </button>
         <button class="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50" :disabled="busy || !canApprove" @click="approveDocument">
           Aprovar e efetivar
         </button>
-        <button class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50" :disabled="busy || !canApprove" @click="markObsolete">
+        <button class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200 dark:hover:bg-rose-950/60" :disabled="busy || !canApprove" @click="markObsolete">
           Marcar obsoleto
         </button>
       </div>
@@ -174,7 +174,7 @@
 
     <div v-else class="p-5">
       <div class="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center text-sm leading-6 text-slate-500 dark:border-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
-        Seleccione um ficheiro para gerir número documental, retenção, revisão periódica, aprovação e obsolescência.
+        {{ $t('gestlab.general.labels.vap_filemanager.select_document_workflow_hint') }}
       </div>
     </div>
   </section>
@@ -185,6 +185,7 @@ import axios from 'axios'
 import { computed, reactive, watch, ref } from 'vue'
 import { useToast } from 'vue-toastification'
 import { useFileStore } from '@/Stores/fileStore'
+import { trans } from 'laravel-vue-i18n'
 
 const fileStore = useFileStore()
 const toast = useToast()
@@ -282,22 +283,22 @@ const statusClass = computed(() => {
   const status = selectedFile.value?.status || 'draft'
 
   if (status === 'effective') {
-    return 'bg-emerald-100 text-emerald-700'
+    return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
   }
 
   if (status === 'obsolete') {
-    return 'bg-rose-100 text-rose-700'
+    return 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
   }
 
   if (status === 'in_review') {
-    return 'bg-amber-100 text-amber-700'
+    return 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
   }
 
   if (status === 'approved') {
-    return 'bg-sky-100 text-sky-700'
+    return 'bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300'
   }
 
-  return 'bg-slate-100 text-slate-700'
+  return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
 })
 
 const form = reactive({
@@ -339,10 +340,9 @@ async function saveMetadata() {
   try {
     await axios.put(`/api/files/${selectedFile.value.id}/metadata`, payload())
     await refreshFiles()
-    toast.success('Metadados documentais atualizados.')
-  } catch (error) {
-    console.error(error)
-    toast.error('Não foi possível atualizar os metadados documentais.')
+    toast.success(trans('gestlab.general.labels.vap_filemanager.notifications.metadata_updated'))
+  } catch {
+    toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_updating_metadata'))
   } finally {
     busy.value = false
   }
@@ -358,10 +358,9 @@ async function submitReview() {
       change_reason: form.change_reason || 'Submissão para revisão controlada',
     })
     await refreshFiles()
-    toast.success('Documento submetido para revisão.')
-  } catch (error) {
-    console.error(error)
-    toast.error('Não foi possível submeter o documento para revisão.')
+    toast.success(trans('gestlab.general.labels.vap_filemanager.notifications.document_submitted_for_review'))
+  } catch {
+    toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_submitting_review'))
   } finally {
     busy.value = false
   }
@@ -379,10 +378,9 @@ async function approveDocument() {
       review_due_at: form.review_due_at || null,
     })
     await refreshFiles()
-    toast.success('Documento aprovado e efetivado.')
-  } catch (error) {
-    console.error(error)
-    toast.error('Não foi possível aprovar o documento.')
+    toast.success(trans('gestlab.general.labels.vap_filemanager.notifications.document_approved'))
+  } catch {
+    toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_approving_document'))
   } finally {
     busy.value = false
   }
@@ -398,10 +396,9 @@ async function markObsolete() {
       change_reason: form.change_reason || 'Documento substituído ou obsoleto',
     })
     await refreshFiles()
-    toast.success('Documento marcado como obsoleto.')
-  } catch (error) {
-    console.error(error)
-    toast.error('Não foi possível marcar o documento como obsoleto.')
+    toast.success(trans('gestlab.general.labels.vap_filemanager.notifications.document_obsolete'))
+  } catch {
+    toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_marking_obsolete'))
   } finally {
     busy.value = false
   }

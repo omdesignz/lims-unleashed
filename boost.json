@@ -4,6 +4,7 @@
         "codex",
         "opencode"
     ],
+    "cloud": false,
     "guidelines": true,
     "mcp": true,
     "nightwatch_mcp": false,
@@ -15,8 +16,10 @@
         "fortify-development",
         "laravel-best-practices",
         "configuring-horizon",
+        "socialite-development",
         "inertia-vue-development",
         "tailwindcss-development",
-        "medialibrary-development"
+        "medialibrary-development",
+        "animate-text"
     ]
 }

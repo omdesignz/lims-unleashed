@@ -1,5 +1,5 @@
 <template>
-
+<div class="space-y-6" :class="commercialDocumentThemeClasses">
 <div class="border-b border-gray-200 pb-5">
     <h3 class="text-base font-semibold leading-6 text-gray-900">Estado da Importação de Dados</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500"></p>
@@ -49,7 +49,7 @@
 
 
     </div>
-    
+</div>
 
   </template>
   
@@ -58,6 +58,7 @@
   import Layout from "@/Shared/Layouts/Layout.vue";
   import { router } from '@inertiajs/vue3'
   import { CheckIcon } from '@heroicons/vue/24/solid'
+  import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
   defineOptions({
     layout: Layout
@@ -81,7 +82,6 @@
         }
       })
   }
-  
+
   onMounted(fetchStatus)
   </script>
-  

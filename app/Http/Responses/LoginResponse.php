@@ -2,34 +2,29 @@
 
 namespace App\Http\Responses;
 
-use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
-use Inertia\Inertia;
+use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
+use Laravel\Fortify\Contracts\TwoFactorLoginResponse as TwoFactorLoginResponseContract;
 
-class LoginResponse implements LoginResponseContract
+class LoginResponse implements LoginResponseContract, TwoFactorLoginResponseContract
 {
-    /**
-     * @param $request
-     * @return mixed
-     */
-
-     public function toResponse($request)
-     {
+    public function toResponse($request): RedirectResponse
+    {
         $request->session()->forget('fortify.portal_login_attempt');
 
-        //  $home = '/dashboard';
+        if ($this->requestIsPortal($request)) {
+            $request->session()->forget('url.intended');
 
-        //  return Redirect::intended($home);
-
-        if($request->is('portal/*')) {
-            // $home = '/portal/home';
-            return Redirect::intended(route('portal.home'));
-        } else {
-            // $home = '/dashboard';
-            return Redirect::intended(route('dashboard'));
+            return Redirect::to(route('portal.home'));
         }
-         
 
-        //  return Redirect::intended($home);
-     }
+        return Redirect::intended(route('dashboard'));
+    }
+
+    private function requestIsPortal(Request $request): bool
+    {
+        return $request->is('portal') || $request->is('portal/*');
+    }
 }

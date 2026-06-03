@@ -60,7 +60,7 @@ function onSubmit() {
       <input
         ref="input"
         v-model="form.name"
-        class="w-full rounded-2xl border border-white/20 bg-white/95 px-4 py-2 text-2xl font-bold text-slate-900 placeholder:text-slate-400 focus:border-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-700/20"
+        class="w-full rounded-2xl border border-white/20 bg-white/95 px-4 py-2 text-2xl font-bold text-[#15231f] placeholder:text-[#8d9b94] focus:border-[rgb(var(--primary-500-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.24)]"
         :placeholder="$t('gestlab.general.labels.kanban.board_id')"
         type="text"
       />

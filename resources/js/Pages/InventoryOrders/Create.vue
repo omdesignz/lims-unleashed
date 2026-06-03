@@ -7,6 +7,7 @@ import {throttle} from "lodash";
 import { TrashIcon, PlusCircleIcon, ClipboardDocumentCheckIcon } from "@heroicons/vue/24/outline";
 import { trans } from 'laravel-vue-i18n';
 import datePicker from '@/Components/date-picker.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
 defineOptions({
@@ -121,6 +122,7 @@ if(!form.id) {
 </script>
 
 <template>
+<div class="space-y-6" :class="commercialDocumentThemeClasses">
 <div class="border-b border-gray-200 pb-5">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.iorders.page_title') }}</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500">{{ $t('gestlab.general.labels.iorders.page_create_description') }} {{ form?.name }}</p>
@@ -266,4 +268,5 @@ if(!form.id) {
     </div>
   </form>
 
+</div>
 </template>

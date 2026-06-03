@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div :class="commercialDocumentThemeClasses">
       <h2>{{ folder.name }}</h2>
       <!-- <button @click="newFolder">New Folder</button> -->
       <button @click="toggleNewFolderForm">New Folder</button>
@@ -81,6 +81,7 @@ import Layout from "@/Shared/Layouts/Layout.vue";
 import { ref } from 'vue';
 import { useForm, router } from "@inertiajs/vue3";
 import UploadFolder from "@/Pages/Folders/folder-upload.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
   const props = defineProps({
@@ -216,4 +217,3 @@ defineOptions({
   layout: Layout
 });
   </script>
-  

@@ -1,6 +1,7 @@
 <script setup>
 import { reactive, ref, computed, watch } from 'vue';
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import DatePickerEnhanced from '@/Components/date-picker-enhanced.vue';
 import UserCard from '@/Pages/partials/user-card.vue';
 import ComboboxMultipleEnhanced from '@/Components/combobox-multiple-enhanced.vue';
@@ -454,7 +455,7 @@ watch(permInput, (newValue) => {
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
     <!-- USER CARD -->
     <UserCard :auth="props.record" :greeting="$t('gestlab.general.labels.users.modifying_user')" />
 

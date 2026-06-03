@@ -14,6 +14,15 @@ class AnalysisResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $sample = $this->resource->relationLoaded('sample') ? $this->sample : null;
+        $labCode = $sample?->relationLoaded('collection') ? $sample->collection : null;
+        $collectionProduct = $labCode?->relationLoaded('collection') ? $labCode->collection : null;
+        $collection = $collectionProduct?->relationLoaded('collection') ? $collectionProduct->collection : null;
+        $sampleEntry = $collectionProduct?->relationLoaded('sampleEntry') ? $collectionProduct->sampleEntry : null;
+        $sampleEntryId = $sampleEntry?->id ?? data_get($collectionProduct?->extra_data, 'sample_entry_id');
+        $collectionType = data_get($collectionProduct?->extra_data, 'collection_type') ?: $collection?->collectionable_type;
+        $collectionType = in_array($collectionType, ['direct', 'programmed'], true) ? $collectionType : null;
+
         return [
             'id' => $this->id,
             'cl' => LabCodeResource::make($this->whenLoaded('code'))?->code ?? null,
@@ -30,17 +39,41 @@ class AnalysisResource extends JsonResource
             'department_id' => $this->department_id,
             'department' => DepartmentResource::make($this->whenLoaded('department'))?->name ?? null,
             'sample_id' => $this->sample_id,
-            // 'sample' => SampleResource::make($this->whenLoaded('sample'))?->name,
+            'sample' => $sample ? [
+                'id' => $sample->id,
+                'code' => $sample->code,
+            ] : null,
+            'sample_entry' => $sampleEntryId ? [
+                'id' => $sampleEntryId,
+                'code' => $sampleEntry?->code,
+                'name' => $sampleEntry?->name,
+                'status' => $sampleEntry?->status,
+                'sample_type' => $sampleEntry?->sample_type,
+                'show_url' => route('vap_samples.show', $sampleEntryId),
+            ] : null,
+            'entry_origin' => [
+                'source' => $sampleEntryId ? 'sample_entry' : 'legacy_analysis',
+                'label' => $sampleEntryId
+                    ? trans('gestlab.general.labels.analysis.sample_entry')
+                    : trans('gestlab.general.labels.analysis.legacy_record'),
+                'is_sample_entry_first' => (bool) $sampleEntryId,
+                'collection_product_id' => $collectionProduct?->id,
+                'collection_type' => $collectionType,
+            ],
             'deleted' => $this->deleted_at ? true : false,
             'links' => [
                 'edit_path' => route('analysis.edit', $this->id),
+                'collection_show_path' => $collectionProduct && $collectionType
+                    ? route("{$collectionType}collections.show", $collectionProduct)
+                    : null,
+                'sample_entry_show_path' => $sampleEntryId ? route('vap_samples.show', $sampleEntryId) : null,
                 'delete_path' => route('analysis.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('analysis.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

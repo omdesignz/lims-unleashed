@@ -7,6 +7,7 @@ import slideOver from '@/Components/slide-over.vue';
 import { ref, computed } from "vue";
 import { useForm, router } from "@inertiajs/vue3";
 import { trans } from 'laravel-vue-i18n';
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
 const props = defineProps({
@@ -158,6 +159,7 @@ let submit = () => {
 }  
 </script>
 <template>
+<div class="space-y-6" :class="commercialDocumentThemeClasses">
 <div class="border-b border-gray-200 pb-5">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
@@ -246,4 +248,5 @@ let submit = () => {
 
     </div>
   </confirm-dialog>
+</div>
 </template>

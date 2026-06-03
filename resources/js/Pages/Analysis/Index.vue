@@ -1,20 +1,14 @@
 <template>
-  <div class="space-y-8">
-    <!-- HEADER CARD -->
-    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Análises
-          </h1>
-          <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Gerencie e execute diferentes tipos de análises no sistema
-          </p>
-        </div>
-        
+  <div class="analysis-workflow-page space-y-8" :class="commercialDocumentThemeClasses">
+    <ModuleHero
+      eyebrow="Fluxo laboratorial"
+      title="Análises"
+      description="Insira, verifique, aprove e arquive resultados laboratoriais com uma fila clara por departamento e estado de decisão."
+    >
+      <template #actions>
         <!-- DEPARTMENT SELECTOR -->
-        <div class="w-full md:w-64">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <div class="w-full md:w-72">
+          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             Departamento
           </label>
           <select-input
@@ -25,11 +19,20 @@
             class="w-full"
           />
         </div>
-      </div>
+
+        <button
+          type="button"
+          class="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
+          @click="handleCreateAnalysis"
+        >
+          <DocumentPlusIcon class="size-5" aria-hidden="true" />
+          Criar via Sample Entry
+        </button>
+      </template>
 
       <!-- ANALYSIS CATEGORY SELECTOR -->
-      <div>
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+      <div class="mt-6">
+        <h2 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
           Selecione uma ação
         </h2>
         <RadioGroup :modelValue="selectedResultAction" 
@@ -43,30 +46,30 @@
                            v-slot="{ active, checked }">
             <div :class="[
               'relative flex cursor-pointer rounded-xl border p-4 focus:outline-none transition-all duration-200',
-              active ? 'ring-2 ring-primary-500 border-primary-500 dark:ring-primary-400 dark:border-primary-400' : 'border-gray-200 dark:border-gray-700',
-              checked ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800' : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50'
+              active ? 'ring-2 ring-primary-500 border-primary-500 dark:ring-primary-400 dark:border-primary-400' : 'border-slate-200 dark:border-slate-700',
+              checked ? 'bg-primary-50 dark:bg-primary-500/10 border-primary-200 dark:border-primary-500/30' : 'bg-white/80 dark:bg-slate-950/45 hover:bg-slate-50 dark:hover:bg-slate-800/70'
             ]">
               <span class="flex flex-1">
                 <span class="flex flex-col">
                   <!-- ACTION ICON -->
                   <span class="mb-3">
                     <DocumentPlusIcon v-if="action.value === 'insert'" 
-                                     class="h-8 w-8 text-orange-500 dark:text-orange-400" />
+                                     class="h-8 w-8 text-amber-600 dark:text-amber-300" />
                     <DocumentMagnifyingGlassIcon v-else-if="action.value === 'verify'" 
                                                  class="h-8 w-8 text-primary-600 dark:text-primary-400" />
                     <DocumentCheckIcon v-else-if="action.value === 'approve'" 
-                                       class="h-8 w-8 text-green-600 dark:text-green-400" />
+                                       class="h-8 w-8 text-emerald-600 dark:text-emerald-300" />
                     <DocumentIcon v-else-if="action.value === 'archived'" 
-                                 class="h-8 w-8 text-indigo-600" />
+                                 class="h-8 w-8 text-slate-600 dark:text-slate-300" />
                   </span>
                   
                   <!-- ACTION TITLE -->
-                  <span class="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  <span class="block text-sm font-semibold text-slate-900 dark:text-white">
                     {{ $t(action.title) }}
                   </span>
                   
                   <!-- ACTION DESCRIPTION -->
-                  <span class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <span class="mt-1 text-xs text-slate-500 dark:text-slate-400">
                     {{ $t(action.description) }}
                   </span>
                 </span>
@@ -87,15 +90,15 @@
           </RadioGroupOption>
         </RadioGroup>
       </div>
-    </div>
+    </ModuleHero>
 
     <!-- ANALYSIS TABLE SECTION -->
-    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+    <ModuleCard class="overflow-hidden" title="Fila de análises" description="Tabela operacional para executar a ação selecionada sem perder o contexto do fluxo.">
       <vap-table
         :model="props.model" 
         :abilities="props.abilities" 
         :data="props.record.data" 
-        :columns="[...columns, ...extraColumns]"
+        :columns="tableColumns"
         :query="props.query" 
         :filters="filters" 
         :initialFilters="props.initialFilters"
@@ -104,7 +107,7 @@
         :initialIncludes="props.initialIncludes"
         :trashedFilter="props.trashedFilter"
         :trashedOptions="props.trashedOptions"
-        @create-record="form.reset(), openslideover=true" 
+        @create-record="handleCreateAnalysis"
         @slideover-on="openSlideoverWithData" 
         :slideOverEdit="props.slideOverEdit" 
         :pagination="props.record.meta" 
@@ -116,6 +119,35 @@
           actionType = $event.actionType
         }"
       >
+        <!-- SAMPLE ENTRY LINEAGE COLUMN -->
+        <template #column-sample_entry="{ row }">
+          <div class="min-w-0">
+            <Link
+              v-if="row.sample_entry?.show_url"
+              :href="row.sample_entry.show_url"
+              class="group inline-flex max-w-full items-center gap-2 rounded-2xl border border-primary-200/80 bg-primary-50/80 px-3 py-2 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-100 dark:border-primary-500/25 dark:bg-primary-500/10 dark:hover:border-primary-400/60 dark:hover:bg-primary-500/15"
+            >
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-primary-700 shadow-sm ring-1 ring-primary-100 transition group-hover:scale-105 dark:bg-slate-950/60 dark:text-primary-300 dark:ring-primary-500/20">
+                <DocumentIcon class="h-4 w-4" aria-hidden="true" />
+              </span>
+              <span class="min-w-0">
+                <span class="block truncate text-sm font-semibold text-slate-900 dark:text-white">
+                  {{ row.sample_entry.code || row.sample_entry.name || $t('gestlab.general.labels.analysis.sample_entry') }}
+                </span>
+                <span class="block truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  {{ row.sample?.code ? `${$t('gestlab.general.labels.analysis.sample_id')}: ${row.sample.code}` : row.entry_origin?.label }}
+                </span>
+              </span>
+            </Link>
+            <span
+              v-else
+              class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400"
+            >
+              {{ row.entry_origin?.label || $t('gestlab.general.labels.analysis.legacy_record') }}
+            </span>
+          </div>
+        </template>
+
         <!-- STATUS COLUMN TEMPLATE -->
         <template #column-status="{ row }">
           <button 
@@ -193,9 +225,9 @@
               v-if="!row.deleted && !props.slideOverEdit && hasPermission('edit_' + props.model)"
               :class="[
                 'p-1.5 rounded-lg transition-colors duration-200 text-gray-400',
-                props.query.category === 'insert' ? 'hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20' : '',
+                props.query.category === 'insert' ? 'hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20' : '',
                 props.query.category === 'verify' ? 'hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20' : '',
-                props.query.category === 'approve' ? 'hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20' : ''
+                props.query.category === 'approve' ? 'hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' : ''
               ]"
               :title="$t('actions.edit')"
             >
@@ -217,9 +249,9 @@
               v-if="!row.deleted && hasPermission('edit_' + props.model) && props.slideOverEdit"
               :class="[
                 'p-1.5 rounded-lg transition-colors duration-200 text-gray-400',
-                props.query.category === 'insert' ? 'hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20' : '',
+                props.query.category === 'insert' ? 'hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20' : '',
                 props.query.category === 'verify' ? 'hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20' : '',
-                props.query.category === 'approve' ? 'hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20' : ''
+                props.query.category === 'approve' ? 'hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' : ''
               ]"
               :title="$t('actions.edit')"
             >
@@ -249,7 +281,7 @@
           </div>
         </template>
       </vap-table>
-    </div>
+    </ModuleCard>
 
     <!-- CONFIRMATION DIALOG -->
     <confirm-dialog 
@@ -268,9 +300,11 @@
 <script setup>
 import { RadioGroup, RadioGroupOption } from '@headlessui/vue'
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { ref, computed, onMounted } from "vue";
-import { router } from "@inertiajs/vue3";
-import { usePage } from '@inertiajs/vue3'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import ModuleCard from '@/Components/base/ModuleCard.vue'
+import ModuleHero from '@/Components/base/ModuleHero.vue'
+import { ref, computed } from "vue";
+import { Link, router, usePage } from "@inertiajs/vue3";
 import selectInput from '@/Components/select-input.vue'
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { usePermission } from '@/Composables/usePermissions'
@@ -302,6 +336,7 @@ const props = defineProps({
     initialSortDirection: { type: String, default: 'asc' },
     initialIncludes: { type: Array, default: [] },
     initialGlobalFilter: { type: String, default: '' },
+    entrypoint: { type: Object, default: () => ({}) },
     slideOverEdit: {
       type: Boolean,
       default: false
@@ -312,7 +347,6 @@ defineOptions({
   layout: Layout
 });
 
-const category = props.query.category || 'insert';
 const department = ref(null);
 
 const resultActions = ref([
@@ -342,12 +376,8 @@ const selectedResultAction = computed(() => {
   return resultActions.value.find(action => action.value === props.query.category) || resultActions.value[0];
 });
 
-onMounted(() => {
-  changeAnalysisCategory();
-});
-
 const changeAnalysisCategory = (category = 'insert') => {
-  router.get(usePage().url, {
+  router.get(page.url, {
     category: category
   }, {
     preserveState: true,
@@ -358,13 +388,17 @@ const changeAnalysisCategory = (category = 'insert') => {
 
 const changeAnalysisDepartment = (v) => {
   department.value = v;
-  router.get(usePage().url, {
+  router.get(page.url, {
     department: v
   }, {
     preserveState: true,
     preserveScroll: true,
     replace: true
   });
+}
+
+const handleCreateAnalysis = () => {
+  router.get(props.entrypoint?.create_sample_url || route('vap_samples.index'));
 }
 
 const columns = props.fields.map(field => ({
@@ -379,6 +413,19 @@ const columns = props.fields.map(field => ({
   options: field.options ? field.options : [],
   config: field.config ? field.config : {}
 }));
+
+const entryLineageColumn = {
+  field: 'sample_entry',
+  filter_field: 'sample_entry',
+  label: 'gestlab.general.labels.analysis.sample_entry',
+  visible: true,
+  filterable: false,
+  type: 'custom',
+  format: 'text',
+  filter: '',
+  options: [],
+  config: {},
+};
 
 const extraColumns = ref([
   {
@@ -396,6 +443,13 @@ const extraColumns = ref([
       { value: 'approve', label: 'Validar' },
     ],
   },
+]);
+
+const tableColumns = computed(() => [
+  ...columns.filter(column => column.field !== 'actions'),
+  entryLineageColumn,
+  ...columns.filter(column => column.field === 'actions'),
+  ...extraColumns.value,
 ]);
 
 const showDeleteConfirmation = ref(false);
@@ -446,10 +500,10 @@ const confirmAction = () => {
   }
 }
 
-const executeBulkAction = (action) => {
+const executeBulkAction = (selectedAction) => {
   if (!selectedIDs.value.length) return;
 
-  switch (action) {
+  switch (selectedAction) {
     case 'delete':
       router.get(route('analysis.destroy'), {
         recordIds: selectedIDs.value
@@ -478,12 +532,12 @@ const executeBulkAction = (action) => {
   showDeleteConfirmation.value = false;
 };
 
-const executeSingleAction = (action, record) => {
-  switch (action) {
+const executeSingleAction = (selectedAction, selectedRecord) => {
+  switch (selectedAction) {
     case "delete":
       router.get(
         recordUrl.value,
-        { recordIds: [record.id] },
+        { recordIds: [selectedRecord.id] },
         {
           preserveState: false,
           preserveScroll: true,
@@ -499,7 +553,7 @@ const executeSingleAction = (action, record) => {
     case "edit":
       router.get(
         recordUrl.value,
-        { recordIds: [record.id] },
+        { recordIds: [selectedRecord.id] },
         {
           preserveState: false,
           preserveScroll: true,
@@ -518,7 +572,7 @@ const executeSingleAction = (action, record) => {
     case "restore":
       router.get(
         recordUrl.value,
-        { recordIds: [record.id] },
+        { recordIds: [selectedRecord.id] },
         {
           preserveState: false,
           preserveScroll: true,

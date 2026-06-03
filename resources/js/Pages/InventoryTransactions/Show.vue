@@ -8,6 +8,7 @@ import { onMounted } from 'vue';
 import { router, usePage } from "@inertiajs/vue3";
 import { computed, ref } from 'vue';
 import { getEcho } from '@/lib/echo';
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
 const { hasRole, hasPermission } = usePermission();
@@ -91,7 +92,7 @@ onMounted(() => {
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.iorders.page_title') }}</h3>
 </div> -->
 
-<div>
+<div :class="commercialDocumentThemeClasses">
 
     <div class="px-4 sm:px-0 flex justify-end items-center space-x-2">
       <button type="button" class="rounded-full bg-blue-900 p-2 text-white shadow-sm hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-900">
@@ -191,6 +192,6 @@ onMounted(() => {
       </dl>
     </div>
     
-  </div>
+</div>
 
 </template>

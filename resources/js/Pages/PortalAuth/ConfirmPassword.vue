@@ -1,74 +1,73 @@
 <template>
-    <Head title="Password Confirmation" />
-    <div class="min-h-screen bg-white flex">
-        <div class="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
-        <div class="mx-auto w-full max-w-sm lg:w-96">
-            <div>
-            <!-- <img class="h-12 w-auto" src="https://tailwindui.com/img/logos/workflow-mark-indigo-600.svg" alt="Workflow" /> -->
-            <logo class="fill-white" width="320" height="72" />
-            <h2 class="mt-6 text-3xl font-bold text-gray-900">
-                Secure Area
-            </h2>
-            <p class="mt-2 text-sm text-gray-600">
-               Please confirm your password before continuing.
-            </p>
-            </div>
+  <Head title="Confirmar palavra-passe" />
+  <AuthExperienceShell
+    mode="portal"
+    title="Confirme a sua identidade"
+    eyebrow="Portal do cliente"
+    description="Algumas acções exigem uma confirmação adicional antes de expor dados sensíveis ou alterar configurações da conta."
+    context-title="Protecção contextual"
+    context-description="A confirmação de palavra-passe reduz risco em operações críticas e mantém evidência de acesso seguro."
+  >
+    <div class="space-y-7">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-[0.22em] text-[#143d37] dark:text-[#f1d78b]">
+          Área protegida
+        </p>
+        <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
+          Confirmar palavra-passe
+        </h2>
+        <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+          Introduza a sua palavra-passe para continuar.
+        </p>
+      </div>
 
-            <div class="mt-8">
-
-            <div class="mt-6">
-                <form @submit.prevent="submit" class="space-y-6">
-
-                <div class="space-y-1">
-                    <label for="password" class="block text-sm font-medium text-gray-700">
-                    Password
-                    </label>
-                    <div class="mt-1">
-                    <input v-model="form.password" id="password" name="password" type="password" autocomplete="current-password" required="" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
-                    </div>
-                </div>
-
-
-                <div>
-                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-ft-orange hover:bg-ft-gray focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ft-orange">
-                    Confirm
-                    </button>
-                </div>
-                </form>
-            </div>
-            </div>
+      <form @submit.prevent="submit" class="space-y-5">
+        <div>
+          <label for="password" class="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            Palavra-passe
+          </label>
+          <input
+            id="password"
+            v-model="form.password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+            class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none transition focus:border-[#1f7a68] focus:ring-4 focus:ring-[#1f7a68]/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+          />
+          <p v-if="form.errors.password" class="mt-2 text-xs font-medium text-red-600 dark:text-red-400">
+            {{ form.errors.password }}
+          </p>
         </div>
-        </div>
-        <div class="hidden lg:block relative w-0 flex-1">
-        <img class="absolute inset-0 h-full w-full object-cover" src="https://images.unsplash.com/photo-1505904267569-f02eaeb45a4c?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1908&q=80" alt="" />
-        </div>
+
+        <button
+          type="submit"
+          :disabled="form.processing"
+          class="inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#143d37] to-[#1f7a68] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#143d37]/20 transition hover:from-[#0d2a25] hover:to-[#176452] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {{ form.processing ? 'A confirmar...' : 'Confirmar e continuar' }}
+        </button>
+      </form>
     </div>
-
+  </AuthExperienceShell>
 </template>
-<script>
-import EmptyLayout from "../../Shared/EmptyLayout.vue";
 
-export default {
-    layout: EmptyLayout
-}
-</script>
 <script setup>
-import { useForm } from '@inertiajs/vue3';
-import Logo from '../../Shared/logo.vue'
+import { Head, useForm } from '@inertiajs/vue3'
+import AuthExperienceShell from '@/Components/auth/AuthExperienceShell.vue'
+import EmptyLayout from '../../Shared/EmptyLayout.vue'
 
-
-defineProps({
-    layout: null,
-});
-
-let form = useForm({
-    password: '',
+defineOptions({
+  layout: EmptyLayout,
 })
 
-let submit = () => {
-    form.post('/user/confirm-password ', {
-        onFinish: () => form.reset(),
-    })
-}
+const form = useForm({
+  password: '',
+})
 
+const submit = () => {
+  form.post(route('portal.password.confirm.store'), {
+    onFinish: () => form.reset(),
+  })
+}
 </script>

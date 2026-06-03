@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div :class="commercialDocumentThemeClasses">
       <h2>File and Folder Manager</h2>
   
       <!-- Folder Navigation -->
@@ -40,6 +40,7 @@
   import axios from 'axios';
 //   import UploadFolder from './UploadFolder.vue'; // Component for uploading folders
   import UploadFolder from "@/Pages/Folders/folder-upload.vue";
+  import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
   const folders = ref([]);
@@ -75,6 +76,5 @@
   onMounted(() => {
     fetchFilesAndFolders();
   });
-  
+
   </script>
-  

@@ -1,6 +1,6 @@
 <template>
   
-    <div class="space-y-8">
+    <div class="iso-revisions-page space-y-8" :class="commercialDocumentThemeClasses">
       <!-- HEADER CARD -->
       <div class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -444,6 +444,7 @@ import Pagination from '@/Components/Pagination.vue'
 import ComparisonModal from './Partials/ComparisonModal.vue'
 import CreateRevisionModal from './Partials/CreateRevisionModal.vue'
 import RestoreRevisionModal from './Partials/RestoreRevisionModal.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 // Icons - using Heroicons v2
 import {
@@ -551,12 +552,12 @@ const openRestoreModal = (revision) => {
 }
 
 const viewAuditTrail = () => {
-  router.visit(route('qualitycertificates.revisions.audit-trail', props.certificate.id))
+  router.visit(route('qualitycertificates.iso-revisions.audit-trail', props.certificate.id))
 }
 
 const exportRevisionHistory = async () => {
   try {
-    const response = await fetch(route('qualitycertificates.revisions.export', props.certificate.id), { 
+    const response = await fetch(route('qualitycertificates.iso-revisions.export', props.certificate.id), {
       method: 'GET',
       headers: {
         'Accept': 'application/pdf',
@@ -607,5 +608,77 @@ const handleRevisionRestored = () => {
 
 .group:hover .group-hover\:opacity-100 {
   opacity: 1 !important;
+}
+
+.iso-revisions-page :deep(.bg-blue-900),
+.iso-revisions-page :deep(.bg-blue-950) {
+  background-color: rgb(var(--primary-900-rgb)) !important;
+}
+
+.iso-revisions-page :deep(.from-blue-900),
+.iso-revisions-page :deep(.from-blue-950) {
+  --tw-gradient-from: rgb(var(--primary-900-rgb)) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(var(--primary-900-rgb) / 0) var(--tw-gradient-to-position) !important;
+}
+
+.iso-revisions-page :deep(.to-blue-800) {
+  --tw-gradient-to: rgb(var(--primary-700-rgb)) var(--tw-gradient-to-position) !important;
+}
+
+.iso-revisions-page :deep(.text-blue-900),
+.iso-revisions-page :deep(.text-blue-800),
+.iso-revisions-page :deep(.text-blue-700) {
+  color: rgb(var(--primary-800-rgb)) !important;
+}
+
+.iso-revisions-page :deep(.bg-blue-50),
+.iso-revisions-page :deep(.bg-blue-100) {
+  background-color: rgb(var(--primary-50-rgb) / 0.82) !important;
+}
+
+.iso-revisions-page :deep(.border-blue-200) {
+  border-color: rgb(var(--primary-200-rgb) / 0.78) !important;
+}
+
+.iso-revisions-page :deep(input),
+.iso-revisions-page :deep(select),
+.iso-revisions-page :deep(textarea) {
+  border-color: #d8cbb8;
+  background: #fffdf7;
+  color: #15231f;
+  border-radius: 0.875rem;
+}
+
+.iso-revisions-page :deep(input:focus),
+.iso-revisions-page :deep(select:focus),
+.iso-revisions-page :deep(textarea:focus) {
+  border-color: rgb(var(--primary-500-rgb));
+  box-shadow: 0 0 0 3px rgb(var(--primary-500-rgb) / 0.18);
+  outline: none;
+}
+
+:global(.dark) .iso-revisions-page :deep(.bg-white),
+:global(.dark) .iso-revisions-page :deep(.bg-gray-50),
+:global(.dark) .iso-revisions-page :deep(.bg-slate-50) {
+  background-color: rgb(15 23 42 / 0.86) !important;
+}
+
+:global(.dark) .iso-revisions-page :deep(.text-gray-900),
+:global(.dark) .iso-revisions-page :deep(.text-slate-900) {
+  color: #f8fafc !important;
+}
+
+:global(.dark) .iso-revisions-page :deep(.text-gray-700),
+:global(.dark) .iso-revisions-page :deep(.text-slate-700),
+:global(.dark) .iso-revisions-page :deep(.text-gray-600) {
+  color: #cbd5e1 !important;
+}
+
+:global(.dark) .iso-revisions-page :deep(input),
+:global(.dark) .iso-revisions-page :deep(select),
+:global(.dark) .iso-revisions-page :deep(textarea) {
+  border-color: #315149;
+  background: #10231f;
+  color: #f7f1e7;
 }
 </style>

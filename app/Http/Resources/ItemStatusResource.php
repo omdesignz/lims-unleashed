@@ -21,17 +21,17 @@ class ItemStatusResource extends JsonResource
             'category_id' => $this->category_id,
             // 'category' => ItemCategoryResource::make($this->whenLoaded('category'))->name ?? null,
             'category' => $this->category?->name ?? null,
-            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
+            'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'deleted' => $this->deleted_at ? true : false,
             'links' => [
                 'edit_path' => route('itemstatuses.edit', $this->id),
                 'delete_path' => route('itemstatuses.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('itemstatuses.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

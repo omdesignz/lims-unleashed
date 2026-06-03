@@ -440,7 +440,7 @@
                     </td>
                     <td style="text-align: right; width: 200px;">
                         <div style="font-size: 16pt; font-weight: bold; color: white;">
-                            {{ number_format($proposal->total, 2, ',', '.') }} R$
+                            {{ number_format($proposal->total, 2, ',', '.') }} AOA
                         </div>
                         <div style="font-size: 9pt; opacity: 0.8;">
                             VALOR TOTAL

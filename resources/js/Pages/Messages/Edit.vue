@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6" :class="commercialDocumentThemeClasses">
     <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <h1 class="text-2xl font-semibold text-slate-900">Editar mensagem</h1>
       <p class="mt-2 text-sm text-slate-600">Atualize o conteúdo e substitua anexos quando necessário.</p>
@@ -22,6 +22,7 @@
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, useForm } from '@inertiajs/vue3'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 defineOptions({ layout: Layout })
 

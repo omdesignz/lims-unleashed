@@ -28,9 +28,9 @@ const emit = defineEmits(["remove"]);
 const variantConfig = computed(() => {
     const variants = {
         success: {
-            wrapper: 'border-emerald-200/80 bg-white/95 text-slate-900 shadow-emerald-100 ring-1 ring-emerald-100/80 dark:border-emerald-500/20 dark:bg-slate-900/95 dark:text-white dark:ring-emerald-500/10',
+            wrapper: 'border-primary-200/80 bg-[#fffaf0]/95 text-[#15231f] shadow-primary-100 ring-1 ring-primary-100/80 dark:border-primary-300/20 dark:bg-[#0c1714]/95 dark:text-[#f7f1e7] dark:ring-primary-300/10',
             iconClass: 'text-emerald-500 dark:text-emerald-400',
-            titleClass: 'text-slate-900 dark:text-white',
+            titleClass: 'text-[#15231f] dark:text-[#f7f1e7]',
             messageClass: 'text-slate-600 dark:text-slate-300',
             actionClass: 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-200',
             icon: CheckCircleIcon,
@@ -52,11 +52,11 @@ const variantConfig = computed(() => {
             icon: ExclamationTriangleIcon,
         },
         info: {
-            wrapper: 'border-blue-200/80 bg-blue-50/95 text-blue-950 shadow-blue-100 ring-1 ring-blue-100/80 dark:border-blue-500/20 dark:bg-slate-900/95 dark:text-blue-100 dark:ring-blue-500/10',
-            iconClass: 'text-blue-500 dark:text-blue-300',
-            titleClass: 'text-blue-900 dark:text-blue-100',
-            messageClass: 'text-blue-700 dark:text-slate-300',
-            actionClass: 'text-blue-400 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-100',
+            wrapper: 'border-accent-200/80 bg-accent-50/95 text-[#15231f] shadow-accent-100 ring-1 ring-accent-100/80 dark:border-accent-300/20 dark:bg-[#10231f]/95 dark:text-accent-100 dark:ring-accent-300/10',
+            iconClass: 'text-primary-600 dark:text-accent-200',
+            titleClass: 'text-[#15231f] dark:text-accent-100',
+            messageClass: 'text-slate-700 dark:text-slate-300',
+            actionClass: 'text-primary-600 hover:text-primary-800 dark:text-accent-200 dark:hover:text-accent-100',
             icon: InformationCircleIcon,
         },
     };
@@ -65,15 +65,15 @@ const variantConfig = computed(() => {
 });
 </script>
 <template>
-    <div :class="variantConfig.wrapper" class="pointer-events-auto w-full max-w-md overflow-hidden rounded-[1.6rem] border shadow-[0_20px_60px_rgba(15,23,42,0.18)] backdrop-blur">
+    <div :class="variantConfig.wrapper" class="pointer-events-auto w-full max-w-md overflow-hidden rounded-[1.6rem] border shadow-[0_20px_60px_rgba(20,61,55,0.18)] backdrop-blur">
         <div class="p-4 sm:p-5">
             <div class="flex items-start gap-3">
                 <div class="flex-shrink-0">
                     <component :is="variantConfig.icon" :class="variantConfig.iconClass" class="h-6 w-6" aria-hidden="true" />
                 </div>
                 <div class="min-w-0 flex-1 pt-0.5">
-                    <p v-if="props.title" :class="variantConfig.titleClass" class="text-sm font-semibold">{{ props.title }}</p>
-                    <p :class="[props.title ? 'mt-1' : '', variantConfig.messageClass]" class="text-sm leading-5">{{ props.message }}</p>
+                    <p v-if="props.title" :class="variantConfig.titleClass" class="text-sm font-bold">{{ props.title }}</p>
+                    <p :class="[props.title ? 'mt-1' : '', variantConfig.messageClass]" class="text-sm font-medium leading-5">{{ props.message }}</p>
                 </div>
                 <div class="flex flex-shrink-0">
                     <button @click="emit('remove')" type="button" :class="variantConfig.actionClass" class="inline-flex rounded-lg p-1.5 transition-colors focus:outline-none">

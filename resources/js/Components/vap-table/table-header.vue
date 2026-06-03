@@ -1,16 +1,16 @@
 <template>
-  <thead class="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+  <thead class="border-b border-[#ded3bf] bg-[#f7f1e7]/95 dark:border-[#25443c] dark:bg-[#10231f]/95">
     <tr>
       <!-- Checkbox Header -->
-      <th scope="col" class="relative px-6 py-3.5">
+      <th scope="col" class="relative px-6 py-4">
         <div class="flex items-center">
           <input 
             type="checkbox" 
             :checked="allSelected" 
             @change="toggleSelectAll"
             :class="[
-              'h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary-900 dark:text-primary-500 focus:ring-2 focus:ring-primary-900/20 dark:focus:ring-primary-500/20 focus:ring-offset-0 transition-colors duration-200',
-              allSelected ? 'bg-primary-900 dark:bg-primary-500 border-primary-900 dark:border-primary-500' : 'bg-white dark:bg-gray-700'
+              'h-4 w-4 rounded border-[#d8cbb8] text-[rgb(var(--primary-700-rgb))] focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.24)] focus:ring-offset-0 transition-colors duration-200 dark:border-[#315149] dark:text-[rgb(var(--primary-300-rgb))]',
+              allSelected ? 'border-[rgb(var(--primary-800-rgb))] bg-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--primary-500-rgb))] dark:bg-[rgb(var(--primary-500-rgb))]' : 'bg-white dark:bg-[#07110f]'
             ]"
             :aria-label="allSelected ? $t('Deselect all') : $t('Select all')"
           />
@@ -23,9 +23,9 @@
         :key="column.field" 
         @click="column.sortable ? changeSort(column.field) : null"
         :class="[
-          'px-6 py-3.5 text-left text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider group',
-          column.sortable ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150' : '',
-          sortField === column.field ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-900 dark:text-primary-400 active-sort-col' : 'text-gray-900 dark:text-gray-300'
+          'group px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em]',
+          column.sortable ? 'cursor-pointer transition-colors duration-150 hover:bg-white/80 dark:hover:bg-[#152f29]' : '',
+          sortField === column.field ? 'active-sort-col bg-[rgb(var(--primary-50-rgb)/0.75)] text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-500-rgb)/0.12)] dark:text-[rgb(var(--primary-100-rgb))]' : 'text-[#31413b] dark:text-[#d7e2dd]'
         ]"
         :title="column.sortable ? $t('Click to sort') : ''"
       >
@@ -40,49 +40,45 @@
             <span v-if="sortField === column.field" class="flex items-center">
               <ArrowLongUpIcon 
                 v-if="sortDirection === 'asc'" 
-                class="h-4 w-4 text-primary-900 dark:text-primary-400"
+                class="h-4 w-4 text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-100-rgb))]"
                 aria-hidden="true"
               />
               <ArrowLongDownIcon 
                 v-else 
-                class="h-4 w-4 text-primary-900 dark:text-primary-400"
+                class="h-4 w-4 text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-100-rgb))]"
                 aria-hidden="true"
               />
             </span>
             <span v-else class="opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-              <ArrowLongUpIcon class="h-3 w-3 text-gray-400" aria-hidden="true" />
+              <ArrowLongUpIcon class="h-3 w-3 text-[#8d9b94] dark:text-[#657970]" aria-hidden="true" />
             </span>
           </div>
           
           <!-- Filter Indicator -->
           <div 
             v-if="column.filterable && column.hasActiveFilter" 
-            class="ml-2 flex h-2 w-2 rounded-full bg-gradient-to-r from-primary-900 to-primary-800 dark:from-primary-600 dark:to-primary-500"
+            class="ml-2 flex h-2 w-2 rounded-full bg-[rgb(var(--primary-700-rgb))] dark:bg-[rgb(var(--primary-300-rgb))]"
             :title="$t('Filter active for') + ' ' + $t(column.label)"
           >
             <span class="sr-only">{{ $t('Filter active') }}</span>
           </div>
         </div>
       </th>
-      
-      <th scope="col" class="relative px-6 py-3.5 text-right">
-        <span class="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
-          {{ $t('gestlab.actions.action') }}
-        </span>
-      </th>
     </tr>
   </thead>
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue';
 import {
   ArrowLongDownIcon,
   ArrowLongUpIcon,
 } from "@heroicons/vue/16/solid";
 
 const props = defineProps({
-  columns: Array,
+  columns: {
+    type: Array,
+    default: () => [],
+  },
   sortField: String,
   sortDirection: String,
   allSelected: Boolean
@@ -131,10 +127,10 @@ th.active-sort-col::before {
   top: 0;
   bottom: 0;
   width: 3px;
-  background: linear-gradient(to bottom, var(--color-primary-900, #1e3a8a), var(--color-primary-700, #1d4ed8));
+  background: linear-gradient(to bottom, rgb(var(--primary-800-rgb)), rgb(var(--primary-500-rgb)));
 }
 
 :global(.dark) th.active-sort-col::before {
-  background: linear-gradient(to bottom, var(--color-primary-500, #3b82f6), var(--color-primary-400, #60a5fa));
+  background: linear-gradient(to bottom, rgb(var(--primary-300-rgb)), rgb(var(--primary-500-rgb)));
 }
 </style>

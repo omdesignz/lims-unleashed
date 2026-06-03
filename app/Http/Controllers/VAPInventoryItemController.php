@@ -3,30 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Exports\InventoryItemsExport;
-use App\Http\Controllers\Controller;
-use App\Models\InventoryItem;
-use App\Models\ItemCategory;
-use App\Models\InventoryUnit;
-use App\Models\InventoryItemType;
-use App\Models\InventoryItemSupplier;
-use App\Models\ItemStatus;
-use App\Models\InventoryItemWarehouse;
 use App\Models\Inventory;
-use App\Models\InventoryItemTransaction;
+use App\Models\InventoryItem;
+use App\Models\InventoryItemSupplier;
+use App\Models\InventoryItemType;
+use App\Models\InventoryItemWarehouse;
 use App\Models\InventoryTransaction;
 use App\Models\InventoryTransactionType;
+use App\Models\InventoryUnit;
+use App\Models\ItemCategory;
+use App\Models\ItemStatus;
 use App\Models\ReagentConsumption;
+use App\Models\User;
 use App\Support\DuplicateSubmissionGuard;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
-use Spatie\MediaLibrary\Support\MediaStream;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Spatie\MediaLibrary\Support\MediaStream;
 
 class VAPInventoryItemController extends Controller
 {
@@ -37,12 +37,12 @@ class VAPInventoryItemController extends Controller
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('code', 'like', "%{$search}%")
-                      ->orWhere('internal_code', 'like', "%{$search}%")
-                      ->orWhere('barcode', 'like', "%{$search}%")
-                      ->orWhere('serial_number', 'like', "%{$search}%")
-                      ->orWhere('model', 'like', "%{$search}%")
-                      ->orWhere('brand', 'like', "%{$search}%");
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhere('internal_code', 'like', "%{$search}%")
+                        ->orWhere('barcode', 'like', "%{$search}%")
+                        ->orWhere('serial_number', 'like', "%{$search}%")
+                        ->orWhere('model', 'like', "%{$search}%")
+                        ->orWhere('brand', 'like', "%{$search}%");
                 });
             })
             ->when($request->category_id, function ($query, $categoryId) {
@@ -169,7 +169,7 @@ class VAPInventoryItemController extends Controller
             }
 
             // Add Possible Documents
-            if(request()->hasFile('documents')) {
+            if (request()->hasFile('documents')) {
 
                 $fileAdders = $item
                     ->addMultipleMediaFromRequest(['documents'])
@@ -184,6 +184,7 @@ class VAPInventoryItemController extends Controller
                 ->with('success', 'Item de inventário criado com sucesso.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()->back()
                 ->with('error', 'Não foi possível criar o item de inventário.')
                 ->withInput();
@@ -199,7 +200,7 @@ class VAPInventoryItemController extends Controller
             'supplier',
             'status',
             'inventory.warehouse.location',
-            'transactions' => function ($query) { 
+            'transactions' => function ($query) {
                 $query->latest()->limit(50);
             },
             'transactions.type',
@@ -399,7 +400,7 @@ class VAPInventoryItemController extends Controller
             }
 
             // Add Possible Documents
-            if($request->documents){
+            if ($request->documents) {
 
                 $fileAdders = $item
                     ->addMultipleMediaFromRequest(['documents'])
@@ -414,6 +415,7 @@ class VAPInventoryItemController extends Controller
                 ->with('success', 'Item de inventário atualizado com sucesso.');
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()->back()
                 ->with('error', 'Não foi possível atualizar o item de inventário.')
                 ->withInput();
@@ -424,6 +426,7 @@ class VAPInventoryItemController extends Controller
     {
         try {
             $item->delete();
+
             return redirect()->route('vap-inventory.items.index')
                 ->with('success', 'Item de inventário eliminado com sucesso.');
         } catch (\Exception $e) {
@@ -466,12 +469,12 @@ class VAPInventoryItemController extends Controller
                 ->where('warehouse_id', $validated['warehouse_id'])
                 ->first();
 
-            if (!$inventory) {
+            if (! $inventory) {
                 return response()->json(['error' => 'Item not found in specified warehouse'], 404);
             }
 
             $oldQuantity = $inventory->qty_available;
-            
+
             switch ($validated['adjustment_type']) {
                 case 'add':
                     $newQuantity = $oldQuantity + $validated['quantity'];
@@ -492,22 +495,30 @@ class VAPInventoryItemController extends Controller
             $inventory->save();
 
             // Record transaction
-            $transactionType = match($validated['adjustment_type']) {
+            $transactionType = match ($validated['adjustment_type']) {
                 'add' => 'stock_adjustment_add',
                 'remove' => 'stock_adjustment_remove',
                 'set' => 'stock_adjustment_set',
             };
 
             Log::info($transactionType, [
-                'inventory' => $inventory
+                'inventory' => $inventory,
             ]);
+
+            $transactionTypeModel = InventoryTransactionType::firstOrCreate(
+                ['code' => $transactionType],
+                [
+                    'name' => ucfirst(str_replace('_', ' ', $transactionType)),
+                    'description' => 'Automatically registered inventory stock adjustment type.',
+                ]
+            );
 
             InventoryTransaction::create([
                 'inventory_id' => $inventory->id,
                 'user_id' => auth()->id(),
                 'warehouse_id' => $validated['warehouse_id'],
                 'item_id' => $item->id,
-                'type_id' => InventoryTransactionType::where('code', $transactionType)->first()->id,
+                'type_id' => $transactionTypeModel->id,
                 'batch_id' => $validated['batch_id'] ?? null,
                 'qty' => $validated['quantity'],
                 'notes' => $validated['notes'] ?? null,
@@ -524,7 +535,8 @@ class VAPInventoryItemController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => 'Failed to adjust stock: ' . $e->getMessage()], 500);
+
+            return response()->json(['error' => 'Failed to adjust stock: '.$e->getMessage()], 500);
         }
     }
 
@@ -697,96 +709,95 @@ class VAPInventoryItemController extends Controller
         ]);
     }
 
-
     // Add these methods to your VAPInventoryItemController class
 
     public function reagentConsumption(Request $request)
     {
-        $query = \App\Models\ReagentConsumption::with([
+        $query = ReagentConsumption::with([
             'item.category',
             'warehouse',
-            'user'
+            'user',
         ])
-        ->when($request->date_from, function ($query, $dateFrom) {
-            $query->whereDate('date', '>=', $dateFrom);
-        })
-        ->when($request->date_to, function ($query, $dateTo) {
-            $query->whereDate('date', '<=', $dateTo);
-        })
-        ->when($request->item_id, function ($query, $itemId) {
-            $query->where('reagent_id', $itemId);
-        })
-        ->when($request->warehouse_id, function ($query, $warehouseId) {
-            $query->where('warehouse_id', $warehouseId);
-        })
-        ->when($request->user_id, function ($query, $userId) {
-            $query->where('user_id', $userId);
-        })
-        ->when($request->search, function ($query, $search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('reagent_name', 'like', "%{$search}%")
-                ->orWhere('used_by', 'like', "%{$search}%")
-                ->orWhere('remarks', 'like', "%{$search}%");
-            });
-        })
-        ->orderBy($request->sort_by ?? 'date', $request->sort_direction ?? 'desc');
+            ->when($request->date_from, function ($query, $dateFrom) {
+                $query->whereDate('date', '>=', $dateFrom);
+            })
+            ->when($request->date_to, function ($query, $dateTo) {
+                $query->whereDate('date', '<=', $dateTo);
+            })
+            ->when($request->item_id, function ($query, $itemId) {
+                $query->where('reagent_id', $itemId);
+            })
+            ->when($request->warehouse_id, function ($query, $warehouseId) {
+                $query->where('warehouse_id', $warehouseId);
+            })
+            ->when($request->user_id, function ($query, $userId) {
+                $query->where('user_id', $userId);
+            })
+            ->when($request->search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('reagent_name', 'like', "%{$search}%")
+                        ->orWhere('used_by', 'like', "%{$search}%")
+                        ->orWhere('remarks', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy($request->sort_by ?? 'date', $request->sort_direction ?? 'desc');
 
         // Summary by item
-        $summaryByItem = \App\Models\ReagentConsumption::select(
+        $summaryByItem = ReagentConsumption::select(
             'reagent_id',
             'reagent_name',
             DB::raw('SUM(quantity_used) as total_consumption'),
             DB::raw('COUNT(*) as usage_count'),
             DB::raw('AVG(quantity_used) as avg_per_use')
         )
-        ->when($request->date_from, function ($query, $dateFrom) {
-            $query->whereDate('date', '>=', $dateFrom);
-        })
-        ->when($request->date_to, function ($query, $dateTo) {
-            $query->whereDate('date', '<=', $dateTo);
-        })
-        ->groupBy('reagent_id', 'reagent_name')
-        ->orderByDesc('total_consumption')
-        ->get();
+            ->when($request->date_from, function ($query, $dateFrom) {
+                $query->whereDate('date', '>=', $dateFrom);
+            })
+            ->when($request->date_to, function ($query, $dateTo) {
+                $query->whereDate('date', '<=', $dateTo);
+            })
+            ->groupBy('reagent_id', 'reagent_name')
+            ->orderByDesc('total_consumption')
+            ->get();
 
         // Summary by date
-        $summaryByDate = \App\Models\ReagentConsumption::select(
+        $summaryByDate = ReagentConsumption::select(
             DB::raw('DATE(date) as date'),
             DB::raw('SUM(quantity_used) as total_consumption'),
             DB::raw('COUNT(*) as usage_count')
         )
-        ->when($request->date_from, function ($query, $dateFrom) {
-            $query->whereDate('date', '>=', $dateFrom);
-        })
-        ->when($request->date_to, function ($query, $dateTo) {
-            $query->whereDate('date', '<=', $dateTo);
-        })
-        ->groupBy(DB::raw('DATE(date)'))
-        ->orderByDesc('date')
-        ->get();
+            ->when($request->date_from, function ($query, $dateFrom) {
+                $query->whereDate('date', '>=', $dateFrom);
+            })
+            ->when($request->date_to, function ($query, $dateTo) {
+                $query->whereDate('date', '<=', $dateTo);
+            })
+            ->groupBy(DB::raw('DATE(date)'))
+            ->orderByDesc('date')
+            ->get();
 
         // Summary by user
-        $summaryByUser = \App\Models\ReagentConsumption::select(
+        $summaryByUser = ReagentConsumption::select(
             'used_by',
             DB::raw('SUM(quantity_used) as total_consumption'),
             DB::raw('COUNT(*) as usage_count')
         )
-        ->when($request->date_from, function ($query, $dateFrom) {
-            $query->whereDate('date', '>=', $dateFrom);
-        })
-        ->when($request->date_to, function ($query, $dateTo) {
-            $query->whereDate('date', '<=', $dateTo);
-        })
-        ->whereNotNull('used_by')
-        ->groupBy('used_by')
-        ->orderByDesc('total_consumption')
-        ->get();
+            ->when($request->date_from, function ($query, $dateFrom) {
+                $query->whereDate('date', '>=', $dateFrom);
+            })
+            ->when($request->date_to, function ($query, $dateTo) {
+                $query->whereDate('date', '<=', $dateTo);
+            })
+            ->whereNotNull('used_by')
+            ->groupBy('used_by')
+            ->orderByDesc('total_consumption')
+            ->get();
 
         $dateFrom = $request->date_from ? Carbon::parse($request->date_from) : Carbon::now()->subMonth();
         $dateTo = $request->date_to ? Carbon::parse($request->date_to) : Carbon::now();
         $days = $dateFrom->diffInDays($dateTo) ?: 1;
 
-        $totalConsumption = \App\Models\ReagentConsumption::query()
+        $totalConsumption = ReagentConsumption::query()
             ->when($request->date_from, function ($query, $dateFrom) {
                 $query->whereDate('date', '>=', $dateFrom);
             })
@@ -803,7 +814,7 @@ class VAPInventoryItemController extends Controller
             'filters' => $request->only(['date_from', 'date_to', 'item_id', 'warehouse_id', 'user_id', 'search', 'sort_by', 'sort_direction']),
             'items' => InventoryItem::reagents()->active()->get(['id', 'name', 'code']),
             'warehouses' => InventoryItemWarehouse::active()->get(['id', 'name']),
-            'users' => \App\Models\User::whereHas('reagentConsumptions')->get(['id', 'name']),
+            'users' => User::whereHas('reagentConsumptions')->get(['id', 'name']),
             'stats' => [
                 'total_consumption' => $totalConsumption,
                 'total_uses' => $summaryByItem->sum('usage_count'),
@@ -820,7 +831,7 @@ class VAPInventoryItemController extends Controller
         return Inertia::render('VAPInventory/Reagents/CreateConsumption', [
             'reagents' => InventoryItem::reagents()->with('inventory.warehouse')->active()->get(),
             'warehouses' => InventoryItemWarehouse::with('location')->active()->get(),
-            'users' => \App\Models\User::active()->get(['id', 'name']),
+            'users' => User::active()->get(['id', 'name']),
         ]);
     }
 
@@ -854,7 +865,7 @@ class VAPInventoryItemController extends Controller
             ->where('warehouse_id', $validated['warehouse_id'])
             ->first();
 
-        if (!$inventory) {
+        if (! $inventory) {
             return redirect()->back()
                 ->with('error', 'Reagent not found in specified warehouse')
                 ->withInput();
@@ -862,7 +873,7 @@ class VAPInventoryItemController extends Controller
 
         if ($inventory->qty_available < $validated['quantity_used']) {
             return redirect()->back()
-                ->with('error', 'Insufficient stock. Available: ' . $inventory->qty_available)
+                ->with('error', 'Insufficient stock. Available: '.$inventory->qty_available)
                 ->withInput();
         }
 
@@ -897,7 +908,7 @@ class VAPInventoryItemController extends Controller
                     'warehouse_id' => $validated['warehouse_id'],
                     'item_id' => $validated['reagent_id'],
                     'type_id' => $transactionType->id,
-                    'qty' => '-' . $validated['quantity_used'],
+                    'qty' => '-'.$validated['quantity_used'],
                     'reason' => 'Reagent consumption',
                     'notes' => $validated['remarks'] ?? null,
                 ]);
@@ -914,6 +925,7 @@ class VAPInventoryItemController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()->back()
                 ->with('error', 'Não foi possível registar o consumo do reagente.')
                 ->withInput();
@@ -945,7 +957,7 @@ class VAPInventoryItemController extends Controller
             ], 429);
         }
 
-        if (!$item->is_reagent) {
+        if (! $item->is_reagent) {
             return response()->json(['error' => 'Item is not a reagent'], 422);
         }
 
@@ -953,12 +965,12 @@ class VAPInventoryItemController extends Controller
             ->where('warehouse_id', $validated['warehouse_id'])
             ->first();
 
-        if (!$inventory) {
+        if (! $inventory) {
             return response()->json(['error' => 'Reagent not found in specified warehouse'], 404);
         }
 
         if ($inventory->qty_available < $validated['quantity_used']) {
-            return response()->json(['error' => 'Insufficient stock. Available: ' . $inventory->qty_available], 422);
+            return response()->json(['error' => 'Insufficient stock. Available: '.$inventory->qty_available], 422);
         }
 
         try {
@@ -993,7 +1005,7 @@ class VAPInventoryItemController extends Controller
                     'item_id' => $item->id,
                     'type_id' => $transactionType->id,
                     'batch_id' => $validated['batch_id'] ?? null,
-                    'qty' => '-' . $validated['quantity_used'],
+                    'qty' => '-'.$validated['quantity_used'],
                     'reason' => 'Reagent consumption',
                     'notes' => $validated['remarks'] ?? null,
                 ]);
@@ -1013,11 +1025,12 @@ class VAPInventoryItemController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => 'Failed to consume reagent: ' . $e->getMessage()], 500);
+
+            return response()->json(['error' => 'Failed to consume reagent: '.$e->getMessage()], 500);
         }
     }
 
-    public function showConsumption(\App\Models\ReagentConsumption $consumption)
+    public function showConsumption(ReagentConsumption $consumption)
     {
         $consumption->load(['item.category', 'warehouse.location', 'user']);
 
@@ -1045,7 +1058,7 @@ class VAPInventoryItemController extends Controller
                 } else {
                     InventoryTransaction::where('item_id', $consumption->reagent_id)
                         ->where('warehouse_id', $consumption->warehouse_id)
-                        ->where('qty', '-' . $consumption->quantity_used)
+                        ->where('qty', '-'.$consumption->quantity_used)
                         ->where('reason', 'Reagent consumption')
                         ->whereDate('created_at', $consumption->created_at)
                         ->delete();
@@ -1062,6 +1075,7 @@ class VAPInventoryItemController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()->back()
                 ->with('error', 'Não foi possível eliminar o registo de consumo.');
         }
@@ -1082,22 +1096,26 @@ class VAPInventoryItemController extends Controller
 
     public function deleteattachment()
     {
-        $item = InventoryItem::findOrFail(request()->model_id);
+        $item = InventoryItem::findOrFail(request()->integer('model_id'));
 
-        $media = Media::where('id', request()->id)->where('model_id', request()->model_id)->first()->delete();
+        Media::query()
+            ->whereKey(request()->integer('id'))
+            ->where('model_id', $item->id)
+            ->firstOrFail()
+            ->delete();
 
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ]
+            ],
         ]);
     }
 
-     /**
+    /**
      * Export all inventory items to an Excel file.
      *
-     * @return \Illuminate\Support\Facades\Response
+     * @return Response
      */
     public function exportInventory(Request $request)
     {
@@ -1108,15 +1126,15 @@ class VAPInventoryItemController extends Controller
             'start' => 'nullable|date',
             'end' => 'nullable|date|after_or_equal:start',
         ]);
-        
+
         $startDate = $request->input('start');
         $endDate = $request->input('end');
         $categories = [1, 2, 3, 4];
         $category_id = $request->input('category_id');
 
         // dd($category_id);
-        
+
         // Pass the date range to the export class
-        return Excel::download(new InventoryItemsExport($startDate, $endDate, $categories, $category_id), 'inventory_items.xlsx'); 
+        return Excel::download(new InventoryItemsExport($startDate, $endDate, $categories, $category_id), 'inventory_items.xlsx');
     }
 }

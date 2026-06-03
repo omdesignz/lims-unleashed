@@ -9,6 +9,7 @@ use App\Models\DirectCollection;
 use App\Models\LabCode;
 use App\Models\Product;
 use App\Models\Profile;
+use App\Models\ProgrammedCollection;
 use App\Models\Sample;
 use App\Models\VAPSampleEntry;
 use Illuminate\Support\Carbon;
@@ -56,12 +57,13 @@ class SampleEntryCollectionFlowService
             return null;
         }
 
-        $directCollection = DirectCollection::query()->create([
-            'description' => 'Fluxo originado pela validação da amostra ' . ($sampleEntry->code ?: $sampleEntry->name),
-            'col_date' => optional($sampleEntry->received_at)->toDateString() ?? now()->toDateString(),
-        ]);
+        $collectionType = data_get($sampleEntry->client_submitted_info, 'collection_type', 'direct') === 'programmed'
+            ? 'programmed'
+            : 'direct';
 
-        $collection = $directCollection->collection()->save(new Collection([
+        $collectionSubject = $this->createCollectionSubject($sampleEntry, $collectionType);
+
+        $collection = $collectionSubject->collection()->save(new Collection([
             'customer_id' => $sampleEntry->customer_id,
             'warehouse_id' => $sampleEntry->warehouse_id,
         ]));
@@ -74,14 +76,29 @@ class SampleEntryCollectionFlowService
             'pack_id' => $sampleEntry->packaging_id,
             'obs' => $sampleEntry->obs,
             'qty' => data_get($sampleEntry->client_submitted_info, 'quantity', 1),
+            'collected_qty' => data_get($sampleEntry->client_submitted_info, 'collected_qty'),
             'lot' => data_get($sampleEntry->client_submitted_info, 'lot'),
             'origin' => data_get($sampleEntry->client_submitted_info, 'origin'),
             'location' => data_get($sampleEntry->client_submitted_info, 'location'),
+            'temperature_value' => data_get($sampleEntry->client_submitted_info, 'temperature_value'),
+            'container_no' => data_get($sampleEntry->client_submitted_info, 'container_no'),
+            'du_no' => data_get($sampleEntry->client_submitted_info, 'du_no'),
+            'term_no' => data_get($sampleEntry->client_submitted_info, 'term_no'),
+            'bl' => data_get($sampleEntry->client_submitted_info, 'bl'),
+            'sampling_plan_ref' => data_get($sampleEntry->client_submitted_info, 'sampling_plan_ref'),
+            'customer_submitted_info' => data_get($sampleEntry->client_submitted_info, 'customer_submitted_info')
+                ?: data_get($sampleEntry->client_submitted_info, 'integrity_observations')
+                ?: data_get($sampleEntry->client_submitted_info, 'chain_of_custody_notes'),
+            'expiry_date' => data_get($sampleEntry->client_submitted_info, 'expiry_date'),
+            'production_date' => data_get($sampleEntry->client_submitted_info, 'production_date'),
             'comercial_brand' => data_get($sampleEntry->client_submitted_info, 'product_name', $sampleEntry->name),
             'processed' => true,
             'collected_by_lab' => (bool) $sampleEntry->collected_by_lab,
             'collection_date' => optional($sampleEntry->received_at)->toDateString(),
             'progress' => $this->resolveTrackingProgress($sampleEntry),
+            'sample_status' => $sampleEntry->status,
+            'analysis_start_date' => optional($sampleEntry->analysis_start_date)?->toDateString(),
+            'analysis_end_date' => optional($sampleEntry->analysis_end_date)?->toDateString(),
             'extra_data' => [
                 'sample_entry_id' => $sampleEntry->id,
                 'analysis_start_date' => optional($sampleEntry->analysis_start_date)?->toDateString(),
@@ -89,6 +106,8 @@ class SampleEntryCollectionFlowService
                 'request_reference' => data_get($sampleEntry->client_submitted_info, 'request_reference'),
                 'request_title' => data_get($sampleEntry->client_submitted_info, 'request_title'),
                 'request_origin' => data_get($sampleEntry->client_submitted_info, 'request_origin', 'client'),
+                'collection_type' => $collectionType,
+                'sampling_plan_ref' => data_get($sampleEntry->client_submitted_info, 'sampling_plan_ref'),
                 'submitted_payload' => $sampleEntry->client_submitted_info,
             ],
         ]);
@@ -131,7 +150,7 @@ class SampleEntryCollectionFlowService
                 'requested_profile_ids' => $profileIds->all(),
                 'linked_lab_code_id' => $code->id,
                 'linked_sample_ids' => $samples,
-                'linked_collection_type' => 'direct',
+                'linked_collection_type' => $collectionType,
             ])
             ->all();
 
@@ -141,6 +160,26 @@ class SampleEntryCollectionFlowService
         ])->save();
 
         return $collectionProduct->fresh(['code', 'product']);
+    }
+
+    private function createCollectionSubject(VAPSampleEntry $sampleEntry, string $collectionType): DirectCollection|ProgrammedCollection
+    {
+        if ($collectionType === 'programmed') {
+            return ProgrammedCollection::query()->create([
+                'user_id' => $sampleEntry->received_by_id,
+                'col_date' => optional($sampleEntry->collected_at ?? $sampleEntry->received_at)->toDateString() ?? now()->toDateString(),
+                'entry_date' => optional($sampleEntry->received_at)->toDateString() ?? now()->toDateString(),
+                'collection_location' => data_get($sampleEntry->client_submitted_info, 'collection_location', data_get($sampleEntry->client_submitted_info, 'location')),
+                'vehicle_reference' => data_get($sampleEntry->client_submitted_info, 'vehicle_reference'),
+                'placed_analysis' => true,
+                'status' => true,
+            ]);
+        }
+
+        return DirectCollection::query()->create([
+            'description' => 'Fluxo originado pela validação da amostra '.($sampleEntry->code ?: $sampleEntry->name),
+            'col_date' => optional($sampleEntry->received_at)->toDateString() ?? now()->toDateString(),
+        ]);
     }
 
     private function resolveTrackingProgress(VAPSampleEntry $sampleEntry): string

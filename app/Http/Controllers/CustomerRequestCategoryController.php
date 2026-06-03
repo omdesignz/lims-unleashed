@@ -2,67 +2,63 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Http\Requests\CustomerRequestCategoryRequest;
 use App\Http\Resources\CustomerRequestCategoryResource;
-use Illuminate\Support\Facades\DB;
 use App\Models\CustomerRequestCategory;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class CustomerRequestCategoryController extends Controller
 {
-    
-     /**
+    /**
      * Display a listing of the resource.
-     *
      */
     public function index()
     {
-        abort_if( !auth()->user()->can('view_request_categories'), 403, '');
+        abort_if(! auth()->user()->can('view_request_categories'), 403, '');
 
         return Inertia::render('CustomerRequestCategories/Index', [
             'record' => CustomerRequestCategoryResource::collection(
                 CustomerRequestCategory::query()
-                            ->when(request()->input('search'), function($query, $search){
-                                $query->where('name', 'like', "%{$search}%");
-                            })
-                            ->when(request()->input('filter'), function($query, $filter){
-                                if($filter = 'trashed'){
-                                    $query->withTrashed();
-                                }
-                            })
-                            ->latest()
-                            ->paginate(10)
-                            ->withQueryString()
-                        ),
-            'slideOverEdit' => true,            
+                    ->when(request()->input('search'), function ($query, $search) {
+                        $query->where('name', 'like', "%{$search}%");
+                    })
+                    ->when(request()->input('filter'), function ($query, $filter) {
+                        if ($filter === 'trashed') {
+                            $query->withTrashed();
+                        }
+                    })
+                    ->latest()
+                    ->paginate(10)
+                    ->withQueryString()
+            ),
+            'slideOverEdit' => true,
             'fields' => [
                 [
                     'name' => trans('gestlab.general.labels.customer_request_categories.name'),
-                    'value' => 'name'
+                    'value' => 'name',
                 ],
                 [
                     'name' => trans('gestlab.general.labels.customer_request_categories.description'),
-                    'value' => 'description'
+                    'value' => 'description',
                 ],
             ],
             'model' => CustomerRequestCategory::MENU_NAME,
-            'abilities' => method_exists(CustomerRequestCategory::class, 'getAbilities') ? collect(CustomerRequestCategory::ABILITIES)->map(function($item){
-                return $item . '_' . CustomerRequestCategory::MENU_NAME;
-            }) : collect(config('gestlab.default_abilities'))->map(function($item){
-                return $item . '_' . CustomerRequestCategory::MENU_NAME;
-            }),                           
-            'query' => request()->only(['search', 'trashed'])
+            'abilities' => method_exists(CustomerRequestCategory::class, 'getAbilities') ? collect(CustomerRequestCategory::ABILITIES)->map(function ($item) {
+                return $item.'_'.CustomerRequestCategory::MENU_NAME;
+            }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
+                return $item.'_'.CustomerRequestCategory::MENU_NAME;
+            }),
+            'query' => request()->only(['search', 'trashed']),
         ]);
     }
 
     /**
      * Show the form for creating a new resource.
-     *
      */
     public function create()
     {
-        abort_if( !auth()->user()->can('add_request_categories'), 403, '');
+        abort_if(! auth()->user()->can('add_request_categories'), 403, '');
 
         // Get any required data
 
@@ -73,7 +69,6 @@ class CustomerRequestCategoryController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     *
      */
     public function store(CustomerRequestCategoryRequest $request)
     {
@@ -85,15 +80,13 @@ class CustomerRequestCategoryController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
-
 
     }
 
     /**
      * Display the specified resource.
-     *
      */
     public function show($id)
     {
@@ -102,28 +95,26 @@ class CustomerRequestCategoryController extends Controller
 
     /**
      * Show the form for editing the specified resource.
-     *
      */
     public function edit($id)
     {
-        abort_if( !auth()->user()->can('edit_request_categories'), 403, '');
+        abort_if(! auth()->user()->can('edit_request_categories'), 403, '');
 
         // Find the record
         $record = CustomerRequestCategory::findOrFail($id);
 
         // Return Inertia View with record data
         return Inertia::render('CustomerRequestCategories/Edit', [
-            'record' => CustomerRequestCategoryResource::make($record)
+            'record' => CustomerRequestCategoryResource::make($record),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
-     *
      */
     public function update(CustomerRequestCategoryRequest $request, $id)
     {
-        abort_if( !auth()->user()->can('edit_request_categories'), 403, '');
+        abort_if(! auth()->user()->can('edit_request_categories'), 403, '');
 
         // Find the record
         $record = CustomerRequestCategory::findOrFail($id);
@@ -134,20 +125,19 @@ class CustomerRequestCategoryController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
     /**
      * Remove the specified resource from storage.
-     *
      */
     public function destroy()
     {
-        abort_if( !auth()->user()->can('delete_request_categories'), 403, '');
+        abort_if(! auth()->user()->can('delete_request_categories'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and delete the record
         foreach (CustomerRequestCategory::withTrashed()->findOrFail(request('recordIds')) as $record) {
@@ -158,48 +148,47 @@ class CustomerRequestCategoryController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ]
+            ],
         ]);
     }
 
     /**
      * restore the specified resource from storage.
-     *
      */
     public function restore()
     {
-        abort_if( !auth()->user()->can('restore_request_categories'), 403, '');
+        abort_if(! auth()->user()->can('restore_request_categories'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and restore the record
         foreach (CustomerRequestCategory::withTrashed()->findOrFail(request('recordIds')) as $record) {
             $record->restore();
         }
 
-       return redirect()->back()->with([
+        return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ]
-       ]);
+            ],
+        ]);
     }
 
-    public function getCustomerRequestCategory() {
+    public function getCustomerRequestCategory()
+    {
         $data = [];
 
-        if(request()->has('q')){
+        if (request()->has('q')) {
             $search = request()->q;
-            
-            $data = DB::table("customer_request_categories")
+
+            $data = DB::table('customer_request_categories')
                 ->select('customer_request_categories.*')
-                ->where('name','LIKE',"%$search%")
-                ->orWhere('description','LIKE',"%$search%")
+                ->where('name', 'LIKE', "%$search%")
+                ->orWhere('description', 'LIKE', "%$search%")
                 ->get();
         }
 
         return response()->json($data);
     }
-
 }

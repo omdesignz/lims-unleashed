@@ -1,5 +1,7 @@
 <script setup>
+import '../CommercialDocumentSurface.css';
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed, onMounted } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue';
@@ -379,12 +381,12 @@ const onSelectedItem = (item) => {
 </script>
 
 <template>
-<div class="border-b border-gray-200 pb-5">
+<div class="commercial-document-page border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
     <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.invoices.page_title') }}</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500">{{ $t('gestlab.general.labels.invoices.page_update_description') }} {{ form?.inv_no }}</p>
 </div>
 
-<form @submit.prevent>
+<form class="commercial-document-page" :class="commercialDocumentThemeClasses" @submit.prevent>
     <div class="space-y-6">
       
         <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-10">

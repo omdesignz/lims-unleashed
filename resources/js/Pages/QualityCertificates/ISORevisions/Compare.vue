@@ -1,6 +1,6 @@
 <template>
   
-    <div class="space-y-8">
+    <div class="iso-revision-compare space-y-8" :class="commercialDocumentThemeClasses">
       <!-- HEADER CARD -->
       <div class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
@@ -445,6 +445,7 @@
 import { ref, computed } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
 // Icons
@@ -527,7 +528,7 @@ const timeBetweenRevisions = computed(() => {
     return `${months} month${months > 1 ? 's' : ''}`
   } else {
     const years = Math.floor(diffDays / 365)
-    return `${years} year${years > 1 ? 's' : ''}`
+    return `${years} yeaAOA{years > 1 ? 's' : ''}`
   }
 })
 
@@ -620,7 +621,7 @@ const swapRevisions = () => {
 // }
 
 const exportComparison = () => {
-  const url = route('qualitycertificates.iso-revisions.export-comparison', {
+  const url = route('iso-revisions.export-comparison', {
     certificate: props.certificate.id,
     revision_a: props.revisionA.id,
     revision_b: props.revisionB.id
@@ -637,3 +638,47 @@ const saveComparison = () => {
   console.log('Save comparison')
 }
 </script>
+
+<style scoped>
+.iso-revision-compare :deep(.bg-blue-900),
+.iso-revision-compare :deep(.bg-blue-950) {
+  background-color: rgb(var(--primary-900-rgb)) !important;
+}
+
+.iso-revision-compare :deep(.from-blue-900),
+.iso-revision-compare :deep(.from-blue-950) {
+  --tw-gradient-from: rgb(var(--primary-900-rgb)) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(var(--primary-900-rgb) / 0) var(--tw-gradient-to-position) !important;
+}
+
+.iso-revision-compare :deep(.to-blue-800) {
+  --tw-gradient-to: rgb(var(--primary-700-rgb)) var(--tw-gradient-to-position) !important;
+}
+
+.iso-revision-compare :deep(.text-blue-900),
+.iso-revision-compare :deep(.text-blue-800),
+.iso-revision-compare :deep(.text-blue-700) {
+  color: rgb(var(--primary-800-rgb)) !important;
+}
+
+.iso-revision-compare :deep(.bg-blue-50),
+.iso-revision-compare :deep(.bg-blue-100) {
+  background-color: rgb(var(--primary-50-rgb) / 0.82) !important;
+}
+
+:global(.dark) .iso-revision-compare :deep(.bg-white),
+:global(.dark) .iso-revision-compare :deep(.bg-gray-50),
+:global(.dark) .iso-revision-compare :deep(.bg-blue-50) {
+  background-color: rgb(15 23 42 / 0.86) !important;
+}
+
+:global(.dark) .iso-revision-compare :deep(.text-gray-900),
+:global(.dark) .iso-revision-compare :deep(.text-slate-900) {
+  color: #f8fafc !important;
+}
+
+:global(.dark) .iso-revision-compare :deep(.text-gray-700),
+:global(.dark) .iso-revision-compare :deep(.text-gray-600) {
+  color: #cbd5e1 !important;
+}
+</style>

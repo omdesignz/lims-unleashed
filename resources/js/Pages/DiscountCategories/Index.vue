@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import RecordsTable from '@/Components/records-table.vue';
 import confirmDialog from "@/Components/confirm-dialog.vue";
 import { TransitionRoot } from '@headlessui/vue'
@@ -138,7 +139,7 @@ let submit = () => {
         preserveScroll: true,
         onSuccess: () => {
             showDeleteConfirmation.value = false;
-            actionId = null;
+            actionId.value = null;
         }
       });
       showDeleteConfirmation.value = false;
@@ -152,7 +153,7 @@ let submit = () => {
             preserveScroll: true,
             onSuccess: () => {
                 showDeleteConfirmation.value = false;
-                actionId = null;
+                actionId.value = null;
             }
         });
         showDeleteConfirmation.value = false;
@@ -160,14 +161,15 @@ let submit = () => {
 }  
 </script>
 <template>
-<div class="border-b border-gray-200 pb-5">
-    <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.discount_categories.page_title') }}</h3>
-    <p class="mt-2 max-w-4xl text-sm text-gray-500"></p>
+<div class="mb-6 rounded-[2rem] border border-slate-200 bg-white/90 p-6 shadow-sm ring-1 ring-slate-100 dark:border-slate-800 dark:bg-slate-950/90 dark:ring-slate-800">
+    <p class="text-xs font-semibold uppercase tracking-[0.22em] text-primary-700 dark:text-primary-300">Configuração comercial</p>
+    <h3 class="mt-2 text-2xl font-semibold leading-7 text-slate-950 dark:text-white">{{ $t('gestlab.general.labels.discount_categories.page_title') }}</h3>
+    <p class="mt-2 max-w-4xl text-sm text-slate-600 dark:text-slate-300">Defina descontos reutilizáveis para documentos comerciais e propostas.</p>
 </div>
 
 <records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="openslideover=true" @slideover-on="openSlideoverWithData"/> <br>
 
-<slide-over v-if="openslideover" @close="close" :title="slideOverTitle" :description="slideOverDescription">
+<slide-over v-if="openslideover" :class="commercialDocumentThemeClasses" @close="close" :title="slideOverTitle" :description="slideOverDescription">
     <template #content>
         <div class="space-y-6 py-6 sm:space-y-0 sm:divide-y sm:divide-gray-200 sm:py-0">
               <!-- Name -->
@@ -224,9 +226,9 @@ let submit = () => {
     </template>
 </slide-over>
 
-<confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
+<confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" :confirm="trans('gestlab.general.buttons.yes')" :cancel="trans('gestlab.general.buttons.no')" />
 
-<confirm-dialog size="sm:max-w-2xl" alignment="sm:items-start" @canceled="showDeleteConfirmationSlideover=false" @close="showDeleteConfirmationSlideover=false" @confirmed="submit" v-if="showDeleteConfirmationSlideover" :title="$t('gestlab.actions.confirmation_dialog_title.default')" :description="$t('gestlab.actions.confirmation_dialog_description.default')" confirm="Sim" cancel="Não">
+<confirm-dialog size="sm:max-w-2xl" alignment="sm:items-start" @canceled="showDeleteConfirmationSlideover=false" @close="showDeleteConfirmationSlideover=false" @confirmed="submit" v-if="showDeleteConfirmationSlideover" :title="$t('gestlab.actions.confirmation_dialog_title.default')" :description="$t('gestlab.actions.confirmation_dialog_description.default')" :confirm="trans('gestlab.general.buttons.yes')" :cancel="trans('gestlab.general.buttons.no')">
     <div class="mt-4">
       <div class="font-semibold inline-flex px-2 py-1 leading-4 text-xs rounded-full text-white bg-blue-900 sm:text-xs mb-2"><p class="text-xs">{{ $t('gestlab.general.labels.summary') }}</p></div>
       <div>

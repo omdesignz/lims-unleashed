@@ -142,6 +142,9 @@ class LabelStudioWorkflowTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('VAPLabels/Show')
                 ->has('templates')
+                ->has('pdfRenderer.chrome.available')
+                ->has('pdfRenderer.fallback.available')
+                ->has('printSettings')
             );
 
         $templateNames = collect($response->inertiaProps('templates'))
@@ -173,6 +176,48 @@ class LabelStudioWorkflowTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('VAPLabels/Create')
                 ->where('selectedTemplateId', $template->id)
+            );
+    }
+
+    public function test_label_edit_route_reuses_polished_studio_shell(): void
+    {
+        $user = $this->verifiedAdmin();
+
+        $template = VAPLabelTemplate::query()->create([
+            'name' => 'Modelo de edição',
+            'description' => 'Disponível no ecrã unificado',
+            'category' => 'general',
+            'template_data' => ['content' => '{name}'],
+            'is_active' => true,
+            'is_featured' => false,
+        ]);
+
+        $label = VAPLabel::query()->create([
+            'tenant_id' => $user->tenant_id,
+            'user_id' => $user->id,
+            'name' => 'Etiqueta editável',
+            'type' => 'custom',
+            'content' => 'Conteúdo',
+            'width' => 50,
+            'height' => 20,
+            'background_color' => '#ffffff',
+            'text_color' => '#000000',
+            'font_size' => 12,
+            'border_width' => 1,
+            'border_color' => '#000000',
+            'text_alignment' => 'center',
+            'template_data' => ['template_id' => $template->id],
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('vap_labels.labels.edit', $label))
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('VAPLabels/Create')
+                ->where('label.id', $label->id)
+                ->where('selectedTemplateId', $template->id)
+                ->has('sourceOptions.samples')
+                ->has('supportedPlaceholders')
             );
     }
 
@@ -588,5 +633,148 @@ class LabelStudioWorkflowTest extends TestCase
         $this->assertSame(12, data_get($template->template_data, 'barcode_height'));
         $this->assertSame('logos/template.png', data_get($template->template_data, 'logo_path'));
         $this->assertSame(18, data_get($template->template_data, 'logo_size'));
+    }
+
+    public function test_label_preview_pdf_uses_production_renderer_contract(): void
+    {
+        $user = $this->verifiedAdmin();
+        $label = VAPLabel::query()->create([
+            'tenant_id' => $user->tenant_id,
+            'user_id' => $user->id,
+            'name' => 'Etiqueta PDF Preview',
+            'type' => 'sample',
+            'content' => 'Amostra PDF',
+            'width' => 60,
+            'height' => 30,
+            'background_color' => '#ffffff',
+            'text_color' => '#111827',
+            'font_size' => 12,
+            'border_width' => 1,
+            'border_color' => '#111827',
+            'text_alignment' => 'center',
+            'has_qr_code' => true,
+            'qr_code_content' => 'sample-preview-001',
+            'has_barcode' => true,
+            'barcode_content' => 'sample-preview-001',
+            'barcode_type' => 'CODE128',
+            'barcode_width' => 32,
+            'barcode_height' => 10,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('vap_labels.preview-pdf', $label));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $response->assertHeader('X-Label-Pdf-Renderer');
+        $this->assertStringStartsWith('%PDF-', (string) $response->baseResponse->getContent());
+    }
+
+    public function test_label_generation_pdf_embeds_real_qr_and_barcode_payloads(): void
+    {
+        $user = $this->verifiedAdmin();
+        $label = VAPLabel::query()->create([
+            'tenant_id' => $user->tenant_id,
+            'user_id' => $user->id,
+            'name' => 'Etiqueta PDF Produção',
+            'type' => 'sample',
+            'content' => '{name}',
+            'width' => 60,
+            'height' => 30,
+            'background_color' => '#f8fafc',
+            'text_color' => '#0f172a',
+            'font_size' => 12,
+            'border_width' => 1,
+            'border_color' => '#0f172a',
+            'text_alignment' => 'center',
+            'has_qr_code' => true,
+            'qr_code_size' => 12,
+            'has_barcode' => true,
+            'barcode_type' => 'CODE128',
+            'barcode_width' => 32,
+            'barcode_height' => 10,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->post(route('vap_labels.generate-pdf', $label), [
+                'data' => [
+                    [
+                        'content' => 'Amostra 001',
+                        'qr_content' => 'sample:001',
+                        'barcode_content' => 'SAMPLE001',
+                    ],
+                ],
+                'include_cutouts' => true,
+                'labels_per_page' => 1,
+                'margin' => 5,
+                'page_size' => 'Legal',
+                'orientation' => 'landscape',
+            ]);
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $response->assertHeader('X-Label-Pdf-Renderer');
+        $this->assertStringStartsWith('%PDF-', (string) $response->baseResponse->getContent());
+
+        $label->refresh();
+
+        $this->assertSame('Legal', data_get($label->template_data, 'print_settings.page_size'));
+        $this->assertSame('landscape', data_get($label->template_data, 'print_settings.orientation'));
+        $this->assertSame(5, data_get($label->template_data, 'print_settings.margin'));
+    }
+
+    public function test_label_batch_pdf_uses_same_renderer_contract(): void
+    {
+        $user = $this->verifiedAdmin();
+        $label = VAPLabel::query()->create([
+            'tenant_id' => $user->tenant_id,
+            'user_id' => $user->id,
+            'name' => 'Etiqueta PDF Lote',
+            'type' => 'custom',
+            'content' => 'Lote',
+            'width' => 50,
+            'height' => 25,
+            'background_color' => '#ffffff',
+            'text_color' => '#000000',
+            'font_size' => 11,
+            'border_width' => 1,
+            'border_color' => '#000000',
+            'text_alignment' => 'center',
+            'has_qr_code' => true,
+            'qr_code_size' => 10,
+            'has_barcode' => true,
+            'barcode_type' => 'CODE128',
+            'barcode_width' => 28,
+            'barcode_height' => 8,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->post(route('vap_labels.generate-batch-pdf', $label), [
+                'data' => [
+                    ['content' => 'Etiqueta 1', 'qr_content' => 'batch:1', 'barcode_content' => 'BATCH001'],
+                    ['content' => 'Etiqueta 2', 'qr_content' => 'batch:2', 'barcode_content' => 'BATCH002'],
+                ],
+                'columns' => 2,
+                'rows' => 4,
+                'spacing' => 4,
+                'include_cutouts' => true,
+                'page_size' => 'A3',
+                'orientation' => 'portrait',
+            ]);
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $response->assertHeader('X-Label-Pdf-Renderer');
+        $this->assertStringStartsWith('%PDF-', (string) $response->baseResponse->getContent());
+
+        $label->refresh();
+
+        $this->assertSame('A3', data_get($label->template_data, 'print_settings.page_size'));
+        $this->assertSame(2, data_get($label->template_data, 'print_settings.columns'));
+        $this->assertSame(4, data_get($label->template_data, 'print_settings.rows'));
+        $this->assertSame(4, data_get($label->template_data, 'print_settings.spacing'));
     }
 }

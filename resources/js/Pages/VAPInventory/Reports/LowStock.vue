@@ -1,111 +1,90 @@
 <template>
-  <div class="space-y-8">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ExclamationTriangleIcon class="h-7 w-7 text-orange-900" />
-            Relatório de Estoque Baixo
-          </h1>
-          <p class="mt-2 text-gray-600">
-            Monitore os itens com estoque baixo que requerem reabastecimento
-            <span class="font-semibold text-orange-900">
-              {{ stats.total_low_stock }} itens precisam de atenção
-            </span>
-          </p>
-        </div>
+  <div class="space-y-8" :class="commercialDocumentThemeClasses">
+    <ModuleHero
+      eyebrow="Stock assurance"
+      title="Relatório de Estoque Baixo"
+      :description="`Monitore itens com estoque baixo que requerem reabastecimento. ${stats.total_low_stock} itens precisam de atenção.`"
+    >
+      <template #actions>
         <div class="flex items-center gap-3">
           <button
             @click="exportReport"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             <ArrowDownTrayIcon class="h-4 w-4" />
             Exportar Relatório
           </button>
           <Link
             :href="route('vap-inventory.items.index')"
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+            class="inline-flex items-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
           >
             <ArrowLeftIcon class="h-4 w-4" />
             Voltar para Inventário
           </Link>
         </div>
-      </div>
-    </div>
+      </template>
+    </ModuleHero>
 
     <!-- FILTERS -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <ModuleCard title="Filtros de estoque baixo" description="Priorize por armazém, categoria, nível de severidade e ordenação operacional.">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <!-- WAREHOUSE FILTER -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             <BuildingLibraryIcon class="h-4 w-4 inline mr-1" />
             Armazém
           </label>
-          <select
-            v-model="filters.warehouse_id"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-          >
+          <BaseSelect v-model="filters.warehouse_id">
             <option value="">Todos os Armazéns</option>
             <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
               {{ warehouse.name }}
             </option>
-          </select>
+          </BaseSelect>
         </div>
 
         <!-- CATEGORY FILTER -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             <TagIcon class="h-4 w-4 inline mr-1" />
             Categoria
           </label>
-          <select
-            v-model="filters.category_id"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-          >
+          <BaseSelect v-model="filters.category_id">
             <option value="">Todas as Categorias</option>
             <option v-for="category in categories" :key="category.id" :value="category.id">
               {{ category.name }}
             </option>
-          </select>
+          </BaseSelect>
         </div>
 
         <!-- STOCK LEVEL FILTER -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             <ScaleIcon class="h-4 w-4 inline mr-1" />
             Nível de Estoque
           </label>
-          <select
-            v-model="filters.severity"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-          >
+          <BaseSelect v-model="filters.severity">
             <option value="">Todos os Níveis</option>
             <option value="critical">Crítico (Abaixo do Mínimo)</option>
             <option value="low">Baixo (Abaixo do Reabastecimento)</option>
             <option value="warning">Aviso (Próximo Reabastecimento)</option>
-          </select>
+          </BaseSelect>
         </div>
 
         <!-- SORT BY -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
             <ArrowsUpDownIcon class="h-4 w-4 inline mr-1" />
             Ordenar Por
           </label>
-          <select
-            v-model="filters.sort_by"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-          >
+          <BaseSelect v-model="filters.sort_by">
             <option value="severity">Severidade</option>
             <option value="current_stock">Estoque Atual</option>
             <option value="reorder_point">Ponto de Reabastecimento</option>
             <option value="item_name">Nome do Item</option>
-          </select>
+          </BaseSelect>
         </div>
       </div>
-    </div>
+    </ModuleCard>
 
     <!-- STATS CARDS -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -155,31 +134,31 @@
     </div>
 
     <section class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-      <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <ModuleCard>
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 class="text-lg font-semibold text-slate-900">Severidade da fila</h2>
-            <p class="mt-1 text-sm text-slate-500">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Severidade da fila</h2>
+            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
               Distribuição entre itens sem stock, críticos e abaixo do ponto de reabastecimento.
             </p>
           </div>
-          <div class="rounded-2xl bg-slate-50 px-4 py-3 text-right">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Itens em atenção</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900">{{ severityMixTotal }}</p>
+          <div class="rounded-2xl bg-slate-50 px-4 py-3 text-right dark:bg-slate-950/50">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Itens em atenção</p>
+            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ severityMixTotal }}</p>
           </div>
         </div>
 
         <div class="mt-6">
           <apexchart type="bar" height="300" :options="severityMixChartOptions" :series="severityMixChartSeries" />
         </div>
-      </article>
+      </ModuleCard>
 
       <div class="grid gap-6">
-        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <ModuleCard>
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h2 class="text-lg font-semibold text-slate-900">Exposição por armazém</h2>
-              <p class="mt-1 text-sm text-slate-500">Onde a pressão de reabastecimento está mais concentrada.</p>
+              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Exposição por armazém</h2>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Onde a pressão de reabastecimento está mais concentrada.</p>
             </div>
             <span class="inline-flex items-center rounded-full bg-orange-50 px-3 py-1 text-sm font-medium text-orange-800">
               {{ warehouseExposureTotal }} armazéns
@@ -189,37 +168,37 @@
           <div class="mt-6">
             <apexchart type="donut" height="300" :options="warehouseExposureChartOptions" :series="warehouseExposureChartSeries" />
           </div>
-        </article>
+        </ModuleCard>
 
-        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <ModuleCard>
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h2 class="text-lg font-semibold text-slate-900">Gap de reabastecimento</h2>
-              <p class="mt-1 text-sm text-slate-500">Itens com maior distância até ao ponto mínimo desejado.</p>
+              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Gap de reabastecimento</h2>
+              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Itens com maior distância até ao ponto mínimo desejado.</p>
             </div>
           </div>
 
           <div class="mt-6">
             <apexchart type="bar" height="250" :options="replenishmentGapChartOptions" :series="replenishmentGapChartSeries" />
           </div>
-        </article>
+        </ModuleCard>
       </div>
     </section>
 
     <!-- LOW STOCK ITEMS -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div class="border-b border-gray-200 px-6 py-4">
+    <ModuleCard class="overflow-hidden" title="Itens com Estoque Baixo">
+      <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
         <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-gray-900">
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
             Itens com Estoque Baixo
-            <span class="text-sm font-normal text-gray-500 ml-2">
+            <span class="ml-2 text-sm font-normal text-slate-500 dark:text-slate-400">
               ({{ inventory.data.length }} itens)
             </span>
           </h2>
           <div class="flex items-center gap-2">
             <button
               @click="generateOrder"
-              class="inline-flex items-center gap-2 rounded-lg bg-green-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-800"
+              class="inline-flex items-center gap-2 rounded-2xl bg-green-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-green-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
             >
               <ShoppingCartIcon class="h-4 w-4" />
               Criar Pedido de Compra
@@ -229,31 +208,31 @@
       </div>
 
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+          <thead class="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-900/70">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Detalhes do Item
               </th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Armazém
               </th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Níveis de Estoque
               </th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Estado
               </th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Acções
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
             <tr
               v-for="item in inventory.data"
               :key="item.id"
-              class="hover:bg-gray-50 transition-colors duration-150"
+              class="transition-colors duration-150 hover:bg-blue-50/60 dark:hover:bg-blue-950/20"
             >
               <td class="px-6 py-4">
                 <div class="flex items-center">
@@ -266,38 +245,38 @@
                     </div>
                   </div>
                   <div class="ml-4">
-                    <div class="text-sm font-semibold text-gray-900">
+                    <div class="text-sm font-semibold text-slate-900 dark:text-white">
                       {{ item.item?.name }}
                     </div>
-                    <div class="text-sm text-gray-500">
+                    <div class="text-sm text-slate-500 dark:text-slate-400">
                       {{ item.item?.internal_code || 'Sem Código Interno' }}
                     </div>
-                    <div class="text-xs text-gray-400">
+                    <div class="text-xs text-slate-400 dark:text-slate-500">
                       {{ item.item?.category?.name || 'Sem Categoria' }}
                     </div>
                   </div>
                 </div>
               </td>
               <td class="px-6 py-4">
-                <div class="text-sm text-gray-900">{{ item.warehouse?.name }}</div>
-                <div class="text-sm text-gray-500">{{ item.warehouse?.location?.name || 'Sem Localização' }}</div>
+                <div class="text-sm text-slate-900 dark:text-white">{{ item.warehouse?.name }}</div>
+                <div class="text-sm text-slate-500 dark:text-slate-400">{{ item.warehouse?.location?.name || 'Sem Localização' }}</div>
               </td>
               <td class="px-6 py-4">
                 <div class="space-y-2">
                   <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-600">Actual:</span>
-                    <span class="font-semibold text-blue-900">{{ item.qty_available }}</span>
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Actual:</span>
+                    <span class="font-semibold text-blue-900 dark:text-blue-300">{{ item.qty_available }}</span>
                   </div>
                   <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-600">Ponto de Reabastecimento:</span>
-                    <span class="font-semibold text-orange-900">{{ item.reorder_point }}</span>
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Ponto de Reabastecimento:</span>
+                    <span class="font-semibold text-orange-900 dark:text-orange-300">{{ item.reorder_point }}</span>
                   </div>
                   <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-600">Nível Mínimo de Estoque:</span>
-                    <span class="font-semibold text-red-900">{{ item.min_stock_level }}</span>
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Nível Mínimo de Estoque:</span>
+                    <span class="font-semibold text-red-900 dark:text-red-300">{{ item.min_stock_level }}</span>
                   </div>
                   <div class="mt-2">
-                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                       <div
                         :class="['h-full rounded-full transition-all duration-500', getStockBarColor(item)]"
                         :style="{ width: getStockPercentage(item) + '%' }"
@@ -327,21 +306,21 @@
                 <div class="flex items-center gap-2">
                   <Link
                     :href="route('vap-inventory.items.show', item.item_id)"
-                    class="inline-flex items-center rounded-lg bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-900 hover:bg-blue-100"
+                    class="inline-flex items-center rounded-xl bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-900 transition hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-200 dark:hover:bg-blue-500/20"
                   >
                     <EyeIcon class="h-4 w-4 mr-1" />
                     Visualizar
                   </Link>
                   <Link
                     :href="route('vap-inventory.items.edit', item.item_id)"
-                    class="inline-flex items-center rounded-lg bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                    class="inline-flex items-center rounded-xl bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
                   >
                     <PencilSquareIcon class="h-4 w-4 mr-1" />
                     Modificar Estoque
                   </Link>
                   <button
                     @click="createOrderForItem(item)"
-                    class="inline-flex items-center rounded-lg bg-green-50 px-3 py-1.5 text-sm font-medium text-green-900 hover:bg-green-100"
+                    class="inline-flex items-center rounded-xl bg-green-50 px-3 py-1.5 text-sm font-semibold text-green-900 transition hover:bg-green-100 dark:bg-emerald-500/10 dark:text-emerald-200 dark:hover:bg-emerald-500/20"
                   >
                     <ShoppingCartIcon class="h-4 w-4 mr-1" />
                     Pedido de Compra
@@ -355,16 +334,16 @@
 
       <!-- EMPTY STATE -->
       <div v-if="inventory.data.length === 0" class="p-12 text-center">
-        <CheckCircleIcon class="mx-auto h-12 w-12 text-green-300" />
-        <h3 class="mt-4 text-sm font-semibold text-gray-900">
+        <CheckCircleIcon class="mx-auto h-12 w-12 text-green-300 dark:text-emerald-500/60" />
+        <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
           Nenhum item com estoque baixo encontrado
         </h3>
-        <p class="mt-2 text-sm text-gray-500">
+        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
           Todos os itens estão no nível de estoque saudável. Boa sorte!
         </p>
         <Link
           :href="route('vap-inventory.items.index')"
-          class="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+          class="mt-6 inline-flex items-center gap-2 rounded-2xl bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500"
         >
           <ArrowLeftIcon class="h-5 w-5" />
           Voltar para Inventário
@@ -372,69 +351,70 @@
       </div>
 
       <!-- PAGINATION -->
-      <div v-if="inventory.data.length > 0" class="border-t border-gray-200 px-6 py-4">
+      <div v-if="inventory.data.length > 0" class="border-t border-slate-200 px-6 py-4 dark:border-slate-800">
         <Pagination :links="inventory.links" />
       </div>
-    </div>
+    </ModuleCard>
 
     <!-- RECOMMENDED ORDERS -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">
-        Quantidades Recomendadas de Compra
-      </h3>
+    <ModuleCard title="Quantidades Recomendadas de Compra">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+          <thead class="bg-slate-50 dark:bg-slate-900/80">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Item
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Estoque Actual
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Quantidade Recomendada
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Fornecedor
               </th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th :class="tableHeadClass">
                 Preço Estimado
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
             <tr
               v-for="item in recommendedOrders"
               :key="item.id"
-              class="hover:bg-gray-50"
+              class="hover:bg-blue-50/60 dark:hover:bg-blue-950/20"
             >
               <td class="px-6 py-4">
-                <div class="text-sm font-medium text-gray-900">{{ item.name }}</div>
-                <div class="text-sm text-gray-500">{{ item.code }}</div>
+                <div class="text-sm font-medium text-slate-900 dark:text-white">{{ item.name }}</div>
+                <div class="text-sm text-slate-500 dark:text-slate-400">{{ item.code }}</div>
               </td>
-              <td class="px-6 py-4 text-sm text-gray-900">{{ item.current_stock }}</td>
+              <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">{{ item.current_stock }}</td>
               <td class="px-6 py-4">
                 <span class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800">
                   {{ item.recommended_qty }} unidades
                 </span>
               </td>
-              <td class="px-6 py-4 text-sm text-gray-900">
+              <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
                 {{ item.supplier?.name || 'Sem Fornecedor' }}
               </td>
-              <td class="px-6 py-4 text-sm text-gray-900">
+              <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
                 AOA{{ (item.recommended_qty * (item.unit_price || 0)).toFixed(2) }}
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
+    </ModuleCard>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, watch } from 'vue'
+import BaseSelect from '@/Components/base/BaseSelect.vue'
+import ModuleCard from '@/Components/base/ModuleCard.vue'
+import ModuleHero from '@/Components/base/ModuleHero.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import {
   ExclamationTriangleIcon,
@@ -475,6 +455,22 @@ const filters = reactive({
   sort_by: props.filters?.sort_by ?? 'severity',
 })
 
+const tableHeadClass = 'px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300'
+const isDarkMode = ref(false)
+let themeObserver
+
+const chartTextColor = computed(() => isDarkMode.value ? '#cbd5e1' : '#475569')
+const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#e2e8f0')
+const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
+
+const syncDarkMode = () => {
+  if (typeof document === 'undefined') {
+    return
+  }
+
+  isDarkMode.value = document.documentElement.classList.contains('dark')
+}
+
 const severityMixChartSeries = computed(() => [
   {
     name: 'Itens',
@@ -493,9 +489,16 @@ const severityMixChartOptions = computed(() => ({
   chart: {
     toolbar: { show: false },
     fontFamily: 'inherit',
+    background: 'transparent',
   },
+  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
+  foreColor: chartTextColor.value,
   colors: ['#b91c1c'],
   dataLabels: { enabled: false },
+  grid: {
+    borderColor: chartGridColor.value,
+    strokeDashArray: 4,
+  },
   plotOptions: {
     bar: {
       borderRadius: 6,
@@ -504,6 +507,19 @@ const severityMixChartOptions = computed(() => ({
   },
   xaxis: {
     categories: props.charts?.severity_mix?.labels || [],
+    axisBorder: { color: chartGridColor.value },
+    axisTicks: { color: chartGridColor.value },
+    labels: {
+      style: { colors: chartTextColor.value },
+    },
+  },
+  yaxis: {
+    labels: {
+      style: { colors: chartTextColor.value },
+    },
+  },
+  tooltip: {
+    theme: chartTooltipTheme.value,
   },
   legend: { show: false },
 }))
@@ -512,11 +528,17 @@ const warehouseExposureChartOptions = computed(() => ({
   chart: {
     toolbar: { show: false },
     fontFamily: 'inherit',
+    background: 'transparent',
   },
+  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
+  foreColor: chartTextColor.value,
   labels: props.charts?.warehouse_exposure?.labels || [],
   colors: ['#ea580c', '#b91c1c', '#1d4ed8', '#7c3aed', '#0f766e', '#475569'],
   legend: {
     position: 'bottom',
+    labels: {
+      colors: chartTextColor.value,
+    },
   },
   dataLabels: {
     formatter: (value) => `${value.toFixed(0)}%`,
@@ -524,15 +546,25 @@ const warehouseExposureChartOptions = computed(() => ({
   stroke: {
     width: 0,
   },
+  tooltip: {
+    theme: chartTooltipTheme.value,
+  },
 }))
 
 const replenishmentGapChartOptions = computed(() => ({
   chart: {
     toolbar: { show: false },
     fontFamily: 'inherit',
+    background: 'transparent',
   },
+  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
+  foreColor: chartTextColor.value,
   colors: ['#1e3a8a'],
   dataLabels: { enabled: false },
+  grid: {
+    borderColor: chartGridColor.value,
+    strokeDashArray: 4,
+  },
   plotOptions: {
     bar: {
       borderRadius: 6,
@@ -544,7 +576,18 @@ const replenishmentGapChartOptions = computed(() => ({
     labels: {
       rotate: -25,
       trim: true,
+      style: { colors: chartTextColor.value },
     },
+    axisBorder: { color: chartGridColor.value },
+    axisTicks: { color: chartGridColor.value },
+  },
+  yaxis: {
+    labels: {
+      style: { colors: chartTextColor.value },
+    },
+  },
+  tooltip: {
+    theme: chartTooltipTheme.value,
   },
   legend: { show: false },
 }))
@@ -604,7 +647,7 @@ const recommendedOrders = computed(() => {
       current_stock: item.qty_available,
       recommended_qty: recommended,
       supplier: item.item?.supplier,
-      unit_price: 100, // Placeholder - you should add this to your model
+      unit_price: item.unit_price || item.item?.unit_price || item.item?.purchase_price || 0,
     }
   })
 })
@@ -646,4 +689,17 @@ watch(
   }, 300),
   { deep: true }
 )
+
+onMounted(() => {
+  syncDarkMode()
+
+  if (typeof MutationObserver !== 'undefined') {
+    themeObserver = new MutationObserver(syncDarkMode)
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+  }
+})
+
+onBeforeUnmount(() => {
+  themeObserver?.disconnect()
+})
 </script>

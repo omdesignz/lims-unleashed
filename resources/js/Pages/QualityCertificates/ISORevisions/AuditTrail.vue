@@ -1,6 +1,6 @@
 <template>
 
-    <div class="space-y-8">
+    <div class="iso-audit-trail-page space-y-8" :class="commercialDocumentThemeClasses">
       <!-- HEADER CARD -->
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="flex items-center justify-between">
@@ -35,12 +35,12 @@
             <div class="flex gap-2">
               <input 
                 type="date" 
-                v-model="filters.date_from"
+                v-model="localFilters.date_from"
                 class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
               />
               <input 
                 type="date" 
-                v-model="filters.date_to"
+                v-model="localFilters.date_to"
                 class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
               />
             </div>
@@ -52,7 +52,7 @@
               {{ $t('gestlab.general.labels.iso_revisions.audit_trail.user') }}
             </label>
             <select 
-              v-model="filters.user_id"
+              v-model="localFilters.user_id"
               class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
             >
               <option value="">{{ $t('gestlab.general.labels.iso_revisions.audit_trail.all_users') }}</option>
@@ -68,7 +68,7 @@
               {{ $t('gestlab.general.labels.iso_revisions.audit_trail.action_type') }}
             </label>
             <select 
-              v-model="filters.action"
+              v-model="localFilters.action"
               class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
             >
               <option value="">{{ $t('gestlab.general.labels.iso_revisions.audit_trail.all_actions') }}</option>
@@ -84,7 +84,7 @@
               {{ $t('gestlab.general.labels.iso_revisions.audit_trail.entity_type') }}
             </label>
             <select 
-              v-model="filters.entity_type"
+              v-model="localFilters.entity_type"
               class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
             >
               <option value="">{{ $t('gestlab.general.labels.iso_revisions.audit_trail.all_entities') }}</option>
@@ -358,6 +358,7 @@ import { ref, computed, reactive } from 'vue'
 import { router } from '@inertiajs/vue3'
 import Layout from "@/Shared/Layouts/Layout.vue";
 import Pagination from '@/Components/Pagination.vue'
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 // Icons
 import {
@@ -553,5 +554,67 @@ const refreshLogs = () => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.iso-audit-trail-page :deep(.bg-blue-900) {
+  background-color: rgb(var(--primary-900-rgb)) !important;
+}
+
+.iso-audit-trail-page :deep(.text-blue-900),
+.iso-audit-trail-page :deep(.text-blue-800) {
+  color: rgb(var(--primary-800-rgb)) !important;
+}
+
+.iso-audit-trail-page :deep(.bg-blue-50),
+.iso-audit-trail-page :deep(.bg-blue-100) {
+  background-color: rgb(var(--primary-50-rgb) / 0.82) !important;
+}
+
+.iso-audit-trail-page :deep(input),
+.iso-audit-trail-page :deep(select),
+.iso-audit-trail-page :deep(textarea) {
+  border-color: #d8cbb8;
+  background: #fffdf7;
+  color: #15231f;
+  border-radius: 0.875rem;
+}
+
+.iso-audit-trail-page :deep(input:focus),
+.iso-audit-trail-page :deep(select:focus),
+.iso-audit-trail-page :deep(textarea:focus) {
+  border-color: rgb(var(--primary-500-rgb));
+  box-shadow: 0 0 0 3px rgb(var(--primary-500-rgb) / 0.18);
+  outline: none;
+}
+
+:global(.dark) .iso-audit-trail-page :deep(.bg-white),
+:global(.dark) .iso-audit-trail-page :deep(.bg-gray-50),
+:global(.dark) .iso-audit-trail-page :deep(.bg-gray-100),
+:global(.dark) .iso-audit-trail-page :deep(.bg-yellow-50) {
+  background-color: rgb(15 23 42 / 0.86) !important;
+}
+
+:global(.dark) .iso-audit-trail-page :deep(.border-gray-200),
+:global(.dark) .iso-audit-trail-page :deep(.divide-gray-200),
+:global(.dark) .iso-audit-trail-page :deep(.divide-gray-300) {
+  border-color: rgb(51 65 85) !important;
+}
+
+:global(.dark) .iso-audit-trail-page :deep(.text-gray-900) {
+  color: #f8fafc !important;
+}
+
+:global(.dark) .iso-audit-trail-page :deep(.text-gray-700),
+:global(.dark) .iso-audit-trail-page :deep(.text-gray-600),
+:global(.dark) .iso-audit-trail-page :deep(.text-gray-500) {
+  color: #cbd5e1 !important;
+}
+
+:global(.dark) .iso-audit-trail-page :deep(input),
+:global(.dark) .iso-audit-trail-page :deep(select),
+:global(.dark) .iso-audit-trail-page :deep(textarea) {
+  border-color: #315149;
+  background: #10231f;
+  color: #f7f1e7;
 }
 </style>

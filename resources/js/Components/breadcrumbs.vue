@@ -1,12 +1,12 @@
 <template>
   <nav aria-label="Breadcrumb" class="flex">
-    <ol role="list" class="flex items-center gap-1.5">
+    <ol role="list" class="flex flex-wrap items-center gap-1.5 rounded-full border border-[#ded3bf]/80 bg-[#fffaf0]/78 px-3 py-2 shadow-sm backdrop-blur dark:border-[#25443c] dark:bg-[#0c1714]/76">
       <!-- Home -->
       <li>
         <div>
           <Link
             :href="route('dashboard')"
-            class="text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400 transition-colors duration-150"
+            class="text-primary-700/70 transition-colors duration-150 hover:text-primary-800 dark:text-accent-200/70 dark:hover:text-accent-100"
           >
             <HomeIcon class="h-5 w-5 flex-shrink-0" aria-hidden="true" />
             <span class="sr-only">Home</span>
@@ -17,19 +17,19 @@
       <!-- Pages -->
       <li v-for="page in pages" :key="page.name" class="flex items-center gap-1.5">
         <ChevronRightIcon
-          class="h-4 w-4 flex-shrink-0 text-gray-400 dark:text-gray-600"
+          class="h-4 w-4 flex-shrink-0 text-slate-400 dark:text-slate-600"
           aria-hidden="true"
         />
         <Link
           v-if="!page.current"
           :href="page.url"
-          class="text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-150"
+          class="text-sm font-semibold text-slate-500 transition-colors duration-150 hover:text-primary-800 dark:text-slate-400 dark:hover:text-accent-100"
         >
           {{ $t(page.title) }}
         </Link>
         <span
           v-else
-          class="text-sm font-semibold text-primary-700 dark:text-primary-300"
+          class="text-sm font-bold text-primary-800 dark:text-accent-100"
           aria-current="page"
         >
           {{ $t(page.title) }}

@@ -1,7 +1,7 @@
 <template>
-    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
-        <h1 class="text-3xl font-bold underline">Welcome</h1>
-        <p>Hello, welcome to your first Inertia app!</p>
+    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:max-w-7xl lg:px-8" :class="commercialDocumentThemeClasses">
+        <h1 class="text-3xl font-bold text-slate-950 dark:text-white">GestLab workspace</h1>
+        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Área técnica para validação de componentes internos e fluxos de apoio.</p>
         <p>Current route: {{ route().current() }}</p>
         <p>Time: {{ formatted }}</p>
         <br>
@@ -73,6 +73,7 @@ import Combo from '@/Components/combo.vue'
 import datePicker from '@/Components/date-picker.vue'
 import tiptapTextarea from '@/Components/tiptap-textarea.vue'
 import Layout from "../Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
 
 defineProps({
@@ -120,7 +121,7 @@ function createUser(option, setSelected) {
     });
 }
 
-const formatted = useDateFormat(useNow(), 'YYYY-MM-DD (ddd) HH:mm:ss', { locales: 'pt-BR' })
+const formatted = useDateFormat(useNow(), 'YYYY-MM-DD (ddd) HH:mm:ss', { locales: 'pt-Pt' })
 
 const options = [
   {value: 1, label: "Wade Cooper"},

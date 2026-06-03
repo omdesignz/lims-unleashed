@@ -3,30 +3,26 @@
 namespace App\Models;
 
 use App\Enums\Collections\CollectionProductTrackingStatus;
-use Illuminate\Database\Eloquent\Casts\AsCollection;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Http\Request;
-use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Writer\SvgWriter;
-use Endroid\QrCode\Writer\PngWriter;
-use Endroid\QrCode\ErrorCorrectionLevel;
-use Endroid\QrCode\Encoding\Encoding;
-use Endroid\QrCode\LabelAlignment;
-use Endroid\QrCode\RoundBlockSizeMode;
-use Endroid\QrCode\Color\Color;
-use Endroid\QrCode\Label\Label;
-use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\AllowedSort;
 use App\Filters\GlobalFilter;
 use App\Traits\ISO17025Revisionable;
+use Endroid\QrCode\Color\Color;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\Label\Label;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\RoundBlockSizeMode;
+use Endroid\QrCode\Writer\SvgWriter;
+use Illuminate\Database\Eloquent\Casts\AsCollection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\CausesActivity;
+use Spatie\QueryBuilder\AllowedFilter;
 
 class CollectionProduct extends Model
 {
-    use HasFactory, SoftDeletes, ISO17025Revisionable, CausesActivity;
+    use CausesActivity, HasFactory, ISO17025Revisionable, SoftDeletes;
 
     public const MENU_NAME = null;
 
@@ -78,6 +74,7 @@ class CollectionProduct extends Model
     ];
 
     protected $table = 'collection_product';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at', 'expiry_date', 'collection_date', 'end_date', 'production_date'];
 
     /**
@@ -95,7 +92,6 @@ class CollectionProduct extends Model
         'progress' => CollectionProductTrackingStatus::class,
         'extra_data' => AsCollection::class,
     ];
-
 
     /**
      * Collection
@@ -119,7 +115,7 @@ class CollectionProduct extends Model
 
     public function getQrAttribute()
     {
-        $writer = new SvgWriter();
+        $writer = new SvgWriter;
 
         $text = <<< EOT
                     {$this->code->code}
@@ -135,12 +131,12 @@ class CollectionProduct extends Model
             roundBlockSizeMode: RoundBlockSizeMode::Margin,
             foregroundColor: new Color(0, 0, 0),
             backgroundColor: new Color(255, 255, 255)
-        );            
+        );
 
         $label = new Label(
             text: 'Label',
             textColor: new Color(255, 0, 0)
-        );                
+        );
 
         $result = $writer->write($qrCode, null, $label);
 
@@ -167,7 +163,6 @@ class CollectionProduct extends Model
         return $this->belongsTo(Invoice::class);
     }
 
-
     public function end_result()
     {
         return $this->belongsTo(CollectionEndResult::class, 'result_id');
@@ -177,7 +172,6 @@ class CollectionProduct extends Model
     {
         return $this->belongsTo(PackagingCategory::class, 'pack_id');
     }
-
 
     /**
      * Laboratory Codes
@@ -194,10 +188,14 @@ class CollectionProduct extends Model
      *
      * @return Relationship
      */
-
     public function samples()
     {
         return $this->hasManyThrough(Sample::class, LabCode::class, 'collection_id', 'cl_id');
+    }
+
+    public function sampleEntry(): HasOne
+    {
+        return $this->hasOne(VAPSampleEntry::class, 'collection_product_id');
     }
 
     /**
@@ -240,7 +238,6 @@ class CollectionProduct extends Model
         return $this->hasOne(QualityCertificate::class, 'collection_id');
     }
 
-
     /**
      * Temperature
      *
@@ -251,24 +248,24 @@ class CollectionProduct extends Model
         return $this->belongsTo(Temperature::class, 'temperature_id');
     }
 
-    public function scopeArchived($query) {
-        
-        return $this->whereHas('quality_certificate', function($query) {
+    public function scopeArchived($query)
+    {
+
+        return $query->whereHas('quality_certificate', function ($query) {
             $query->whereNull('deleted_at');
         });
     }
 
-    public function scopePending($query) {
-        
-        return $this->whereDoesntHave('quality_certificate');
-    }
+    public function scopePending($query)
+    {
 
+        return $query->whereDoesntHave('quality_certificate');
+    }
 
     public function recollection()
     {
         return $this->hasOne(Recollection::class, 'collection_id');
     }
-
 
     public function invoice_item()
     {
@@ -289,7 +286,6 @@ class CollectionProduct extends Model
     {
         return $this->morphOne(ProposalItem::class, 'itemable');
     }
-
 
     public static function boot()
     {
@@ -352,6 +348,24 @@ class CollectionProduct extends Model
                 'filter' => '',
             ],
             [
+                'name' => trans('gestlab.general.labels.analysis.sample_entry'),
+                'value' => 'entry_lineage',
+                'filter_field' => 'sampleEntry.code',
+                'filterable' => false,
+                'type' => 'string',
+                'format' => '',
+                'filter' => '',
+            ],
+            [
+                'name' => trans('gestlab.general.labels.status'),
+                'value' => 'tracking_label',
+                'filter_field' => 'tracking_label',
+                'filterable' => false,
+                'type' => 'string',
+                'format' => '',
+                'filter' => '',
+            ],
+            [
                 'name' => trans('gestlab.general.labels.direct_collections.product_id'),
                 'value' => 'product',
                 'filter_field' => 'product.name',
@@ -364,7 +378,7 @@ class CollectionProduct extends Model
                     'url' => route('products.getProduct'),
                     'label' => 'name',
                     'value' => 'id',
-                ]
+                ],
             ],
             [
                 'name' => trans('gestlab.general.labels.direct_collections.collection_date'),
@@ -388,7 +402,7 @@ class CollectionProduct extends Model
                     'url' => route('customers.getCustomer'),
                     'label' => 'name',
                     'value' => 'id',
-                ]
+                ],
             ],
             [
                 'name' => trans('gestlab.general.labels.direct_collections.warehouse_id'),
@@ -498,7 +512,7 @@ class CollectionProduct extends Model
     {
         return [
             ['value' => 'only', 'text' => trans('gestlab.general.labels.trashed_only')],
-            ['value' => 'with', 'text' => trans('gestlab.general.labels.trashed_with')]
+            ['value' => 'with', 'text' => trans('gestlab.general.labels.trashed_with')],
         ];
     }
 }

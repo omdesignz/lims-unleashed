@@ -2,9 +2,10 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Result;
 use App\Models\Sample;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class ResultRequest extends FormRequest
 {
@@ -19,7 +20,7 @@ class ResultRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
@@ -29,25 +30,25 @@ class ResultRequest extends FormRequest
                 'action' => 'nullable',
                 'sample_id' => 'required|exists:samples,id',
                 'results' => 'required|array|min:1',
-                'results.*.result_id' => 'nullable|exists:results,id',                                                                                                                                                                                                                                                
-                'results.*.parameter_id' => 'required|exists:parameters,id',   
+                'results.*.result_id' => 'nullable|exists:results,id',
+                'results.*.parameter_id' => 'required|exists:parameters,id',
                 'results.*.parameter_label' => 'nullable',
-                'results.*.product_id' => 'required|exists:products,id',    
+                'results.*.product_id' => 'required|exists:products,id',
                 'results.*.product_label' => 'nullable',
-                'results.*.profile_id' => 'required|exists:profiles,id',    
+                'results.*.profile_id' => 'required|exists:profiles,id',
                 'results.*.profile_label' => 'nullable',
-                'results.*.protocol_id' => 'required|exists:protocols,id',   
+                'results.*.protocol_id' => 'required|exists:protocols,id',
                 'results.*.protocol_label' => 'nullable',
-                'results.*.unit_id' => 'required|exists:units,id',   
+                'results.*.unit_id' => 'required|exists:units,id',
                 'results.*.unit_label' => 'nullable',
-                'results.*.standard_id' => 'required|exists:standards,id',  
+                'results.*.standard_id' => 'required|exists:standards,id',
                 'results.*.standard_label' => 'nullable',
-                'results.*.nwp_id' => 'required|exists:nwps,id',  
+                'results.*.nwp_id' => 'required|exists:nwps,id',
                 'results.*.nwp_label' => 'nullable',
                 'results.*.code_id' => 'required|exists:lab_codes,id',
                 'results.*.code_label' => 'nullable',
-                'results.*.sample_id' => 'required|exists:samples,id',                                                                                                                                                                                                                                                   
-                'results.*.matrix_id' => 'required|exists:matrixes,id',                                                                                                                                                                                                                                                 
+                'results.*.sample_id' => 'required|exists:samples,id',
+                'results.*.matrix_id' => 'required|exists:matrixes,id',
                 'results.*.collection_id' => 'required|exists:collection_product,id',
                 'results.*.equipment_id' => 'nullable|exists:i_items,id',
                 'results.*.inserted_by_id' => 'nullable|exists:users,id',
@@ -95,25 +96,25 @@ class ResultRequest extends FormRequest
                 'action' => 'nullable',
                 'sample_id' => 'required|exists:samples,id',
                 'results' => 'required|array|min:1',
-                'results.*.result_id' => 'required|exists:results,id',                                                                                                                                                                                                                                                
-                'results.*.parameter_id' => 'required|exists:parameters,id',    
+                'results.*.result_id' => 'required|exists:results,id',
+                'results.*.parameter_id' => 'required|exists:parameters,id',
                 'results.*.parameter_label' => 'nullable',
-                'results.*.product_id' => 'required|exists:products,id',    
+                'results.*.product_id' => 'required|exists:products,id',
                 'results.*.product_label' => 'nullable',
-                'results.*.profile_id' => 'required|exists:profiles,id',  
+                'results.*.profile_id' => 'required|exists:profiles,id',
                 'results.*.profile_label' => 'nullable',
-                'results.*.protocol_id' => 'required|exists:protocols,id',   
+                'results.*.protocol_id' => 'required|exists:protocols,id',
                 'results.*.protocol_label' => 'nullable',
-                'results.*.unit_id' => 'required|exists:units,id',    
+                'results.*.unit_id' => 'required|exists:units,id',
                 'results.*.unit_label' => 'nullable',
-                'results.*.standard_id' => 'required|exists:standards,id',  
+                'results.*.standard_id' => 'required|exists:standards,id',
                 'results.*.standard_label' => 'nullable',
-                'results.*.nwp_id' => 'required|exists:nwps,id', 
+                'results.*.nwp_id' => 'required|exists:nwps,id',
                 'results.*.nwp_label' => 'nullable',
-                'results.*.code_id' => 'required|exists:lab_codes,id', 
+                'results.*.code_id' => 'required|exists:lab_codes,id',
                 'results.*.code_label' => 'nullable',
-                'results.*.sample_id' => 'required|exists:samples,id',                                                                                                                                                                                                                                                   
-                'results.*.matrix_id' => 'required|exists:matrixes,id',                                                                                                                                                                                                                                                 
+                'results.*.sample_id' => 'required|exists:samples,id',
+                'results.*.matrix_id' => 'required|exists:matrixes,id',
                 'results.*.collection_id' => 'required|exists:collection_product,id',
                 'results.*.equipment_id' => 'nullable|exists:i_items,id',
                 'results.*.inserted_by_id' => 'nullable|exists:users,id',
@@ -169,7 +170,7 @@ class ResultRequest extends FormRequest
      */
     public function messages(): array
     {
-        return [];   
+        return [];
     }
 
     /**
@@ -182,17 +183,17 @@ class ResultRequest extends FormRequest
         return [
             'sample_id' => trans('gestlab.general.labels.results.sample_id'),
             'results' => trans('gestlab.general.labels.results.results'),
-            'results.*.result_id' => trans('gestlab.general.labels.results.result_id'),                                                                                                                                                                                                                                                
+            'results.*.result_id' => trans('gestlab.general.labels.results.result_id'),
             'results.*.parameter_id' => trans('gestlab.general.labels.results.parameter_id'),
             'results.*.product_id' => trans('gestlab.general.labels.results.product_id'),
             'results.*.profile_id' => trans('gestlab.general.labels.results.profile_id'),
-            'results.*.protocol_id' => trans('gestlab.general.labels.results.protocol_id'), 
+            'results.*.protocol_id' => trans('gestlab.general.labels.results.protocol_id'),
             'results.*.unit_id' => trans('gestlab.general.labels.results.unit_id'),
             'results.*.standard_id' => trans('gestlab.general.labels.results.standard_id'),
             'results.*.nwp_id' => trans('gestlab.general.labels.results.nwp_id'),
             'results.*.code_id' => trans('gestlab.general.labels.results.code_id'),
-            'results.*.sample_id' => trans('gestlab.general.labels.results.sample_id'),                                                                                                                                                                                                                                                 
-            'results.*.matrix_id' => trans('gestlab.general.labels.results.matrix_id'),                                                                                                                                                                                                                                               
+            'results.*.sample_id' => trans('gestlab.general.labels.results.sample_id'),
+            'results.*.matrix_id' => trans('gestlab.general.labels.results.matrix_id'),
             'results.*.collection_id' => trans('gestlab.general.labels.results.collection_id'),
             'results.*.equipment_id' => 'equipamento',
             'results.*.inserted_by' => trans('gestlab.general.labels.results.inserted_by'),
@@ -223,20 +224,19 @@ class ResultRequest extends FormRequest
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
+     * @param  Validator  $validator
      * @return void
      */
     public function prepareForValidation()
     {
         // dd(request()->all());
 
-        if(request()->action == 'analyze')
-        {
+        if (request()->action == 'analyze') {
             // code...
 
             $this->merge([
-                'sample_id' => !is_null(request()->sample_id) ? request()->sample_id['value'] : null,
-                'results' => is_null(request()->results) ? [] : collect(request()->results)->map(function($item) {
+                'sample_id' => ! is_null(request()->sample_id) ? request()->sample_id['value'] : null,
+                'results' => is_null(request()->results) ? [] : collect(request()->results)->map(function ($item) {
                     return [
                         'approved_by' => $item['approved_by'],
                         'approved_by_id' => $item['approved_by_id'],
@@ -248,7 +248,7 @@ class ResultRequest extends FormRequest
                         'collection_id' => $item['collection_id'],
                         'count' => $item['count'],
                         'inserted_by' => $item['inserted_by'],
-                        'inserted_by_id' => $item['inserted_by_id'], 
+                        'inserted_by_id' => $item['inserted_by_id'],
                         'inserted_date' => now(),
                         'inserted_value' => $item['inserted_value'],
                         'insertion_notes' => $item['insertion_notes'],
@@ -291,17 +291,16 @@ class ResultRequest extends FormRequest
                         'is_override' => $item['is_override'] ?? false,
                         'calculation_metadata' => $item['calculation_metadata'] ?? null,
                     ];
-                })->toArray()
+                })->toArray(),
             ]);
         }
 
-        if(request()->action == 'verify')
-        {
+        if (request()->action == 'verify') {
             // code...
 
             $this->merge([
-                'sample_id' => !is_null(request()->sample_id) ? request()->sample_id['value'] : null,
-                'results' => is_null(request()->results) ? [] : collect(request()->results)->map(function($item) {
+                'sample_id' => ! is_null(request()->sample_id) ? request()->sample_id['value'] : null,
+                'results' => is_null(request()->results) ? [] : collect(request()->results)->map(function ($item) {
                     return [
                         'approved_by' => $item['approved_by'],
                         'result_id' => $item['result_id'],
@@ -359,18 +358,16 @@ class ResultRequest extends FormRequest
                         'is_override' => $item['is_override'] ?? false,
                         'calculation_metadata' => $item['calculation_metadata'] ?? null,
                     ];
-                })->toArray()
+                })->toArray(),
             ]);
         }
 
-
-        if(request()->action == 'approve')
-        {
+        if (request()->action == 'approve') {
             // code...
 
             $this->merge([
-                'sample_id' => !is_null(request()->sample_id) ? request()->sample_id['value'] : null,
-                'results' => is_null(request()->results) ? [] : collect(request()->results)->map(function($item) {
+                'sample_id' => ! is_null(request()->sample_id) ? request()->sample_id['value'] : null,
+                'results' => is_null(request()->results) ? [] : collect(request()->results)->map(function ($item) {
                     return [
                         'approved_by' => $item['approved_by'],
                         'approved_by_id' => $item['approved_by_id'],
@@ -424,10 +421,10 @@ class ResultRequest extends FormRequest
                         'is_override' => $item['is_override'] ?? false,
                         'calculation_metadata' => $item['calculation_metadata'] ?? null,
                     ];
-                })->toArray()
+                })->toArray(),
             ]);
         }
-        
+
     }
 
     public function withValidator($validator): void
@@ -436,17 +433,31 @@ class ResultRequest extends FormRequest
             $action = (string) $this->input('action');
             $results = collect($this->input('results', []));
             $sampleId = $this->input('sample_id');
+            $workflowRelation = $this->routeIs('results.storeCounterAnalysisResults')
+                ? 'counteranalysis'
+                : 'analysis';
             $sample = $sampleId
                 ? Sample::query()
                     ->with([
-                        'analysis.profile.parameters:id',
+                        "{$workflowRelation}.profile.parameters:id",
                         'results:id,sample_id,parameter_id',
                     ])
                     ->find($sampleId)
                 : null;
 
             if ($sample) {
-                $expectedParameterIds = collect($sample->analysis?->profile?->parameters ?? [])
+                if (! $sample->{$workflowRelation}) {
+                    $validator->errors()->add(
+                        'sample_id',
+                        $workflowRelation === 'counteranalysis'
+                            ? 'A amostra selecionada ainda não tem uma contra-análise associada.'
+                            : 'A amostra selecionada ainda não tem uma análise associada.'
+                    );
+
+                    return;
+                }
+
+                $expectedParameterIds = collect($sample->{$workflowRelation}?->profile?->parameters ?? [])
                     ->pluck('id')
                     ->filter()
                     ->map(fn ($id) => (int) $id)

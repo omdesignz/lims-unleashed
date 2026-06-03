@@ -1,227 +1,246 @@
 <script setup>
-import { reactive, ref } from 'vue';
 import Layout from "@/Shared/Layouts/Layout.vue";
-import DatePicker from "@/Components/date-picker.vue";
-import UserCard from '@/Pages/partials/user-card.vue'
-import { useForm } from '@inertiajs/vue3';
-import { trans } from 'laravel-vue-i18n';
+import combobox from "@/Components/combobox-enhanced.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
+import { Link, useForm } from "@inertiajs/vue3";
+import {
+  ArrowLeftIcon,
+  CheckBadgeIcon,
+  DocumentTextIcon,
+  ShieldCheckIcon,
+} from "@heroicons/vue/24/outline";
 
 defineOptions({
-    layout: Layout
-});
-const props = defineProps({
-    record: Object
+  layout: Layout,
 });
 
-const updateRange = (e) => {
-  form.dob = e;
+const props = defineProps({
+  record: {
+    type: Object,
+    required: true,
+  },
+});
+
+const certificate = props.record?.data ?? {};
+
+const optionFromValue = (value, label) => {
+  if (!value) {
+    return null;
+  }
+
+  return {
+    value,
+    label: label || String(value),
+  };
+};
+
+const form = useForm({
+  customer_id: optionFromValue(certificate.customer_id, certificate.customer),
+  warehouse_id: optionFromValue(certificate.warehouse_id, certificate.warehouse),
+  cl_id: optionFromValue(certificate.cl_id, certificate.lab_code),
+  invoice_id: null,
+  status: Boolean(certificate.status),
+  obs: certificate.obs ?? "",
+});
+
+const submit = () => {
+  form.put(route("qualitycertificates.update", { certificate: certificate.id }), {
+    preserveScroll: true,
+  });
+};
+
+function loadCustomers(query, setOptions) {
+  return loadSelectOptions("/customers/getCustomer", query, setOptions, optionMappers.name);
 }
 
-const form = reactive(useForm(props.record.data));
+function loadWarehouses(query, setOptions) {
+  return loadSelectOptions("/warehouses/getWarehouse", query, setOptions, optionMappers.address);
+}
 
-const editUserInfo = ref(false);
-
-const genderOptions = ref([
-  {
-    value: 'O',
-    label: 'Outro'
-  },
-  {
-    value: 'M',
-    label: 'Masculino'
-  },
-  {
-    value: 'F',
-    label: 'Feminino'
-  }
-]);
-
-let submit = () => {
-    form.put(route('users.update', {id: form.id}), {
-      preserveScroll: true,
-      preserveState: false,
-      onSuccess: () => {
-        openslideover.value = false;
-        form.reset()
-      },
-  });
-  }
-
-const masks = ref({
-  modelValue: 'YYYY-MM-DD',
-  data: 'YYYY-MM-DD',
-  input: 'YYYY-MM-DD',
-  model: 'YYYY-MM-DD',
-});
-
+function loadLabCodes(query, setOptions) {
+  return loadSelectOptions("/labcodes/getCode", query, setOptions, optionMappers.code);
+}
 </script>
+
 <template>
-    <user-card :auth="props.record.data" greeting="A modificar o usuário" />
+  <div class="quality-certificate-edit space-y-6" :class="commercialDocumentThemeClasses">
+    <section class="overflow-hidden rounded-[2rem] border border-[rgb(var(--primary-200-rgb)/0.6)] bg-[radial-gradient(circle_at_top_left,_rgba(var(--primary-500-rgb),0.16),_transparent_34%),linear-gradient(135deg,_#fffdf7,_#f8fafc)] shadow-[0_22px_70px_-36px_rgba(15,23,42,0.32)] dark:border-[rgb(var(--primary-700-rgb)/0.45)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(var(--primary-400-rgb),0.2),_transparent_36%),linear-gradient(135deg,_#07110f,_#111827)]">
+      <div class="flex flex-col gap-6 p-6 lg:flex-row lg:items-end lg:justify-between">
+        <div class="max-w-3xl">
+          <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgb(var(--primary-900-rgb))] text-white shadow-lg shadow-[rgb(var(--primary-900-rgb)/0.2)] dark:bg-[rgb(var(--primary-300-rgb))] dark:text-[#07110f]">
+            <DocumentTextIcon class="h-6 w-6" />
+          </div>
+          <p class="mt-5 text-[11px] font-semibold uppercase tracking-[0.24em] text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-200-rgb))]">
+            Certificado final
+          </p>
+          <h1 class="mt-3 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white">
+            Editar certificado {{ certificate.code ? `#${certificate.code}` : "" }}
+          </h1>
+          <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+            Ajuste cliente, armazem, codigo laboratorial e observacoes antes da emissao ou validacao final.
+          </p>
+        </div>
 
-    <div class="bg-white">
-        <form @submit.prevent="submit" class="space-y-6">
-          <div class="mt-8 max-w-3xl mx-auto grid grid-cols-1 gap-6 sm:px-6 lg:max-w-7xl lg:grid-flow-col-dense lg:grid-cols-1">
-        <div class="space-y-6 lg:col-start-1 lg:col-span-2">
-          <!-- Description list-->
-          <section aria-labelledby="applicant-information-title">
-            <div class="bg-white shadow sm:rounded-lg">
-              <!-- <div class="px-4 py-5 sm:px-6">
-                <h2 id="applicant-information-title" class="text-lg leading-6 font-medium text-gray-900">
-                  Informações Gerais <span>Update</span>
-                </h2>
-                <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                  Dados relacionados à sua conta
-                </p>
-              </div> -->
-              
-                <div class="bg-white px-4 py-5 sm:px-6">
-                  <div class="-ml-4 -mt-4 flex justify-between items-center flex-wrap sm:flex-nowrap">
-                    <div class="ml-4 mt-4">
-                      <h3 class="text-lg leading-6 font-medium text-gray-900">
-                        Informações Gerais
-                      </h3>
-                      <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                        Dados relacionados a conta do {{ props.record.data.name }}
-                      </p>
-                    </div>
-                    <div class="ml-4 mt-4 flex-shrink-0">
-                      <button v-if="!form.isDirty" @click="editUserInfo = !editUserInfo" type="button" class="relative inline-flex items-center px-4 py-2 shadow-sm text-sm font-medium rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-orange-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-800">
-                        {{ editUserInfo ? 'Cancelar Edição' : 'Editar Informação' }}
-                      </button>
-                      <button v-if="form.isDirty" @click="submit" class="relative inline-flex items-center px-4 py-2 shadow-sm text-sm font-medium rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-orange-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-800">
-                        Actualizar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              
-              <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
-                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
-                  <div class="sm:col-span-1">
-                    <dt class="text-sm font-medium text-gray-500">
-                      Usuário
-                    </dt>
-                    <dd v-if="!editUserInfo" class="mt-1 text-sm text-gray-900">
-                      {{ form.username }}
-                    </dd>
-                    <dd v-if="editUserInfo">
-                      <div class="mt-1">
-                      <input v-model="form.username" id="username" name="username" type="text" autocomplete="username" :class="[form.errors.username ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
-                      <p v-if="form.errors.username" class="mt-2 text-sm text-red-600" id="username-error">{{ form.errors.username }}</p>
-                      </div>
-                    </dd>
-                  </div>
-                  <div class="sm:col-span-1">
-                    <dt class="text-sm font-medium text-gray-500">
-                      Nome
-                    </dt>
-                    <dd v-if="!editUserInfo" class="mt-1 text-sm text-gray-900">
-                      {{ form.name }}
-                    </dd>
-                    <dd v-if="editUserInfo">
-                      <div class="mt-1">
-                      <input v-model="form.name" id="name" name="name" type="text" autocomplete="name" :class="[form.errors.name ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
-                      <p v-if="form.errors.name" class="mt-2 text-sm text-red-600" id="name-error">{{ form.errors.name }}</p>
-                      </div>
-                    </dd>
-                  </div>
-                  <div class="sm:col-span-1">
-                    <dt class="text-sm font-medium text-gray-500">
-                      Gênero
-                    </dt>
-                    <dd v-if="!editUserInfo" class="mt-1 text-sm text-gray-900">
-                      {{ form.gender }}
-                    </dd>
-                    <dd v-if="editUserInfo">
-                      <div class="mt-1">
-                      <select v-model="form.gender" id="gender" name="gender" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm rounded-md" :class="[form.errors.gender ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']">
-                        <option :value="gender.value" v-for="(gender, index) in genderOptions" :key="index">{{ gender.label }}</option>
-                      </select>
-                      <p v-if="form.errors.gender" class="mt-2 text-sm text-red-600" id="gender-error">{{ form.errors.gender }}</p>
-                      </div>
-                    </dd>
-                  </div>
-                  <div class="sm:col-span-1">
-                    <dt class="text-sm font-medium text-gray-500">
-                      Endereço de Email
-                    </dt>
-                    <dd v-if="!editUserInfo" class="mt-1 text-sm text-gray-900">
-                      {{ form.email }}
-                    </dd>
-                    <dd v-if="editUserInfo">
-                      <div class="mt-1">
-                      <input v-model="form.email" id="email" name="email" type="text" autocomplete="email" :class="[form.errors.email ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
-                      <p v-if="form.errors.email" class="mt-2 text-sm text-red-600" id="email-error">{{ form.errors.email }}</p>
-                      </div>
-                    </dd>
-                  </div>
-                  <div class="sm:col-span-1">
-                    <dt class="text-sm font-medium text-gray-500">
-                      Nº B.I (Bilhete de Identidade)
-                    </dt>
-                    <dd v-if="!editUserInfo" class="mt-1 text-sm text-gray-900">
-                      {{ form.id_number }}
-                    </dd>
-                    <dd v-if="editUserInfo">
-                      <div class="mt-1">
-                      <input v-model="form.id_number" id="id_number" name="id_number" type="text" autocomplete="id_number" :class="[form.errors.id_number ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
-                      <p v-if="form.errors.id_number" class="mt-2 text-sm text-red-600" id="id_number-error">{{ form.errors.id_number }}</p>
-                      </div>
-                    </dd>
-                  </div>
-                  <div class="sm:col-span-1">
-                    <dt class="text-sm font-medium text-gray-500">
-                      Contacto
-                    </dt>
-                    <dd v-if="!editUserInfo" class="mt-1 text-sm text-gray-900">
-                      {{ form.primary_phone }}
-                    </dd>
-                    <dd v-if="editUserInfo">
-                      <div class="mt-1">
-                      <input v-model="form.primary_phone" id="phone" name="phone" type="text" autocomplete="phone" :class="[form.errors.primary_phone ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
-                      <p v-if="form.errors.primary_phone" class="mt-2 text-sm text-red-600" id="phone-error">{{ form.errors.primary_phone }}</p>
-                      </div>
-                    </dd>
-                  </div>
-                  <div class="sm:col-span-1">
-                    <dt class="text-sm font-medium text-gray-500">
-                      Contacto Alternativo
-                    </dt>
-                    <dd v-if="!editUserInfo" class="mt-1 text-sm text-gray-900">
-                      {{ form.secondary_phone }}
-                    </dd>
-                    <dd v-if="editUserInfo">
-                      <div class="mt-1">
-                      <input v-model="form.secondary_phone" id="secondary_phone" name="secondary_phone" type="text" autocomplete="secondary_phone" :class="[form.errors.secondary_phone ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
-                      <p v-if="form.errors.secondary_phone" class="mt-2 text-sm text-red-600" id="secondary_phone-error">{{ form.errors.secondary_phone }}</p>
-                      </div>
-                    </dd>
-                  </div>
-                  <div class="sm:col-span-1">
-                    <dt class="text-sm font-medium text-gray-500">
-                      Data de Nascimento
-                    </dt>
-                    <dd v-if="!editUserInfo" class="mt-1 text-sm text-gray-900">
-                      {{ form.dob }}
-                    </dd>
-                    <dd v-if="editUserInfo">
-                      <div class="mt-1">
-                      <date-picker v-model.string="form.dob" name="dob" id="dob" mode="date" locale="pt" :masks="masks" color="orange" @update:model-value="updateRange" />
-                      <p v-if="form.errors.dob" class="mt-2 text-sm text-red-600" id="dob-error">{{ form.errors.dob }}</p>
-                      </div>
-                    </dd>
-                  </div>
-                  
-                </dl>
-              </div>
-              
-            </div>
-          </section>
-
-          
+        <div class="flex flex-wrap items-center gap-3">
+          <Link
+            :href="certificate.links?.show_path || route('qualitycertificates.show', { certificate: certificate.id })"
+            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-[rgb(var(--primary-700-rgb))] hover:text-[rgb(var(--primary-900-rgb))] dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200 dark:hover:border-[rgb(var(--primary-300-rgb))] dark:hover:text-[rgb(var(--primary-100-rgb))]"
+          >
+            <ArrowLeftIcon class="h-4 w-4" />
+            Voltar ao certificado
+          </Link>
+          <button
+            type="button"
+            :disabled="form.processing"
+            @click="submit"
+            class="inline-flex items-center gap-2 rounded-2xl bg-[rgb(var(--primary-900-rgb))] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[rgb(var(--primary-900-rgb)/0.2)] transition hover:bg-[rgb(var(--primary-800-rgb))] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[rgb(var(--primary-300-rgb))] dark:text-[#07110f] dark:hover:bg-[rgb(var(--primary-200-rgb))]"
+          >
+            <CheckBadgeIcon class="h-4 w-4" />
+            {{ form.processing ? "A guardar..." : "Guardar certificado" }}
+          </button>
         </div>
       </div>
-      </form>
-    </div>
+    </section>
 
+    <form @submit.prevent="submit" class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <section class="rounded-[2rem] border border-slate-200 bg-white/95 p-6 shadow-[0_20px_60px_-34px_rgba(15,23,42,0.28)] dark:border-slate-800 dark:bg-slate-950/85">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+              Dados do certificado
+            </p>
+            <h2 class="mt-2 text-lg font-semibold text-slate-950 dark:text-white">
+              Contexto comercial e laboratorial
+            </h2>
+          </div>
+          <span
+            :class="[
+              'rounded-full px-3 py-1 text-xs font-semibold ring-1',
+              form.status
+                ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20'
+                : 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20',
+            ]"
+          >
+            {{ form.status ? "Ativo" : "Inativo" }}
+          </span>
+        </div>
+
+        <div class="mt-6 grid gap-5 lg:grid-cols-2">
+          <label class="block">
+            <span class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+              {{ $t("gestlab.general.labels.quality_certificates.customer_id") }}
+            </span>
+            <combobox
+              v-model="form.customer_id"
+              :hasError="Boolean(form.errors.customer_id)"
+              :load-options="loadCustomers"
+              placeholder="Pesquisar cliente"
+            />
+            <p v-if="form.errors.customer_id" class="mt-2 text-sm text-red-600 dark:text-red-400">
+              {{ form.errors.customer_id }}
+            </p>
+          </label>
+
+          <label class="block">
+            <span class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+              {{ $t("gestlab.general.labels.quality_certificates.warehouse_id") }}
+            </span>
+            <combobox
+              v-model="form.warehouse_id"
+              :hasError="Boolean(form.errors.warehouse_id)"
+              :load-options="loadWarehouses"
+              placeholder="Pesquisar armazem"
+            />
+            <p v-if="form.errors.warehouse_id" class="mt-2 text-sm text-red-600 dark:text-red-400">
+              {{ form.errors.warehouse_id }}
+            </p>
+          </label>
+
+          <label class="block">
+            <span class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+              {{ $t("gestlab.general.labels.quality_certificates.cl_id") }}
+            </span>
+            <combobox
+              v-model="form.cl_id"
+              :hasError="Boolean(form.errors.cl_id)"
+              :load-options="loadLabCodes"
+              placeholder="Pesquisar codigo laboratorial"
+            />
+            <p v-if="form.errors.cl_id" class="mt-2 text-sm text-red-600 dark:text-red-400">
+              {{ form.errors.cl_id }}
+            </p>
+          </label>
+
+          <label class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+            <span>
+              <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">
+                {{ $t("gestlab.general.labels.quality_certificates.status") }}
+              </span>
+              <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+                Controla se o certificado permanece disponivel para operacoes.
+              </span>
+            </span>
+            <input
+              v-model="form.status"
+              type="checkbox"
+              class="h-5 w-5 rounded-md border-slate-300 text-[rgb(var(--primary-700-rgb))] focus:ring-[rgb(var(--primary-500-rgb))] dark:border-slate-700 dark:bg-slate-900"
+            />
+          </label>
+        </div>
+
+        <label class="mt-5 block">
+          <span class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200">
+            {{ $t("gestlab.general.labels.quality_certificates.obs") }}
+          </span>
+          <textarea
+            v-model="form.obs"
+            rows="7"
+            class="block w-full rounded-2xl border border-[#d8cbb8] bg-[#fffdf7] px-4 py-3 text-sm text-[#15231f] shadow-sm transition placeholder:text-[#8d9b94] focus:border-[rgb(var(--primary-500-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.18)] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:placeholder:text-[#657970]"
+            placeholder="Observacoes tecnicas ou comerciais relevantes para o certificado"
+          />
+          <p v-if="form.errors.obs" class="mt-2 text-sm text-red-600 dark:text-red-400">
+            {{ form.errors.obs }}
+          </p>
+        </label>
+      </section>
+
+      <aside class="space-y-5">
+        <section class="rounded-[2rem] border border-slate-200 bg-white/95 p-5 shadow-[0_20px_60px_-34px_rgba(15,23,42,0.28)] dark:border-slate-800 dark:bg-slate-950/85">
+          <div class="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgb(var(--primary-900-rgb))] text-white dark:bg-[rgb(var(--primary-300-rgb))] dark:text-[#07110f]">
+            <ShieldCheckIcon class="h-5 w-5" />
+          </div>
+          <h3 class="mt-4 text-base font-semibold text-slate-950 dark:text-white">
+            Cadeia de emissao
+          </h3>
+          <dl class="mt-4 space-y-3 text-sm">
+            <div class="flex items-start justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">Codigo</dt>
+              <dd class="font-semibold text-slate-900 dark:text-white">{{ certificate.code || "-" }}</dd>
+            </div>
+            <div class="flex items-start justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">Cliente</dt>
+              <dd class="text-right font-semibold text-slate-900 dark:text-white">{{ certificate.customer || "-" }}</dd>
+            </div>
+            <div class="flex items-start justify-between gap-3">
+              <dt class="text-slate-500 dark:text-slate-400">Validado</dt>
+              <dd class="text-right font-semibold text-slate-900 dark:text-white">{{ certificate.validated_at || "Pendente" }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="rounded-[2rem] border border-amber-200 bg-amber-50/80 p-5 text-sm leading-6 text-amber-900 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-100">
+          Alteracoes feitas aqui afetam a emissao do documento final. Mantenha os dados alinhados com a amostra, cliente e codigo laboratorial antes de aprovar.
+        </section>
+      </aside>
+    </form>
+  </div>
 </template>
+
+<style scoped>
+.quality-certificate-edit :deep(.commercial-document-theme input),
+.quality-certificate-edit :deep(input:not([type='checkbox']):not([type='radio'])),
+.quality-certificate-edit :deep(select) {
+  color-scheme: light dark;
+}
+</style>

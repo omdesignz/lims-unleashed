@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { computed, ref } from "vue";
 import { useForm } from "@inertiajs/vue3";
 
@@ -63,13 +64,13 @@ const saveWorksheet = () => {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+  <div class="worksheet-editor space-y-8" :class="commercialDocumentThemeClasses">
+    <div class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Worksheet</p>
-          <h1 class="mt-1 text-2xl font-bold text-slate-900">{{ form.name }}</h1>
-          <p class="mt-2 text-sm text-slate-600">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Worksheet</p>
+          <h1 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{{ form.name }}</h1>
+          <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
             Planilha operacional baseada no escopo analítico controlado da amostra.
           </p>
         </div>
@@ -78,14 +79,14 @@ const saveWorksheet = () => {
           <button
             type="button"
             @click="addSheet"
-            class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            class="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             Adicionar sheet
           </button>
           <button
             type="button"
             @click="removeActiveSheet"
-            class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            class="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             Remover ativa
           </button>
@@ -93,7 +94,7 @@ const saveWorksheet = () => {
             type="button"
             @click="saveWorksheet"
             :disabled="form.processing"
-            class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            class="rounded-2xl bg-gradient-to-r from-[rgb(var(--primary-900-rgb))] to-[rgb(var(--primary-700-rgb))] px-4 py-2 text-sm font-medium text-white transition hover:from-[rgb(var(--primary-800-rgb))] hover:to-[rgb(var(--primary-600-rgb))] disabled:cursor-not-allowed disabled:opacity-60 dark:from-[rgb(var(--primary-300-rgb))] dark:to-[rgb(var(--primary-500-rgb))] dark:text-[#07110f]"
           >
             {{ form.processing ? 'A guardar...' : 'Guardar worksheet' }}
           </button>
@@ -103,13 +104,13 @@ const saveWorksheet = () => {
 
     <div
       v-if="scopeControl.expected_count || scopeControl.missing_count || scopeControl.status_label"
-      class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+      class="rounded-[26px] border border-slate-200 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85"
     >
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Escopo controlado</p>
-          <h2 class="mt-1 text-lg font-semibold text-slate-900">Estado operacional da worksheet</h2>
-          <p class="mt-2 text-sm text-slate-600">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Escopo controlado</p>
+          <h2 class="mt-1 text-lg font-semibold text-slate-900 dark:text-white">Estado operacional da worksheet</h2>
+          <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
             Resume se o conjunto controlado de parâmetros já foi totalmente refletido no fluxo analítico.
           </p>
         </div>
@@ -128,27 +129,27 @@ const saveWorksheet = () => {
       </div>
 
       <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <article class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Esperados</p>
-          <p class="mt-2 text-2xl font-semibold text-slate-900">{{ scopeControl.expected_count || 0 }}</p>
+          <article class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Esperados</p>
+            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ scopeControl.expected_count || 0 }}</p>
+          </article>
+        <article class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+          <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Com resultado</p>
+          <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ scopeControl.completed_count || 0 }}</p>
         </article>
-        <article class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Com resultado</p>
-          <p class="mt-2 text-2xl font-semibold text-slate-900">{{ scopeControl.completed_count || 0 }}</p>
+        <article class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+          <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Em falta</p>
+          <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ scopeControl.missing_count || 0 }}</p>
         </article>
-        <article class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Em falta</p>
-          <p class="mt-2 text-2xl font-semibold text-slate-900">{{ scopeControl.missing_count || 0 }}</p>
-        </article>
-        <article class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Condicionamento</p>
-          <p class="mt-2 text-sm font-semibold text-slate-900">{{ scopeControl.conditioning_status || 'N/A' }}</p>
+        <article class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+          <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Condicionamento</p>
+          <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-white">{{ scopeControl.conditioning_status || 'N/A' }}</p>
         </article>
       </div>
 
-      <div v-if="scopeControl.missing_parameters?.length" class="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
-        <p class="text-sm font-semibold text-amber-900">Parâmetros ainda em falta no fluxo</p>
-        <ul class="mt-3 space-y-2 text-sm text-amber-800">
+      <div v-if="scopeControl.missing_parameters?.length" class="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-400/20 dark:bg-amber-500/10">
+        <p class="text-sm font-semibold text-amber-900 dark:text-amber-200">Parâmetros ainda em falta no fluxo</p>
+        <ul class="mt-3 space-y-2 text-sm text-amber-800 dark:text-amber-300">
           <li v-for="parameter in scopeControl.missing_parameters" :key="parameter.id">
             {{ parameter.code || 'N/D' }} · {{ parameter.name }}
           </li>
@@ -157,8 +158,8 @@ const saveWorksheet = () => {
     </div>
 
     <div class="grid gap-6 xl:grid-cols-[280px,minmax(0,1fr)]">
-      <aside class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <p class="text-sm font-semibold text-slate-900">Sheets</p>
+      <aside class="rounded-[26px] border border-slate-200 bg-white/95 p-4 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
+        <p class="text-sm font-semibold text-slate-900 dark:text-white">Sheets</p>
         <div class="mt-4 space-y-2">
           <button
             v-for="(sheet, index) in form.worksheets.sheets"
@@ -168,8 +169,8 @@ const saveWorksheet = () => {
             :class="[
               'w-full rounded-xl border px-4 py-3 text-left text-sm transition',
               activeSheetIndex === index
-                ? 'border-slate-900 bg-slate-900 text-white'
-                : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                ? 'border-[rgb(var(--primary-900-rgb))] bg-[rgb(var(--primary-900-rgb))] text-white dark:border-[rgb(var(--primary-300-rgb))] dark:bg-[rgb(var(--primary-300-rgb))] dark:text-[#07110f]'
+                : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:bg-slate-800'
             ]"
           >
             {{ sheet.name }}
@@ -177,27 +178,27 @@ const saveWorksheet = () => {
         </div>
       </aside>
 
-      <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <section class="rounded-[26px] border border-slate-200 bg-white/95 p-4 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
           <input
             v-if="activeSheet"
             v-model="activeSheet.name"
             type="text"
-            class="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 lg:max-w-sm"
+            class="w-full rounded-2xl border border-[#d8cbb8] bg-[#fffdf7] px-4 py-2 text-sm text-[#15231f] focus:border-[rgb(var(--primary-500-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.18)] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#f7f1e7] lg:max-w-sm"
           />
 
           <div class="flex flex-wrap gap-3">
             <button
               type="button"
               @click="addRow"
-              class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              class="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Adicionar linha
             </button>
             <button
               type="button"
               @click="addColumn"
-              class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              class="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               Adicionar coluna
             </button>
@@ -211,12 +212,12 @@ const saveWorksheet = () => {
                 <td
                   v-for="(_, columnIndex) in row"
                   :key="`cell-${rowIndex}-${columnIndex}`"
-                  class="border border-slate-200 bg-white p-0"
+                  class="border border-slate-200 bg-white p-0 dark:border-slate-800 dark:bg-slate-950"
                 >
                   <input
                     v-model="activeSheet.data[rowIndex][columnIndex]"
                     type="text"
-                    class="w-full min-w-[140px] border-0 px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                    class="w-full min-w-[140px] border-0 bg-transparent px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.18)] dark:text-white"
                   />
                 </td>
               </tr>
@@ -227,3 +228,15 @@ const saveWorksheet = () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.worksheet-editor :deep(input),
+.worksheet-editor :deep(textarea),
+.worksheet-editor :deep(select) {
+  color-scheme: light dark;
+}
+
+.worksheet-editor table input:focus {
+  outline: none;
+}
+</style>

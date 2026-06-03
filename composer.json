@@ -8,6 +8,7 @@
         "php": "^8.4",
         "ext-json": "*",
         "carlos-meneses/laravel-mpdf": "^2.1",
+        "chrome-php/chrome": "^1.15",
         "diglactic/laravel-breadcrumbs": "^10.0.0",
         "endroid/qr-code": "^6.1",
         "guzzlehttp/guzzle": "^7.2",

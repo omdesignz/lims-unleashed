@@ -1,5 +1,6 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
+import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import datePicker from '@/Components/date-picker.vue'
@@ -73,7 +74,7 @@ const removeProduct = (index) => {
 }
 
 const onSearchAnalysisCategoryChange = throttle(function (term) {
-    router.get(route('directcollections.create'), {term}, {
+    router.get(route('analysis.create'), {term}, {
     preserveState: true,
     preserveScroll: true,
     replace: true
@@ -189,13 +190,13 @@ function loadTemperatures(query, setOptions) {
 let submit = () => {
 
 if(!form.id) {
-  form.post(route('directcollections.store'), {
+  form.post(route('analysis.store'), {
       onSuccess: () => {
         form.reset()
       },
   });
 } else {
-  form.put(route('directcollections.update',{collection: form.id}), {
+  form.put(route('analysis.update',{analysis: form.id}), {
       preserveScroll: true,
       onSuccess: () => {
         form.reset()
@@ -208,12 +209,12 @@ if(!form.id) {
 </script>
 
 <template>
-<div class="border-b border-gray-200 pb-5">
+<div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
     <h3 class="text-base font-semibold leading-6 text-gray-900">Colheitas Directas</h3>
     <p class="mt-2 max-w-4xl text-sm text-gray-500">A iniciar o processo para o cliente: {{ form.customer_id.label }}</p>
 </div>
 
-<form @submit.prevent>
+<form :class="commercialDocumentThemeClasses" @submit.prevent>
     <div class="space-y-12">
       
         <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-10">
