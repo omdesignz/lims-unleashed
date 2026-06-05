@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class MediaController extends Controller
@@ -82,15 +83,31 @@ class MediaController extends Controller
 
     public function store(Request $request, ReportStudioAssetLibrary $assetLibrary): JsonResponse
     {
+        $fileRules = ['required', 'file', 'max:512000'];
+
+        if ($request->filled('studio_asset_context')) {
+            $fileRules[] = 'mimetypes:image/svg+xml,image/png,image/jpeg,image/webp,image/gif,image/avif';
+        }
+
         $validated = $request->validate([
-            'file' => ['required', 'file', 'max:512000'],
+            'file' => $fileRules,
+            'studio_asset_context' => ['nullable', 'string', Rule::in(['report_studio', 'proposal_studio'])],
+            'studio_asset_kind' => ['nullable', 'string', Rule::in(ReportStudioAssetLibrary::studioUploadKinds())],
         ], [
             'file.required' => 'Seleccione um ficheiro para carregar.',
             'file.file' => 'O conteúdo carregado tem de ser um ficheiro válido.',
             'file.max' => 'O ficheiro não pode ter mais de 512 MB.',
+            'file.mimetypes' => 'Use SVG, PNG, JPEG, WebP, GIF ou AVIF para media de estúdio.',
+            'studio_asset_context.in' => 'O contexto de media do estúdio não é suportado.',
+            'studio_asset_kind.in' => 'O tipo de media do estúdio não é suportado.',
         ]);
 
         $file = $validated['file'];
+        $isStudioUpload = filled($validated['studio_asset_context'] ?? null);
+        $studioAssetKind = $isStudioUpload
+            ? ($validated['studio_asset_kind'] ?? ReportStudioAssetLibrary::DEFAULT_STUDIO_UPLOAD_KIND)
+            : null;
+        $studioAssetSource = $studioAssetKind ? ReportStudioAssetLibrary::sourceForKind($studioAssetKind) : null;
 
         $media = GestlabMedia::create([
             'name' => $file->getClientOriginalName(),
@@ -98,6 +115,8 @@ class MediaController extends Controller
             'mime_type' => $file->getMimeType(),
             'size' => $file->getSize(),
             'author_id' => auth()->id(),
+            'studio_asset_kind' => $studioAssetKind,
+            'studio_asset_source' => $studioAssetSource,
         ]);
 
         $directory = "media/{$media->created_at->format('Y/m/d')}/{$media->id}";
@@ -113,8 +132,14 @@ class MediaController extends Controller
                 'file_type' => $media->file_type,
                 'size' => $media->size,
                 'path' => $media->path,
+                'studio_asset_kind' => $media->studio_asset_kind,
+                'studio_asset_source' => $media->studio_asset_source,
             ],
-            'asset' => $assetLibrary->assetForMedia($media, source: 'Upload do studio'),
+            'asset' => $assetLibrary->assetForMedia(
+                $media,
+                $studioAssetKind ?: 'gallery_image',
+                $studioAssetSource ?: 'Upload do studio'
+            ),
         ]);
     }
 

@@ -6,6 +6,8 @@ import {
   proposalTemplatePreviewPageDimensions,
   proposalTemplatePreviewPageFormatLabel,
 } from '@/Support/proposal-template-preview-geometry.mjs'
+import { imagePositionCoordinates, imagePositionStringFromCoordinates } from '@/Support/report-studio-image-position.mjs'
+import { uploadedStudioAssetKind } from '@/Support/report-studio-media-assets.mjs'
 import axios from 'axios'
 import { create as createQrCode } from 'qrcode'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -92,6 +94,7 @@ const previewDisplayMode = ref('paged')
 const activePreviewPage = ref(1)
 const selectedCanvasBlockId = ref(null)
 const interactionState = ref(null)
+const focalDragState = ref(null)
 const alignmentGuides = ref({ x: [], y: [] })
 const showCanvasGrid = ref(true)
 const showSafeArea = ref(true)
@@ -971,13 +974,18 @@ function csrfToken() {
   return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
 }
 
+function uploadedAssetKind(target = mediaPickerTarget.value) {
+  return uploadedStudioAssetKind(target)
+}
+
 function normalizeUploadedAsset(data, file) {
   const backendAsset = data?.asset || {}
+  const kind = uploadedAssetKind()
 
   return {
     id: backendAsset.id || `proposal-studio-upload-${data?.id || Date.now()}`,
     label: backendAsset.label || file.name,
-    kind: backendAsset.kind || 'proposal_studio_upload',
+    kind: backendAsset.kind || kind,
     source: backendAsset.source || 'Carregamento no estúdio',
     mime_type: backendAsset.mime_type || file.type,
     file_type: backendAsset.file_type || (String(file.type || '').startsWith('image/') ? 'image' : 'other'),
@@ -1001,6 +1009,8 @@ async function uploadMediaPickerAsset(file) {
   }
 
   const formData = new FormData()
+  formData.append('studio_asset_context', 'proposal_studio')
+  formData.append('studio_asset_kind', uploadedAssetKind())
   formData.append('file', file)
   mediaPickerUploadBusy.value = true
   mediaPickerUploadProgress.value = 0
@@ -1249,7 +1259,7 @@ function canvasBlockContentHtml(block) {
       return '<div class="flex h-full min-h-24 items-center justify-center rounded-2xl border border-dashed border-slate-300 text-xs text-slate-500">Selecione uma imagem da galeria</div>'
     }
 
-    return `<img src="${imageUrl}" alt="${interpolatePreviewHtml(block.image_alt || block.title || 'Imagem')}" style="display:block; width:100%; height:100%; min-height:inherit; object-fit:${block.image_fit || 'contain'}; object-position:${block.image_position || 'center center'};" />`
+    return `<img src="${imageUrl}" alt="${interpolatePreviewHtml(block.image_alt || block.title || 'Imagem')}" style="display:block; width:100%; height:100%; min-height:inherit; object-fit:${imageObjectFit(block)}; object-position:${imageObjectPosition(block)};" />`
   }
 
   if (block.block_kind === 'chart_snapshot') {
@@ -1514,6 +1524,10 @@ function mediaObjectFit(value = 'contain') {
   }[value] || 'contain'
 }
 
+function imageObjectFit(block) {
+  return mediaObjectFit(block?.image_fit || 'contain')
+}
+
 function safeCssPositionValue(value, fallback = 'center center') {
   const position = String(value || '').trim()
 
@@ -1527,8 +1541,72 @@ function safeCssPositionValue(value, fallback = 'center center') {
   return positionPattern.test(position) ? position : fallback
 }
 
+function imageObjectPosition(block) {
+  return safeCssPositionValue(block?.image_position, 'center center')
+}
+
+function imageFocalPointStyle(block) {
+  const coordinates = imagePositionCoordinates(block?.image_position)
+
+  return {
+    left: `${coordinates.x}%`,
+    top: `${coordinates.y}%`,
+  }
+}
+
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value))
+}
+
+function setImageFocalCoordinate(block, axis, value) {
+  if (!block) {
+    return
+  }
+
+  const coordinates = imagePositionCoordinates(block.image_position)
+  coordinates[axis] = clamp(Math.round(Number(value) || 0), 0, 100)
+  block.image_position = imagePositionStringFromCoordinates(coordinates.x, coordinates.y)
+}
+
+function setSelectedImageFocalCoordinate(axis, value) {
+  setImageFocalCoordinate(selectedCanvasBlock.value, axis, value)
+}
+
+function updateFocalDrag(event) {
+  if (!focalDragState.value) {
+    return
+  }
+
+  const { block, rect } = focalDragState.value
+
+  if (!rect?.width || !rect?.height) {
+    return
+  }
+
+  const x = clamp(Math.round(((event.clientX - rect.left) / rect.width) * 100), 0, 100)
+  const y = clamp(Math.round(((event.clientY - rect.top) / rect.height) * 100), 0, 100)
+
+  block.image_position = imagePositionStringFromCoordinates(x, y)
+}
+
+function stopFocalDrag() {
+  focalDragState.value = null
+  window.removeEventListener('pointermove', updateFocalDrag)
+  window.removeEventListener('pointerup', stopFocalDrag)
+}
+
+function startImageFocalDrag(block, event) {
+  event.preventDefault()
+  event.stopPropagation()
+
+  focalDragState.value = {
+    block,
+    rect: event.currentTarget.getBoundingClientRect(),
+  }
+
+  updateFocalDrag(event)
+  window.addEventListener('pointermove', updateFocalDrag)
+  window.addEventListener('pointerup', stopFocalDrag, { once: true })
 }
 
 function snapPercent(value) {
@@ -1899,6 +1977,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  stopFocalDrag()
   stopInteraction()
   window.removeEventListener('keydown', handleCanvasKeyboard)
 })
@@ -2829,6 +2908,47 @@ function submit() {
                       <option v-for="option in imagePositionOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
+                  <div v-if="selectedCanvasBlock.image_url || selectedCanvasBlock.background_image" class="sm:col-span-2 rounded-[1.6rem] border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/40">
+                    <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
+                      <div>
+                        <div
+                          class="relative h-52 overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white shadow-inner dark:border-slate-700 dark:bg-slate-950"
+                          @pointerdown="startImageFocalDrag(selectedCanvasBlock, $event)"
+                        >
+                          <img
+                            :src="selectedCanvasBlock.image_url || selectedCanvasBlock.background_image"
+                            :alt="selectedCanvasBlock.image_alt || selectedCanvasBlock.title || 'Imagem'"
+                            class="h-full w-full select-none"
+                            draggable="false"
+                            :style="{ objectFit: imageObjectFit(selectedCanvasBlock), objectPosition: imageObjectPosition(selectedCanvasBlock) }"
+                          />
+                          <span class="pointer-events-none absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-primary-600 shadow-lg ring-4 ring-primary-900/15" :style="imageFocalPointStyle(selectedCanvasBlock)" />
+                        </div>
+                        <div class="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
+                          Posição exportada: {{ imageObjectPosition(selectedCanvasBlock) }}
+                        </div>
+                      </div>
+                      <div class="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+                        <div>
+                          <div class="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300">
+                            <span>Eixo X</span>
+                            <span>{{ imagePositionCoordinates(selectedCanvasBlock.image_position).x }}%</span>
+                          </div>
+                          <input :value="imagePositionCoordinates(selectedCanvasBlock.image_position).x" type="range" min="0" max="100" step="1" class="mt-2 w-full accent-primary-700" @input="setSelectedImageFocalCoordinate('x', $event.target.value)" />
+                        </div>
+                        <div>
+                          <div class="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300">
+                            <span>Eixo Y</span>
+                            <span>{{ imagePositionCoordinates(selectedCanvasBlock.image_position).y }}%</span>
+                          </div>
+                          <input :value="imagePositionCoordinates(selectedCanvasBlock.image_position).y" type="range" min="0" max="100" step="1" class="mt-2 w-full accent-primary-700" @input="setSelectedImageFocalCoordinate('y', $event.target.value)" />
+                        </div>
+                        <p class="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                          Arraste o ponto sobre a imagem para definir o recorte exacto que será usado no PDF.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                   <div class="rounded-2xl border border-primary-200 bg-primary-50 p-4 text-xs leading-relaxed text-primary-900 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">
                     Para pôr um carimbo sobre uma assinatura, coloque o bloco de carimbo acima da assinatura e use uma camada maior.
                   </div>

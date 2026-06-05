@@ -5,6 +5,8 @@ import { scopeReportStudioPreviewCss } from '../../resources/js/Support/report-s
 import { previewReplacementsByType } from '../../resources/js/Support/report-studio-preview-html.mjs'
 import { escapePreviewHtmlAttribute, escapePreviewHtmlText, safePreviewCssUrl, safePreviewMediaUrl } from '../../resources/js/Support/report-studio-preview-safety.mjs'
 import { buildReportStudioPreviewCss } from '../../resources/js/Support/report-studio-preview-styles.mjs'
+import { imagePositionCoordinates, imagePositionStringFromCoordinates } from '../../resources/js/Support/report-studio-image-position.mjs'
+import { uploadedStudioAssetKind } from '../../resources/js/Support/report-studio-media-assets.mjs'
 import {
   proposalTemplatePreviewMarginStyle,
   proposalTemplatePreviewPageDimensions,
@@ -144,6 +146,30 @@ test('studio preview media helpers reject executable urls and escape attributes'
   assert.equal(escapePreviewHtmlText('Legenda <strong>não HTML</strong> & segura'), 'Legenda &lt;strong&gt;não HTML&lt;/strong&gt; &amp; segura')
   assert.equal(safePreviewCssUrl('/storage/media/bg "assinada".png'), 'url("/storage/media/bg \\"assinada\\".png")')
   assert.equal(safePreviewCssUrl('vbscript:msgbox(1)'), '')
+})
+
+test('studio upload targets resolve to stable media asset roles', () => {
+  assert.equal(uploadedStudioAssetKind({ scope: 'document-background' }), 'uploaded_background')
+  assert.equal(uploadedStudioAssetKind({ field: 'background_image' }), 'uploaded_background')
+  assert.equal(uploadedStudioAssetKind({ scope: 'new-canvas-block', blockKind: 'signature' }), 'uploaded_signature')
+  assert.equal(uploadedStudioAssetKind({ scope: 'new-canvas-block', blockKind: 'stamp' }), 'uploaded_stamp')
+  assert.equal(uploadedStudioAssetKind({ scope: 'new-canvas-block', blockKind: 'chart_snapshot' }), 'uploaded_chart')
+  assert.equal(uploadedStudioAssetKind({ scope: 'new-canvas-block', blockKind: 'image' }), 'uploaded_image')
+  assert.equal(uploadedStudioAssetKind({ field: 'signature_image' }), 'uploaded_signature')
+  assert.equal(uploadedStudioAssetKind({ field: 'chart_image_url' }), 'uploaded_chart')
+  assert.equal(uploadedStudioAssetKind({ scope: 'asset-url' }), 'uploaded_asset')
+  assert.equal(uploadedStudioAssetKind({ scope: 'selected-block', field: 'image_url' }), 'uploaded_image')
+  assert.equal(uploadedStudioAssetKind(), 'uploaded_image')
+})
+
+test('studio image focal helpers normalize keywords and percentage coordinates', () => {
+  assert.deepEqual(imagePositionCoordinates('center center'), { x: 50, y: 50 })
+  assert.deepEqual(imagePositionCoordinates('top left'), { x: 0, y: 0 })
+  assert.deepEqual(imagePositionCoordinates('right bottom'), { x: 100, y: 100 })
+  assert.deepEqual(imagePositionCoordinates('37% 68%'), { x: 37, y: 68 })
+  assert.deepEqual(imagePositionCoordinates('135% -4%'), { x: 50, y: 50 })
+  assert.equal(imagePositionStringFromCoordinates(37.4, 68.6), '37% 69%')
+  assert.equal(imagePositionStringFromCoordinates(135, -4), '100% 0%')
 })
 
 test('proposal template preview geometry mirrors custom PDF page settings', () => {

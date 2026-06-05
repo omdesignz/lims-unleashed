@@ -7,6 +7,38 @@ use App\Models\User;
 
 class ReportStudioAssetLibrary
 {
+    public const DEFAULT_STUDIO_UPLOAD_KIND = 'uploaded_image';
+
+    public const STUDIO_UPLOAD_KINDS = [
+        'uploaded_asset',
+        'uploaded_background',
+        'uploaded_chart',
+        'uploaded_image',
+        'uploaded_signature',
+        'uploaded_stamp',
+    ];
+
+    /**
+     * @return array<int, string>
+     */
+    public static function studioUploadKinds(): array
+    {
+        return self::STUDIO_UPLOAD_KINDS;
+    }
+
+    public static function sourceForKind(string $kind): string
+    {
+        return match ($kind) {
+            'uploaded_asset' => 'Upload de ficheiro',
+            'uploaded_background' => 'Fundos carregados',
+            'uploaded_chart' => 'Gráficos carregados',
+            'uploaded_signature' => 'Assinaturas carregadas',
+            'uploaded_stamp' => 'Carimbos carregados',
+            'uploaded_image' => 'Imagens carregadas',
+            default => 'Upload do studio',
+        };
+    }
+
     /**
      * @return array<int, array<string, mixed>>
      */
@@ -30,7 +62,11 @@ class ReportStudioAssetLibrary
             ->latest('id')
             ->limit(60)
             ->get()
-            ->map(fn (GestlabMedia $media): array => $this->assetForMedia($media))
+            ->map(fn (GestlabMedia $media): array => $this->assetForMedia(
+                $media,
+                $media->studio_asset_kind ?: 'gallery_image',
+                $media->studio_asset_source ?: ($media->studio_asset_kind ? self::sourceForKind($media->studio_asset_kind) : 'Galeria')
+            ))
             ->all();
     }
 

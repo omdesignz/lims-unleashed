@@ -1941,6 +1941,42 @@ CSS,
         Storage::disk('public')->assertExists($media->path);
     }
 
+    public function test_media_store_persists_report_studio_asset_role_metadata(): void
+    {
+        Storage::fake('public');
+
+        $user = $this->verifiedAdmin();
+
+        $response = $this->actingAs($user)->postJson(route('media.store'), [
+            'studio_asset_context' => 'report_studio',
+            'studio_asset_kind' => 'uploaded_stamp',
+            'file' => UploadedFile::fake()->create('carimbo-validacao.svg', 12, 'image/svg+xml'),
+        ]);
+
+        $media = GestlabMedia::query()->latest('id')->firstOrFail();
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('media.studio_asset_kind', 'uploaded_stamp')
+            ->assertJsonPath('media.studio_asset_source', 'Carimbos carregados')
+            ->assertJsonPath('asset.id', 'gallery-'.$media->id)
+            ->assertJsonPath('asset.kind', 'uploaded_stamp')
+            ->assertJsonPath('asset.source', 'Carimbos carregados')
+            ->assertJsonPath('asset.file_type', 'image');
+
+        $this->assertSame('uploaded_stamp', $media->studio_asset_kind);
+        $this->assertSame('Carimbos carregados', $media->studio_asset_source);
+
+        $asset = collect(app(ReportStudioAssetLibrary::class)->assets())
+            ->firstWhere('id', 'gallery-'.$media->id);
+
+        $this->assertIsArray($asset);
+        $this->assertSame('uploaded_stamp', $asset['kind']);
+        $this->assertSame('Carimbos carregados', $asset['source']);
+
+        Storage::disk('public')->assertExists($media->path);
+    }
+
     public function test_media_store_returns_json_validation_errors_for_studio_uploads(): void
     {
         $this->actingAs($this->verifiedAdmin())
@@ -1948,6 +1984,16 @@ CSS,
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['file'])
             ->assertJsonPath('errors.file.0', 'Seleccione um ficheiro para carregar.');
+
+        $this->actingAs($this->verifiedAdmin())
+            ->postJson(route('media.store'), [
+                'studio_asset_context' => 'report_studio',
+                'studio_asset_kind' => 'uploaded_chart',
+                'file' => UploadedFile::fake()->create('anexo.pdf', 20, 'application/pdf'),
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['file'])
+            ->assertJsonPath('errors.file.0', 'Use SVG, PNG, JPEG, WebP, GIF ou AVIF para media de estúdio.');
     }
 
     public function test_report_studio_profile_signature_assets_are_pdf_ready(): void

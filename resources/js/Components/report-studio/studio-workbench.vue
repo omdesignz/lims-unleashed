@@ -3,6 +3,7 @@ import fancyTextarea from '@/Components/fancy-textarea.vue'
 import { chartSvgPalette, normalizeStudioChartList, normalizedHexColor, sanitizeStudioChartSvg } from '@/Support/report-studio-chart-palette.mjs'
 import { escapePreviewHtmlAttribute, escapePreviewHtmlText, safePreviewCssUrl, safePreviewMediaUrl } from '@/Support/report-studio-preview-safety.mjs'
 import { buildReportStudioPreviewCss } from '@/Support/report-studio-preview-styles.mjs'
+import { uploadedStudioAssetKind } from '@/Support/report-studio-media-assets.mjs'
 import axios from 'axios'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
@@ -2658,41 +2659,7 @@ function uploadStatusRefs(status = 'background') {
 }
 
 function uploadedAssetKind(target = mediaPickerTarget.value) {
-  if (target.scope === 'document-background' || target.field === 'background_image') {
-    return 'uploaded_background'
-  }
-
-  if (target.scope === 'new-canvas-block') {
-    const blockKind = target.blockKind || 'image'
-
-    if (blockKind === 'signature') {
-      return 'uploaded_signature'
-    }
-
-    if (blockKind === 'stamp') {
-      return 'uploaded_stamp'
-    }
-
-    if (blockKind === 'chart_snapshot') {
-      return 'uploaded_chart'
-    }
-
-    return 'uploaded_image'
-  }
-
-  if (target.field === 'signature_image') {
-    return 'uploaded_signature'
-  }
-
-  if (target.field === 'chart_image_url') {
-    return 'uploaded_chart'
-  }
-
-  if (target.scope === 'asset-url') {
-    return 'uploaded_asset'
-  }
-
-  return 'uploaded_image'
+  return uploadedStudioAssetKind(target)
 }
 
 function uploadedAssetSource(kind) {
@@ -2714,7 +2681,7 @@ function normalizeUploadedAsset(data, file, target = mediaPickerTarget.value) {
     id: backendAsset.id || `uploaded-${data?.id || Date.now()}`,
     label: backendAsset.label || file.name,
     kind,
-    source: uploadedAssetSource(kind),
+    source: backendAsset.source || uploadedAssetSource(kind),
     author: backendAsset.author || studioCopy('media_picker.current_session'),
     mime_type: backendAsset.mime_type || file.type,
     file_type: backendAsset.file_type || (String(file.type || '').startsWith('image/') ? 'image' : 'other'),
@@ -2755,6 +2722,8 @@ async function uploadStudioAsset(file, options = {}) {
   }
 
   const formData = new FormData()
+  formData.append('studio_asset_context', 'report_studio')
+  formData.append('studio_asset_kind', uploadedAssetKind(options.target))
   formData.append('file', file)
   uploadStatus.busy.value = true
   uploadStatus.progress.value = 0
