@@ -61,7 +61,7 @@ class ReportStudioTemplateRequest extends FormRequest
             'layout_schema.canvas_blocks.*.asset_mime_type' => ['nullable', 'string', 'max:255'],
             'layout_schema.canvas_blocks.*.asset_size' => ['nullable', 'numeric', 'min:0'],
             'layout_schema.canvas_blocks.*.content_html' => ['nullable', 'string'],
-            'layout_schema.canvas_blocks.*.image_url' => ['nullable', 'string', 'max:2048'],
+            'layout_schema.canvas_blocks.*.image_url' => ['nullable', 'string', 'max:2048', $this->studioMediaReferenceRule()],
             'layout_schema.canvas_blocks.*.image_alt' => ['nullable', 'string', 'max:255'],
             'layout_schema.canvas_blocks.*.image_fit' => ['nullable', Rule::in(['cover', 'contain', 'auto'])],
             'layout_schema.canvas_blocks.*.image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
@@ -74,7 +74,7 @@ class ReportStudioTemplateRequest extends FormRequest
             'layout_schema.canvas_blocks.*.chart_title' => ['nullable', 'string', 'max:255'],
             'layout_schema.canvas_blocks.*.chart_caption' => ['nullable', 'string', 'max:1000'],
             'layout_schema.canvas_blocks.*.chart_svg' => ['nullable', 'string'],
-            'layout_schema.canvas_blocks.*.chart_image_url' => ['nullable', 'string', 'max:65535'],
+            'layout_schema.canvas_blocks.*.chart_image_url' => ['nullable', 'string', 'max:65535', $this->studioMediaReferenceRule()],
             'layout_schema.canvas_blocks.*.chart_type' => ['nullable', Rule::in(['bar', 'line', 'doughnut'])],
             'layout_schema.canvas_blocks.*.chart_labels' => ['nullable', $this->chartTextListRule()],
             'layout_schema.canvas_blocks.*.chart_labels.*' => ['nullable', 'string', 'max:120'],
@@ -92,7 +92,7 @@ class ReportStudioTemplateRequest extends FormRequest
             'layout_schema.canvas_blocks.*.z_index' => ['nullable', 'numeric', 'min:0', 'max:999'],
             'layout_schema.canvas_blocks.*.padding' => ['nullable', 'numeric', 'min:0', 'max:400'],
             'layout_schema.canvas_blocks.*.background_color' => ['nullable', 'string', 'max:100', $cssColorRule],
-            'layout_schema.canvas_blocks.*.background_image' => ['nullable', 'string', 'max:2048'],
+            'layout_schema.canvas_blocks.*.background_image' => ['nullable', 'string', 'max:2048', $this->studioMediaReferenceRule()],
             'layout_schema.canvas_blocks.*.background_image_fit' => ['nullable', Rule::in(['cover', 'contain', 'auto'])],
             'layout_schema.canvas_blocks.*.background_image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
             'layout_schema.canvas_blocks.*.overlay_color' => ['nullable', 'string', 'max:100', $cssColorRule],
@@ -110,7 +110,7 @@ class ReportStudioTemplateRequest extends FormRequest
             'layout_schema.canvas_blocks.*.signature_label' => ['nullable', 'string', 'max:255'],
             'layout_schema.canvas_blocks.*.signature_name' => ['nullable', 'string', 'max:255'],
             'layout_schema.canvas_blocks.*.signature_title' => ['nullable', 'string', 'max:255'],
-            'layout_schema.canvas_blocks.*.signature_image' => ['nullable', 'string', 'max:2048'],
+            'layout_schema.canvas_blocks.*.signature_image' => ['nullable', 'string', 'max:2048', $this->studioMediaReferenceRule()],
             'layout_schema.canvas_blocks.*.signature_image_fit' => ['nullable', Rule::in(['cover', 'contain', 'auto'])],
             'layout_schema.canvas_blocks.*.signature_image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
             'layout_schema.canvas_blocks.*.signature_image_width' => ['nullable', 'numeric', 'min:24', 'max:360'],
@@ -123,7 +123,7 @@ class ReportStudioTemplateRequest extends FormRequest
             'layout_schema.canvas_blocks.*.is_hidden' => ['sometimes', 'boolean'],
             'layout_schema.canvas_blocks.*.page_scope' => ['nullable', Rule::in(['first', 'all', 'following', 'specific'])],
             'layout_schema.canvas_blocks.*.page_number' => ['nullable', 'integer', 'min:1', 'max:999'],
-            'layout_schema.background_image_path' => ['nullable', 'string', 'max:2048'],
+            'layout_schema.background_image_path' => ['nullable', 'string', 'max:2048', $this->studioMediaReferenceRule()],
             'layout_schema.background_size' => ['nullable', Rule::in(['cover', 'contain', 'auto'])],
             'layout_schema.background_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
             'layout_schema.background_repeat' => ['nullable', Rule::in(['no-repeat', 'repeat', 'repeat-x', 'repeat-y'])],
@@ -288,6 +288,57 @@ class ReportStudioTemplateRequest extends FormRequest
             if (! $this->isHexChartColor($item) && ! $this->isStudioPlaceholder($item)) {
                 $fail('A paleta do gráfico deve conter apenas cores HEX no formato #RRGGBB ou variáveis do estúdio.');
             }
+        };
+    }
+
+    private function studioMediaReferenceRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '') {
+                return;
+            }
+
+            if (! is_string($value)) {
+                $fail('A referência de media do estúdio deve ser um URL, caminho público, data URI de imagem ou variável do estúdio.');
+
+                return;
+            }
+
+            $value = trim($value);
+
+            if ($value === '' || $this->isStudioPlaceholder($value)) {
+                return;
+            }
+
+            if (preg_match('/[\x00-\x1F\x7F<>"\']/', $value) === 1) {
+                $fail('A referência de media do estúdio contém caracteres inseguros.');
+
+                return;
+            }
+
+            if (preg_match('/\Adata:image\/(?:png|jpe?g|gif|webp|avif|svg\+xml);base64,[A-Za-z0-9+\/=\s]+\z/i', $value) === 1) {
+                return;
+            }
+
+            if (preg_match('/\Adata:/i', $value) === 1) {
+                $fail('Apenas data URIs de imagem em base64 são permitidos nos elementos de media do estúdio.');
+
+                return;
+            }
+
+            if (filter_var($value, FILTER_VALIDATE_URL)) {
+                $scheme = strtolower((string) parse_url($value, PHP_URL_SCHEME));
+
+                if (in_array($scheme, ['http', 'https'], true)) {
+                    return;
+                }
+            }
+
+            if (preg_match('/\A\/?(?:storage|images)\/[A-Za-z0-9._~!$&()*+,;=:@%\/-]+\z/', $value) === 1) {
+                return;
+            }
+
+            $fail('A referência de media do estúdio deve apontar para uma imagem pública segura, URL HTTP(S), data URI de imagem ou variável do estúdio.');
         };
     }
 

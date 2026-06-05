@@ -534,7 +534,7 @@ class ReportStudioPdfRenderer
                 return 'file://'.public_path($publicPath);
             }
 
-            return $path;
+            return $this->isSafeBrowserAssetScheme($scheme, $path) ? $path : '';
         }
 
         if (str_starts_with($path, '/') && is_file($path)) {
@@ -564,7 +564,7 @@ class ReportStudioPdfRenderer
                 return public_path($publicPath);
             }
 
-            return $path;
+            return $this->isSafeMpdfAssetScheme($scheme, $path) ? $path : '';
         }
 
         if (str_starts_with($path, '/') && is_file($path)) {
@@ -592,6 +592,28 @@ class ReportStudioPdfRenderer
         return in_array($host, $allowedHosts, true);
     }
 
+    private function isSafeBrowserAssetScheme(string $scheme, string $path): bool
+    {
+        $scheme = strtolower($scheme);
+
+        if (in_array($scheme, ['http', 'https', 'file'], true)) {
+            return true;
+        }
+
+        return $scheme === 'data' && preg_match('/\Adata:image\//i', $path) === 1;
+    }
+
+    private function isSafeMpdfAssetScheme(string $scheme, string $path): bool
+    {
+        $scheme = strtolower($scheme);
+
+        if (in_array($scheme, ['http', 'https', 'file'], true)) {
+            return true;
+        }
+
+        return $scheme === 'data' && preg_match('/\Adata:image\//i', $path) === 1;
+    }
+
     private function normalizeMpdfAssetReferences(string $html): string
     {
         $html = preg_replace_callback(
@@ -606,10 +628,18 @@ class ReportStudioPdfRenderer
         ) ?? $html;
 
         return preg_replace_callback(
-            '/url\(([\'"]?)([^)\'"]+)\1\)/i',
+            '/url\(\s*(?:"([^"]*)"|\'([^\']*)\'|([^)]*))\s*\)/i',
             function (array $matches): string {
-                $quote = $matches[1] !== '' ? $matches[1] : '"';
-                $resolvedPath = e($this->resolveMpdfAssetPath($matches[2]), false);
+                $doubleQuotedAssetPath = $matches[1] ?? '';
+                $singleQuotedAssetPath = $matches[2] ?? '';
+                $unquotedAssetPath = $matches[3] ?? '';
+                $quote = $doubleQuotedAssetPath !== ''
+                    ? '"'
+                    : ($singleQuotedAssetPath !== '' ? "'" : '"');
+                $assetPath = $doubleQuotedAssetPath !== ''
+                    ? $doubleQuotedAssetPath
+                    : ($singleQuotedAssetPath !== '' ? $singleQuotedAssetPath : trim($unquotedAssetPath));
+                $resolvedPath = ReportStudioCssEscaper::quotedString($this->resolveMpdfAssetPath($assetPath));
 
                 return "url({$quote}{$resolvedPath}{$quote})";
             },
@@ -631,10 +661,18 @@ class ReportStudioPdfRenderer
         ) ?? $html;
 
         return preg_replace_callback(
-            '/url\(([\'"]?)([^)\'"]+)\1\)/i',
+            '/url\(\s*(?:"([^"]*)"|\'([^\']*)\'|([^)]*))\s*\)/i',
             function (array $matches): string {
-                $quote = $matches[1] !== '' ? $matches[1] : '"';
-                $resolvedPath = e($this->resolveBrowserAssetPath($matches[2]), false);
+                $doubleQuotedAssetPath = $matches[1] ?? '';
+                $singleQuotedAssetPath = $matches[2] ?? '';
+                $unquotedAssetPath = $matches[3] ?? '';
+                $quote = $doubleQuotedAssetPath !== ''
+                    ? '"'
+                    : ($singleQuotedAssetPath !== '' ? "'" : '"');
+                $assetPath = $doubleQuotedAssetPath !== ''
+                    ? $doubleQuotedAssetPath
+                    : ($singleQuotedAssetPath !== '' ? $singleQuotedAssetPath : trim($unquotedAssetPath));
+                $resolvedPath = ReportStudioCssEscaper::quotedString($this->resolveBrowserAssetPath($assetPath));
 
                 return "url({$quote}{$resolvedPath}{$quote})";
             },

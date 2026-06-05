@@ -3,6 +3,7 @@ import test from 'node:test'
 import { chartSvgPalette, normalizeStudioChartList, normalizedHexColor, sanitizeStudioChartSvg, splitStudioChartList } from '../../resources/js/Support/report-studio-chart-palette.mjs'
 import { scopeReportStudioPreviewCss } from '../../resources/js/Support/report-studio-css.mjs'
 import { previewReplacementsByType } from '../../resources/js/Support/report-studio-preview-html.mjs'
+import { escapePreviewHtmlAttribute, escapePreviewHtmlText, safePreviewCssUrl, safePreviewMediaUrl } from '../../resources/js/Support/report-studio-preview-safety.mjs'
 import { buildReportStudioPreviewCss } from '../../resources/js/Support/report-studio-preview-styles.mjs'
 import {
   proposalTemplatePreviewMarginStyle,
@@ -75,6 +76,10 @@ test('studio preview snippets use the production document table system', () => {
   assert.match(previewReplacementsByType.analysis['{sample_details}'], /document-summary-table/)
   assert.match(previewReplacementsByType.analysis['{results_table}'], /class="report-table studio-avoid-break"/)
   assert.match(previewReplacementsByType.proposal['{summary_table}'], /document-financial-summary/)
+  assert.equal(previewReplacementsByType.proposal['{bank_account_number}'], '0011223344')
+  assert.equal(previewReplacementsByType.proposal['{bank_swift}'], 'BFAAAOLU')
+  assert.equal(previewReplacementsByType.invoice['{bank_iban}'], 'AO06 0000 0000 0000 0000 0000 0')
+  assert.equal(previewReplacementsByType.receipt['{bank_details}'], 'Pagamento por transferência bancária com referência do documento.')
   assert.match(previewReplacementsByType.invoice['{items_table}'], /class="report-table studio-avoid-break"/)
 })
 
@@ -126,6 +131,19 @@ test('studio chart svg sanitizer preserves chart markup and strips executable sv
   assert.equal(sanitizeStudioChartSvg('<div>not svg</div>'), '')
   assert.equal(sanitizeStudioChartSvg('<svg><rect /></svg><script>alert(1)</script>'), '<svg><rect /></svg>')
   assert.equal(sanitizeStudioChartSvg('<svg><rect /></svg><p>fora do svg</p>'), '<svg><rect /></svg>')
+})
+
+test('studio preview media helpers reject executable urls and escape attributes', () => {
+  assert.equal(safePreviewMediaUrl('/storage/report-studio/logo.svg'), '/storage/report-studio/logo.svg')
+  assert.equal(safePreviewMediaUrl('https://lims-unleashed.test/storage/media/stamp.png'), 'https://lims-unleashed.test/storage/media/stamp.png')
+  assert.equal(safePreviewMediaUrl('data:image/png;base64,aGVsbG8='), 'data:image/png;base64,aGVsbG8=')
+  assert.equal(safePreviewMediaUrl('javascript:alert(1)'), '')
+  assert.equal(safePreviewMediaUrl('data:text/html;base64,PHNjcmlwdD4='), '')
+  assert.equal(safePreviewMediaUrl('/storage/media/logo.png\nonerror=alert(1)'), '')
+  assert.equal(escapePreviewHtmlAttribute('Selo "Aprovado" <svg>'), 'Selo &quot;Aprovado&quot; &lt;svg&gt;')
+  assert.equal(escapePreviewHtmlText('Legenda <strong>não HTML</strong> & segura'), 'Legenda &lt;strong&gt;não HTML&lt;/strong&gt; &amp; segura')
+  assert.equal(safePreviewCssUrl('/storage/media/bg "assinada".png'), 'url("/storage/media/bg \\"assinada\\".png")')
+  assert.equal(safePreviewCssUrl('vbscript:msgbox(1)'), '')
 })
 
 test('proposal template preview geometry mirrors custom PDF page settings', () => {

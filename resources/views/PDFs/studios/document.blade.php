@@ -43,6 +43,7 @@
 
             if (! $resolvedBackgroundImage && ! empty($backgroundImage)) {
                 $backgroundSource = trim((string) $backgroundImage);
+                $backgroundScheme = parse_url($backgroundSource, PHP_URL_SCHEME);
                 $backgroundPath = parse_url($backgroundSource, PHP_URL_PATH);
                 $backgroundHost = parse_url($backgroundSource, PHP_URL_HOST);
                 $allowedBackgroundHosts = array_filter([
@@ -58,24 +59,37 @@
                         || $backgroundHost === ''
                         || in_array($backgroundHost, $allowedBackgroundHosts, true)
                     );
+                $isDataImageBackground = str_starts_with($backgroundSource, 'data:image/');
+                $isUnsafeBackgroundScheme = is_string($backgroundScheme)
+                    && $backgroundScheme !== ''
+                    && ! in_array(strtolower($backgroundScheme), ['http', 'https', 'file', 'data'], true);
+                $isSafeExternalBackground = filter_var($backgroundSource, FILTER_VALIDATE_URL)
+                    && is_string($backgroundScheme)
+                    && in_array(strtolower($backgroundScheme), ['http', 'https', 'file'], true);
 
-                if (str_starts_with($backgroundSource, 'data:image/')) {
+                if ($isDataImageBackground) {
                     $resolvedBackgroundImage = $backgroundSource;
+                } elseif ($isUnsafeBackgroundScheme || strtolower((string) $backgroundScheme) === 'data') {
+                    $resolvedBackgroundImage = null;
                 } elseif (is_file($backgroundSource)) {
                     $resolvedBackgroundImage = $backgroundSource;
                 } elseif ($isSameHostAsset) {
                     $resolvedBackgroundImage = public_path($backgroundPublicPath);
-                } elseif (filter_var($backgroundSource, FILTER_VALIDATE_URL)) {
+                } elseif ($isSafeExternalBackground) {
                     $resolvedBackgroundImage = $backgroundSource;
                 } else {
                     $resolvedBackgroundImage = public_path(ltrim($backgroundSource, '/'));
                 }
             }
+
+            $resolvedBackgroundImageCssUrl = $resolvedBackgroundImage
+                ? \App\Support\ReportStudioCssEscaper::quotedString((string) $resolvedBackgroundImage)
+                : null;
         @endphp
 
-        @if($resolvedBackgroundImage)
+        @if($resolvedBackgroundImageCssUrl)
         @page {
-            background-image: url("{{ $resolvedBackgroundImage }}");
+            background-image: url("{!! $resolvedBackgroundImageCssUrl !!}");
             background-image-resize: 6;
             background-position: {{ $backgroundPosition ?? 'center center' }};
             background-repeat: {{ $backgroundRepeat ?? 'no-repeat' }};

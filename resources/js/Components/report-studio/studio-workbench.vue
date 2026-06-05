@@ -1,6 +1,7 @@
 <script setup>
 import fancyTextarea from '@/Components/fancy-textarea.vue'
 import { chartSvgPalette, normalizeStudioChartList, normalizedHexColor, sanitizeStudioChartSvg } from '@/Support/report-studio-chart-palette.mjs'
+import { escapePreviewHtmlAttribute, escapePreviewHtmlText, safePreviewCssUrl, safePreviewMediaUrl } from '@/Support/report-studio-preview-safety.mjs'
 import { buildReportStudioPreviewCss } from '@/Support/report-studio-preview-styles.mjs'
 import axios from 'axios'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -697,6 +698,12 @@ const placeholderLabels = {
   '{uncertainty_statement}': 'Declaração de incerteza',
   '{signature_block}': 'Bloco de assinatura',
   '{banking_details}': 'Dados bancários',
+  '{bank_name}': 'Banco',
+  '{bank_account_name}': 'Titular da conta',
+  '{bank_account_number}': 'Número da conta',
+  '{bank_iban}': 'IBAN',
+  '{bank_swift}': 'SWIFT/BIC',
+  '{bank_details}': 'Observações bancárias',
   '{verification_url}': 'Ligação de verificação',
   '{proposal_authenticity}': 'QR e autenticidade da proposta',
   '{proposal_acceptance_evidence}': 'Evidência de aceite da proposta',
@@ -1030,11 +1037,11 @@ const visiblePreviewPages = computed(() => {
 })
 
 const previewPageStyle = computed(() => {
-  const image = props.layoutSchema.background_image_path
+  const image = safePreviewCssUrl(props.layoutSchema.background_image_path)
 
   return image
     ? {
-        backgroundImage: `url('${image}')`,
+        backgroundImage: image,
         backgroundSize: safeCssImageFitValue(props.layoutSchema.background_size, 'cover'),
         backgroundPosition: safeCssPositionValue(props.layoutSchema.background_position, 'center center'),
         backgroundRepeat: safeCssRepeatValue(props.layoutSchema.background_repeat, 'no-repeat'),
@@ -2811,6 +2818,7 @@ function canvasBlockStyle(block) {
   const blockBackgroundColor = safeCssColorValue(block.background_color, 'rgba(255,255,255,0.88)')
   const blockTextColor = safeCssColorValue(block.text_color, '')
   const blockBorderColor = safeCssColorValue(block.border_color, 'rgba(148,163,184,0.4)')
+  const blockBackgroundImage = safePreviewCssUrl(interpolatePreviewHtml(block.background_image || ''))
 
   return {
     position: 'absolute',
@@ -2822,10 +2830,10 @@ function canvasBlockStyle(block) {
     padding: `${Number(block.padding || 0)}px`,
     borderRadius: `${Number(block.border_radius || 0)}px`,
     background: blockBackgroundColor,
-    backgroundImage: block.background_image ? `url('${block.background_image}')` : undefined,
-    backgroundSize: block.background_image ? safeCssImageFitValue(block.background_image_fit, 'cover') : undefined,
-    backgroundPosition: block.background_image ? safeCssPositionValue(block.background_image_position, 'center center') : undefined,
-    backgroundRepeat: block.background_image ? 'no-repeat' : undefined,
+    backgroundImage: blockBackgroundImage || undefined,
+    backgroundSize: blockBackgroundImage ? safeCssImageFitValue(block.background_image_fit, 'cover') : undefined,
+    backgroundPosition: blockBackgroundImage ? safeCssPositionValue(block.background_image_position, 'center center') : undefined,
+    backgroundRepeat: blockBackgroundImage ? 'no-repeat' : undefined,
     border: Number(block.border_width || 0) > 0
       ? `${Number(block.border_width || 0)}px solid ${blockBorderColor}`
       : 'none',
@@ -3020,55 +3028,59 @@ function canvasBlockContentHtml(block) {
       ? 'border-t border-dashed border-slate-500/70'
       : 'border-t border-slate-500/70'
 
-    const signatureImageUrl = interpolatePreviewHtml(block.signature_image || '')
+    const signatureImageUrl = safePreviewMediaUrl(interpolatePreviewHtml(block.signature_image || ''))
     const signatureImageFit = mediaObjectFit(block.signature_image_fit || 'contain')
     const signatureImagePosition = safeCssPositionValue(block.signature_image_position || 'center center', 'center center')
     const signatureImageWidth = clamp(Number(block.signature_image_width || 180), 24, 360)
     const signatureImageHeight = clamp(Number(block.signature_image_height || 72), 16, 240)
     const signatureImage = signatureImageUrl
-      ? `<img src="${signatureImageUrl}" alt="Assinatura" style="display:block; width:${signatureImageWidth}px; max-width:100%; height:${signatureImageHeight}px; object-fit:${signatureImageFit}; object-position:${signatureImagePosition};" />`
+      ? `<img src="${escapePreviewHtmlAttribute(signatureImageUrl)}" alt="Assinatura" style="display:block; width:${signatureImageWidth}px; max-width:100%; height:${signatureImageHeight}px; object-fit:${signatureImageFit}; object-position:${signatureImagePosition};" />`
       : ''
+    const signatureLabel = escapePreviewHtmlText(interpolatePreviewHtml(block.signature_label || ''))
+    const signatureName = escapePreviewHtmlText(interpolatePreviewHtml(block.signature_name || ''))
+    const signatureTitle = escapePreviewHtmlText(interpolatePreviewHtml(block.signature_title || ''))
 
     const dateLabel = block.signature_show_date
-      ? `<div class="mt-2 text-[11px] text-slate-500">${interpolatePreviewHtml(block.signature_date_label || 'Data: ____ / ____ / ______')}</div>`
+      ? `<div class="mt-2 text-[11px] text-slate-500">${escapePreviewHtmlText(interpolatePreviewHtml(block.signature_date_label || 'Data: ____ / ____ / ______'))}</div>`
       : ''
 
-    return interpolatePreviewHtml(`
+    return `
       <div class="flex h-full flex-col justify-end gap-3 ${alignClass}">
         ${signatureImage ? `<div>${signatureImage}</div>` : ''}
         <div class="w-full ${lineStyle}"></div>
         <div class="space-y-1">
-          ${block.signature_label ? `<div class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">${block.signature_label}</div>` : ''}
-          ${block.signature_name ? `<div class="text-sm font-semibold text-slate-900">${block.signature_name}</div>` : ''}
-          ${block.signature_title ? `<div class="text-xs text-slate-600">${block.signature_title}</div>` : ''}
+          ${signatureLabel ? `<div class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">${signatureLabel}</div>` : ''}
+          ${signatureName ? `<div class="text-sm font-semibold text-slate-900">${signatureName}</div>` : ''}
+          ${signatureTitle ? `<div class="text-xs text-slate-600">${signatureTitle}</div>` : ''}
           ${dateLabel}
         </div>
       </div>
-    `.trim())
+    `.trim()
   }
 
   if (['image', 'stamp'].includes(block.block_kind)) {
-    const imageUrl = interpolatePreviewHtml(block.image_url || block.background_image || '')
+    const imageUrl = safePreviewMediaUrl(interpolatePreviewHtml(block.image_url || block.background_image || ''))
 
     if (!imageUrl) {
       return '<div class="flex h-full min-h-24 items-center justify-center rounded-2xl border border-dashed border-slate-300 text-xs text-slate-500">Selecione uma imagem da galeria</div>'
     }
 
-    return `<img src="${imageUrl}" alt="${interpolatePreviewHtml(block.image_alt || block.title || 'Imagem')}" style="display:block; width:100%; height:100%; min-height:inherit; object-fit:${mediaObjectFit(block.image_fit || 'contain')}; object-position:${imageObjectPosition(block)};" />`
+    return `<img src="${escapePreviewHtmlAttribute(imageUrl)}" alt="${escapePreviewHtmlAttribute(interpolatePreviewHtml(block.image_alt || block.title || 'Imagem'))}" style="display:block; width:100%; height:100%; min-height:inherit; object-fit:${mediaObjectFit(block.image_fit || 'contain')}; object-position:${imageObjectPosition(block)};" />`
   }
 
   if (block.block_kind === 'chart_snapshot') {
     const sanitizedChartSvg = sanitizeStudioChartSvg(interpolatePreviewHtml(block.chart_svg || ''))
     const chartTitle = block.chart_title
-      ? `<div class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">${interpolatePreviewHtml(block.chart_title)}</div>`
+      ? `<div class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">${escapePreviewHtmlText(interpolatePreviewHtml(block.chart_title))}</div>`
       : ''
     const chartCaption = block.chart_caption
-      ? `<div class="mt-3 text-xs leading-relaxed text-slate-500">${interpolatePreviewHtml(block.chart_caption)}</div>`
+      ? `<div class="mt-3 text-xs leading-relaxed text-slate-500">${escapePreviewHtmlText(interpolatePreviewHtml(block.chart_caption))}</div>`
       : ''
+    const chartImageUrl = safePreviewMediaUrl(interpolatePreviewHtml(block.chart_image_url || ''))
     const chartGraphic = sanitizedChartSvg
       ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${sanitizedChartSvg}</div>`
-      : block.chart_image_url
-        ? `<img src="${interpolatePreviewHtml(block.chart_image_url)}" alt="${interpolatePreviewHtml(block.chart_title || block.title || 'Gráfico')}" style="display:block; margin-top:12px; width:100%; min-height:140px; object-fit:contain;" />`
+      : chartImageUrl
+        ? `<img src="${escapePreviewHtmlAttribute(chartImageUrl)}" alt="${escapePreviewHtmlAttribute(interpolatePreviewHtml(block.chart_title || block.title || 'Gráfico'))}" style="display:block; margin-top:12px; width:100%; min-height:140px; object-fit:contain;" />`
         : generatedChartSvg(block)
           ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${generatedChartSvg(block)}</div>`
           : '<div class="mt-3 flex min-h-36 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-center text-xs text-slate-500">Defina rótulos e valores para gerar o gráfico ou use SVG/imagem exportada.</div>'
@@ -3092,7 +3104,7 @@ function canvasBlockContentHtml(block) {
     return `
       <div class="flex h-full min-h-24 flex-col items-center justify-center gap-2">
         <img src="${qrDataUri}" alt="QR code" style="display:block; width:100%; max-width:148px; height:auto;" />
-        ${block.qr_label ? `<div class="text-center text-[11px] text-slate-500">${interpolatePreviewHtml(block.qr_label)}</div>` : ''}
+        ${block.qr_label ? `<div class="text-center text-[11px] text-slate-500">${escapePreviewHtmlText(interpolatePreviewHtml(block.qr_label))}</div>` : ''}
       </div>
     `.trim()
   }

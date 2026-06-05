@@ -22,6 +22,10 @@
         if (is_numeric($customPageWidth ?? null) && is_numeric($customPageHeight ?? null)) {
             $chromePageSize = (float) $customPageWidth.'mm '.(float) $customPageHeight.'mm';
         }
+
+        $resolvedBackgroundImageCssUrl = ! empty($resolvedBackgroundImage)
+            ? \App\Support\ReportStudioCssEscaper::quotedString((string) $resolvedBackgroundImage)
+            : null;
     @endphp
     <style>
         @include('PDFs.partials.premium-document-style')
@@ -106,13 +110,13 @@
             max-width: 100%;
         }
 
-        @if($resolvedBackgroundImage ?? null)
+        @if($resolvedBackgroundImageCssUrl)
         body::before {
             content: "";
             position: fixed;
             inset: 0;
             z-index: -1;
-            background-image: url("{{ $resolvedBackgroundImage }}");
+            background-image: url("{!! $resolvedBackgroundImageCssUrl !!}");
             background-position: {{ $backgroundPosition ?? 'center center' }};
             background-repeat: {{ $backgroundRepeat ?? 'no-repeat' }};
             background-size: {{ $backgroundSize ?? 'cover' }};

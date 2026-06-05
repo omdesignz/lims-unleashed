@@ -92,7 +92,11 @@ class VAPProposalTemplate extends Model
             '{lab_details}' => 'Dados do laboratório',
             '{customer_details}' => 'Dados do cliente',
             '{bank_name}' => 'Nome do banco',
+            '{bank_account_name}' => 'Titular da conta',
+            '{bank_account_number}' => 'Número da conta',
             '{bank_iban}' => 'IBAN',
+            '{bank_swift}' => 'SWIFT/BIC',
+            '{bank_details}' => 'Observações bancárias',
             '{verification_url}' => 'Ligação pública de verificação',
             '{proposal_authenticity}' => 'QR e autenticidade da proposta',
             '{proposal_acceptance_evidence}' => 'Evidência de aceite do cliente',
@@ -156,7 +160,11 @@ class VAPProposalTemplate extends Model
         $replacements['{lab_details}'] = self::generateLabDetails($settings);
         $replacements['{customer_details}'] = self::generateCustomerDetails($proposal);
         $replacements['{bank_name}'] = $settings?->app_bank_name ?? '';
+        $replacements['{bank_account_name}'] = $settings?->app_bank_account_name ?? '';
+        $replacements['{bank_account_number}'] = $settings?->app_bank_account_number ?? '';
         $replacements['{bank_iban}'] = $settings?->app_bank_iban ?? '';
+        $replacements['{bank_swift}'] = $settings?->app_bank_swift ?? '';
+        $replacements['{bank_details}'] = $settings?->app_bank_details ?? '';
         $replacements['{verification_url}'] = self::verificationUrl($proposal);
         $replacements['{proposal_authenticity}'] = self::generateAuthenticityBlock($proposal);
         $replacements['{proposal_acceptance_evidence}'] = self::generateAcceptanceEvidenceBlock($proposal);

@@ -340,6 +340,7 @@ class ReportStudioPdfBuilder
         ];
         $proposalPlaceholderValues = array_merge(
             VAPProposalTemplate::placeholderValues($proposal, $settings),
+            $this->bankPlaceholderValues($settings),
             [
                 '{proposal_content}' => $parsedContent,
                 '{parsed_content}' => $parsedContent,
@@ -1014,6 +1015,7 @@ class ReportStudioPdfBuilder
                 '{lab_details}' => $this->labDetailsHtml($settings),
                 '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente industrial de referência, Lda.'),
                 '{banking_details}' => $this->bankingDetailsHtml($settings),
+                ...$this->bankPlaceholderValues($settings),
                 '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, proforma, proposta'),
             ]
         );
@@ -1490,8 +1492,7 @@ class ReportStudioPdfBuilder
             '{lab_name}' => $labName,
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml(null, $customerName),
-            '{bank_name}' => $settings->app_bank_name ?: '',
-            '{bank_iban}' => $settings->app_bank_iban ?: '',
+            ...$this->bankPlaceholderValues($settings),
         ];
     }
 
@@ -1723,6 +1724,21 @@ HTML;
         }
 
         return $this->detailsLinesHtml($lines, 'Dados bancários');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function bankPlaceholderValues(GeneralSettings $settings): array
+    {
+        return [
+            '{bank_name}' => $settings->app_bank_name ?: '',
+            '{bank_account_name}' => $settings->app_bank_account_name ?: '',
+            '{bank_account_number}' => $settings->app_bank_account_number ?: '',
+            '{bank_iban}' => $settings->app_bank_iban ?: '',
+            '{bank_swift}' => $settings->app_bank_swift ?: '',
+            '{bank_details}' => $settings->app_bank_details ?: '',
+        ];
     }
 
     private function documentKeywordsHtml(GeneralSettings $settings, string $fallback): string
@@ -2222,6 +2238,7 @@ HTML;
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($quote->customer, $quote->customer?->name ?: 'Cliente'),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
+            ...$this->bankPlaceholderValues($settings),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, proforma, proposta'),
         ];
     }
@@ -2262,6 +2279,7 @@ HTML;
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($invoice->customer, $invoice->customer?->name ?: 'Cliente'),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
+            ...$this->bankPlaceholderValues($settings),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, fiscal, factura'),
         ];
     }
@@ -2300,6 +2318,7 @@ HTML;
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($receipt->customer, $receipt->customer?->name ?: 'Cliente'),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
+            ...$this->bankPlaceholderValues($settings),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, tesouraria, recibo'),
         ];
     }
@@ -2336,6 +2355,7 @@ HTML;
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($creditNote->customer, $creditNote->customer?->name ?: 'Cliente'),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
+            ...$this->bankPlaceholderValues($settings),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, rectificação, nota de crédito'),
         ];
     }
@@ -2351,6 +2371,7 @@ HTML;
     ): array {
         $layout = $studio->layout_schema ?? [];
         $export = $studio->export_settings ?? [];
+        $placeholders = array_merge($placeholders, $this->bankPlaceholderValues($settings));
 
         $headerContext = [
             'lab_name' => $settings->app_client_lab_name ?: $settings->app_name ?: 'Laboratório',
@@ -2362,7 +2383,10 @@ HTML;
         ];
         $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholders));
 
-        $bodyHtml = strtr(data_get($layout, 'body_html') ?: $defaultBodyHtml, $placeholders);
+        $bodyHtml = strtr(
+            data_get($layout, 'body_html') ?: $defaultBodyHtml,
+            $this->placeholderReplacements($placeholders)
+        );
 
         return [
             'view' => 'PDFs.studios.document',
@@ -2929,7 +2953,7 @@ HTML;
 
                 $backgroundImageStyle = sprintf(
                     'background-image: url("%s"); background-size: %s; background-position: %s; background-repeat: no-repeat;',
-                    $resolvedBackgroundImage,
+                    $this->safeCssUrlString($resolvedBackgroundImage),
                     $backgroundImageFit,
                     $backgroundImagePosition,
                 );
@@ -3038,7 +3062,7 @@ HTML;
 
             $signatureImageHtml = sprintf(
                 '<img src="%s" alt="Assinatura" style="display:block; width:%spx; max-width:100%%; height:%spx; object-fit:%s; object-position:%s;" />',
-                $resolvedSignatureImage,
+                e($resolvedSignatureImage),
                 $signatureImageWidth,
                 $signatureImageHeight,
                 $signatureImageFit,
@@ -3049,20 +3073,20 @@ HTML;
         $dateHtml = ! empty($block['signature_show_date'])
             ? sprintf(
                 '<div style="margin-top:8px; font-size:11px; color:#64748b;">%s</div>',
-                $signatureDateLabel
+                e($signatureDateLabel)
             )
             : '';
         $labelHtml = $signatureLabel !== ''
             ? sprintf(
                 '<div style="font-size:11px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#64748b;">%s</div>',
-                $signatureLabel
+                e($signatureLabel)
             )
             : '';
         $nameHtml = $signatureName !== ''
-            ? sprintf('<div style="font-size:14px; font-weight:700; color:#0f172a;">%s</div>', $signatureName)
+            ? sprintf('<div style="font-size:14px; font-weight:700; color:#0f172a;">%s</div>', e($signatureName))
             : '';
         $titleHtml = $signatureTitle !== ''
-            ? sprintf('<div style="font-size:12px; color:#475569;">%s</div>', $signatureTitle)
+            ? sprintf('<div style="font-size:12px; color:#475569;">%s</div>', e($signatureTitle))
             : '';
 
         return <<<HTML
@@ -3110,8 +3134,8 @@ HTML;
             $resolvedChartImage = $this->resolvePdfImageSource($chartImageUrl);
 
             $chartHtml = sprintf(
-                '<img src="%s" alt="%s" style="display:block; width:100%; max-width:100%; height:auto; object-fit:contain;" />',
-                $resolvedChartImage,
+                '<img src="%s" alt="%s" style="display:block; width:100%%; max-width:100%%; height:auto; object-fit:contain;" />',
+                e($resolvedChartImage),
                 e($title ?: 'Gráfico')
             );
         } elseif ($generatedChartSvg !== '') {
@@ -3487,7 +3511,7 @@ SVG;
 
         return sprintf(
             '<img src="%s" alt="%s" style="display:block; width:100%%; height:100%%; min-height:inherit; object-fit:%s; object-position:%s;" />',
-            $resolvedImageUrl,
+            e($resolvedImageUrl),
             $imageAlt,
             $objectFit,
             $imagePosition,
@@ -3804,6 +3828,17 @@ CSS);
         $value = trim($value);
 
         return in_array($value, ['cover', 'contain', 'auto'], true) ? $value : $fallback;
+    }
+
+    private function safeCssUrlString(string $value): string
+    {
+        $value = (string) preg_replace('/[\x00-\x1F\x7F]/', '', $value);
+
+        return str_replace(
+            ['\\', '"'],
+            ['\\\\', '\\"'],
+            $value
+        );
     }
 
     private function safeCssPosition(string $value, string $fallback): string

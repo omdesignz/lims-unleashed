@@ -12,6 +12,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Settings\GeneralSettings;
 use App\Support\ReportStudioAssetLibrary;
+use App\Support\ReportStudioCssEscaper;
 use App\Support\ReportStudioDefaultTemplates;
 use App\Support\ReportStudioPdfBuilder;
 use App\Support\ReportStudioPdfRenderer;
@@ -93,10 +94,15 @@ class ReportStudioWorkflowTest extends TestCase
         $this->assertContains('{analysis_chart_values}', $analysisVariables);
         $this->assertContains('{executive_chart_values}', $executiveVariables);
         $this->assertContains('{banking_details}', $proposalVariables);
+        $this->assertContains('{bank_account_name}', $proposalVariables);
+        $this->assertContains('{bank_account_number}', $proposalVariables);
+        $this->assertContains('{bank_swift}', $proposalVariables);
         $this->assertContains('{proposal_content}', $proposalVariables);
         $this->assertContains('{products_table}', $exportVariables);
         $this->assertContains('{items_table}', $importVariables);
         $this->assertContains('{due_date}', $invoiceVariables);
+        $this->assertContains('{bank_iban}', $invoiceVariables);
+        $this->assertContains('{bank_details}', $invoiceVariables);
     }
 
     public function test_system_presets_include_production_canvas_blocks(): void
@@ -538,6 +544,15 @@ CSS,
     public function test_commercial_canvas_blocks_resolve_banking_details_in_generated_payloads(): void
     {
         $quote = Quote::query()->firstOrFail();
+        $settings = app(GeneralSettings::class);
+        $original = [
+            'app_bank_name' => $settings->app_bank_name,
+            'app_bank_account_name' => $settings->app_bank_account_name,
+            'app_bank_account_number' => $settings->app_bank_account_number,
+            'app_bank_iban' => $settings->app_bank_iban,
+            'app_bank_swift' => $settings->app_bank_swift,
+            'app_bank_details' => $settings->app_bank_details,
+        ];
         $studio = new ReportStudioTemplate([
             'name' => 'Commercial Banking Canvas',
             'studio_type' => 'quote',
@@ -558,23 +573,51 @@ CSS,
                         'min_height' => 120,
                         'z_index' => 10,
                         'padding' => 12,
-                        'content_html' => '<div class="banking-marker">{banking_details}</div>',
+                        'content_html' => '<div class="banking-marker">{banking_details}<p>{{bank_name}}</p><p>{bank_account_name}</p><p>{bank_account_number}</p><p>{bank_iban}</p><p>{bank_swift}</p><p>{bank_details}</p></div>',
                     ],
                 ],
             ],
             'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
         ]);
 
-        $payload = app(ReportStudioPdfBuilder::class)->buildQuotePayload(
-            $quote,
-            app(GeneralSettings::class),
-            $studio
-        );
-        $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
+        try {
+            $settings->fill([
+                'app_bank_name' => 'Banco Comercial de Teste',
+                'app_bank_account_name' => 'Laboratório Comercial de Teste',
+                'app_bank_account_number' => '0099887766',
+                'app_bank_iban' => 'AO06000000000000998877660',
+                'app_bank_swift' => 'TESTAOLU',
+                'app_bank_details' => 'Transferência com referência da proforma.',
+            ]);
+            $settings->save();
 
-        $this->assertStringContainsString('banking-marker', $bodyHtml);
-        $this->assertStringContainsString('Dados bancários', $bodyHtml);
-        $this->assertStringNotContainsString('{banking_details}', $bodyHtml);
+            $payload = app(ReportStudioPdfBuilder::class)->buildQuotePayload(
+                $quote,
+                $settings,
+                $studio
+            );
+            $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
+
+            $this->assertStringContainsString('banking-marker', $bodyHtml);
+            $this->assertStringContainsString('Banco:', $bodyHtml);
+            $this->assertStringContainsString('Banco Comercial de Teste', $bodyHtml);
+            $this->assertStringContainsString('Laboratório Comercial de Teste', $bodyHtml);
+            $this->assertStringContainsString('0099887766', $bodyHtml);
+            $this->assertStringContainsString('AO06000000000000998877660', $bodyHtml);
+            $this->assertStringContainsString('TESTAOLU', $bodyHtml);
+            $this->assertStringContainsString('Transferência com referência da proforma.', $bodyHtml);
+            $this->assertStringNotContainsString('{banking_details}', $bodyHtml);
+            $this->assertStringNotContainsString('{{bank_name}}', $bodyHtml);
+            $this->assertStringNotContainsString('{bank_account_name}', $bodyHtml);
+            $this->assertStringNotContainsString('{bank_account_number}', $bodyHtml);
+            $this->assertStringNotContainsString('{bank_iban}', $bodyHtml);
+            $this->assertStringNotContainsString('{bank_swift}', $bodyHtml);
+            $this->assertStringNotContainsString('{bank_details}', $bodyHtml);
+        } finally {
+            $settings = app(GeneralSettings::class);
+            $settings->fill($original);
+            $settings->save();
+        }
     }
 
     public function test_commercial_fallback_payload_uses_premium_document_table_system(): void
@@ -695,6 +738,83 @@ CSS,
 
         $this->assertStringContainsString('background-image: url("https://cdn.example.test/storage/media/fundo.svg")', $html);
         $this->assertStringContainsString('background-repeat: repeat-y', $html);
+    }
+
+    public function test_studio_document_shells_escape_background_urls_for_css_contexts(): void
+    {
+        $syntaxBreakingUrl = 'https://cdn.example.test/background.svg"); color:red; /*';
+        $escapedUrl = ReportStudioCssEscaper::quotedString($syntaxBreakingUrl);
+
+        $mpdfHtml = view('PDFs.studios.document', [
+            'documentTitle' => 'Preview',
+            'firstPageHeader' => '<div>Header</div>',
+            'defaultHeader' => '<div>Header</div>',
+            'footerHtml' => '<div>Footer</div>',
+            'bodyHtml' => '<p>Body</p>',
+            'styles' => '',
+            'resolvedBackgroundImage' => $syntaxBreakingUrl,
+            'backgroundSize' => 'cover',
+            'backgroundPosition' => 'center center',
+            'backgroundRepeat' => 'no-repeat',
+            'margins' => [
+                'top' => 20,
+                'right' => 14,
+                'bottom' => 20,
+                'left' => 14,
+                'first_top' => 42,
+            ],
+        ])->render();
+        $chromeHtml = view('PDFs.studios.chrome-document', [
+            'documentTitle' => 'Chrome Preview',
+            'firstPageHeader' => '',
+            'bodyHtml' => '<section>Conteúdo</section>',
+            'styles' => '',
+            'fontFamily' => 'Century Gothic, DejaVu Sans, sans-serif',
+            'resolvedBackgroundImage' => $syntaxBreakingUrl,
+            'backgroundSize' => 'cover',
+            'backgroundPosition' => 'center center',
+            'backgroundRepeat' => 'no-repeat',
+            'margins' => [
+                'top' => 18,
+                'right' => 12,
+                'bottom' => 20,
+                'left' => 16,
+                'first_top' => 54,
+            ],
+        ])->render();
+
+        foreach ([$mpdfHtml, $chromeHtml] as $html) {
+            $this->assertStringContainsString('background-image: url("'.$escapedUrl.'")', $html);
+            $this->assertStringNotContainsString('background-image: url("'.$syntaxBreakingUrl.'")', $html);
+        }
+    }
+
+    public function test_mpdf_studio_document_drops_unsafe_direct_background_schemes(): void
+    {
+        foreach (['javascript:alert(1)', 'data:text/html;base64,PHNjcmlwdD4='] as $backgroundImage) {
+            $html = view('PDFs.studios.document', [
+                'documentTitle' => 'Preview',
+                'firstPageHeader' => '<div>Header</div>',
+                'defaultHeader' => '<div>Header</div>',
+                'footerHtml' => '<div>Footer</div>',
+                'bodyHtml' => '<p>Body</p>',
+                'styles' => '',
+                'backgroundImage' => $backgroundImage,
+                'backgroundSize' => 'cover',
+                'backgroundPosition' => 'center center',
+                'backgroundRepeat' => 'no-repeat',
+                'margins' => [
+                    'top' => 20,
+                    'right' => 14,
+                    'bottom' => 20,
+                    'left' => 14,
+                    'first_top' => 42,
+                ],
+            ])->render();
+
+            $this->assertStringNotContainsString($backgroundImage, $html);
+            $this->assertStringNotContainsString('background-image: url(', $html);
+        }
     }
 
     public function test_mpdf_driver_data_normalizes_local_html_and_css_asset_references(): void
@@ -1023,6 +1143,50 @@ CSS,
         } finally {
             Config::set('app.url', $originalAppUrl);
         }
+    }
+
+    public function test_pdf_renderer_rejects_unsafe_asset_schemes_during_driver_normalization(): void
+    {
+        $driverMethod = new ReflectionMethod(ReportStudioPdfRenderer::class, 'dataForDriver');
+        $driverMethod->setAccessible(true);
+        $mpdfMethod = new ReflectionMethod(ReportStudioPdfRenderer::class, 'dataForMpdf');
+        $mpdfMethod->setAccessible(true);
+
+        $payload = [
+            'view' => 'PDFs.studios.document',
+            'data' => [
+                'firstPageHeader' => '<a href="mailto:qualidade@example.test">Contacto</a><img src="javascript:alert(1)" alt="x">',
+                'defaultHeader' => '<img src="data:text/html;base64,PHNjcmlwdD4=" alt="x">',
+                'footerHtml' => '<span style="background-image:url(vbscript:msgbox(1))">Rodapé</span>',
+                'bodyHtml' => '<img src="data:image/png;base64,aGVsbG8=" alt="ok">',
+                'styles' => '.unsafe{background-image:url("javascript:alert(2)");}.safe{background-image:url("https://cdn.example.test/pattern.svg");}',
+                'backgroundImage' => 'javascript:alert(3)',
+            ],
+        ];
+
+        $chromeData = $driverMethod->invoke(app(ReportStudioPdfRenderer::class), $payload, 'chrome');
+        $mpdfData = $mpdfMethod->invoke(app(ReportStudioPdfRenderer::class), $payload);
+
+        foreach ([$chromeData, $mpdfData] as $data) {
+            $serialized = implode("\n", [
+                (string) $data['firstPageHeader'],
+                (string) $data['defaultHeader'],
+                (string) $data['footerHtml'],
+                (string) $data['bodyHtml'],
+                (string) $data['styles'],
+                (string) ($data['resolvedBackgroundImage'] ?? ''),
+            ]);
+
+            $this->assertStringContainsString('href="mailto:qualidade@example.test"', (string) $data['firstPageHeader']);
+            $this->assertStringContainsString('src="data:image/png;base64,aGVsbG8="', (string) $data['bodyHtml']);
+            $this->assertStringContainsString('url("https://cdn.example.test/pattern.svg")', (string) $data['styles']);
+            $this->assertStringNotContainsString('javascript:', $serialized);
+            $this->assertStringNotContainsString('vbscript:', $serialized);
+            $this->assertStringNotContainsString('data:text/html', $serialized);
+        }
+
+        $this->assertSame('', $chromeData['resolvedBackgroundImage']);
+        $this->assertSame('', $mpdfData['resolvedBackgroundImage']);
     }
 
     public function test_chrome_header_footer_templates_follow_configured_pdf_margins(): void
@@ -1444,6 +1608,42 @@ CSS,
             'layout_schema.canvas_blocks.0.overlay_color',
             'layout_schema.canvas_blocks.0.text_color',
             'layout_schema.canvas_blocks.0.border_color',
+        ]);
+    }
+
+    public function test_report_studio_rejects_unsafe_canvas_media_references(): void
+    {
+        $response = $this->actingAs($this->verifiedAdmin())
+            ->post(route('report-studios.store'), [
+                'name' => 'Unsafe Canvas Media Template',
+                'studio_type' => 'executive',
+                'renderer' => 'internal',
+                'status' => 'draft',
+                'is_default' => false,
+                'layout_schema' => [
+                    'body_html' => '<h1>Resumo executivo</h1>',
+                    'background_image_path' => 'javascript:alert(1)',
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'unsafe-media-layer',
+                            'surface' => 'content',
+                            'block_kind' => 'image',
+                            'image_url' => '/storage/media/logo.png" onerror="alert(1)',
+                            'background_image' => 'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==',
+                            'signature_image' => 'ftp://example.test/signature.png',
+                            'chart_image_url' => '/private/tmp/chart.png',
+                        ],
+                    ],
+                ],
+                'export_settings' => ['paper_size' => 'A4'],
+            ]);
+
+        $response->assertSessionHasErrors([
+            'layout_schema.background_image_path',
+            'layout_schema.canvas_blocks.0.image_url',
+            'layout_schema.canvas_blocks.0.background_image',
+            'layout_schema.canvas_blocks.0.signature_image',
+            'layout_schema.canvas_blocks.0.chart_image_url',
         ]);
     }
 
@@ -1922,6 +2122,98 @@ CSS,
         $this->assertStringNotContainsString('url(javascript:alert(1))', $bodyHtml);
         $this->assertStringNotContainsString('37%; transform:rotate(45deg)', $bodyHtml);
         $this->assertStringNotContainsString('object-fit:stretch', $bodyHtml);
+    }
+
+    public function test_pdf_builder_escapes_canvas_media_urls_in_html_and_css_contexts(): void
+    {
+        $template = new ReportStudioTemplate([
+            'name' => 'Escaped Canvas Media',
+            'studio_type' => 'executive',
+            'renderer' => 'internal',
+            'status' => 'active',
+            'layout_schema' => [
+                'body_html' => '<h1>Resumo executivo</h1>',
+                'canvas_blocks' => [
+                    [
+                        'id' => 'escaped-background',
+                        'surface' => 'content',
+                        'block_kind' => 'rich_text',
+                        'content_html' => '<p>Conteúdo controlado</p>',
+                        'background_image' => '/storage/media/fundo.svg" ); color:red; /*',
+                        'x' => 4,
+                        'y' => 8,
+                        'width' => 80,
+                        'min_height' => 120,
+                    ],
+                    [
+                        'id' => 'escaped-image',
+                        'surface' => 'content',
+                        'block_kind' => 'image',
+                        'image_url' => '/storage/media/selo.png" onerror="alert(1)',
+                        'image_alt' => 'Selo "aprovado"',
+                        'x' => 8,
+                        'y' => 20,
+                        'width' => 30,
+                        'min_height' => 80,
+                    ],
+                    [
+                        'id' => 'escaped-signature',
+                        'surface' => 'content',
+                        'block_kind' => 'signature',
+                        'signature_image' => '/storage/signatures/director.png" onerror="alert(2)',
+                        'signature_label' => '<strong>Direcção técnica</strong>',
+                        'signature_name' => 'Ana <script>alert(4)</script>',
+                        'signature_title' => 'Responsável "técnica"',
+                        'signature_show_date' => true,
+                        'signature_date_label' => 'Data <em>assinada</em>',
+                        'x' => 48,
+                        'y' => 20,
+                        'width' => 30,
+                        'min_height' => 100,
+                    ],
+                    [
+                        'id' => 'escaped-chart',
+                        'surface' => 'content',
+                        'block_kind' => 'chart_snapshot',
+                        'chart_title' => 'Tendência "mensal"',
+                        'chart_image_url' => 'https://cdn.example.test/chart.png" onerror="alert(3)',
+                        'x' => 8,
+                        'y' => 40,
+                        'width' => 40,
+                        'min_height' => 140,
+                    ],
+                ],
+            ],
+            'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
+        ]);
+
+        $payload = app(ReportStudioPdfBuilder::class)->buildExecutiveReportPayload([
+            'kpis' => [],
+            'top_customers' => [],
+        ], app(GeneralSettings::class), $template);
+        $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
+
+        $escapedBackgroundPath = str_replace(
+            ['\\', '"'],
+            ['\\\\', '\\"'],
+            public_path('storage/media/fundo.svg" ); color:red; /*')
+        );
+
+        $this->assertStringContainsString('background-image: url("'.$escapedBackgroundPath.'")', $bodyHtml);
+        $this->assertStringContainsString('src="'.e(public_path('storage/media/selo.png" onerror="alert(1)')).'"', $bodyHtml);
+        $this->assertStringContainsString('alt="Selo &quot;aprovado&quot;"', $bodyHtml);
+        $this->assertStringContainsString('src="'.e(public_path('storage/signatures/director.png" onerror="alert(2)')).'"', $bodyHtml);
+        $this->assertStringContainsString('&lt;strong&gt;Direcção técnica&lt;/strong&gt;', $bodyHtml);
+        $this->assertStringContainsString('Ana &lt;script&gt;alert(4)&lt;/script&gt;', $bodyHtml);
+        $this->assertStringContainsString('Responsável &quot;técnica&quot;', $bodyHtml);
+        $this->assertStringContainsString('Data &lt;em&gt;assinada&lt;/em&gt;', $bodyHtml);
+        $this->assertStringContainsString('src="'.e(public_path('https://cdn.example.test/chart.png" onerror="alert(3)')).'"', $bodyHtml);
+        $this->assertStringContainsString('alt="Tendência &quot;mensal&quot;"', $bodyHtml);
+        $this->assertStringNotContainsString('" onerror="alert(1)', $bodyHtml);
+        $this->assertStringNotContainsString('" onerror="alert(2)', $bodyHtml);
+        $this->assertStringNotContainsString('" onerror="alert(3)', $bodyHtml);
+        $this->assertStringNotContainsString('<script>alert(4)</script>', $bodyHtml);
+        $this->assertStringNotContainsString('background-image: url("'.public_path('storage/media/fundo.svg').'" ); color:red;', $bodyHtml);
     }
 
     public function test_pdf_builder_resolves_same_host_public_media_urls_to_local_paths(): void
@@ -2448,6 +2740,8 @@ CSS,
             'app_bank_account_name' => $settings->app_bank_account_name,
             'app_bank_account_number' => $settings->app_bank_account_number,
             'app_bank_iban' => $settings->app_bank_iban,
+            'app_bank_swift' => $settings->app_bank_swift,
+            'app_bank_details' => $settings->app_bank_details,
             'app_document_keywords' => $settings->app_document_keywords,
         ];
 
@@ -2459,6 +2753,8 @@ CSS,
                 'app_bank_account_name' => 'Laboratório Report Studio',
                 'app_bank_account_number' => '0011223344',
                 'app_bank_iban' => 'AO06000000000000112233440',
+                'app_bank_swift' => 'RPTSAOLU',
+                'app_bank_details' => 'Pagamento por transferência com referência da proposta.',
                 'app_document_keywords' => 'proposta, report studio, ISO 17025',
             ]);
             $settings->save();
@@ -2475,7 +2771,7 @@ CSS,
                     'first_page_header_html' => '<div>Proposta {{document_code}} · {{lab_name}}</div>',
                     'default_header_html' => '<div>{{document_code}} · {{customer_name}}</div>',
                     'footer_html' => '<div>Página {PAGENO}/{nbpg}</div>',
-                    'body_html' => '<h1>Proposta Técnica</h1><section>{items_table}</section><section>{summary_table}</section><section>{banking_details}</section><p>{{bank_iban}}</p><section>{document_keywords}</section><div>{signature_block}</div>',
+                    'body_html' => '<h1>Proposta Técnica</h1><section>{items_table}</section><section>{summary_table}</section><section>{banking_details}</section><p>{{bank_iban}}</p><p>{bank_account_name}</p><p>{bank_account_number}</p><p>{bank_swift}</p><p>{bank_details}</p><section>{document_keywords}</section><div>{signature_block}</div>',
                     'styles_css' => 'body{color:#0f172a;} h1{font-size:18px;}',
                 ],
                 'export_settings' => [
@@ -2496,10 +2792,18 @@ CSS,
 
             $this->assertStringContainsString('Banco Report Studio', $bodyHtml);
             $this->assertStringContainsString('AO06000000000000112233440', $bodyHtml);
+            $this->assertStringContainsString('Laboratório Report Studio', $bodyHtml);
+            $this->assertStringContainsString('0011223344', $bodyHtml);
+            $this->assertStringContainsString('RPTSAOLU', $bodyHtml);
+            $this->assertStringContainsString('Pagamento por transferência com referência da proposta.', $bodyHtml);
             $this->assertStringContainsString('report studio', $bodyHtml);
             $this->assertStringContainsString('Direcção Técnica Report Studio', $bodyHtml);
             $this->assertStringNotContainsString('{banking_details}', $bodyHtml);
             $this->assertStringNotContainsString('{{bank_iban}}', $bodyHtml);
+            $this->assertStringNotContainsString('{bank_account_name}', $bodyHtml);
+            $this->assertStringNotContainsString('{bank_account_number}', $bodyHtml);
+            $this->assertStringNotContainsString('{bank_swift}', $bodyHtml);
+            $this->assertStringNotContainsString('{bank_details}', $bodyHtml);
             $this->assertStringNotContainsString('{signature_block}', $bodyHtml);
 
             $response = $this->actingAs($user)->get(route('report-studios.preview-pdf', $template));

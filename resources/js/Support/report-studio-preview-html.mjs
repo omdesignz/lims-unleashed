@@ -58,6 +58,14 @@ const financialSummary = (rows) => {
 }
 
 const bankingDetails = '<div style="line-height:1.7;">Banco: Banco principal do laboratório<br />Titular: Laboratório Central<br />IBAN: AO06 0000 0000 0000 0000 0000 0</div>'
+const bankPlaceholders = {
+  '{bank_name}': 'Banco principal do laboratório',
+  '{bank_account_name}': 'Laboratório Central',
+  '{bank_account_number}': '0011223344',
+  '{bank_iban}': 'AO06 0000 0000 0000 0000 0000 0',
+  '{bank_swift}': 'BFAAAOLU',
+  '{bank_details}': 'Pagamento por transferência bancária com referência do documento.',
+}
 
 const signatureBlock = (leftTitle = 'Direcção técnica', rightTitle = 'Representante autorizado') => `<section style="margin-top:24px;"><table class="document-summary-table studio-avoid-break"><tr><td class="document-summary-cell" style="width:48%; padding-top:26px;"><strong>${leftTitle}</strong><br><span class="muted">Validação técnica e documental</span></td><td style="width:4%;"></td><td class="document-summary-cell" style="width:48%; padding-top:26px;"><strong>${rightTitle}</strong><br><span class="muted">Assinatura, data e evidência de aceite</span></td></tr></table></section>`
 
@@ -231,6 +239,7 @@ export const previewReplacementsByType = {
     '{items_table}': commercialItemsTable,
     '{summary_table}': commercialSummaryTable,
     '{banking_details}': bankingDetails,
+    ...bankPlaceholders,
     '{observations}': 'Proforma preparada com composição editorial, resumo financeiro e paginação controlada.',
     '{signature_block}': signatureBlock('Direcção Comercial', 'Cliente'),
   },
@@ -248,6 +257,7 @@ export const previewReplacementsByType = {
       { label: 'Total', value: 'AOA 59.850,00', emphasis: true },
     ]),
     '{banking_details}': bankingDetails,
+    ...bankPlaceholders,
     '{observations}': 'Factura preparada com composição fiscal, resumo financeiro e paginação controlada.',
     '{signature_block}': signatureBlock('Direcção Financeira', 'Cliente'),
   },
@@ -267,6 +277,7 @@ export const previewReplacementsByType = {
     ),
     '{summary_table}': financialSummary([{ label: 'Total recebido', value: 'AOA 59.850,00', emphasis: true }]),
     '{banking_details}': bankingDetails,
+    ...bankPlaceholders,
     '{observations}': 'Recibo preparado com rastreabilidade de recebimento e validação financeira.',
     '{signature_block}': signatureBlock('Tesouraria', 'Cliente'),
   },
@@ -286,6 +297,7 @@ export const previewReplacementsByType = {
     ),
     '{summary_table}': financialSummary([{ label: 'Total da nota', value: 'AOA 7.500,00', emphasis: true }]),
     '{banking_details}': bankingDetails,
+    ...bankPlaceholders,
     '{observations}': 'Nota de crédito preparada com motivo, impacto financeiro e validação.',
     '{signature_block}': signatureBlock('Direcção Financeira', 'Cliente'),
   },
@@ -312,6 +324,7 @@ export const previewReplacementsByType = {
       { label: 'Total', value: 'AOA 25.000,00', emphasis: true },
     ]),
     '{banking_details}': bankingDetails,
+    ...bankPlaceholders,
     '{decision_rule}': 'Regra de decisão definida na proposta e aceite pelo cliente.',
     '{observations}': 'Proposta preparada com âmbito, condições comerciais, dados bancários e aceite.',
     '{document_keywords}': '<div style="font-size:9px; color:#6b7b74;"><strong style="color:#143d37;">Palavras-chave / Keywords:</strong> proposta, laboratório, ISO 17025</div>',
