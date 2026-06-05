@@ -26,7 +26,7 @@ class ReportStudioPdfBuilder
 {
     private const PAGE_BREAK_PATTERN = '/<pagebreak\b[^>]*\/?>/i';
 
-    private const DEFAULT_CHART_PALETTE = ['#143d37', '#d9b05f', '#0f766e', '#475569', '#7c2d12', '#2563eb'];
+    private const DEFAULT_CHART_PALETTE = ['#143d37', '#d9b05f', '#0f766e', '#475569', '#7c2d12', '#3f6f58'];
 
     public function buildAnalysisReportPayload(
         QualityCertificate $certificate,
@@ -264,6 +264,8 @@ class ReportStudioPdfBuilder
      */
     private function executivePlaceholderValues(array $payload): array
     {
+        $chart = $this->executiveCanvasChartData($payload);
+
         return [
             '{executive_summary}' => e((string) data_get($payload, 'executive_summary', 'Resumo consolidado de desempenho, risco e capacidade operacional.')),
             '{executive_kpis}' => View::make('PDFs.studios.partials.executive-kpis', [
@@ -275,6 +277,38 @@ class ReportStudioPdfBuilder
             '{top_customers_table}' => View::make('PDFs.studios.partials.executive-customers', [
                 'payload' => $payload,
             ])->render(),
+            '{executive_chart_title}' => $chart['title'],
+            '{executive_chart_labels}' => implode(', ', $chart['labels']),
+            '{executive_chart_values}' => implode(', ', $chart['values']),
+            '{executive_chart_caption}' => $chart['caption'],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array{title: string, labels: array<int, string>, values: array<int, string>, caption: string}
+     */
+    private function executiveCanvasChartData(array $payload): array
+    {
+        $chart = data_get($payload, 'charts.throughput', []);
+        $labels = collect(data_get($chart, 'labels', ['Recepção', 'Preparação', 'Ensaio', 'Verificação', 'Emissão']))
+            ->map(fn (mixed $label): string => trim((string) $label))
+            ->filter()
+            ->take(12)
+            ->values()
+            ->all();
+        $values = collect(data_get($chart, 'series', [24, 21, 18, 16, 12]))
+            ->filter(fn (mixed $value): bool => is_numeric($value))
+            ->map(fn (mixed $value): string => $this->formatChartValue((float) $value))
+            ->take(12)
+            ->values()
+            ->all();
+
+        return [
+            'title' => trim((string) data_get($chart, 'title', 'Capacidade técnica por etapa')) ?: 'Capacidade técnica por etapa',
+            'labels' => $labels !== [] ? $labels : ['Recepção', 'Preparação', 'Ensaio', 'Verificação', 'Emissão'],
+            'values' => $values !== [] ? $values : ['24', '21', '18', '16', '12'],
+            'caption' => trim((string) data_get($chart, 'caption', 'Dados provenientes da série executiva do período seleccionado.')) ?: 'Dados provenientes da série executiva do período seleccionado.',
         ];
     }
 
@@ -322,6 +356,8 @@ class ReportStudioPdfBuilder
                 'proposal' => $proposal,
                 'parsedContent' => $parsedContent,
                 'settings' => $settings,
+                'proposalAuthenticity' => $proposalPlaceholderValues['{proposal_authenticity}'] ?? '',
+                'proposalAcceptanceEvidence' => $proposalPlaceholderValues['{proposal_acceptance_evidence}'] ?? '',
             ])->render();
 
         return [
@@ -472,7 +508,7 @@ class ReportStudioPdfBuilder
             'Direcção Comercial',
             'Pré-visualização do estúdio de proposta com paginação, composição editorial e assinatura.'
         );
-        $previewValues['{proposal_content}'] = '<section class="document-callout studio-avoid-break"><strong>Cláusulas técnicas e comerciais</strong><br>Escopo, métodos, decisão, prazos e aceite preparados para validação do cliente.</section>';
+        $previewValues['{proposal_content}'] = '<section class="document-callout studio-avoid-break"><strong>Cláusulas técnicas e comerciais</strong><br>Âmbito, métodos, decisão, prazos e aceite preparados para validação do cliente.</section>';
         $previewValues['{parsed_content}'] = $previewValues['{proposal_content}'];
         $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($previewValues));
         $bodyHtml = strtr(data_get($layout, 'body_html') ?: $this->defaultProposalPreviewBodyHtml(), $this->placeholderReplacements($previewValues));
@@ -607,9 +643,9 @@ class ReportStudioPdfBuilder
         $headerContext = [
             'lab_name' => $settings->app_client_lab_name ?: $settings->app_name ?: 'Laboratório',
             'document_code' => 'EXP-2026-0041',
-            'customer_name' => 'Exportadora Exemplo, Lda.',
+            'customer_name' => 'Exportador alimentar certificado, Lda.',
             'issue_date' => now()->format('d/m/Y'),
-            'exporter_name' => 'Exportadora Exemplo, Lda.',
+            'exporter_name' => 'Exportador alimentar certificado, Lda.',
             'origin_country' => 'Angola',
             'destination_country' => 'Namíbia',
         ];
@@ -618,7 +654,7 @@ class ReportStudioPdfBuilder
             data_get($layout, 'body_html') ?: $this->defaultExportCertificateBodyHtml(),
             [
                 '{certificate_number}' => 'EXP-2026-0041',
-                '{exporter_name}' => 'Exportadora Exemplo, Lda.',
+                '{exporter_name}' => 'Exportador alimentar certificado, Lda.',
                 '{origin_country}' => 'Angola',
                 '{destination_country}' => 'Namíbia',
                 '{origin_city}' => 'Luanda',
@@ -627,11 +663,20 @@ class ReportStudioPdfBuilder
                 '{authorized_personnel}' => 'Direcção Técnica',
                 '{expedition_date}' => now()->format('d/m/Y'),
                 '{expedition_location}' => 'Porto de Luanda',
-                '{products_table}' => '<table style="width:100%; border-collapse:collapse;"><thead><tr><th style="border:1px solid #cbd5e1; padding:6px;">Produto</th><th style="border:1px solid #cbd5e1; padding:6px;">Quantidade</th></tr></thead><tbody><tr><td style="border:1px solid #cbd5e1; padding:6px;">Milho</td><td style="border:1px solid #cbd5e1; padding:6px;">250 sacos</td></tr><tr><td style="border:1px solid #cbd5e1; padding:6px;">Farinha</td><td style="border:1px solid #cbd5e1; padding:6px;">120 caixas</td></tr></tbody></table>',
+                '{products_table}' => $this->reportTableHtml(
+                    [
+                        ['label' => 'Produto', 'translation' => 'Product'],
+                        ['label' => 'Quantidade', 'translation' => 'Quantity', 'align' => 'right'],
+                    ],
+                    [
+                        ['Milho', '250 sacos'],
+                        ['Farinha', '120 caixas'],
+                    ]
+                ),
                 '{remarks}' => 'Pré-visualização do certificado de exportação com composição editorial, dados logísticos e assinatura.',
                 '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>Direcção Técnica</strong><br />Validação do certificado de exportação</div>',
                 '{lab_details}' => $this->labDetailsHtml($settings),
-                '{customer_details}' => $this->customerDetailsHtml(null, 'Exportadora Exemplo, Lda.'),
+                '{customer_details}' => $this->customerDetailsHtml(null, 'Exportador alimentar certificado, Lda.'),
                 '{document_keywords}' => $this->documentKeywordsHtml($settings, 'certificado, exportação, rastreabilidade, controlo documental'),
             ]
         );
@@ -766,9 +811,9 @@ class ReportStudioPdfBuilder
         $headerContext = [
             'lab_name' => $settings->app_client_lab_name ?: $settings->app_name ?: 'Laboratório',
             'document_code' => 'IMP-2026-0038',
-            'customer_name' => 'Importadora Exemplo, Lda.',
+            'customer_name' => 'Importador alimentar certificado, Lda.',
             'issue_date' => now()->format('d/m/Y'),
-            'importer_name' => 'Importadora Exemplo, Lda.',
+            'importer_name' => 'Importador alimentar certificado, Lda.',
             'exporter_name' => 'Fornecedor Internacional GmbH',
             'destination_country' => 'Angola',
         ];
@@ -777,7 +822,7 @@ class ReportStudioPdfBuilder
             data_get($layout, 'body_html') ?: $this->defaultImportCertificateBodyHtml(),
             [
                 '{certificate_number}' => 'IMP-2026-0038',
-                '{importer_name}' => 'Importadora Exemplo, Lda.',
+                '{importer_name}' => 'Importador alimentar certificado, Lda.',
                 '{exporter_name}' => 'Fornecedor Internacional GmbH',
                 '{destination_country}' => 'Angola',
                 '{port_entry}' => 'Porto de Luanda',
@@ -785,11 +830,22 @@ class ReportStudioPdfBuilder
                 '{transport_type}' => 'Marítimo',
                 '{authorized_personnel}' => 'Direcção Técnica',
                 '{issue_date}' => now()->format('d/m/Y'),
-                '{items_table}' => '<table style="width:100%; border-collapse:collapse;"><thead><tr><th style="border:1px solid #cbd5e1; padding:6px;">Produto</th><th style="border:1px solid #cbd5e1; padding:6px;">Lote</th><th style="border:1px solid #cbd5e1; padding:6px;">Validade</th><th style="border:1px solid #cbd5e1; padding:6px;">Quantidade</th></tr></thead><tbody><tr><td style="border:1px solid #cbd5e1; padding:6px;">Aditivo alimentar</td><td style="border:1px solid #cbd5e1; padding:6px;">LT-8841</td><td style="border:1px solid #cbd5e1; padding:6px;">12/2027</td><td style="border:1px solid #cbd5e1; padding:6px;">48 caixas</td></tr><tr><td style="border:1px solid #cbd5e1; padding:6px;">Reagente técnico</td><td style="border:1px solid #cbd5e1; padding:6px;">RG-2017</td><td style="border:1px solid #cbd5e1; padding:6px;">08/2028</td><td style="border:1px solid #cbd5e1; padding:6px;">20 bidões</td></tr></tbody></table>',
+                '{items_table}' => $this->reportTableHtml(
+                    [
+                        ['label' => 'Produto', 'translation' => 'Product'],
+                        ['label' => 'Lote', 'translation' => 'Lot'],
+                        ['label' => 'Validade', 'translation' => 'Validity'],
+                        ['label' => 'Quantidade', 'translation' => 'Quantity', 'align' => 'right'],
+                    ],
+                    [
+                        ['Aditivo alimentar', 'LT-8841', '12/2027', '48 caixas'],
+                        ['Reagente técnico', 'RG-2017', '08/2028', '20 bidões'],
+                    ]
+                ),
                 '{remarks}' => 'Pré-visualização do certificado de importação com composição logística, lotes, validade e assinatura técnica.',
                 '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>Direcção Técnica</strong><br />Validação do certificado de importação</div>',
                 '{lab_details}' => $this->labDetailsHtml($settings),
-                '{customer_details}' => $this->customerDetailsHtml(null, 'Importadora Exemplo, Lda.'),
+                '{customer_details}' => $this->customerDetailsHtml(null, 'Importador alimentar certificado, Lda.'),
                 '{document_keywords}' => $this->documentKeywordsHtml($settings, 'certificado, importação, rastreabilidade, controlo documental'),
             ]
         );
@@ -923,7 +979,7 @@ class ReportStudioPdfBuilder
         $headerContext = [
             'lab_name' => $settings->app_client_lab_name ?: $settings->app_name ?: 'Laboratório',
             'document_code' => 'PP 05/2026/0048',
-            'customer_name' => 'Cliente Exemplo, Lda.',
+            'customer_name' => 'Cliente industrial de referência, Lda.',
             'issue_date' => now()->format('d/m/Y'),
             'service_location' => 'Luanda · Unidade Industrial',
             'expiry_date' => now()->addDays(15)->format('d/m/Y'),
@@ -933,16 +989,30 @@ class ReportStudioPdfBuilder
             data_get($layout, 'body_html') ?: $this->defaultQuoteBodyHtml(),
             [
                 '{quote_number}' => 'PP 05/2026/0048',
-                '{customer_name}' => 'Cliente Exemplo, Lda.',
+                '{customer_name}' => 'Cliente industrial de referência, Lda.',
                 '{service_location}' => 'Luanda · Unidade Industrial',
                 '{issue_date}' => now()->format('d/m/Y'),
                 '{expiry_date}' => now()->addDays(15)->format('d/m/Y'),
-                '{items_table}' => '<table style="width:100%; border-collapse:collapse;"><thead><tr><th style="border:1px solid #cbd5e1; padding:6px;">Serviço</th><th style="border:1px solid #cbd5e1; padding:6px;">Qtd.</th><th style="border:1px solid #cbd5e1; padding:6px;">Valor</th></tr></thead><tbody><tr><td style="border:1px solid #cbd5e1; padding:6px;">Ensaios microbiológicos</td><td style="border:1px solid #cbd5e1; padding:6px;">1</td><td style="border:1px solid #cbd5e1; padding:6px;">AOA 52.500,00</td></tr><tr><td style="border:1px solid #cbd5e1; padding:6px;">Metais pesados</td><td style="border:1px solid #cbd5e1; padding:6px;">1</td><td style="border:1px solid #cbd5e1; padding:6px;">AOA 45.000,00</td></tr></tbody></table>',
-                '{summary_table}' => '<table style="width:100%; border-collapse:collapse;"><tr><td style="border:1px solid #cbd5e1; padding:6px;">Subtotal</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right;">AOA 97.500,00</td></tr><tr><td style="border:1px solid #cbd5e1; padding:6px;">IVA</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right;">AOA 13.650,00</td></tr><tr><td style="border:1px solid #cbd5e1; padding:6px; font-weight:700;">Total</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right; font-weight:700;">AOA 111.150,00</td></tr></table>',
+                '{items_table}' => $this->reportTableHtml(
+                    [
+                        ['label' => 'Serviço', 'translation' => 'Service'],
+                        ['label' => 'Qtd.', 'translation' => 'Qty.', 'align' => 'right'],
+                        ['label' => 'Valor', 'translation' => 'Amount', 'align' => 'right'],
+                    ],
+                    [
+                        ['Ensaios microbiológicos', '1', 'AOA 52.500,00'],
+                        ['Metais pesados', '1', 'AOA 45.000,00'],
+                    ]
+                ),
+                '{summary_table}' => $this->financialSummaryTableHtml([
+                    ['label' => 'Subtotal', 'value' => 'AOA 97.500,00'],
+                    ['label' => 'IVA', 'value' => 'AOA 13.650,00'],
+                    ['label' => 'Total', 'value' => 'AOA 111.150,00', 'emphasis' => true],
+                ]),
                 '{observations}' => 'Pré-visualização de proforma com composição comercial, paginação, resumo financeiro e assinatura.',
                 '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>Direcção Comercial</strong><br />Validação e emissão da proforma</div>',
                 '{lab_details}' => $this->labDetailsHtml($settings),
-                '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente Exemplo, Lda.'),
+                '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente industrial de referência, Lda.'),
                 '{banking_details}' => $this->bankingDetailsHtml($settings),
                 '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, proforma, proposta'),
             ]
@@ -1218,16 +1288,29 @@ class ReportStudioPdfBuilder
             $this->defaultInvoiceBodyHtml(),
             [
                 '{document_number}' => 'FT 05/2026/0091',
-                '{customer_name}' => 'Cliente Exemplo, Lda.',
+                '{customer_name}' => 'Cliente industrial de referência, Lda.',
                 '{issue_date}' => now()->format('d/m/Y'),
                 '{due_date}' => now()->addDays(30)->format('d/m/Y'),
                 '{service_location}' => 'Luanda · Unidade Industrial',
-                '{items_table}' => '<table style="width:100%; border-collapse:collapse;"><thead><tr><th style="border:1px solid #cbd5e1; padding:6px;">Item</th><th style="border:1px solid #cbd5e1; padding:6px;">Qtd.</th><th style="border:1px solid #cbd5e1; padding:6px;">Valor</th></tr></thead><tbody><tr><td style="border:1px solid #cbd5e1; padding:6px;">Ensaios microbiológicos</td><td style="border:1px solid #cbd5e1; padding:6px;">1</td><td style="border:1px solid #cbd5e1; padding:6px;">AOA 52.500,00</td></tr></tbody></table>',
-                '{summary_table}' => '<table style="width:100%; border-collapse:collapse;"><tr><td style="border:1px solid #cbd5e1; padding:6px;">Subtotal</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right;">AOA 52.500,00</td></tr><tr><td style="border:1px solid #cbd5e1; padding:6px;">IVA</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right;">AOA 7.350,00</td></tr><tr><td style="border:1px solid #cbd5e1; padding:6px; font-weight:700;">Total</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right; font-weight:700;">AOA 59.850,00</td></tr></table>',
+                '{items_table}' => $this->reportTableHtml(
+                    [
+                        ['label' => 'Item', 'translation' => 'Item'],
+                        ['label' => 'Qtd.', 'translation' => 'Qty.', 'align' => 'right'],
+                        ['label' => 'Valor', 'translation' => 'Amount', 'align' => 'right'],
+                    ],
+                    [
+                        ['Ensaios microbiológicos', '1', 'AOA 52.500,00'],
+                    ]
+                ),
+                '{summary_table}' => $this->financialSummaryTableHtml([
+                    ['label' => 'Subtotal', 'value' => 'AOA 52.500,00'],
+                    ['label' => 'IVA', 'value' => 'AOA 7.350,00'],
+                    ['label' => 'Total', 'value' => 'AOA 59.850,00', 'emphasis' => true],
+                ]),
                 '{observations}' => 'Pré-visualização de factura com narrativa comercial, resumo financeiro e paginação.',
                 '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>Direcção Financeira</strong><br />Emissão da factura</div>',
                 '{lab_details}' => $this->labDetailsHtml($settings),
-                '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente Exemplo, Lda.'),
+                '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente industrial de referência, Lda.'),
                 '{banking_details}' => $this->bankingDetailsHtml($settings),
                 '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, fiscal, factura'),
             ]
@@ -1245,16 +1328,26 @@ class ReportStudioPdfBuilder
             $this->defaultReceiptBodyHtml(),
             [
                 '{document_number}' => 'RG 05/2026/0042',
-                '{customer_name}' => 'Cliente Exemplo, Lda.',
+                '{customer_name}' => 'Cliente industrial de referência, Lda.',
                 '{issue_date}' => now()->format('d/m/Y'),
                 '{service_location}' => 'Luanda · Unidade Industrial',
                 '{payment_type}' => 'Transferência bancária',
-                '{items_table}' => '<table style="width:100%; border-collapse:collapse;"><thead><tr><th style="border:1px solid #cbd5e1; padding:6px;">Factura</th><th style="border:1px solid #cbd5e1; padding:6px;">Valor pago</th></tr></thead><tbody><tr><td style="border:1px solid #cbd5e1; padding:6px;">FT 05/2026/0091</td><td style="border:1px solid #cbd5e1; padding:6px;">AOA 59.850,00</td></tr></tbody></table>',
-                '{summary_table}' => '<table style="width:100%; border-collapse:collapse;"><tr><td style="border:1px solid #cbd5e1; padding:6px; font-weight:700;">Total recebido</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right; font-weight:700;">AOA 59.850,00</td></tr></table>',
+                '{items_table}' => $this->reportTableHtml(
+                    [
+                        ['label' => 'Factura', 'translation' => 'Invoice'],
+                        ['label' => 'Valor pago', 'translation' => 'Paid amount', 'align' => 'right'],
+                    ],
+                    [
+                        ['FT 05/2026/0091', 'AOA 59.850,00'],
+                    ]
+                ),
+                '{summary_table}' => $this->financialSummaryTableHtml([
+                    ['label' => 'Total recebido', 'value' => 'AOA 59.850,00', 'emphasis' => true],
+                ]),
                 '{observations}' => 'Pré-visualização de recibo com rastreio de liquidação e confirmação financeira.',
                 '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>Tesouraria</strong><br />Confirmação do recebimento</div>',
                 '{lab_details}' => $this->labDetailsHtml($settings),
-                '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente Exemplo, Lda.'),
+                '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente industrial de referência, Lda.'),
                 '{banking_details}' => $this->bankingDetailsHtml($settings),
                 '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, tesouraria, recibo'),
             ]
@@ -1272,16 +1365,26 @@ class ReportStudioPdfBuilder
             $this->defaultCreditNoteBodyHtml(),
             [
                 '{document_number}' => 'NC 05/2026/0017',
-                '{customer_name}' => 'Cliente Exemplo, Lda.',
+                '{customer_name}' => 'Cliente industrial de referência, Lda.',
                 '{issue_date}' => now()->format('d/m/Y'),
                 '{service_location}' => 'Luanda · Unidade Industrial',
                 '{reason_label}' => 'Rectificação comercial',
-                '{items_table}' => '<table style="width:100%; border-collapse:collapse;"><thead><tr><th style="border:1px solid #cbd5e1; padding:6px;">Item</th><th style="border:1px solid #cbd5e1; padding:6px;">Valor</th></tr></thead><tbody><tr><td style="border:1px solid #cbd5e1; padding:6px;">Rectificação de preço</td><td style="border:1px solid #cbd5e1; padding:6px;">AOA 7.500,00</td></tr></tbody></table>',
-                '{summary_table}' => '<table style="width:100%; border-collapse:collapse;"><tr><td style="border:1px solid #cbd5e1; padding:6px; font-weight:700;">Total da nota</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right; font-weight:700;">AOA 7.500,00</td></tr></table>',
+                '{items_table}' => $this->reportTableHtml(
+                    [
+                        ['label' => 'Item', 'translation' => 'Item'],
+                        ['label' => 'Valor', 'translation' => 'Amount', 'align' => 'right'],
+                    ],
+                    [
+                        ['Rectificação de preço', 'AOA 7.500,00'],
+                    ]
+                ),
+                '{summary_table}' => $this->financialSummaryTableHtml([
+                    ['label' => 'Total da nota', 'value' => 'AOA 7.500,00', 'emphasis' => true],
+                ]),
                 '{observations}' => 'Pré-visualização de nota de crédito com motivo, impacto financeiro e validação.',
                 '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>Direcção Financeira</strong><br />Emissão da nota de crédito</div>',
                 '{lab_details}' => $this->labDetailsHtml($settings),
-                '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente Exemplo, Lda.'),
+                '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente industrial de referência, Lda.'),
                 '{banking_details}' => $this->bankingDetailsHtml($settings),
                 '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, rectificação, nota de crédito'),
             ]
@@ -1322,6 +1425,15 @@ class ReportStudioPdfBuilder
         $labName = $settings->app_client_lab_name ?: $settings->app_name ?: 'Laboratório';
         $customerName = 'Cliente industrial, Lda.';
         $labSigner = $settings->app_client_lab_director ?: 'Direcção Técnica';
+        $verificationUrl = url('/vap-proposals/proposal/preview-prop-2026-001');
+        $qrBlock = $this->renderQrCodeBlock([
+            'qr_content' => $verificationUrl,
+            'qr_label' => 'Verificar proposta PROP-2026-001',
+            'qr_foreground_color' => '#143d37',
+            'qr_background_color' => '#fffdf7',
+            'qr_error_correction' => 'medium',
+            'qr_margin' => 8,
+        ], []);
 
         return [
             '{proposal_number}' => 'PROP-2026-001',
@@ -1349,14 +1461,32 @@ class ReportStudioPdfBuilder
             '{observations}' => $observations,
             '{total_items}' => '3',
             '{taxable_items}' => '3',
-            '{items_table}' => '<table style="width:100%; border-collapse:collapse; font-size:10px;"><thead><tr><th style="text-align:left; border-bottom:1px solid #cbd5e1; padding:6px;">Serviço</th><th style="text-align:left; border-bottom:1px solid #cbd5e1; padding:6px;">Norma</th><th style="text-align:right; border-bottom:1px solid #cbd5e1; padding:6px;">Valor</th></tr></thead><tbody><tr><td style="padding:6px; border-bottom:1px solid #e2e8f0;">Metais pesados</td><td style="padding:6px; border-bottom:1px solid #e2e8f0;">ISO 17294</td><td style="padding:6px; border-bottom:1px solid #e2e8f0; text-align:right;">AOA 45.000,00</td></tr><tr><td style="padding:6px; border-bottom:1px solid #e2e8f0;">Microbiologia</td><td style="padding:6px; border-bottom:1px solid #e2e8f0;">ISO 4833</td><td style="padding:6px; border-bottom:1px solid #e2e8f0; text-align:right;">AOA 52.500,00</td></tr><tr><td style="padding:6px;">Contra-análise</td><td style="padding:6px;">Fluxo dedicado</td><td style="padding:6px; text-align:right;">AOA 45.000,00</td></tr></tbody></table>',
+            '{items_table}' => $this->reportTableHtml(
+                [
+                    ['label' => 'Serviço', 'translation' => 'Service'],
+                    ['label' => 'Norma', 'translation' => 'Standard'],
+                    ['label' => 'Valor', 'translation' => 'Amount', 'align' => 'right'],
+                ],
+                [
+                    ['Metais pesados', 'ISO 17294', 'AOA 45.000,00'],
+                    ['Microbiologia', 'ISO 4833', 'AOA 52.500,00'],
+                    ['Contra-análise', 'Fluxo dedicado', 'AOA 45.000,00'],
+                ]
+            ),
             '{items_list}' => '<ul style="padding-left:18px; margin:0;"><li>Metais pesados</li><li>Microbiologia</li><li>Contra-análise</li></ul>',
-            '{summary_table}' => '<table style="width:100%; border-collapse:collapse; font-size:10px;"><tr><td style="padding:6px; border-bottom:1px solid #cbd5e1;">Subtotal</td><td style="padding:6px; border-bottom:1px solid #cbd5e1; text-align:right;">AOA 125.000,00</td></tr><tr><td style="padding:6px; border-bottom:1px solid #cbd5e1;">IVA</td><td style="padding:6px; border-bottom:1px solid #cbd5e1; text-align:right;">AOA 17.500,00</td></tr><tr><td style="padding:6px; font-weight:700;">Total</td><td style="padding:6px; text-align:right; font-weight:700;">AOA 142.500,00</td></tr></table>',
+            '{summary_table}' => $this->financialSummaryTableHtml([
+                ['label' => 'Subtotal', 'value' => 'AOA 125.000,00'],
+                ['label' => 'IVA', 'value' => 'AOA 17.500,00'],
+                ['label' => 'Total', 'value' => 'AOA 142.500,00', 'emphasis' => true],
+            ]),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'proposta, análise, laboratório, ISO 17025'),
             '{lab_signature}' => $labSigner,
             '{client_signature}' => 'Representante do Cliente',
             '{signature_block}' => '<section style="margin-top:24px;"><table style="width:100%; border-collapse:collapse;"><tr><td style="width:48%; padding-top:26px; border-top:1px solid #143d37; color:#20332f;"><strong>'.e($labSigner).'</strong><br><span style="color:#58665f;">Validação técnica / comercial</span></td><td style="width:4%;"></td><td style="width:48%; padding-top:26px; border-top:1px solid #143d37; color:#20332f;"><strong>Representante do Cliente</strong><br><span style="color:#58665f;">Aceitação da proposta</span></td></tr></table></section>',
+            '{verification_url}' => $verificationUrl,
+            '{proposal_authenticity}' => '<section style="padding:14px 16px; border:1px solid #ded3bf; border-radius:18px; background:#fffdf7;"><table style="width:100%; border-collapse:collapse;"><tr><td style="width:68%; vertical-align:top; padding-right:14px;"><div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#9a7a2f; font-weight:800;">Verificação da proposta</div><div style="margin-top:8px; color:#20332f;">Documento verificável por código QR e ligação pública segura.</div><div style="margin-top:8px; color:#58665f;">Estado: <strong style="color:#143d37;">Pré-visualização</strong></div><div style="margin-top:8px; font-size:9px; color:#58665f; word-break:break-all;">'.e($verificationUrl).'</div></td><td style="width:32%; vertical-align:top; text-align:right;">'.$qrBlock.'</td></tr></table></section>',
+            '{proposal_acceptance_evidence}' => '<section style="padding:14px 16px; border:1px solid #ded3bf; border-radius:18px; background:#ffffff;"><div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#9a7a2f; font-weight:800;">Evidência de aceite</div><div style="margin-top:8px; font-weight:800; color:#9a7a2f;">Aceite pendente</div><div style="margin-top:6px; color:#58665f;">A proposta aguarda validação do cliente no portal.</div></section>',
             '{lab_name}' => $labName,
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml(null, $customerName),
@@ -1400,7 +1530,7 @@ class ReportStudioPdfBuilder
     <div class="document-hero studio-avoid-break" style="padding:22px 24px;">
         <div class="document-kicker">Proposta laboratorial · Documento controlado</div>
         <h1 style="margin:8px 0 8px;">Proposta {proposal_number}</h1>
-        <p class="studio-lead">Escopo técnico, condições comerciais, decisão de regra e aceite do cliente num documento único e rastreável.</p>
+        <p class="studio-lead">Âmbito técnico, condições comerciais, decisão de regra e aceite do cliente num documento único e rastreável.</p>
     </div>
 </section>
 <section style="margin-bottom:18px;">
@@ -1422,7 +1552,15 @@ class ReportStudioPdfBuilder
 <section>{items_table}</section>
 <section style="margin-top:20px;">{summary_table}</section>
 <section class="document-callout studio-avoid-break" style="margin-top:20px;">{observations}</section>
-<section style="margin-top:24px;">{lab_signature} · {client_signature}</section>
+<section style="margin-top:20px;">
+    <table style="width:100%; border-collapse:collapse;">
+        <tr>
+            <td style="width:50%; vertical-align:top; padding-right:8px;">{proposal_acceptance_evidence}</td>
+            <td style="width:50%; vertical-align:top; padding-left:8px;">{proposal_authenticity}</td>
+        </tr>
+    </table>
+</section>
+<section style="margin-top:24px;">{signature_block}</section>
 HTML;
     }
 
@@ -1438,30 +1576,29 @@ HTML;
 </section>
 
 <section style="margin-bottom:18px;">
-    <table class="report-table studio-avoid-break" style="width:100%; border-collapse: collapse;">
+    <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Cliente / Customer</strong><br>
-                {customer_details}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Cliente / Customer</span>
+                <span class="value">{customer_name}</span>
+                <div class="muted" style="margin-top:6px;">{customer_details}</div>
             </td>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Laboratório / Laboratory</strong><br>
-                {lab_details}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Laboratório / Laboratory</span>
+                <span class="value">{lab_name}</span>
+                <div class="muted" style="margin-top:6px;">{lab_details}</div>
             </td>
         </tr>
         <tr>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Amostra / Sample</strong><br>
-                Produto: {sample_product}<br>
-                Matriz: {sample_matrix}<br>
-                Lote: {sample_lot}<br>
-                Origem: {sample_origin}<br>
-                Emissão: {issue_date}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Amostra / Sample</span>
+                <span class="value">{sample_name}</span>
+                <div class="muted" style="margin-top:6px;">Produto: {sample_product}<br>Matriz: {sample_matrix}<br>Lote: {sample_lot}<br>Origem: {sample_origin}</div>
             </td>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Validação / Validation</strong><br>
-                {validated_by}<br>
-                Regra de decisão: {decision_rule}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Validação / Validation</span>
+                <span class="value">{validated_by}</span>
+                <div class="muted" style="margin-top:6px;">Emissão: {issue_date}<br>Regra de decisão: {decision_rule}</div>
             </td>
         </tr>
     </table>
@@ -1472,18 +1609,7 @@ HTML;
 {analytical_scope}
 
 <section style="margin:20px 0;">{results_table}</section>
-<section class="studio-avoid-break" style="margin:20px 0; border:1px solid #ded3bf; background:#fffdf7; padding:14px 16px; border-radius:14px;">
-    <div style="font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:#6b7b74; font-weight:800;">Tendência visual de resultados / Result trend</div>
-    <svg class="report-chart-svg" width="100%" viewBox="0 0 620 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tendência de resultados">
-        <rect x="0" y="0" width="620" height="150" rx="18" fill="#f7f1e7"/>
-        <line x1="44" y1="112" x2="580" y2="112" stroke="#ded3bf" stroke-width="2"/>
-        <polyline points="52,96 156,84 260,88 364,62 468,70 572,44" fill="none" stroke="#143d37" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-        <polyline points="52,116 156,106 260,112 364,90 468,96 572,78" fill="none" stroke="#d9b05f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.82"/>
-        <text x="52" y="132" font-size="13" fill="#475a53">Recepção</text>
-        <text x="260" y="132" font-size="13" fill="#475a53">Validação</text>
-        <text x="492" y="132" font-size="13" fill="#475a53">Emissão</text>
-    </svg>
-</section>
+<section style="margin:20px 0;">{analysis_chart_card}</section>
 <section class="document-callout studio-avoid-break" style="margin-top:20px;">{uncertainty_statement}</section>
 <section style="margin-top:18px;">{conclusion}</section>
 <section style="margin-top:18px;">{document_keywords}</section>
@@ -1622,6 +1748,96 @@ HTML;
             ->implode('<br>');
     }
 
+    /**
+     * @param  array<int, array{label: string, translation?: string, align?: string}>  $columns
+     * @param  array<int, array<int, mixed>>  $rows
+     */
+    private function reportTableHtml(array $columns, array $rows, string $emptyMessage = 'Sem dados registados.'): string
+    {
+        $columns = array_values($columns);
+        $columnCount = max(count($columns), 1);
+        $headerHtml = collect($columns)
+            ->map(function (array $column): string {
+                $alignment = $this->pdfTableAlignment($column['align'] ?? 'left');
+                $translation = trim((string) ($column['translation'] ?? ''));
+                $translationHtml = $translation !== ''
+                    ? '<br><span class="bilingual-label">'.e($translation).'</span>'
+                    : '';
+
+                return '<th style="text-align:'.$alignment.';">'.e($column['label']).$translationHtml.'</th>';
+            })
+            ->implode('');
+        $bodyHtml = collect($rows)
+            ->map(function (array $row) use ($columns): string {
+                $cells = collect($columns)
+                    ->map(function (array $column, int $index) use ($row): string {
+                        $alignment = $this->pdfTableAlignment($column['align'] ?? 'left');
+
+                        return '<td style="text-align:'.$alignment.';">'.$this->pdfTableCellValue($row[$index] ?? '').'</td>';
+                    })
+                    ->implode('');
+
+                return '<tr>'.$cells.'</tr>';
+            })
+            ->implode('');
+
+        if ($bodyHtml === '') {
+            $bodyHtml = '<tr><td colspan="'.$columnCount.'" class="muted">'.e($emptyMessage).'</td></tr>';
+        }
+
+        return <<<HTML
+<table class="report-table studio-avoid-break" style="width:100%; border-collapse:collapse;">
+    <thead>
+        <tr>{$headerHtml}</tr>
+    </thead>
+    <tbody>
+        {$bodyHtml}
+    </tbody>
+</table>
+HTML;
+    }
+
+    /**
+     * @param  array<int, array{label: string, value: mixed, emphasis?: bool}>  $rows
+     */
+    private function financialSummaryTableHtml(array $rows): string
+    {
+        $bodyHtml = collect($rows)
+            ->map(function (array $row): string {
+                $isEmphasis = (bool) ($row['emphasis'] ?? false);
+                $labelStyle = $isEmphasis ? 'font-weight:800; color:#143d37;' : '';
+                $valueStyle = $isEmphasis ? 'font-weight:800; color:#143d37;' : 'font-weight:700;';
+
+                return '<tr>'
+                    .'<td style="'.$labelStyle.'">'.e((string) $row['label']).'</td>'
+                    .'<td style="text-align:right; '.$valueStyle.'">'.e((string) $row['value']).'</td>'
+                    .'</tr>';
+            })
+            ->implode('');
+
+        if ($bodyHtml === '') {
+            $bodyHtml = '<tr><td colspan="2" class="muted">Sem resumo financeiro registado.</td></tr>';
+        }
+
+        return <<<HTML
+<table class="report-table document-financial-summary studio-avoid-break" style="width:100%; border-collapse:collapse;">
+    <tbody>
+        {$bodyHtml}
+    </tbody>
+</table>
+HTML;
+    }
+
+    private function pdfTableCellValue(mixed $value): string
+    {
+        return nl2br(e((string) $value), false);
+    }
+
+    private function pdfTableAlignment(string $alignment): string
+    {
+        return in_array($alignment, ['left', 'center', 'right'], true) ? $alignment : 'left';
+    }
+
     private function defaultExportCertificateFirstPageHeader(GeneralSettings $settings): string
     {
         return $this->defaultCertificateFirstPageHeader(
@@ -1641,27 +1857,28 @@ HTML;
     {
         return <<<'HTML'
 <section style="margin-bottom:18px;">
-    <table class="report-table studio-avoid-break" style="width:100%; border-collapse: collapse;">
+    <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Exportador / Exporter</strong><br>
-                {customer_details}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Exportador / Exporter</span>
+                <span class="value">{exporter_name}</span>
+                <div class="muted" style="margin-top:6px;">{customer_details}</div>
             </td>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Laboratório / Laboratory</strong><br>
-                {lab_details}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Laboratório / Laboratory</span>
+                <div class="muted" style="margin-top:6px;">{lab_details}</div>
             </td>
         </tr>
         <tr>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Origem / Origin</strong><br>
-                {exporter_name}<br>
-                {origin_city}, {origin_country}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Origem / Origin</span>
+                <span class="value">{origin_city}, {origin_country}</span>
+                <div class="muted" style="margin-top:6px;">Expedidor: {exporter_name}</div>
             </td>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Destino / Destination</strong><br>
-                {destination_city}, {destination_country}<br>
-                Transporte: {transport_type}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Destino / Destination</span>
+                <span class="value">{destination_city}, {destination_country}</span>
+                <div class="muted" style="margin-top:6px;">Transporte: {transport_type}</div>
             </td>
         </tr>
     </table>
@@ -1696,28 +1913,28 @@ HTML;
     {
         return <<<'HTML'
 <section style="margin-bottom:18px;">
-    <table class="report-table studio-avoid-break" style="width:100%; border-collapse: collapse;">
+    <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Importador / Importer</strong><br>
-                {customer_details}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Importador / Importer</span>
+                <span class="value">{importer_name}</span>
+                <div class="muted" style="margin-top:6px;">{customer_details}</div>
             </td>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Laboratório / Laboratory</strong><br>
-                {lab_details}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Laboratório / Laboratory</span>
+                <div class="muted" style="margin-top:6px;">{lab_details}</div>
             </td>
         </tr>
         <tr>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Importação / Import</strong><br>
-                {importer_name}<br>
-                Destino: {destination_country}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Importação / Import</span>
+                <span class="value">{destination_country}</span>
+                <div class="muted" style="margin-top:6px;">Exportador: {exporter_name}</div>
             </td>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Logística / Logistics</strong><br>
-                Porto de saída: {port_exit}<br>
-                Porto de entrada: {port_entry}<br>
-                Transporte: {transport_type}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Logística / Logistics</span>
+                <span class="value">{transport_type}</span>
+                <div class="muted" style="margin-top:6px;">Porto de saída: {port_exit}<br>Porto de entrada: {port_entry}</div>
             </td>
         </tr>
     </table>
@@ -1739,7 +1956,7 @@ HTML;
             $settings,
             'Factura Proforma {{document_code}}',
             '{{customer_name}} · Emitida em {{issue_date}} · Válida até {{expiry_date}}',
-            'Documento comercial controlado para aprovação de escopo, condições e valores.'
+            'Documento comercial controlado para aprovação de âmbito, condições e valores.'
         );
     }
 
@@ -1755,32 +1972,31 @@ HTML;
     <div class="document-hero studio-avoid-break" style="padding:22px 24px;">
         <div class="document-kicker">Proposta comercial · Commercial proposal</div>
         <h1 style="margin:8px 0 8px;">Proforma {quote_number}</h1>
-        <p class="studio-lead">Preparada para <strong>{customer_name}</strong>, com escopo, condições e valores sujeitos à aceitação formal do cliente.</p>
+        <p class="studio-lead">Preparada para <strong>{customer_name}</strong>, com âmbito, condições e valores sujeitos à aceitação formal do cliente.</p>
     </div>
 </section>
 
 <section style="margin-bottom:18px;">
-    <table class="report-table studio-avoid-break" style="width:100%; border-collapse: collapse;">
+    <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Cliente / Customer</strong><br>
-                {customer_details}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Cliente / Customer</span>
+                <span class="value">{customer_name}</span>
+                <div class="muted" style="margin-top:6px;">{customer_details}</div>
             </td>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Laboratório / Laboratory</strong><br>
-                {lab_details}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Laboratório / Laboratory</span>
+                <div class="muted" style="margin-top:6px;">{lab_details}</div>
             </td>
         </tr>
         <tr>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Condições / Terms</strong><br>
-                Emissão: {issue_date}<br>
-                Validade: {expiry_date}<br>
-                Local: {service_location}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Condições / Terms</span>
+                <div class="muted" style="margin-top:6px;">Emissão: {issue_date}<br>Validade: {expiry_date}<br>Local: {service_location}</div>
             </td>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Pagamento / Banking</strong><br>
-                {banking_details}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Pagamento / Banking</span>
+                <div class="muted" style="margin-top:6px;">{banking_details}</div>
             </td>
         </tr>
     </table>
@@ -1859,25 +2075,26 @@ HTML;
     ): string {
         return <<<HTML
 <section style="margin-bottom:18px;">
-    <table class="report-table studio-avoid-break" style="width:100%; border-collapse: collapse;">
+    <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Cliente / Customer</strong><br>
-                {customer_details}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Cliente / Customer</span>
+                <span class="value">{customer_name}</span>
+                <div class="muted" style="margin-top:6px;">{customer_details}</div>
             </td>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Laboratório / Laboratory</strong><br>
-                {lab_details}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Laboratório / Laboratory</span>
+                <div class="muted" style="margin-top:6px;">{lab_details}</div>
             </td>
         </tr>
         <tr>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>{$termsTitle}</strong><br>
-                {$termsBody}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">{$termsTitle}</span>
+                <div class="muted" style="margin-top:6px;">{$termsBody}</div>
             </td>
-            <td style="width:50%; vertical-align: top; padding: 8px; border: 1px solid #cbd5e1;">
-                <strong>Pagamento / Banking</strong><br>
-                {banking_details}
+            <td class="document-summary-cell" style="width:50%;">
+                <span class="label">Pagamento / Banking</span>
+                <div class="muted" style="margin-top:6px;">{banking_details}</div>
             </td>
         </tr>
     </table>
@@ -1892,11 +2109,20 @@ HTML;
 
     private function exportCertificatePlaceholderValues(ExportCertificate $certificate, GeneralSettings $settings): array
     {
-        $productsTable = '<table style="width:100%; border-collapse:collapse;"><thead><tr><th style="border:1px solid #cbd5e1; padding:6px;">Produto</th><th style="border:1px solid #cbd5e1; padding:6px;">Quantidade</th></tr></thead><tbody>';
-        foreach ($certificate->items as $item) {
-            $productsTable .= '<tr><td style="border:1px solid #cbd5e1; padding:6px;">'.e($item->product?->name ?: 'Produto').'</td><td style="border:1px solid #cbd5e1; padding:6px;">'.e((string) $item->qty).'</td></tr>';
-        }
-        $productsTable .= '</tbody></table>';
+        $productsTable = $this->reportTableHtml(
+            [
+                ['label' => 'Produto', 'translation' => 'Product'],
+                ['label' => 'Quantidade', 'translation' => 'Quantity', 'align' => 'right'],
+            ],
+            collect($certificate->items ?? [])
+                ->map(fn ($item): array => [
+                    $item->product?->name ?: 'Produto',
+                    (string) $item->qty,
+                ])
+                ->values()
+                ->all(),
+            'Sem produtos registados no certificado.'
+        );
 
         return [
             '{certificate_number}' => $certificate->cert_no,
@@ -1920,11 +2146,24 @@ HTML;
 
     private function importCertificatePlaceholderValues(ImportCertificate $certificate, GeneralSettings $settings): array
     {
-        $itemsTable = '<table style="width:100%; border-collapse:collapse;"><thead><tr><th style="border:1px solid #cbd5e1; padding:6px;">Produto</th><th style="border:1px solid #cbd5e1; padding:6px;">Lote</th><th style="border:1px solid #cbd5e1; padding:6px;">Validade</th><th style="border:1px solid #cbd5e1; padding:6px;">Quantidade</th></tr></thead><tbody>';
-        foreach ($certificate->items as $item) {
-            $itemsTable .= '<tr><td style="border:1px solid #cbd5e1; padding:6px;">'.e($item->product?->description ?: $item->product?->name ?: 'Produto').'</td><td style="border:1px solid #cbd5e1; padding:6px;">'.e($item->lot ?: '—').'</td><td style="border:1px solid #cbd5e1; padding:6px;">'.e($item->validity ?: '—').'</td><td style="border:1px solid #cbd5e1; padding:6px;">'.e((string) ($item->qty ?: '—')).'</td></tr>';
-        }
-        $itemsTable .= '</tbody></table>';
+        $itemsTable = $this->reportTableHtml(
+            [
+                ['label' => 'Produto', 'translation' => 'Product'],
+                ['label' => 'Lote', 'translation' => 'Lot'],
+                ['label' => 'Validade', 'translation' => 'Validity'],
+                ['label' => 'Quantidade', 'translation' => 'Quantity', 'align' => 'right'],
+            ],
+            collect($certificate->items ?? [])
+                ->map(fn ($item): array => [
+                    $item->product?->description ?: $item->product?->name ?: 'Produto',
+                    $item->lot ?: '—',
+                    $item->validity ?: '—',
+                    (string) ($item->qty ?: '—'),
+                ])
+                ->values()
+                ->all(),
+            'Sem lotes registados no certificado.'
+        );
 
         return [
             '{certificate_number}' => $certificate->cert_no,
@@ -1947,15 +2186,28 @@ HTML;
 
     private function quotePlaceholderValues(Quote $quote, GeneralSettings $settings): array
     {
-        $itemsTable = '<table class="report-table" style="width:100%; border-collapse:collapse;"><thead><tr><th style="border:1px solid #cbd5e1; padding:6px;">Serviço<br><span class="bilingual-label">Service</span></th><th style="border:1px solid #cbd5e1; padding:6px;">Qtd.<br><span class="bilingual-label">Qty.</span></th><th style="border:1px solid #cbd5e1; padding:6px;">Valor<br><span class="bilingual-label">Amount</span></th></tr></thead><tbody>';
+        $itemsTable = $this->reportTableHtml(
+            [
+                ['label' => 'Serviço', 'translation' => 'Service'],
+                ['label' => 'Qtd.', 'translation' => 'Qty.', 'align' => 'right'],
+                ['label' => 'Valor', 'translation' => 'Amount', 'align' => 'right'],
+            ],
+            collect($quote->items ?? [])
+                ->map(fn ($item): array => [
+                    $item->description ?? $item->itemable?->description ?? $item->itemable?->name ?? 'Serviço',
+                    (string) ($item->qty ?? 1),
+                    number_format((float) ($item->total ?? $item->price ?? 0), 2, ',', '.'),
+                ])
+                ->values()
+                ->all(),
+            'Sem serviços registados.'
+        );
 
-        foreach ($quote->items as $item) {
-            $itemsTable .= '<tr><td style="border:1px solid #cbd5e1; padding:6px;">'.e($item->description ?? $item->itemable?->description ?? $item->itemable?->name ?? 'Serviço').'</td><td style="border:1px solid #cbd5e1; padding:6px;">'.e((string) ($item->qty ?? 1)).'</td><td style="border:1px solid #cbd5e1; padding:6px;">'.e(number_format((float) ($item->total ?? $item->price ?? 0), 2, ',', '.')).'</td></tr>';
-        }
-
-        $itemsTable .= '</tbody></table>';
-
-        $summaryTable = '<table class="report-table" style="width:100%; border-collapse:collapse;"><tr><td style="border:1px solid #cbd5e1; padding:8px;">Subtotal</td><td style="border:1px solid #cbd5e1; padding:8px; text-align:right;">'.e(number_format((float) ($quote->sub_total ?? 0), 2, ',', '.')).'</td></tr><tr><td style="border:1px solid #cbd5e1; padding:8px;">IVA</td><td style="border:1px solid #cbd5e1; padding:8px; text-align:right;">'.e(number_format((float) ($quote->tax ?? 0), 2, ',', '.')).'</td></tr><tr><td style="border:1px solid #cbd5e1; padding:8px; font-weight:700; background:#f8fafc;">Total</td><td style="border:1px solid #cbd5e1; padding:8px; text-align:right; font-weight:700; background:#f8fafc; color:#102a43;">'.e(number_format((float) ($quote->total ?? 0), 2, ',', '.')).'</td></tr></table>';
+        $summaryTable = $this->financialSummaryTableHtml([
+            ['label' => 'Subtotal', 'value' => number_format((float) ($quote->sub_total ?? 0), 2, ',', '.')],
+            ['label' => 'IVA', 'value' => number_format((float) ($quote->tax ?? 0), 2, ',', '.')],
+            ['label' => 'Total', 'value' => number_format((float) ($quote->total ?? 0), 2, ',', '.'), 'emphasis' => true],
+        ]);
 
         return [
             '{quote_number}' => $quote->quote_no,
@@ -1965,7 +2217,7 @@ HTML;
             '{expiry_date}' => optional($quote->due_date)->format('d/m/Y') ?: now()->addDays(15)->format('d/m/Y'),
             '{items_table}' => $itemsTable,
             '{summary_table}' => $summaryTable,
-            '{observations}' => $quote->obs ?: 'Proforma preparada com base no escopo e nas condições comerciais acordadas.',
+            '{observations}' => $quote->obs ?: 'Proforma preparada com base no âmbito e nas condições comerciais acordadas.',
             '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>'.e($quote->user?->name ?: 'Direcção Comercial').'</strong><br />Validação e emissão da proforma</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($quote->customer, $quote->customer?->name ?: 'Cliente'),
@@ -1976,11 +2228,22 @@ HTML;
 
     private function invoicePlaceholderValues(Invoice $invoice, GeneralSettings $settings): array
     {
-        $itemsTable = '<table class="report-table" style="width:100%; border-collapse:collapse;"><thead><tr><th style="border:1px solid #cbd5e1; padding:6px;">Item<br><span class="bilingual-label">Item</span></th><th style="border:1px solid #cbd5e1; padding:6px;">Qtd.<br><span class="bilingual-label">Qty.</span></th><th style="border:1px solid #cbd5e1; padding:6px;">Valor<br><span class="bilingual-label">Amount</span></th></tr></thead><tbody>';
-        foreach ($invoice->items as $item) {
-            $itemsTable .= '<tr><td style="border:1px solid #cbd5e1; padding:6px;">'.e($item->description ?? $item->itemable?->description ?? $item->itemable?->name ?? 'Serviço').'</td><td style="border:1px solid #cbd5e1; padding:6px;">'.e((string) ($item->qty ?? 1)).'</td><td style="border:1px solid #cbd5e1; padding:6px;">'.e(number_format((float) ($item->total ?? $item->price ?? 0), 2, ',', '.')).'</td></tr>';
-        }
-        $itemsTable .= '</tbody></table>';
+        $itemsTable = $this->reportTableHtml(
+            [
+                ['label' => 'Item', 'translation' => 'Item'],
+                ['label' => 'Qtd.', 'translation' => 'Qty.', 'align' => 'right'],
+                ['label' => 'Valor', 'translation' => 'Amount', 'align' => 'right'],
+            ],
+            collect($invoice->items ?? [])
+                ->map(fn ($item): array => [
+                    $item->description ?? $item->itemable?->description ?? $item->itemable?->name ?? 'Serviço',
+                    (string) ($item->qty ?? 1),
+                    number_format((float) ($item->total ?? $item->price ?? 0), 2, ',', '.'),
+                ])
+                ->values()
+                ->all(),
+            'Sem itens registados.'
+        );
 
         return [
             '{document_number}' => $invoice->inv_no,
@@ -1989,8 +2252,12 @@ HTML;
             '{issue_date}' => optional($invoice->date ?: $invoice->created_at)->format('d/m/Y') ?: now()->format('d/m/Y'),
             '{due_date}' => optional($invoice->due_date)->format('d/m/Y') ?: now()->addDays(30)->format('d/m/Y'),
             '{items_table}' => $itemsTable,
-            '{summary_table}' => '<table style="width:100%; border-collapse:collapse;"><tr><td style="border:1px solid #cbd5e1; padding:6px;">Subtotal</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right;">'.e(number_format((float) ($invoice->sub_total ?? 0), 2, ',', '.')).'</td></tr><tr><td style="border:1px solid #cbd5e1; padding:6px;">IVA</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right;">'.e(number_format((float) ($invoice->tax ?? 0), 2, ',', '.')).'</td></tr><tr><td style="border:1px solid #cbd5e1; padding:6px; font-weight:700;">Total</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right; font-weight:700;">'.e(number_format((float) ($invoice->total ?? 0), 2, ',', '.')).'</td></tr></table>',
-            '{observations}' => $invoice->obs ?: 'Factura emitida com base no documento comercial aprovado e no escopo executado.',
+            '{summary_table}' => $this->financialSummaryTableHtml([
+                ['label' => 'Subtotal', 'value' => number_format((float) ($invoice->sub_total ?? 0), 2, ',', '.')],
+                ['label' => 'IVA', 'value' => number_format((float) ($invoice->tax ?? 0), 2, ',', '.')],
+                ['label' => 'Total', 'value' => number_format((float) ($invoice->total ?? 0), 2, ',', '.'), 'emphasis' => true],
+            ]),
+            '{observations}' => $invoice->obs ?: 'Factura emitida com base no documento comercial aprovado e no âmbito executado.',
             '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>'.e($invoice->user?->name ?: 'Direcção Financeira').'</strong><br />Emissão da factura</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($invoice->customer, $invoice->customer?->name ?: 'Cliente'),
@@ -2001,11 +2268,20 @@ HTML;
 
     private function receiptPlaceholderValues(Receipt $receipt, GeneralSettings $settings): array
     {
-        $itemsTable = '<table class="report-table" style="width:100%; border-collapse:collapse;"><thead><tr><th style="border:1px solid #cbd5e1; padding:6px;">Factura<br><span class="bilingual-label">Invoice</span></th><th style="border:1px solid #cbd5e1; padding:6px;">Valor pago<br><span class="bilingual-label">Paid amount</span></th></tr></thead><tbody>';
-        foreach ($receipt->items as $item) {
-            $itemsTable .= '<tr><td style="border:1px solid #cbd5e1; padding:6px;">'.e($item->invoice?->inv_no ?: 'Factura').'</td><td style="border:1px solid #cbd5e1; padding:6px;">'.e(number_format((float) ($item->paid_amount ?? 0), 2, ',', '.')).'</td></tr>';
-        }
-        $itemsTable .= '</tbody></table>';
+        $itemsTable = $this->reportTableHtml(
+            [
+                ['label' => 'Factura', 'translation' => 'Invoice'],
+                ['label' => 'Valor pago', 'translation' => 'Paid amount', 'align' => 'right'],
+            ],
+            collect($receipt->items ?? [])
+                ->map(fn ($item): array => [
+                    $item->invoice?->inv_no ?: 'Factura',
+                    number_format((float) ($item->paid_amount ?? 0), 2, ',', '.'),
+                ])
+                ->values()
+                ->all(),
+            'Sem facturas associadas ao recibo.'
+        );
 
         $totalPaid = $receipt->items->sum('paid_amount');
 
@@ -2016,7 +2292,9 @@ HTML;
             '{issue_date}' => optional($receipt->date ?: $receipt->created_at)->format('d/m/Y') ?: now()->format('d/m/Y'),
             '{payment_type}' => $receipt->type?->description ?: $receipt->type?->name ?: 'Forma de pagamento',
             '{items_table}' => $itemsTable,
-            '{summary_table}' => '<table style="width:100%; border-collapse:collapse;"><tr><td style="border:1px solid #cbd5e1; padding:6px; font-weight:700;">Total recebido</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right; font-weight:700;">'.e(number_format((float) $totalPaid, 2, ',', '.')).'</td></tr></table>',
+            '{summary_table}' => $this->financialSummaryTableHtml([
+                ['label' => 'Total recebido', 'value' => number_format((float) $totalPaid, 2, ',', '.'), 'emphasis' => true],
+            ]),
             '{observations}' => $receipt->obs ?: 'Recibo emitido como comprovativo do recebimento financeiro.',
             '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>'.e($receipt->user?->name ?: 'Tesouraria').'</strong><br />Confirmação do recebimento</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
@@ -2028,11 +2306,20 @@ HTML;
 
     private function creditNotePlaceholderValues(CreditNote $creditNote, GeneralSettings $settings): array
     {
-        $itemsTable = '<table class="report-table" style="width:100%; border-collapse:collapse;"><thead><tr><th style="border:1px solid #cbd5e1; padding:6px;">Item<br><span class="bilingual-label">Item</span></th><th style="border:1px solid #cbd5e1; padding:6px;">Valor<br><span class="bilingual-label">Amount</span></th></tr></thead><tbody>';
-        foreach ($creditNote->items as $item) {
-            $itemsTable .= '<tr><td style="border:1px solid #cbd5e1; padding:6px;">'.e($item->description ?? $item->itemable?->description ?? $item->itemable?->name ?? 'Rectificação').'</td><td style="border:1px solid #cbd5e1; padding:6px;">'.e(number_format((float) ($item->total ?? $item->price ?? 0), 2, ',', '.')).'</td></tr>';
-        }
-        $itemsTable .= '</tbody></table>';
+        $itemsTable = $this->reportTableHtml(
+            [
+                ['label' => 'Item', 'translation' => 'Item'],
+                ['label' => 'Valor', 'translation' => 'Amount', 'align' => 'right'],
+            ],
+            collect($creditNote->items ?? [])
+                ->map(fn ($item): array => [
+                    $item->description ?? $item->itemable?->description ?? $item->itemable?->name ?? 'Rectificação',
+                    number_format((float) ($item->total ?? $item->price ?? 0), 2, ',', '.'),
+                ])
+                ->values()
+                ->all(),
+            'Sem itens de rectificação registados.'
+        );
 
         return [
             '{document_number}' => $creditNote->note_no,
@@ -2041,7 +2328,9 @@ HTML;
             '{issue_date}' => optional($creditNote->date ?: $creditNote->created_at)->format('d/m/Y') ?: now()->format('d/m/Y'),
             '{reason_label}' => $creditNote->reason === CreditNote::REASON_CANCELATION ? 'Cancelamento' : 'Rectificação',
             '{items_table}' => $itemsTable,
-            '{summary_table}' => '<table style="width:100%; border-collapse:collapse;"><tr><td style="border:1px solid #cbd5e1; padding:6px; font-weight:700;">Total da nota</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right; font-weight:700;">'.e(number_format((float) ($creditNote->total ?? 0), 2, ',', '.')).'</td></tr></table>',
+            '{summary_table}' => $this->financialSummaryTableHtml([
+                ['label' => 'Total da nota', 'value' => number_format((float) ($creditNote->total ?? 0), 2, ',', '.'), 'emphasis' => true],
+            ]),
             '{observations}' => $creditNote->obs ?: 'Nota de crédito emitida para rectificação financeira/documental.',
             '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>'.e($creditNote->user?->name ?: 'Direcção Financeira').'</strong><br />Emissão da nota de crédito</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
@@ -2066,7 +2355,7 @@ HTML;
         $headerContext = [
             'lab_name' => $settings->app_client_lab_name ?: $settings->app_name ?: 'Laboratório',
             'document_code' => $placeholders['{document_number}'] ?? 'DOC-2026-001',
-            'customer_name' => $placeholders['{customer_name}'] ?? 'Cliente Exemplo, Lda.',
+            'customer_name' => $placeholders['{customer_name}'] ?? 'Cliente industrial de referência, Lda.',
             'issue_date' => $placeholders['{issue_date}'] ?? now()->format('d/m/Y'),
             'due_date' => $placeholders['{due_date}'] ?? now()->addDays(30)->format('d/m/Y'),
             'service_location' => $placeholders['{service_location}'] ?? 'Luanda',
@@ -2148,6 +2437,7 @@ HTML;
         $collectionDetails = $this->analysisCollectionDetailsHtml($certificate);
         $analyticalScope = $this->analysisScopeDetailsHtml($certificate);
         $resultsTable = $this->analysisResultsTableHtml($certificate, $resultId);
+        $analysisChart = $this->analysisResultChartData($certificate, $resultId);
 
         return [
             '{report_title}' => 'Relatório Analítico',
@@ -2174,9 +2464,14 @@ HTML;
             '{collection_details}' => $collectionDetails,
             '{analytical_scope}' => $analyticalScope,
             '{results_table}' => $resultsTable,
+            '{analysis_chart_title}' => $analysisChart['title'],
+            '{analysis_chart_labels}' => implode(', ', $analysisChart['labels']),
+            '{analysis_chart_values}' => implode(', ', $analysisChart['values']),
+            '{analysis_chart_caption}' => $analysisChart['caption'],
+            '{analysis_chart_card}' => $this->analysisChartCardHtml($analysisChart),
             '{uncertainty_statement}' => 'As incertezas de medição aplicáveis são apresentadas de acordo com o método validado e a política do laboratório.',
             '{decision_rule}' => 'A decisão declarada segue a regra de decisão configurada para o ensaio e o âmbito aplicável.',
-            '{conclusion}' => 'Conclusão emitida com base no escopo analítico validado e na rastreabilidade documental do processo.',
+            '{conclusion}' => 'Conclusão emitida com base no âmbito analítico validado e na rastreabilidade documental do processo.',
             '{signature_block}' => '<div style="margin-top:24px; border-top:1px solid #0f172a; padding-top:10px; font-size:11px;">'.e($validation).'</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($certificate->customer, $customerName),
@@ -2219,43 +2514,23 @@ HTML;
             ['Serviços solicitados', 'Requested services', 'Controlo interno de matéria-prima'],
             ['Regra de decisão', 'Decision rule', 'Aplicar critério definido no método validado e no plano de controlo interno.'],
             ['Observações', 'Observations', 'Pré-visualização técnica para validar estrutura, campos e paginação do template.'],
-        ], 'Escopo analítico / Analytical scope');
-        $resultsTable = <<<'HTML'
-<table class="report-table" style="width:100%; border-collapse:collapse; font-size:10px;">
-    <thead>
-        <tr>
-            <th style="text-align:left; border-bottom:1px solid #cbd5e1; padding:7px;">Parâmetro<br><span class="bilingual-label">Parameter / method</span></th>
-            <th style="text-align:left; border-bottom:1px solid #cbd5e1; padding:7px;">Resultado<br><span class="bilingual-label">Result</span></th>
-            <th style="text-align:left; border-bottom:1px solid #cbd5e1; padding:7px;">Unidade<br><span class="bilingual-label">Unit</span></th>
-            <th style="text-align:left; border-bottom:1px solid #cbd5e1; padding:7px;">Incerteza<br><span class="bilingual-label">Uncertainty</span></th>
-            <th style="text-align:left; border-bottom:1px solid #cbd5e1; padding:7px;">Estado<br><span class="bilingual-label">Status</span></th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">Humidade<br><span class="bilingual-label">ISO 712</span></td>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">13,2</td>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">%</td>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">±0,4</td>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">Aprovado</td>
-        </tr>
-        <tr>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">Cinzas<br><span class="bilingual-label">ISO 2171</span></td>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">0,62</td>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">%</td>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">±0,03</td>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">Verificado</td>
-        </tr>
-        <tr>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">Salmonella spp.<br><span class="bilingual-label">ISO 6579-1</span></td>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">Ausente</td>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">25 g</td>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">Qualitativo</td>
-            <td style="padding:7px; border-bottom:1px solid #e2e8f0;">Aprovado</td>
-        </tr>
-    </tbody>
-</table>
-HTML;
+        ], 'Âmbito analítico / Analytical scope');
+        $resultsTable = $this->reportTableHtml(
+            [
+                ['label' => 'Parâmetro', 'translation' => 'Parameter'],
+                ['label' => 'Método', 'translation' => 'Method'],
+                ['label' => 'Resultado', 'translation' => 'Result'],
+                ['label' => 'Unidade', 'translation' => 'Unit'],
+                ['label' => 'Incerteza', 'translation' => 'Uncertainty'],
+                ['label' => 'Estado', 'translation' => 'Status'],
+            ],
+            [
+                ['Humidade', 'ISO 712', '13,2', '%', '±0,4', 'Aprovado'],
+                ['Cinzas', 'ISO 2171', '0,62', '%', '±0,03', 'Verificado'],
+                ['Salmonella spp.', 'ISO 6579-1', 'Ausente', '25 g', 'Qualitativo', 'Aprovado'],
+            ]
+        );
+        $analysisChart = $this->analysisPreviewChartData();
 
         return [
             '{report_title}' => 'Relatório Analítico',
@@ -2282,6 +2557,11 @@ HTML;
             '{collection_details}' => $collectionDetails,
             '{analytical_scope}' => $analyticalScope,
             '{results_table}' => $resultsTable,
+            '{analysis_chart_title}' => $analysisChart['title'],
+            '{analysis_chart_labels}' => implode(', ', $analysisChart['labels']),
+            '{analysis_chart_values}' => implode(', ', $analysisChart['values']),
+            '{analysis_chart_caption}' => $analysisChart['caption'],
+            '{analysis_chart_card}' => $this->analysisChartCardHtml($analysisChart),
             '{uncertainty_statement}' => 'As incertezas de medição apresentadas são estimativas de pré-visualização para validar o template. Na emissão real, o valor vem do método, cálculo ou fonte de incerteza configurada.',
             '{decision_rule}' => 'A decisão de conformidade segue a regra definida no método validado e no contrato/proposta aprovada.',
             '{conclusion}' => 'Pré-visualização controlada para confirmar que amostra, cadeia de custódia, resultados, incerteza, decisão e assinatura permanecem legíveis no PDF final.',
@@ -2290,6 +2570,74 @@ HTML;
             '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente laboratorial de referência'),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'ISO 17025, relatório analítico, rastreabilidade, incerteza de medição'),
         ];
+    }
+
+    /**
+     * @return array{title: string, labels: array<int, string>, values: array<int, string>, caption: string}
+     */
+    private function analysisResultChartData(QualityCertificate $certificate, mixed $resultId): array
+    {
+        $results = collect($certificate->results ?? []);
+        $approved = $results->filter(fn ($result): bool => filled($result->approved_date))->count();
+        $verified = $results
+            ->filter(fn ($result): bool => ! filled($result->approved_date) && filled($result->verified_date))
+            ->count();
+        $inserted = $results
+            ->filter(fn ($result): bool => ! filled($result->approved_date) && ! filled($result->verified_date) && filled($result->inserted_date))
+            ->count();
+        $pending = $results
+            ->filter(fn ($result): bool => ! filled($result->approved_date) && ! filled($result->verified_date) && ! filled($result->inserted_date))
+            ->count();
+        $counterAnalysis = $results
+            ->filter(fn ($result): bool => (bool) $result->requested_counter_analysis || filled($result->counter_analysis))
+            ->count();
+
+        if ($results->isEmpty() && filled($resultId)) {
+            $pending = 1;
+        }
+
+        $total = $results->count() ?: ($pending > 0 ? $pending : 0);
+
+        return [
+            'title' => 'Estado dos resultados analíticos',
+            'labels' => ['Aprovados', 'Verificados', 'Inseridos', 'Pendentes', 'Contra-análise'],
+            'values' => array_map(
+                fn (int $value): string => (string) $value,
+                [$approved, $verified, $inserted, $pending, $counterAnalysis]
+            ),
+            'caption' => "{$total} parâmetro(s) associados ao certificado; {$counterAnalysis} com contra-análise solicitada ou registada.",
+        ];
+    }
+
+    /**
+     * @return array{title: string, labels: array<int, string>, values: array<int, string>, caption: string}
+     */
+    private function analysisPreviewChartData(): array
+    {
+        return [
+            'title' => 'Estado dos resultados analíticos',
+            'labels' => ['Aprovados', 'Verificados', 'Inseridos', 'Pendentes', 'Contra-análise'],
+            'values' => ['2', '1', '1', '0', '1'],
+            'caption' => 'Pré-visualização com estados típicos de inserção, verificação, aprovação e contra-análise.',
+        ];
+    }
+
+    /**
+     * @param  array{title: string, labels: array<int, string>, values: array<int, string>, caption: string}  $chart
+     */
+    private function analysisChartCardHtml(array $chart): string
+    {
+        return $this->renderChartSnapshotBlock([
+            'chart_title' => $chart['title'],
+            'chart_caption' => $chart['caption'],
+            'chart_type' => 'bar',
+            'chart_labels' => $chart['labels'],
+            'chart_values' => $chart['values'],
+            'chart_colors' => ['#143d37', '#3f6f58', '#d9b05f', '#94a3b8', '#9f1d1d'],
+            'chart_primary_color' => '#143d37',
+            'chart_background_color' => '#f8f4ea',
+            'chart_show_values' => true,
+        ], []);
     }
 
     private function analysisSampleDetailsHtml(QualityCertificate $certificate): string
@@ -2363,54 +2711,57 @@ HTML;
             ['Serviços solicitados', 'Requested services', is_array($sampleEntry?->requested_services) ? implode('; ', $sampleEntry->requested_services) : $sampleEntry?->requested_services],
             ['Regra de decisão', 'Decision rule', data_get($clientInfo, 'decision_rule')],
             ['Observações', 'Observations', $sampleEntry?->obs ?: $collectionProduct?->obs],
-        ], 'Escopo analítico / Analytical scope');
+        ], 'Âmbito analítico / Analytical scope');
     }
 
     private function analysisResultsTableHtml(QualityCertificate $certificate, mixed $resultId): string
     {
         $rows = collect($certificate->results ?? [])
             ->sortBy(fn ($result) => $result->parameter?->name ?: $result->parameter_label ?: $result->id)
-            ->map(function ($result): string {
+            ->map(function ($result): array {
                 $parameter = $result->parameter_label ?: $result->parameter?->name ?: 'Parâmetro';
                 $method = $result->standard_label ?: $result->standard?->name ?: $result->protocol_label ?: $result->protocol?->name ?: 'Método registado';
                 $value = $result->approved_value ?: $result->verified_value ?: $result->inserted_value ?: '—';
                 $unit = $result->unit_label ?: $result->unit?->name ?: '—';
                 $uncertainty = $result->uncertainty_value ?: data_get($result->calculation_metadata, 'uncertainty') ?: '—';
                 $status = $result->approved_date ? 'Aprovado' : ($result->verified_date ? 'Verificado' : ($result->inserted_date ? 'Inserido' : 'Pendente'));
-                $counterAnalysis = $result->requested_counter_analysis || $result->counter_analysis
-                    ? '<span style="display:inline-block; margin-top:3px; color:#b45309;">Contra-análise associada</span>'
-                    : '';
+                $counterAnalysis = $result->requested_counter_analysis || $result->counter_analysis ? "\nContra-análise associada" : '';
 
-                return '<tr>'
-                    .'<td style="padding:7px; border-bottom:1px solid #e2e8f0;">'.e($parameter).'<br><span class="bilingual-label">'.e($method).'</span></td>'
-                    .'<td style="padding:7px; border-bottom:1px solid #e2e8f0;">'.e((string) $value).'</td>'
-                    .'<td style="padding:7px; border-bottom:1px solid #e2e8f0;">'.e((string) $unit).'</td>'
-                    .'<td style="padding:7px; border-bottom:1px solid #e2e8f0;">'.e((string) $uncertainty).'</td>'
-                    .'<td style="padding:7px; border-bottom:1px solid #e2e8f0;">'.e($status).$counterAnalysis.'</td>'
-                    .'</tr>';
+                return [
+                    $parameter,
+                    $method,
+                    (string) $value,
+                    (string) $unit,
+                    (string) $uncertainty,
+                    $status.$counterAnalysis,
+                ];
             })
-            ->implode('');
+            ->values()
+            ->all();
 
-        if ($rows === '') {
-            $rows = '<tr><td style="padding:7px; border-bottom:1px solid #e2e8f0;">Resultado associado #'.e((string) $resultId).'</td><td style="padding:7px; border-bottom:1px solid #e2e8f0;">Conforme o método registado</td><td style="padding:7px; border-bottom:1px solid #e2e8f0;">N/A</td><td style="padding:7px; border-bottom:1px solid #e2e8f0;">Consultar método / cálculo</td><td style="padding:7px; border-bottom:1px solid #e2e8f0;">Pendente</td></tr>';
+        if ($rows === []) {
+            $rows = [[
+                'Resultado associado #'.(string) $resultId,
+                'Método registado',
+                'Conforme o método registado',
+                'N/A',
+                'Consultar método / cálculo',
+                'Pendente',
+            ]];
         }
 
-        return <<<HTML
-<table class="report-table" style="width:100%; border-collapse:collapse; font-size:10px;">
-    <thead>
-        <tr>
-            <th style="text-align:left; border-bottom:1px solid #cbd5e1; padding:7px;">Parâmetro<br><span class="bilingual-label">Parameter / method</span></th>
-            <th style="text-align:left; border-bottom:1px solid #cbd5e1; padding:7px;">Resultado<br><span class="bilingual-label">Result</span></th>
-            <th style="text-align:left; border-bottom:1px solid #cbd5e1; padding:7px;">Unidade<br><span class="bilingual-label">Unit</span></th>
-            <th style="text-align:left; border-bottom:1px solid #cbd5e1; padding:7px;">Incerteza<br><span class="bilingual-label">Uncertainty</span></th>
-            <th style="text-align:left; border-bottom:1px solid #cbd5e1; padding:7px;">Estado<br><span class="bilingual-label">Status</span></th>
-        </tr>
-    </thead>
-    <tbody>
-        {$rows}
-    </tbody>
-</table>
-HTML;
+        return $this->reportTableHtml(
+            [
+                ['label' => 'Parâmetro', 'translation' => 'Parameter'],
+                ['label' => 'Método', 'translation' => 'Method'],
+                ['label' => 'Resultado', 'translation' => 'Result'],
+                ['label' => 'Unidade', 'translation' => 'Unit'],
+                ['label' => 'Incerteza', 'translation' => 'Uncertainty'],
+                ['label' => 'Estado', 'translation' => 'Status'],
+            ],
+            $rows,
+            'Sem resultados registados.'
+        );
     }
 
     /**
@@ -2663,6 +3014,14 @@ HTML;
         $signatureAlign = (string) ($block['signature_align'] ?? 'left');
         $signatureLineStyle = (string) ($block['signature_line_style'] ?? 'solid');
         $signatureImage = (string) ($block['signature_image'] ?? '');
+        $signatureImagePosition = $this->safeCssPosition((string) ($block['signature_image_position'] ?? 'center center'), 'center center');
+        $signatureImageWidth = $this->clampedCssNumber($block['signature_image_width'] ?? null, 24, 360, 180);
+        $signatureImageHeight = $this->clampedCssNumber($block['signature_image_height'] ?? null, 16, 240, 72);
+        $signatureImageFit = match ((string) ($block['signature_image_fit'] ?? 'contain')) {
+            'cover' => 'cover',
+            'auto' => 'scale-down',
+            default => 'contain',
+        };
 
         $justify = match ($signatureAlign) {
             'center' => 'center',
@@ -2678,8 +3037,12 @@ HTML;
             $resolvedSignatureImage = $this->resolvePdfImageSource($signatureImage);
 
             $signatureImageHtml = sprintf(
-                '<img src="%s" alt="Assinatura" style="display:block; max-height:72px; max-width:180px; object-fit:contain;" />',
-                $resolvedSignatureImage
+                '<img src="%s" alt="Assinatura" style="display:block; width:%spx; max-width:100%%; height:%spx; object-fit:%s; object-position:%s;" />',
+                $resolvedSignatureImage,
+                $signatureImageWidth,
+                $signatureImageHeight,
+                $signatureImageFit,
+                $signatureImagePosition,
             );
         }
 
@@ -2730,7 +3093,7 @@ HTML;
     {
         $title = $this->interpolate((string) ($block['chart_title'] ?? ''), $data);
         $caption = $this->interpolate((string) ($block['chart_caption'] ?? ''), $data);
-        $chartSvg = trim($this->interpolate((string) ($block['chart_svg'] ?? ''), $data));
+        $chartSvg = $this->sanitizeChartSvg(trim($this->interpolate((string) ($block['chart_svg'] ?? ''), $data)));
         $chartImageUrl = trim($this->interpolate((string) ($block['chart_image_url'] ?? ''), $data));
         $generatedChartSvg = $this->renderGeneratedChartSvg($block, $data);
 
@@ -2768,20 +3131,43 @@ HTML;
 HTML;
     }
 
+    private function sanitizeChartSvg(string $svg): string
+    {
+        if ($svg === '' || preg_match('/\A\s*<svg(?:\s|>)/i', $svg) !== 1) {
+            return '';
+        }
+
+        $sanitized = (string) preg_replace(
+            [
+                '/<\s*(script|iframe|object|embed|foreignObject|link|meta)\b[^>]*>.*?<\s*\/\s*\1\s*>/is',
+                '/<\s*(script|iframe|object|embed|foreignObject|link|meta)\b[^>]*\/?\s*>/is',
+                '/\s+on[a-zA-Z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i',
+                '/\s+(?:xlink:href|href)\s*=\s*("[\']?)\s*javascript:[^"\'>\s]*\1/i',
+                '/url\(\s*([\'"]?)\s*javascript:[^)]+\)/i',
+            ],
+            '',
+            $svg
+        );
+
+        return preg_match('/\A[\s\S]*?<\s*\/\s*svg\s*>/i', $sanitized, $matches) === 1
+            ? trim($matches[0])
+            : '';
+    }
+
     /**
      * @param  array<string, mixed>  $block
      * @param  array<string, mixed>  $data
      */
     private function renderGeneratedChartSvg(array $block, array $data): string
     {
-        $values = $this->chartNumericValues($block);
+        $values = $this->chartNumericValues($block, $data);
 
         if ($values === []) {
             return '';
         }
 
-        $labels = $this->chartLabelValues($block, count($values));
-        $colors = $this->chartColorValues($block);
+        $labels = $this->chartLabelValues($block, count($values), $data);
+        $colors = $this->chartColorValues($block, $data);
         $type = in_array(($block['chart_type'] ?? 'bar'), ['bar', 'line', 'doughnut'], true)
             ? (string) $block['chart_type']
             : 'bar';
@@ -2789,11 +3175,12 @@ HTML;
         $backgroundColor = $this->hexColor((string) ($block['chart_background_color'] ?? '#f8f4ea'), '#f8f4ea');
         $primaryColor = $this->hexColor((string) ($block['chart_primary_color'] ?? ($colors[0] ?? '#143d37')), '#143d37');
         $showValues = (bool) ($block['chart_show_values'] ?? true);
+        $palette = $this->chartSvgPalette($backgroundColor);
 
         return match ($type) {
-            'line' => $this->renderLineChartSvg($values, $labels, $colors, $title, $backgroundColor, $primaryColor, $showValues, $data),
-            'doughnut' => $this->renderDoughnutChartSvg($values, $labels, $colors, $title, $backgroundColor, $primaryColor, $data),
-            default => $this->renderBarChartSvg($values, $labels, $colors, $title, $backgroundColor, $showValues, $data),
+            'line' => $this->renderLineChartSvg($values, $labels, $colors, $title, $backgroundColor, $primaryColor, $showValues, $data, $palette),
+            'doughnut' => $this->renderDoughnutChartSvg($values, $labels, $colors, $title, $backgroundColor, $data, $palette),
+            default => $this->renderBarChartSvg($values, $labels, $colors, $title, $backgroundColor, $showValues, $data, $palette),
         };
     }
 
@@ -2801,25 +3188,27 @@ HTML;
      * @param  array<int, float>  $values
      * @param  array<int, string>  $labels
      * @param  array<int, string>  $colors
+     * @param  array{ink:string, muted:string, grid:string, marker_stroke:string}  $palette
      */
-    private function renderBarChartSvg(array $values, array $labels, array $colors, string $title, string $backgroundColor, bool $showValues, array $data): string
+    private function renderBarChartSvg(array $values, array $labels, array $colors, string $title, string $backgroundColor, bool $showValues, array $data, array $palette): string
     {
         $maxValue = max(max($values), 1);
         $slot = 470 / max(count($values), 1);
-        $bars = collect($values)->map(function (float $value, int $index) use ($maxValue, $slot, $labels, $colors, $showValues, $data): string {
+        $bars = collect($values)->map(function (float $value, int $index) use ($maxValue, $slot, $labels, $colors, $showValues, $data, $palette): string {
             $height = max(6, ($value / $maxValue) * 132);
             $x = 58 + ($index * $slot) + max(6, $slot * 0.15);
             $y = 202 - $height;
             $width = max(18, $slot * 0.7);
             $valueText = $showValues ? sprintf(
-                '<text x="%.1f" y="%.1f" text-anchor="middle" font-size="11" font-weight="700" fill="#0f172a">%s</text>',
+                '<text x="%.1f" y="%.1f" text-anchor="middle" font-size="11" font-weight="700" fill="%s">%s</text>',
                 $x + ($width / 2),
                 $y - 10,
+                $palette['ink'],
                 e($this->formatChartValue($value))
             ) : '';
 
             return sprintf(
-                '<g><rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" rx="10" fill="%s"/>%s<text x="%.1f" y="230" text-anchor="middle" font-size="10" fill="#64748b">%s</text></g>',
+                '<g><rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" rx="10" fill="%s"/>%s<text x="%.1f" y="230" text-anchor="middle" font-size="10" fill="%s">%s</text></g>',
                 $x,
                 $y,
                 $width,
@@ -2827,12 +3216,13 @@ HTML;
                 $colors[$index % count($colors)],
                 $valueText,
                 $x + ($width / 2),
+                $palette['muted'],
                 e($this->interpolate($labels[$index] ?? 'S'.($index + 1), $data))
             );
         })->implode('');
 
         return <<<SVG
-<svg class="report-chart-svg" data-chart-type="bar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="{$title}"><rect width="560" height="260" rx="24" fill="{$backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="#0f172a">{$title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="#cbd5e1"/><line x1="52" y1="70" x2="52" y2="202" stroke="#cbd5e1"/>{$bars}</svg>
+<svg class="report-chart-svg" data-chart-type="bar" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="{$title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="{$backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="{$palette['ink']}">{$title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="{$palette['grid']}"/><line x1="52" y1="70" x2="52" y2="202" stroke="{$palette['grid']}"/>{$bars}</svg>
 SVG;
     }
 
@@ -2840,8 +3230,9 @@ SVG;
      * @param  array<int, float>  $values
      * @param  array<int, string>  $labels
      * @param  array<int, string>  $colors
+     * @param  array{ink:string, muted:string, grid:string, marker_stroke:string}  $palette
      */
-    private function renderLineChartSvg(array $values, array $labels, array $colors, string $title, string $backgroundColor, string $primaryColor, bool $showValues, array $data): string
+    private function renderLineChartSvg(array $values, array $labels, array $colors, string $title, string $backgroundColor, string $primaryColor, bool $showValues, array $data, array $palette): string
     {
         $maxValue = max(max($values), 1);
         $pointCount = max(count($values) - 1, 1);
@@ -2851,29 +3242,32 @@ SVG;
 
             return sprintf('%.1f,%.1f', $x, $y);
         })->implode(' ');
-        $markers = collect($values)->map(function (float $value, int $index) use ($maxValue, $pointCount, $labels, $colors, $showValues, $data): string {
+        $markers = collect($values)->map(function (float $value, int $index) use ($maxValue, $pointCount, $labels, $colors, $showValues, $data, $palette): string {
             $x = 58 + ($index * (470 / $pointCount));
             $y = 202 - (($value / $maxValue) * 132);
             $valueText = $showValues ? sprintf(
-                '<text x="%.1f" y="%.1f" text-anchor="middle" font-size="10" font-weight="700" fill="#0f172a">%s</text>',
+                '<text x="%.1f" y="%.1f" text-anchor="middle" font-size="10" font-weight="700" fill="%s">%s</text>',
                 $x,
                 $y - 12,
+                $palette['ink'],
                 e($this->formatChartValue($value))
             ) : '';
 
             return sprintf(
-                '<g><circle cx="%.1f" cy="%.1f" r="5" fill="%s" stroke="#fffaf0" stroke-width="2"/>%s<text x="%.1f" y="230" text-anchor="middle" font-size="10" fill="#64748b">%s</text></g>',
+                '<g><circle cx="%.1f" cy="%.1f" r="5" fill="%s" stroke="%s" stroke-width="2"/>%s<text x="%.1f" y="230" text-anchor="middle" font-size="10" fill="%s">%s</text></g>',
                 $x,
                 $y,
                 $colors[$index % count($colors)],
+                $palette['marker_stroke'],
                 $valueText,
                 $x,
+                $palette['muted'],
                 e($this->interpolate($labels[$index] ?? 'S'.($index + 1), $data))
             );
         })->implode('');
 
         return <<<SVG
-<svg class="report-chart-svg" data-chart-type="line" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="{$title}"><rect width="560" height="260" rx="24" fill="{$backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="#0f172a">{$title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="#cbd5e1"/><line x1="52" y1="70" x2="52" y2="202" stroke="#cbd5e1"/><polyline points="{$points}" fill="none" stroke="{$primaryColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>{$markers}</svg>
+<svg class="report-chart-svg" data-chart-type="line" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="{$title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="{$backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="{$palette['ink']}">{$title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="{$palette['grid']}"/><line x1="52" y1="70" x2="52" y2="202" stroke="{$palette['grid']}"/><polyline points="{$points}" fill="none" stroke="{$primaryColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>{$markers}</svg>
 SVG;
     }
 
@@ -2881,8 +3275,9 @@ SVG;
      * @param  array<int, float>  $values
      * @param  array<int, string>  $labels
      * @param  array<int, string>  $colors
+     * @param  array{ink:string, muted:string, grid:string, marker_stroke:string}  $palette
      */
-    private function renderDoughnutChartSvg(array $values, array $labels, array $colors, string $title, string $backgroundColor, string $primaryColor, array $data): string
+    private function renderDoughnutChartSvg(array $values, array $labels, array $colors, string $title, string $backgroundColor, array $data, array $palette): string
     {
         $total = array_sum(array_map(fn (float $value): float => max($value, 0), $values)) ?: 1;
         $circumference = 251.2;
@@ -2901,23 +3296,25 @@ SVG;
             $offset += $segment;
         }
 
-        $legend = collect($values)->map(function (float $value, int $index) use ($labels, $colors, $data): string {
+        $legend = collect($values)->map(function (float $value, int $index) use ($labels, $colors, $data, $palette): string {
             $y = 70 + ($index * 26);
 
             return sprintf(
-                '<g><rect x="250" y="%d" width="12" height="12" rx="3" fill="%s"/><text x="272" y="%d" font-size="12" fill="#334155">%s</text><text x="520" y="%d" font-size="12" font-weight="700" fill="#0f172a" text-anchor="end">%s</text></g>',
+                '<g><rect x="250" y="%d" width="12" height="12" rx="3" fill="%s"/><text x="272" y="%d" font-size="12" fill="%s">%s</text><text x="520" y="%d" font-size="12" font-weight="700" fill="%s" text-anchor="end">%s</text></g>',
                 $y - 10,
                 $colors[$index % count($colors)],
                 $y,
+                $palette['muted'],
                 e($this->interpolate($labels[$index] ?? 'S'.($index + 1), $data)),
                 $y,
+                $palette['ink'],
                 e($this->formatChartValue($value))
             );
         })->implode('');
         $totalText = e($this->formatChartValue($total));
 
         return <<<SVG
-<svg class="report-chart-svg" data-chart-type="doughnut" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="{$title}"><rect width="560" height="260" rx="24" fill="{$backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="#0f172a">{$title}</text><circle cx="130" cy="128" r="40" fill="none" stroke="#e2e8f0" stroke-width="18"/>{$rings}<text x="130" y="126" text-anchor="middle" font-size="18" font-weight="800" fill="{$primaryColor}">{$totalText}</text><text x="130" y="144" text-anchor="middle" font-size="10" fill="#64748b">total</text>{$legend}</svg>
+<svg class="report-chart-svg" data-chart-type="doughnut" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="{$title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="{$backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="{$palette['ink']}">{$title}</text><circle cx="130" cy="128" r="40" fill="none" stroke="{$palette['grid']}" stroke-width="18"/>{$rings}<text x="130" y="126" text-anchor="middle" font-size="18" font-weight="800" fill="{$palette['ink']}">{$totalText}</text><text x="130" y="144" text-anchor="middle" font-size="10" fill="{$palette['muted']}">total</text>{$legend}</svg>
 SVG;
     }
 
@@ -2925,11 +3322,11 @@ SVG;
      * @param  array<string, mixed>  $block
      * @return array<int, float>
      */
-    private function chartNumericValues(array $block): array
+    private function chartNumericValues(array $block, array $data): array
     {
-        return collect($this->chartListValue($block['chart_values'] ?? $block['chart_series'] ?? []))
+        return collect($this->chartListValue($block['chart_values'] ?? $block['chart_series'] ?? [], $data))
+            ->filter(fn (string $value): bool => is_numeric(str_replace(',', '.', $value)))
             ->map(fn (string $value): float => (float) str_replace(',', '.', $value))
-            ->filter(fn (float $value): bool => is_finite($value))
             ->take(12)
             ->values()
             ->all();
@@ -2939,9 +3336,9 @@ SVG;
      * @param  array<string, mixed>  $block
      * @return array<int, string>
      */
-    private function chartLabelValues(array $block, int $count): array
+    private function chartLabelValues(array $block, int $count, array $data): array
     {
-        $labels = $this->chartListValue($block['chart_labels'] ?? []);
+        $labels = $this->chartListValue($block['chart_labels'] ?? [], $data);
 
         if ($labels !== []) {
             return array_slice($labels, 0, max($count, 1));
@@ -2956,9 +3353,9 @@ SVG;
      * @param  array<string, mixed>  $block
      * @return array<int, string>
      */
-    private function chartColorValues(array $block): array
+    private function chartColorValues(array $block, array $data): array
     {
-        $colors = collect($this->chartListValue($block['chart_colors'] ?? []))
+        $colors = collect($this->chartListValue($block['chart_colors'] ?? [], $data))
             ->filter(fn (string $value): bool => preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1)
             ->values()
             ->all();
@@ -2969,17 +3366,28 @@ SVG;
     /**
      * @return array<int, string>
      */
-    private function chartListValue(mixed $value): array
+    private function chartListValue(mixed $value, array $data = []): array
     {
         if (is_array($value)) {
             return collect($value)
-                ->map(fn (mixed $item): string => trim((string) $item))
+                ->flatMap(fn (mixed $item): array => $this->splitChartListString($this->interpolate((string) $item, $data)))
                 ->filter()
                 ->values()
                 ->all();
         }
 
-        return collect(preg_split('/[\r\n,;]+/', (string) $value) ?: [])
+        return collect($this->splitChartListString($this->interpolate((string) $value, $data)))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function splitChartListString(string $value): array
+    {
+        return collect(preg_split('/[\r\n;]+|(?<!\d),|,(?!\d)/', $value) ?: [])
             ->map(fn (string $item): string => trim($item))
             ->filter()
             ->values()
@@ -2989,6 +3397,63 @@ SVG;
     private function hexColor(string $value, string $fallback): string
     {
         return preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1 ? $value : $fallback;
+    }
+
+    /**
+     * @return array{ink:string, muted:string, grid:string, marker_stroke:string}
+     */
+    private function chartSvgPalette(string $backgroundColor): array
+    {
+        $rgb = $this->hexColorRgb($backgroundColor) ?? $this->hexColorRgb('#f8f4ea');
+        $luminance = $this->relativeLuminance($rgb ?? [248, 244, 234]);
+
+        if ($luminance < 0.42) {
+            return [
+                'ink' => '#fffdf7',
+                'muted' => '#d7e3dc',
+                'grid' => '#48615a',
+                'marker_stroke' => '#07110f',
+            ];
+        }
+
+        return [
+            'ink' => '#0f172a',
+            'muted' => '#64748b',
+            'grid' => '#cbd5e1',
+            'marker_stroke' => '#fffaf0',
+        ];
+    }
+
+    /**
+     * @return array{0:int, 1:int, 2:int}|null
+     */
+    private function hexColorRgb(string $hexColor): ?array
+    {
+        if (preg_match('/^#([0-9a-fA-F]{6})$/', trim($hexColor), $matches) !== 1) {
+            return null;
+        }
+
+        return [
+            hexdec(substr($matches[1], 0, 2)),
+            hexdec(substr($matches[1], 2, 2)),
+            hexdec(substr($matches[1], 4, 2)),
+        ];
+    }
+
+    /**
+     * @param  array{0:int, 1:int, 2:int}  $rgb
+     */
+    private function relativeLuminance(array $rgb): float
+    {
+        $channels = array_map(function (int $value): float {
+            $normalized = $value / 255;
+
+            return $normalized <= 0.03928
+                ? $normalized / 12.92
+                : (($normalized + 0.055) / 1.055) ** 2.4;
+        }, $rgb);
+
+        return (0.2126 * $channels[0]) + (0.7152 * $channels[1]) + (0.0722 * $channels[2]);
     }
 
     private function formatChartValue(float $value): string
@@ -3254,6 +3719,9 @@ CSS);
             'table_border_color',
             'table_font_size',
             'table_cell_padding',
+            'table_summary_background',
+            'table_summary_text_color',
+            'table_summary_muted_color',
         ])->contains(fn (string $key): bool => filled(data_get($layout, $key)));
 
         if (! $hasTableControls) {
@@ -3265,21 +3733,32 @@ CSS);
         $borderColor = $this->safeCssColor((string) data_get($layout, 'table_border_color', '#ded3bf'), '#ded3bf');
         $fontSize = $this->clampedCssNumber(data_get($layout, 'table_font_size', 10), 8, 16, 10);
         $cellPadding = $this->clampedCssNumber(data_get($layout, 'table_cell_padding', 8), 2, 24, 8);
+        $summaryBackground = $this->safeCssColor((string) data_get($layout, 'table_summary_background', '#fffdf7'), '#fffdf7');
+        $summaryTextColor = $this->safeCssColor((string) data_get($layout, 'table_summary_text_color', '#15231f'), '#15231f');
+        $summaryMutedColor = $this->safeCssColor((string) data_get($layout, 'table_summary_muted_color', '#64748b'), '#64748b');
         $secondaryFontSize = max(7, round($fontSize * 0.82, 2));
 
         return trim(<<<CSS
 /* studio-table-controls:start */
-.pdf-document table{width:100%;border-collapse:collapse;font-size:{$fontSize}px;}
-.pdf-document table th,
+.pdf-document table{width:100%;font-size:{$fontSize}px;}
+.pdf-document table:not(.document-summary-table){border-collapse:collapse;}
+.pdf-document table:not(.document-summary-table) th,
 .pdf-document .data-table th,
 .pdf-document .worksheet-table th,
 .pdf-document .report-table th,
 .pdf-document .tg thead th{background:{$headerBackground} !important;color:{$headerTextColor} !important;border:1px solid {$borderColor} !important;padding:{$cellPadding}px !important;font-size:{$fontSize}px !important;letter-spacing:0.04em;text-transform:uppercase;}
-.pdf-document table td,
+.pdf-document table:not(.document-summary-table) td,
 .pdf-document .data-table td,
 .pdf-document .worksheet-table td,
 .pdf-document .report-table td,
 .pdf-document .tg td{border:1px solid {$borderColor} !important;padding:{$cellPadding}px !important;font-size:{$fontSize}px !important;vertical-align:top;}
+.pdf-document .document-summary-table{border-collapse:separate !important;border-spacing:0 8px !important;}
+.pdf-document .document-summary-table td{border:0 !important;padding:4px !important;}
+.pdf-document .document-summary-cell{background:{$summaryBackground} !important;border:1px solid {$borderColor} !important;border-radius:18px !important;padding:14px !important;vertical-align:top;}
+.pdf-document .document-summary-cell .label{display:block;color:{$summaryMutedColor} !important;font-size:9px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;}
+.pdf-document .document-summary-cell .value{display:block;color:{$summaryTextColor} !important;font-size:12px;font-weight:800;margin-top:4px;}
+.pdf-document .document-summary-cell .muted{display:block;color:{$summaryMutedColor} !important;font-size:10px;line-height:1.55;margin-top:6px;}
+.pdf-document .document-financial-summary td{color:{$summaryTextColor};}
 .pdf-document .bilingual-label,
 .pdf-document .tg small{font-size:{$secondaryFontSize}px !important;}
 /* studio-table-controls:end */

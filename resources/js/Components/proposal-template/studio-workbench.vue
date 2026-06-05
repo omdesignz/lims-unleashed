@@ -1,8 +1,14 @@
 <script setup>
 import fancyTextarea from '@/Components/fancy-textarea.vue'
+import {
+  proposalTemplatePageSizeCatalog,
+  proposalTemplatePreviewMarginStyle,
+  proposalTemplatePreviewPageDimensions,
+  proposalTemplatePreviewPageFormatLabel,
+} from '@/Support/proposal-template-preview-geometry.mjs'
 import axios from 'axios'
 import { create as createQrCode } from 'qrcode'
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
 import {
@@ -70,6 +76,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  draftPreviewHref: {
+    type: String,
+    default: '',
+  },
 })
 
 const emit = defineEmits(['submit', 'select-preset'])
@@ -95,6 +105,8 @@ const mediaPickerUploadBusy = ref(false)
 const mediaPickerUploadDragging = ref(false)
 const mediaPickerUploadProgress = ref(0)
 const mediaPickerUploadError = ref('')
+const draftPreviewBusy = ref(false)
+const draftPreviewError = ref('')
 
 const allowedMediaMimeTypes = [
   'image/svg+xml',
@@ -103,6 +115,14 @@ const allowedMediaMimeTypes = [
   'image/webp',
   'image/gif',
   'image/avif',
+]
+
+const defaultChartPalette = ['#143d37', '#d9b05f', '#0f766e', '#475569', '#7c2d12', '#3f6f58']
+
+const chartTypeOptions = [
+  { value: 'bar', label: 'Barras' },
+  { value: 'line', label: 'Linha' },
+  { value: 'doughnut', label: 'Anel' },
 ]
 
 const snippetTargetOptions = [
@@ -160,10 +180,13 @@ const presetCategoryLabels = {
   general: 'Geral',
 }
 
+const pageSizeCatalog = proposalTemplatePageSizeCatalog
+
 const pageFormatOptions = [
   { value: 'A4', label: 'A4' },
   { value: 'Letter', label: 'Letter' },
   { value: 'Legal', label: 'Legal' },
+  { value: 'custom', label: 'Personalizado' },
 ]
 
 const orientationOptions = [
@@ -487,6 +510,24 @@ const previewPageStyle = computed(() => {
     : baseStyle
 })
 
+const previewPageDimensions = computed(() => proposalTemplatePreviewPageDimensions(props.exportSettings))
+const previewPageFormatLabel = computed(() => proposalTemplatePreviewPageFormatLabel(props.exportSettings))
+
+const previewPageFrameStyle = computed(() => {
+  const dimensions = previewPageDimensions.value
+  const maxWidth = props.exportSettings.orientation === 'L' ? 1080 : 860
+
+  return {
+    ...previewPageStyle.value,
+    maxWidth: `${maxWidth}px`,
+    aspectRatio: `${dimensions.width} / ${dimensions.height}`,
+  }
+})
+
+function previewMarginStyleForPage(pageNumber) {
+  return proposalTemplatePreviewMarginStyle(props.exportSettings, pageNumber)
+}
+
 const previewHeaderHtml = computed(() => {
   return interpolatePreviewHtml(previewMode.value === 'first-page'
     ? props.layoutSchema.first_page_header_html
@@ -559,7 +600,7 @@ const snippetLibrary = [
 <section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#143d37,#d8b85f); color:#fffdf7; margin-bottom:24px;">
   <div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.8;">{{lab_name}}</div>
   <h1 style="margin:12px 0 0; font-size:28px;">Proposta {{proposal_number}}</h1>
-  <p style="margin:12px 0 0; font-size:14px; opacity:0.88;">Escopo preparado para {{customer_name}} com enquadramento técnico, comercial e documental.</p>
+  <p style="margin:12px 0 0; font-size:14px; opacity:0.88;">Âmbito preparado para {{customer_name}} com enquadramento técnico, comercial e documental.</p>
 </section>`.trim(),
   },
   {
@@ -583,7 +624,7 @@ const snippetLibrary = [
   },
   {
     label: 'Bloco de decisão',
-    description: 'Área para regra de decisão, escopo ou condições de aceitação.',
+    description: 'Área para regra de decisão, âmbito ou condições de aceitação.',
     html: `
 <section style="border-left:4px solid #1d4ed8; background:#eff6ff; padding:18px 20px; border-radius:18px; margin:20px 0;">
   <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.16em; color:#9a7a2f; font-weight:700;">Regra de decisão</div>
@@ -647,6 +688,17 @@ function createCanvasBlock(overrides = {}) {
     qr_background_color: '#ffffff',
     qr_error_correction: 'low',
     qr_margin: 8,
+    chart_title: '',
+    chart_caption: '',
+    chart_svg: '',
+    chart_image_url: '',
+    chart_type: 'bar',
+    chart_labels: '',
+    chart_values: '',
+    chart_colors: defaultChartPalette.join(', '),
+    chart_primary_color: '#143d37',
+    chart_background_color: '#f8f4ea',
+    chart_show_values: true,
     x: 0,
     y: 0,
     width: 100,
@@ -671,6 +723,10 @@ function createCanvasBlock(overrides = {}) {
     signature_name: '',
     signature_title: '',
     signature_image: '',
+    signature_image_fit: 'contain',
+    signature_image_position: 'center center',
+    signature_image_width: 180,
+    signature_image_height: 72,
     signature_line_style: 'solid',
     signature_align: 'left',
     signature_show_date: false,
@@ -791,6 +847,30 @@ function addQrCanvasBlock() {
   })
 }
 
+function addChartSnapshotCanvasBlock() {
+  addCanvasBlock({
+    title: 'Resumo visual da proposta',
+    block_kind: 'chart_snapshot',
+    content_html: '',
+    width: 42,
+    min_height: 180,
+    padding: 14,
+    background_color: 'rgba(255,255,255,0.92)',
+    border_width: 1,
+    border_color: 'rgba(148,163,184,0.28)',
+    border_radius: 22,
+    chart_title: 'Resumo visual da proposta',
+    chart_caption: 'Âmbito, amostras e investimento acordados.',
+    chart_type: 'bar',
+    chart_labels: ['Âmbito', 'Amostras', 'Serviços'],
+    chart_values: [3, 5, 8],
+    chart_colors: defaultChartPalette,
+    chart_primary_color: '#143d37',
+    chart_background_color: '#f8f4ea',
+    chart_show_values: true,
+  })
+}
+
 function addSavedSignatureCanvasBlock(asset) {
   addSignatureCanvasBlock('approval')
 
@@ -802,6 +882,10 @@ function addSavedSignatureCanvasBlock(asset) {
   selectedCanvasBlock.value.signature_label = 'Assinatura autorizada'
   selectedCanvasBlock.value.signature_name = asset.label || '{{lab_name}}'
   selectedCanvasBlock.value.signature_image = asset.url
+  selectedCanvasBlock.value.signature_image_fit = selectedCanvasBlock.value.signature_image_fit || 'contain'
+  selectedCanvasBlock.value.signature_image_position = selectedCanvasBlock.value.signature_image_position || 'center center'
+  selectedCanvasBlock.value.signature_image_width = selectedCanvasBlock.value.signature_image_width || 180
+  selectedCanvasBlock.value.signature_image_height = selectedCanvasBlock.value.signature_image_height || 72
 }
 
 function presetCategoryLabel(category) {
@@ -886,7 +970,7 @@ function normalizeUploadedAsset(data, file) {
     id: backendAsset.id || `proposal-studio-upload-${data?.id || Date.now()}`,
     label: backendAsset.label || file.name,
     kind: backendAsset.kind || 'proposal_studio_upload',
-    source: backendAsset.source || 'Upload do studio',
+    source: backendAsset.source || 'Carregamento no estúdio',
     mime_type: backendAsset.mime_type || file.type,
     file_type: backendAsset.file_type || (String(file.type || '').startsWith('image/') ? 'image' : 'other'),
     size: backendAsset.size || file.size,
@@ -1001,6 +1085,117 @@ function canvasBlockOverlayStyle(block) {
   }
 }
 
+function chartListValue(value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item ?? '').trim())
+      .filter(Boolean)
+  }
+
+  return String(value || '')
+    .split(/[\n,;]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function chartNumericValues(block) {
+  return chartListValue(block.chart_values)
+    .map((value) => Number(String(value).replace(',', '.')))
+    .filter((value) => Number.isFinite(value))
+    .slice(0, 12)
+}
+
+function chartLabelValues(block, values) {
+  const labels = chartListValue(block.chart_labels).slice(0, 12)
+
+  if (labels.length) {
+    return labels
+  }
+
+  return values.map((_, index) => `S${index + 1}`)
+}
+
+function chartColorValues(block) {
+  const configuredColors = chartListValue(block.chart_colors)
+    .filter((value) => /^#[0-9a-fA-F]{6}$/.test(value))
+
+  return configuredColors.length ? configuredColors : defaultChartPalette
+}
+
+function escapeSvgText(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+}
+
+function generatedChartSvg(block) {
+  const values = chartNumericValues(block)
+
+  if (!values.length) {
+    return ''
+  }
+
+  const labels = chartLabelValues(block, values)
+  const colors = chartColorValues(block)
+  const maxValue = Math.max(...values, 1)
+  const type = ['bar', 'line', 'doughnut'].includes(block.chart_type) ? block.chart_type : 'bar'
+  const title = escapeSvgText(interpolatePreviewHtml(block.chart_title || block.title || 'Gráfico'))
+  const backgroundColor = colorInputValue(block.chart_background_color, '#f8f4ea')
+  const primaryColor = colorInputValue(block.chart_primary_color, colors[0] || '#143d37')
+  const showValues = block.chart_show_values !== false
+
+  if (type === 'doughnut') {
+    const total = values.reduce((sum, value) => sum + Math.max(value, 0), 0) || 1
+    const circumference = 251.2
+    let offset = 0
+    const rings = values.map((value, index) => {
+      const segment = (Math.max(value, 0) / total) * circumference
+      const ring = `<circle cx="130" cy="128" r="40" fill="none" stroke="${colors[index % colors.length]}" stroke-width="18" stroke-dasharray="${segment.toFixed(2)} ${(circumference - segment).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 130 128)" />`
+      offset += segment
+
+      return ring
+    }).join('')
+    const legend = labels.map((label, index) => {
+      const y = 70 + (index * 26)
+
+      return `<g><rect x="250" y="${y - 10}" width="12" height="12" rx="3" fill="${colors[index % colors.length]}"/><text x="272" y="${y}" font-size="12" fill="#334155">${escapeSvgText(interpolatePreviewHtml(label))}</text><text x="520" y="${y}" font-size="12" font-weight="700" fill="#0f172a" text-anchor="end">${values[index]}</text></g>`
+    }).join('')
+
+    return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="#0f172a">${title}</text><circle cx="130" cy="128" r="40" fill="none" stroke="#e2e8f0" stroke-width="18"/>${rings}<text x="130" y="126" text-anchor="middle" font-size="18" font-weight="800" fill="${primaryColor}">${total}</text><text x="130" y="144" text-anchor="middle" font-size="10" fill="#64748b">total</text>${legend}</svg>`
+  }
+
+  if (type === 'line') {
+    const points = values.map((value, index) => {
+      const x = 58 + (index * (470 / Math.max(values.length - 1, 1)))
+      const y = 202 - ((value / maxValue) * 132)
+
+      return `${x.toFixed(1)},${y.toFixed(1)}`
+    }).join(' ')
+    const markers = values.map((value, index) => {
+      const x = 58 + (index * (470 / Math.max(values.length - 1, 1)))
+      const y = 202 - ((value / maxValue) * 132)
+
+      return `<g><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${colors[index % colors.length]}" stroke="#fffaf0" stroke-width="2"/>${showValues ? `<text x="${x.toFixed(1)}" y="${(y - 12).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="#0f172a">${value}</text>` : ''}<text x="${x.toFixed(1)}" y="230" text-anchor="middle" font-size="10" fill="#64748b">${escapeSvgText(interpolatePreviewHtml(labels[index] || `S${index + 1}`))}</text></g>`
+    }).join('')
+
+    return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="#0f172a">${title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="#cbd5e1"/><line x1="52" y1="70" x2="52" y2="202" stroke="#cbd5e1"/><polyline points="${points}" fill="none" stroke="${primaryColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${markers}</svg>`
+  }
+
+  const slot = 470 / Math.max(values.length, 1)
+  const bars = values.map((value, index) => {
+    const height = Math.max(6, (value / maxValue) * 132)
+    const x = 58 + (index * slot) + Math.max(6, slot * 0.15)
+    const y = 202 - height
+    const width = Math.max(18, slot * 0.7)
+
+    return `<g><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${width.toFixed(1)}" height="${height.toFixed(1)}" rx="10" fill="${colors[index % colors.length]}"/>${showValues ? `<text x="${(x + width / 2).toFixed(1)}" y="${(y - 10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="#0f172a">${value}</text>` : ''}<text x="${(x + width / 2).toFixed(1)}" y="230" text-anchor="middle" font-size="10" fill="#64748b">${escapeSvgText(interpolatePreviewHtml(labels[index] || `S${index + 1}`))}</text></g>`
+  }).join('')
+
+  return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="#0f172a">${title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="#cbd5e1"/><line x1="52" y1="70" x2="52" y2="202" stroke="#cbd5e1"/>${bars}</svg>`
+}
+
 function canvasBlockContentHtml(block) {
   if (block.block_kind === 'signature') {
     const alignClass = {
@@ -1013,8 +1208,12 @@ function canvasBlockContentHtml(block) {
       ? 'border-t border-dashed border-slate-500/70'
       : 'border-t border-slate-500/70'
 
+    const signatureImageFit = mediaObjectFit(block.signature_image_fit || 'contain')
+    const signatureImagePosition = safeCssPositionValue(block.signature_image_position || 'center center', 'center center')
+    const signatureImageWidth = clamp(Number(block.signature_image_width || 180), 24, 360)
+    const signatureImageHeight = clamp(Number(block.signature_image_height || 72), 16, 240)
     const signatureImage = block.signature_image
-      ? `<img src="${block.signature_image}" alt="Assinatura" style="max-height:72px; max-width:180px; object-fit:contain;" />`
+      ? `<img src="${block.signature_image}" alt="Assinatura" style="display:block; width:${signatureImageWidth}px; max-width:100%; height:${signatureImageHeight}px; object-fit:${signatureImageFit}; object-position:${signatureImagePosition};" />`
       : ''
 
     const dateLabel = block.signature_show_date
@@ -1043,6 +1242,30 @@ function canvasBlockContentHtml(block) {
     }
 
     return `<img src="${imageUrl}" alt="${interpolatePreviewHtml(block.image_alt || block.title || 'Imagem')}" style="display:block; width:100%; height:100%; min-height:inherit; object-fit:${block.image_fit || 'contain'}; object-position:${block.image_position || 'center center'};" />`
+  }
+
+  if (block.block_kind === 'chart_snapshot') {
+    const chartTitle = block.chart_title
+      ? `<div class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">${interpolatePreviewHtml(block.chart_title)}</div>`
+      : ''
+    const chartCaption = block.chart_caption
+      ? `<div class="mt-3 text-xs leading-relaxed text-slate-500">${interpolatePreviewHtml(block.chart_caption)}</div>`
+      : ''
+    const chartGraphic = block.chart_svg
+      ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${interpolatePreviewHtml(block.chart_svg)}</div>`
+      : block.chart_image_url
+        ? `<img src="${interpolatePreviewHtml(block.chart_image_url)}" alt="${interpolatePreviewHtml(block.chart_title || block.title || 'Gráfico')}" style="display:block; margin-top:12px; width:100%; min-height:140px; object-fit:contain;" />`
+        : generatedChartSvg(block)
+          ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${generatedChartSvg(block)}</div>`
+          : '<div class="mt-3 flex min-h-36 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-center text-xs text-slate-500">Defina rótulos e valores para gerar o gráfico ou use SVG/imagem exportada.</div>'
+
+    return `
+      <div class="report-chart studio-avoid-break">
+        ${chartTitle}
+        ${chartGraphic}
+        ${chartCaption}
+      </div>
+    `.trim()
   }
 
   if (block.block_kind === 'qr_code') {
@@ -1274,6 +1497,26 @@ function setPreviewPage(pageNumber) {
 
 function stepPreviewPage(direction) {
   setPreviewPage(currentPreviewPage.value + direction)
+}
+
+function mediaObjectFit(value = 'contain') {
+  return {
+    cover: 'cover',
+    auto: 'scale-down',
+  }[value] || 'contain'
+}
+
+function safeCssPositionValue(value, fallback = 'center center') {
+  const position = String(value || '').trim()
+
+  if (!position) {
+    return fallback
+  }
+
+  const positionToken = '(?:left|right|top|bottom|center|(?:100|[1-9]?\\d)(?:\\.\\d{1,2})?%)'
+  const positionPattern = new RegExp(`^${positionToken}(?:\\s+${positionToken})?$`, 'i')
+
+  return positionPattern.test(position) ? position : fallback
 }
 
 function clamp(value, min, max) {
@@ -1708,6 +1951,118 @@ function syncAssetUrlFromBackground() {
   mediaAssetUrl.value = props.layoutSchema.background_image_path || ''
 }
 
+function draftPreviewPayload() {
+  props.layoutSchema.variable_catalog = translatedPlaceholders.value
+
+  return {
+    name: props.form.name || '',
+    category: props.form.category || 'general',
+    description: props.form.description || '',
+    theme_preset: props.form.theme_preset || 'corporate',
+    is_active: props.form.is_active ?? true,
+    content: props.form.content || '',
+    layout_schema: { ...props.layoutSchema },
+    export_settings: normalizedExportSettings(),
+  }
+}
+
+function normalizedExportSettings() {
+  return {
+    paper_size: props.exportSettings.paper_size || 'A4',
+    custom_page_width: props.exportSettings.paper_size === 'custom' ? Number(props.exportSettings.custom_page_width || 0) : null,
+    custom_page_height: props.exportSettings.paper_size === 'custom' ? Number(props.exportSettings.custom_page_height || 0) : null,
+    orientation: props.exportSettings.orientation || 'P',
+    margin_top: Number(props.exportSettings.margin_top || 0),
+    margin_right: Number(props.exportSettings.margin_right || 0),
+    margin_bottom: Number(props.exportSettings.margin_bottom || 0),
+    margin_left: Number(props.exportSettings.margin_left || 0),
+    first_page_margin_top: Number(props.exportSettings.first_page_margin_top || 0),
+  }
+}
+
+function ensureCustomPageDefaults() {
+  if (!Number.isFinite(Number(props.exportSettings.custom_page_width)) || Number(props.exportSettings.custom_page_width) < 50) {
+    props.exportSettings.custom_page_width = pageSizeCatalog.A4.width
+  }
+
+  if (!Number.isFinite(Number(props.exportSettings.custom_page_height)) || Number(props.exportSettings.custom_page_height) < 50) {
+    props.exportSettings.custom_page_height = pageSizeCatalog.A4.height
+  }
+}
+
+watch(() => props.exportSettings.paper_size, (paperSize) => {
+  if (paperSize === 'custom') {
+    ensureCustomPageDefaults()
+  }
+}, { immediate: true })
+
+function filenameFromResponse(response, fallback) {
+  const disposition = response.headers?.['content-disposition'] || ''
+  const match = disposition.match(/filename="?([^"]+)"?/i)
+
+  return match?.[1] || fallback
+}
+
+function downloadBlob(blob, filename) {
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
+async function draftPreviewMessage(error) {
+  const fallback = trans('gestlab.general.labels.vap_proposal_templates.studio.draft_preview.error')
+  const payload = error?.response?.data
+
+  if (payload instanceof Blob) {
+    const text = await payload.text()
+
+    try {
+      const json = JSON.parse(text)
+      const firstError = Object.values(json.errors || {}).flat()[0]
+
+      return json.message || firstError || fallback
+    } catch {
+      return text || fallback
+    }
+  }
+
+  return error?.response?.data?.message || fallback
+}
+
+async function previewDraftPdf() {
+  draftPreviewError.value = ''
+
+  if (!props.draftPreviewHref) {
+    draftPreviewError.value = trans('gestlab.general.labels.vap_proposal_templates.studio.draft_preview.missing_route')
+
+    return
+  }
+
+  draftPreviewBusy.value = true
+
+  try {
+    syncTableStylesCss()
+    const response = await axios.post(props.draftPreviewHref, draftPreviewPayload(), {
+      responseType: 'blob',
+      headers: {
+        Accept: 'application/json, application/pdf',
+      },
+    })
+    const filename = filenameFromResponse(response, 'proposal-template-draft-preview.pdf')
+
+    downloadBlob(response.data, filename)
+  } catch (error) {
+    draftPreviewError.value = await draftPreviewMessage(error)
+  } finally {
+    draftPreviewBusy.value = false
+  }
+}
+
 function submit() {
   props.layoutSchema.variable_catalog = translatedPlaceholders.value
   emit('submit')
@@ -1742,14 +2097,25 @@ function submit() {
           </Link>
           <button
             type="button"
+            class="inline-flex items-center justify-center rounded-2xl border border-[#ded2bb] bg-white/80 px-4 py-3 text-sm font-black text-[#143d37] transition hover:bg-[#fff7e5] disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-emerald-100 dark:hover:bg-white/15"
+            :disabled="draftPreviewBusy || props.form.processing"
+            @click="previewDraftPdf"
+          >
+            {{ draftPreviewBusy ? trans('gestlab.general.labels.vap_proposal_templates.studio.draft_preview.generating') : trans('gestlab.general.labels.vap_proposal_templates.studio.draft_preview.action') }}
+          </button>
+          <button
+            type="button"
             class="inline-flex items-center justify-center rounded-2xl bg-[#143d37] px-4 py-3 text-sm font-black text-white shadow-[0_18px_42px_-24px_rgba(20,61,55,0.75)] transition hover:bg-[#0f302b] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400"
-            :disabled="props.form.processing"
+            :disabled="props.form.processing || draftPreviewBusy"
             @click="submit"
           >
             {{ props.form.processing ? 'A guardar...' : props.submitLabel }}
           </button>
         </div>
       </div>
+      <p v-if="draftPreviewError" class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+        {{ draftPreviewError }}
+      </p>
     </div>
 
     <div v-if="props.presets.length" class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
@@ -1951,6 +2317,13 @@ function submit() {
                 </button>
                 <button
                   type="button"
+                  @click="addChartSnapshotCanvasBlock"
+                  class="inline-flex items-center rounded-2xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-white dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-900"
+                >
+                  Gráfico
+                </button>
+                <button
+                  type="button"
                   @click="addSignatureCanvasBlock('lab')"
                   class="inline-flex items-center rounded-2xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-white dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-900"
                 >
@@ -2129,7 +2502,7 @@ function submit() {
                 <div class="flex items-center justify-between gap-3">
                   <div>
                     <div class="text-sm font-semibold text-slate-900 dark:text-slate-100">Editar bloco</div>
-                    <div class="text-xs text-slate-500 dark:text-slate-400">Posicionamento, escopo e estilo persistidos no layout.</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400">Posicionamento, âmbito e estilo persistidos no layout.</div>
                   </div>
                   <div class="flex items-center gap-2">
                     <button
@@ -2231,6 +2604,7 @@ function submit() {
                       <option value="stamp">Carimbo / selo</option>
                       <option value="signature">Assinatura</option>
                       <option value="qr_code">QR code</option>
+                      <option value="chart_snapshot">Gráfico / captura</option>
                     </select>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Superfície
@@ -2334,7 +2708,7 @@ function submit() {
                     <input v-model="selectedCanvasBlock.is_locked" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
                     Bloco bloqueado para mover e redimensionar
                   </label>
-                  <label v-if="selectedCanvasBlock.surface === 'content'" class="text-sm text-slate-700 dark:text-slate-300">Escopo no PDF
+                  <label v-if="selectedCanvasBlock.surface === 'content'" class="text-sm text-slate-700 dark:text-slate-300">Âmbito no PDF
                     <select v-model="selectedCanvasBlock.page_scope" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option v-for="option in canvasContentScopeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
@@ -2362,6 +2736,45 @@ function submit() {
                     </select>
                     <button type="button" @click="openMediaPicker('selected-block', 'signature_image')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Galeria / upload</button>
                   </label>
+                  <div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/70 sm:col-span-2">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Imagem impressa da assinatura</p>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Controla a imagem no preview e no PDF final da proposta.</p>
+                      </div>
+                      <div v-if="selectedCanvasBlock.signature_image" class="rounded-2xl bg-white p-2 shadow-sm ring-1 ring-slate-200 dark:bg-slate-950 dark:ring-slate-700">
+                        <img
+                          :src="selectedCanvasBlock.signature_image"
+                          alt="Preview da assinatura"
+                          :style="{
+                            width: `${clamp(Number(selectedCanvasBlock.signature_image_width || 180), 24, 360)}px`,
+                            maxWidth: '220px',
+                            height: `${clamp(Number(selectedCanvasBlock.signature_image_height || 72), 16, 240)}px`,
+                            objectFit: mediaObjectFit(selectedCanvasBlock.signature_image_fit || 'contain'),
+                            objectPosition: safeCssPositionValue(selectedCanvasBlock.signature_image_position || 'center center', 'center center'),
+                          }"
+                        />
+                      </div>
+                    </div>
+                    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      <label class="text-sm text-slate-700 dark:text-slate-300">Ajuste
+                        <select v-model="selectedCanvasBlock.signature_image_fit" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                          <option v-for="option in backgroundFitOptions" :key="`signature-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
+                        </select>
+                      </label>
+                      <label class="text-sm text-slate-700 dark:text-slate-300">Foco
+                        <select v-model="selectedCanvasBlock.signature_image_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                          <option v-for="option in imagePositionOptions" :key="`signature-position-${option.value}`" :value="option.value">{{ option.label }}</option>
+                        </select>
+                      </label>
+                      <label class="text-sm text-slate-700 dark:text-slate-300">Largura
+                        <input v-model.number="selectedCanvasBlock.signature_image_width" type="number" min="24" max="360" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      </label>
+                      <label class="text-sm text-slate-700 dark:text-slate-300">Altura
+                        <input v-model.number="selectedCanvasBlock.signature_image_height" type="number" min="16" max="240" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      </label>
+                    </div>
+                  </div>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Estilo da linha
                     <select v-model="selectedCanvasBlock.signature_line_style" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option value="solid">Contínua</option>
@@ -2446,7 +2859,57 @@ function submit() {
                   <p class="text-xs leading-relaxed text-slate-500 dark:text-slate-400 sm:col-span-2">O preview usa o mesmo conteúdo, cores, margem e tolerância de leitura aplicados ao PDF final.</p>
                 </div>
 
-                <div v-if="!['signature', 'image', 'stamp', 'qr_code'].includes(selectedCanvasBlock.block_kind)" class="mt-4">
+                <div v-if="selectedCanvasBlock.block_kind === 'chart_snapshot'" class="mt-4 grid gap-4 sm:grid-cols-2">
+                  <label class="text-sm text-slate-700 dark:text-slate-300">Título do gráfico
+                    <input v-model="selectedCanvasBlock.chart_title" type="text" placeholder="Resumo visual da proposta" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                  </label>
+                  <label class="text-sm text-slate-700 dark:text-slate-300">Tipo
+                    <select v-model="selectedCanvasBlock.chart_type" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                      <option v-for="option in chartTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                    </select>
+                  </label>
+                  <label class="text-sm text-slate-700 dark:text-slate-300">Etiquetas
+                    <textarea v-model="selectedCanvasBlock.chart_labels" rows="4" placeholder="Âmbito, Amostras, Serviços" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                  </label>
+                  <label class="text-sm text-slate-700 dark:text-slate-300">Valores
+                    <textarea v-model="selectedCanvasBlock.chart_values" rows="4" placeholder="3, 5, 8" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                  </label>
+                  <label class="text-sm text-slate-700 dark:text-slate-300">Paleta
+                    <input v-model="selectedCanvasBlock.chart_colors" type="text" placeholder="#143d37, #d9b05f, #0f766e" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                  </label>
+                  <label class="text-sm text-slate-700 dark:text-slate-300">Cor principal
+                    <div class="mt-2 flex gap-2">
+                      <input :value="colorInputValue(selectedCanvasBlock.chart_primary_color, '#143d37')" type="color" @input="setSelectedBlockColor('chart_primary_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <input v-model="selectedCanvasBlock.chart_primary_color" type="text" placeholder="#143d37" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    </div>
+                  </label>
+                  <label class="text-sm text-slate-700 dark:text-slate-300">Fundo do gráfico
+                    <div class="mt-2 flex gap-2">
+                      <input :value="colorInputValue(selectedCanvasBlock.chart_background_color, '#f8f4ea')" type="color" @input="setSelectedBlockColor('chart_background_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <input v-model="selectedCanvasBlock.chart_background_color" type="text" placeholder="#f8f4ea" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    </div>
+                  </label>
+                  <label class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300">
+                    <input v-model="selectedCanvasBlock.chart_show_values" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
+                    Mostrar valores no gráfico
+                  </label>
+                  <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Imagem do gráfico
+                    <input v-model="selectedCanvasBlock.chart_image_url" type="text" placeholder="/storage/proposals/charts/scope.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <select v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'chart_image_url')">
+                      <option value="">Selecionar captura da galeria</option>
+                      <option v-for="asset in assetLibraryItems" :key="`chart-${asset.id}`" :value="asset.url">{{ asset.source }} · {{ asset.label }}</option>
+                    </select>
+                    <button type="button" @click="openMediaPicker('selected-block', 'chart_image_url')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Escolher no media picker</button>
+                  </label>
+                  <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Legenda
+                    <input v-model="selectedCanvasBlock.chart_caption" type="text" placeholder="Inclui somente itens acordados nesta proposta." class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                  </label>
+                  <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">SVG exportado
+                    <textarea v-model="selectedCanvasBlock.chart_svg" rows="7" placeholder="<svg ...> exportado do ApexCharts</svg>" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 font-mono text-xs text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                  </label>
+                </div>
+
+                <div v-if="!['signature', 'image', 'stamp', 'qr_code', 'chart_snapshot'].includes(selectedCanvasBlock.block_kind)" class="mt-4">
                   <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Conteúdo do bloco</label>
                   <textarea v-model="selectedCanvasBlock.content_html" rows="8" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                 </div>
@@ -2556,6 +3019,12 @@ function submit() {
                 <option v-for="option in pageFormatOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
               </select>
             </label>
+            <label v-if="props.exportSettings.paper_size === 'custom'" class="text-sm text-slate-700 dark:text-slate-300">Largura (mm)
+              <input v-model.number="props.exportSettings.custom_page_width" type="number" min="50" max="2000" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+            </label>
+            <label v-if="props.exportSettings.paper_size === 'custom'" class="text-sm text-slate-700 dark:text-slate-300">Altura (mm)
+              <input v-model.number="props.exportSettings.custom_page_height" type="number" min="50" max="2000" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+            </label>
             <label class="text-sm text-slate-700 dark:text-slate-300">Orientação
               <select v-model="props.exportSettings.orientation" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                 <option v-for="option in orientationOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
@@ -2577,12 +3046,28 @@ function submit() {
               <input v-model="props.exportSettings.first_page_margin_top" type="number" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
             </label>
           </div>
+          <div class="mt-5 rounded-2xl border border-[#ded2bb] bg-[#fbfaf6] p-4 dark:border-white/10 dark:bg-white/5">
+            <div class="text-xs font-black uppercase tracking-[0.18em] text-[#c79a43]">
+              {{ trans('gestlab.general.labels.vap_proposal_templates.studio.draft_preview.panel_eyebrow') }}
+            </div>
+            <p class="mt-2 text-sm font-medium leading-6 text-[#59665f] dark:text-slate-300">
+              {{ trans('gestlab.general.labels.vap_proposal_templates.studio.draft_preview.panel_description') }}
+            </p>
+            <button
+              type="button"
+              @click="previewDraftPdf"
+              :disabled="draftPreviewBusy || props.form.processing"
+              class="mt-4 inline-flex w-full items-center justify-center rounded-2xl border border-[#143d37]/20 bg-white px-4 py-3 text-sm font-black text-[#143d37] transition hover:bg-[#fff7e5] disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-emerald-100 dark:hover:bg-white/15"
+            >
+              {{ draftPreviewBusy ? trans('gestlab.general.labels.vap_proposal_templates.studio.draft_preview.generating') : trans('gestlab.general.labels.vap_proposal_templates.studio.draft_preview.action') }}
+            </button>
+          </div>
         </div>
 
         <button
           type="button"
           @click="submit"
-          :disabled="props.form.processing"
+          :disabled="props.form.processing || draftPreviewBusy"
           class="inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-primary-900 to-primary-700 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:from-primary-800 hover:to-primary-600 disabled:cursor-not-allowed disabled:opacity-60 dark:from-primary-700 dark:to-primary-500"
         >
           {{ props.form.processing ? 'A guardar…' : props.submitLabel }}
@@ -2650,6 +3135,9 @@ function submit() {
               <p class="mt-1 text-xs text-slate-600 dark:text-slate-400">{{ previewMeta.subtitle }}</p>
               <div class="mt-2 text-xs font-medium text-primary-700 dark:text-primary-300">
                 {{ previewPages.length }} página<span v-if="previewPages.length !== 1">s</span> no preview
+              </div>
+              <div class="mt-2 inline-flex rounded-full border border-[#ded2bb] bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#475a53] dark:border-white/10 dark:bg-white/10 dark:text-[#cbd8cf]">
+                {{ previewPageFormatLabel }}
               </div>
             </div>
             <div v-if="previewPages.length > 1" class="text-xs font-medium text-slate-600 dark:text-slate-300">
@@ -2719,8 +3207,8 @@ function submit() {
         <div
           v-for="previewPage in visiblePreviewPages"
           :key="`preview-page-${previewPage.pageNumber}`"
-          class="relative mx-auto min-h-[680px] w-full max-w-[860px] rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-900 xl:p-10"
-          :style="previewPageStyle"
+          class="relative mx-auto w-full rounded-[32px] border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-900 xl:p-10"
+          :style="previewPageFrameStyle"
         >
           <div class="mb-5 flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
             <span>{{ previewPage.pageNumber === 1 ? 'Primeira página' : 'Página contínua' }}</span>
@@ -2728,7 +3216,8 @@ function submit() {
           </div>
           <div
             v-if="showSafeArea"
-            class="pointer-events-none absolute inset-[34px] rounded-[26px] border border-dashed border-primary-300/70 dark:border-primary-500/40 xl:inset-[42px]"
+            class="pointer-events-none absolute rounded-[26px] border border-dashed border-primary-300/70 dark:border-primary-500/40"
+            :style="previewMarginStyleForPage(previewPage.pageNumber)"
           />
           <div
             v-for="guideX in alignmentGuides.x"
@@ -2776,7 +3265,7 @@ function submit() {
               v-if="!previewContentBlocksForPage(previewPage.pageNumber).length && previewContentBlocks.length"
               class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 px-4 py-3 text-xs text-slate-500 dark:border-slate-600 dark:bg-slate-950/40 dark:text-slate-400"
             >
-              Nenhum bloco do corpo está configurado para esta página. Ajuste o escopo do bloco para primeira página, páginas seguintes, todas ou uma página específica.
+              Nenhum bloco do corpo está configurado para esta página. Ajuste o âmbito do bloco para primeira página, páginas seguintes, todas ou uma página específica.
             </div>
             <div
               v-for="block in previewContentBlocksForPage(previewPage.pageNumber)"
@@ -2836,7 +3325,7 @@ function submit() {
       </div>
 
       <p class="mt-4 text-xs text-slate-500 dark:text-slate-400">
-        Esta pré-visualização serve para a composição editorial. No PDF final, cabeçalhos, rodapés, margens, orientação, fundo, paginação e o escopo por página dos blocos do corpo são respeitados.
+        Esta pré-visualização serve para a composição editorial. No PDF final, cabeçalhos, rodapés, margens, orientação, fundo, paginação e o âmbito por página dos blocos do corpo são respeitados.
       </p>
     </div>
 

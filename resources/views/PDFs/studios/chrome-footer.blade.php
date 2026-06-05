@@ -1,4 +1,6 @@
 <style>
+    @include('PDFs.partials.premium-document-style')
+
     html,
     body {
         margin: 0;
@@ -14,6 +16,8 @@
         font-size: 8px;
         color: #475569;
     }
+
+    {!! $styles ?? '' !!}
 </style>
 
 <div class="chrome-pdf-footer">

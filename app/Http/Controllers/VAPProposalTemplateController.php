@@ -98,6 +98,9 @@ class VAPProposalTemplateController extends Controller
 
     public function store(Request $request)
     {
+        $cssColorRule = 'regex:/\A(?:#[0-9a-fA-F]{3,8}|(?:rgb|rgba|hsl|hsla)\([0-9\s,.%+\-]+\)|[a-zA-Z][a-zA-Z0-9-]{2,32})\z/';
+        $cssPositionRule = 'regex:/\A(?:left|right|top|bottom|center|(?:100|[1-9]?\d)(?:\.\d{1,2})?%)(?:\s+(?:left|right|top|bottom|center|(?:100|[1-9]?\d)(?:\.\d{1,2})?%))?\z/i';
+
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:proposal_templates,name',
             'category' => 'nullable|string|max:100',
@@ -118,18 +121,32 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks.*.id' => 'nullable|string|max:100',
             'layout_schema.canvas_blocks.*.title' => 'nullable|string|max:255',
             'layout_schema.canvas_blocks.*.surface' => 'nullable|string|max:100',
-            'layout_schema.canvas_blocks.*.block_kind' => 'nullable|string|in:rich_text,signature,image,stamp,qr_code',
+            'layout_schema.canvas_blocks.*.block_kind' => 'nullable|string|in:rich_text,signature,image,stamp,qr_code,chart_snapshot',
             'layout_schema.canvas_blocks.*.content_html' => 'nullable|string',
             'layout_schema.canvas_blocks.*.image_url' => 'nullable|string|max:2048',
             'layout_schema.canvas_blocks.*.image_alt' => 'nullable|string|max:255',
             'layout_schema.canvas_blocks.*.image_fit' => 'nullable|string|in:cover,contain,auto',
-            'layout_schema.canvas_blocks.*.image_position' => 'nullable|string|max:50',
+            'layout_schema.canvas_blocks.*.image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
             'layout_schema.canvas_blocks.*.qr_content' => 'nullable|string|max:2048',
             'layout_schema.canvas_blocks.*.qr_label' => 'nullable|string|max:255',
             'layout_schema.canvas_blocks.*.qr_foreground_color' => 'nullable|regex:/^#[0-9a-fA-F]{6}$/',
             'layout_schema.canvas_blocks.*.qr_background_color' => 'nullable|regex:/^#[0-9a-fA-F]{6}$/',
             'layout_schema.canvas_blocks.*.qr_error_correction' => 'nullable|in:low,medium,quartile,high',
             'layout_schema.canvas_blocks.*.qr_margin' => 'nullable|integer|min:0|max:32',
+            'layout_schema.canvas_blocks.*.chart_title' => 'nullable|string|max:255',
+            'layout_schema.canvas_blocks.*.chart_caption' => 'nullable|string|max:1000',
+            'layout_schema.canvas_blocks.*.chart_svg' => 'nullable|string',
+            'layout_schema.canvas_blocks.*.chart_image_url' => 'nullable|string|max:65535',
+            'layout_schema.canvas_blocks.*.chart_type' => 'nullable|in:bar,line,doughnut',
+            'layout_schema.canvas_blocks.*.chart_labels' => ['nullable', $this->chartTextListRule()],
+            'layout_schema.canvas_blocks.*.chart_labels.*' => 'nullable|string|max:120',
+            'layout_schema.canvas_blocks.*.chart_values' => ['nullable', $this->chartNumericListRule()],
+            'layout_schema.canvas_blocks.*.chart_values.*' => ['nullable', $this->chartNumericOrPlaceholderRule()],
+            'layout_schema.canvas_blocks.*.chart_colors' => ['nullable', $this->chartHexColorListRule()],
+            'layout_schema.canvas_blocks.*.chart_colors.*' => ['nullable', $this->chartHexColorOrPlaceholderRule()],
+            'layout_schema.canvas_blocks.*.chart_primary_color' => 'nullable|regex:/^#[0-9a-fA-F]{6}$/',
+            'layout_schema.canvas_blocks.*.chart_background_color' => 'nullable|regex:/^#[0-9a-fA-F]{6}$/',
+            'layout_schema.canvas_blocks.*.chart_show_values' => 'sometimes|boolean',
             'layout_schema.canvas_blocks.*.x' => 'nullable|numeric|min:0|max:100',
             'layout_schema.canvas_blocks.*.y' => 'nullable|numeric|min:0|max:100',
             'layout_schema.canvas_blocks.*.width' => 'nullable|numeric|min:1|max:100',
@@ -139,7 +156,7 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks.*.background_color' => 'nullable|string|max:100',
             'layout_schema.canvas_blocks.*.background_image' => 'nullable|string|max:2048',
             'layout_schema.canvas_blocks.*.background_image_fit' => 'nullable|string|in:cover,contain,auto',
-            'layout_schema.canvas_blocks.*.background_image_position' => 'nullable|string|max:50',
+            'layout_schema.canvas_blocks.*.background_image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
             'layout_schema.canvas_blocks.*.overlay_color' => 'nullable|string|max:100',
             'layout_schema.canvas_blocks.*.overlay_opacity' => 'nullable|numeric|min:0|max:1',
             'layout_schema.canvas_blocks.*.text_color' => 'nullable|string|max:100',
@@ -154,6 +171,10 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks.*.signature_name' => 'nullable|string|max:255',
             'layout_schema.canvas_blocks.*.signature_title' => 'nullable|string|max:255',
             'layout_schema.canvas_blocks.*.signature_image' => 'nullable|string|max:2048',
+            'layout_schema.canvas_blocks.*.signature_image_fit' => 'nullable|string|in:cover,contain,auto',
+            'layout_schema.canvas_blocks.*.signature_image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
+            'layout_schema.canvas_blocks.*.signature_image_width' => 'nullable|numeric|min:24|max:360',
+            'layout_schema.canvas_blocks.*.signature_image_height' => 'nullable|numeric|min:16|max:240',
             'layout_schema.canvas_blocks.*.signature_line_style' => 'nullable|string|in:solid,dashed',
             'layout_schema.canvas_blocks.*.signature_align' => 'nullable|string|in:left,center,right',
             'layout_schema.canvas_blocks.*.signature_show_date' => 'sometimes|boolean',
@@ -163,16 +184,21 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks.*.page_number' => 'nullable|integer|min:1|max:999',
             'layout_schema.background_image_path' => 'nullable|string|max:2048',
             'layout_schema.background_size' => 'nullable|string|max:50',
-            'layout_schema.background_position' => 'nullable|string|max:50',
+            'layout_schema.background_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
             'layout_schema.background_repeat' => 'nullable|string|max:50',
-            'layout_schema.table_header_background' => 'nullable|string|max:50',
-            'layout_schema.table_header_text_color' => 'nullable|string|max:50',
-            'layout_schema.table_border_color' => 'nullable|string|max:50',
+            'layout_schema.table_header_background' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_header_text_color' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_border_color' => ['nullable', 'string', 'max:50', $cssColorRule],
             'layout_schema.table_font_size' => 'nullable|numeric|min:8|max:16',
             'layout_schema.table_cell_padding' => 'nullable|numeric|min:2|max:24',
+            'layout_schema.table_summary_background' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_summary_text_color' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_summary_muted_color' => ['nullable', 'string', 'max:50', $cssColorRule],
             'export_settings' => 'nullable|array',
-            'export_settings.paper_size' => 'nullable|string|max:20',
-            'export_settings.orientation' => 'nullable|string|max:5',
+            'export_settings.paper_size' => 'nullable|string|in:A4,Letter,Legal,custom',
+            'export_settings.custom_page_width' => 'nullable|required_if:export_settings.paper_size,custom|numeric|min:50|max:2000',
+            'export_settings.custom_page_height' => 'nullable|required_if:export_settings.paper_size,custom|numeric|min:50|max:2000',
+            'export_settings.orientation' => 'nullable|string|in:P,L',
             'export_settings.margin_top' => 'nullable|numeric|min:0|max:200',
             'export_settings.margin_right' => 'nullable|numeric|min:0|max:200',
             'export_settings.margin_bottom' => 'nullable|numeric|min:0|max:200',
@@ -214,51 +240,10 @@ class VAPProposalTemplateController extends Controller
             ->limit(10)
             ->get();
 
-        // Variáveis disponíveis para templates
-        $variables = [
-            '{proposal_number}' => 'Número da proposta',
-            '{customer_name}' => 'Nome do cliente',
-            '{customer_code}' => 'Código do cliente',
-            '{service_location}' => 'Local do serviço',
-            '{department}' => 'Departamento',
-            '{warehouse}' => 'Armazém',
-            '{created_at}' => 'Data de criação',
-            '{created_by}' => 'Responsável comercial',
-            '{tolerance_days}' => 'Dias de tolerância',
-            '{expiry_date}' => 'Data de validade',
-            '{days_until_expiry}' => 'Dias até expirar',
-            '{sub_total}' => 'Subtotal',
-            '{total}' => 'Total',
-            '{tax}' => 'Imposto',
-            '{discount}' => 'Desconto',
-            '{global_discount_amount}' => 'Desconto global',
-            '{global_discount_percentage}' => 'Percentagem do desconto global',
-            '{withholding_tax_amount}' => 'Retenção na fonte',
-            '{withholding_tax_percentage}' => 'Percentagem da retenção',
-            '{pricing_mode}' => 'Modo de preço',
-            '{withhold_tax}' => 'Aplicação de retenção',
-            '{observations}' => 'Observações',
-            '{total_items}' => 'Total de itens',
-            '{taxable_items}' => 'Itens tributáveis',
-            '{items_table}' => 'Tabela de itens/serviços',
-            '{items_list}' => 'Lista de itens/serviços',
-            '{summary_table}' => 'Resumo financeiro',
-            '{banking_details}' => 'Dados bancários',
-            '{document_keywords}' => 'Palavras-chave documentais',
-            '{lab_signature}' => 'Assinatura do laboratório',
-            '{client_signature}' => 'Assinatura do cliente',
-            '{signature_block}' => 'Bloco de assinatura',
-            '{lab_name}' => 'Nome do laboratório',
-            '{lab_details}' => 'Dados do laboratório',
-            '{customer_details}' => 'Dados do cliente',
-            '{bank_name}' => 'Nome do banco',
-            '{bank_iban}' => 'IBAN',
-        ];
-
         return Inertia::render('VAPProposalTemplates/Show', [
             'template' => $proposalTemplate,
             'recentProposals' => $recentProposals,
-            'variables' => $variables,
+            'variables' => VAPProposalTemplate::getPlaceholderLabels(),
         ]);
     }
 
@@ -281,6 +266,49 @@ class VAPProposalTemplateController extends Controller
         ]);
     }
 
+    public function previewDraftPdf(
+        Request $request,
+        ReportStudioPdfBuilder $reportStudioPdfBuilder,
+        ReportStudioPdfRenderer $reportStudioPdfRenderer,
+        GeneralSettings $settings
+    ) {
+        $validated = $this->validateDraftPreview($request);
+        $templateName = filled($validated['name'] ?? null)
+            ? (string) $validated['name']
+            : 'Pré-visualização do modelo de proposta';
+        $templateContent = filled($validated['content'] ?? null)
+            ? (string) $validated['content']
+            : '<h1>Pré-visualização da proposta</h1><p>{lab_details}</p><p>{customer_details}</p><p>{items_table}</p><p>{summary_table}</p><p>{signature_block}</p>';
+
+        $proposalTemplate = new VAPProposalTemplate([
+            'name' => $templateName,
+            'category' => $validated['category'] ?? 'general',
+            'description' => $validated['description'] ?? null,
+            'theme_preset' => $validated['theme_preset'] ?? null,
+            'is_active' => (bool) ($validated['is_active'] ?? true),
+            'content' => $templateContent,
+            'user_id' => auth()->id(),
+            'layout_schema' => $validated['layout_schema'] ?? [],
+            'export_settings' => $validated['export_settings'] ?? [],
+        ]);
+        $proposalTemplate->setRelation('user', auth()->user());
+
+        $studioPayload = $reportStudioPdfBuilder->buildProposalTemplatePayload($proposalTemplate, $settings);
+        $filename = 'proposal-template-draft-'.str($templateName)->slug()->limit(72, '')->value().'.pdf';
+
+        try {
+            $renderedPdf = $reportStudioPdfRenderer->renderDocument('proposal', $studioPayload, $filename);
+        } catch (\RuntimeException $exception) {
+            abort(422, $exception->getMessage());
+        }
+
+        return response($renderedPdf['content'], 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'X-Report-Studio-Renderer' => $renderedPdf['renderer'],
+        ]);
+    }
+
     public function edit(VAPProposalTemplate $proposalTemplate)
     {
         return Inertia::render('VAPProposalTemplates/Edit', [
@@ -293,6 +321,9 @@ class VAPProposalTemplateController extends Controller
 
     public function update(Request $request, VAPProposalTemplate $proposalTemplate)
     {
+        $cssColorRule = 'regex:/\A(?:#[0-9a-fA-F]{3,8}|(?:rgb|rgba|hsl|hsla)\([0-9\s,.%+\-]+\)|[a-zA-Z][a-zA-Z0-9-]{2,32})\z/';
+        $cssPositionRule = 'regex:/\A(?:left|right|top|bottom|center|(?:100|[1-9]?\d)(?:\.\d{1,2})?%)(?:\s+(?:left|right|top|bottom|center|(?:100|[1-9]?\d)(?:\.\d{1,2})?%))?\z/i';
+
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:proposal_templates,name,'.$proposalTemplate->id,
             'category' => 'nullable|string|max:100',
@@ -313,18 +344,32 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks.*.id' => 'nullable|string|max:100',
             'layout_schema.canvas_blocks.*.title' => 'nullable|string|max:255',
             'layout_schema.canvas_blocks.*.surface' => 'nullable|string|max:100',
-            'layout_schema.canvas_blocks.*.block_kind' => 'nullable|string|in:rich_text,signature,image,stamp,qr_code',
+            'layout_schema.canvas_blocks.*.block_kind' => 'nullable|string|in:rich_text,signature,image,stamp,qr_code,chart_snapshot',
             'layout_schema.canvas_blocks.*.content_html' => 'nullable|string',
             'layout_schema.canvas_blocks.*.image_url' => 'nullable|string|max:2048',
             'layout_schema.canvas_blocks.*.image_alt' => 'nullable|string|max:255',
             'layout_schema.canvas_blocks.*.image_fit' => 'nullable|string|in:cover,contain,auto',
-            'layout_schema.canvas_blocks.*.image_position' => 'nullable|string|max:50',
+            'layout_schema.canvas_blocks.*.image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
             'layout_schema.canvas_blocks.*.qr_content' => 'nullable|string|max:2048',
             'layout_schema.canvas_blocks.*.qr_label' => 'nullable|string|max:255',
             'layout_schema.canvas_blocks.*.qr_foreground_color' => 'nullable|regex:/^#[0-9a-fA-F]{6}$/',
             'layout_schema.canvas_blocks.*.qr_background_color' => 'nullable|regex:/^#[0-9a-fA-F]{6}$/',
             'layout_schema.canvas_blocks.*.qr_error_correction' => 'nullable|in:low,medium,quartile,high',
             'layout_schema.canvas_blocks.*.qr_margin' => 'nullable|integer|min:0|max:32',
+            'layout_schema.canvas_blocks.*.chart_title' => 'nullable|string|max:255',
+            'layout_schema.canvas_blocks.*.chart_caption' => 'nullable|string|max:1000',
+            'layout_schema.canvas_blocks.*.chart_svg' => 'nullable|string',
+            'layout_schema.canvas_blocks.*.chart_image_url' => 'nullable|string|max:65535',
+            'layout_schema.canvas_blocks.*.chart_type' => 'nullable|in:bar,line,doughnut',
+            'layout_schema.canvas_blocks.*.chart_labels' => ['nullable', $this->chartTextListRule()],
+            'layout_schema.canvas_blocks.*.chart_labels.*' => 'nullable|string|max:120',
+            'layout_schema.canvas_blocks.*.chart_values' => ['nullable', $this->chartNumericListRule()],
+            'layout_schema.canvas_blocks.*.chart_values.*' => ['nullable', $this->chartNumericOrPlaceholderRule()],
+            'layout_schema.canvas_blocks.*.chart_colors' => ['nullable', $this->chartHexColorListRule()],
+            'layout_schema.canvas_blocks.*.chart_colors.*' => ['nullable', $this->chartHexColorOrPlaceholderRule()],
+            'layout_schema.canvas_blocks.*.chart_primary_color' => 'nullable|regex:/^#[0-9a-fA-F]{6}$/',
+            'layout_schema.canvas_blocks.*.chart_background_color' => 'nullable|regex:/^#[0-9a-fA-F]{6}$/',
+            'layout_schema.canvas_blocks.*.chart_show_values' => 'sometimes|boolean',
             'layout_schema.canvas_blocks.*.x' => 'nullable|numeric|min:0|max:100',
             'layout_schema.canvas_blocks.*.y' => 'nullable|numeric|min:0|max:100',
             'layout_schema.canvas_blocks.*.width' => 'nullable|numeric|min:1|max:100',
@@ -334,7 +379,7 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks.*.background_color' => 'nullable|string|max:100',
             'layout_schema.canvas_blocks.*.background_image' => 'nullable|string|max:2048',
             'layout_schema.canvas_blocks.*.background_image_fit' => 'nullable|string|in:cover,contain,auto',
-            'layout_schema.canvas_blocks.*.background_image_position' => 'nullable|string|max:50',
+            'layout_schema.canvas_blocks.*.background_image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
             'layout_schema.canvas_blocks.*.overlay_color' => 'nullable|string|max:100',
             'layout_schema.canvas_blocks.*.overlay_opacity' => 'nullable|numeric|min:0|max:1',
             'layout_schema.canvas_blocks.*.text_color' => 'nullable|string|max:100',
@@ -349,6 +394,10 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks.*.signature_name' => 'nullable|string|max:255',
             'layout_schema.canvas_blocks.*.signature_title' => 'nullable|string|max:255',
             'layout_schema.canvas_blocks.*.signature_image' => 'nullable|string|max:2048',
+            'layout_schema.canvas_blocks.*.signature_image_fit' => 'nullable|string|in:cover,contain,auto',
+            'layout_schema.canvas_blocks.*.signature_image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
+            'layout_schema.canvas_blocks.*.signature_image_width' => 'nullable|numeric|min:24|max:360',
+            'layout_schema.canvas_blocks.*.signature_image_height' => 'nullable|numeric|min:16|max:240',
             'layout_schema.canvas_blocks.*.signature_line_style' => 'nullable|string|in:solid,dashed',
             'layout_schema.canvas_blocks.*.signature_align' => 'nullable|string|in:left,center,right',
             'layout_schema.canvas_blocks.*.signature_show_date' => 'sometimes|boolean',
@@ -358,16 +407,21 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks.*.page_number' => 'nullable|integer|min:1|max:999',
             'layout_schema.background_image_path' => 'nullable|string|max:2048',
             'layout_schema.background_size' => 'nullable|string|max:50',
-            'layout_schema.background_position' => 'nullable|string|max:50',
+            'layout_schema.background_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
             'layout_schema.background_repeat' => 'nullable|string|max:50',
-            'layout_schema.table_header_background' => 'nullable|string|max:50',
-            'layout_schema.table_header_text_color' => 'nullable|string|max:50',
-            'layout_schema.table_border_color' => 'nullable|string|max:50',
+            'layout_schema.table_header_background' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_header_text_color' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_border_color' => ['nullable', 'string', 'max:50', $cssColorRule],
             'layout_schema.table_font_size' => 'nullable|numeric|min:8|max:16',
             'layout_schema.table_cell_padding' => 'nullable|numeric|min:2|max:24',
+            'layout_schema.table_summary_background' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_summary_text_color' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_summary_muted_color' => ['nullable', 'string', 'max:50', $cssColorRule],
             'export_settings' => 'nullable|array',
-            'export_settings.paper_size' => 'nullable|string|max:20',
-            'export_settings.orientation' => 'nullable|string|max:5',
+            'export_settings.paper_size' => 'nullable|string|in:A4,Letter,Legal,custom',
+            'export_settings.custom_page_width' => 'nullable|required_if:export_settings.paper_size,custom|numeric|min:50|max:2000',
+            'export_settings.custom_page_height' => 'nullable|required_if:export_settings.paper_size,custom|numeric|min:50|max:2000',
+            'export_settings.orientation' => 'nullable|string|in:P,L',
             'export_settings.margin_top' => 'nullable|numeric|min:0|max:200',
             'export_settings.margin_right' => 'nullable|numeric|min:0|max:200',
             'export_settings.margin_bottom' => 'nullable|numeric|min:0|max:200',
@@ -489,6 +543,120 @@ class VAPProposalTemplateController extends Controller
         ]);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function validateDraftPreview(Request $request): array
+    {
+        $cssColorRule = 'regex:/\A(?:#[0-9a-fA-F]{3,8}|(?:rgb|rgba|hsl|hsla)\([0-9\s,.%+\-]+\)|[a-zA-Z][a-zA-Z0-9-]{2,32})\z/';
+        $cssPositionRule = 'regex:/\A(?:left|right|top|bottom|center|(?:100|[1-9]?\d)(?:\.\d{1,2})?%)(?:\s+(?:left|right|top|bottom|center|(?:100|[1-9]?\d)(?:\.\d{1,2})?%))?\z/i';
+
+        return $request->validate([
+            'name' => 'nullable|string|max:255',
+            'category' => 'nullable|string|max:100',
+            'description' => 'nullable|string|max:5000',
+            'theme_preset' => 'nullable|string|max:100',
+            'is_active' => 'sometimes|boolean',
+            'content' => 'nullable|string',
+            'layout_schema' => 'nullable|array',
+            'layout_schema.first_page_header_html' => 'nullable|string',
+            'layout_schema.default_header_html' => 'nullable|string',
+            'layout_schema.footer_html' => 'nullable|string',
+            'layout_schema.styles_css' => 'nullable|string',
+            'layout_schema.document_font_family' => 'nullable|string|max:160',
+            'layout_schema.variable_catalog' => 'nullable|array',
+            'layout_schema.variable_catalog.*.value' => 'nullable|string|max:255',
+            'layout_schema.variable_catalog.*.label' => 'nullable|string|max:255',
+            'layout_schema.canvas_blocks' => 'nullable|array',
+            'layout_schema.canvas_blocks.*.id' => 'nullable|string|max:100',
+            'layout_schema.canvas_blocks.*.title' => 'nullable|string|max:255',
+            'layout_schema.canvas_blocks.*.surface' => 'nullable|string|max:100',
+            'layout_schema.canvas_blocks.*.block_kind' => 'nullable|string|in:rich_text,signature,image,stamp,qr_code,chart_snapshot',
+            'layout_schema.canvas_blocks.*.content_html' => 'nullable|string',
+            'layout_schema.canvas_blocks.*.image_url' => 'nullable|string|max:2048',
+            'layout_schema.canvas_blocks.*.image_alt' => 'nullable|string|max:255',
+            'layout_schema.canvas_blocks.*.image_fit' => 'nullable|string|in:cover,contain,auto',
+            'layout_schema.canvas_blocks.*.image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
+            'layout_schema.canvas_blocks.*.qr_content' => 'nullable|string|max:2048',
+            'layout_schema.canvas_blocks.*.qr_label' => 'nullable|string|max:255',
+            'layout_schema.canvas_blocks.*.qr_foreground_color' => 'nullable|regex:/^#[0-9a-fA-F]{6}$/',
+            'layout_schema.canvas_blocks.*.qr_background_color' => 'nullable|regex:/^#[0-9a-fA-F]{6}$/',
+            'layout_schema.canvas_blocks.*.qr_error_correction' => 'nullable|in:low,medium,quartile,high',
+            'layout_schema.canvas_blocks.*.qr_margin' => 'nullable|integer|min:0|max:32',
+            'layout_schema.canvas_blocks.*.chart_title' => 'nullable|string|max:255',
+            'layout_schema.canvas_blocks.*.chart_caption' => 'nullable|string|max:1000',
+            'layout_schema.canvas_blocks.*.chart_svg' => 'nullable|string',
+            'layout_schema.canvas_blocks.*.chart_image_url' => 'nullable|string|max:65535',
+            'layout_schema.canvas_blocks.*.chart_type' => 'nullable|in:bar,line,doughnut',
+            'layout_schema.canvas_blocks.*.chart_labels' => ['nullable', $this->chartTextListRule()],
+            'layout_schema.canvas_blocks.*.chart_labels.*' => 'nullable|string|max:120',
+            'layout_schema.canvas_blocks.*.chart_values' => ['nullable', $this->chartNumericListRule()],
+            'layout_schema.canvas_blocks.*.chart_values.*' => ['nullable', $this->chartNumericOrPlaceholderRule()],
+            'layout_schema.canvas_blocks.*.chart_colors' => ['nullable', $this->chartHexColorListRule()],
+            'layout_schema.canvas_blocks.*.chart_colors.*' => ['nullable', $this->chartHexColorOrPlaceholderRule()],
+            'layout_schema.canvas_blocks.*.chart_primary_color' => 'nullable|regex:/^#[0-9a-fA-F]{6}$/',
+            'layout_schema.canvas_blocks.*.chart_background_color' => 'nullable|regex:/^#[0-9a-fA-F]{6}$/',
+            'layout_schema.canvas_blocks.*.chart_show_values' => 'sometimes|boolean',
+            'layout_schema.canvas_blocks.*.x' => 'nullable|numeric|min:0|max:100',
+            'layout_schema.canvas_blocks.*.y' => 'nullable|numeric|min:0|max:100',
+            'layout_schema.canvas_blocks.*.width' => 'nullable|numeric|min:1|max:100',
+            'layout_schema.canvas_blocks.*.min_height' => 'nullable|numeric|min:0|max:4000',
+            'layout_schema.canvas_blocks.*.z_index' => 'nullable|numeric|min:0|max:999',
+            'layout_schema.canvas_blocks.*.padding' => 'nullable|numeric|min:0|max:400',
+            'layout_schema.canvas_blocks.*.background_color' => ['nullable', 'string', 'max:100', $cssColorRule],
+            'layout_schema.canvas_blocks.*.background_image' => 'nullable|string|max:2048',
+            'layout_schema.canvas_blocks.*.background_image_fit' => 'nullable|string|in:cover,contain,auto',
+            'layout_schema.canvas_blocks.*.background_image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
+            'layout_schema.canvas_blocks.*.overlay_color' => ['nullable', 'string', 'max:100', $cssColorRule],
+            'layout_schema.canvas_blocks.*.overlay_opacity' => 'nullable|numeric|min:0|max:1',
+            'layout_schema.canvas_blocks.*.text_color' => ['nullable', 'string', 'max:100', $cssColorRule],
+            'layout_schema.canvas_blocks.*.border_width' => 'nullable|numeric|min:0|max:40',
+            'layout_schema.canvas_blocks.*.border_color' => ['nullable', 'string', 'max:100', $cssColorRule],
+            'layout_schema.canvas_blocks.*.border_radius' => 'nullable|numeric|min:0|max:2000',
+            'layout_schema.canvas_blocks.*.opacity' => 'nullable|numeric|min:0.05|max:1',
+            'layout_schema.canvas_blocks.*.text_align' => 'nullable|string|in:left,center,right,justify',
+            'layout_schema.canvas_blocks.*.font_size' => 'nullable|numeric|min:8|max:72',
+            'layout_schema.canvas_blocks.*.line_height' => 'nullable|numeric|min:0.8|max:3',
+            'layout_schema.canvas_blocks.*.signature_label' => 'nullable|string|max:255',
+            'layout_schema.canvas_blocks.*.signature_name' => 'nullable|string|max:255',
+            'layout_schema.canvas_blocks.*.signature_title' => 'nullable|string|max:255',
+            'layout_schema.canvas_blocks.*.signature_image' => 'nullable|string|max:2048',
+            'layout_schema.canvas_blocks.*.signature_image_fit' => 'nullable|string|in:cover,contain,auto',
+            'layout_schema.canvas_blocks.*.signature_image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
+            'layout_schema.canvas_blocks.*.signature_image_width' => 'nullable|numeric|min:24|max:360',
+            'layout_schema.canvas_blocks.*.signature_image_height' => 'nullable|numeric|min:16|max:240',
+            'layout_schema.canvas_blocks.*.signature_line_style' => 'nullable|string|in:solid,dashed',
+            'layout_schema.canvas_blocks.*.signature_align' => 'nullable|string|in:left,center,right',
+            'layout_schema.canvas_blocks.*.signature_show_date' => 'sometimes|boolean',
+            'layout_schema.canvas_blocks.*.signature_date_label' => 'nullable|string|max:255',
+            'layout_schema.canvas_blocks.*.is_locked' => 'sometimes|boolean',
+            'layout_schema.canvas_blocks.*.page_scope' => 'nullable|string|in:first,all,following,specific',
+            'layout_schema.canvas_blocks.*.page_number' => 'nullable|integer|min:1|max:999',
+            'layout_schema.background_image_path' => 'nullable|string|max:2048',
+            'layout_schema.background_size' => 'nullable|string|max:50',
+            'layout_schema.background_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
+            'layout_schema.background_repeat' => 'nullable|string|max:50',
+            'layout_schema.table_header_background' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_header_text_color' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_border_color' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_font_size' => 'nullable|numeric|min:8|max:16',
+            'layout_schema.table_cell_padding' => 'nullable|numeric|min:2|max:24',
+            'layout_schema.table_summary_background' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_summary_text_color' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_summary_muted_color' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'export_settings' => 'nullable|array',
+            'export_settings.paper_size' => 'nullable|string|in:A4,Letter,Legal,custom',
+            'export_settings.custom_page_width' => 'nullable|required_if:export_settings.paper_size,custom|numeric|min:50|max:2000',
+            'export_settings.custom_page_height' => 'nullable|required_if:export_settings.paper_size,custom|numeric|min:50|max:2000',
+            'export_settings.orientation' => 'nullable|string|in:P,L',
+            'export_settings.margin_top' => 'nullable|numeric|min:0|max:200',
+            'export_settings.margin_right' => 'nullable|numeric|min:0|max:200',
+            'export_settings.margin_bottom' => 'nullable|numeric|min:0|max:200',
+            'export_settings.margin_left' => 'nullable|numeric|min:0|max:200',
+            'export_settings.first_page_margin_top' => 'nullable|numeric|min:0|max:250',
+        ]);
+    }
+
     public function toggleStatus(VAPProposalTemplate $proposalTemplate)
     {
         try {
@@ -519,5 +687,134 @@ class VAPProposalTemplateController extends Controller
                 'message' => 'Não foi possível alterar o estado do modelo: '.$e->getMessage(),
             ], 500);
         }
+    }
+
+    private function chartTextListRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '' || is_array($value)) {
+                return;
+            }
+
+            if (! is_string($value)) {
+                $fail('A lista de etiquetas do gráfico deve ser texto ou uma lista.');
+
+                return;
+            }
+
+            foreach ($this->splitChartStudioList($value) as $item) {
+                if (mb_strlen($item) > 120) {
+                    $fail('Cada etiqueta do gráfico deve ter no máximo 120 caracteres.');
+
+                    return;
+                }
+            }
+        };
+    }
+
+    private function chartNumericListRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '' || is_array($value)) {
+                return;
+            }
+
+            if (! is_string($value)) {
+                $fail('Os valores do gráfico devem ser numéricos ou variáveis do estúdio.');
+
+                return;
+            }
+
+            foreach ($this->splitChartStudioList($value) as $item) {
+                if (! $this->isNumericChartValue($item) && ! $this->isStudioPlaceholder($item)) {
+                    $fail('Os valores do gráfico devem conter apenas números ou variáveis separados por vírgula, ponto e vírgula ou quebra de linha.');
+
+                    return;
+                }
+            }
+        };
+    }
+
+    private function chartHexColorListRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '' || is_array($value)) {
+                return;
+            }
+
+            if (! is_string($value)) {
+                $fail('A paleta do gráfico deve ser texto ou uma lista de cores.');
+
+                return;
+            }
+
+            foreach ($this->splitChartStudioList($value) as $item) {
+                if (! $this->isHexChartColor($item) && ! $this->isStudioPlaceholder($item)) {
+                    $fail('A paleta do gráfico deve conter apenas cores HEX no formato #RRGGBB ou variáveis do estúdio.');
+
+                    return;
+                }
+            }
+        };
+    }
+
+    private function chartNumericOrPlaceholderRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '') {
+                return;
+            }
+
+            $item = (string) $value;
+
+            if (! $this->isNumericChartValue($item) && ! $this->isStudioPlaceholder($item)) {
+                $fail('Os valores do gráfico devem ser numéricos ou variáveis do estúdio.');
+            }
+        };
+    }
+
+    private function chartHexColorOrPlaceholderRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '') {
+                return;
+            }
+
+            $item = (string) $value;
+
+            if (! $this->isHexChartColor($item) && ! $this->isStudioPlaceholder($item)) {
+                $fail('A paleta do gráfico deve conter apenas cores HEX no formato #RRGGBB ou variáveis do estúdio.');
+            }
+        };
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function splitChartStudioList(string $value): array
+    {
+        return collect(preg_split('/[\r\n;]+|(?<!\d),|,(?!\d)/', $value) ?: [])
+            ->map(fn (string $item): string => trim($item))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function isNumericChartValue(string $value): bool
+    {
+        return is_numeric(str_replace(',', '.', trim($value)));
+    }
+
+    private function isHexChartColor(string $value): bool
+    {
+        return preg_match('/^#[0-9a-fA-F]{6}$/', trim($value)) === 1;
+    }
+
+    private function isStudioPlaceholder(string $value): bool
+    {
+        $value = trim($value);
+
+        return preg_match('/^\{\{\s*[A-Za-z_][A-Za-z0-9_.-]*\s*\}\}$/', $value) === 1
+            || preg_match('/^\{\s*[A-Za-z_][A-Za-z0-9_.-]*\s*\}$/', $value) === 1;
     }
 }

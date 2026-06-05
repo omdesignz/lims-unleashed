@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Http\Middleware\VerifyCsrfToken;
 use App\Models\Customer;
 use App\Models\Department;
+use App\Models\LabCode;
 use App\Models\Matrix;
+use App\Models\Parameter;
 use App\Models\Role;
 use App\Models\Unit;
 use App\Models\User;
@@ -19,6 +21,7 @@ use App\Settings\GeneralSettings;
 use App\Support\ReportStudioPdfBuilder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProposalWorkflowTest extends TestCase
@@ -139,6 +142,81 @@ class ProposalWorkflowTest extends TestCase
         Notification::assertSentTo($user, GlobalNotification::class);
     }
 
+    public function test_revising_a_vap_proposal_invalidates_stale_pdf_and_send_regenerates_it(): void
+    {
+        Notification::fake();
+
+        $disk = config('filesystems.default', 'local');
+        Storage::fake($disk);
+
+        $user = $this->verifiedAdmin();
+        $proposal = $this->draftProposal($user);
+        $unit = Unit::query()->firstOrFail();
+        $stalePdfPath = 'vap-proposals/'.$proposal->id.'/'.str($proposal->proposal_number)->slug('-')->prepend('Proposta-')->append('.pdf')->value();
+
+        Storage::disk($disk)->put($stalePdfPath, 'stale proposal pdf');
+        $proposal->update(['file_path' => $stalePdfPath]);
+
+        $this->withoutMiddleware(VerifyCsrfToken::class)
+            ->actingAs($user)
+            ->put(route('vap-proposals.update', $proposal), [
+                'service_location' => 'Unidade industrial revista',
+                'obs' => 'Âmbito comercial revisto antes de novo envio.',
+                'tolerance_days' => 45,
+                'revision_reason' => 'Actualização do âmbito técnico e comercial antes do reenvio.',
+                'withhold_tax' => false,
+                'use_matrix_price' => true,
+                'sub_total' => 1000,
+                'total' => 1000,
+                'tax' => 0,
+                'discount' => 0,
+                'items' => [
+                    [
+                        'item_id' => null,
+                        'itemable_type' => null,
+                        'itemable_id' => null,
+                        'item_description' => 'Ensaio microbiológico revisto',
+                        'standard_id' => null,
+                        'unit_id' => $unit->id,
+                        'qty' => 2,
+                        'unit_price' => 500,
+                        'discount_percentage' => 0,
+                        'discount_amount' => 0,
+                        'discount_id' => null,
+                        'tax_percentage' => 0,
+                        'tax_amount' => 0,
+                        'tax_id' => null,
+                        'charge_tax' => false,
+                        'withhold_tax' => false,
+                        'exemption_id' => null,
+                        'exemption_code' => null,
+                        'obs' => 'Escopo actualizado',
+                    ],
+                ],
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $proposal->refresh();
+
+        $this->assertSame('REVISED', $proposal->status);
+        $this->assertNull($proposal->file_path);
+        Storage::disk($disk)->assertMissing($stalePdfPath);
+
+        $this->withoutMiddleware(VerifyCsrfToken::class)
+            ->actingAs($user)
+            ->post(route('vap-proposals.send', $proposal))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $proposal->refresh();
+
+        $this->assertSame('SENT', $proposal->status);
+        $this->assertSame($stalePdfPath, $proposal->file_path);
+        Storage::disk($disk)->assertExists($proposal->file_path);
+        $this->assertStringStartsWith('%PDF-', Storage::disk($disk)->get($proposal->file_path));
+    }
+
     public function test_legacy_proposal_pdf_endpoint_uses_report_studio_renderer(): void
     {
         $user = $this->verifiedAdmin();
@@ -185,7 +263,7 @@ class ProposalWorkflowTest extends TestCase
     {
         $proposal = $this->draftProposal($this->verifiedAdmin());
         $proposal->update(['status' => 'SENT']);
-        $reason = 'O escopo técnico precisa de revisão antes da aprovação.';
+        $reason = 'O âmbito técnico precisa de revisão antes da aprovação.';
 
         $response = $this->withoutMiddleware(VerifyCsrfToken::class)
             ->postJson(route('proposals.api.reject', $proposal), [
@@ -332,6 +410,45 @@ class ProposalWorkflowTest extends TestCase
         }
     }
 
+    public function test_vap_proposal_templates_parse_authenticity_and_acceptance_evidence_blocks(): void
+    {
+        $user = $this->verifiedAdmin();
+        $proposal = $this->draftProposal($user);
+        $proposal->update(['status' => 'ACCEPTED']);
+        $proposal->complianceAgreement()->update([
+            'confidentiality' => true,
+            'impartiality' => true,
+            'nondisclosure' => true,
+            'acknowledged_at' => now()->setSecond(0),
+            'client_ip' => '203.0.113.24',
+        ]);
+
+        VAPProposalTemplate::query()->whereKey($proposal->template_id)->update([
+            'user_id' => $user->id,
+            'content' => '<section>{proposal_authenticity}</section><section>{proposal_acceptance_evidence}</section><p>{verification_url}</p>',
+        ]);
+
+        $verificationUrl = route('vap-proposals.public.show', $proposal->unique_hash);
+
+        $this->actingAs($user)
+            ->get(route('vap-proposals.show', $proposal))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('VAPProposals/Show')
+                ->where('parsedTemplateContent', fn (string $content): bool => str_contains($content, 'Verificação da proposta')
+                    && str_contains($content, 'Evidência de aceite')
+                    && str_contains($content, 'Aceite pelo cliente')
+                    && str_contains($content, 'Confidencialidade')
+                    && str_contains($content, 'Não divulgação')
+                    && str_contains($content, '203.0.113.24')
+                    && str_contains($content, $verificationUrl)
+                    && str_contains($content, 'data:image/svg+xml')
+                    && ! str_contains($content, '{proposal_authenticity}')
+                    && ! str_contains($content, '{proposal_acceptance_evidence}')
+                    && ! str_contains($content, '{verification_url}'))
+            );
+    }
+
     public function test_vap_proposal_index_can_be_filtered_by_template_context(): void
     {
         $user = $this->verifiedAdmin();
@@ -390,6 +507,8 @@ class ProposalWorkflowTest extends TestCase
                 ->where('presets.0.layout_schema.canvas_blocks.0.block_kind', 'rich_text')
                 ->where('presets.0.layout_schema.canvas_blocks.1.block_kind', 'qr_code')
                 ->where('presets.0.layout_schema.canvas_blocks.2.block_kind', 'signature')
+                ->where('presets.0.layout_schema.canvas_blocks.3.block_kind', 'chart_snapshot')
+                ->where('presets.0.layout_schema.canvas_blocks.3.chart_title', 'Resumo visual do âmbito')
                 ->where('presets.0.content', fn (string $content) => str_contains($content, '{lab_details}')
                     && str_contains($content, '{customer_details}')
                     && str_contains($content, '{banking_details}')
@@ -402,6 +521,9 @@ class ProposalWorkflowTest extends TestCase
                 ->where('presets.0.export_settings.paper_size', 'A4')
                 ->where('variables.27', '{banking_details}')
                 ->where('variables.28', '{document_keywords}')
+                ->where('variables', fn ($variables): bool => collect($variables)->contains('{proposal_authenticity}')
+                    && collect($variables)->contains('{proposal_acceptance_evidence}')
+                    && collect($variables)->contains('{verification_url}'))
             );
 
         $template = VAPProposalTemplate::query()->create([
@@ -421,6 +543,41 @@ class ProposalWorkflowTest extends TestCase
                 ->where('presets.1.slug', 'iso-decision-rule')
                 ->where('variables.27', '{banking_details}')
                 ->where('variables.28', '{document_keywords}')
+                ->where('variables', fn ($variables): bool => collect($variables)->contains('{proposal_authenticity}')
+                    && collect($variables)->contains('{proposal_acceptance_evidence}')
+                    && collect($variables)->contains('{verification_url}'))
+            );
+    }
+
+    public function test_proposal_template_show_uses_current_placeholder_label_catalog(): void
+    {
+        $user = $this->verifiedAdmin();
+
+        $template = VAPProposalTemplate::query()->create([
+            'name' => 'Modelo com catálogo actual',
+            'category' => 'general',
+            'content' => '<p>{proposal_authenticity}</p><p>{proposal_acceptance_evidence}</p>',
+            'user_id' => $user->id,
+            'is_active' => true,
+            'layout_schema' => [
+                'document_font_family' => '"Century Gothic", DejaVu Sans, sans-serif',
+            ],
+            'export_settings' => [
+                'paper_size' => 'A4',
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('vap-proposals.templates.show', $template))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('VAPProposalTemplates/Show')
+                ->where('template.id', $template->id)
+                ->where('variables', fn ($variables): bool => ($variables['{proposal_authenticity}'] ?? null) === 'QR e autenticidade da proposta'
+                    && ($variables['{proposal_acceptance_evidence}'] ?? null) === 'Evidência de aceite do cliente'
+                    && ($variables['{verification_url}'] ?? null) === 'Ligação pública de verificação'
+                    && ($variables['{banking_details}'] ?? null) === 'Dados bancários'
+                    && count($variables) === count(VAPProposalTemplate::getPlaceholders()))
             );
     }
 
@@ -550,7 +707,9 @@ class ProposalWorkflowTest extends TestCase
                     'background_repeat' => 'repeat-y',
                 ],
                 'export_settings' => [
-                    'paper_size' => 'Letter',
+                    'paper_size' => 'custom',
+                    'custom_page_width' => 250,
+                    'custom_page_height' => 180,
                     'orientation' => 'L',
                     'margin_top' => 18,
                     'margin_right' => 12,
@@ -577,7 +736,9 @@ class ProposalWorkflowTest extends TestCase
         $this->assertFalse((bool) data_get($template->layout_schema, 'canvas_blocks.0.is_locked'));
         $this->assertSame('specific', data_get($template->layout_schema, 'canvas_blocks.0.page_scope'));
         $this->assertSame(2, data_get($template->layout_schema, 'canvas_blocks.0.page_number'));
-        $this->assertSame('Letter', data_get($template->export_settings, 'paper_size'));
+        $this->assertSame('custom', data_get($template->export_settings, 'paper_size'));
+        $this->assertSame(250, data_get($template->export_settings, 'custom_page_width'));
+        $this->assertSame(180, data_get($template->export_settings, 'custom_page_height'));
         $this->assertSame('L', data_get($template->export_settings, 'orientation'));
     }
 
@@ -706,6 +867,10 @@ class ProposalWorkflowTest extends TestCase
                         'signature_name' => '{{customer_name}}',
                         'signature_title' => 'Cliente / representante',
                         'signature_image' => '/storage/proposals/signatures/customer.png',
+                        'signature_image_fit' => 'cover',
+                        'signature_image_position' => '37% 68%',
+                        'signature_image_width' => 220,
+                        'signature_image_height' => 92,
                         'signature_line_style' => 'dashed',
                         'signature_align' => 'right',
                         'signature_show_date' => true,
@@ -769,6 +934,7 @@ class ProposalWorkflowTest extends TestCase
         $this->assertStringContainsString('Data da aceitação: ____ / ____ / ______', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('border-top: 2px dashed rgba(148,163,184,0.85);', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('/storage/proposals/signatures/customer.png', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('width:220px; max-width:100%; height:92px; object-fit:cover; object-position:37% 68%;', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('border: 2px solid #94a3b8;', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('text-align: center;', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('font-size: 18px;', $payload['data']['bodyHtml']);
@@ -792,12 +958,19 @@ class ProposalWorkflowTest extends TestCase
             'user_id' => $user->id,
             'is_active' => true,
             'layout_schema' => [
-                'body_html' => '<section class="studio-body-marker"><h1>Corpo controlado pelo estúdio</h1>{proposal_content}<div class="studio-summary">{summary_table}</div><div>{banking_details}</div></section>',
+                'body_html' => '<section class="studio-body-marker"><h1>Corpo controlado pelo estúdio</h1>{proposal_content}<div class="studio-summary">{summary_table}</div><div>{banking_details}</div><div class="studio-evidence">{proposal_acceptance_evidence}</div><div class="studio-auth">{proposal_authenticity}</div></section>',
             ],
         ]);
 
         $proposal = $this->draftProposal($user);
-        $proposal->update(['template_id' => $template->id]);
+        $proposal->update(['template_id' => $template->id, 'status' => 'ACCEPTED']);
+        $proposal->complianceAgreement()->update([
+            'confidentiality' => true,
+            'impartiality' => true,
+            'nondisclosure' => true,
+            'acknowledged_at' => now()->setSecond(0),
+            'client_ip' => '203.0.113.55',
+        ]);
         $proposal = $proposal->fresh(['template', 'customer', 'warehouse', 'department', 'user', 'items.standard', 'items.unit']);
         $parsedContent = VAPProposalTemplate::parseContent($template->content, $proposal, app(GeneralSettings::class));
 
@@ -813,8 +986,17 @@ class ProposalWorkflowTest extends TestCase
         $this->assertStringContainsString('Cláusulas aceites por '.$proposal->customer->name, $payload['data']['bodyHtml']);
         $this->assertStringContainsString('studio-summary', $payload['data']['bodyHtml']);
         $this->assertStringContainsString('Dados bancários', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('studio-evidence', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('Aceite pelo cliente', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('203.0.113.55', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('studio-auth', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('Verificação da proposta', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString(route('vap-proposals.public.show', $proposal->unique_hash), $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('data:image/svg+xml', $payload['data']['bodyHtml']);
         $this->assertStringNotContainsString('{proposal_content}', $payload['data']['bodyHtml']);
         $this->assertStringNotContainsString('{summary_table}', $payload['data']['bodyHtml']);
+        $this->assertStringNotContainsString('{proposal_acceptance_evidence}', $payload['data']['bodyHtml']);
+        $this->assertStringNotContainsString('{proposal_authenticity}', $payload['data']['bodyHtml']);
         $this->assertStringNotContainsString('Proposta comercial</div>', $payload['data']['bodyHtml']);
     }
 
@@ -897,6 +1079,340 @@ class ProposalWorkflowTest extends TestCase
                 'layout_schema.canvas_blocks.0.qr_background_color',
                 'layout_schema.canvas_blocks.0.qr_margin',
             ]);
+    }
+
+    public function test_proposal_template_signature_image_customisation_is_persisted_and_validated(): void
+    {
+        $user = $this->verifiedAdmin();
+
+        $this->actingAs($user)
+            ->post(route('vap-proposals.templates.store'), [
+                'name' => 'Proposal Signature Studio Template',
+                'content' => '<p>Proposta {proposal_number}</p>',
+                'layout_schema' => [
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'proposal-signature',
+                            'block_kind' => 'signature',
+                            'signature_label' => 'Aceitação do cliente',
+                            'signature_name' => '{{customer_name}}',
+                            'signature_title' => 'Representante autorizado',
+                            'signature_image' => '/storage/proposals/signatures/customer.png',
+                            'signature_image_fit' => 'cover',
+                            'signature_image_position' => '37% 68%',
+                            'signature_image_width' => 220,
+                            'signature_image_height' => 92,
+                        ],
+                    ],
+                ],
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $template = VAPProposalTemplate::query()
+            ->where('name', 'Proposal Signature Studio Template')
+            ->firstOrFail();
+
+        $this->assertSame('cover', data_get($template->layout_schema, 'canvas_blocks.0.signature_image_fit'));
+        $this->assertSame('37% 68%', data_get($template->layout_schema, 'canvas_blocks.0.signature_image_position'));
+        $this->assertSame(220, data_get($template->layout_schema, 'canvas_blocks.0.signature_image_width'));
+        $this->assertSame(92, data_get($template->layout_schema, 'canvas_blocks.0.signature_image_height'));
+
+        $this->actingAs($user)
+            ->put(route('vap-proposals.templates.update', $template), [
+                'name' => $template->name,
+                'content' => $template->content,
+                'layout_schema' => [
+                    'background_position' => 'center; background:red',
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'invalid-signature',
+                            'block_kind' => 'signature',
+                            'signature_image_fit' => 'stretch',
+                            'signature_image_position' => 'center; transform:rotate(45deg)',
+                            'signature_image_width' => 800,
+                            'signature_image_height' => 4,
+                            'image_position' => 'left; position:fixed',
+                            'background_image_position' => 'bottom; background:red',
+                        ],
+                    ],
+                ],
+            ])
+            ->assertSessionHasErrors([
+                'layout_schema.background_position',
+                'layout_schema.canvas_blocks.0.signature_image_fit',
+                'layout_schema.canvas_blocks.0.signature_image_position',
+                'layout_schema.canvas_blocks.0.signature_image_width',
+                'layout_schema.canvas_blocks.0.signature_image_height',
+                'layout_schema.canvas_blocks.0.image_position',
+                'layout_schema.canvas_blocks.0.background_image_position',
+            ]);
+    }
+
+    public function test_proposal_template_chart_snapshot_blocks_are_persisted_validated_and_rendered(): void
+    {
+        $user = $this->verifiedAdmin();
+
+        $this->actingAs($user)
+            ->post(route('vap-proposals.templates.store'), [
+                'name' => 'Proposal Chart Studio Template',
+                'content' => '<p>Proposta {proposal_number}</p>',
+                'layout_schema' => [
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'proposal-chart',
+                            'title' => 'Âmbito visual',
+                            'surface' => 'content',
+                            'block_kind' => 'chart_snapshot',
+                            'chart_title' => 'Resumo para {customer_name}',
+                            'chart_caption' => 'Visualização comercial gerada pelo estúdio.',
+                            'chart_type' => 'line',
+                            'chart_labels' => ['Âmbito', 'Amostras', 'Serviços'],
+                            'chart_values' => [3, 5, 8],
+                            'chart_colors' => ['#143d37', '#d9b05f', '#0f766e'],
+                            'chart_primary_color' => '#143d37',
+                            'chart_background_color' => '#f8f4ea',
+                            'chart_show_values' => true,
+                            'x' => 8,
+                            'y' => 24,
+                            'width' => 58,
+                            'min_height' => 180,
+                            'page_scope' => 'first',
+                        ],
+                    ],
+                ],
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $template = VAPProposalTemplate::query()
+            ->where('name', 'Proposal Chart Studio Template')
+            ->firstOrFail();
+
+        $this->assertSame('chart_snapshot', data_get($template->layout_schema, 'canvas_blocks.0.block_kind'));
+        $this->assertSame('line', data_get($template->layout_schema, 'canvas_blocks.0.chart_type'));
+        $this->assertSame([3, 5, 8], data_get($template->layout_schema, 'canvas_blocks.0.chart_values'));
+        $this->assertSame('#f8f4ea', data_get($template->layout_schema, 'canvas_blocks.0.chart_background_color'));
+
+        $proposal = $this->draftProposal($user);
+        $proposal->update(['template_id' => $template->id]);
+        $proposal = $proposal->fresh(['template', 'customer', 'warehouse', 'department', 'user', 'items.standard', 'items.unit']);
+
+        $payload = app(ReportStudioPdfBuilder::class)->buildProposalPayload(
+            $proposal,
+            '<p>Proposta com gráfico</p>',
+            app(GeneralSettings::class)
+        );
+
+        $this->assertStringContainsString('report-chart studio-avoid-break', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('data-chart-type="line"', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('Resumo para '.$proposal->customer->name, $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('Visualização comercial gerada pelo estúdio.', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('#f8f4ea', $payload['data']['bodyHtml']);
+        $this->assertStringNotContainsString('{customer_name}', $payload['data']['bodyHtml']);
+
+        $this->actingAs($user)
+            ->put(route('vap-proposals.templates.update', $template), [
+                'name' => $template->name,
+                'content' => $template->content,
+                'layout_schema' => [
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'invalid-chart',
+                            'block_kind' => 'chart_snapshot',
+                            'chart_type' => 'radar',
+                            'chart_values' => [18, 'bad'],
+                            'chart_colors' => ['#143d37', 'gold'],
+                            'chart_primary_color' => 'navy',
+                            'chart_background_color' => 'transparent',
+                        ],
+                    ],
+                ],
+            ])
+            ->assertSessionHasErrors([
+                'layout_schema.canvas_blocks.0.chart_type',
+                'layout_schema.canvas_blocks.0.chart_values.1',
+                'layout_schema.canvas_blocks.0.chart_colors.1',
+                'layout_schema.canvas_blocks.0.chart_primary_color',
+                'layout_schema.canvas_blocks.0.chart_background_color',
+            ]);
+    }
+
+    public function test_proposal_template_chart_snapshot_text_lists_are_validated_and_rendered(): void
+    {
+        $user = $this->verifiedAdmin();
+
+        $this->actingAs($user)
+            ->post(route('vap-proposals.templates.store'), [
+                'name' => 'Proposal Chart Text List Template',
+                'content' => '<p>Proposta {proposal_number}</p>',
+                'layout_schema' => [
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'proposal-chart-text-list',
+                            'title' => 'Resumo digitado',
+                            'surface' => 'content',
+                            'block_kind' => 'chart_snapshot',
+                            'chart_title' => 'Resumo digitado para {customer_name}',
+                            'chart_caption' => 'Valores introduzidos no painel do estúdio.',
+                            'chart_type' => 'bar',
+                            'chart_labels' => "Âmbito\nAmostras\nServiços",
+                            'chart_values' => "1,5; 2,75\n3,25",
+                            'chart_colors' => '#143d37, #d9b05f; #0f766e',
+                            'chart_primary_color' => '#143d37',
+                            'chart_background_color' => '#f8f4ea',
+                            'chart_show_values' => true,
+                            'page_scope' => 'first',
+                        ],
+                    ],
+                ],
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $template = VAPProposalTemplate::query()
+            ->where('name', 'Proposal Chart Text List Template')
+            ->firstOrFail();
+
+        $this->assertSame("1,5; 2,75\n3,25", data_get($template->layout_schema, 'canvas_blocks.0.chart_values'));
+        $this->assertSame('#143d37, #d9b05f; #0f766e', data_get($template->layout_schema, 'canvas_blocks.0.chart_colors'));
+
+        $proposal = $this->draftProposal($user);
+        $proposal->update(['template_id' => $template->id]);
+        $proposal = $proposal->fresh(['template', 'customer', 'warehouse', 'department', 'user', 'items.standard', 'items.unit']);
+
+        $payload = app(ReportStudioPdfBuilder::class)->buildProposalPayload(
+            $proposal,
+            '<p>Proposta com gráfico textual</p>',
+            app(GeneralSettings::class)
+        );
+
+        $this->assertStringContainsString('data-chart-type="bar"', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('Resumo digitado para '.$proposal->customer->name, $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('Valores introduzidos no painel do estúdio.', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('Âmbito', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('>1.5</text>', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('>2.75</text>', $payload['data']['bodyHtml']);
+        $this->assertStringNotContainsString('>75</text>', $payload['data']['bodyHtml']);
+        $this->assertStringContainsString('#d9b05f', $payload['data']['bodyHtml']);
+
+        $this->actingAs($user)
+            ->put(route('vap-proposals.templates.update', $template), [
+                'name' => $template->name,
+                'content' => $template->content,
+                'layout_schema' => [
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'invalid-text-list-chart',
+                            'block_kind' => 'chart_snapshot',
+                            'chart_values' => '3, inválido, 8',
+                            'chart_colors' => '#143d37, gold',
+                        ],
+                    ],
+                ],
+            ])
+            ->assertSessionHasErrors([
+                'layout_schema.canvas_blocks.0.chart_values',
+                'layout_schema.canvas_blocks.0.chart_colors',
+            ]);
+    }
+
+    public function test_proposal_template_chart_snapshot_allows_placeholder_series_items(): void
+    {
+        $user = $this->verifiedAdmin();
+
+        $this->actingAs($user)
+            ->post(route('vap-proposals.templates.store'), [
+                'name' => 'Proposal Chart Placeholder Series Template',
+                'content' => '<p>Proposta {proposal_number}</p>',
+                'layout_schema' => [
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'proposal-chart-placeholder-series',
+                            'surface' => 'content',
+                            'block_kind' => 'chart_snapshot',
+                            'chart_title' => 'Indicadores comerciais',
+                            'chart_caption' => 'Série resolvida quando o documento é gerado.',
+                            'chart_type' => 'bar',
+                            'chart_labels' => ['Âmbito', 'Amostras', 'Serviços'],
+                            'chart_values' => ['{proposal_chart_scope}', '{{ proposal_chart_samples }}', 8],
+                            'chart_colors' => ['#143d37', '{{ proposal_chart_accent }}', '#0f766e'],
+                            'chart_show_values' => true,
+                        ],
+                    ],
+                ],
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $template = VAPProposalTemplate::query()
+            ->where('name', 'Proposal Chart Placeholder Series Template')
+            ->firstOrFail();
+
+        $this->assertSame('{proposal_chart_scope}', data_get($template->layout_schema, 'canvas_blocks.0.chart_values.0'));
+        $this->assertSame('{{ proposal_chart_samples }}', data_get($template->layout_schema, 'canvas_blocks.0.chart_values.1'));
+        $this->assertSame('{{ proposal_chart_accent }}', data_get($template->layout_schema, 'canvas_blocks.0.chart_colors.1'));
+    }
+
+    public function test_admin_can_preview_unsaved_vap_proposal_template_as_pdf(): void
+    {
+        $user = $this->verifiedAdmin();
+        $templateCount = VAPProposalTemplate::query()->count();
+
+        $response = $this->actingAs($user)->post(route('vap-proposals.templates.preview-draft-pdf'), [
+            'name' => 'Draft Template Preview',
+            'category' => 'compliance',
+            'description' => 'Rascunho ainda não persistido.',
+            'theme_preset' => 'compliance',
+            'is_active' => true,
+            'content' => '<h1>Proposta de ensaio</h1><p>{lab_details}</p><p>{customer_details}</p><p>{items_table}</p><p>{banking_details}</p><p>{signature_block}</p>',
+            'layout_schema' => [
+                'first_page_header_html' => '<div>{{lab_name}} · {{document_code}}</div>',
+                'default_header_html' => '<div>{{document_code}} · {{customer_name}}</div>',
+                'footer_html' => '<div>Página {PAGENO}/{nbpg}</div>',
+                'styles_css' => '.report-table th{background:#143d37;color:#fffdf7;}',
+                'document_font_family' => '"Century Gothic", DejaVu Sans, sans-serif',
+                'table_header_background' => '#143d37',
+                'table_header_text_color' => '#fffdf7',
+                'table_border_color' => '#ded2bb',
+                'canvas_blocks' => [
+                    [
+                        'id' => 'draft-qr',
+                        'title' => 'QR do rascunho',
+                        'surface' => 'content',
+                        'block_kind' => 'qr_code',
+                        'x' => 68,
+                        'y' => 6,
+                        'width' => 22,
+                        'min_height' => 120,
+                        'qr_content' => 'Rascunho {proposal_number} · {verification_url}',
+                        'qr_label' => 'Verificar {proposal_number}',
+                        'qr_foreground_color' => '#143d37',
+                        'qr_background_color' => '#f7f1e7',
+                        'qr_error_correction' => 'quartile',
+                        'qr_margin' => 10,
+                        'page_scope' => 'first',
+                    ],
+                ],
+            ],
+            'export_settings' => [
+                'paper_size' => 'custom',
+                'custom_page_width' => 210,
+                'custom_page_height' => 297,
+                'orientation' => 'P',
+                'margin_top' => 22,
+                'margin_right' => 14,
+                'margin_bottom' => 18,
+                'margin_left' => 14,
+                'first_page_margin_top' => 56,
+            ],
+        ]);
+
+        $response->assertOk();
+        $response->assertHeader('X-Report-Studio-Renderer');
+        $response->assertDownload('proposal-template-draft-draft-template-preview.pdf');
+        $this->assertStringStartsWith('%PDF-', (string) $response->baseResponse->getContent());
+        $this->assertSame($templateCount, VAPProposalTemplate::query()->count());
     }
 
     public function test_admin_can_export_a_vap_proposal_template_as_pdf(): void
@@ -1084,13 +1600,41 @@ class ProposalWorkflowTest extends TestCase
     public function test_vap_proposal_combobox_option_endpoints_return_json_payloads(): void
     {
         $user = $this->verifiedAdmin();
+        $customer = Customer::query()->firstOrFail();
+
+        $proposal = $this->draftProposal($user);
+        $warehouse = Warehouse::query()->create([
+            'customer_id' => $customer->id,
+            'name' => 'Armazém combobox proposta',
+            'address' => 'Rua do Combobox Comercial',
+        ]);
+        $matrix = Matrix::query()->create([
+            'code' => 'CBX-MTX-'.str()->random(8),
+            'description' => 'Matriz para combobox comercial',
+            'fixed_price' => 1250,
+            'charge_tax' => true,
+            'tax_percentage' => 14,
+        ]);
+        $parameter = Parameter::query()->create([
+            'code' => 'CBX-PAR-'.str()->random(8),
+            'name' => 'Parâmetro para combobox comercial',
+            'price' => 450,
+            'charge_tax' => true,
+            'tax_percentage' => 14,
+            'active' => true,
+        ]);
+        $labCode = LabCode::query()->create([
+            'cl_month' => '06',
+            'codeable_type' => VAPProposal::class,
+            'codeable_id' => $proposal->id,
+        ]);
 
         $routes = [
-            route('vap-proposals.options.proposals', ['q' => '']),
-            route('vap-proposals.options.warehouses', ['q' => '']),
-            route('vap-proposals.options.matrixes', ['q' => '']),
-            route('vap-proposals.options.parameters', ['q' => '']),
-            route('vap-proposals.options.lab-codes', ['q' => '']),
+            route('vap-proposals.options.proposals', ['q' => $proposal->proposal_no]),
+            route('vap-proposals.options.warehouses', ['q' => $warehouse->address]),
+            route('vap-proposals.options.matrixes', ['q' => $matrix->description]),
+            route('vap-proposals.options.parameters', ['q' => $parameter->name]),
+            route('vap-proposals.options.lab-codes', ['q' => $labCode->code]),
             route('vap-proposals.options.lab-code-parameters', ['code_id' => 0]),
         ];
 
@@ -1100,6 +1644,46 @@ class ProposalWorkflowTest extends TestCase
                 ->assertOk()
                 ->assertHeader('content-type', 'application/json');
         }
+
+        $this->actingAs($user)
+            ->getJson(route('vap-proposals.options.proposals', ['q' => $proposal->proposal_no]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'value' => $proposal->id,
+                'proposal_no' => $proposal->proposal_no,
+            ]);
+
+        $this->actingAs($user)
+            ->getJson(route('vap-proposals.options.warehouses', ['q' => $warehouse->address]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'value' => $warehouse->id,
+                'label' => $warehouse->address,
+            ]);
+
+        $this->actingAs($user)
+            ->getJson(route('vap-proposals.options.matrixes', ['q' => $matrix->description]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'value' => $matrix->id,
+                'label' => $matrix->description,
+            ]);
+
+        $this->actingAs($user)
+            ->getJson(route('vap-proposals.options.parameters', ['q' => $parameter->name]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'value' => $parameter->id,
+                'label' => $parameter->name,
+            ]);
+
+        $this->actingAs($user)
+            ->getJson(route('vap-proposals.options.lab-codes', ['q' => $labCode->code]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'value' => $labCode->id,
+                'label' => $labCode->code,
+            ]);
     }
 
     public function test_vap_proposal_tax_accessor_sums_item_tax_for_payloads_and_pdfs(): void

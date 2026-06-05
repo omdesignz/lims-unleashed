@@ -743,8 +743,13 @@ const exportTemplate = async () => {
       name: props.template.name,
       content: props.template.content,
       category: props.template.category,
+      description: props.template.description,
+      theme_preset: props.template.theme_preset,
       is_active: props.template.is_active,
+      layout_schema: props.template.layout_schema || {},
+      export_settings: props.template.export_settings || {},
       variables: templateVariables.value,
+      variable_reference: props.variables,
       metadata: {
         exported_at: new Date().toISOString(),
         exported_by: window.userName || trans('gestlab.general.labels.vap_proposal_templates.show.exported_by_fallback'),

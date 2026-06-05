@@ -129,6 +129,19 @@
         </section>
     @endif
 
+    <section style="margin: 20px 0;">
+        <table style="width:100%; border-collapse: collapse;">
+            <tr>
+                <td style="width:50%; vertical-align: top; padding-right: 8px;">
+                    {!! $proposalAcceptanceEvidence ?? '' !!}
+                </td>
+                <td style="width:50%; vertical-align: top; padding-left: 8px;">
+                    {!! $proposalAuthenticity ?? '' !!}
+                </td>
+            </tr>
+        </table>
+    </section>
+
     <section style="margin-top: 26px;">
         <table style="width:100%; border-collapse: collapse;">
             <tr>

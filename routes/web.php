@@ -342,6 +342,7 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     Route::get('/dashboard', [ExecutiveDashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/export', [ExecutiveDashboardController::class, 'export'])->name('dashboard.export');
     Route::get('/report-studios', [ReportStudioController::class, 'index'])->name('report-studios.index');
+    Route::post('/report-studios/preview-pdf', [ReportStudioController::class, 'previewDraftPdf'])->name('report-studios.preview-draft-pdf');
     Route::post('/report-studios', [ReportStudioController::class, 'store'])->name('report-studios.store');
     Route::put('/report-studios/{reportStudio}', [ReportStudioController::class, 'update'])->name('report-studios.update');
     Route::delete('/report-studios/{reportStudio}', [ReportStudioController::class, 'destroy'])->name('report-studios.destroy');
@@ -1576,6 +1577,7 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('/templates', [VAPProposalTemplateController::class, 'index'])->name('templates.index');
         Route::get('/templates/create', [VAPProposalTemplateController::class, 'create'])->name('templates.create');
         Route::post('/templates', [VAPProposalTemplateController::class, 'store'])->name('templates.store');
+        Route::post('/templates/preview-pdf', [VAPProposalTemplateController::class, 'previewDraftPdf'])->name('templates.preview-draft-pdf');
         Route::post('/templates/import', [VAPProposalTemplateController::class, 'import'])->name('templates.import');
         Route::get('/templates/export', [VAPProposalTemplateController::class, 'export'])->name('templates.export');
         Route::get('/templates/{proposalTemplate}', [VAPProposalTemplateController::class, 'show'])->name('templates.show');

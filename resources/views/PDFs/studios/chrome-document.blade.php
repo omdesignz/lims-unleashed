@@ -3,8 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <title>{{ $documentTitle }}</title>
+    @php
+        $chromeMargins = array_merge([
+            'top' => 20,
+            'right' => 14,
+            'bottom' => 24,
+            'left' => 14,
+        ], is_array($margins ?? null) ? $margins : []);
+
+        $chromeFormat = match (strtoupper((string) ($format ?? 'A4'))) {
+            'LETTER' => 'Letter',
+            'LEGAL' => 'Legal',
+            default => 'A4',
+        };
+        $chromeOrientation = ($orientation ?? 'P') === 'L' ? 'landscape' : 'portrait';
+        $chromePageSize = $chromeFormat.' '.$chromeOrientation;
+
+        if (is_numeric($customPageWidth ?? null) && is_numeric($customPageHeight ?? null)) {
+            $chromePageSize = (float) $customPageWidth.'mm '.(float) $customPageHeight.'mm';
+        }
+    @endphp
     <style>
         @include('PDFs.partials.premium-document-style')
+
+        @page {
+            size: {{ $chromePageSize }};
+            margin: {{ (float) $chromeMargins['top'] }}mm {{ (float) $chromeMargins['right'] }}mm {{ (float) $chromeMargins['bottom'] }}mm {{ (float) $chromeMargins['left'] }}mm;
+        }
 
         html {
             -webkit-print-color-adjust: exact;

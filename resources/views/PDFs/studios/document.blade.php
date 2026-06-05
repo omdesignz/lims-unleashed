@@ -7,7 +7,7 @@
         @include('PDFs.partials.premium-document-style')
 
         body {
-            font-family: DejaVu Sans, sans-serif;
+            font-family: {!! $fontFamily ?? 'DejaVu Sans, sans-serif' !!};
             font-size: 11px;
             color: #0f172a;
         }

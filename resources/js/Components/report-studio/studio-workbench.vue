@@ -1,5 +1,7 @@
 <script setup>
 import fancyTextarea from '@/Components/fancy-textarea.vue'
+import { chartSvgPalette, normalizeStudioChartList, normalizedHexColor, sanitizeStudioChartSvg } from '@/Support/report-studio-chart-palette.mjs'
+import { buildReportStudioPreviewCss } from '@/Support/report-studio-preview-styles.mjs'
 import axios from 'axios'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
@@ -72,6 +74,10 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  draftPreviewHref: {
+    type: String,
+    default: '',
+  },
   assetLibrary: {
     type: Array,
     default: () => [],
@@ -119,151 +125,175 @@ const mediaPickerUploadDragging = ref(false)
 const mediaPickerUploadBusy = ref(false)
 const mediaPickerUploadProgress = ref(0)
 const mediaPickerUploadError = ref('')
+const pdfWorkspaceSection = ref('surfaces')
+const advancedCompositionOpen = ref(false)
+const draftPreviewBusy = ref(false)
+const draftPreviewError = ref('')
+
+function studioCopy(key, replacements = {}, fallback = '') {
+  const translationKey = `gestlab.general.labels.vap_report_studios.studio.${key}`
+  const translated = trans(translationKey, replacements)
+
+  return translated === translationKey ? fallback : translated
+}
 
 const canvasZoomOptions = [
   { value: 0.72, label: '72%' },
   { value: 0.86, label: '86%' },
-  { value: 0.92, label: 'Ajustar' },
+  { value: 0.92, label: studioCopy('zoom.fit', {}, 'Ajustar') },
   { value: 1, label: '100%' },
   { value: 1.12, label: '112%' },
 ]
 
 const studioPanes = [
-  { value: 'setup', label: 'Configurar', description: 'Modelo, preset, tipo e tema' },
-  { value: 'compose', label: 'Compor', description: 'Conteúdo, blocos e multimédia' },
-  { value: 'pdf', label: 'PDF', description: 'Páginas, margens e saída' },
-  { value: 'preview', label: 'Pré-visualizar', description: 'Conferir saída antes de guardar' },
+  { value: 'setup', label: studioCopy('panes.setup.label', {}, 'Configurar'), description: studioCopy('panes.setup.description', {}, 'Modelo, preset, tipo e tema') },
+  { value: 'compose', label: studioCopy('panes.compose.label', {}, 'Compor'), description: studioCopy('panes.compose.description', {}, 'Conteúdo, blocos e multimédia') },
+  { value: 'pdf', label: studioCopy('panes.pdf.label', {}, 'PDF'), description: studioCopy('panes.pdf.description', {}, 'Páginas, margens e saída') },
+  { value: 'preview', label: studioCopy('panes.preview.label', {}, 'Pré-visualizar'), description: studioCopy('panes.preview.description', {}, 'Conferir saída antes de guardar') },
+]
+
+const pdfWorkspaceSections = [
+  { value: 'surfaces', label: studioCopy('pdf_sections.surfaces.label', {}, 'Estrutura'), description: studioCopy('pdf_sections.surfaces.description', {}, 'Cabeçalhos, rodapé e fundo') },
+  { value: 'tables', label: studioCopy('pdf_sections.tables.label', {}, 'Tabelas'), description: studioCopy('pdf_sections.tables.description', {}, 'Leitura e densidade técnica') },
+  { value: 'page', label: studioCopy('pdf_sections.page.label', {}, 'Página'), description: studioCopy('pdf_sections.page.description', {}, 'Formato, orientação e margens') },
+  { value: 'output', label: studioCopy('pdf_sections.output.label', {}, 'Saída'), description: studioCopy('pdf_sections.output.description', {}, 'Renderizador e validação final') },
+]
+
+const studioStatusOptions = [
+  { value: 'draft', label: studioCopy('status.draft.label', {}, 'Rascunho'), description: studioCopy('status.draft.description', {}, 'Ainda em construção e indisponível como modelo activo.') },
+  { value: 'active', label: studioCopy('status.active.label', {}, 'Activo'), description: studioCopy('status.active.description', {}, 'Disponível para gerar novos documentos deste tipo.') },
+  { value: 'archived', label: studioCopy('status.archived.label', {}, 'Arquivado'), description: studioCopy('status.archived.description', {}, 'Preservado para histórico, sem utilização em novos documentos.') },
 ]
 
 const editorInspectorModes = [
-  { value: 'layout', label: 'Layout' },
-  { value: 'style', label: 'Estilo' },
-  { value: 'content', label: 'Conteúdo' },
-  { value: 'media', label: 'Multimédia' },
+  { value: 'layout', label: studioCopy('inspector_modes.layout', {}, 'Layout') },
+  { value: 'style', label: studioCopy('inspector_modes.style', {}, 'Estilo') },
+  { value: 'content', label: studioCopy('inspector_modes.content', {}, 'Conteúdo') },
+  { value: 'media', label: studioCopy('inspector_modes.media', {}, 'Multimédia') },
 ]
 
 const studioLabels = computed(() => ({
   analysis: {
-    singular: 'relatório analítico',
-    plural: 'relatórios analíticos',
-    badge: 'Studio analítico multi-página',
+    singular: studioCopy('document_labels.analysis.singular', {}, 'relatório analítico'),
+    plural: studioCopy('document_labels.analysis.plural', {}, 'relatórios analíticos'),
+    badge: studioCopy('document_labels.analysis.badge', {}, 'Studio analítico multi-página'),
   },
   executive: {
-    singular: 'relatório executivo',
-    plural: 'relatórios executivos',
-    badge: 'Studio executivo multi-página',
+    singular: studioCopy('document_labels.executive.singular', {}, 'relatório executivo'),
+    plural: studioCopy('document_labels.executive.plural', {}, 'relatórios executivos'),
+    badge: studioCopy('document_labels.executive.badge', {}, 'Studio executivo multi-página'),
   },
   export_certificate: {
-    singular: 'certificado de exportação',
-    plural: 'certificados de exportação',
-    badge: 'Studio de exportação multi-página',
+    singular: studioCopy('document_labels.export_certificate.singular', {}, 'certificado de exportação'),
+    plural: studioCopy('document_labels.export_certificate.plural', {}, 'certificados de exportação'),
+    badge: studioCopy('document_labels.export_certificate.badge', {}, 'Studio de exportação multi-página'),
   },
   import_certificate: {
-    singular: 'certificado de importação',
-    plural: 'certificados de importação',
-    badge: 'Studio de importação multi-página',
+    singular: studioCopy('document_labels.import_certificate.singular', {}, 'certificado de importação'),
+    plural: studioCopy('document_labels.import_certificate.plural', {}, 'certificados de importação'),
+    badge: studioCopy('document_labels.import_certificate.badge', {}, 'Studio de importação multi-página'),
   },
   quote: {
-    singular: 'proforma',
-    plural: 'proformas',
-    badge: 'Studio comercial multi-página',
+    singular: studioCopy('document_labels.quote.singular', {}, 'proforma'),
+    plural: studioCopy('document_labels.quote.plural', {}, 'proformas'),
+    badge: studioCopy('document_labels.quote.badge', {}, 'Studio comercial multi-página'),
   },
   invoice: {
-    singular: 'factura',
-    plural: 'facturas',
-    badge: 'Studio fiscal multi-página',
+    singular: studioCopy('document_labels.invoice.singular', {}, 'factura'),
+    plural: studioCopy('document_labels.invoice.plural', {}, 'facturas'),
+    badge: studioCopy('document_labels.invoice.badge', {}, 'Studio fiscal multi-página'),
   },
   receipt: {
-    singular: 'recibo',
-    plural: 'recibos',
-    badge: 'Studio de recebimento multi-página',
+    singular: studioCopy('document_labels.receipt.singular', {}, 'recibo'),
+    plural: studioCopy('document_labels.receipt.plural', {}, 'recibos'),
+    badge: studioCopy('document_labels.receipt.badge', {}, 'Studio de recebimento multi-página'),
   },
   credit_note: {
-    singular: 'nota de crédito',
-    plural: 'notas de crédito',
-    badge: 'Studio de rectificação multi-página',
+    singular: studioCopy('document_labels.credit_note.singular', {}, 'nota de crédito'),
+    plural: studioCopy('document_labels.credit_note.plural', {}, 'notas de crédito'),
+    badge: studioCopy('document_labels.credit_note.badge', {}, 'Studio de rectificação multi-página'),
   },
   proposal: {
-    singular: 'proposta',
-    plural: 'propostas',
-    badge: 'Studio interno multi-página',
+    singular: studioCopy('document_labels.proposal.singular', {}, 'proposta'),
+    plural: studioCopy('document_labels.proposal.plural', {}, 'propostas'),
+    badge: studioCopy('document_labels.proposal.badge', {}, 'Studio interno multi-página'),
   },
 }[props.form.studio_type] || {
-  singular: 'documento',
-  plural: 'documentos',
-  badge: 'Studio multi-página',
+  singular: studioCopy('document_labels.default.singular', {}, 'documento'),
+  plural: studioCopy('document_labels.default.plural', {}, 'documentos'),
+  badge: studioCopy('document_labels.default.badge', {}, 'Studio multi-página'),
 }))
 
 function studioTypeLabel(type) {
   return {
-    analysis: 'Relatório analítico',
-    executive: 'Relatório executivo',
-    proposal: 'Proposta',
-    export_certificate: 'Certificado de exportação',
-    import_certificate: 'Certificado de importação',
-    quote: 'Proforma',
-    invoice: 'Factura',
-    receipt: 'Recibo',
-    credit_note: 'Nota de crédito',
-  }[type] || 'Documento'
+    analysis: studioCopy('document_types.analysis', {}, 'Relatório analítico'),
+    executive: studioCopy('document_types.executive', {}, 'Relatório executivo'),
+    proposal: studioCopy('document_types.proposal', {}, 'Proposta'),
+    export_certificate: studioCopy('document_types.export_certificate', {}, 'Certificado de exportação'),
+    import_certificate: studioCopy('document_types.import_certificate', {}, 'Certificado de importação'),
+    quote: studioCopy('document_types.quote', {}, 'Proforma'),
+    invoice: studioCopy('document_types.invoice', {}, 'Factura'),
+    receipt: studioCopy('document_types.receipt', {}, 'Recibo'),
+    credit_note: studioCopy('document_types.credit_note', {}, 'Nota de crédito'),
+  }[type] || studioCopy('document_types.default', {}, 'Documento')
 }
 
 const snippetTargetOptions = [
-  { value: 'content', label: 'Corpo do documento' },
-  { value: 'first_page_header_html', label: 'Cabeçalho da primeira página' },
-  { value: 'default_header_html', label: 'Cabeçalho padrão' },
-  { value: 'footer_html', label: 'Rodapé' },
-  { value: 'styles_css', label: 'CSS adicional' },
+  { value: 'content', label: studioCopy('surfaces.content', {}, 'Corpo do documento') },
+  { value: 'first_page_header_html', label: studioCopy('surfaces.first_page_header_html', {}, 'Cabeçalho da primeira página') },
+  { value: 'default_header_html', label: studioCopy('surfaces.default_header_html', {}, 'Cabeçalho padrão') },
+  { value: 'footer_html', label: studioCopy('surfaces.footer_html', {}, 'Rodapé') },
+  { value: 'styles_css', label: studioCopy('surfaces.styles_css', {}, 'CSS adicional') },
 ]
 
 const backgroundFitOptions = [
-  { value: 'cover', label: 'Cobrir página' },
-  { value: 'contain', label: 'Conter' },
-  { value: 'auto', label: 'Tamanho original' },
+  { value: 'cover', label: studioCopy('media_fit.cover', {}, 'Cobrir página') },
+  { value: 'contain', label: studioCopy('media_fit.contain', {}, 'Conter') },
+  { value: 'auto', label: studioCopy('media_fit.auto', {}, 'Tamanho original') },
 ]
 
 const backgroundPositionOptions = [
-  { value: 'center center', label: 'Centro' },
-  { value: 'top center', label: 'Topo ao centro' },
-  { value: 'top left', label: 'Topo à esquerda' },
-  { value: 'top right', label: 'Topo à direita' },
-  { value: 'bottom center', label: 'Base ao centro' },
-  { value: '0% 100%', label: 'Base à esquerda' },
-  { value: '100% 100%', label: 'Base à direita' },
+  { value: 'center center', label: studioCopy('media_position.center_center', {}, 'Centro') },
+  { value: 'top center', label: studioCopy('media_position.top_center', {}, 'Topo ao centro') },
+  { value: 'top left', label: studioCopy('media_position.top_left', {}, 'Topo à esquerda') },
+  { value: 'top right', label: studioCopy('media_position.top_right', {}, 'Topo à direita') },
+  { value: 'bottom center', label: studioCopy('media_position.bottom_center', {}, 'Base ao centro') },
+  { value: '0% 100%', label: studioCopy('media_position.bottom_left', {}, 'Base à esquerda') },
+  { value: '100% 100%', label: studioCopy('media_position.bottom_right', {}, 'Base à direita') },
 ]
 
 const imagePositionOptions = [
-  { value: 'center center', label: 'Centro' },
-  { value: 'top center', label: 'Topo' },
-  { value: 'bottom center', label: 'Base' },
-  { value: 'center left', label: 'Esquerda' },
-  { value: 'center right', label: 'Direita' },
-  { value: '0% 0%', label: 'Canto superior esquerdo' },
-  { value: '100% 0%', label: 'Canto superior direito' },
-  { value: '0% 100%', label: 'Canto inferior esquerdo' },
-  { value: '100% 100%', label: 'Canto inferior direito' },
+  { value: 'center center', label: studioCopy('media_position.center_center', {}, 'Centro') },
+  { value: 'top center', label: studioCopy('media_position.top', {}, 'Topo') },
+  { value: 'bottom center', label: studioCopy('media_position.bottom', {}, 'Base') },
+  { value: 'center left', label: studioCopy('media_position.left', {}, 'Esquerda') },
+  { value: 'center right', label: studioCopy('media_position.right', {}, 'Direita') },
+  { value: '0% 0%', label: studioCopy('media_position.top_left_corner', {}, 'Canto superior esquerdo') },
+  { value: '100% 0%', label: studioCopy('media_position.top_right_corner', {}, 'Canto superior direito') },
+  { value: '0% 100%', label: studioCopy('media_position.bottom_left_corner', {}, 'Canto inferior esquerdo') },
+  { value: '100% 100%', label: studioCopy('media_position.bottom_right_corner', {}, 'Canto inferior direito') },
 ]
 
 const backgroundRepeatOptions = [
-  { value: 'no-repeat', label: 'Sem repetição' },
-  { value: 'repeat-x', label: 'Repetir horizontalmente' },
-  { value: 'repeat-y', label: 'Repetir verticalmente' },
-  { value: 'repeat', label: 'Repetir em mosaico' },
+  { value: 'no-repeat', label: studioCopy('media_repeat.no_repeat', {}, 'Sem repetição') },
+  { value: 'repeat-x', label: studioCopy('media_repeat.repeat_x', {}, 'Repetir horizontalmente') },
+  { value: 'repeat-y', label: studioCopy('media_repeat.repeat_y', {}, 'Repetir verticalmente') },
+  { value: 'repeat', label: studioCopy('media_repeat.repeat', {}, 'Repetir em mosaico') },
 ]
 
 const themePresetOptions = [
-  { value: 'corporate', label: 'Corporativo premium' },
-  { value: 'compliance', label: 'Conformidade / ISO' },
-  { value: 'field', label: 'Recolha e operações' },
-  { value: 'minimal', label: 'Editorial minimalista' },
+  { value: 'corporate', label: studioCopy('themes.corporate', {}, 'Corporativo premium') },
+  { value: 'compliance', label: studioCopy('themes.compliance', {}, 'Conformidade / ISO') },
+  { value: 'field', label: studioCopy('themes.field', {}, 'Recolha e operações') },
+  { value: 'minimal', label: studioCopy('themes.minimal', {}, 'Editorial minimalista') },
 ]
 
 const studioFontOptions = [
-  { value: 'Manrope, DejaVu Sans, sans-serif', label: 'Marca GestLab / Manrope', description: 'A fonte principal da aplicação, limpa e séria para documentos premium.' },
-  { value: 'Century Gothic, CenturyGothic, AppleGothic, DejaVu Sans, sans-serif', label: 'Century Gothic', description: 'Geometria limpa para relatórios, propostas e capas com presença editorial.' },
-  { value: 'DejaVu Sans, sans-serif', label: 'PDF seguro / DejaVu Sans', description: 'Fallback mais compatível com mPDF e servidores sem fontes instaladas.' },
-  { value: 'Georgia, serif', label: 'Editorial serifado', description: 'Bom para capas institucionais e documentos mais formais.' },
-  { value: 'Arial, sans-serif', label: 'Compatibilidade universal', description: 'Opção conservadora para ambientes PDF antigos.' },
+  { value: 'Manrope, DejaVu Sans, sans-serif', label: studioCopy('fonts.brand.label', {}, 'Marca GestLab / Manrope'), description: studioCopy('fonts.brand.description', {}, 'A fonte principal da aplicação, limpa e séria para documentos premium.') },
+  { value: 'Century Gothic, CenturyGothic, AppleGothic, DejaVu Sans, sans-serif', label: studioCopy('fonts.century_gothic.label', {}, 'Century Gothic'), description: studioCopy('fonts.century_gothic.description', {}, 'Geometria limpa para relatórios, propostas e capas com presença editorial.') },
+  { value: 'DejaVu Sans, sans-serif', label: studioCopy('fonts.pdf_safe.label', {}, 'PDF seguro / DejaVu Sans'), description: studioCopy('fonts.pdf_safe.description', {}, 'Fallback mais compatível com mPDF e servidores sem fontes instaladas.') },
+  { value: 'Georgia, serif', label: studioCopy('fonts.editorial_serif.label', {}, 'Editorial serifado'), description: studioCopy('fonts.editorial_serif.description', {}, 'Bom para capas institucionais e documentos mais formais.') },
+  { value: 'Arial, sans-serif', label: studioCopy('fonts.universal.label', {}, 'Compatibilidade universal'), description: studioCopy('fonts.universal.description', {}, 'Opção conservadora para ambientes PDF antigos.') },
 ]
 
 const allowedBackgroundMimeTypes = [
@@ -275,10 +305,6 @@ const allowedBackgroundMimeTypes = [
   'image/avif',
 ]
 
-function studioCopy(key, replacements = {}) {
-  return trans(`gestlab.general.labels.vap_report_studios.studio.${key}`, replacements)
-}
-
 const pageSizeCatalog = {
   A4: { width: 210, height: 297 },
   Letter: { width: 216, height: 279 },
@@ -286,40 +312,40 @@ const pageSizeCatalog = {
 }
 
 const pageFormatOptions = [
-  { value: 'A4', label: 'A4', description: 'Relatórios técnicos, certificados e propostas padrão.', dimensions: pageSizeCatalog.A4 },
-  { value: 'Letter', label: 'Letter', description: 'Clientes internacionais que exigem papel norte-americano.', dimensions: pageSizeCatalog.Letter },
-  { value: 'Legal', label: 'Legal', description: 'Contratos, anexos e propostas comerciais mais longas.', dimensions: pageSizeCatalog.Legal },
-  { value: 'custom', label: 'Personalizado', description: 'Etiquetas, formatos especiais e documentos com medidas próprias.', dimensions: null },
+  { value: 'A4', label: 'A4', description: studioCopy('page_formats.a4.description', {}, 'Relatórios técnicos, certificados e propostas padrão.'), dimensions: pageSizeCatalog.A4 },
+  { value: 'Letter', label: 'Letter', description: studioCopy('page_formats.letter.description', {}, 'Clientes internacionais que exigem papel norte-americano.'), dimensions: pageSizeCatalog.Letter },
+  { value: 'Legal', label: 'Legal', description: studioCopy('page_formats.legal.description', {}, 'Contratos, anexos e propostas comerciais mais longas.'), dimensions: pageSizeCatalog.Legal },
+  { value: 'custom', label: studioCopy('page_formats.custom.label', {}, 'Personalizado'), description: studioCopy('page_formats.custom.description', {}, 'Etiquetas, formatos especiais e documentos com medidas próprias.'), dimensions: null },
 ]
 
 const orientationOptions = [
-  { value: 'P', label: 'Vertical' },
-  { value: 'L', label: 'Horizontal' },
+  { value: 'P', label: studioCopy('orientation.portrait', {}, 'Vertical') },
+  { value: 'L', label: studioCopy('orientation.landscape', {}, 'Horizontal') },
 ]
 
 const marginProfileOptions = [
   {
     key: 'controlled',
-    label: 'Controlado',
-    description: 'Cabeçalho forte, rodapé com paginação e corpo técnico confortável.',
+    label: studioCopy('margin_profiles.controlled.label', {}, 'Controlado'),
+    description: studioCopy('margin_profiles.controlled.description', {}, 'Cabeçalho forte, rodapé com paginação e corpo técnico confortável.'),
     values: { margin_top: 20, margin_right: 14, margin_bottom: 22, margin_left: 14, first_page_margin_top: 56 },
   },
   {
     key: 'executive',
-    label: 'Executivo',
-    description: 'Mais respiro para capas, destaques, assinaturas e documentos comerciais.',
+    label: studioCopy('margin_profiles.executive.label', {}, 'Executivo'),
+    description: studioCopy('margin_profiles.executive.description', {}, 'Mais respiro para capas, destaques, assinaturas e documentos comerciais.'),
     values: { margin_top: 24, margin_right: 18, margin_bottom: 24, margin_left: 18, first_page_margin_top: 64 },
   },
   {
     key: 'technical-dense',
-    label: 'Técnico denso',
-    description: 'Mais área útil para tabelas longas sem eliminar proteção de página.',
+    label: studioCopy('margin_profiles.technical_dense.label', {}, 'Técnico denso'),
+    description: studioCopy('margin_profiles.technical_dense.description', {}, 'Mais área útil para tabelas longas sem eliminar protecção de página.'),
     values: { margin_top: 16, margin_right: 10, margin_bottom: 18, margin_left: 10, first_page_margin_top: 44 },
   },
   {
     key: 'full-bleed',
-    label: 'Capa / fundo total',
-    description: 'Margens mínimas para páginas com fundo visual ou capa editorial.',
+    label: studioCopy('margin_profiles.full_bleed.label', {}, 'Capa / fundo total'),
+    description: studioCopy('margin_profiles.full_bleed.description', {}, 'Margens mínimas para páginas com fundo visual ou capa editorial.'),
     values: { margin_top: 8, margin_right: 8, margin_bottom: 10, margin_left: 8, first_page_margin_top: 12 },
   },
 ]
@@ -327,34 +353,34 @@ const marginProfileOptions = [
 const rendererOptions = computed(() => [
   {
     value: 'internal',
-    label: 'mPDF interno',
+    label: studioCopy('renderers.internal.label', {}, 'mPDF interno'),
     badge: 'CSS 2.1',
     available: true,
-    description: 'Seguro para documentos clássicos, headers/footers e tabelas. Não é 1:1 com o browser quando usa grid, flex avançado, filtros, transforms, sombras complexas ou CSS moderno.',
+    description: studioCopy('renderers.internal.description', {}, 'Seguro para documentos clássicos, cabeçalhos, rodapés e tabelas. Não é 1:1 com o browser quando usa grid, flex avançado, filtros, transformações, sombras complexas ou CSS moderno.'),
   },
   {
     value: 'chrome',
-    label: 'Spatie Laravel PDF · Chrome',
-    badge: props.rendererCapabilities?.chrome?.available ? 'Disponível' : 'Verificar servidor',
+    label: studioCopy('renderers.chrome.label', {}, 'Spatie Laravel PDF · Chrome'),
+    badge: props.rendererCapabilities?.chrome?.available ? studioCopy('renderers.badges.available', {}, 'Disponível') : studioCopy('renderers.badges.check_server', {}, 'Verificar servidor'),
     available: Boolean(props.rendererCapabilities?.chrome?.available),
-    description: props.rendererCapabilities?.chrome?.description || 'Renderização Chromium para maior fidelidade ao canvas. Requer chrome-php/chrome e Chrome/Chromium no servidor.',
+    description: props.rendererCapabilities?.chrome?.description || studioCopy('renderers.chrome.description', {}, 'Renderização Chromium para maior fidelidade ao canvas. Requer chrome-php/chrome e Chrome/Chromium no servidor.'),
     binaryPath: props.rendererCapabilities?.chrome?.binary_path || '',
     binaryConfigured: Boolean(props.rendererCapabilities?.chrome?.binary_configured),
     binaryExecutable: Boolean(props.rendererCapabilities?.chrome?.binary_executable),
   },
   {
     value: 'browsershot',
-    label: 'Spatie Laravel PDF · Browsershot',
-    badge: props.rendererCapabilities?.browsershot?.available ? 'Disponível' : 'Requer driver',
+    label: studioCopy('renderers.browsershot.label', {}, 'Spatie Laravel PDF · Browsershot'),
+    badge: props.rendererCapabilities?.browsershot?.available ? studioCopy('renderers.badges.available', {}, 'Disponível') : studioCopy('renderers.badges.requires_driver', {}, 'Requer driver'),
     available: Boolean(props.rendererCapabilities?.browsershot?.available),
-    description: props.rendererCapabilities?.browsershot?.description || 'Renderização Chromium via Puppeteer/Browsershot. Requer spatie/browsershot, Node e Chrome/Chromium no servidor.',
+    description: props.rendererCapabilities?.browsershot?.description || studioCopy('renderers.browsershot.description', {}, 'Renderização Chromium via Puppeteer/Browsershot. Requer spatie/browsershot, Node e Chrome/Chromium no servidor.'),
   },
   {
     value: 'canva',
-    label: 'Ligado ao Canva',
-    badge: 'Referência',
+    label: studioCopy('renderers.canva.label', {}, 'Ligado ao Canva'),
+    badge: studioCopy('renderers.badges.reference', {}, 'Referência'),
     available: true,
-    description: 'Mantém uma referência externa de design. Não substitui a geração PDF interna do studio.',
+    description: studioCopy('renderers.canva.description', {}, 'Mantém uma referência externa de design. Não substitui a geração PDF interna do studio.'),
   },
 ])
 
@@ -362,83 +388,95 @@ const selectedRendererOption = computed(() => rendererOptions.value.find((option
 const rendererSelectionUnavailable = computed(() => selectedRendererOption.value && !selectedRendererOption.value.available)
 
 const canvasSurfaceOptions = [
-  { value: 'content', label: 'Corpo do documento' },
-  { value: 'first_page_header_html', label: 'Cabeçalho da primeira página' },
-  { value: 'default_header_html', label: 'Cabeçalho padrão' },
-  { value: 'footer_html', label: 'Rodapé' },
+  { value: 'content', label: studioCopy('surfaces.content', {}, 'Corpo do documento') },
+  { value: 'first_page_header_html', label: studioCopy('surfaces.first_page_header_html', {}, 'Cabeçalho da primeira página') },
+  { value: 'default_header_html', label: studioCopy('surfaces.default_header_html', {}, 'Cabeçalho padrão') },
+  { value: 'footer_html', label: studioCopy('surfaces.footer_html', {}, 'Rodapé') },
 ]
 
 const canvasContentScopeOptions = [
-  { value: 'first', label: 'Primeira página' },
-  { value: 'all', label: 'Todas as páginas' },
-  { value: 'following', label: 'Páginas seguintes' },
-  { value: 'specific', label: 'Página específica' },
+  { value: 'first', label: studioCopy('page_scopes.first', {}, 'Primeira página') },
+  { value: 'all', label: studioCopy('page_scopes.all', {}, 'Todas as páginas') },
+  { value: 'following', label: studioCopy('page_scopes.following', {}, 'Páginas seguintes') },
+  { value: 'specific', label: studioCopy('page_scopes.specific', {}, 'Página específica') },
 ]
 
 const blockKindOptions = [
-  { value: 'rich_text', label: 'Conteúdo livre' },
-  { value: 'image', label: 'Imagem' },
-  { value: 'chart_snapshot', label: 'Gráfico / Apex snapshot' },
-  { value: 'stamp', label: 'Carimbo / selo' },
-  { value: 'signature', label: 'Assinatura' },
-  { value: 'qr_code', label: 'QR code' },
+  { value: 'rich_text', label: studioCopy('block_kinds.rich_text', {}, 'Conteúdo livre') },
+  { value: 'image', label: studioCopy('block_kinds.image', {}, 'Imagem') },
+  { value: 'chart_snapshot', label: studioCopy('block_kinds.chart_snapshot', {}, 'Gráfico / captura') },
+  { value: 'stamp', label: studioCopy('block_kinds.stamp', {}, 'Carimbo / selo') },
+  { value: 'signature', label: studioCopy('block_kinds.signature', {}, 'Assinatura') },
+  { value: 'qr_code', label: studioCopy('block_kinds.qr_code', {}, 'Código QR') },
 ]
 
 const chartTypeOptions = [
-  { value: 'bar', label: 'Barras' },
-  { value: 'line', label: 'Linha' },
-  { value: 'doughnut', label: 'Anel' },
+  { value: 'bar', label: studioCopy('chart_types.bar', {}, 'Barras') },
+  { value: 'line', label: studioCopy('chart_types.line', {}, 'Linha') },
+  { value: 'doughnut', label: studioCopy('chart_types.doughnut', {}, 'Anel') },
 ]
 
-const defaultChartPalette = ['#143d37', '#d9b05f', '#0f766e', '#475569', '#7c2d12', '#2563eb']
+const defaultChartPalette = ['#143d37', '#d9b05f', '#0f766e', '#475569', '#7c2d12', '#3f6f58']
 
 const tableStylePresets = [
   {
     key: 'iso-controlled',
-    label: 'ISO controlado',
-    description: 'Cabeçalho institucional, contraste alto e bordas sóbrias para relatórios técnicos.',
+    label: studioCopy('table_presets.iso_controlled.label', {}, 'ISO controlado'),
+    description: studioCopy('table_presets.iso_controlled.description', {}, 'Cabeçalho institucional, contraste alto e bordas sóbrias para relatórios técnicos.'),
     values: {
       table_header_background: '#143d37',
       table_header_text_color: '#fffaf0',
       table_border_color: '#ded3bf',
       table_font_size: 10,
       table_cell_padding: 8,
+      table_summary_background: '#fffdf7',
+      table_summary_text_color: '#15231f',
+      table_summary_muted_color: '#64748b',
     },
   },
   {
     key: 'analysis-bilingual',
-    label: 'Análise bilingue',
-    description: 'Densidade adequada para tabelas com título em português e legenda técnica em inglês.',
+    label: studioCopy('table_presets.analysis_bilingual.label', {}, 'Análise bilingue'),
+    description: studioCopy('table_presets.analysis_bilingual.description', {}, 'Densidade adequada para tabelas com título em português e legenda técnica em inglês.'),
     values: {
       table_header_background: '#0f4a44',
       table_header_text_color: '#f8f4ea',
       table_border_color: '#b8d7d1',
       table_font_size: 9,
       table_cell_padding: 7,
+      table_summary_background: '#f6fbf8',
+      table_summary_text_color: '#123b35',
+      table_summary_muted_color: '#54736b',
     },
   },
   {
     key: 'commercial-clean',
-    label: 'Comercial limpo',
-    description: 'Mais respiro para propostas, facturas e documentos que precisam de leitura executiva.',
+    label: studioCopy('table_presets.commercial_clean.label', {}, 'Comercial limpo'),
+    description: studioCopy('table_presets.commercial_clean.description', {}, 'Mais respiro para propostas, facturas e documentos que precisam de leitura executiva.'),
     values: {
       table_header_background: '#241c15',
       table_header_text_color: '#fffaf0',
       table_border_color: '#e6dccb',
       table_font_size: 10,
       table_cell_padding: 10,
+      table_summary_background: '#fffaf0',
+      table_summary_text_color: '#241c15',
+      table_summary_muted_color: '#7a6a56',
     },
   },
   {
     key: 'traceability-compact',
-    label: 'Rastreio compacto',
-    description: 'Linhas mais densas para anexos, cadeias de custódia e listas longas sem perder legibilidade.',
+    label: studioCopy('table_presets.traceability_compact.label', {}, 'Rastreio compacto'),
+    description: studioCopy('table_presets.traceability_compact.description', {}, 'Linhas mais densas para anexos, cadeias de custódia e listas longas sem perder legibilidade.'),
     values: {
       table_header_background: '#1f2937',
       table_header_text_color: '#ffffff',
       table_border_color: '#cbd5e1',
       table_font_size: 8,
       table_cell_padding: 5,
+      table_summary_background: '#f8fafc',
+      table_summary_text_color: '#1f2937',
+      table_summary_muted_color: '#64748b',
     },
   },
 ]
@@ -446,36 +484,36 @@ const tableStylePresets = [
 const canvasLayoutPresets = [
   {
     key: 'hero',
-    label: 'Hero',
-    description: 'Faixa superior ampla para capa.',
+    label: studioCopy('canvas_layout_presets.hero.label', {}, 'Hero'),
+    description: studioCopy('canvas_layout_presets.hero.description', {}, 'Faixa superior ampla para capa.'),
     values: { x: 0, y: 0, width: 100, min_height: 140, padding: 24, border_radius: 28 },
   },
   {
     key: 'badge',
-    label: 'Selo',
-    description: 'Chip ou badge destacado no canto.',
+    label: studioCopy('canvas_layout_presets.badge.label', {}, 'Selo'),
+    description: studioCopy('canvas_layout_presets.badge.description', {}, 'Chip ou badge destacado no canto.'),
     values: { x: 68, y: 6, width: 26, min_height: 24, padding: 10, border_radius: 999 },
   },
   {
     key: 'sidebar',
-    label: 'Sidebar',
-    description: 'Bloco vertical lateral para destaques.',
+    label: studioCopy('canvas_layout_presets.sidebar.label', {}, 'Lateral'),
+    description: studioCopy('canvas_layout_presets.sidebar.description', {}, 'Bloco vertical lateral para destaques.'),
     values: { x: 68, y: 16, width: 28, min_height: 180, padding: 18, border_radius: 20 },
   },
   {
     key: 'callout',
-    label: 'Callout',
-    description: 'Destaque intermédio dentro do conteúdo.',
+    label: studioCopy('canvas_layout_presets.callout.label', {}, 'Destaque'),
+    description: studioCopy('canvas_layout_presets.callout.description', {}, 'Destaque intermédio dentro do conteúdo.'),
     values: { x: 8, y: 18, width: 84, min_height: 96, padding: 18, border_radius: 22 },
   },
 ]
 
 const canvasShadowPresets = [
-  { value: 'none', label: 'Sem sombra', css: 'none' },
-  { value: 'soft', label: 'Sombra suave', css: '0 14px 32px rgba(15, 23, 42, 0.10)' },
-  { value: 'elevated', label: 'Elevado premium', css: '0 22px 55px rgba(15, 23, 42, 0.18)' },
-  { value: 'stamp', label: 'Carimbo impresso', css: '0 10px 22px rgba(20, 61, 55, 0.22)' },
-  { value: 'glow', label: 'Realce dourado', css: '0 0 0 6px rgba(217, 176, 95, 0.16), 0 20px 45px rgba(15, 23, 42, 0.16)' },
+  { value: 'none', label: studioCopy('shadow_presets.none', {}, 'Sem sombra'), css: 'none' },
+  { value: 'soft', label: studioCopy('shadow_presets.soft', {}, 'Sombra suave'), css: '0 14px 32px rgba(15, 23, 42, 0.10)' },
+  { value: 'elevated', label: studioCopy('shadow_presets.elevated', {}, 'Elevado premium'), css: '0 22px 55px rgba(15, 23, 42, 0.18)' },
+  { value: 'stamp', label: studioCopy('shadow_presets.stamp', {}, 'Carimbo impresso'), css: '0 10px 22px rgba(20, 61, 55, 0.22)' },
+  { value: 'glow', label: studioCopy('shadow_presets.glow', {}, 'Realce dourado'), css: '0 0 0 6px rgba(217, 176, 95, 0.16), 0 20px 45px rgba(15, 23, 42, 0.16)' },
 ]
 
 const themeCatalog = {
@@ -631,12 +669,16 @@ const placeholderLabels = {
   '{received_at}': 'Data de receção',
   '{sample_details}': 'Detalhes da amostra',
   '{collection_details}': 'Receção e cadeia de custódia',
-  '{analytical_scope}': 'Escopo analítico',
+  '{analytical_scope}': 'Âmbito analítico',
   '{validated_by}': 'Responsável pela validação',
   '{conclusion}': 'Conclusão técnica',
   '{executive_summary}': 'Resumo executivo',
   '{executive_kpis}': 'Indicadores executivos',
   '{executive_charts}': 'Gráficos executivos',
+  '{executive_chart_title}': 'Título do gráfico executivo',
+  '{executive_chart_labels}': 'Etiquetas do gráfico executivo',
+  '{executive_chart_values}': 'Valores do gráfico executivo',
+  '{executive_chart_caption}': 'Legenda do gráfico executivo',
   '{top_customers_table}': 'Clientes com maior actividade',
   '{quote_number}': 'Número da proforma',
   '{expiry_date}': 'Data de validade',
@@ -646,10 +688,18 @@ const placeholderLabels = {
   '{items_table}': 'Tabela de itens',
   '{summary_table}': 'Resumo financeiro',
   '{results_table}': 'Tabela de resultados',
+  '{analysis_chart_title}': 'Título do gráfico de resultados',
+  '{analysis_chart_labels}': 'Etiquetas do gráfico de resultados',
+  '{analysis_chart_values}': 'Valores do gráfico de resultados',
+  '{analysis_chart_caption}': 'Legenda do gráfico de resultados',
+  '{analysis_chart_card}': 'Cartão visual dos resultados',
   '{decision_rule}': 'Regra de decisão',
   '{uncertainty_statement}': 'Declaração de incerteza',
   '{signature_block}': 'Bloco de assinatura',
   '{banking_details}': 'Dados bancários',
+  '{verification_url}': 'Ligação de verificação',
+  '{proposal_authenticity}': 'QR e autenticidade da proposta',
+  '{proposal_acceptance_evidence}': 'Evidência de aceite da proposta',
   '{observations}': 'Observações',
   '{exporter_name}': 'Exportador',
   '{importer_name}': 'Importador',
@@ -763,7 +813,31 @@ const mediaKindLabelMap = {
 }
 
 function mediaKindValue(asset) {
-  return asset.kind || asset.source || 'file'
+  const kind = String(asset.kind || '').trim()
+
+  if (kind) {
+    return kind
+  }
+
+  const source = String(asset.source || '').toLowerCase()
+
+  if (source.includes('assinatura') || source.includes('signature')) {
+    return 'profile_signature'
+  }
+
+  if (source.includes('fundo') || source.includes('background')) {
+    return 'uploaded_background'
+  }
+
+  if (source.includes('gráfico') || source.includes('grafico') || source.includes('chart')) {
+    return 'uploaded_chart'
+  }
+
+  if (source.includes('carimbo') || source.includes('selo') || source.includes('stamp')) {
+    return 'uploaded_stamp'
+  }
+
+  return source ? source.replace(/\s+/g, '_') : 'file'
 }
 
 function mediaKindLabel(kind) {
@@ -782,13 +856,16 @@ const mediaKindOptions = computed(() => [
     })),
 ])
 
+function syncAdvancedCompositionState(event) {
+  advancedCompositionOpen.value = Boolean(event?.target?.open)
+}
+
 const filteredMediaAssets = computed(() => {
   const query = mediaPickerSearch.value.trim().toLowerCase()
 
   return localAssetLibrary.value.filter((asset) => {
     const kindMatches = mediaPickerKind.value === 'all'
-      || asset.kind === mediaPickerKind.value
-      || asset.source === mediaPickerKind.value
+      || mediaKindValue(asset) === mediaPickerKind.value
 
     if (!kindMatches) {
       return false
@@ -876,7 +953,7 @@ const previewReplacementMap = computed(() => ({
   '{document_code}': 'DOC-2026-001',
   '{issue_date}': '04/05/2026',
   '{lab_name}': 'Laboratório Central',
-  '{customer_name}': 'Cliente Exemplo',
+  '{customer_name}': 'Cliente industrial de referência',
   ...props.previewReplacements,
 }))
 
@@ -992,6 +1069,15 @@ const previewPageDimensions = computed(() => {
   }
 })
 
+const previewPageFormatLabel = computed(() => {
+  const paperSize = props.exportSettings.paper_size === 'custom'
+    ? `${previewPageDimensions.value.width} × ${previewPageDimensions.value.height} mm`
+    : String(props.exportSettings.paper_size || 'A4').toUpperCase()
+  const orientation = props.exportSettings.orientation === 'L' ? 'Paisagem' : 'Retrato'
+
+  return `${paperSize} · ${orientation}`
+})
+
 const previewPageMaxWidth = computed(() => props.exportSettings.orientation === 'L' ? 1080 : 860)
 
 const previewPageFrameStyle = computed(() => {
@@ -1049,12 +1135,12 @@ function blockQualityFields(block) {
 
 const studioSurfaceSources = computed(() => {
   const sources = [
-    { label: 'Corpo do documento', pane: 'compose', value: props.layoutSchema.body_html || '' },
-    { label: 'Cabeçalho da primeira página', pane: 'pdf', value: props.layoutSchema.first_page_header_html || '' },
-    { label: 'Cabeçalho padrão', pane: 'pdf', value: props.layoutSchema.default_header_html || '' },
-    { label: 'Rodapé', pane: 'pdf', value: props.layoutSchema.footer_html || '' },
-    { label: 'CSS adicional', pane: 'pdf', value: props.layoutSchema.styles_css || '' },
-    { label: 'Fundo do documento', pane: 'pdf', value: props.layoutSchema.background_image_path || '' },
+    { label: studioCopy('surfaces.content', {}, 'Corpo do documento'), pane: 'compose', value: props.layoutSchema.body_html || '' },
+    { label: studioCopy('surfaces.first_page_header_html', {}, 'Cabeçalho da primeira página'), pane: 'pdf', value: props.layoutSchema.first_page_header_html || '' },
+    { label: studioCopy('surfaces.default_header_html', {}, 'Cabeçalho padrão'), pane: 'pdf', value: props.layoutSchema.default_header_html || '' },
+    { label: studioCopy('surfaces.footer_html', {}, 'Rodapé'), pane: 'pdf', value: props.layoutSchema.footer_html || '' },
+    { label: studioCopy('surfaces.styles_css', {}, 'CSS adicional'), pane: 'pdf', value: props.layoutSchema.styles_css || '' },
+    { label: studioCopy('surfaces.document_background', {}, 'Fundo do documento'), pane: 'pdf', value: props.layoutSchema.background_image_path || '' },
   ]
 
   canvasBlocks.value.forEach((block) => {
@@ -1095,12 +1181,12 @@ const unresolvedPlaceholders = computed(() => {
 
 const rendererCssRiskCatalog = [
   { key: 'grid', label: 'CSS Grid', pattern: /display\s*:\s*grid/i },
-  { key: 'flex', label: 'Flexbox avançado', pattern: /display\s*:\s*(inline-)?flex/i },
-  { key: 'filter', label: 'Filtros visuais', pattern: /\b(backdrop-)?filter\s*:/i },
-  { key: 'transform', label: 'Transformações', pattern: /\btransform\s*:/i },
-  { key: 'sticky', label: 'Posicionamento sticky', pattern: /position\s*:\s*sticky/i },
-  { key: 'gradient', label: 'Gradientes complexos', pattern: /(linear|radial)-gradient\(/i },
-  { key: 'shadow', label: 'Sombras CSS', pattern: /\bbox-shadow\s*:/i },
+  { key: 'flex', label: studioCopy('css_risks.flex', {}, 'Flexbox avançado'), pattern: /display\s*:\s*(inline-)?flex/i },
+  { key: 'filter', label: studioCopy('css_risks.filter', {}, 'Filtros visuais'), pattern: /\b(backdrop-)?filter\s*:/i },
+  { key: 'transform', label: studioCopy('css_risks.transform', {}, 'Transformações'), pattern: /\btransform\s*:/i },
+  { key: 'sticky', label: studioCopy('css_risks.sticky', {}, 'Posicionamento sticky'), pattern: /position\s*:\s*sticky/i },
+  { key: 'gradient', label: studioCopy('css_risks.gradient', {}, 'Gradientes complexos'), pattern: /(linear|radial)-gradient\(/i },
+  { key: 'shadow', label: studioCopy('css_risks.shadow', {}, 'Sombras CSS'), pattern: /\bbox-shadow\s*:/i },
 ]
 
 const canvasRendererRiskSource = computed(() => {
@@ -1155,6 +1241,40 @@ const documentHasFooter = computed(() => {
     || visibleCanvasBlocks.value.some((block) => block.surface === 'footer_html')
 })
 
+const pdfSurfaceCards = computed(() => [
+  {
+    surface: 'first_page_header_html',
+    label: studioCopy('pdf_surface_cards.first_page_header.label', {}, 'Abertura da primeira página'),
+    description: studioCopy('pdf_surface_cards.first_page_header.description', {}, 'Identidade, título e contexto documental para a página de entrada.'),
+    pageNumber: 1,
+  },
+  {
+    surface: 'default_header_html',
+    label: studioCopy('pdf_surface_cards.default_header.label', {}, 'Cabeçalho das páginas seguintes'),
+    description: studioCopy('pdf_surface_cards.default_header.description', {}, 'Referência compacta que acompanha documentos multi-página.'),
+    pageNumber: Math.min(2, Math.max(previewPages.value.length, 1)),
+  },
+  {
+    surface: 'footer_html',
+    label: studioCopy('pdf_surface_cards.footer.label', {}, 'Rodapé e paginação'),
+    description: studioCopy('pdf_surface_cards.footer.description', {}, 'Controlo documental, autenticação, versão e número de página.'),
+    pageNumber: 1,
+  },
+].map((card) => {
+  const objectCount = visibleCanvasBlocks.value.filter((block) => block.surface === card.surface).length
+  const hasHtml = stripHtml(props.layoutSchema[card.surface] || '').length > 0
+
+  return {
+    ...card,
+    objectCount,
+    isConfigured: hasHtml || objectCount > 0,
+  }
+}))
+
+const configuredPdfSurfaceCount = computed(() => {
+  return pdfSurfaceCards.value.filter((surface) => surface.isConfigured).length
+})
+
 const documentHasSignature = computed(() => {
   return String(props.layoutSchema.body_html || '').includes('{signature_block}')
     || String(props.layoutSchema.body_html || '').includes('{{signature_block}}')
@@ -1172,8 +1292,8 @@ const studioQualityIssues = computed(() => {
     issues.push({
       key: 'empty-body',
       tone: 'critical',
-      title: 'Documento sem corpo útil',
-      description: 'Adicione texto, tabelas ou blocos ao corpo antes de exportar.',
+      title: studioCopy('quality.issues.empty_body.title', {}, 'Documento sem corpo útil'),
+      description: studioCopy('quality.issues.empty_body.description', {}, 'Adicione texto, tabelas ou blocos ao corpo antes de exportar.'),
       pane: 'compose',
     })
   }
@@ -1184,8 +1304,12 @@ const studioQualityIssues = computed(() => {
     issues.push({
       key: 'unresolved-placeholders',
       tone: 'critical',
-      title: `${unresolvedPlaceholders.value.length} variável${unresolvedPlaceholders.value.length === 1 ? '' : 's'} sem dados de pré-visualização`,
-      description: `Revise ${preview}${unresolvedPlaceholders.value.length > 3 ? '…' : ''} para evitar PDF com texto cru.`,
+      title: studioCopy('quality.issues.unresolved_placeholders.title', {
+        count: unresolvedPlaceholders.value.length,
+      }, `${unresolvedPlaceholders.value.length} variável${unresolvedPlaceholders.value.length === 1 ? '' : 's'} sem dados de pré-visualização`),
+      description: studioCopy('quality.issues.unresolved_placeholders.description', {
+        preview: `${preview}${unresolvedPlaceholders.value.length > 3 ? '…' : ''}`,
+      }, `Revise ${preview}${unresolvedPlaceholders.value.length > 3 ? '…' : ''} para evitar PDF com texto cru.`),
       pane: unresolvedPlaceholders.value[0]?.pane || 'compose',
     })
   }
@@ -1194,8 +1318,10 @@ const studioQualityIssues = computed(() => {
     issues.push({
       key: 'renderer-risk',
       tone: 'warning',
-      title: 'mPDF pode não reproduzir o design 1:1',
-      description: `${rendererCssRisks.value.map((risk) => risk.label).slice(0, 3).join(', ')} exigem Chrome PDF para fidelidade superior.`,
+      title: studioCopy('quality.issues.renderer_risk.title', {}, 'mPDF pode não reproduzir o design 1:1'),
+      description: studioCopy('quality.issues.renderer_risk.description', {
+        risks: rendererCssRisks.value.map((risk) => risk.label).slice(0, 3).join(', '),
+      }, `${rendererCssRisks.value.map((risk) => risk.label).slice(0, 3).join(', ')} exigem Chrome PDF para fidelidade superior.`),
       pane: 'pdf',
       action: 'chrome',
     })
@@ -1205,8 +1331,8 @@ const studioQualityIssues = computed(() => {
     issues.push({
       key: 'missing-header',
       tone: 'warning',
-      title: 'Cabeçalhos por página ainda vazios',
-      description: 'Configure cabeçalho da primeira página e cabeçalho padrão para documentos multi-página.',
+      title: studioCopy('quality.issues.missing_header.title', {}, 'Cabeçalhos por página ainda vazios'),
+      description: studioCopy('quality.issues.missing_header.description', {}, 'Configure cabeçalho da primeira página e cabeçalho padrão para documentos multi-página.'),
       pane: 'pdf',
     })
   }
@@ -1215,8 +1341,8 @@ const studioQualityIssues = computed(() => {
     issues.push({
       key: 'missing-footer',
       tone: 'warning',
-      title: 'Rodapé ou paginação não configurados',
-      description: 'Inclua paginação, código do documento ou trilha de emissão no rodapé.',
+      title: studioCopy('quality.issues.missing_footer.title', {}, 'Rodapé ou paginação não configurados'),
+      description: studioCopy('quality.issues.missing_footer.description', {}, 'Inclua paginação, código do documento ou trilha de emissão no rodapé.'),
       pane: 'pdf',
     })
   }
@@ -1225,8 +1351,8 @@ const studioQualityIssues = computed(() => {
     issues.push({
       key: 'missing-signature',
       tone: 'advisory',
-      title: 'Assinatura ainda não configurada',
-      description: 'Adicione bloco de assinatura ou variável {signature_block} para emissão formal.',
+      title: studioCopy('quality.issues.missing_signature.title', {}, 'Assinatura ainda não configurada'),
+      description: studioCopy('quality.issues.missing_signature.description', {}, 'Adicione bloco de assinatura ou variável {signature_block} para emissão formal.'),
       pane: 'compose',
     })
   }
@@ -1240,31 +1366,31 @@ const studioQualityStatus = computed(() => {
 
   if (criticalCount > 0) {
     return {
-      label: 'Requer revisão',
-      description: 'Há conteúdo que pode sair incompleto no PDF.',
+      label: studioCopy('quality.status.requires_review.label', {}, 'Requer revisão'),
+      description: studioCopy('quality.status.requires_review.description', {}, 'Há conteúdo que pode sair incompleto no PDF.'),
       class: 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100',
     }
   }
 
   if (warningCount > 0) {
     return {
-      label: 'Quase pronto',
-      description: 'O documento exporta, mas ainda há decisões de fidelidade ou paginação.',
+      label: studioCopy('quality.status.almost_ready.label', {}, 'Quase pronto'),
+      description: studioCopy('quality.status.almost_ready.description', {}, 'O documento exporta, mas ainda há decisões de fidelidade ou paginação.'),
       class: 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100',
     }
   }
 
   return {
-    label: 'Pronto para PDF',
-    description: 'Variáveis, estrutura e renderizador estão coerentes para exportação.',
+    label: studioCopy('quality.status.ready.label', {}, 'Pronto para PDF'),
+    description: studioCopy('quality.status.ready.description', {}, 'Variáveis, estrutura e renderizador estão coerentes para exportação.'),
     class: 'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100',
   }
 })
 
 const studioQualityMetrics = computed(() => [
-  { label: 'Páginas', value: String(previewPages.value.length || 1) },
-  { label: 'Variáveis abertas', value: String(unresolvedPlaceholders.value.length) },
-  { label: 'Riscos CSS', value: String(rendererCssRisks.value.length) },
+  { label: studioCopy('quality.metrics.pages', {}, 'Páginas'), value: String(previewPages.value.length || 1) },
+  { label: studioCopy('quality.metrics.open_variables', {}, 'Variáveis abertas'), value: String(unresolvedPlaceholders.value.length) },
+  { label: studioCopy('quality.metrics.css_risks', {}, 'Riscos CSS'), value: String(rendererCssRisks.value.length) },
 ])
 
 function focusQualityIssue(issue) {
@@ -1277,6 +1403,20 @@ function preferChromeRenderer() {
   }
 
   activeStudioPane.value = 'pdf'
+}
+
+function pdfSurfacePreviewHtml(surface) {
+  return interpolatePreviewHtml(props.layoutSchema[surface] || '', {
+    PAGENO: surface === 'default_header_html' ? '2' : '1',
+    nbpg: String(Math.max(previewPages.value.length, 1)),
+  })
+}
+
+function editPdfSurfaceInCanvas(surface, pageNumber = 1) {
+  snippetTarget.value = surface
+  activePreviewPage.value = clamp(pageNumber, 1, Math.max(previewPages.value.length, 1))
+  previewMode.value = surface === 'default_header_html' ? 'following-page' : 'first-page'
+  activeStudioPane.value = 'compose'
 }
 
 function previewMarginPercent(value, axisSize, fallback = 0) {
@@ -1312,9 +1452,11 @@ function previewContentPaddingStyleForPage(pageNumber) {
 const previewPageSummary = computed(() => {
   const dimensions = previewPageDimensions.value
   const format = props.exportSettings.paper_size === 'custom'
-    ? 'Personalizado'
+    ? studioCopy('page_formats.custom.label', {}, 'Personalizado')
     : props.exportSettings.paper_size || 'A4'
-  const orientation = props.exportSettings.orientation === 'L' ? 'horizontal' : 'vertical'
+  const orientation = props.exportSettings.orientation === 'L'
+    ? studioCopy('orientation.landscape_lower', {}, 'horizontal')
+    : studioCopy('orientation.portrait_lower', {}, 'vertical')
 
   return `${format} · ${Math.round(dimensions.width)} x ${Math.round(dimensions.height)} mm · ${orientation}`
 })
@@ -1326,7 +1468,13 @@ const previewMarginSummary = computed(() => {
   const left = numericSetting(props.exportSettings.margin_left, 14)
   const firstTop = numericSetting(props.exportSettings.first_page_margin_top, top)
 
-  return `Margens ${top}/${right}/${bottom}/${left} mm · primeira página ${firstTop} mm no topo`
+  return studioCopy('page_summaries.margins', {
+    top,
+    right,
+    bottom,
+    left,
+    firstTop,
+  }, `Margens ${top}/${right}/${bottom}/${left} mm · primeira página ${firstTop} mm no topo`)
 })
 
 const selectedPageFormatOption = computed(() => {
@@ -1349,7 +1497,10 @@ const printableAreaDimensions = computed(() => {
 const printableAreaSummary = computed(() => {
   const area = printableAreaDimensions.value
 
-  return `${Math.round(area.width)} x ${Math.round(area.height)} mm úteis`
+  return studioCopy('page_summaries.printable_area', {
+    width: Math.round(area.width),
+    height: Math.round(area.height),
+  }, `${Math.round(area.width)} x ${Math.round(area.height)} mm úteis`)
 })
 
 const activeMarginProfileKey = computed(() => {
@@ -1377,8 +1528,8 @@ const exportSetupIssues = computed(() => {
     if (width < 50 || height < 50) {
       issues.push({
         tone: 'critical',
-        title: 'Tamanho personalizado incompleto',
-        description: 'Defina largura e altura reais em milímetros para o Chrome e o mPDF gerarem a mesma página.',
+        title: studioCopy('export_issues.custom_size.title', {}, 'Tamanho personalizado incompleto'),
+        description: studioCopy('export_issues.custom_size.description', {}, 'Defina largura e altura reais em milímetros para o Chrome e o mPDF gerarem a mesma página.'),
       })
     }
   }
@@ -1386,40 +1537,40 @@ const exportSetupIssues = computed(() => {
   if (left + right >= dimensions.width * 0.5) {
     issues.push({
       tone: 'critical',
-      title: 'Margens laterais excessivas',
-      description: 'A largura útil está demasiado reduzida para tabelas, assinaturas e blocos posicionáveis.',
+      title: studioCopy('export_issues.side_margins.title', {}, 'Margens laterais excessivas'),
+      description: studioCopy('export_issues.side_margins.description', {}, 'A largura útil está demasiado reduzida para tabelas, assinaturas e blocos posicionáveis.'),
     })
   }
 
   if (top + bottom >= dimensions.height * 0.55) {
     issues.push({
       tone: 'critical',
-      title: 'Margens verticais excessivas',
-      description: 'O corpo do documento ficará comprimido e pode paginar de forma inesperada.',
+      title: studioCopy('export_issues.vertical_margins.title', {}, 'Margens verticais excessivas'),
+      description: studioCopy('export_issues.vertical_margins.description', {}, 'O corpo do documento ficará comprimido e pode paginar de forma inesperada.'),
     })
   }
 
   if (area.width < 120) {
     issues.push({
       tone: 'warning',
-      title: 'Área útil estreita',
-      description: 'Tabelas analíticas e documentos bilingues podem quebrar linhas em excesso.',
+      title: studioCopy('export_issues.narrow_area.title', {}, 'Área útil estreita'),
+      description: studioCopy('export_issues.narrow_area.description', {}, 'Tabelas analíticas e documentos bilingues podem quebrar linhas em excesso.'),
     })
   }
 
   if (firstTop < top) {
     issues.push({
       tone: 'warning',
-      title: 'Primeira página com topo menor que o padrão',
-      description: 'O cabeçalho especial da primeira página pode ficar próximo demais do conteúdo.',
+      title: studioCopy('export_issues.first_top_small.title', {}, 'Primeira página com topo menor que o padrão'),
+      description: studioCopy('export_issues.first_top_small.description', {}, 'O cabeçalho especial da primeira página pode ficar próximo demais do conteúdo.'),
     })
   }
 
   if (firstTop > dimensions.height * 0.35) {
     issues.push({
       tone: 'warning',
-      title: 'Primeira página com cabeçalho muito alto',
-      description: 'Capas e cabeçalhos longos devem ser intencionais para não expulsar conteúdo útil.',
+      title: studioCopy('export_issues.first_top_large.title', {}, 'Primeira página com cabeçalho muito alto'),
+      description: studioCopy('export_issues.first_top_large.description', {}, 'Capas e cabeçalhos longos devem ser intencionais para não expulsar conteúdo útil.'),
     })
   }
 
@@ -1429,23 +1580,23 @@ const exportSetupIssues = computed(() => {
 const exportSetupStatus = computed(() => {
   if (exportSetupIssues.value.some((issue) => issue.tone === 'critical')) {
     return {
-      label: 'Requer ajuste',
-      description: 'As dimensões podem comprometer o PDF final.',
+      label: studioCopy('export_status.requires_adjustment.label', {}, 'Requer ajuste'),
+      description: studioCopy('export_status.requires_adjustment.description', {}, 'As dimensões podem comprometer o PDF final.'),
       class: 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100',
     }
   }
 
   if (exportSetupIssues.value.length) {
     return {
-      label: 'Rever antes de exportar',
-      description: 'A página é válida, mas há riscos de paginação.',
+      label: studioCopy('export_status.review_before_export.label', {}, 'Rever antes de exportar'),
+      description: studioCopy('export_status.review_before_export.description', {}, 'A página é válida, mas há riscos de paginação.'),
       class: 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100',
     }
   }
 
   return {
-    label: 'Configuração segura',
-    description: 'Página, margens e área útil estão coerentes.',
+    label: studioCopy('export_status.safe.label', {}, 'Configuração segura'),
+    description: studioCopy('export_status.safe.description', {}, 'Página, margens e área útil estão coerentes.'),
     class: 'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100',
   }
 })
@@ -1457,51 +1608,12 @@ const previewStyleVariables = computed(() => ({
   '--studio-table-border-color': tableStyleSettings.value.table_border_color,
   '--studio-table-font-size': `${tableStyleSettings.value.table_font_size}px`,
   '--studio-table-cell-padding': `${tableStyleSettings.value.table_cell_padding}px`,
+  '--studio-table-summary-bg': tableStyleSettings.value.table_summary_background,
+  '--studio-table-summary-text-color': tableStyleSettings.value.table_summary_text_color,
+  '--studio-table-summary-muted-color': tableStyleSettings.value.table_summary_muted_color,
 }))
 
-function scopePreviewCss(css) {
-  return String(css || '')
-    .split('}')
-    .map((rule) => {
-      const [selectorPart, declarationPart] = rule.split('{')
-
-      if (!selectorPart || !declarationPart) {
-        return ''
-      }
-
-      const selector = selectorPart.trim()
-
-      if (!selector || selector.startsWith('@')) {
-        return ''
-      }
-
-      const scopedSelector = selector
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .map((item) => {
-          if (item.startsWith('.studio-preview-document')) {
-            return item
-          }
-
-          return item.toLowerCase() === 'body' ? '.studio-preview-document' : `.studio-preview-document ${item}`
-        })
-        .join(', ')
-
-      return `${scopedSelector}{${declarationPart.trim()}}`
-    })
-    .filter(Boolean)
-    .join('\n')
-}
-
-const previewScopedCss = computed(() => `
-.studio-preview-document{font-family:var(--studio-document-font);}
-.studio-preview-document table{width:100% !important;border-collapse:collapse !important;font-size:var(--studio-table-font-size) !important;}
-.studio-preview-document th{background:var(--studio-table-header-bg) !important;color:var(--studio-table-header-color) !important;font-size:var(--studio-table-font-size) !important;letter-spacing:.04em !important;text-transform:uppercase !important;}
-.studio-preview-document th,.studio-preview-document td{border:1px solid var(--studio-table-border-color) !important;padding:var(--studio-table-cell-padding) !important;vertical-align:top !important;}
-.studio-preview-document .bilingual-label{display:block;margin-top:2px;font-size:9px;font-weight:500;letter-spacing:.02em;text-transform:none;opacity:.72;}
-${scopePreviewCss(props.layoutSchema.styles_css)}
-`)
+const previewScopedCss = computed(() => buildReportStudioPreviewCss(props.layoutSchema.styles_css))
 
 const previewHeaderHtml = computed(() => {
   const html = previewMode.value === 'first-page'
@@ -1522,12 +1634,12 @@ const previewPageKind = computed(() => {
 const previewMeta = computed(() => {
   return previewPageKind.value === 'first-page'
     ? {
-        title: 'Primeira página',
-        subtitle: 'Capa, hero e enquadramento inicial.',
+        title: studioCopy('preview_meta.first_page.title', {}, 'Primeira página'),
+        subtitle: studioCopy('preview_meta.first_page.subtitle', {}, 'Capa, hero e enquadramento inicial.'),
       }
     : {
-        title: 'Páginas seguintes',
-        subtitle: 'Continuação com cabeçalho padrão e paginação recorrente.',
+        title: studioCopy('preview_meta.following_pages.title', {}, 'Páginas seguintes'),
+        subtitle: studioCopy('preview_meta.following_pages.subtitle', {}, 'Continuação com cabeçalho padrão e paginação recorrente.'),
     }
 })
 
@@ -1612,7 +1724,7 @@ const snippetLibraries = {
     { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página no preview e no PDF.', html: '<pagebreak />' },
   ],
   proposal: [
-    { label: 'Hero institucional', description: 'Capa editorial com proposta, cliente e subtítulo.', html: '<section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:24px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.8;">{{lab_name}}</div><h1 style="margin:12px 0 0; font-size:28px;">Proposta {{proposal_number}}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">Escopo preparado para {{customer_name}} com enquadramento técnico, comercial e documental.</p></section>' },
+    { label: 'Hero institucional', description: 'Capa editorial com proposta, cliente e subtítulo.', html: '<section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:24px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.8;">{{lab_name}}</div><h1 style="margin:12px 0 0; font-size:28px;">Proposta {{proposal_number}}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">Âmbito preparado para {{customer_name}} com enquadramento técnico, comercial e documental.</p></section>' },
     { label: 'Resumo executivo', description: 'Quadro com cliente, local e validade.', html: '<section style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:20px;"><div style="border:1px solid #cbd5e1; border-radius:18px; padding:14px;"><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#64748b;">Cliente</div><div style="margin-top:6px; font-weight:700;">{{customer_name}}</div></div><div style="border:1px solid #cbd5e1; border-radius:18px; padding:14px;"><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#64748b;">Local</div><div style="margin-top:6px; font-weight:700;">{{service_location}}</div></div><div style="border:1px solid #cbd5e1; border-radius:18px; padding:14px;"><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#64748b;">Validade</div><div style="margin-top:6px; font-weight:700;">{{expiry_date}}</div></div></section>' },
     { label: 'Tabela de serviços', description: 'Insere a tabela dinâmica de itens da proposta.', html: '<section style="margin:20px 0;">{items_table}</section>' },
     { label: 'Resumo financeiro', description: 'Insere a tabela de subtotal, desconto, imposto e total.', html: '<section style="margin:20px 0;">{summary_table}</section>' },
@@ -1746,6 +1858,10 @@ function createCanvasBlock(overrides = {}) {
     signature_name: '',
     signature_title: '',
     signature_image: '',
+    signature_image_fit: 'contain',
+    signature_image_position: 'center center',
+    signature_image_width: 180,
+    signature_image_height: 72,
     signature_line_style: 'solid',
     signature_align: 'left',
     signature_show_date: false,
@@ -2033,7 +2149,7 @@ function addChartSnapshotCanvasBlock() {
     block_kind: 'chart_snapshot',
     content_html: '',
     chart_title: 'Gráfico do relatório',
-    chart_caption: 'Indicador visual gerado pelo studio ou substituído por snapshot ApexCharts.',
+    chart_caption: 'Indicador visual gerado pelo estúdio ou substituído por captura exportada.',
     chart_image_url: mediaAssetUrl.value || '',
     chart_type: 'bar',
     chart_labels: ['Recepção', 'Validação', 'Emissão'],
@@ -2106,6 +2222,10 @@ function addSavedSignatureCanvasBlock(asset) {
   selectedCanvasBlock.value.signature_label = 'Assinatura autorizada'
   selectedCanvasBlock.value.signature_name = asset.label || '{{lab_name}}'
   selectedCanvasBlock.value.signature_image = mediaAssetDocumentUrl(asset)
+  selectedCanvasBlock.value.signature_image_fit = selectedCanvasBlock.value.signature_image_fit || 'contain'
+  selectedCanvasBlock.value.signature_image_position = selectedCanvasBlock.value.signature_image_position || 'center center'
+  selectedCanvasBlock.value.signature_image_width = selectedCanvasBlock.value.signature_image_width || 180
+  selectedCanvasBlock.value.signature_image_height = selectedCanvasBlock.value.signature_image_height || 72
 }
 
 function applyAssetToSelectedBlock(assetUrl, field = 'image_url') {
@@ -2389,6 +2509,11 @@ function applyAssetToCanvasTarget(asset, target = 'document-background') {
 
 function openMediaPicker(scope = 'selected-block', field = 'image_url', options = {}) {
   mediaPickerTarget.value = { scope, field, ...options }
+  mediaPickerSearch.value = ''
+  mediaPickerKind.value = 'all'
+  mediaPickerManualUrl.value = ''
+  mediaPickerUploadError.value = ''
+  mediaPickerUploadProgress.value = 0
   mediaPickerOpen.value = true
 }
 
@@ -2781,16 +2906,7 @@ function qrCodePreviewDataUri(block) {
 }
 
 function chartListValue(value) {
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item ?? '').trim())
-      .filter(Boolean)
-  }
-
-  return String(value || '')
-    .split(/[\n,;]+/)
-    .map((item) => item.trim())
-    .filter(Boolean)
+  return normalizeStudioChartList(value)
 }
 
 function chartNumericValues(block) {
@@ -2840,6 +2956,7 @@ function generatedChartSvg(block) {
   const backgroundColor = colorInputValue(block.chart_background_color, '#f8f4ea')
   const primaryColor = colorInputValue(block.chart_primary_color, colors[0] || '#143d37')
   const showValues = block.chart_show_values !== false
+  const palette = chartSvgPalette(backgroundColor)
 
   if (type === 'doughnut') {
     const total = values.reduce((sum, value) => sum + Math.max(value, 0), 0) || 1
@@ -2855,10 +2972,10 @@ function generatedChartSvg(block) {
     const legend = labels.map((label, index) => {
       const y = 70 + (index * 26)
 
-      return `<g><rect x="250" y="${y - 10}" width="12" height="12" rx="3" fill="${colors[index % colors.length]}"/><text x="272" y="${y}" font-size="12" fill="#334155">${escapeSvgText(interpolatePreviewHtml(label))}</text><text x="520" y="${y}" font-size="12" font-weight="700" fill="#0f172a" text-anchor="end">${values[index]}</text></g>`
+      return `<g><rect x="250" y="${y - 10}" width="12" height="12" rx="3" fill="${colors[index % colors.length]}"/><text x="272" y="${y}" font-size="12" fill="${palette.muted}">${escapeSvgText(interpolatePreviewHtml(label))}</text><text x="520" y="${y}" font-size="12" font-weight="700" fill="${palette.ink}" text-anchor="end">${values[index]}</text></g>`
     }).join('')
 
-    return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="#0f172a">${title}</text><circle cx="130" cy="128" r="40" fill="none" stroke="#e2e8f0" stroke-width="18"/>${rings}<text x="130" y="126" text-anchor="middle" font-size="18" font-weight="800" fill="${primaryColor}">${total}</text><text x="130" y="144" text-anchor="middle" font-size="10" fill="#64748b">total</text>${legend}</svg>`
+    return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="${palette.ink}">${title}</text><circle cx="130" cy="128" r="40" fill="none" stroke="${palette.grid}" stroke-width="18"/>${rings}<text x="130" y="126" text-anchor="middle" font-size="18" font-weight="800" fill="${palette.ink}">${total}</text><text x="130" y="144" text-anchor="middle" font-size="10" fill="${palette.muted}">total</text>${legend}</svg>`
   }
 
   if (type === 'line') {
@@ -2872,10 +2989,10 @@ function generatedChartSvg(block) {
       const x = 58 + (index * (470 / Math.max(values.length - 1, 1)))
       const y = 202 - ((value / maxValue) * 132)
 
-      return `<g><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${colors[index % colors.length]}" stroke="#fffaf0" stroke-width="2"/>${showValues ? `<text x="${x.toFixed(1)}" y="${(y - 12).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="#0f172a">${value}</text>` : ''}<text x="${x.toFixed(1)}" y="230" text-anchor="middle" font-size="10" fill="#64748b">${escapeSvgText(interpolatePreviewHtml(labels[index] || `S${index + 1}`))}</text></g>`
+      return `<g><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${colors[index % colors.length]}" stroke="${palette.markerStroke}" stroke-width="2"/>${showValues ? `<text x="${x.toFixed(1)}" y="${(y - 12).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="${palette.ink}">${value}</text>` : ''}<text x="${x.toFixed(1)}" y="230" text-anchor="middle" font-size="10" fill="${palette.muted}">${escapeSvgText(interpolatePreviewHtml(labels[index] || `S${index + 1}`))}</text></g>`
     }).join('')
 
-    return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="#0f172a">${title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="#cbd5e1"/><line x1="52" y1="70" x2="52" y2="202" stroke="#cbd5e1"/><polyline points="${points}" fill="none" stroke="${primaryColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${markers}</svg>`
+    return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="${palette.ink}">${title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="${palette.grid}"/><line x1="52" y1="70" x2="52" y2="202" stroke="${palette.grid}"/><polyline points="${points}" fill="none" stroke="${primaryColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${markers}</svg>`
   }
 
   const slot = 470 / Math.max(values.length, 1)
@@ -2885,10 +3002,10 @@ function generatedChartSvg(block) {
     const y = 202 - height
     const width = Math.max(18, slot * 0.7)
 
-    return `<g><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${width.toFixed(1)}" height="${height.toFixed(1)}" rx="10" fill="${colors[index % colors.length]}"/>${showValues ? `<text x="${(x + width / 2).toFixed(1)}" y="${(y - 10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="#0f172a">${value}</text>` : ''}<text x="${(x + width / 2).toFixed(1)}" y="230" text-anchor="middle" font-size="10" fill="#64748b">${escapeSvgText(interpolatePreviewHtml(labels[index] || `S${index + 1}`))}</text></g>`
+    return `<g><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${width.toFixed(1)}" height="${height.toFixed(1)}" rx="10" fill="${colors[index % colors.length]}"/>${showValues ? `<text x="${(x + width / 2).toFixed(1)}" y="${(y - 10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="${palette.ink}">${value}</text>` : ''}<text x="${(x + width / 2).toFixed(1)}" y="230" text-anchor="middle" font-size="10" fill="${palette.muted}">${escapeSvgText(interpolatePreviewHtml(labels[index] || `S${index + 1}`))}</text></g>`
   }).join('')
 
-  return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="#0f172a">${title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="#cbd5e1"/><line x1="52" y1="70" x2="52" y2="202" stroke="#cbd5e1"/>${bars}</svg>`
+  return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="${palette.ink}">${title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="${palette.grid}"/><line x1="52" y1="70" x2="52" y2="202" stroke="${palette.grid}"/>${bars}</svg>`
 }
 
 function canvasBlockContentHtml(block) {
@@ -2904,8 +3021,12 @@ function canvasBlockContentHtml(block) {
       : 'border-t border-slate-500/70'
 
     const signatureImageUrl = interpolatePreviewHtml(block.signature_image || '')
+    const signatureImageFit = mediaObjectFit(block.signature_image_fit || 'contain')
+    const signatureImagePosition = safeCssPositionValue(block.signature_image_position || 'center center', 'center center')
+    const signatureImageWidth = clamp(Number(block.signature_image_width || 180), 24, 360)
+    const signatureImageHeight = clamp(Number(block.signature_image_height || 72), 16, 240)
     const signatureImage = signatureImageUrl
-      ? `<img src="${signatureImageUrl}" alt="Assinatura" style="max-height:72px; max-width:180px; object-fit:contain;" />`
+      ? `<img src="${signatureImageUrl}" alt="Assinatura" style="display:block; width:${signatureImageWidth}px; max-width:100%; height:${signatureImageHeight}px; object-fit:${signatureImageFit}; object-position:${signatureImagePosition};" />`
       : ''
 
     const dateLabel = block.signature_show_date
@@ -2937,14 +3058,15 @@ function canvasBlockContentHtml(block) {
   }
 
   if (block.block_kind === 'chart_snapshot') {
+    const sanitizedChartSvg = sanitizeStudioChartSvg(interpolatePreviewHtml(block.chart_svg || ''))
     const chartTitle = block.chart_title
       ? `<div class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">${interpolatePreviewHtml(block.chart_title)}</div>`
       : ''
     const chartCaption = block.chart_caption
       ? `<div class="mt-3 text-xs leading-relaxed text-slate-500">${interpolatePreviewHtml(block.chart_caption)}</div>`
       : ''
-    const chartGraphic = block.chart_svg
-      ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${interpolatePreviewHtml(block.chart_svg)}</div>`
+    const chartGraphic = sanitizedChartSvg
+      ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${sanitizedChartSvg}</div>`
       : block.chart_image_url
         ? `<img src="${interpolatePreviewHtml(block.chart_image_url)}" alt="${interpolatePreviewHtml(block.chart_title || block.title || 'Gráfico')}" style="display:block; margin-top:12px; width:100%; min-height:140px; object-fit:contain;" />`
         : generatedChartSvg(block)
@@ -3511,6 +3633,9 @@ const tableStyleSettings = computed(() => ({
   table_border_color: safeCssColorValue(props.layoutSchema.table_border_color, '#cbd5e1'),
   table_font_size: props.layoutSchema.table_font_size || 10,
   table_cell_padding: props.layoutSchema.table_cell_padding || 8,
+  table_summary_background: safeCssColorValue(props.layoutSchema.table_summary_background, '#fffdf7'),
+  table_summary_text_color: safeCssColorValue(props.layoutSchema.table_summary_text_color, '#15231f'),
+  table_summary_muted_color: safeCssColorValue(props.layoutSchema.table_summary_muted_color, '#64748b'),
 }))
 
 const tablePreviewHeaderStyle = computed(() => ({
@@ -3527,12 +3652,22 @@ const tablePreviewCellStyle = computed(() => ({
   padding: `${tableStyleSettings.value.table_cell_padding}px`,
 }))
 
+const tablePreviewSummaryStyle = computed(() => ({
+  backgroundColor: tableStyleSettings.value.table_summary_background,
+  borderColor: tableStyleSettings.value.table_border_color,
+  color: tableStyleSettings.value.table_summary_text_color,
+}))
+
+const tablePreviewSummaryMutedStyle = computed(() => ({
+  color: tableStyleSettings.value.table_summary_muted_color,
+}))
+
 const activeTableStylePresetKey = computed(() => {
   return tableStylePresets.find((preset) => tableStylePresetIsActive(preset))?.key || null
 })
 
 function colorInputValue(value, fallback = '#0f172a') {
-  return /^#[0-9a-f]{6}$/i.test(String(value || '')) ? value : fallback
+  return normalizedHexColor(value, fallback)
 }
 
 function setSelectedBlockColor(field, value) {
@@ -3565,6 +3700,13 @@ function syncTableStylesCss() {
     'table{width:100% !important;border-collapse:collapse !important;}',
     `th{background:${settings.table_header_background} !important;color:${settings.table_header_text_color} !important;font-size:${settings.table_font_size}px !important;letter-spacing:0.04em !important;text-transform:uppercase !important;}`,
     `th,td{border:1px solid ${settings.table_border_color} !important;padding:${settings.table_cell_padding}px !important;vertical-align:top !important;}`,
+    '.document-summary-table{border-collapse:separate !important;border-spacing:0 8px !important;}',
+    '.document-summary-table td{border:0 !important;padding:4px !important;}',
+    `.document-summary-cell{background:${settings.table_summary_background} !important;border:1px solid ${settings.table_border_color} !important;border-radius:18px !important;padding:14px !important;vertical-align:top !important;}`,
+    `.document-summary-cell .label{color:${settings.table_summary_muted_color} !important;}`,
+    `.document-summary-cell .value{color:${settings.table_summary_text_color} !important;}`,
+    `.document-summary-cell .muted{color:${settings.table_summary_muted_color} !important;}`,
+    `.document-financial-summary td{color:${settings.table_summary_text_color};}`,
     '/* studio-table-controls:end */',
   ].join('\n')
 
@@ -3829,6 +3971,93 @@ function syncAssetUrlFromBackground() {
   mediaAssetUrl.value = props.layoutSchema.background_image_path || ''
 }
 
+function studioPayload() {
+  return {
+    name: props.form.name || '',
+    studio_type: props.form.studio_type,
+    renderer: props.form.renderer,
+    status: props.form.status || 'draft',
+    is_default: Boolean(props.form.is_default),
+    theme_preset: props.form.theme_preset || 'corporate',
+    canva_design_url: props.form.canva_design_url || '',
+    description: props.form.description || '',
+    layout_schema: props.layoutSchema,
+    export_settings: props.exportSettings,
+  }
+}
+
+function filenameFromResponse(response, fallback = 'report-studio-draft-preview.pdf') {
+  const contentDisposition = response?.headers?.['content-disposition'] || ''
+  const match = contentDisposition.match(/filename="?([^";]+)"?/i)
+
+  return match?.[1] || fallback
+}
+
+function downloadBlob(blob, filename) {
+  const objectUrl = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+
+  link.href = objectUrl
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(objectUrl)
+}
+
+async function previewErrorMessage(error) {
+  const fallback = studioCopy('draft_preview.error', {}, 'Não foi possível gerar a pré-visualização PDF deste rascunho.')
+  const payload = error?.response?.data
+
+  if (payload instanceof Blob) {
+    const text = await payload.text()
+
+    try {
+      const json = JSON.parse(text)
+      const firstError = Object.values(json.errors || {}).flat()[0]
+
+      return json.message || firstError || fallback
+    } catch {
+      return text || fallback
+    }
+  }
+
+  return error?.response?.data?.message || error?.message || fallback
+}
+
+async function previewDraftPdf() {
+  draftPreviewError.value = ''
+
+  if (!props.draftPreviewHref) {
+    draftPreviewError.value = studioCopy('draft_preview.missing_route', {}, 'A rota de pré-visualização do rascunho não está disponível.')
+
+    return
+  }
+
+  if (rendererSelectionUnavailable.value) {
+    draftPreviewError.value = studioCopy('draft_preview.renderer_unavailable', {}, 'Este renderizador precisa de um driver instalado no servidor antes de pré-visualizar.')
+
+    return
+  }
+
+  syncTableStylesCss()
+  syncDocumentStylesCss()
+  props.layoutSchema.variable_catalog = translatedPlaceholders.value
+  draftPreviewBusy.value = true
+
+  try {
+    const response = await axios.post(props.draftPreviewHref, studioPayload(), {
+      responseType: 'blob',
+    })
+
+    downloadBlob(response.data, filenameFromResponse(response))
+  } catch (error) {
+    draftPreviewError.value = await previewErrorMessage(error)
+  } finally {
+    draftPreviewBusy.value = false
+  }
+}
+
 function submit() {
   if (rendererSelectionUnavailable.value) {
     if (typeof props.form.setError === 'function') {
@@ -3876,6 +4105,15 @@ function submit() {
           </Link>
           <button
             type="button"
+            class="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#ded3bf] bg-white/75 px-4 py-3 text-sm font-bold text-[#15231f] shadow-sm transition hover:border-[rgb(var(--primary-300-rgb))] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:hover:border-[rgb(var(--primary-400-rgb)/0.55)]"
+            :disabled="draftPreviewBusy || props.form.processing"
+            @click="previewDraftPdf"
+          >
+            <EyeIcon class="h-4 w-4" />
+            {{ draftPreviewBusy ? studioCopy('draft_preview.generating', {}, 'A gerar PDF...') : studioCopy('draft_preview.action', {}, 'Pré-visualizar PDF') }}
+          </button>
+          <button
+            type="button"
             class="inline-flex items-center justify-center rounded-2xl bg-[rgb(var(--primary-800-rgb))] px-4 py-3 text-sm font-bold text-white shadow-[0_18px_45px_rgb(var(--primary-900-rgb)/0.18)] transition hover:bg-[rgb(var(--primary-700-rgb))] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[rgb(var(--accent-300-rgb))] dark:text-[#07110f] dark:hover:bg-[rgb(var(--accent-200-rgb))]"
             :disabled="props.form.processing"
             @click="submit"
@@ -3884,6 +4122,9 @@ function submit() {
           </button>
         </div>
       </div>
+      <p v-if="draftPreviewError" class="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">
+        {{ draftPreviewError }}
+      </p>
     </div>
 
     <nav class="rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7]/92 p-2 shadow-[0_18px_55px_rgba(20,61,55,0.07)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f]/92 dark:ring-white/10">
@@ -4006,125 +4247,140 @@ function submit() {
       class="grid gap-8 xl:grid-cols-1"
     >
       <section v-show="activeStudioPane !== 'pdf'" class="space-y-6">
-        <div v-show="activeStudioPane === 'setup'" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <div class="grid gap-5 md:grid-cols-2">
-            <div>
-              <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Nome do modelo</label>
-              <input v-model="props.form.name" type="text" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-              <p v-if="props.form.errors.name" class="mt-2 text-xs text-red-600 dark:text-red-400">{{ props.form.errors.name }}</p>
-            </div>
-
-            <div>
-              <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Tipo de estúdio</label>
-              <select v-model="props.form.studio_type" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="emit('update:studio-type', props.form.studio_type)">
-                <option value="analysis">Relatório analítico</option>
-                <option value="executive">Relatório executivo</option>
-                <option value="export_certificate">Certificado de exportação</option>
-                <option value="import_certificate">Certificado de importação</option>
-                <option value="quote">Proforma / orçamento</option>
-                <option value="invoice">Factura</option>
-                <option value="receipt">Recibo</option>
-                <option value="credit_note">Nota de crédito</option>
-                <option value="proposal">Proposta</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Renderização</label>
-              <select v-model="props.form.renderer" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                <option v-for="option in rendererOptions" :key="option.value" :value="option.value" :disabled="!option.available">
-                  {{ option.label }}{{ option.available ? '' : ' · indisponível' }}
-                </option>
-              </select>
-              <p v-if="props.form.errors.renderer" class="mt-2 text-xs text-red-600 dark:text-red-400">{{ props.form.errors.renderer }}</p>
-              <div
-                class="mt-3 rounded-2xl border px-4 py-3 text-xs leading-5"
-                :class="selectedRendererOption.available ? 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300' : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200'"
-              >
-                <div class="flex flex-wrap items-center gap-2">
-                  <span class="font-semibold">{{ selectedRendererOption.label }}</span>
-                  <span class="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:bg-slate-950 dark:text-slate-300">{{ selectedRendererOption.badge }}</span>
-                </div>
-                <p class="mt-2">{{ selectedRendererOption.description }}</p>
-                <p v-if="selectedRendererOption.value === 'chrome' && selectedRendererOption.binaryPath" class="mt-2 font-mono text-[11px]">
-                  Chrome: {{ selectedRendererOption.binaryPath }}
-                </p>
-                <p v-else-if="selectedRendererOption.value === 'chrome' && selectedRendererOption.available" class="mt-2">
-                  Chrome será autodetectado pelo servidor. Para produção, prefira definir <span class="font-mono">LARAVEL_PDF_CHROME_BINARY</span>.
-                </p>
+        <div v-show="activeStudioPane === 'setup'" class="space-y-5">
+          <div class="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(310px,0.65fr)]">
+            <section class="studio-output-panel">
+              <div class="studio-output-eyebrow">Identidade do modelo</div>
+              <h2 class="studio-output-title">Defina o propósito antes de desenhar</h2>
+              <p class="studio-output-description">O nome, o tipo documental e a descrição orientam a equipa e determinam as variáveis disponíveis no estúdio.</p>
+              <div class="mt-6 grid gap-4 md:grid-cols-2">
+                <label class="studio-setup-field">Nome do modelo
+                  <input v-model="props.form.name" type="text" placeholder="Ex.: Relatório analítico de rotina" />
+                  <span v-if="props.form.errors.name" class="studio-setup-field__error">{{ props.form.errors.name }}</span>
+                </label>
+                <label class="studio-setup-field">Tipo documental
+                  <select v-model="props.form.studio_type" @change="emit('update:studio-type', props.form.studio_type)">
+                    <option value="analysis">Relatório analítico</option>
+                    <option value="executive">Relatório executivo</option>
+                    <option value="export_certificate">Certificado de exportação</option>
+                    <option value="import_certificate">Certificado de importação</option>
+                    <option value="quote">Proforma / orçamento</option>
+                    <option value="invoice">Factura</option>
+                    <option value="receipt">Recibo</option>
+                    <option value="credit_note">Nota de crédito</option>
+                    <option value="proposal">Proposta</option>
+                  </select>
+                </label>
+                <label class="studio-setup-field md:col-span-2">Descrição operacional
+                  <textarea v-model="props.form.description" rows="4" placeholder="Explique quando este modelo deve ser utilizado e que decisões suporta." />
+                </label>
               </div>
-            </div>
+            </section>
 
-            <div>
-              <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Estado</label>
-              <select v-model="props.form.status" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                <option value="draft">Rascunho</option>
-                <option value="active">Activo</option>
-                <option value="archived">Arquivado</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Tema visual</label>
-              <select v-model="props.form.theme_preset" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                <option v-for="option in themePresetOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-              </select>
-            </div>
-
-            <div class="flex items-end">
-              <label class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300">
-                <input v-model="props.form.is_default" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
-                Modelo padrão para novos {{ studioLabels.plural }}
+            <aside class="studio-lifecycle-card">
+              <div class="studio-output-eyebrow">Ciclo de vida</div>
+              <h3 class="mt-2 text-lg font-black text-[#15231f] dark:text-[#f7f1e7]">Disponibilidade do modelo</h3>
+              <div class="mt-5 space-y-2">
+                <button
+                  v-for="option in studioStatusOptions"
+                  :key="`studio-status-${option.value}`"
+                  type="button"
+                  class="studio-lifecycle-option"
+                  :class="{ 'studio-lifecycle-option--active': props.form.status === option.value }"
+                  @click="props.form.status = option.value"
+                >
+                  <span class="studio-lifecycle-option__mark" />
+                  <span>
+                    <span class="block text-sm font-black">{{ option.label }}</span>
+                    <span class="mt-1 block text-xs font-medium leading-5 opacity-70">{{ option.description }}</span>
+                  </span>
+                </button>
+              </div>
+              <label class="studio-default-toggle mt-4">
+                <input v-model="props.form.is_default" type="checkbox" />
+                <span>
+                  <span class="block text-sm font-black">Modelo padrão</span>
+                  <span class="mt-1 block text-xs font-medium leading-5 opacity-70">Pré-seleccionar para novos {{ studioLabels.plural }}.</span>
+                </span>
               </label>
-            </div>
+            </aside>
           </div>
 
-          <div class="mt-5">
-            <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Descrição operacional</label>
-            <textarea v-model="props.form.description" rows="3" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-          </div>
-
-          <div class="mt-5">
-            <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Referência externa de design</label>
-            <input v-model="props.form.canva_design_url" type="url" placeholder="https://www.canva.com/design/..." class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-          </div>
-
-          <div class="mt-6 rounded-3xl border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-700 dark:bg-slate-950/50">
-            <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <section class="studio-output-panel">
+            <div class="studio-output-panel__heading">
               <div>
-                <div class="inline-flex rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm dark:bg-slate-900 dark:text-slate-200">
-                  {{ selectedThemePreset.badge }}
-                </div>
-                <h3 class="mt-3 text-base font-semibold text-slate-900 dark:text-slate-100">Direcção visual</h3>
-                <p class="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
-                  {{ selectedThemePreset.description }}
-                </p>
+                <div class="studio-output-eyebrow">Direcção visual</div>
+                <h3 class="studio-output-title">Uma linguagem coerente para o documento</h3>
+                <p class="studio-output-description">{{ selectedThemePreset.description }}</p>
               </div>
-              <button
-                type="button"
-                @click="applyThemePreset(props.form.theme_preset)"
-                class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-white dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-900"
-              >
-                Aplicar tema ao layout
-              </button>
+              <span class="studio-theme-badge">{{ selectedThemePreset.badge }}</span>
             </div>
-            <div class="mt-5 grid gap-4 lg:grid-cols-4">
+            <div class="mt-6 grid gap-4 lg:grid-cols-4">
               <button
                 v-for="option in themePresetOptions"
-                :key="option.value"
+                :key="`studio-theme-${option.value}`"
                 type="button"
+                class="studio-theme-card"
+                :class="{ 'studio-theme-card--active': props.form.theme_preset === option.value }"
                 @click="applyThemePreset(option.value)"
-                class="group rounded-2xl border px-4 py-4 text-left transition"
-                :class="props.form.theme_preset === option.value
-                  ? 'border-primary-500 bg-primary-50 dark:border-primary-400 dark:bg-primary-500/10'
-                  : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900/60 dark:hover:border-slate-600'"
               >
-                <div class="h-2.5 rounded-full bg-gradient-to-r" :class="themeCatalog[option.value].accent" />
-                <div class="mt-4 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ option.label }}</div>
-                <p class="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-400">{{ themeCatalog[option.value].description }}</p>
+                <span class="studio-theme-card__specimen">
+                  <span class="studio-theme-card__accent bg-gradient-to-r" :class="themeCatalog[option.value].accent" />
+                  <span class="studio-theme-card__line studio-theme-card__line--strong" />
+                  <span class="studio-theme-card__line" />
+                  <span class="studio-theme-card__table">
+                    <span /><span /><span />
+                  </span>
+                </span>
+                <span class="mt-4 block text-sm font-black">{{ option.label }}</span>
+                <span class="mt-2 block text-xs font-medium leading-5 opacity-70">{{ themeCatalog[option.value].description }}</span>
               </button>
             </div>
-          </div>
+          </section>
+
+          <section class="studio-output-panel">
+            <div class="studio-output-panel__heading">
+              <div>
+                <div class="studio-output-eyebrow">Estratégia de saída</div>
+                <h3 class="studio-output-title">Motor de renderização</h3>
+                <p class="studio-output-description">Escolha o motor de acordo com a complexidade visual. Esta decisão pode ser refinada novamente antes da emissão.</p>
+              </div>
+              <button type="button" class="studio-output-action" @click="activeStudioPane = 'pdf'; pdfWorkspaceSection = 'output'">Configurar saída</button>
+            </div>
+            <div class="mt-6 grid gap-4 lg:grid-cols-3">
+              <button
+                v-for="option in rendererOptions.filter((renderer) => renderer.value !== 'canva')"
+                :key="`setup-renderer-${option.value}`"
+                type="button"
+                class="studio-renderer-card"
+                :class="{ 'studio-renderer-card--active': props.form.renderer === option.value }"
+                :disabled="!option.available"
+                @click="props.form.renderer = option.value"
+              >
+                <span class="flex items-start justify-between gap-4">
+                  <span>
+                    <span class="block text-sm font-black">{{ option.label }}</span>
+                    <span class="mt-2 block text-xs font-medium leading-5 opacity-75">{{ option.description }}</span>
+                  </span>
+                  <span class="studio-renderer-card__badge">{{ option.badge }}</span>
+                </span>
+              </button>
+            </div>
+            <p v-if="props.form.errors.renderer" class="mt-3 text-xs font-black text-rose-600 dark:text-rose-300">{{ props.form.errors.renderer }}</p>
+            <details class="studio-advanced-panel mt-5">
+              <summary>Referência externa e diagnóstico técnico</summary>
+              <div class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.7fr)]">
+                <label class="studio-code-field">Referência externa de design
+                  <input v-model="props.form.canva_design_url" type="url" placeholder="https://www.canva.com/design/..." />
+                </label>
+                <div class="rounded-[1.2rem] border border-[#ded3bf] bg-[#fffdf7] p-4 text-xs font-medium leading-5 text-[#6b7b74] dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#a9bcb2]">
+                  <div class="font-black text-[#15231f] dark:text-[#f7f1e7]">{{ selectedRendererOption.label }} · {{ selectedRendererOption.badge }}</div>
+                  <p class="mt-2">{{ selectedRendererOption.description }}</p>
+                  <p v-if="selectedRendererOption.value === 'chrome' && selectedRendererOption.binaryPath" class="mt-2 font-mono text-[11px]">Chrome: {{ selectedRendererOption.binaryPath }}</p>
+                </div>
+              </div>
+            </details>
+          </section>
         </div>
 
         <div v-show="activeStudioPane === 'compose'" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
@@ -4170,7 +4426,7 @@ function submit() {
                   <button
                     type="button"
                     class="flex-1 rounded-full px-3 py-2 transition"
-                    :class="editorRailMode === 'layers' ? 'bg-primary-900 text-white shadow-sm dark:bg-primary-500' : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white'"
+                    :class="editorRailMode === 'layers' ? 'bg-[#143d37] text-white shadow-sm dark:bg-[#d9b05f] dark:text-[#07110f]' : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white'"
                     @click="editorRailMode = 'layers'"
                   >
                     Objectos
@@ -4178,7 +4434,7 @@ function submit() {
                   <button
                     type="button"
                     class="flex-1 rounded-full px-3 py-2 transition"
-                    :class="editorRailMode === 'assets' ? 'bg-primary-900 text-white shadow-sm dark:bg-primary-500' : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white'"
+                    :class="editorRailMode === 'assets' ? 'bg-[#143d37] text-white shadow-sm dark:bg-[#d9b05f] dark:text-[#07110f]' : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white'"
                     @click="editorRailMode = 'assets'"
                   >
                     Media
@@ -4188,7 +4444,7 @@ function submit() {
                 <div v-show="editorRailMode === 'layers'" class="mt-4 space-y-3">
                   <div class="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-950/60">
                     <div class="text-xs font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Objectos do documento</div>
-                    <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Os objectos no topo aparecem por cima no canvas. Controle visibilidade, bloqueio, ordem visual e escopo por página.</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Os objectos no topo aparecem por cima no canvas. Controle visibilidade, bloqueio, ordem visual e âmbito por página.</p>
                   </div>
                   <template v-for="group in canvasBlockGroups" :key="`editor-${group.value}`">
                     <div class="rounded-3xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-950/60">
@@ -4200,7 +4456,7 @@ function submit() {
                           type="button"
                           class="w-full rounded-2xl border px-3 py-3 text-left transition"
                           :class="selectedCanvasBlockId === block.id
-                            ? 'border-primary-400 bg-primary-50 text-primary-950 dark:border-primary-400/60 dark:bg-primary-500/10 dark:text-primary-100'
+                            ? 'border-[#d9b05f] bg-[#f8f0dd] text-[#143d37] dark:border-[#d9b05f]/70 dark:bg-[#d9b05f]/10 dark:text-[#f7f1e7]'
                             : canvasBlockIsHidden(block)
                               ? 'border-slate-200 bg-slate-50/60 text-slate-400 opacity-70 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-500 dark:hover:border-slate-600'
                               : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600'"
@@ -4322,81 +4578,138 @@ function submit() {
 
               <section class="relative overflow-auto bg-[radial-gradient(circle_at_top_left,rgba(20,61,55,0.12),transparent_34%),linear-gradient(135deg,#f7f1e7,#ebe2d2)] p-4 dark:bg-none dark:bg-slate-950 sm:p-6 xl:p-8">
                 <div class="mx-auto flex max-w-6xl flex-col gap-4">
-                  <div class="flex flex-col gap-3 rounded-[1.6rem] border border-white/70 bg-white/75 px-4 py-3 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/80 xl:flex-row xl:items-center xl:justify-between">
-                    <div>
-                      <div class="text-xs font-black uppercase tracking-[0.18em] text-primary-700 dark:text-primary-300">Editor canvas</div>
-                      <div class="mt-1 text-sm font-semibold text-slate-950 dark:text-white">{{ previewPageSummary }}</div>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                      <div class="inline-flex flex-wrap items-center gap-1 rounded-full border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-950">
-                        <button type="button" class="rounded-full px-3 py-1.5 text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-900" @click="addTextCanvasBlock">
-                          Texto
-                        </button>
-                        <button type="button" class="rounded-full px-3 py-1.5 text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-900" @click="addCalloutCanvasBlock">
-                          Destaque
-                        </button>
-                        <button type="button" class="rounded-full px-3 py-1.5 text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-900" @click="addImageCanvasBlock">
-                          Imagem
-                        </button>
-                        <button type="button" class="rounded-full px-3 py-1.5 text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-900" @click="addSignatureCanvasBlock('lab')">
-                          Assinatura
-                        </button>
-                        <button type="button" class="rounded-full px-3 py-1.5 text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-900" @click="addStampCanvasBlock">
-                          Carimbo
-                        </button>
-                        <button type="button" class="rounded-full px-3 py-1.5 text-slate-700 transition hover:bg-slate-50 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-900" @click="addQrCanvasBlock">
-                          QR
-                        </button>
+                  <div class="studio-canvas-toolbar">
+                    <div class="min-w-0">
+                      <div class="text-[10px] font-black uppercase tracking-[0.24em] text-[#6b7b74] dark:text-[#a9bcb2]">Prancheta activa</div>
+                      <div class="mt-1 truncate text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">{{ previewPageSummary }}</div>
+                      <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-bold text-[#6b7b74] dark:text-[#a9bcb2]">
+                        <span class="studio-toolbar-status">{{ previewPageFormatLabel }}</span>
+                        <span class="studio-toolbar-status">{{ visibleCanvasBlocks.length }} objecto{{ visibleCanvasBlocks.length === 1 ? '' : 's' }} {{ visibleCanvasBlocks.length === 1 ? 'visível' : 'visíveis' }}</span>
                       </div>
-                      <div v-if="previewPages.length > 1" class="inline-flex items-center rounded-full border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-950">
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                      <details class="studio-toolbar-menu relative">
+                        <summary class="studio-toolbar-button studio-toolbar-button--primary">
+                          <RectangleGroupIcon class="h-4 w-4" />
+                          Adicionar
+                        </summary>
+                        <div class="studio-toolbar-menu-panel">
+                          <div class="px-2 pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#6b7b74] dark:text-[#a9bcb2]">Novo objecto</div>
+                          <div class="grid grid-cols-2 gap-2">
+                            <button type="button" class="studio-toolbar-menu-action" @click="addTextCanvasBlock">
+                              <SparklesIcon class="h-4 w-4" />
+                              Texto
+                            </button>
+                            <button type="button" class="studio-toolbar-menu-action" @click="addCalloutCanvasBlock">
+                              <RectangleGroupIcon class="h-4 w-4" />
+                              Destaque
+                            </button>
+                            <button type="button" class="studio-toolbar-menu-action" @click="addImageCanvasBlock">
+                              <PhotoIcon class="h-4 w-4" />
+                              Imagem
+                            </button>
+                            <button type="button" class="studio-toolbar-menu-action" @click="addSignatureCanvasBlock('lab')">
+                              <DocumentDuplicateIcon class="h-4 w-4" />
+                              Assinatura
+                            </button>
+                            <button type="button" class="studio-toolbar-menu-action" @click="addStampCanvasBlock">
+                              <PaintBrushIcon class="h-4 w-4" />
+                              Carimbo
+                            </button>
+                            <button type="button" class="studio-toolbar-menu-action" @click="addQrCanvasBlock">
+                              <RectangleGroupIcon class="h-4 w-4" />
+                              Código QR
+                            </button>
+                          </div>
+                        </div>
+                      </details>
+
+                      <div v-if="previewPages.length > 1" class="studio-toolbar-group">
                         <button
                           type="button"
-                          class="rounded-full px-3 py-1.5 transition disabled:cursor-not-allowed disabled:opacity-40"
+                          class="studio-toolbar-icon-button"
+                          title="Página anterior"
                           :disabled="currentPreviewPage <= 1"
                           @click="stepPreviewPage(-1)"
                         >
-                          Anterior
+                          ‹
                         </button>
-                        <span class="px-2 text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">{{ currentPreviewPage }}/{{ previewPages.length }}</span>
+                        <span class="min-w-14 px-1 text-center text-[11px] font-black tracking-[0.08em] text-[#475a53] dark:text-[#cbd8cf]">{{ currentPreviewPage }}/{{ previewPages.length }}</span>
                         <button
                           type="button"
-                          class="rounded-full px-3 py-1.5 transition disabled:cursor-not-allowed disabled:opacity-40"
+                          class="studio-toolbar-icon-button"
+                          title="Página seguinte"
                           :disabled="currentPreviewPage >= previewPages.length"
                           @click="stepPreviewPage(1)"
                         >
-                          Seguinte
+                          ›
                         </button>
                       </div>
-                      <div class="inline-flex items-center rounded-full border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-950">
-                        <button
-                          v-for="option in canvasZoomOptions"
-                          :key="`zoom-${option.value}`"
-                          type="button"
-                          class="rounded-full px-3 py-1.5 transition"
-                          :class="Number(canvasZoom) === Number(option.value)
-                            ? 'bg-primary-900 text-white dark:bg-primary-500'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white'"
-                          @click="canvasZoom = option.value"
-                        >
-                          {{ option.label }}
-                        </button>
+
+                      <label class="studio-toolbar-group gap-2 pl-3 text-[10px] font-black uppercase tracking-[0.14em] text-[#6b7b74] dark:text-[#a9bcb2]">
+                        Zoom
+                        <select v-model.number="canvasZoom" class="studio-toolbar-select">
+                          <option v-for="option in canvasZoomOptions" :key="`zoom-${option.value}`" :value="option.value">{{ option.label }}</option>
+                        </select>
+                      </label>
+
+                      <details class="studio-toolbar-menu relative">
+                        <summary class="studio-toolbar-button">
+                          <EyeIcon class="h-4 w-4" />
+                          Vista
+                        </summary>
+                        <div class="studio-toolbar-menu-panel studio-toolbar-menu-panel--compact">
+                          <div class="px-1 pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#6b7b74] dark:text-[#a9bcb2]">Assistentes do canvas</div>
+                          <label class="studio-view-option">
+                            <input v-model="showCanvasGrid" type="checkbox" />
+                            <span>Mostrar grelha</span>
+                          </label>
+                          <label class="studio-view-option">
+                            <input v-model="showCanvasRulers" type="checkbox" />
+                            <span>Mostrar réguas</span>
+                          </label>
+                          <label class="studio-view-option">
+                            <input v-model="showSafeArea" type="checkbox" />
+                            <span>Mostrar área segura</span>
+                          </label>
+                          <label class="studio-view-option">
+                            <input v-model="snapToGrid" type="checkbox" />
+                            <span>Alinhamento inteligente</span>
+                          </label>
+                        </div>
+                      </details>
+                    </div>
+                  </div>
+
+                  <div v-if="selectedCanvasBlock" class="studio-context-bar">
+                    <div class="min-w-0">
+                      <div class="truncate text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">{{ selectedCanvasBlock.title || 'Objecto sem título' }}</div>
+                      <div class="mt-1 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#6b7b74] dark:text-[#a9bcb2]">
+                        <span>{{ selectedCanvasBlockKindLabel }}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{{ blockSurfaceLabel(selectedCanvasBlock.surface) }}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{{ Number(selectedCanvasBlock.x || 0) }}% × {{ Number(selectedCanvasBlock.y || 0) }}% · {{ Number(selectedCanvasBlock.width || 0) }}% largura</span>
                       </div>
-                      <label class="inline-flex items-center gap-2">
-                        <input v-model="showCanvasGrid" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
-                        Grelha
-                      </label>
-                      <label class="inline-flex items-center gap-2">
-                        <input v-model="showCanvasRulers" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
-                        Réguas
-                      </label>
-                      <label class="inline-flex items-center gap-2">
-                        <input v-model="showSafeArea" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
-                        Área segura
-                      </label>
-                      <label class="inline-flex items-center gap-2">
-                        <input v-model="snapToGrid" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
-                        Alinhamento
-                      </label>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1">
+                      <button type="button" class="studio-context-action" :title="canvasBlockIsHidden(selectedCanvasBlock) ? 'Mostrar objecto' : 'Ocultar objecto'" @click="toggleSelectedCanvasBlockVisibility()">
+                        <EyeIcon v-if="canvasBlockIsHidden(selectedCanvasBlock)" class="h-4 w-4" />
+                        <EyeSlashIcon v-else class="h-4 w-4" />
+                      </button>
+                      <button type="button" class="studio-context-action" :title="canvasBlockIsLocked(selectedCanvasBlock) ? 'Desbloquear objecto' : 'Bloquear objecto'" @click="toggleSelectedCanvasBlockLock()">
+                        <LockClosedIcon v-if="canvasBlockIsLocked(selectedCanvasBlock)" class="h-4 w-4" />
+                        <LockOpenIcon v-else class="h-4 w-4" />
+                      </button>
+                      <button type="button" class="studio-context-action studio-context-action--text" title="Enviar uma posição para trás" @click="shiftSelectedCanvasBlockLayer(-1)">Atrás</button>
+                      <button type="button" class="studio-context-action studio-context-action--text" title="Trazer uma posição para a frente" @click="shiftSelectedCanvasBlockLayer(1)">Frente</button>
+                      <button type="button" class="studio-context-action" title="Duplicar objecto" @click="duplicateCanvasBlock(selectedCanvasBlock)">
+                        <DocumentDuplicateIcon class="h-4 w-4" />
+                      </button>
+                      <button type="button" class="studio-context-action studio-context-action--danger" title="Apagar objecto" @click="removeCanvasBlock(selectedCanvasBlock.id)">
+                        <TrashIcon class="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
 
@@ -4619,26 +4932,12 @@ function submit() {
                         type="button"
                         class="rounded-full px-2 py-2 transition"
                         :class="editorInspectorMode === mode.value
-                          ? 'bg-primary-900 text-white shadow-sm dark:bg-primary-500'
+                          ? 'bg-[#143d37] text-white shadow-sm dark:bg-[#d9b05f] dark:text-[#07110f]'
                           : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'"
                         @click="editorInspectorMode = mode.value"
                       >
                         {{ mode.label }}
                       </button>
-                    </div>
-                    <div v-show="editorInspectorMode === 'layout'" class="grid grid-cols-2 gap-2">
-                      <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">X
-                        <input v-model.number="selectedCanvasBlock.x" type="number" min="0" max="100" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                      </label>
-                      <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Y
-                        <input v-model.number="selectedCanvasBlock.y" type="number" min="0" max="100" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                      </label>
-                      <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Largura
-                        <input v-model.number="selectedCanvasBlock.width" type="number" min="1" max="100" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                      </label>
-                      <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Altura
-                        <input v-model.number="selectedCanvasBlock.min_height" type="number" min="0" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                      </label>
                     </div>
                     <div v-show="editorInspectorMode === 'layout'" class="grid grid-cols-2 gap-2 text-xs">
                       <button type="button" @click="alignCanvasBlock('left')" class="rounded-2xl border border-slate-200 px-3 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">Esquerda</button>
@@ -4655,6 +4954,23 @@ function submit() {
                       <button type="button" @click="duplicateCanvasBlock(selectedCanvasBlock)" class="rounded-2xl border border-slate-200 px-3 py-2 font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">Duplicar</button>
                       <button type="button" @click="removeCanvasBlock(selectedCanvasBlock.id)" class="rounded-2xl border border-red-200 px-3 py-2 font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-950/30">Apagar</button>
                     </div>
+                    <details v-show="editorInspectorMode === 'layout'" class="studio-advanced-panel">
+                      <summary>Medidas exactas</summary>
+                      <div class="mt-3 grid grid-cols-2 gap-2">
+                        <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">X
+                          <input v-model.number="selectedCanvasBlock.x" type="number" min="0" max="100" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        </label>
+                        <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Y
+                          <input v-model.number="selectedCanvasBlock.y" type="number" min="0" max="100" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        </label>
+                        <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Largura
+                          <input v-model.number="selectedCanvasBlock.width" type="number" min="1" max="100" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        </label>
+                        <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Altura
+                          <input v-model.number="selectedCanvasBlock.min_height" type="number" min="0" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        </label>
+                      </div>
+                    </details>
                     <div v-if="['image', 'stamp'].includes(selectedCanvasBlock.block_kind)" v-show="editorInspectorMode === 'media'" class="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
                       <div class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Imagem / recorte</div>
                       <div class="mt-3 grid gap-2">
@@ -4706,7 +5022,7 @@ function submit() {
                           <option v-for="option in canvasSurfaceOptions" :key="`inspector-surface-${option.value}`" :value="option.value">{{ option.label }}</option>
                         </select>
                       </label>
-                      <label v-if="selectedCanvasBlock.surface === 'content'" class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Escopo
+                      <label v-if="selectedCanvasBlock.surface === 'content'" class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Âmbito
                         <select v-model="selectedCanvasBlock.page_scope" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                           <option v-for="option in canvasContentScopeOptions" :key="`inspector-scope-${option.value}`" :value="option.value">{{ option.label }}</option>
                         </select>
@@ -4792,7 +5108,10 @@ function submit() {
                         <textarea v-model="selectedCanvasBlock.chart_labels" rows="3" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" placeholder="Recepção, Validação, Emissão" />
                         <textarea v-model="selectedCanvasBlock.chart_values" rows="3" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" placeholder="18, 12, 9" />
                         <textarea v-model="selectedCanvasBlock.chart_caption" rows="3" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" placeholder="Legenda ou leitura executiva do gráfico" />
-                        <textarea v-model="selectedCanvasBlock.chart_svg" rows="5" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-3 font-mono text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" placeholder="Cole aqui um SVG exportado do ApexCharts" />
+                        <details class="studio-advanced-panel">
+                          <summary>SVG avançado do gráfico</summary>
+                          <textarea v-model="selectedCanvasBlock.chart_svg" rows="5" class="mt-3 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-3 font-mono text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" placeholder="Cole aqui um SVG exportado do ApexCharts" />
+                        </details>
                       </div>
                     </div>
 
@@ -4819,8 +5138,13 @@ function submit() {
                           <img :src="selectedCanvasBlock.background_image" alt="Fundo do bloco" class="h-28 w-full object-contain p-2" />
                         </div>
                       </div>
-                      <input v-model="selectedCanvasBlock.image_url" type="text" placeholder="URL da imagem principal" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                      <input v-model="selectedCanvasBlock.background_image" type="text" placeholder="URL do fundo do bloco" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <details class="studio-advanced-panel">
+                        <summary>Origem avançada da media</summary>
+                        <div class="mt-3 space-y-2">
+                          <input v-model="selectedCanvasBlock.image_url" type="text" placeholder="URL da imagem principal" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <input v-model="selectedCanvasBlock.background_image" type="text" placeholder="URL do fundo do bloco" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        </div>
+                      </details>
                     </div>
                   </div>
                   <p v-else class="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">Selecione um objecto no canvas ou na lista para editar posição, media, assinatura e aparência.</p>
@@ -4829,6 +5153,21 @@ function submit() {
             </div>
           </div>
 
+          <details class="studio-composition-drawer mt-6" @toggle="syncAdvancedCompositionState">
+            <summary>
+              <span class="min-w-0">
+                <span class="studio-composition-drawer__eyebrow">{{ studioCopy('advanced_composition.eyebrow', {}, 'Ferramentas avançadas') }}</span>
+                <span class="studio-composition-drawer__title">{{ studioCopy('advanced_composition.title', {}, 'Biblioteca, variáveis e edição técnica') }}</span>
+                <span class="studio-composition-drawer__description">
+                  {{ studioCopy('advanced_composition.description', {}, 'Use esta área apenas quando precisar de snippets HTML, variáveis rápidas ou ajustes técnicos fora do canvas principal.') }}
+                </span>
+              </span>
+              <span class="studio-composition-drawer__action">
+                {{ advancedCompositionOpen ? studioCopy('advanced_composition.close', {}, 'Fechar') : studioCopy('advanced_composition.action', {}, 'Abrir') }}
+              </span>
+            </summary>
+
+            <div class="studio-composition-drawer__content">
           <swiper-container
             class="report-studio-swiper mt-5 block"
             :slides-per-view="1.05"
@@ -5088,7 +5427,7 @@ function submit() {
                 <div class="flex items-center justify-between gap-3">
                   <div>
                     <div class="text-sm font-semibold text-slate-900 dark:text-slate-100">Editar bloco</div>
-                    <div class="text-xs text-slate-500 dark:text-slate-400">Posicionamento, escopo e estilo persistidos no layout.</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400">Posicionamento, âmbito e estilo persistidos no layout.</div>
                   </div>
                   <div class="flex items-center gap-2">
                     <button
@@ -5187,7 +5526,7 @@ function submit() {
                     <select v-model="selectedCanvasBlock.block_kind" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option value="rich_text">Conteúdo livre</option>
                       <option value="image">Imagem</option>
-                      <option value="chart_snapshot">Gráfico / Apex snapshot</option>
+                      <option value="chart_snapshot">Gráfico / captura</option>
                       <option value="stamp">Carimbo / selo</option>
                       <option value="signature">Assinatura</option>
                       <option value="qr_code">QR code</option>
@@ -5303,7 +5642,7 @@ function submit() {
                     <input v-model="selectedCanvasBlock.is_locked" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
                     Bloco bloqueado para mover e redimensionar
                   </label>
-                  <label v-if="selectedCanvasBlock.surface === 'content'" class="text-sm text-slate-700 dark:text-slate-300">Escopo no PDF
+                  <label v-if="selectedCanvasBlock.surface === 'content'" class="text-sm text-slate-700 dark:text-slate-300">Âmbito no PDF
                     <select v-model="selectedCanvasBlock.page_scope" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option v-for="option in canvasContentScopeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
@@ -5331,6 +5670,40 @@ function submit() {
                     </select>
                     <button type="button" @click="openMediaPicker('selected-block', 'signature_image')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Escolher no media picker</button>
                   </label>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900 sm:col-span-2">
+                    <div class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Imagem impressa da assinatura</div>
+                    <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                      <label class="text-sm text-slate-700 dark:text-slate-300">Encaixe
+                        <select v-model="selectedCanvasBlock.signature_image_fit" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                          <option v-for="option in backgroundFitOptions" :key="`signature-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
+                        </select>
+                      </label>
+                      <label class="text-sm text-slate-700 dark:text-slate-300">Foco / recorte
+                        <select v-model="selectedCanvasBlock.signature_image_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                          <option v-for="option in imagePositionOptions" :key="`signature-position-${option.value}`" :value="option.value">{{ option.label }}</option>
+                        </select>
+                      </label>
+                      <label class="text-sm text-slate-700 dark:text-slate-300">Largura impressa
+                        <input v-model.number="selectedCanvasBlock.signature_image_width" type="number" min="24" max="360" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      </label>
+                      <label class="text-sm text-slate-700 dark:text-slate-300">Altura impressa
+                        <input v-model.number="selectedCanvasBlock.signature_image_height" type="number" min="16" max="240" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      </label>
+                    </div>
+                    <div v-if="selectedCanvasBlock.signature_image" class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-950">
+                      <img
+                        :src="selectedCanvasBlock.signature_image"
+                        alt="Pré-visualização da assinatura"
+                        class="mx-auto max-w-full rounded-xl bg-white/80"
+                        :style="{
+                          width: `${clamp(Number(selectedCanvasBlock.signature_image_width || 180), 24, 360)}px`,
+                          height: `${clamp(Number(selectedCanvasBlock.signature_image_height || 72), 16, 240)}px`,
+                          objectFit: mediaObjectFit(selectedCanvasBlock.signature_image_fit || 'contain'),
+                          objectPosition: safeCssPositionValue(selectedCanvasBlock.signature_image_position || 'center center', 'center center'),
+                        }"
+                      />
+                    </div>
+                  </div>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Estilo da linha
                     <select v-model="selectedCanvasBlock.signature_line_style" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option value="solid">Contínua</option>
@@ -5521,442 +5894,547 @@ function submit() {
               </div>
             </div>
           </div>
+            </div>
+          </details>
         </div>
       </section>
 
-      <aside v-show="activeStudioPane === 'pdf'" class="space-y-6">
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Layout multi-página</h2>
-          <div class="mt-4 space-y-4">
-            <div>
-              <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Cabeçalho da primeira página</label>
-              <textarea v-model="props.layoutSchema.first_page_header_html" rows="4" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-xs text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-            </div>
-            <div>
-              <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Cabeçalho padrão</label>
-              <textarea v-model="props.layoutSchema.default_header_html" rows="3" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-xs text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-            </div>
-            <div>
-              <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Rodapé</label>
-              <textarea v-model="props.layoutSchema.footer_html" rows="3" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-xs text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-            </div>
-            <div class="grid gap-4 sm:grid-cols-2">
-              <label class="text-sm text-slate-700 dark:text-slate-300">Fundo
-                <input v-model="props.layoutSchema.background_image_path" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-              </label>
-              <div class="flex items-end">
-                <button
-                  type="button"
-                  @click="syncAssetUrlFromBackground"
-                  class="inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                >
-                  Sincronizar URL do ficheiro
-                </button>
-              </div>
-              <label class="text-sm text-slate-700 dark:text-slate-300">Ajuste do fundo
-                <select v-model="props.layoutSchema.background_size" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                  <option v-for="option in backgroundFitOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                </select>
-              </label>
-              <label class="text-sm text-slate-700 dark:text-slate-300">Posição
-                <select v-model="props.layoutSchema.background_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                  <option v-for="option in backgroundPositionOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                </select>
-              </label>
-              <label class="text-sm text-slate-700 dark:text-slate-300">Repetição
-                <select v-model="props.layoutSchema.background_repeat" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                  <option v-for="option in backgroundRepeatOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                </select>
-              </label>
-            </div>
-            <div>
-              <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">CSS adicional</label>
-              <textarea v-model="props.layoutSchema.styles_css" rows="5" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-xs text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/40">
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Tabelas do documento</h3>
-                  <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Personalize cabeçalhos, bordas e densidade. O CSS gerado é persistido e sai no PDF.</p>
-                </div>
-                <button type="button" @click="syncTableStylesCss" class="rounded-2xl bg-primary-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-500">
-                  Aplicar
-                </button>
-              </div>
-              <div class="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(260px,0.9fr)]">
-                <div class="space-y-3">
-                  <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Presets profissionais</p>
-                  <button
-                    v-for="preset in tableStylePresets"
-                    :key="preset.key"
-                    type="button"
-                    @click="applyTableStylePreset(preset)"
-                    class="w-full rounded-2xl border p-3 text-left transition"
-                    :class="activeTableStylePresetKey === preset.key
-                      ? 'border-primary-500 bg-primary-50 text-primary-950 shadow-sm dark:border-primary-400/70 dark:bg-primary-500/10 dark:text-primary-100'
-                      : 'border-slate-200 bg-white text-slate-700 hover:border-primary-200 hover:bg-primary-50/60 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10'"
-                  >
-                    <span class="flex items-center justify-between gap-3">
-                      <span class="text-sm font-semibold">{{ preset.label }}</span>
-                      <span
-                        class="h-4 w-4 rounded-full border"
-                        :style="{ backgroundColor: preset.values.table_header_background, borderColor: preset.values.table_border_color }"
-                      />
-                    </span>
-                    <span class="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{{ preset.description }}</span>
-                  </button>
-                </div>
-
-                <div class="space-y-4">
-                  <div class="grid gap-3 sm:grid-cols-3">
-                    <label class="text-xs font-medium text-slate-600 dark:text-slate-300">Cabeçalho
-                      <input v-model="props.layoutSchema.table_header_background" type="color" class="mt-2 h-11 w-full rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                    </label>
-                    <label class="text-xs font-medium text-slate-600 dark:text-slate-300">Texto
-                      <input v-model="props.layoutSchema.table_header_text_color" type="color" class="mt-2 h-11 w-full rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                    </label>
-                    <label class="text-xs font-medium text-slate-600 dark:text-slate-300">Bordas
-                      <input v-model="props.layoutSchema.table_border_color" type="color" class="mt-2 h-11 w-full rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                    </label>
-                    <label class="text-xs font-medium text-slate-600 dark:text-slate-300">Fonte
-                      <input v-model.number="props.layoutSchema.table_font_size" type="number" min="8" max="16" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    </label>
-                    <label class="text-xs font-medium text-slate-600 dark:text-slate-300 sm:col-span-2">Espaçamento interno
-                      <input v-model.number="props.layoutSchema.table_cell_padding" type="range" min="2" max="24" class="mt-3 w-full accent-primary-800 dark:accent-primary-300" />
-                      <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">{{ tableStyleSettings.table_cell_padding }} px</span>
-                    </label>
-                  </div>
-
-                  <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                    <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-700">
-                      <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Pré-visualização</p>
-                        <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Tabela técnica</p>
-                      </div>
-                      <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                        {{ tableStyleSettings.table_font_size }} px
-                      </span>
-                    </div>
-                    <table class="w-full border-collapse">
-                      <thead>
-                        <tr>
-                          <th class="border text-left uppercase tracking-[0.12em]" :style="tablePreviewHeaderStyle">Parâmetro</th>
-                          <th class="border text-left uppercase tracking-[0.12em]" :style="tablePreviewHeaderStyle">Resultado</th>
-                          <th class="border text-left uppercase tracking-[0.12em]" :style="tablePreviewHeaderStyle">Unidade</th>
-                        </tr>
-                      </thead>
-                      <tbody class="text-slate-700 dark:text-slate-200">
-                        <tr>
-                          <td class="border" :style="tablePreviewCellStyle">
-                            Proteína
-                            <span class="block text-[0.8em] opacity-70">Protein</span>
-                          </td>
-                          <td class="border font-semibold" :style="tablePreviewCellStyle">12,4</td>
-                          <td class="border" :style="tablePreviewCellStyle">g/100g</td>
-                        </tr>
-                        <tr class="bg-slate-50/70 dark:bg-slate-950/40">
-                          <td class="border" :style="tablePreviewCellStyle">
-                            Humidade
-                            <span class="block text-[0.8em] opacity-70">Moisture</span>
-                          </td>
-                          <td class="border font-semibold" :style="tablePreviewCellStyle">8,1</td>
-                          <td class="border" :style="tablePreviewCellStyle">%</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Exportação</h2>
-              <p class="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                Defina página, margens e área útil com guardrails para manter preview e PDF alinhados.
+      <aside v-show="activeStudioPane === 'pdf'" class="space-y-5">
+        <section class="studio-output-command">
+          <div class="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div class="max-w-3xl">
+              <div class="text-[11px] font-black uppercase tracking-[0.24em] text-[#d9b05f]">Finalização documental</div>
+              <h2 class="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl">Prepare a versão que será emitida</h2>
+              <p class="mt-3 max-w-2xl text-sm font-medium leading-6 text-[#cbd8cf]">
+                Estruture superfícies recorrentes, proteja a área útil e seleccione o renderizador adequado antes de guardar ou emitir o PDF.
               </p>
             </div>
-            <div class="rounded-2xl border px-4 py-3 text-sm shadow-sm" :class="exportSetupStatus.class">
-              <div class="font-bold">{{ exportSetupStatus.label }}</div>
-              <div class="mt-1 text-xs opacity-80">{{ exportSetupStatus.description }}</div>
+            <div class="grid grid-cols-3 gap-2">
+              <div class="studio-output-metric">
+                <span class="studio-output-metric__value">{{ configuredPdfSurfaceCount }}/3</span>
+                <span class="studio-output-metric__label">superfícies</span>
+              </div>
+              <div class="studio-output-metric">
+                <span class="studio-output-metric__value">{{ previewPages.length || 1 }}</span>
+                <span class="studio-output-metric__label">páginas</span>
+              </div>
+              <div class="studio-output-metric">
+                <span class="studio-output-metric__value">{{ rendererCssRisks.length }}</span>
+                <span class="studio-output-metric__label">riscos CSS</span>
+              </div>
             </div>
           </div>
-          <div class="mt-4 grid gap-4 sm:grid-cols-2">
-            <label class="text-sm text-slate-700 dark:text-slate-300">Formato
-              <select v-model="props.exportSettings.paper_size" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                <option v-for="option in pageFormatOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-              </select>
-            </label>
-            <label class="text-sm text-slate-700 dark:text-slate-300">Orientação
-              <select v-model="props.exportSettings.orientation" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                <option v-for="option in orientationOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-              </select>
-            </label>
-            <div class="sm:col-span-2">
-              <div class="mb-2 flex items-center justify-between gap-3">
-                <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Presets de página</p>
-                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                  {{ selectedPageFormatOption.label }} · {{ previewPageSummary }}
-                </span>
+        </section>
+
+        <nav class="studio-pdf-navigation" aria-label="Configuração da saída PDF">
+          <button
+            v-for="section in pdfWorkspaceSections"
+            :key="section.value"
+            type="button"
+            class="studio-pdf-navigation__item"
+            :class="{ 'studio-pdf-navigation__item--active': pdfWorkspaceSection === section.value }"
+            @click="pdfWorkspaceSection = section.value"
+          >
+            <span class="studio-pdf-navigation__label">{{ section.label }}</span>
+            <span class="studio-pdf-navigation__description">{{ section.description }}</span>
+          </button>
+        </nav>
+
+        <section v-show="pdfWorkspaceSection === 'surfaces'" class="studio-output-panel">
+          <div class="studio-output-panel__heading">
+            <div>
+              <div class="studio-output-eyebrow">Estrutura multi-página</div>
+              <h3 class="studio-output-title">Superfícies que acompanham o documento</h3>
+              <p class="studio-output-description">Configure visualmente a abertura, o cabeçalho contínuo e o rodapé. O código fica disponível apenas no modo avançado.</p>
+            </div>
+            <button type="button" class="studio-output-action" @click="activeStudioPane = 'preview'">
+              <EyeIcon class="h-4 w-4" />
+              Rever páginas
+            </button>
+          </div>
+
+          <div class="mt-6 grid gap-4 xl:grid-cols-3">
+            <article v-for="surface in pdfSurfaceCards" :key="surface.surface" class="studio-surface-card">
+              <div class="studio-surface-card__preview">
+                <div class="studio-surface-card__paper">
+                  <div
+                    class="studio-surface-card__content"
+                    :class="surface.surface === 'footer_html' ? 'studio-surface-card__content--footer' : ''"
+                    v-html="pdfSurfacePreviewHtml(surface.surface)"
+                  />
+                </div>
               </div>
-              <div class="grid gap-3 md:grid-cols-4">
-                <button
-                  v-for="option in pageFormatOptions"
-                  :key="option.value"
-                  type="button"
-                  @click="applyPageFormat(option)"
-                  class="rounded-2xl border px-4 py-3 text-left transition"
-                  :class="props.exportSettings.paper_size === option.value
-                    ? 'border-primary-500 bg-primary-50 text-primary-950 shadow-sm dark:border-primary-400/70 dark:bg-primary-500/10 dark:text-primary-100'
-                    : 'border-slate-200 bg-slate-50/80 text-slate-700 hover:border-primary-200 hover:bg-primary-50/60 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10'"
-                >
-                  <span class="block text-sm font-bold">{{ option.label }}</span>
-                  <span class="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{{ option.description }}</span>
+              <div class="p-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 class="text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">{{ surface.label }}</h4>
+                    <p class="mt-1 text-xs font-medium leading-5 text-[#6b7b74] dark:text-[#a9bcb2]">{{ surface.description }}</p>
+                  </div>
+                  <span class="studio-surface-status" :class="{ 'studio-surface-status--ready': surface.isConfigured }">
+                    {{ surface.isConfigured ? 'Configurado' : 'Em falta' }}
+                  </span>
+                </div>
+                <div class="mt-4 flex items-center justify-between gap-3">
+                  <span class="text-[11px] font-black uppercase tracking-[0.14em] text-[#6b7b74] dark:text-[#83978d]">
+                    {{ surface.objectCount }} objecto{{ surface.objectCount === 1 ? '' : 's' }}
+                  </span>
+                  <button type="button" class="studio-surface-edit" @click="editPdfSurfaceInCanvas(surface.surface, surface.pageNumber)">
+                    Editar no canvas
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div class="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+            <div class="studio-background-card">
+              <div class="studio-output-panel__heading">
+                <div>
+                  <div class="studio-output-eyebrow">Plano de fundo</div>
+                  <h4 class="mt-2 text-lg font-black text-[#15231f] dark:text-[#f7f1e7]">Identidade aplicada à página</h4>
+                  <p class="mt-2 text-sm font-medium leading-6 text-[#6b7b74] dark:text-[#a9bcb2]">Escolha uma imagem da galeria e controle o enquadramento sem introduzir ligações manualmente.</p>
+                </div>
+                <button type="button" class="studio-output-action" @click="openMediaPicker('document-background')">
+                  <PhotoIcon class="h-4 w-4" />
+                  Escolher media
                 </button>
               </div>
-            </div>
-            <div v-if="props.exportSettings.paper_size === 'custom'" class="rounded-3xl border border-primary-200 bg-primary-50/70 p-4 dark:border-primary-500/30 dark:bg-primary-500/10 sm:col-span-2">
-              <div class="flex flex-col gap-1">
-                <p class="text-sm font-semibold text-primary-950 dark:text-primary-100">Tamanho personalizado</p>
-                <p class="text-xs leading-5 text-primary-800 dark:text-primary-200">
-                  Defina a área real da página em milímetros. O Chrome PDF usa este tamanho para manter o preview e o documento final alinhados.
-                </p>
-              </div>
-              <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                <label class="text-sm text-primary-950 dark:text-primary-100">Largura da página (mm)
-                  <input v-model.number="props.exportSettings.custom_page_width" type="number" min="50" max="2000" step="1" placeholder="210" class="mt-2 block w-full rounded-2xl border border-primary-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-600/20 dark:border-primary-500/30 dark:bg-slate-950 dark:text-slate-100" />
-                </label>
-                <label class="text-sm text-primary-950 dark:text-primary-100">Altura da página (mm)
-                  <input v-model.number="props.exportSettings.custom_page_height" type="number" min="50" max="2000" step="1" placeholder="297" class="mt-2 block w-full rounded-2xl border border-primary-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-600/20 dark:border-primary-500/30 dark:bg-slate-950 dark:text-slate-100" />
-                </label>
-              </div>
-            </div>
-            <div class="sm:col-span-2">
-              <div class="mb-2 flex items-center justify-between gap-3">
-                <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Perfis de margem</p>
-                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                  {{ printableAreaSummary }}
-                </span>
-              </div>
-              <div class="grid gap-3 md:grid-cols-4">
-                <button
-                  v-for="profile in marginProfileOptions"
-                  :key="profile.key"
-                  type="button"
-                  @click="applyMarginProfile(profile)"
-                  class="rounded-2xl border px-4 py-3 text-left transition"
-                  :class="activeMarginProfileKey === profile.key
-                    ? 'border-primary-500 bg-primary-50 text-primary-950 shadow-sm dark:border-primary-400/70 dark:bg-primary-500/10 dark:text-primary-100'
-                    : 'border-slate-200 bg-slate-50/80 text-slate-700 hover:border-primary-200 hover:bg-primary-50/60 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10'"
-                >
-                  <span class="block text-sm font-bold">{{ profile.label }}</span>
-                  <span class="mt-1 block text-xs leading-5 text-slate-500 dark:text-slate-400">{{ profile.description }}</span>
-                </button>
-              </div>
-            </div>
-            <label class="text-sm text-slate-700 dark:text-slate-300">Margem superior
-              <input v-model.number="props.exportSettings.margin_top" type="number" min="0" max="200" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-            </label>
-            <label class="text-sm text-slate-700 dark:text-slate-300">Margem direita
-              <input v-model.number="props.exportSettings.margin_right" type="number" min="0" max="200" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-            </label>
-            <label class="text-sm text-slate-700 dark:text-slate-300">Margem inferior
-              <input v-model.number="props.exportSettings.margin_bottom" type="number" min="0" max="200" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-            </label>
-            <label class="text-sm text-slate-700 dark:text-slate-300">Margem esquerda
-              <input v-model.number="props.exportSettings.margin_left" type="number" min="0" max="200" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-            </label>
-            <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Margem superior da primeira página
-              <input v-model.number="props.exportSettings.first_page_margin_top" type="number" min="0" max="250" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-            </label>
-          </div>
-          <div v-if="exportSetupIssues.length" class="mt-4 rounded-3xl border border-amber-200 bg-amber-50/80 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
-            <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-200">Riscos de paginação</p>
-            <div class="mt-3 grid gap-3 md:grid-cols-2">
-              <div v-for="issue in exportSetupIssues" :key="issue.title" class="rounded-2xl border border-white/70 bg-white/70 px-4 py-3 text-sm text-amber-950 shadow-sm dark:border-amber-400/20 dark:bg-amber-950/30 dark:text-amber-100">
-                <div class="font-bold">{{ issue.title }}</div>
-                <div class="mt-1 text-xs leading-5 opacity-80">{{ issue.description }}</div>
+              <div class="mt-5 grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
+                <div class="studio-background-card__preview">
+                  <img
+                    v-if="props.layoutSchema.background_image_path"
+                    :src="props.layoutSchema.background_image_path"
+                    alt="Fundo activo do documento"
+                    class="h-full w-full"
+                    :style="{ objectFit: mediaObjectFit(props.layoutSchema.background_size || 'cover'), objectPosition: props.layoutSchema.background_position || 'center center' }"
+                  />
+                  <div v-else class="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+                    <PhotoIcon class="h-7 w-7 text-[#d9b05f]" />
+                    <span class="text-xs font-black uppercase tracking-[0.16em] text-[#6b7b74] dark:text-[#a9bcb2]">Sem fundo aplicado</span>
+                  </div>
+                </div>
+                <div class="grid content-start gap-3 sm:grid-cols-3">
+                  <label class="studio-compact-field">Ajuste
+                    <select v-model="props.layoutSchema.background_size">
+                      <option v-for="option in backgroundFitOptions" :key="`pdf-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
+                    </select>
+                  </label>
+                  <label class="studio-compact-field">Posição
+                    <select v-model="props.layoutSchema.background_position">
+                      <option v-for="option in backgroundPositionOptions" :key="`pdf-position-${option.value}`" :value="option.value">{{ option.label }}</option>
+                    </select>
+                  </label>
+                  <label class="studio-compact-field">Repetição
+                    <select v-model="props.layoutSchema.background_repeat">
+                      <option v-for="option in backgroundRepeatOptions" :key="`pdf-repeat-${option.value}`" :value="option.value">{{ option.label }}</option>
+                    </select>
+                  </label>
+                  <button
+                    v-if="props.layoutSchema.background_image_path"
+                    type="button"
+                    class="studio-danger-action sm:col-span-3"
+                    @click="props.layoutSchema.background_image_path = ''; mediaAssetUrl = ''"
+                  >
+                    Remover fundo
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="mt-5 grid gap-3 rounded-3xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/40 md:grid-cols-3">
-            <div>
-              <div class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Página</div>
-              <div class="mt-1 text-sm font-semibold text-slate-950 dark:text-white">{{ previewPageSummary }}</div>
-            </div>
-            <div>
-              <div class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Área útil</div>
-              <div class="mt-1 text-sm font-semibold text-slate-950 dark:text-white">{{ printableAreaSummary }}</div>
-              <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ previewMarginSummary }}</div>
-            </div>
-            <div>
-              <div class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Renderizador</div>
-              <div class="mt-1 text-sm font-semibold text-slate-950 dark:text-white">{{ selectedRendererOption.label }}</div>
-            </div>
-          </div>
-        </div>
 
-        <div class="space-y-3">
-          <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-            <strong>Nota de fidelidade:</strong>
-            a pré-visualização do estúdio aproxima o comportamento do browser, mas o PDF mPDF usa principalmente CSS 2.1. Para layouts 1:1 com flex/grid, filtros, transforms, gráficos Apex exportados como SVG/imagem ou posicionamento moderno, selecione Chrome PDF. No Chrome, cabeçalho padrão, rodapé e paginação usam templates nativos; o cabeçalho especial da primeira página é renderizado no corpo da primeira página.
-          </div>
-          <a
-            v-if="props.previewPdfHref"
-            :href="props.previewPdfHref"
-            target="_blank"
-            class="inline-flex w-full items-center justify-center rounded-2xl border border-[#ded3bf] bg-[#fffdf7] px-4 py-3 text-sm font-bold text-[rgb(var(--primary-800-rgb))] shadow-sm transition hover:border-[rgb(var(--primary-300-rgb))] hover:bg-[#f8f4ea] dark:border-[#25443c] dark:bg-[#10231f] dark:text-[rgb(var(--primary-200-rgb))] dark:hover:border-[rgb(var(--primary-400-rgb)/0.55)]"
-          >
-            Pré-visualizar PDF técnico
-          </a>
-          <button
-            type="button"
-            @click="submit"
-            :disabled="props.form.processing"
-            class="inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-primary-900 to-primary-700 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:from-primary-800 hover:to-primary-600 disabled:cursor-not-allowed disabled:opacity-60 dark:from-primary-700 dark:to-primary-500"
-          >
-            {{ props.form.processing ? 'A guardar…' : props.submitLabel }}
-          </button>
-        </div>
-      </aside>
-    </div>
-
-    <div v-show="activeStudioPane === 'preview'" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80 lg:p-8">
-      <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div>
-          <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Pré-visualização editorial</h2>
-          <p class="mt-1 max-w-3xl text-sm text-slate-600 dark:text-slate-400">
-            O canvas agora ocupa uma superfície própria. A pré-visualização editorial orienta a composição visual; a fidelidade exacta do PDF depende do renderizador selecionado e das capacidades CSS suportadas por ele.
-          </p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="button"
-            @click="showPreviewScope('first-page')"
-            class="rounded-full px-4 py-2 text-sm font-medium transition"
-            :class="previewPageKind === 'first-page'
-              ? 'bg-primary-900 text-white dark:bg-primary-500'
-              : 'border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800'"
-          >
-            Primeira página
-          </button>
-          <button
-            type="button"
-            @click="showPreviewScope('following-page')"
-            class="rounded-full px-4 py-2 text-sm font-medium transition"
-            :class="previewPageKind === 'following-page'
-              ? 'bg-primary-900 text-white dark:bg-primary-500'
-              : 'border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800'"
-          >
-            Páginas seguintes
-          </button>
-          <button
-            type="button"
-            @click="previewDisplayMode = 'paged'"
-            class="rounded-full px-4 py-2 text-sm font-medium transition"
-            :class="previewDisplayMode === 'paged'
-              ? 'bg-primary-900 text-white dark:bg-primary-500'
-              : 'border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800'"
-          >
-            Página única
-          </button>
-          <button
-            type="button"
-            @click="previewDisplayMode = 'all'"
-            class="rounded-full px-4 py-2 text-sm font-medium transition"
-            :class="previewDisplayMode === 'all'
-              ? 'bg-primary-900 text-white dark:bg-primary-500'
-              : 'border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800'"
-          >
-            Todas
-          </button>
-        </div>
-      </div>
-
-      <div class="mt-6 grid gap-4 2xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-700 dark:bg-slate-950/40">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ previewMeta.title }}</div>
-              <p class="mt-1 text-xs text-slate-600 dark:text-slate-400">{{ previewMeta.subtitle }}</p>
-              <div class="mt-2 text-xs font-medium text-primary-700 dark:text-primary-300">
-                {{ previewPages.length }} página<span v-if="previewPages.length !== 1">s</span> no preview
+            <div class="studio-background-card">
+              <div class="studio-output-eyebrow">Tipografia documental</div>
+              <h4 class="mt-2 text-lg font-black text-[#15231f] dark:text-[#f7f1e7]">Leitura consistente em todas as páginas</h4>
+              <label class="studio-compact-field mt-5">Família tipográfica
+                <select v-model="props.layoutSchema.document_font_family">
+                  <option v-for="option in studioFontOptions" :key="`pdf-font-${option.value}`" :value="option.value">{{ option.label }}</option>
+                </select>
+              </label>
+              <p class="mt-3 text-xs font-medium leading-5 text-[#6b7b74] dark:text-[#a9bcb2]">
+                {{ studioFontOptions.find((option) => option.value === documentFontFamily)?.description }}
+              </p>
+              <div class="mt-5 rounded-[1.25rem] border border-[#ded3bf] bg-[#fffdf7] p-4 dark:border-[#25443c] dark:bg-[#07110f]">
+                <div class="text-[10px] font-black uppercase tracking-[0.18em] text-[#d9b05f]">Amostra tipográfica</div>
+                <div class="mt-3 text-xl font-black text-[#15231f] dark:text-[#f7f1e7]" :style="{ fontFamily: documentFontFamily }">Relatório técnico controlado</div>
+                <p class="mt-2 text-xs leading-5 text-[#6b7b74] dark:text-[#a9bcb2]" :style="{ fontFamily: documentFontFamily }">Resultado, incerteza, método e decisão apresentados com hierarquia consistente.</p>
               </div>
-              <div class="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">
-                {{ previewPageSummary }}
-              </div>
-            </div>
-            <div v-if="previewPages.length > 1" class="text-xs font-medium text-slate-600 dark:text-slate-300">
-              Página {{ currentPreviewPage }} de {{ previewPages.length }}
             </div>
           </div>
 
-          <div v-if="previewPages.length > 1" class="mt-4 space-y-3">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div class="flex items-center gap-2">
-                <button
-                  type="button"
-                  @click="stepPreviewPage(-1)"
-                  :disabled="currentPreviewPage <= 1"
-                  class="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                >
-                  Anterior
-                </button>
-                <button
-                  type="button"
-                  @click="stepPreviewPage(1)"
-                  :disabled="currentPreviewPage >= previewPages.length"
-                  class="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                >
-                  Seguinte
-                </button>
-              </div>
+          <details class="studio-advanced-panel mt-5">
+            <summary>Código e integrações avançadas</summary>
+            <div class="mt-4 grid gap-4 xl:grid-cols-2">
+              <label class="studio-code-field">Cabeçalho da primeira página
+                <textarea v-model="props.layoutSchema.first_page_header_html" rows="6" />
+              </label>
+              <label class="studio-code-field">Cabeçalho das páginas seguintes
+                <textarea v-model="props.layoutSchema.default_header_html" rows="6" />
+              </label>
+              <label class="studio-code-field">Rodapé
+                <textarea v-model="props.layoutSchema.footer_html" rows="6" />
+              </label>
+              <label class="studio-code-field">CSS adicional
+                <textarea v-model="props.layoutSchema.styles_css" rows="6" />
+              </label>
+              <label class="studio-code-field xl:col-span-2">Ligação directa do fundo
+                <input v-model="props.layoutSchema.background_image_path" type="text" @change="syncAssetUrlFromBackground" />
+              </label>
             </div>
-            <div class="flex gap-2 overflow-x-auto pb-1">
+          </details>
+        </section>
+
+        <section v-show="pdfWorkspaceSection === 'tables'" class="studio-output-panel">
+          <div class="studio-output-panel__heading">
+            <div>
+              <div class="studio-output-eyebrow">Sistema de tabelas</div>
+              <h3 class="studio-output-title">Resultados legíveis, mesmo em documentos densos</h3>
+              <p class="studio-output-description">Aplique um preset profissional e refine cor, densidade e hierarquia. As alterações são persistidas no CSS do PDF.</p>
+            </div>
+            <button type="button" class="studio-output-action studio-output-action--primary" @click="syncTableStylesCss">Aplicar ao documento</button>
+          </div>
+          <div class="mt-6 grid gap-5 xl:grid-cols-[minmax(280px,0.75fr)_minmax(0,1.25fr)]">
+            <div class="space-y-3">
               <button
-                v-for="pageNumber in previewPages.length"
-                :key="`preview-nav-${pageNumber}`"
+                v-for="preset in tableStylePresets"
+                :key="`output-${preset.key}`"
                 type="button"
-                @click="setPreviewPage(pageNumber)"
-                class="shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition"
-                :class="currentPreviewPage === pageNumber
-                  ? 'bg-primary-900 text-white dark:bg-primary-500'
-                  : 'border border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800'"
+                class="studio-preset-card"
+                :class="{ 'studio-preset-card--active': activeTableStylePresetKey === preset.key }"
+                @click="applyTableStylePreset(preset)"
               >
-                {{ pageNumber }}
+                <span class="flex items-center justify-between gap-3">
+                  <span class="text-sm font-black">{{ preset.label }}</span>
+                  <span class="h-5 w-5 rounded-full border-2 border-white shadow-sm" :style="{ backgroundColor: preset.values.table_header_background }" />
+                </span>
+                <span class="mt-2 block text-xs font-medium leading-5 opacity-75">{{ preset.description }}</span>
+              </button>
+            </div>
+            <div class="studio-table-stage">
+              <div class="grid gap-3 sm:grid-cols-3">
+                <label class="studio-color-field">Cabeçalho
+                  <input v-model="props.layoutSchema.table_header_background" type="color" />
+                </label>
+                <label class="studio-color-field">Texto
+                  <input v-model="props.layoutSchema.table_header_text_color" type="color" />
+                </label>
+                <label class="studio-color-field">Bordas
+                  <input v-model="props.layoutSchema.table_border_color" type="color" />
+                </label>
+                <label class="studio-color-field">Cartões
+                  <input v-model="props.layoutSchema.table_summary_background" type="color" />
+                </label>
+                <label class="studio-color-field">Texto dos cartões
+                  <input v-model="props.layoutSchema.table_summary_text_color" type="color" />
+                </label>
+                <label class="studio-color-field">Texto auxiliar
+                  <input v-model="props.layoutSchema.table_summary_muted_color" type="color" />
+                </label>
+                <label class="studio-compact-field">Tamanho da fonte
+                  <input v-model.number="props.layoutSchema.table_font_size" type="number" min="8" max="16" />
+                </label>
+                <label class="studio-compact-field sm:col-span-2">Espaçamento interno · {{ tableStyleSettings.table_cell_padding }} px
+                  <input v-model.number="props.layoutSchema.table_cell_padding" type="range" min="2" max="24" />
+                </label>
+              </div>
+              <div class="mt-5 overflow-hidden rounded-[1.6rem] border border-[#ded3bf] bg-[#fffdf7] shadow-sm dark:border-[#25443c] dark:bg-[#07110f]">
+                <div class="flex items-center justify-between border-b border-[#ded3bf] px-5 py-4 dark:border-[#25443c]">
+                  <div>
+                    <div class="studio-output-eyebrow">Pré-visualização real</div>
+                    <div class="mt-1 text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">Tabela analítica bilingue</div>
+                  </div>
+                  <span class="studio-toolbar-status text-xs font-black">{{ tableStyleSettings.table_font_size }} px</span>
+                </div>
+                <table class="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      <th class="border text-left uppercase tracking-[0.12em]" :style="tablePreviewHeaderStyle">Parâmetro</th>
+                      <th class="border text-left uppercase tracking-[0.12em]" :style="tablePreviewHeaderStyle">Resultado</th>
+                      <th class="border text-left uppercase tracking-[0.12em]" :style="tablePreviewHeaderStyle">Unidade</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-[#475a53] dark:text-[#cbd8cf]">
+                    <tr>
+                      <td class="border" :style="tablePreviewCellStyle">Proteína<span class="block text-[0.8em] opacity-65">Protein</span></td>
+                      <td class="border font-black" :style="tablePreviewCellStyle">12,4 ± 0,3</td>
+                      <td class="border" :style="tablePreviewCellStyle">g/100g</td>
+                    </tr>
+                    <tr>
+                      <td class="border" :style="tablePreviewCellStyle">Humidade<span class="block text-[0.8em] opacity-65">Moisture</span></td>
+                      <td class="border font-black" :style="tablePreviewCellStyle">8,1 ± 0,2</td>
+                      <td class="border" :style="tablePreviewCellStyle">%</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="grid gap-3 border-t border-[#ded3bf] p-4 dark:border-[#25443c] sm:grid-cols-2">
+                  <div class="rounded-2xl border p-4" :style="tablePreviewSummaryStyle">
+                    <span class="block text-[0.68rem] font-black uppercase tracking-[0.18em]" :style="tablePreviewSummaryMutedStyle">Amostra / Sample</span>
+                    <span class="mt-1 block text-sm font-black">SE-2026-0142</span>
+                    <span class="mt-2 block text-xs leading-5" :style="tablePreviewSummaryMutedStyle">Cartão de identificação persistido no PDF.</span>
+                  </div>
+                  <div class="rounded-2xl border p-4" :style="tablePreviewSummaryStyle">
+                    <span class="block text-[0.68rem] font-black uppercase tracking-[0.18em]" :style="tablePreviewSummaryMutedStyle">Validação / Validation</span>
+                    <span class="mt-1 block text-sm font-black">Direcção Técnica</span>
+                    <span class="mt-2 block text-xs leading-5" :style="tablePreviewSummaryMutedStyle">Mesmas cores no preview e na exportação.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section v-show="pdfWorkspaceSection === 'page'" class="studio-output-panel">
+          <div class="studio-output-panel__heading">
+            <div>
+              <div class="studio-output-eyebrow">Geometria de emissão</div>
+              <h3 class="studio-output-title">Página, orientação e área útil</h3>
+              <p class="studio-output-description">Escolha uma configuração segura e use medidas exactas apenas quando o documento exigir um formato especializado.</p>
+            </div>
+            <div class="rounded-[1.25rem] border px-4 py-3 text-sm" :class="exportSetupStatus.class">
+              <div class="font-black">{{ exportSetupStatus.label }}</div>
+              <div class="mt-1 text-xs opacity-75">{{ printableAreaSummary }}</div>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <div class="studio-output-eyebrow">Formato da página</div>
+            <div class="mt-3 grid gap-3 md:grid-cols-4">
+              <button
+                v-for="option in pageFormatOptions"
+                :key="`output-page-${option.value}`"
+                type="button"
+                class="studio-format-card"
+                :class="{ 'studio-format-card--active': props.exportSettings.paper_size === option.value }"
+                @click="applyPageFormat(option)"
+              >
+                <span class="studio-format-card__paper" :class="{ 'studio-format-card__paper--landscape': props.exportSettings.orientation === 'L' }" />
+                <span>
+                  <span class="block text-sm font-black">{{ option.label }}</span>
+                  <span class="mt-1 block text-xs font-medium leading-5 opacity-70">{{ option.description }}</span>
+                </span>
               </button>
             </div>
           </div>
-        </div>
 
-        <div class="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/40 sm:grid-cols-2 2xl:grid-cols-1">
-          <label class="inline-flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
-            <input v-model="showCanvasGrid" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
-            Mostrar grelha
-          </label>
-          <label class="inline-flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
-            <input v-model="showCanvasRulers" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
-            Mostrar réguas
-          </label>
-          <label class="inline-flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
-            <input v-model="showSafeArea" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
-            Mostrar safe area
-          </label>
-          <label class="inline-flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
-            <input v-model="snapToGrid" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
-            Alinhamento activo
-          </label>
-          <label class="text-sm text-slate-700 dark:text-slate-300">
-            Grelha (%)
-            <input v-model="gridSize" type="number" min="1" max="24" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-          </label>
+          <div class="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_310px]">
+            <div>
+              <div class="flex items-center justify-between gap-3">
+                <div class="studio-output-eyebrow">Perfis de margem</div>
+                <span class="studio-toolbar-status text-xs font-black">{{ printableAreaSummary }}</span>
+              </div>
+              <div class="mt-3 grid gap-3 md:grid-cols-2">
+                <button
+                  v-for="profile in marginProfileOptions"
+                  :key="`output-margin-${profile.key}`"
+                  type="button"
+                  class="studio-preset-card"
+                  :class="{ 'studio-preset-card--active': activeMarginProfileKey === profile.key }"
+                  @click="applyMarginProfile(profile)"
+                >
+                  <span class="text-sm font-black">{{ profile.label }}</span>
+                  <span class="mt-2 block text-xs font-medium leading-5 opacity-75">{{ profile.description }}</span>
+                </button>
+              </div>
+            </div>
+            <div class="studio-page-specimen">
+              <div class="studio-page-specimen__sheet" :class="{ 'studio-page-specimen__sheet--landscape': props.exportSettings.orientation === 'L' }">
+                <div class="studio-page-specimen__safe" />
+              </div>
+              <div class="mt-4 text-center">
+                <div class="text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">{{ previewPageSummary }}</div>
+                <div class="mt-1 text-xs font-medium text-[#6b7b74] dark:text-[#a9bcb2]">{{ previewMarginSummary }}</div>
+              </div>
+              <div class="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  v-for="option in orientationOptions"
+                  :key="`output-orientation-${option.value}`"
+                  type="button"
+                  class="studio-orientation-button"
+                  :class="{ 'studio-orientation-button--active': props.exportSettings.orientation === option.value }"
+                  @click="props.exportSettings.orientation = option.value"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <details class="studio-advanced-panel mt-5">
+            <summary>Medidas exactas da página e margens</summary>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              <label v-if="props.exportSettings.paper_size === 'custom'" class="studio-compact-field">Largura (mm)
+                <input v-model.number="props.exportSettings.custom_page_width" type="number" min="50" max="2000" step="1" />
+              </label>
+              <label v-if="props.exportSettings.paper_size === 'custom'" class="studio-compact-field">Altura (mm)
+                <input v-model.number="props.exportSettings.custom_page_height" type="number" min="50" max="2000" step="1" />
+              </label>
+              <label class="studio-compact-field">Topo (mm)
+                <input v-model.number="props.exportSettings.margin_top" type="number" min="0" max="200" step="1" />
+              </label>
+              <label class="studio-compact-field">Direita (mm)
+                <input v-model.number="props.exportSettings.margin_right" type="number" min="0" max="200" step="1" />
+              </label>
+              <label class="studio-compact-field">Base (mm)
+                <input v-model.number="props.exportSettings.margin_bottom" type="number" min="0" max="200" step="1" />
+              </label>
+              <label class="studio-compact-field">Esquerda (mm)
+                <input v-model.number="props.exportSettings.margin_left" type="number" min="0" max="200" step="1" />
+              </label>
+              <label class="studio-compact-field">Topo inicial (mm)
+                <input v-model.number="props.exportSettings.first_page_margin_top" type="number" min="0" max="250" step="1" />
+              </label>
+            </div>
+          </details>
+
+          <div v-if="exportSetupIssues.length" class="mt-5 grid gap-3 md:grid-cols-2">
+            <div v-for="issue in exportSetupIssues" :key="`output-${issue.title}`" class="studio-output-warning">
+              <div class="text-sm font-black">{{ issue.title }}</div>
+              <div class="mt-1 text-xs font-medium leading-5 opacity-75">{{ issue.description }}</div>
+            </div>
+          </div>
+        </section>
+
+        <section v-show="pdfWorkspaceSection === 'output'" class="studio-output-panel">
+          <div class="studio-output-panel__heading">
+            <div>
+              <div class="studio-output-eyebrow">Motor de emissão</div>
+              <h3 class="studio-output-title">Escolha a fidelidade adequada ao documento</h3>
+              <p class="studio-output-description">Chrome é recomendado para composição moderna, gráficos e posicionamento. mPDF continua disponível para documentos clássicos e ambientes conservadores.</p>
+            </div>
+            <span class="rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em]" :class="studioQualityStatus.class">{{ studioQualityStatus.label }}</span>
+          </div>
+
+          <div class="mt-6 grid gap-4 lg:grid-cols-2">
+            <button
+              v-for="option in rendererOptions.filter((renderer) => renderer.value !== 'canva')"
+              :key="`output-renderer-${option.value}`"
+              type="button"
+              class="studio-renderer-card"
+              :class="{ 'studio-renderer-card--active': props.form.renderer === option.value }"
+              :disabled="!option.available"
+              @click="props.form.renderer = option.value"
+            >
+              <span class="flex items-start justify-between gap-4">
+                <span>
+                  <span class="block text-sm font-black">{{ option.label }}</span>
+                  <span class="mt-2 block text-xs font-medium leading-5 opacity-75">{{ option.description }}</span>
+                </span>
+                <span class="studio-renderer-card__badge">{{ option.badge }}</span>
+              </span>
+            </button>
+          </div>
+
+          <div class="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div>
+              <div class="studio-output-eyebrow">Validação antes de emitir</div>
+              <div v-if="studioQualityIssues.length" class="mt-3 grid gap-3 md:grid-cols-2">
+                <button
+                  v-for="issue in studioQualityIssues"
+                  :key="`output-quality-${issue.key}`"
+                  type="button"
+                  class="studio-quality-card"
+                  @click="focusQualityIssue(issue)"
+                >
+                  <span class="text-sm font-black">{{ issue.title }}</span>
+                  <span class="mt-1 block text-xs font-medium leading-5 opacity-75">{{ issue.description }}</span>
+                </button>
+              </div>
+              <div v-else class="mt-3 rounded-[1.4rem] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm font-black text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
+                O documento passou as verificações estruturais do estúdio.
+              </div>
+            </div>
+            <div class="studio-emission-card">
+              <div class="studio-output-eyebrow">Resumo de emissão</div>
+              <dl class="mt-4 space-y-3 text-sm">
+                <div class="flex items-start justify-between gap-4"><dt class="text-[#6b7b74] dark:text-[#a9bcb2]">Página</dt><dd class="text-right font-black text-[#15231f] dark:text-[#f7f1e7]">{{ selectedPageFormatOption.label }}</dd></div>
+                <div class="flex items-start justify-between gap-4"><dt class="text-[#6b7b74] dark:text-[#a9bcb2]">Área útil</dt><dd class="text-right font-black text-[#15231f] dark:text-[#f7f1e7]">{{ printableAreaSummary }}</dd></div>
+                <div class="flex items-start justify-between gap-4"><dt class="text-[#6b7b74] dark:text-[#a9bcb2]">Renderizador</dt><dd class="text-right font-black text-[#15231f] dark:text-[#f7f1e7]">{{ selectedRendererOption.label }}</dd></div>
+              </dl>
+              <button type="button" class="studio-output-action studio-output-action--primary mt-5 w-full justify-center" :disabled="draftPreviewBusy || props.form.processing" @click="previewDraftPdf">
+                <EyeIcon class="h-4 w-4" />
+                {{ draftPreviewBusy ? studioCopy('draft_preview.generating', {}, 'A gerar PDF...') : studioCopy('draft_preview.action', {}, 'Pré-visualizar PDF') }}
+              </button>
+              <a v-if="props.previewPdfHref" :href="props.previewPdfHref" target="_blank" class="studio-output-action mt-3 w-full justify-center">
+                <EyeIcon class="h-4 w-4" />
+                {{ studioCopy('draft_preview.saved_preview', {}, 'Abrir PDF guardado') }}
+              </a>
+              <button type="button" class="studio-output-action studio-output-action--primary mt-3 w-full justify-center" :disabled="props.form.processing" @click="submit">
+                {{ props.form.processing ? 'A guardar…' : props.submitLabel }}
+              </button>
+              <p v-if="draftPreviewError" class="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold leading-5 text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">
+                {{ draftPreviewError }}
+              </p>
+            </div>
+          </div>
+
+          <details class="studio-advanced-panel mt-5">
+            <summary>Notas técnicas do renderizador</summary>
+            <p class="mt-3 text-xs font-medium leading-6 text-[#6b7b74] dark:text-[#a9bcb2]">
+              O mPDF usa principalmente CSS 2.1. Para flex/grid, filtros, transforms, gráficos exportados como SVG ou imagem e posicionamento moderno, seleccione Chrome PDF. No Chrome, cabeçalhos, rodapés e paginação usam templates nativos.
+            </p>
+          </details>
+        </section>
+      </aside>
+    </div>
+
+    <div v-show="activeStudioPane === 'preview'" class="studio-preview-workspace">
+      <div class="studio-preview-header">
+        <div class="min-w-0">
+          <div class="studio-output-eyebrow">Prova editorial</div>
+          <div class="mt-2 flex flex-wrap items-center gap-2">
+            <h2 class="text-xl font-black tracking-tight text-[#15231f] dark:text-[#f7f1e7]">{{ previewMeta.title }}</h2>
+            <span class="studio-toolbar-status text-[10px] font-black uppercase tracking-[0.12em]">{{ previewPageFormatLabel }}</span>
+            <span class="studio-toolbar-status text-[10px] font-black uppercase tracking-[0.12em]">{{ printableAreaSummary }}</span>
+          </div>
+          <p class="mt-2 max-w-3xl text-xs font-medium leading-5 text-[#6b7b74] dark:text-[#a9bcb2]">{{ previewMeta.subtitle }}</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="studio-preview-toggle">
+            <button type="button" :class="{ 'studio-preview-toggle__item--active': previewPageKind === 'first-page' }" class="studio-preview-toggle__item" @click="showPreviewScope('first-page')">Primeira</button>
+            <button type="button" :class="{ 'studio-preview-toggle__item--active': previewPageKind === 'following-page' }" class="studio-preview-toggle__item" @click="showPreviewScope('following-page')">Seguintes</button>
+          </div>
+          <div class="studio-preview-toggle">
+            <button type="button" :class="{ 'studio-preview-toggle__item--active': previewDisplayMode === 'paged' }" class="studio-preview-toggle__item" @click="previewDisplayMode = 'paged'">Uma página</button>
+            <button type="button" :class="{ 'studio-preview-toggle__item--active': previewDisplayMode === 'all' }" class="studio-preview-toggle__item" @click="previewDisplayMode = 'all'">Documento</button>
+          </div>
+          <details class="studio-toolbar-menu relative">
+            <summary class="studio-toolbar-button">
+              <EyeIcon class="h-4 w-4" />
+              Assistentes
+            </summary>
+            <div class="studio-toolbar-menu-panel studio-toolbar-menu-panel--compact">
+              <label class="studio-view-option"><input v-model="showCanvasGrid" type="checkbox" /><span>Grelha</span></label>
+              <label class="studio-view-option"><input v-model="showCanvasRulers" type="checkbox" /><span>Réguas</span></label>
+              <label class="studio-view-option"><input v-model="showSafeArea" type="checkbox" /><span>Área segura</span></label>
+              <label class="studio-view-option"><input v-model="snapToGrid" type="checkbox" /><span>Alinhamento inteligente</span></label>
+              <label class="studio-compact-field mt-2">Passo da grelha (%)
+                <input v-model="gridSize" type="number" min="1" max="24" />
+              </label>
+            </div>
+          </details>
         </div>
       </div>
 
-      <div class="mt-6 space-y-5 rounded-[32px] border border-slate-200 bg-slate-100 p-5 shadow-inner dark:border-slate-700 dark:bg-slate-950 lg:p-7">
+      <div v-if="previewPages.length > 1" class="studio-preview-pagebar">
+        <div class="studio-toolbar-group">
+          <button type="button" class="studio-toolbar-icon-button" :disabled="currentPreviewPage <= 1 || previewDisplayMode === 'all'" aria-label="Página anterior" @click="stepPreviewPage(-1)">‹</button>
+          <span class="min-w-16 px-2 text-center text-[11px] font-black tracking-[0.08em] text-[#475a53] dark:text-[#cbd8cf]">{{ currentPreviewPage }}/{{ previewPages.length }}</span>
+          <button type="button" class="studio-toolbar-icon-button" :disabled="currentPreviewPage >= previewPages.length || previewDisplayMode === 'all'" aria-label="Página seguinte" @click="stepPreviewPage(1)">›</button>
+        </div>
+        <div class="flex min-w-0 flex-1 gap-2 overflow-x-auto py-1">
+          <button
+            v-for="pageNumber in previewPages.length"
+            :key="`preview-nav-${pageNumber}`"
+            type="button"
+            class="studio-preview-page-chip"
+            :class="{ 'studio-preview-page-chip--active': currentPreviewPage === pageNumber && previewDisplayMode !== 'all' }"
+            @click="setPreviewPage(pageNumber)"
+          >
+            <span class="studio-preview-page-chip__paper" />
+            Página {{ pageNumber }}
+          </button>
+        </div>
+      </div>
+
+      <div class="studio-preview-stage">
         <div
           v-for="previewPage in visiblePreviewPages"
           :key="`preview-page-${previewPage.pageNumber}`"
@@ -6041,7 +6519,7 @@ function submit() {
                 v-if="!previewContentBlocksForPage(previewPage.pageNumber).length && previewContentBlocks.length"
                 class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50/80 px-4 py-3 text-xs text-slate-500 dark:border-slate-600 dark:bg-slate-950/40 dark:text-slate-400"
               >
-                Nenhum bloco do corpo está configurado para esta página. Ajuste o escopo do bloco para primeira página, páginas seguintes, todas ou uma página específica.
+                Nenhum bloco do corpo está configurado para esta página. Ajuste o âmbito do bloco para primeira página, páginas seguintes, todas ou uma página específica.
               </div>
               <div
                 v-for="block in previewContentBlocksForPage(previewPage.pageNumber)"
@@ -6101,8 +6579,8 @@ function submit() {
         </div>
       </div>
 
-      <p class="mt-4 text-xs text-slate-500 dark:text-slate-400">
-        Esta pré-visualização serve para a composição editorial. No PDF final, cabeçalhos, rodapés, margens, orientação, fundo, paginação e o escopo por página dos blocos do corpo são respeitados.
+      <p class="mt-4 text-center text-xs font-medium text-[#6b7b74] dark:text-[#a9bcb2]">
+        Esta pré-visualização serve para a composição editorial. No PDF final, cabeçalhos, rodapés, margens, orientação, fundo, paginação e o âmbito por página dos blocos do corpo são respeitados.
       </p>
     </div>
 
@@ -6278,6 +6756,1518 @@ function submit() {
   color: #f7f1e7;
 }
 
+.studio-canvas-toolbar {
+  align-items: center;
+  background: color-mix(in srgb, #fffdf7 92%, white);
+  border: 1px solid color-mix(in srgb, #ded3bf 82%, white);
+  border-radius: 1.6rem;
+  box-shadow: 0 18px 45px rgb(20 61 55 / 0.08);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.9rem 1rem;
+}
+
+.dark .studio-canvas-toolbar {
+  background: color-mix(in srgb, #10231f 92%, #07110f);
+  border-color: #25443c;
+  box-shadow: 0 18px 45px rgb(0 0 0 / 0.22);
+}
+
+.studio-toolbar-status {
+  align-items: center;
+  background: #f8f4ea;
+  border: 1px solid #ded3bf;
+  border-radius: 999px;
+  display: inline-flex;
+  padding: 0.28rem 0.58rem;
+}
+
+.dark .studio-toolbar-status {
+  background: #07110f;
+  border-color: #25443c;
+}
+
+.studio-toolbar-group {
+  align-items: center;
+  background: color-mix(in srgb, #fffdf7 90%, white);
+  border: 1px solid #ded3bf;
+  border-radius: 999px;
+  display: inline-flex;
+  min-height: 2.65rem;
+  padding: 0.25rem;
+}
+
+.dark .studio-toolbar-group {
+  background: #07110f;
+  border-color: #25443c;
+}
+
+.studio-toolbar-button {
+  align-items: center;
+  background: color-mix(in srgb, #fffdf7 90%, white);
+  border: 1px solid #ded3bf;
+  border-radius: 999px;
+  color: #475a53;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.75rem;
+  font-weight: 800;
+  gap: 0.5rem;
+  min-height: 2.65rem;
+  padding: 0.55rem 0.9rem;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  user-select: none;
+}
+
+.studio-toolbar-button::-webkit-details-marker {
+  display: none;
+}
+
+.studio-toolbar-button:hover,
+.studio-toolbar-menu[open] > .studio-toolbar-button {
+  border-color: #d9b05f;
+  box-shadow: 0 12px 30px rgb(20 61 55 / 0.12);
+  color: #143d37;
+  transform: translateY(-1px);
+}
+
+.studio-toolbar-button--primary {
+  background: #143d37;
+  border-color: #143d37;
+  color: white;
+}
+
+.studio-toolbar-button--primary:hover,
+.studio-toolbar-menu[open] > .studio-toolbar-button--primary {
+  background: #0f302b;
+  color: white;
+}
+
+.dark .studio-toolbar-button {
+  background: #07110f;
+  border-color: #25443c;
+  color: #cbd8cf;
+}
+
+.dark .studio-toolbar-button:hover,
+.dark .studio-toolbar-menu[open] > .studio-toolbar-button {
+  border-color: #d9b05f;
+  color: #f7f1e7;
+}
+
+.dark .studio-toolbar-button--primary {
+  background: #d9b05f;
+  border-color: #d9b05f;
+  color: #07110f;
+}
+
+.studio-toolbar-menu-panel {
+  background: #fffdf7;
+  border: 1px solid #ded3bf;
+  border-radius: 1.25rem;
+  box-shadow: 0 24px 60px rgb(20 61 55 / 0.18);
+  margin-top: 0.55rem;
+  padding: 0.75rem;
+  position: absolute;
+  right: 0;
+  width: min(18rem, calc(100vw - 3rem));
+  z-index: 40;
+}
+
+.studio-toolbar-menu-panel--compact {
+  width: min(16rem, calc(100vw - 3rem));
+}
+
+.dark .studio-toolbar-menu-panel {
+  background: #10231f;
+  border-color: #25443c;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.4);
+}
+
+.studio-toolbar-menu-action {
+  align-items: center;
+  background: #f8f4ea;
+  border: 1px solid transparent;
+  border-radius: 0.9rem;
+  color: #475a53;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 800;
+  gap: 0.45rem;
+  justify-content: flex-start;
+  padding: 0.7rem 0.75rem;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.studio-toolbar-menu-action:hover {
+  background: #fffaf0;
+  border-color: #d9b05f;
+  color: #143d37;
+}
+
+.dark .studio-toolbar-menu-action {
+  background: #07110f;
+  color: #cbd8cf;
+}
+
+.dark .studio-toolbar-menu-action:hover {
+  background: #143d37;
+  border-color: #d9b05f;
+  color: #f7f1e7;
+}
+
+.studio-toolbar-icon-button {
+  align-items: center;
+  border-radius: 999px;
+  color: #143d37;
+  display: inline-flex;
+  font-size: 1.15rem;
+  font-weight: 900;
+  height: 2.1rem;
+  justify-content: center;
+  transition: background-color 150ms ease, color 150ms ease;
+  width: 2.1rem;
+}
+
+.studio-toolbar-icon-button:hover:not(:disabled) {
+  background: #143d37;
+  color: white;
+}
+
+.studio-toolbar-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+}
+
+.dark .studio-toolbar-icon-button {
+  color: #f7f1e7;
+}
+
+.dark .studio-toolbar-icon-button:hover:not(:disabled) {
+  background: #d9b05f;
+  color: #07110f;
+}
+
+.studio-toolbar-select {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: #143d37;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 900;
+  min-height: 2rem;
+  padding: 0.25rem 1.8rem 0.25rem 0.45rem;
+}
+
+.dark .studio-toolbar-select {
+  color: #f7f1e7;
+}
+
+.studio-view-option {
+  align-items: center;
+  border-radius: 0.85rem;
+  color: #475a53;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.75rem;
+  font-weight: 800;
+  gap: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.studio-view-option:hover {
+  background: #f8f4ea;
+  color: #143d37;
+}
+
+.studio-view-option input {
+  accent-color: #143d37;
+}
+
+.dark .studio-view-option {
+  color: #cbd8cf;
+}
+
+.dark .studio-view-option:hover {
+  background: #07110f;
+  color: #f7f1e7;
+}
+
+.dark .studio-view-option input {
+  accent-color: #d9b05f;
+}
+
+.studio-context-bar {
+  align-items: center;
+  background: color-mix(in srgb, #f8f4ea 88%, white);
+  border: 1px solid #ded3bf;
+  border-radius: 1.35rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  justify-content: space-between;
+  padding: 0.7rem 0.8rem 0.7rem 1rem;
+}
+
+.dark .studio-context-bar {
+  background: #10231f;
+  border-color: #25443c;
+}
+
+.studio-context-action {
+  align-items: center;
+  background: #fffdf7;
+  border: 1px solid #ded3bf;
+  border-radius: 0.8rem;
+  color: #475a53;
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-weight: 900;
+  height: 2.2rem;
+  justify-content: center;
+  min-width: 2.2rem;
+  padding: 0 0.65rem;
+  transition: border-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.studio-context-action:hover {
+  border-color: #d9b05f;
+  color: #143d37;
+  transform: translateY(-1px);
+}
+
+.studio-context-action--text {
+  min-width: auto;
+}
+
+.studio-context-action--danger {
+  color: #be123c;
+}
+
+.studio-context-action--danger:hover {
+  border-color: #fda4af;
+  color: #9f1239;
+}
+
+.dark .studio-context-action {
+  background: #07110f;
+  border-color: #25443c;
+  color: #cbd8cf;
+}
+
+.dark .studio-context-action:hover {
+  border-color: #d9b05f;
+  color: #f7f1e7;
+}
+
+.dark .studio-context-action--danger {
+  color: #fda4af;
+}
+
+.studio-advanced-panel {
+  background: color-mix(in srgb, #f8f4ea 88%, white);
+  border: 1px solid #ded3bf;
+  border-radius: 1rem;
+  color: #475a53;
+  padding: 0.7rem 0.8rem;
+}
+
+.studio-advanced-panel > summary {
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  list-style: none;
+  text-transform: uppercase;
+}
+
+.studio-advanced-panel > summary::-webkit-details-marker {
+  display: none;
+}
+
+.studio-advanced-panel > summary::after {
+  color: #d9b05f;
+  content: "+";
+  float: right;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.studio-advanced-panel[open] > summary::after {
+  content: "−";
+}
+
+.dark .studio-advanced-panel {
+  background: #07110f;
+  border-color: #25443c;
+  color: #cbd8cf;
+}
+
+.studio-composition-drawer {
+  background: #fffdf7;
+  border: 1px solid #ded3bf;
+  border-radius: 1.8rem;
+  box-shadow: 0 18px 55px rgb(20 61 55 / 0.08);
+  color: #475a53;
+  overflow: hidden;
+}
+
+.studio-composition-drawer > summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  list-style: none;
+  padding: 1.1rem 1.25rem;
+}
+
+.studio-composition-drawer > summary::-webkit-details-marker {
+  display: none;
+}
+
+.studio-composition-drawer__eyebrow,
+.studio-composition-drawer__title,
+.studio-composition-drawer__description {
+  display: block;
+}
+
+.studio-composition-drawer__eyebrow {
+  color: #b98a34;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.studio-composition-drawer__title {
+  color: #15231f;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  margin-top: 0.35rem;
+}
+
+.studio-composition-drawer__description {
+  color: #6b7b74;
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.55;
+  margin-top: 0.25rem;
+  max-width: 52rem;
+}
+
+.studio-composition-drawer__action {
+  align-items: center;
+  background: #143d37;
+  border-radius: 999px;
+  color: #fffaf0;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 900;
+  justify-content: center;
+  min-width: 5rem;
+  padding: 0.65rem 1rem;
+  text-transform: uppercase;
+}
+
+.studio-composition-drawer__content {
+  border-top: 1px solid #ded3bf;
+  padding: 0 1.25rem 1.25rem;
+}
+
+.dark .studio-composition-drawer {
+  background: #07110f;
+  border-color: #25443c;
+  box-shadow: 0 18px 55px rgb(0 0 0 / 0.24);
+  color: #cbd8cf;
+}
+
+.dark .studio-composition-drawer__eyebrow {
+  color: #d9b05f;
+}
+
+.dark .studio-composition-drawer__title {
+  color: #f7f1e7;
+}
+
+.dark .studio-composition-drawer__description {
+  color: #a9bcb2;
+}
+
+.dark .studio-composition-drawer__action {
+  background: #d9b05f;
+  color: #07110f;
+}
+
+.dark .studio-composition-drawer__content {
+  border-color: #25443c;
+}
+
+.studio-output-command {
+  background:
+    radial-gradient(circle at 88% 8%, rgb(217 176 95 / 0.2), transparent 30%),
+    linear-gradient(135deg, #07110f, #143d37);
+  border: 1px solid #25443c;
+  border-radius: 2rem;
+  box-shadow: 0 26px 70px rgb(20 61 55 / 0.2);
+  overflow: hidden;
+  padding: 1.5rem;
+  position: relative;
+}
+
+.studio-output-command::after {
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 999px;
+  content: "";
+  height: 18rem;
+  position: absolute;
+  right: -7rem;
+  top: -10rem;
+  width: 18rem;
+}
+
+.studio-output-metric {
+  align-items: center;
+  background: rgb(255 255 255 / 0.07);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  min-width: 5.5rem;
+  padding: 0.8rem 0.7rem;
+}
+
+.studio-output-metric__value {
+  color: #fffaf0;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.studio-output-metric__label {
+  color: #a9bcb2;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  margin-top: 0.2rem;
+  text-transform: uppercase;
+}
+
+.studio-pdf-navigation {
+  background: #fffdf7;
+  border: 1px solid #ded3bf;
+  border-radius: 1.6rem;
+  box-shadow: 0 16px 45px rgb(20 61 55 / 0.07);
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 0.45rem;
+}
+
+.dark .studio-pdf-navigation {
+  background: #07110f;
+  border-color: #25443c;
+  box-shadow: 0 16px 45px rgb(0 0 0 / 0.24);
+}
+
+.studio-pdf-navigation__item {
+  border: 1px solid transparent;
+  border-radius: 1.2rem;
+  color: #6b7b74;
+  padding: 0.8rem 0.9rem;
+  text-align: left;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.studio-pdf-navigation__item:hover {
+  background: #f8f4ea;
+  color: #143d37;
+}
+
+.studio-pdf-navigation__item--active {
+  background: #143d37;
+  border-color: #143d37;
+  box-shadow: 0 12px 30px rgb(20 61 55 / 0.16);
+  color: #fffaf0;
+}
+
+.dark .studio-pdf-navigation__item {
+  color: #a9bcb2;
+}
+
+.dark .studio-pdf-navigation__item:hover {
+  background: #10231f;
+  color: #f7f1e7;
+}
+
+.dark .studio-pdf-navigation__item--active {
+  background: #d9b05f;
+  border-color: #d9b05f;
+  color: #07110f;
+}
+
+.studio-pdf-navigation__label,
+.studio-pdf-navigation__description {
+  display: block;
+}
+
+.studio-pdf-navigation__label {
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.studio-pdf-navigation__description {
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin-top: 0.2rem;
+  opacity: 0.72;
+}
+
+.studio-output-panel {
+  background: #fffdf7;
+  border: 1px solid #ded3bf;
+  border-radius: 2rem;
+  box-shadow: 0 20px 55px rgb(20 61 55 / 0.07);
+  padding: 1.5rem;
+}
+
+.dark .studio-output-panel {
+  background: #07110f;
+  border-color: #25443c;
+  box-shadow: 0 20px 55px rgb(0 0 0 / 0.24);
+}
+
+.studio-output-panel__heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.studio-output-eyebrow {
+  color: #b98a34;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.dark .studio-output-eyebrow {
+  color: #d9b05f;
+}
+
+.studio-output-title {
+  color: #15231f;
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-top: 0.55rem;
+}
+
+.dark .studio-output-title {
+  color: #f7f1e7;
+}
+
+.studio-output-description {
+  color: #6b7b74;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.6;
+  margin-top: 0.45rem;
+  max-width: 44rem;
+}
+
+.dark .studio-output-description {
+  color: #a9bcb2;
+}
+
+.studio-output-action {
+  align-items: center;
+  background: #fffdf7;
+  border: 1px solid #ded3bf;
+  border-radius: 999px;
+  color: #143d37;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 900;
+  gap: 0.45rem;
+  min-height: 2.6rem;
+  padding: 0.65rem 1rem;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.studio-output-action:hover {
+  border-color: #d9b05f;
+  box-shadow: 0 12px 28px rgb(20 61 55 / 0.12);
+  transform: translateY(-1px);
+}
+
+.studio-output-action--primary {
+  background: #143d37;
+  border-color: #143d37;
+  color: white;
+}
+
+.dark .studio-output-action {
+  background: #10231f;
+  border-color: #25443c;
+  color: #f7f1e7;
+}
+
+.dark .studio-output-action--primary {
+  background: #d9b05f;
+  border-color: #d9b05f;
+  color: #07110f;
+}
+
+.studio-surface-card {
+  background: #f8f4ea;
+  border: 1px solid #ded3bf;
+  border-radius: 1.5rem;
+  overflow: hidden;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.studio-surface-card:hover {
+  border-color: #d9b05f;
+  box-shadow: 0 18px 42px rgb(20 61 55 / 0.1);
+  transform: translateY(-2px);
+}
+
+.dark .studio-surface-card {
+  background: #10231f;
+  border-color: #25443c;
+}
+
+.studio-surface-card__preview {
+  background:
+    linear-gradient(rgb(20 61 55 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(20 61 55 / 0.04) 1px, transparent 1px),
+    #f1ecdf;
+  background-size: 14px 14px;
+  padding: 1rem;
+}
+
+.dark .studio-surface-card__preview {
+  background-color: #07110f;
+}
+
+.studio-surface-card__paper {
+  aspect-ratio: 1.65 / 1;
+  background: white;
+  border: 1px solid #e9e0d1;
+  border-radius: 0.8rem;
+  box-shadow: 0 10px 28px rgb(20 61 55 / 0.1);
+  overflow: hidden;
+  padding: 1rem;
+  position: relative;
+}
+
+.studio-surface-card__content {
+  color: #15231f;
+  font-size: 0.45rem;
+  line-height: 1.35;
+  max-height: 100%;
+  overflow: hidden;
+  transform-origin: top left;
+}
+
+.studio-surface-card__content--footer {
+  bottom: 0.8rem;
+  left: 1rem;
+  position: absolute;
+  right: 1rem;
+}
+
+.studio-surface-status {
+  background: #ede7dc;
+  border-radius: 999px;
+  color: #7c6850;
+  flex-shrink: 0;
+  font-size: 0.55rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 0.35rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.studio-surface-status--ready {
+  background: #dcebe5;
+  color: #143d37;
+}
+
+.dark .studio-surface-status {
+  background: #07110f;
+  color: #a9bcb2;
+}
+
+.dark .studio-surface-status--ready {
+  background: rgb(217 176 95 / 0.16);
+  color: #d9b05f;
+}
+
+.studio-surface-edit {
+  color: #143d37;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.studio-surface-edit:hover {
+  color: #9a6e23;
+}
+
+.dark .studio-surface-edit {
+  color: #d9b05f;
+}
+
+.studio-background-card,
+.studio-table-stage,
+.studio-emission-card {
+  background: #f8f4ea;
+  border: 1px solid #ded3bf;
+  border-radius: 1.6rem;
+  padding: 1.2rem;
+}
+
+.dark .studio-background-card,
+.dark .studio-table-stage,
+.dark .studio-emission-card {
+  background: #10231f;
+  border-color: #25443c;
+}
+
+.studio-background-card__preview {
+  aspect-ratio: 1.25 / 1;
+  background:
+    linear-gradient(45deg, rgb(20 61 55 / 0.04) 25%, transparent 25%, transparent 75%, rgb(20 61 55 / 0.04) 75%),
+    linear-gradient(45deg, rgb(20 61 55 / 0.04) 25%, transparent 25%, transparent 75%, rgb(20 61 55 / 0.04) 75%),
+    #fffdf7;
+  background-position: 0 0, 10px 10px;
+  background-size: 20px 20px;
+  border: 1px solid #ded3bf;
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+
+.dark .studio-background-card__preview {
+  background-color: #07110f;
+  border-color: #25443c;
+}
+
+.studio-compact-field,
+.studio-code-field,
+.studio-color-field {
+  color: #6b7b74;
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dark .studio-compact-field,
+.dark .studio-code-field,
+.dark .studio-color-field {
+  color: #a9bcb2;
+}
+
+.studio-compact-field :where(input, select),
+.studio-code-field :where(input, textarea) {
+  background: #fffdf7;
+  border: 1px solid #ded3bf;
+  border-radius: 1rem;
+  color: #15231f;
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  margin-top: 0.5rem;
+  min-height: 2.8rem;
+  padding: 0.65rem 0.8rem;
+  text-transform: none;
+  width: 100%;
+}
+
+.studio-code-field textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.studio-compact-field input[type="range"] {
+  min-height: 1rem;
+  padding: 0;
+}
+
+.dark .studio-compact-field :where(input, select),
+.dark .studio-code-field :where(input, textarea) {
+  background: #07110f;
+  border-color: #25443c;
+  color: #f7f1e7;
+}
+
+.studio-color-field input {
+  background: #fffdf7;
+  border: 1px solid #ded3bf;
+  border-radius: 1rem;
+  display: block;
+  height: 2.8rem;
+  margin-top: 0.5rem;
+  padding: 0.3rem;
+  width: 100%;
+}
+
+.dark .studio-color-field input {
+  background: #07110f;
+  border-color: #25443c;
+}
+
+.studio-danger-action {
+  border: 1px solid #fecdd3;
+  border-radius: 1rem;
+  color: #be123c;
+  font-size: 0.7rem;
+  font-weight: 900;
+  min-height: 2.8rem;
+  padding: 0.65rem 0.8rem;
+}
+
+.studio-danger-action:hover {
+  background: #fff1f2;
+}
+
+.dark .studio-danger-action {
+  border-color: rgb(244 63 94 / 0.3);
+  color: #fda4af;
+}
+
+.studio-preset-card,
+.studio-renderer-card,
+.studio-quality-card {
+  background: #fffdf7;
+  border: 1px solid #ded3bf;
+  border-radius: 1.25rem;
+  color: #475a53;
+  padding: 1rem;
+  text-align: left;
+  transition: border-color 150ms ease, box-shadow 150ms ease, color 150ms ease, transform 150ms ease;
+  width: 100%;
+}
+
+.studio-preset-card:hover,
+.studio-renderer-card:hover:not(:disabled),
+.studio-quality-card:hover {
+  border-color: #d9b05f;
+  box-shadow: 0 14px 32px rgb(20 61 55 / 0.08);
+  color: #143d37;
+  transform: translateY(-1px);
+}
+
+.studio-preset-card--active,
+.studio-renderer-card--active {
+  background: #143d37;
+  border-color: #143d37;
+  color: #fffaf0;
+}
+
+.dark .studio-preset-card,
+.dark .studio-renderer-card,
+.dark .studio-quality-card {
+  background: #07110f;
+  border-color: #25443c;
+  color: #cbd8cf;
+}
+
+.dark .studio-preset-card--active,
+.dark .studio-renderer-card--active {
+  background: #d9b05f;
+  border-color: #d9b05f;
+  color: #07110f;
+}
+
+.studio-renderer-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.studio-renderer-card__badge {
+  background: rgb(217 176 95 / 0.18);
+  border-radius: 999px;
+  color: #9a6e23;
+  flex-shrink: 0;
+  font-size: 0.55rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 0.35rem 0.55rem;
+  text-transform: uppercase;
+}
+
+.studio-renderer-card--active .studio-renderer-card__badge {
+  background: rgb(255 255 255 / 0.14);
+  color: inherit;
+}
+
+.studio-format-card {
+  align-items: center;
+  background: #f8f4ea;
+  border: 1px solid #ded3bf;
+  border-radius: 1.3rem;
+  color: #475a53;
+  display: flex;
+  gap: 0.9rem;
+  padding: 0.9rem;
+  text-align: left;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.studio-format-card:hover,
+.studio-format-card--active {
+  border-color: #d9b05f;
+  box-shadow: 0 14px 30px rgb(20 61 55 / 0.08);
+  transform: translateY(-1px);
+}
+
+.studio-format-card--active {
+  color: #143d37;
+}
+
+.dark .studio-format-card {
+  background: #10231f;
+  border-color: #25443c;
+  color: #cbd8cf;
+}
+
+.dark .studio-format-card--active {
+  border-color: #d9b05f;
+  color: #f7f1e7;
+}
+
+.studio-format-card__paper {
+  background: white;
+  border: 1px solid #ded3bf;
+  border-radius: 0.22rem;
+  box-shadow: 0 4px 10px rgb(20 61 55 / 0.1);
+  flex-shrink: 0;
+  height: 2.8rem;
+  width: 2rem;
+}
+
+.studio-format-card__paper--landscape {
+  height: 2rem;
+  width: 2.8rem;
+}
+
+.studio-page-specimen {
+  background: #f8f4ea;
+  border: 1px solid #ded3bf;
+  border-radius: 1.6rem;
+  padding: 1.2rem;
+}
+
+.dark .studio-page-specimen {
+  background: #10231f;
+  border-color: #25443c;
+}
+
+.studio-page-specimen__sheet {
+  aspect-ratio: 210 / 297;
+  background: white;
+  border: 1px solid #ded3bf;
+  border-radius: 0.8rem;
+  box-shadow: 0 16px 40px rgb(20 61 55 / 0.12);
+  margin: 0 auto;
+  max-height: 15rem;
+  position: relative;
+}
+
+.studio-page-specimen__sheet--landscape {
+  aspect-ratio: 297 / 210;
+  margin-top: 2.5rem;
+}
+
+.studio-page-specimen__safe {
+  border: 1px dashed #d9b05f;
+  border-radius: 0.5rem;
+  inset: 12%;
+  position: absolute;
+}
+
+.studio-orientation-button {
+  border: 1px solid #ded3bf;
+  border-radius: 999px;
+  color: #6b7b74;
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 0.65rem;
+}
+
+.studio-orientation-button--active {
+  background: #143d37;
+  border-color: #143d37;
+  color: white;
+}
+
+.dark .studio-orientation-button {
+  border-color: #25443c;
+  color: #a9bcb2;
+}
+
+.dark .studio-orientation-button--active {
+  background: #d9b05f;
+  border-color: #d9b05f;
+  color: #07110f;
+}
+
+.studio-output-warning {
+  background: #fff8e7;
+  border: 1px solid #ead9ae;
+  border-radius: 1.3rem;
+  color: #7c5b1e;
+  padding: 1rem;
+}
+
+.dark .studio-output-warning {
+  background: rgb(217 176 95 / 0.1);
+  border-color: rgb(217 176 95 / 0.28);
+  color: #f1d89e;
+}
+
+.studio-setup-field {
+  color: #6b7b74;
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.studio-setup-field :where(input, select, textarea) {
+  background: #f8f4ea;
+  border: 1px solid #ded3bf;
+  border-radius: 1.1rem;
+  color: #15231f;
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  margin-top: 0.55rem;
+  min-height: 3.1rem;
+  padding: 0.75rem 0.9rem;
+  text-transform: none;
+  width: 100%;
+}
+
+.studio-setup-field textarea {
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.studio-setup-field :where(input, textarea)::placeholder {
+  color: #93a099;
+  font-weight: 600;
+}
+
+.dark .studio-setup-field {
+  color: #a9bcb2;
+}
+
+.dark .studio-setup-field :where(input, select, textarea) {
+  background: #10231f;
+  border-color: #25443c;
+  color: #f7f1e7;
+}
+
+.studio-setup-field__error {
+  color: #be123c;
+  display: block;
+  font-size: 0.65rem;
+  letter-spacing: normal;
+  margin-top: 0.45rem;
+  text-transform: none;
+}
+
+.studio-lifecycle-card {
+  background:
+    radial-gradient(circle at top right, rgb(217 176 95 / 0.18), transparent 38%),
+    #f8f4ea;
+  border: 1px solid #ded3bf;
+  border-radius: 2rem;
+  box-shadow: 0 20px 55px rgb(20 61 55 / 0.07);
+  padding: 1.5rem;
+}
+
+.dark .studio-lifecycle-card {
+  background:
+    radial-gradient(circle at top right, rgb(217 176 95 / 0.1), transparent 38%),
+    #10231f;
+  border-color: #25443c;
+}
+
+.studio-lifecycle-option,
+.studio-default-toggle {
+  align-items: flex-start;
+  background: #fffdf7;
+  border: 1px solid #ded3bf;
+  border-radius: 1.2rem;
+  color: #475a53;
+  display: flex;
+  gap: 0.8rem;
+  padding: 0.9rem;
+  text-align: left;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  width: 100%;
+}
+
+.studio-lifecycle-option:hover,
+.studio-lifecycle-option--active {
+  border-color: #d9b05f;
+  box-shadow: 0 12px 28px rgb(20 61 55 / 0.08);
+  transform: translateY(-1px);
+}
+
+.studio-lifecycle-option--active {
+  color: #143d37;
+}
+
+.dark .studio-lifecycle-option,
+.dark .studio-default-toggle {
+  background: #07110f;
+  border-color: #25443c;
+  color: #cbd8cf;
+}
+
+.dark .studio-lifecycle-option--active {
+  border-color: #d9b05f;
+  color: #f7f1e7;
+}
+
+.studio-lifecycle-option__mark {
+  border: 2px solid #cfc3ae;
+  border-radius: 999px;
+  flex-shrink: 0;
+  height: 0.9rem;
+  margin-top: 0.2rem;
+  position: relative;
+  width: 0.9rem;
+}
+
+.studio-lifecycle-option--active .studio-lifecycle-option__mark {
+  border-color: #143d37;
+}
+
+.studio-lifecycle-option--active .studio-lifecycle-option__mark::after {
+  background: #d9b05f;
+  border-radius: inherit;
+  content: "";
+  inset: 2px;
+  position: absolute;
+}
+
+.dark .studio-lifecycle-option--active .studio-lifecycle-option__mark {
+  border-color: #d9b05f;
+}
+
+.studio-default-toggle {
+  cursor: pointer;
+}
+
+.studio-default-toggle input {
+  accent-color: #143d37;
+  flex-shrink: 0;
+  height: 1rem;
+  margin-top: 0.2rem;
+  width: 1rem;
+}
+
+.dark .studio-default-toggle input {
+  accent-color: #d9b05f;
+}
+
+.studio-theme-badge {
+  background: rgb(217 176 95 / 0.16);
+  border: 1px solid rgb(217 176 95 / 0.4);
+  border-radius: 999px;
+  color: #8a641f;
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  padding: 0.5rem 0.75rem;
+  text-transform: uppercase;
+}
+
+.dark .studio-theme-badge {
+  color: #f1d89e;
+}
+
+.studio-theme-card {
+  background: #f8f4ea;
+  border: 1px solid #ded3bf;
+  border-radius: 1.4rem;
+  color: #475a53;
+  padding: 0.85rem;
+  text-align: left;
+  transition: border-color 150ms ease, box-shadow 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.studio-theme-card:hover,
+.studio-theme-card--active {
+  border-color: #d9b05f;
+  box-shadow: 0 16px 36px rgb(20 61 55 / 0.09);
+  color: #143d37;
+  transform: translateY(-2px);
+}
+
+.dark .studio-theme-card {
+  background: #10231f;
+  border-color: #25443c;
+  color: #cbd8cf;
+}
+
+.dark .studio-theme-card--active {
+  border-color: #d9b05f;
+  color: #f7f1e7;
+}
+
+.studio-theme-card__specimen {
+  background: white;
+  border: 1px solid #e7dece;
+  border-radius: 0.95rem;
+  box-shadow: 0 10px 24px rgb(20 61 55 / 0.08);
+  display: block;
+  min-height: 7.5rem;
+  padding: 0.8rem;
+}
+
+.studio-theme-card__accent {
+  border-radius: 999px;
+  display: block;
+  height: 0.45rem;
+  width: 58%;
+}
+
+.studio-theme-card__line {
+  background: #e7e0d5;
+  border-radius: 999px;
+  display: block;
+  height: 0.3rem;
+  margin-top: 0.55rem;
+  width: 74%;
+}
+
+.studio-theme-card__line--strong {
+  background: #aab9b2;
+  height: 0.45rem;
+  margin-top: 0.8rem;
+  width: 48%;
+}
+
+.studio-theme-card__table {
+  border: 1px solid #ded3bf;
+  border-radius: 0.35rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0.85rem;
+  overflow: hidden;
+}
+
+.studio-theme-card__table span {
+  border-right: 1px solid #ded3bf;
+  display: block;
+  height: 1.6rem;
+}
+
+.studio-theme-card__table span:last-child {
+  border-right: 0;
+}
+
+.studio-preview-workspace {
+  background: #fffdf7;
+  border: 1px solid #ded3bf;
+  border-radius: 2rem;
+  box-shadow: 0 22px 65px rgb(20 61 55 / 0.09);
+  padding: 1.25rem;
+}
+
+.dark .studio-preview-workspace {
+  background: #07110f;
+  border-color: #25443c;
+  box-shadow: 0 22px 65px rgb(0 0 0 / 0.3);
+}
+
+.studio-preview-header,
+.studio-preview-pagebar {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.studio-preview-header {
+  border-bottom: 1px solid #ded3bf;
+  padding: 0.35rem 0.35rem 1rem;
+}
+
+.dark .studio-preview-header {
+  border-color: #25443c;
+}
+
+.studio-preview-toggle {
+  align-items: center;
+  background: #f8f4ea;
+  border: 1px solid #ded3bf;
+  border-radius: 999px;
+  display: inline-flex;
+  padding: 0.25rem;
+}
+
+.dark .studio-preview-toggle {
+  background: #10231f;
+  border-color: #25443c;
+}
+
+.studio-preview-toggle__item {
+  border-radius: 999px;
+  color: #6b7b74;
+  font-size: 0.66rem;
+  font-weight: 900;
+  min-height: 2.1rem;
+  padding: 0.45rem 0.7rem;
+  transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+
+.studio-preview-toggle__item:hover {
+  color: #143d37;
+}
+
+.studio-preview-toggle__item--active {
+  background: #143d37;
+  box-shadow: 0 8px 20px rgb(20 61 55 / 0.16);
+  color: white;
+}
+
+.dark .studio-preview-toggle__item {
+  color: #a9bcb2;
+}
+
+.dark .studio-preview-toggle__item--active {
+  background: #d9b05f;
+  color: #07110f;
+}
+
+.studio-preview-pagebar {
+  border-bottom: 1px solid #ded3bf;
+  padding: 0.8rem 0.35rem;
+}
+
+.dark .studio-preview-pagebar {
+  border-color: #25443c;
+}
+
+.studio-preview-page-chip {
+  align-items: center;
+  background: #f8f4ea;
+  border: 1px solid #ded3bf;
+  border-radius: 999px;
+  color: #6b7b74;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 900;
+  gap: 0.45rem;
+  min-height: 2.1rem;
+  padding: 0.4rem 0.7rem;
+  transition: border-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.studio-preview-page-chip:hover,
+.studio-preview-page-chip--active {
+  border-color: #d9b05f;
+  color: #143d37;
+  transform: translateY(-1px);
+}
+
+.dark .studio-preview-page-chip {
+  background: #10231f;
+  border-color: #25443c;
+  color: #a9bcb2;
+}
+
+.dark .studio-preview-page-chip--active {
+  border-color: #d9b05f;
+  color: #f7f1e7;
+}
+
+.studio-preview-page-chip__paper {
+  background: white;
+  border: 1px solid #ded3bf;
+  border-radius: 0.12rem;
+  height: 0.9rem;
+  width: 0.65rem;
+}
+
+.studio-preview-stage {
+  background:
+    linear-gradient(rgb(20 61 55 / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(20 61 55 / 0.035) 1px, transparent 1px),
+    #f1ecdf;
+  background-size: 20px 20px;
+  border: 1px solid #ded3bf;
+  border-radius: 1.6rem;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.65);
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1rem;
+  overflow: auto;
+  padding: clamp(1rem, 2.4vw, 2rem);
+}
+
+.dark .studio-preview-stage {
+  background:
+    linear-gradient(rgb(217 176 95 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(217 176 95 / 0.04) 1px, transparent 1px),
+    #10231f;
+  background-size: 20px 20px;
+  border-color: #25443c;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+@media (max-width: 767px) {
+  .studio-canvas-toolbar,
+  .studio-context-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .studio-pdf-navigation {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .studio-output-panel__heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .studio-preview-header,
+  .studio-preview-pagebar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .studio-output-action {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
 .report-studio-shell :where(input, select, textarea, button) {
   font-family: inherit;
 }
@@ -6348,6 +8338,23 @@ function submit() {
 .report-studio-shell :where(input, select, textarea):not(.studio-preview-document *):focus {
   border-color: rgb(var(--primary-500-rgb));
   box-shadow: 0 0 0 3px rgb(var(--primary-500-rgb) / 0.18);
+}
+
+.report-studio-shell .studio-toolbar-select {
+  background-color: transparent;
+  border: 0;
+  box-shadow: none;
+  color: #143d37;
+}
+
+.report-studio-shell .studio-toolbar-select:focus {
+  border: 0;
+  box-shadow: none;
+}
+
+.dark .report-studio-shell .studio-toolbar-select {
+  background-color: transparent;
+  color: #f7f1e7;
 }
 
 .report-studio-swiper::part(button-prev),

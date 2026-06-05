@@ -36,7 +36,7 @@ class ReportStudioDefaultTemplates
             'status' => 'active',
             'is_default' => true,
             'theme_preset' => in_array($studioType, ['analysis', 'export_certificate', 'import_certificate'], true) ? 'compliance' : 'corporate',
-            'description' => 'Modelo padrão de produção gerado pelo studio para documentos sem template activo configurado.',
+            'description' => self::descriptionFor($studioType),
             'layout_schema' => self::layoutFor($studioType),
             'export_settings' => self::exportSettingsFor($studioType),
         ]);
@@ -46,10 +46,12 @@ class ReportStudioDefaultTemplates
      * @return array<int, array{
      *     slug: string,
      *     name: string,
+     *     name_key: string,
      *     category: string,
      *     renderer: string,
      *     theme_preset: string,
      *     description: string,
+     *     description_key: string,
      *     source: string,
      *     layout_schema: array<string, mixed>,
      *     export_settings: array<string, mixed>
@@ -67,10 +69,12 @@ class ReportStudioDefaultTemplates
      * @return array{
      *     slug: string,
      *     name: string,
+     *     name_key: string,
      *     category: string,
      *     renderer: string,
      *     theme_preset: string,
      *     description: string,
+     *     description_key: string,
      *     source: string,
      *     layout_schema: array<string, mixed>,
      *     export_settings: array<string, mixed>
@@ -83,10 +87,12 @@ class ReportStudioDefaultTemplates
         return [
             'slug' => 'system-'.$template->studio_type,
             'name' => $template->name,
+            'name_key' => self::nameTranslationKeyFor($template->studio_type),
             'category' => $template->studio_type,
             'renderer' => $template->renderer,
             'theme_preset' => $template->theme_preset,
             'description' => $template->description,
+            'description_key' => self::descriptionTranslationKeyFor($template->studio_type),
             'source' => 'system',
             'layout_schema' => $template->layout_schema ?? [],
             'export_settings' => $template->export_settings ?? [],
@@ -122,6 +128,31 @@ class ReportStudioDefaultTemplates
         };
     }
 
+    private static function descriptionFor(string $studioType): string
+    {
+        return match ($studioType) {
+            'executive' => 'Pacote executivo com indicadores, gráficos, leitura de risco e capacidade operacional.',
+            'proposal' => 'Proposta técnica-comercial com escopo, condições, dados bancários, assinatura e aceite do cliente.',
+            'export_certificate' => 'Certificado de exportação com produto, origem, destino, expedição e validação técnica.',
+            'import_certificate' => 'Certificado de importação com importador, portos, lotes, validade e assinatura técnica.',
+            'quote' => 'Proforma com itens, condições comerciais, resumo financeiro e validação formal.',
+            'invoice' => 'Factura fiscal com cliente, vencimento, itens, impostos, dados bancários e paginação.',
+            'receipt' => 'Recibo de tesouraria com liquidação, forma de pagamento, confirmação e assinatura.',
+            'credit_note' => 'Nota de crédito com motivo de rectificação, impacto financeiro e validação.',
+            default => 'Relatório analítico com amostra, cadeia de custódia, resultados, incerteza, decisão e assinatura.',
+        };
+    }
+
+    private static function nameTranslationKeyFor(string $studioType): string
+    {
+        return 'gestlab.general.labels.vap_report_studios.presets.names.'.$studioType;
+    }
+
+    private static function descriptionTranslationKeyFor(string $studioType): string
+    {
+        return 'gestlab.general.labels.vap_report_studios.presets.descriptions.'.$studioType;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -141,7 +172,7 @@ class ReportStudioDefaultTemplates
             'styles_css' => self::stylesCss($accent),
             'sections' => [
                 ['key' => 'identification', 'label' => 'Identificação', 'visible' => true],
-                ['key' => $isCommercial ? 'commercial_terms' : 'technical_scope', 'label' => $isCommercial ? 'Condições comerciais' : 'Escopo técnico', 'visible' => true],
+                ['key' => $isCommercial ? 'commercial_terms' : 'technical_scope', 'label' => $isCommercial ? 'Condições comerciais' : 'Âmbito técnico', 'visible' => true],
                 ['key' => 'validation', 'label' => 'Validação', 'visible' => true],
             ],
             'variable_catalog' => self::variableCatalogFor($studioType),
@@ -156,6 +187,9 @@ class ReportStudioDefaultTemplates
             'table_border_color' => '#ded3bf',
             'table_font_size' => 10,
             'table_cell_padding' => 8,
+            'table_summary_background' => '#fffdf7',
+            'table_summary_text_color' => '#15231f',
+            'table_summary_muted_color' => '#64748b',
             'show_canvas_grid' => true,
             'show_canvas_rulers' => true,
             'snap_to_grid' => true,
@@ -198,8 +232,13 @@ class ReportStudioDefaultTemplates
                 '{received_at}' => 'Data de receção',
                 '{sample_details}' => 'Tabela de detalhes da amostra',
                 '{collection_details}' => 'Receção e cadeia de custódia',
-                '{analytical_scope}' => 'Escopo analítico',
+                '{analytical_scope}' => 'Âmbito analítico',
                 '{results_table}' => 'Tabela de resultados',
+                '{analysis_chart_title}' => 'Título do gráfico de resultados',
+                '{analysis_chart_labels}' => 'Etiquetas do gráfico de resultados',
+                '{analysis_chart_values}' => 'Valores do gráfico de resultados',
+                '{analysis_chart_caption}' => 'Legenda do gráfico de resultados',
+                '{analysis_chart_card}' => 'Cartão visual de resultados',
                 '{uncertainty_statement}' => 'Declaração de incerteza',
                 '{decision_rule}' => 'Regra de decisão',
                 '{conclusion}' => 'Conclusão técnica',
@@ -211,6 +250,10 @@ class ReportStudioDefaultTemplates
                 '{executive_summary}' => 'Resumo executivo',
                 '{executive_kpis}' => 'Indicadores executivos',
                 '{executive_charts}' => 'Gráficos executivos',
+                '{executive_chart_title}' => 'Título do gráfico do canvas',
+                '{executive_chart_labels}' => 'Etiquetas do gráfico do canvas',
+                '{executive_chart_values}' => 'Valores do gráfico do canvas',
+                '{executive_chart_caption}' => 'Legenda do gráfico do canvas',
                 '{top_customers_table}' => 'Clientes com maior actividade',
             ]),
             'proposal' => array_merge($common, [
@@ -222,6 +265,9 @@ class ReportStudioDefaultTemplates
                 '{items_table}' => 'Tabela de serviços',
                 '{summary_table}' => 'Resumo financeiro',
                 '{banking_details}' => 'Dados bancários',
+                '{verification_url}' => 'Ligação pública de verificação',
+                '{proposal_authenticity}' => 'QR e autenticidade da proposta',
+                '{proposal_acceptance_evidence}' => 'Evidência de aceite do cliente',
                 '{decision_rule}' => 'Regra de decisão',
                 '{observations}' => 'Observações comerciais',
                 '{signature_block}' => 'Assinaturas e aceite',
@@ -352,14 +398,14 @@ CSS;
     <p style="margin:12px 0 0; font-size:13px; color:#e7efe8;">{certificate_code} · {customer_name} · Entrada {sample_entry_code} · Código laboratorial {lab_code}</p>
 </section>
 <section style="margin-bottom:18px;">
-    <table class="report-table studio-avoid-break">
+    <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td style="width:50%;"><strong>Cliente / Customer</strong><br>{customer_details}</td>
-            <td style="width:50%;"><strong>Laboratório / Laboratory</strong><br>{lab_details}</td>
+            <td class="document-summary-cell" style="width:50%;"><span class="label">Cliente / Customer</span><span class="value">{customer_name}</span><span class="muted">{customer_details}</span></td>
+            <td class="document-summary-cell" style="width:50%;"><span class="label">Laboratório / Laboratory</span><span class="value">{lab_name}</span><span class="muted">{lab_details}</span></td>
         </tr>
         <tr>
-            <td><strong>Amostra / Sample</strong><br>Produto: {sample_product}<br>Matriz: {sample_matrix}<br>Lote: {sample_lot}<br>Origem: {sample_origin}</td>
-            <td><strong>Receção / Reception</strong><br>Local: {warehouse_name}<br>Recebida em: {received_at}<br>Recolha: {collection_date}<br>Plano: {sampling_plan_ref}</td>
+            <td class="document-summary-cell"><span class="label">Amostra / Sample</span><span class="value">{sample_product}</span><span class="muted">Matriz: {sample_matrix}<br>Lote: {sample_lot}<br>Origem: {sample_origin}</span></td>
+            <td class="document-summary-cell"><span class="label">Receção / Reception</span><span class="value">{warehouse_name}</span><span class="muted">Recebida em: {received_at}<br>Recolha: {collection_date}<br>Plano: {sampling_plan_ref}</span></td>
         </tr>
     </table>
 </section>
@@ -367,6 +413,7 @@ CSS;
 <section style="margin:18px 0;">{collection_details}</section>
 <section style="margin:18px 0;">{analytical_scope}</section>
 <section style="margin:20px 0;">{results_table}</section>
+<section style="margin:20px 0;">{analysis_chart_card}</section>
 <section class="document-callout studio-avoid-break" style="margin-top:20px;">{uncertainty_statement}<br>{decision_rule}</section>
 <section style="margin-top:18px;">{conclusion}</section>
 <section style="margin-top:18px;">{document_keywords}</section>
@@ -397,28 +444,37 @@ HTML;
     <p style="margin:12px 0 0; font-size:13px; color:#e7efe8;">{customer_name} · {service_location} · Válida até {expiry_date}</p>
 </section>
 <section style="margin-bottom:18px;">
-    <table class="report-table studio-avoid-break">
+    <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td style="width:50%;"><strong>Cliente / Customer</strong><br>{customer_details}</td>
-            <td style="width:50%;"><strong>Laboratório / Laboratory</strong><br>{lab_details}</td>
+            <td class="document-summary-cell" style="width:50%;"><span class="label">Cliente / Customer</span><span class="value">{customer_name}</span><span class="muted">{customer_details}</span></td>
+            <td class="document-summary-cell" style="width:50%;"><span class="label">Laboratório / Laboratory</span><span class="value">{lab_name}</span><span class="muted">{lab_details}</span></td>
         </tr>
         <tr>
-            <td><strong>Escopo / Scope</strong><br>{items_table}</td>
-            <td><strong>Condições / Terms</strong><br>Validade: {expiry_date}<br>Local: {service_location}<br>Regra de decisão: {decision_rule}</td>
+            <td class="document-summary-cell"><span class="label">Âmbito / Scope</span><span class="value">Serviços laboratoriais propostos</span><span class="muted">O âmbito técnico deve ser aceite antes da execução.</span></td>
+            <td class="document-summary-cell"><span class="label">Condições / Terms</span><span class="value">Validade: {expiry_date}</span><span class="muted">Local: {service_location}<br>Regra de decisão: {decision_rule}</span></td>
         </tr>
     </table>
 </section>
 <section style="margin:20px 0;">{proposal_content}</section>
+<section style="margin:20px 0;">{items_table}</section>
 <section style="margin-top:20px; page-break-inside:avoid;">{summary_table}</section>
 <section class="document-callout studio-avoid-break" style="margin-top:20px;">{observations}</section>
 <section style="margin-top:20px;">{banking_details}</section>
+<section style="margin-top:20px;">
+    <table class="document-summary-table studio-avoid-break">
+        <tr>
+            <td class="document-summary-cell" style="width:50%; vertical-align:top;">{proposal_acceptance_evidence}</td>
+            <td class="document-summary-cell" style="width:50%; vertical-align:top;">{proposal_authenticity}</td>
+        </tr>
+    </table>
+</section>
 <section style="margin-top:18px;">{document_keywords}</section>
 <section style="margin-top:24px;">{signature_block}</section>
 <pagebreak />
 <section style="padding:26px; border-radius:24px; border:1px solid #ded3bf; background:#fffdf7;">
     <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:#d9b05f; font-weight:800;">Aceitação do cliente</div>
-    <h2 style="margin:10px 0 8px; color:#143d37;">Confirmação de escopo e condições</h2>
-    <p style="margin:0; color:#475a53;">O cliente confirma que o escopo, a regra de decisão, os prazos e as condições comerciais foram revistos antes da execução dos serviços.</p>
+    <h2 style="margin:10px 0 8px; color:#143d37;">Confirmação de âmbito e condições</h2>
+    <p style="margin:0; color:#475a53;">O cliente confirma que o âmbito, a regra de decisão, os prazos e as condições comerciais foram revistos antes da execução dos serviços.</p>
 </section>
 HTML;
     }
@@ -427,14 +483,14 @@ HTML;
     {
         return <<<'HTML'
 <section style="margin-bottom:18px;">
-    <table class="report-table studio-avoid-break">
+    <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td style="width:50%;"><strong>Exportador / Exporter</strong><br>{customer_details}</td>
-            <td style="width:50%;"><strong>Laboratório / Laboratory</strong><br>{lab_details}</td>
+            <td class="document-summary-cell" style="width:50%;"><span class="label">Exportador / Exporter</span><span class="value">{exporter_name}</span><span class="muted">{customer_details}</span></td>
+            <td class="document-summary-cell" style="width:50%;"><span class="label">Laboratório / Laboratory</span><span class="value">{lab_name}</span><span class="muted">{lab_details}</span></td>
         </tr>
         <tr>
-            <td><strong>Origem / Origin</strong><br>{exporter_name}<br>{origin_city}, {origin_country}</td>
-            <td><strong>Destino / Destination</strong><br>{destination_city}, {destination_country}<br>Transporte: {transport_type}</td>
+            <td class="document-summary-cell"><span class="label">Origem / Origin</span><span class="value">{origin_city}, {origin_country}</span><span class="muted">Exportador: {exporter_name}</span></td>
+            <td class="document-summary-cell"><span class="label">Destino / Destination</span><span class="value">{destination_city}, {destination_country}</span><span class="muted">Transporte: {transport_type}</span></td>
         </tr>
     </table>
 </section>
@@ -450,14 +506,14 @@ HTML;
     {
         return <<<'HTML'
 <section style="margin-bottom:18px;">
-    <table class="report-table studio-avoid-break">
+    <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td style="width:50%;"><strong>Importador / Importer</strong><br>{customer_details}</td>
-            <td style="width:50%;"><strong>Laboratório / Laboratory</strong><br>{lab_details}</td>
+            <td class="document-summary-cell" style="width:50%;"><span class="label">Importador / Importer</span><span class="value">{importer_name}</span><span class="muted">{customer_details}</span></td>
+            <td class="document-summary-cell" style="width:50%;"><span class="label">Laboratório / Laboratory</span><span class="value">{lab_name}</span><span class="muted">{lab_details}</span></td>
         </tr>
         <tr>
-            <td><strong>Importação / Import</strong><br>{importer_name}<br>Exportador: {exporter_name}<br>Destino: {destination_country}</td>
-            <td><strong>Logística / Logistics</strong><br>Porto de saída: {port_exit}<br>Porto de entrada: {port_entry}<br>Transporte: {transport_type}</td>
+            <td class="document-summary-cell"><span class="label">Importação / Import</span><span class="value">{destination_country}</span><span class="muted">Importador: {importer_name}<br>Exportador: {exporter_name}</span></td>
+            <td class="document-summary-cell"><span class="label">Logística / Logistics</span><span class="value">{transport_type}</span><span class="muted">Porto de saída: {port_exit}<br>Porto de entrada: {port_entry}</span></td>
         </tr>
     </table>
 </section>
@@ -478,14 +534,14 @@ HTML;
     <p style="margin:12px 0 0; font-size:13px; color:#e7efe8;">{customer_name} · {service_location} · {issue_date}</p>
 </section>
 <section style="margin-bottom:18px;">
-    <table class="report-table studio-avoid-break">
+    <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td style="width:50%;"><strong>Cliente / Customer</strong><br>{customer_details}</td>
-            <td style="width:50%;"><strong>Laboratório / Laboratory</strong><br>{lab_details}</td>
+            <td class="document-summary-cell" style="width:50%;"><span class="label">Cliente / Customer</span><span class="value">{customer_name}</span><span class="muted">{customer_details}</span></td>
+            <td class="document-summary-cell" style="width:50%;"><span class="label">Laboratório / Laboratory</span><span class="value">{lab_name}</span><span class="muted">{lab_details}</span></td>
         </tr>
         <tr>
-            <td><strong>{$termsTitle}</strong><br>{$termsBody}</td>
-            <td><strong>Dados bancários / Banking</strong><br>{banking_details}</td>
+            <td class="document-summary-cell"><span class="label">{$termsTitle}</span><span class="value">Condições do documento</span><span class="muted">{$termsBody}</span></td>
+            <td class="document-summary-cell"><span class="label">Dados bancários / Banking</span><span class="value">Pagamento</span><span class="muted">{banking_details}</span></td>
         </tr>
     </table>
 </section>
@@ -544,6 +600,7 @@ HTML;
 
         if ($studioType === 'analysis') {
             $blocks[] = self::analysisDecisionRuleBlock();
+            $blocks[] = self::analysisChartBlock($accent);
         }
 
         if (self::isCommercial($studioType)) {
@@ -589,6 +646,10 @@ HTML;
             'signature_label' => $isCommercial ? 'Validação do documento' : 'Validação técnica',
             'signature_name' => '{{lab_name}}',
             'signature_title' => $isCommercial ? 'Direcção comercial / financeira' : 'Direcção técnica',
+            'signature_image_fit' => 'contain',
+            'signature_image_position' => 'center center',
+            'signature_image_width' => 180,
+            'signature_image_height' => 72,
             'signature_line_style' => 'solid',
             'signature_align' => 'left',
             'signature_show_date' => true,
@@ -618,11 +679,11 @@ HTML;
             'border_color' => 'rgba(222,211,191,0.92)',
             'border_radius' => 26,
             'shadow_preset' => 'elevated',
-            'chart_title' => 'Desempenho do ciclo técnico',
-            'chart_caption' => 'Indicador visual preparado para PDF Chrome e mPDF.',
+            'chart_title' => '{executive_chart_title}',
+            'chart_caption' => '{executive_chart_caption}',
             'chart_type' => 'line',
-            'chart_labels' => 'Recepção, Validação, Emissão',
-            'chart_values' => '18, 12, 9',
+            'chart_labels' => '{executive_chart_labels}',
+            'chart_values' => '{executive_chart_values}',
             'chart_colors' => $accent.', #d9b05f, #3f6f58',
             'chart_primary_color' => $accent,
             'chart_background_color' => '#f8f4ea',
@@ -653,6 +714,40 @@ HTML;
             'border_radius' => 24,
             'shadow_preset' => 'soft',
             'content_html' => '<p style="margin:0 0 6px; font-weight:700; color:#143d37;">Decisão e incerteza</p><p style="margin:0; color:#475a53;">{decision_rule}</p>',
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function analysisChartBlock(string $accent): array
+    {
+        return [
+            'id' => 'analysis-results-chart',
+            'title' => 'Gráfico de resultados',
+            'block_kind' => 'chart_snapshot',
+            'surface' => 'content',
+            'page_scope' => 'first',
+            'x' => 6,
+            'y' => 52,
+            'width' => 42,
+            'min_height' => 168,
+            'z_index' => 15,
+            'padding' => 14,
+            'background_color' => 'rgba(255,255,255,0.96)',
+            'border_width' => 1,
+            'border_color' => 'rgba(222,211,191,0.92)',
+            'border_radius' => 24,
+            'shadow_preset' => 'soft',
+            'chart_title' => '{analysis_chart_title}',
+            'chart_caption' => '{analysis_chart_caption}',
+            'chart_type' => 'bar',
+            'chart_labels' => '{analysis_chart_labels}',
+            'chart_values' => '{analysis_chart_values}',
+            'chart_colors' => $accent.', #d9b05f, #0f766e',
+            'chart_primary_color' => $accent,
+            'chart_background_color' => '#f8f4ea',
+            'chart_show_values' => true,
         ];
     }
 
@@ -707,6 +802,10 @@ HTML;
             'signature_label' => 'Aceitação do cliente',
             'signature_name' => '{customer_name}',
             'signature_title' => 'Representante autorizado',
+            'signature_image_fit' => 'contain',
+            'signature_image_position' => 'center center',
+            'signature_image_width' => 180,
+            'signature_image_height' => 72,
             'signature_line_style' => 'solid',
             'signature_align' => 'right',
             'signature_show_date' => true,

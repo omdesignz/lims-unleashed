@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\GestlabMedia;
+use App\Models\LabCode;
 use App\Models\QualityCertificate;
 use App\Models\Quote;
 use App\Models\ReportStudioTemplate;
+use App\Models\Result;
 use App\Models\Role;
 use App\Models\User;
 use App\Settings\GeneralSettings;
@@ -62,6 +64,8 @@ class ReportStudioWorkflowTest extends TestCase
                 ->has('systemPresets', count(ReportStudioDefaultTemplates::supportedTypes()))
                 ->where('systemPresets.0.source', 'system')
                 ->where('systemPresets.0.category', 'analysis')
+                ->where('systemPresets.0.name_key', 'gestlab.general.labels.vap_report_studios.presets.names.analysis')
+                ->where('systemPresets.0.description_key', 'gestlab.general.labels.vap_report_studios.presets.descriptions.analysis')
                 ->where('systemPresets.0.layout_schema.variable_catalog.0.value', '{document_code}')
                 ->where('systemPresets.0.layout_schema.canvas_blocks.0.block_kind', 'qr_code')
                 ->where('systemPresets.0.layout_schema.canvas_blocks.1.block_kind', 'signature')
@@ -76,6 +80,7 @@ class ReportStudioWorkflowTest extends TestCase
         $presets = collect(ReportStudioDefaultTemplates::presets())->keyBy('category');
 
         $analysisVariables = collect(data_get($presets->get('analysis'), 'layout_schema.variable_catalog'))->pluck('value')->all();
+        $executiveVariables = collect(data_get($presets->get('executive'), 'layout_schema.variable_catalog'))->pluck('value')->all();
         $proposalVariables = collect(data_get($presets->get('proposal'), 'layout_schema.variable_catalog'))->pluck('value')->all();
         $exportVariables = collect(data_get($presets->get('export_certificate'), 'layout_schema.variable_catalog'))->pluck('value')->all();
         $importVariables = collect(data_get($presets->get('import_certificate'), 'layout_schema.variable_catalog'))->pluck('value')->all();
@@ -84,6 +89,9 @@ class ReportStudioWorkflowTest extends TestCase
         $this->assertContains('{results_table}', $analysisVariables);
         $this->assertContains('{uncertainty_statement}', $analysisVariables);
         $this->assertContains('{sample_entry_code}', $analysisVariables);
+        $this->assertContains('{analysis_chart_card}', $analysisVariables);
+        $this->assertContains('{analysis_chart_values}', $analysisVariables);
+        $this->assertContains('{executive_chart_values}', $executiveVariables);
         $this->assertContains('{banking_details}', $proposalVariables);
         $this->assertContains('{proposal_content}', $proposalVariables);
         $this->assertContains('{products_table}', $exportVariables);
@@ -102,11 +110,15 @@ class ReportStudioWorkflowTest extends TestCase
 
         $this->assertContains('analysis-signature-block', $analysisBlocks);
         $this->assertContains('analysis-decision-rule-note', $analysisBlocks);
+        $this->assertContains('analysis-results-chart', $analysisBlocks);
         $this->assertContains('executive-studio-chart', $executiveBlocks);
         $this->assertContains('proposal-banking-details', $proposalBlocks);
         $this->assertContains('proposal-client-acceptance', $proposalBlocks);
         $this->assertContains('invoice-banking-details', $invoiceBlocks);
         $this->assertSame('chart_snapshot', data_get($presets->get('executive'), 'layout_schema.canvas_blocks.2.block_kind'));
+        $this->assertSame('{executive_chart_values}', data_get($presets->get('executive'), 'layout_schema.canvas_blocks.2.chart_values'));
+        $this->assertSame('chart_snapshot', data_get($presets->get('analysis'), 'layout_schema.canvas_blocks.3.block_kind'));
+        $this->assertSame('{analysis_chart_values}', data_get($presets->get('analysis'), 'layout_schema.canvas_blocks.3.chart_values'));
         $this->assertSame('signature', data_get($presets->get('proposal'), 'layout_schema.canvas_blocks.3.block_kind'));
     }
 
@@ -115,15 +127,57 @@ class ReportStudioWorkflowTest extends TestCase
         $presets = collect(ReportStudioDefaultTemplates::presets())->keyBy('category');
 
         $this->assertStringContainsString('{results_table}', data_get($presets->get('analysis'), 'layout_schema.body_html'));
+        $this->assertStringContainsString('{analysis_chart_card}', data_get($presets->get('analysis'), 'layout_schema.body_html'));
+        $this->assertStringContainsString('document-summary-table', data_get($presets->get('analysis'), 'layout_schema.body_html'));
         $this->assertStringContainsString('{executive_charts}', data_get($presets->get('executive'), 'layout_schema.body_html'));
         $this->assertStringContainsString('{banking_details}', data_get($presets->get('proposal'), 'layout_schema.body_html'));
         $this->assertStringContainsString('{proposal_content}', data_get($presets->get('proposal'), 'layout_schema.body_html'));
+        $this->assertStringContainsString('{items_table}', data_get($presets->get('proposal'), 'layout_schema.body_html'));
+        $this->assertStringContainsString('document-summary-cell', data_get($presets->get('proposal'), 'layout_schema.body_html'));
         $this->assertStringContainsString('{products_table}', data_get($presets->get('export_certificate'), 'layout_schema.body_html'));
+        $this->assertStringContainsString('document-summary-table', data_get($presets->get('export_certificate'), 'layout_schema.body_html'));
         $this->assertStringContainsString('{items_table}', data_get($presets->get('import_certificate'), 'layout_schema.body_html'));
+        $this->assertStringContainsString('document-summary-table', data_get($presets->get('import_certificate'), 'layout_schema.body_html'));
         $this->assertStringContainsString('Proforma {quote_number}', data_get($presets->get('quote'), 'layout_schema.body_html'));
+        $this->assertStringContainsString('document-summary-table', data_get($presets->get('quote'), 'layout_schema.body_html'));
         $this->assertStringContainsString('Factura {document_number}', data_get($presets->get('invoice'), 'layout_schema.body_html'));
         $this->assertStringContainsString('Recibo {document_number}', data_get($presets->get('receipt'), 'layout_schema.body_html'));
         $this->assertStringContainsString('Nota de crédito {document_number}', data_get($presets->get('credit_note'), 'layout_schema.body_html'));
+        $this->assertStringNotContainsString('border:1px solid #cbd5e1', json_encode($presets->values()->all(), JSON_THROW_ON_ERROR));
+    }
+
+    public function test_studio_preview_payloads_use_production_language_instead_of_demo_names(): void
+    {
+        $settings = app(GeneralSettings::class);
+        $builder = app(ReportStudioPdfBuilder::class);
+        $studioFor = fn (string $type): ReportStudioTemplate => new ReportStudioTemplate([
+            'name' => 'Preview '.$type,
+            'studio_type' => $type,
+            'renderer' => 'internal',
+            'status' => 'active',
+            'layout_schema' => [],
+            'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
+        ]);
+
+        $payloads = [
+            $builder->buildAnalysisStudioPreviewPayload($studioFor('analysis'), $settings),
+            $builder->buildProposalStudioPreviewPayload($studioFor('proposal'), $settings),
+            $builder->buildExportCertificatePreviewPayload($studioFor('export_certificate'), $settings),
+            $builder->buildImportCertificatePreviewPayload($studioFor('import_certificate'), $settings),
+            $builder->buildQuotePreviewPayload($studioFor('quote'), $settings),
+            $builder->buildInvoicePreviewPayload($studioFor('invoice'), $settings),
+            $builder->buildReceiptPreviewPayload($studioFor('receipt'), $settings),
+            $builder->buildCreditNotePreviewPayload($studioFor('credit_note'), $settings),
+        ];
+
+        $serializedPayloads = json_encode($payloads, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+
+        $this->assertStringNotContainsString('Cliente Exemplo', $serializedPayloads);
+        $this->assertStringNotContainsString('Exportadora Exemplo', $serializedPayloads);
+        $this->assertStringNotContainsString('Importadora Exemplo', $serializedPayloads);
+        $this->assertStringContainsString('Cliente industrial de referência', $serializedPayloads);
+        $this->assertStringContainsString('Exportador alimentar certificado', $serializedPayloads);
+        $this->assertStringContainsString('Importador alimentar certificado', $serializedPayloads);
     }
 
     public function test_admin_can_create_and_update_report_studio_templates(): void
@@ -221,6 +275,54 @@ class ReportStudioWorkflowTest extends TestCase
         $this->assertTrue((bool) data_get($template->layout_schema, 'page_safe_area'));
     }
 
+    public function test_report_studio_rejects_unsupported_export_page_settings(): void
+    {
+        $response = $this->actingAs($this->verifiedAdmin())
+            ->post(route('report-studios.store'), [
+                'name' => 'Invalid Export Settings Template',
+                'studio_type' => 'executive',
+                'renderer' => 'internal',
+                'status' => 'draft',
+                'is_default' => false,
+                'layout_schema' => [
+                    'body_html' => '<h1>Resumo executivo</h1>',
+                ],
+                'export_settings' => [
+                    'paper_size' => 'Tabloid',
+                    'orientation' => 'Landscape',
+                ],
+            ]);
+
+        $response->assertSessionHasErrors([
+            'export_settings.paper_size',
+            'export_settings.orientation',
+        ]);
+    }
+
+    public function test_report_studio_requires_dimensions_for_custom_export_page_size(): void
+    {
+        $response = $this->actingAs($this->verifiedAdmin())
+            ->post(route('report-studios.store'), [
+                'name' => 'Incomplete Custom Export Size Template',
+                'studio_type' => 'executive',
+                'renderer' => 'internal',
+                'status' => 'draft',
+                'is_default' => false,
+                'layout_schema' => [
+                    'body_html' => '<h1>Resumo executivo</h1>',
+                ],
+                'export_settings' => [
+                    'paper_size' => 'custom',
+                    'orientation' => 'P',
+                    'custom_page_width' => 210,
+                ],
+            ]);
+
+        $response->assertSessionHasErrors([
+            'export_settings.custom_page_height',
+        ]);
+    }
+
     public function test_pdf_payload_generates_document_and_table_control_styles_from_layout_settings(): void
     {
         $studio = new ReportStudioTemplate([
@@ -236,6 +338,9 @@ class ReportStudioWorkflowTest extends TestCase
                 'table_border_color' => '#94a3b8',
                 'table_font_size' => 12,
                 'table_cell_padding' => 10,
+                'table_summary_background' => '#f8fafc',
+                'table_summary_text_color' => '#0f172a',
+                'table_summary_muted_color' => '#475569',
                 'styles_css' => <<<'CSS'
 /* studio-table-controls:start */
 th{background:#ff0000;}
@@ -260,6 +365,12 @@ CSS,
         $this->assertStringContainsString('border:1px solid #94a3b8 !important', $styles);
         $this->assertStringContainsString('font-size:12px !important', $styles);
         $this->assertStringContainsString('padding:10px !important', $styles);
+        $this->assertStringContainsString('.pdf-document table:not(.document-summary-table){border-collapse:collapse;}', $styles);
+        $this->assertStringContainsString('.pdf-document .document-summary-table{border-collapse:separate !important;border-spacing:0 8px !important;}', $styles);
+        $this->assertStringContainsString('.pdf-document .document-summary-cell{background:#f8fafc !important;border:1px solid #94a3b8 !important;border-radius:18px !important;padding:14px !important;vertical-align:top;}', $styles);
+        $this->assertStringContainsString('.pdf-document .document-summary-cell .value{display:block;color:#0f172a !important;', $styles);
+        $this->assertStringContainsString('.pdf-document .document-summary-cell .muted{display:block;color:#475569 !important;', $styles);
+        $this->assertStringContainsString('.pdf-document .document-financial-summary td{color:#0f172a;}', $styles);
         $this->assertStringContainsString('.custom-document-note{color:#334155;}', $styles);
         $this->assertStringNotContainsString('#ff0000', $styles);
     }
@@ -305,6 +416,102 @@ CSS,
         $this->assertStringContainsString('<svg', $bodyHtml);
         $this->assertStringContainsString('Capacidade técnica por etapa', $bodyHtml);
         $this->assertStringContainsString('Pressão de qualidade', $bodyHtml);
+    }
+
+    public function test_chart_canvas_blocks_can_bind_to_executive_payload_series(): void
+    {
+        $studio = new ReportStudioTemplate([
+            'name' => 'Payload Bound Chart Studio',
+            'studio_type' => 'executive',
+            'renderer' => 'internal',
+            'status' => 'active',
+            'layout_schema' => [
+                'body_html' => '<section>Resumo executivo operacional</section>',
+                'canvas_blocks' => [
+                    [
+                        'id' => 'payload-bound-chart',
+                        'surface' => 'content',
+                        'page_scope' => 'first',
+                        'block_kind' => 'chart_snapshot',
+                        'chart_title' => '{executive_chart_title}',
+                        'chart_caption' => '{executive_chart_caption}',
+                        'chart_type' => 'bar',
+                        'chart_labels' => '{executive_chart_labels}',
+                        'chart_values' => '{executive_chart_values}',
+                        'chart_colors' => '#143d37, #d9b05f',
+                        'width' => 60,
+                        'min_height' => 220,
+                    ],
+                ],
+            ],
+            'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
+        ]);
+
+        $payload = app(ReportStudioPdfBuilder::class)->buildExecutiveReportPayload(
+            [
+                'charts' => [
+                    'throughput' => [
+                        'title' => 'Ciclo técnico validado',
+                        'labels' => ['Recepção premium', 'Emissão final'],
+                        'series' => [31, 17],
+                    ],
+                ],
+                'kpis' => [],
+                'top_customers' => [],
+            ],
+            app(GeneralSettings::class),
+            $studio
+        );
+
+        $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
+
+        $this->assertStringContainsString('data-chart-type="bar"', $bodyHtml);
+        $this->assertStringContainsString('Ciclo técnico validado', $bodyHtml);
+        $this->assertStringContainsString('Recepção premium', $bodyHtml);
+        $this->assertStringContainsString('Emissão final', $bodyHtml);
+        $this->assertStringContainsString('>31</text>', $bodyHtml);
+        $this->assertStringContainsString('>17</text>', $bodyHtml);
+        $this->assertStringContainsString('Dados provenientes da série executiva do período seleccionado.', $bodyHtml);
+    }
+
+    public function test_chart_canvas_blocks_use_brand_palette_when_colors_are_not_configured(): void
+    {
+        $studio = new ReportStudioTemplate([
+            'name' => 'Brand Palette Chart Studio',
+            'studio_type' => 'executive',
+            'renderer' => 'internal',
+            'status' => 'active',
+            'layout_schema' => [
+                'body_html' => '<section>Resumo executivo operacional</section>',
+                'canvas_blocks' => [
+                    [
+                        'id' => 'brand-palette-chart',
+                        'surface' => 'content',
+                        'page_scope' => 'first',
+                        'block_kind' => 'chart_snapshot',
+                        'chart_title' => 'Distribuição operacional',
+                        'chart_type' => 'bar',
+                        'chart_labels' => 'Recepção, Triagem, Ensaios, Verificação, Aprovação, Emissão',
+                        'chart_values' => '10, 9, 8, 7, 6, 5',
+                        'width' => 60,
+                        'min_height' => 220,
+                    ],
+                ],
+            ],
+            'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
+        ]);
+
+        $payload = app(ReportStudioPdfBuilder::class)->buildExecutiveReportPayload(
+            ['kpis' => [], 'top_customers' => []],
+            app(GeneralSettings::class),
+            $studio
+        );
+
+        $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
+
+        $this->assertStringContainsString('data-chart-type="bar"', $bodyHtml);
+        $this->assertStringContainsString('#3f6f58', $bodyHtml);
+        $this->assertStringNotContainsString('#2563eb', $bodyHtml);
     }
 
     public function test_builder_uses_backend_default_studio_when_no_database_template_exists(): void
@@ -368,6 +575,37 @@ CSS,
         $this->assertStringContainsString('banking-marker', $bodyHtml);
         $this->assertStringContainsString('Dados bancários', $bodyHtml);
         $this->assertStringNotContainsString('{banking_details}', $bodyHtml);
+    }
+
+    public function test_commercial_fallback_payload_uses_premium_document_table_system(): void
+    {
+        $quote = Quote::query()->firstOrFail();
+        $studio = new ReportStudioTemplate([
+            'name' => 'Commercial Fallback Polish',
+            'studio_type' => 'quote',
+            'renderer' => 'internal',
+            'status' => 'active',
+            'layout_schema' => [],
+            'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
+        ]);
+
+        $payload = app(ReportStudioPdfBuilder::class)->buildQuotePayload(
+            $quote,
+            app(GeneralSettings::class),
+            $studio
+        );
+
+        $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
+
+        $this->assertStringContainsString('document-summary-table', $bodyHtml);
+        $this->assertStringContainsString('document-summary-cell', $bodyHtml);
+        $this->assertStringContainsString('class="report-table studio-avoid-break"', $bodyHtml);
+        $this->assertStringContainsString('document-financial-summary', $bodyHtml);
+        $this->assertStringContainsString('Pagamento / Banking', $bodyHtml);
+        $this->assertStringNotContainsString('border:1px solid #cbd5e1', $bodyHtml);
+        $this->assertStringNotContainsString('border-bottom:1px solid #cbd5e1', $bodyHtml);
+        $this->assertStringNotContainsString('{items_table}', $bodyHtml);
+        $this->assertStringNotContainsString('{summary_table}', $bodyHtml);
     }
 
     public function test_mpdf_studio_document_preserves_data_uri_backgrounds(): void
@@ -525,6 +763,38 @@ CSS,
         $this->assertSame('Manrope, DejaVu Sans, sans-serif', $fontFamily);
     }
 
+    public function test_mpdf_driver_data_and_document_view_use_resolved_studio_font_family(): void
+    {
+        $method = new ReflectionMethod(ReportStudioPdfRenderer::class, 'dataForMpdf');
+        $method->setAccessible(true);
+
+        $data = $method->invoke(app(ReportStudioPdfRenderer::class), [
+            'view' => 'PDFs.studios.document',
+            'data' => [
+                'documentTitle' => 'Documento com fonte de marca',
+                'firstPageHeader' => '<div>Capa</div>',
+                'defaultHeader' => '<div>Cabeçalho</div>',
+                'footerHtml' => '<div>Rodapé {PAGENO}/{nbpg}</div>',
+                'bodyHtml' => '<section>Conteúdo</section>',
+                'styles' => 'body.pdf-document,.pdf-document{font-family:Century Gothic, DejaVu Sans, sans-serif !important;}',
+                'margins' => [
+                    'top' => 20,
+                    'right' => 14,
+                    'bottom' => 24,
+                    'left' => 14,
+                    'first_top' => 56,
+                ],
+            ],
+        ]);
+
+        $this->assertSame('Century Gothic, DejaVu Sans, sans-serif', $data['fontFamily']);
+
+        $html = view('PDFs.studios.document', $data)->render();
+
+        $this->assertStringContainsString('font-family: Century Gothic, DejaVu Sans, sans-serif;', $html);
+        $this->assertStringNotContainsString('font-family: DejaVu Sans, sans-serif;', $html);
+    }
+
     public function test_chrome_driver_data_preserves_first_page_margin_offset(): void
     {
         $method = new ReflectionMethod(ReportStudioPdfRenderer::class, 'dataForDriver');
@@ -554,6 +824,104 @@ CSS,
         $this->assertSame('center center', $data['backgroundPosition']);
         $this->assertSame('no-repeat', $data['backgroundRepeat']);
         $this->assertSame('Century Gothic, DejaVu Sans, sans-serif', $data['fontFamily']);
+    }
+
+    public function test_pdf_renderer_normalizes_legacy_export_margins_before_driver_output(): void
+    {
+        $driverMethod = new ReflectionMethod(ReportStudioPdfRenderer::class, 'dataForDriver');
+        $driverMethod->setAccessible(true);
+        $geometryMethod = new ReflectionMethod(ReportStudioPdfRenderer::class, 'withPrintableCanvasGeometry');
+        $geometryMethod->setAccessible(true);
+
+        $payload = [
+            'view' => 'PDFs.studios.document',
+            'data' => [
+                'format' => 'A4',
+                'orientation' => 'P',
+                'margins' => [
+                    'top' => -10,
+                    'right' => 260,
+                    'bottom' => 'not-a-number',
+                    'left' => 999,
+                    'first_top' => 500,
+                ],
+            ],
+        ];
+
+        $data = $driverMethod->invoke(app(ReportStudioPdfRenderer::class), $payload, 'chrome');
+
+        $this->assertSame([
+            'top' => 0.0,
+            'right' => 200.0,
+            'bottom' => 24.0,
+            'left' => 200.0,
+            'first_top' => 250.0,
+        ], $data['margins']);
+        $this->assertSame(250.0, $data['browserFirstPageTopOffset']);
+
+        $geometryPayload = $geometryMethod->invoke(app(ReportStudioPdfRenderer::class), $payload);
+
+        $this->assertSame(273.0, data_get($geometryPayload, 'data.canvasPageMinHeight'));
+        $this->assertSame(40.0, data_get($geometryPayload, 'data.firstCanvasPageMinHeight'));
+        $this->assertSame(200.0, data_get($geometryPayload, 'data.margins.left'));
+    }
+
+    public function test_pdf_renderer_normalizes_legacy_page_settings_before_driver_output(): void
+    {
+        $driverMethod = new ReflectionMethod(ReportStudioPdfRenderer::class, 'dataForDriver');
+        $driverMethod->setAccessible(true);
+        $mpdfMethod = new ReflectionMethod(ReportStudioPdfRenderer::class, 'dataForMpdf');
+        $mpdfMethod->setAccessible(true);
+        $geometryMethod = new ReflectionMethod(ReportStudioPdfRenderer::class, 'withPrintableCanvasGeometry');
+        $geometryMethod->setAccessible(true);
+        $renderer = app(ReportStudioPdfRenderer::class);
+
+        $legacyPayload = [
+            'view' => 'PDFs.studios.document',
+            'data' => [
+                'format' => 'Tabloid',
+                'orientation' => 'Landscape',
+                'customPageWidth' => 30,
+                'customPageHeight' => 5000,
+                'margins' => [
+                    'top' => 20,
+                    'right' => 14,
+                    'bottom' => 24,
+                    'left' => 14,
+                ],
+            ],
+        ];
+
+        $driverData = $driverMethod->invoke($renderer, $legacyPayload, 'chrome');
+        $mpdfData = $mpdfMethod->invoke($renderer, $legacyPayload);
+        $geometryPayload = $geometryMethod->invoke($renderer, $legacyPayload);
+
+        $this->assertSame('A4', $driverData['format']);
+        $this->assertSame('P', $driverData['orientation']);
+        $this->assertSame('A4', $mpdfData['format']);
+        $this->assertSame('P', $mpdfData['orientation']);
+        $this->assertSame(253.0, data_get($geometryPayload, 'data.canvasPageMinHeight'));
+
+        $letterLandscapePayload = [
+            'view' => 'PDFs.studios.document',
+            'data' => [
+                'format' => 'letter',
+                'orientation' => 'L',
+                'margins' => [
+                    'top' => 0,
+                    'right' => 0,
+                    'bottom' => 0,
+                    'left' => 0,
+                ],
+            ],
+        ];
+
+        $driverData = $driverMethod->invoke($renderer, $letterLandscapePayload, 'chrome');
+        $geometryPayload = $geometryMethod->invoke($renderer, $letterLandscapePayload);
+
+        $this->assertSame('Letter', $driverData['format']);
+        $this->assertSame('L', $driverData['orientation']);
+        $this->assertEqualsWithDelta(215.9, data_get($geometryPayload, 'data.canvasPageMinHeight'), 0.01);
     }
 
     public function test_canvas_geometry_uses_custom_landscape_page_and_print_margins(): void
@@ -662,19 +1030,53 @@ CSS,
         $headerHtml = view('PDFs.studios.chrome-header', [
             'headerHtml' => '<div>Header</div>',
             'fontFamily' => 'Manrope, DejaVu Sans, sans-serif',
+            'styles' => '.studio-brand-header{background:#143d37;color:#fffdf7;}',
             'marginLeft' => 18,
             'marginRight' => 10,
         ])->render();
         $footerHtml = view('PDFs.studios.chrome-footer', [
             'footerHtml' => '<div>Footer</div>',
             'fontFamily' => 'Manrope, DejaVu Sans, sans-serif',
+            'styles' => '.studio-brand-footer{border-top:1px solid #d9b05f;}',
             'marginLeft' => 18,
             'marginRight' => 10,
         ])->render();
 
         $this->assertStringContainsString('padding: 0 10mm 0 18mm', $headerHtml);
         $this->assertStringContainsString('font-family: Manrope, DejaVu Sans, sans-serif', $headerHtml);
+        $this->assertStringContainsString('.studio-brand-header{background:#143d37;color:#fffdf7;}', $headerHtml);
         $this->assertStringContainsString('padding: 0 10mm 0 18mm', $footerHtml);
+        $this->assertStringContainsString('.studio-brand-footer{border-top:1px solid #d9b05f;}', $footerHtml);
+    }
+
+    public function test_chrome_header_footer_renderer_includes_studio_styles_and_pagination_tokens(): void
+    {
+        $headerMethod = new ReflectionMethod(ReportStudioPdfRenderer::class, 'chromeHeaderHtml');
+        $headerMethod->setAccessible(true);
+        $footerMethod = new ReflectionMethod(ReportStudioPdfRenderer::class, 'chromeFooterHtml');
+        $footerMethod->setAccessible(true);
+        $payload = [
+            'view' => 'PDFs.studios.document',
+            'data' => [
+                'defaultHeader' => '<div class="studio-brand-header">Relatório {PAGENO}/{nbpg}</div>',
+                'footerHtml' => '<div class="studio-brand-footer">Rodapé {{page_number}}/{{total_pages}}</div>',
+                'styles' => 'body.pdf-document,.pdf-document{font-family:Century Gothic, DejaVu Sans, sans-serif !important;}.studio-brand-header{background:#143d37;color:#fffdf7;}.studio-brand-footer{border-top:1px solid #d9b05f;}',
+                'margins' => [
+                    'left' => 16,
+                    'right' => 12,
+                ],
+            ],
+        ];
+
+        $headerHtml = $headerMethod->invoke(app(ReportStudioPdfRenderer::class), $payload);
+        $footerHtml = $footerMethod->invoke(app(ReportStudioPdfRenderer::class), $payload);
+
+        $this->assertStringContainsString('font-family: Century Gothic, DejaVu Sans, sans-serif', $headerHtml);
+        $this->assertStringContainsString('.studio-brand-header{background:#143d37;color:#fffdf7;}', $headerHtml);
+        $this->assertStringContainsString('<span class="pageNumber"></span>/<span class="totalPages"></span>', $headerHtml);
+        $this->assertStringContainsString('padding: 0 12mm 0 16mm', $headerHtml);
+        $this->assertStringContainsString('.studio-brand-footer{border-top:1px solid #d9b05f;}', $footerHtml);
+        $this->assertStringContainsString('<span class="pageNumber"></span>/<span class="totalPages"></span>', $footerHtml);
     }
 
     public function test_chrome_document_converts_studio_pagebreak_tags_to_browser_print_breaks(): void
@@ -696,6 +1098,51 @@ CSS,
         $this->assertStringContainsString('<div class="studio-page-break"></div>', $html);
         $this->assertStringNotContainsString('<pagebreak', $html);
         $this->assertStringNotContainsString('orientation="L"', $html);
+    }
+
+    public function test_chrome_document_embeds_studio_page_geometry_css(): void
+    {
+        $letterHtml = view('PDFs.studios.chrome-document', [
+            'documentTitle' => 'Chrome Preview',
+            'firstPageHeader' => '',
+            'bodyHtml' => '<section>Conteúdo</section>',
+            'styles' => '',
+            'fontFamily' => 'Century Gothic, DejaVu Sans, sans-serif',
+            'resolvedBackgroundImage' => null,
+            'format' => 'Letter',
+            'orientation' => 'L',
+            'margins' => [
+                'top' => 18,
+                'right' => 12,
+                'bottom' => 20,
+                'left' => 16,
+                'first_top' => 54,
+            ],
+        ])->render();
+
+        $customHtml = view('PDFs.studios.chrome-document', [
+            'documentTitle' => 'Chrome Custom Preview',
+            'firstPageHeader' => '',
+            'bodyHtml' => '<section>Conteúdo</section>',
+            'styles' => '',
+            'fontFamily' => 'Century Gothic, DejaVu Sans, sans-serif',
+            'resolvedBackgroundImage' => null,
+            'format' => 'custom',
+            'orientation' => 'P',
+            'customPageWidth' => 320,
+            'customPageHeight' => 180,
+            'margins' => [
+                'top' => 10,
+                'right' => 8,
+                'bottom' => 12,
+                'left' => 8,
+            ],
+        ])->render();
+
+        $this->assertStringContainsString('size: Letter landscape;', $letterHtml);
+        $this->assertStringContainsString('margin: 18mm 12mm 20mm 16mm;', $letterHtml);
+        $this->assertStringContainsString('size: 320mm 180mm;', $customHtml);
+        $this->assertStringContainsString('margin: 10mm 8mm 12mm 8mm;', $customHtml);
     }
 
     public function test_pdf_builder_segments_at_attributed_pagebreaks_for_page_scoped_canvas_blocks(): void
@@ -765,6 +1212,10 @@ CSS,
                             'block_kind' => 'signature',
                             'signature_name' => '{{lab_name}}',
                             'signature_image' => $signatureDataUri,
+                            'signature_image_fit' => 'cover',
+                            'signature_image_position' => '37% 68%',
+                            'signature_image_width' => 220,
+                            'signature_image_height' => 92,
                             'z_index' => 10,
                         ],
                         [
@@ -816,10 +1267,16 @@ CSS,
                 'export_settings' => ['paper_size' => 'A4'],
             ]);
 
-        $response->assertRedirect()->assertSessionHas('success');
+        $response->assertRedirect()
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
 
         $template = ReportStudioTemplate::query()->where('name', 'Overlay Stamp Signature Template')->firstOrFail();
         $this->assertTrue((bool) data_get($template->layout_schema, 'canvas_blocks.4.is_hidden'));
+        $this->assertSame('cover', data_get($template->layout_schema, 'canvas_blocks.0.signature_image_fit'));
+        $this->assertSame('37% 68%', data_get($template->layout_schema, 'canvas_blocks.0.signature_image_position'));
+        $this->assertSame(220, data_get($template->layout_schema, 'canvas_blocks.0.signature_image_width'));
+        $this->assertSame(92, data_get($template->layout_schema, 'canvas_blocks.0.signature_image_height'));
         $this->assertSame('#143d37', data_get($template->layout_schema, 'canvas_blocks.2.qr_foreground_color'));
         $this->assertSame('#f7f1e7', data_get($template->layout_schema, 'canvas_blocks.2.qr_background_color'));
         $this->assertSame('quartile', data_get($template->layout_schema, 'canvas_blocks.2.qr_error_correction'));
@@ -834,6 +1291,7 @@ CSS,
         $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
 
         $this->assertStringContainsString($signatureDataUri, $bodyHtml);
+        $this->assertStringContainsString('width:220px; max-width:100%; height:92px; object-fit:cover; object-position:37% 68%;', $bodyHtml);
         $this->assertStringContainsString($blockBackgroundDataUri, $bodyHtml);
         $this->assertStringContainsString('stamp.png', $bodyHtml);
         $this->assertStringContainsString('data:image/svg+xml;base64', $bodyHtml);
@@ -912,6 +1370,10 @@ CSS,
                             'block_kind' => 'stamp',
                             'rotation_deg' => 90,
                             'shadow_preset' => 'dramatic',
+                            'signature_image_fit' => 'stretch',
+                            'signature_image_position' => 'center; transform:rotate(45deg)',
+                            'signature_image_width' => 800,
+                            'signature_image_height' => 4,
                         ],
                     ],
                 ],
@@ -921,6 +1383,10 @@ CSS,
         $response->assertSessionHasErrors([
             'layout_schema.canvas_blocks.0.rotation_deg',
             'layout_schema.canvas_blocks.0.shadow_preset',
+            'layout_schema.canvas_blocks.0.signature_image_fit',
+            'layout_schema.canvas_blocks.0.signature_image_position',
+            'layout_schema.canvas_blocks.0.signature_image_width',
+            'layout_schema.canvas_blocks.0.signature_image_height',
         ]);
     }
 
@@ -938,6 +1404,9 @@ CSS,
                     'table_header_background' => '#f8f4ea; background:red',
                     'table_header_text_color' => 'rgba(20,61,55,0.95); font-size:80px',
                     'table_border_color' => 'url(javascript:alert(1))',
+                    'table_summary_background' => '#fffdf7; color:red',
+                    'table_summary_text_color' => 'expression(alert(1))',
+                    'table_summary_muted_color' => 'rgba(20,61,55,0.75); position:fixed',
                     'background_size' => 'cover; position:fixed',
                     'background_position' => 'center; position:fixed',
                     'background_repeat' => 'repeat no-repeat',
@@ -963,6 +1432,9 @@ CSS,
             'layout_schema.table_header_background',
             'layout_schema.table_header_text_color',
             'layout_schema.table_border_color',
+            'layout_schema.table_summary_background',
+            'layout_schema.table_summary_text_color',
+            'layout_schema.table_summary_muted_color',
             'layout_schema.background_size',
             'layout_schema.background_position',
             'layout_schema.background_repeat',
@@ -1024,6 +1496,7 @@ CSS,
 
         $this->assertStringContainsString('data-chart-type="line"', $bodyHtml);
         $this->assertStringContainsString('report-chart-svg', $bodyHtml);
+        $this->assertStringContainsString('aria-label="Fluxo técnico" style="font-family:inherit;"', $bodyHtml);
         $this->assertStringContainsString('#143d37', $bodyHtml);
         $this->assertStringContainsString('#f8f4ea', $bodyHtml);
         $this->assertStringContainsString('Fluxo técnico', $bodyHtml);
@@ -1031,6 +1504,173 @@ CSS,
         $this->assertStringContainsString('Validação', $bodyHtml);
         $this->assertStringContainsString('Emissão', $bodyHtml);
         $this->assertStringContainsString('Recepção, validação e emissão no período.', $bodyHtml);
+    }
+
+    public function test_chart_snapshot_svg_is_sanitized_before_pdf_rendering(): void
+    {
+        $template = new ReportStudioTemplate([
+            'name' => 'Unsafe SVG Chart Template',
+            'studio_type' => 'executive',
+            'renderer' => 'internal',
+            'status' => 'active',
+            'layout_schema' => [
+                'body_html' => '<h1>Resumo executivo</h1>',
+                'canvas_blocks' => [
+                    [
+                        'id' => 'unsafe-svg-chart',
+                        'surface' => 'content',
+                        'block_kind' => 'chart_snapshot',
+                        'chart_title' => 'Gráfico SVG importado',
+                        'chart_svg' => '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)" viewBox="0 0 120 60"><script>alert(1)</script><foreignObject><body>unsafe</body></foreignObject><a href="javascript:alert(1)"><text onclick="alert(2)">Clique</text></a><rect width="120" height="60" fill="#143d37" style="background-image:url(javascript:alert(3))"/></svg><p>fora do svg</p>',
+                    ],
+                ],
+            ],
+            'export_settings' => ['paper_size' => 'A4'],
+        ]);
+
+        $payload = app(ReportStudioPdfBuilder::class)->buildExecutiveReportPayload([
+            'kpis' => [],
+            'top_customers' => [],
+        ], app(GeneralSettings::class), $template);
+        $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
+
+        $this->assertStringContainsString('<svg xmlns="http://www.w3.org/2000/svg"', $bodyHtml);
+        $this->assertStringContainsString('<rect width="120" height="60" fill="#143d37"', $bodyHtml);
+        $this->assertStringNotContainsString('<script', $bodyHtml);
+        $this->assertStringNotContainsString('foreignObject', $bodyHtml);
+        $this->assertStringNotContainsString('onload=', $bodyHtml);
+        $this->assertStringNotContainsString('onclick=', $bodyHtml);
+        $this->assertStringNotContainsString('javascript:', $bodyHtml);
+        $this->assertStringNotContainsString('fora do svg', $bodyHtml);
+    }
+
+    public function test_chart_blocks_accept_studio_text_lists_and_placeholder_series(): void
+    {
+        $response = $this->actingAs($this->verifiedAdmin())
+            ->post(route('report-studios.store'), [
+                'name' => 'Placeholder Chart Template',
+                'studio_type' => 'executive',
+                'renderer' => 'internal',
+                'status' => 'active',
+                'layout_schema' => [
+                    'body_html' => '<h1>Resumo executivo</h1>',
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'placeholder-chart',
+                            'title' => 'Ciclo de ensaio',
+                            'surface' => 'content',
+                            'block_kind' => 'chart_snapshot',
+                            'chart_title' => '{executive_chart_title}',
+                            'chart_caption' => '{executive_chart_caption}',
+                            'chart_type' => 'bar',
+                            'chart_labels' => '{executive_chart_labels}',
+                            'chart_values' => '{executive_chart_values}',
+                            'chart_colors' => "#143d37, #d9b05f\n#0f766e",
+                            'chart_show_values' => true,
+                            'width' => 76,
+                            'min_height' => 240,
+                        ],
+                    ],
+                ],
+                'export_settings' => ['paper_size' => 'A4'],
+            ]);
+
+        $response->assertRedirect()->assertSessionHasNoErrors();
+
+        $template = ReportStudioTemplate::query()->where('name', 'Placeholder Chart Template')->firstOrFail();
+        $this->assertSame('{executive_chart_values}', data_get($template->layout_schema, 'canvas_blocks.0.chart_values'));
+        $this->assertSame("#143d37, #d9b05f\n#0f766e", data_get($template->layout_schema, 'canvas_blocks.0.chart_colors'));
+
+        $payload = app(ReportStudioPdfBuilder::class)->buildExecutiveReportPayload([
+            'kpis' => [],
+            'top_customers' => [],
+            'charts' => [
+                'throughput' => [
+                    'title' => 'Ciclo técnico por etapa',
+                    'caption' => 'Indicadores preenchidos a partir do modelo executivo.',
+                    'labels' => ['Recepção', 'Validação', 'Emissão'],
+                    'series' => [18, 12, 9],
+                ],
+            ],
+        ], app(GeneralSettings::class), $template);
+        $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
+
+        $this->assertStringContainsString('data-chart-type="bar"', $bodyHtml);
+        $this->assertStringContainsString('Ciclo técnico por etapa', $bodyHtml);
+        $this->assertStringContainsString('Indicadores preenchidos a partir do modelo executivo.', $bodyHtml);
+        $this->assertStringContainsString('Recepção', $bodyHtml);
+        $this->assertStringContainsString('>18</text>', $bodyHtml);
+        $this->assertStringContainsString('#d9b05f', $bodyHtml);
+
+        $this->actingAs($this->verifiedAdmin())
+            ->put(route('report-studios.update', $template), [
+                'name' => $template->name,
+                'studio_type' => $template->studio_type,
+                'renderer' => $template->renderer,
+                'status' => $template->status,
+                'layout_schema' => [
+                    'body_html' => '<h1>Resumo executivo</h1>',
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'invalid-placeholder-chart',
+                            'surface' => 'content',
+                            'block_kind' => 'chart_snapshot',
+                            'chart_values' => '18, inválido, 9',
+                            'chart_colors' => '#143d37, gold',
+                        ],
+                    ],
+                ],
+            ])
+            ->assertSessionHasErrors([
+                'layout_schema.canvas_blocks.0.chart_values',
+                'layout_schema.canvas_blocks.0.chart_colors',
+            ]);
+    }
+
+    public function test_generated_chart_blocks_use_readable_ink_on_dark_backgrounds(): void
+    {
+        $template = new ReportStudioTemplate([
+            'name' => 'Dark Chart Contrast Template',
+            'studio_type' => 'executive',
+            'renderer' => 'internal',
+            'status' => 'active',
+            'layout_schema' => [
+                'body_html' => '<h1>Resumo executivo</h1>',
+                'canvas_blocks' => [
+                    [
+                        'id' => 'dark-chart',
+                        'surface' => 'content',
+                        'block_kind' => 'chart_snapshot',
+                        'chart_title' => 'Contraste técnico',
+                        'chart_type' => 'bar',
+                        'chart_labels' => 'Recepção, Validação, Emissão',
+                        'chart_values' => "1,5; 2,75\n3,25",
+                        'chart_colors' => '#d9b05f, #0f766e, #7dd3fc',
+                        'chart_background_color' => '#07110f',
+                        'chart_show_values' => true,
+                        'width' => 76,
+                        'min_height' => 240,
+                    ],
+                ],
+            ],
+            'export_settings' => ['paper_size' => 'A4'],
+        ]);
+
+        $payload = app(ReportStudioPdfBuilder::class)->buildExecutiveReportPayload([
+            'kpis' => [],
+            'top_customers' => [],
+        ], app(GeneralSettings::class), $template);
+        $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
+
+        $this->assertStringContainsString('data-chart-type="bar"', $bodyHtml);
+        $this->assertStringContainsString('<text x="28" y="38" font-size="16" font-weight="700" fill="#fffdf7">Contraste técnico</text>', $bodyHtml);
+        $this->assertStringContainsString('stroke="#48615a"', $bodyHtml);
+        $this->assertStringContainsString('font-size="11" font-weight="700" fill="#fffdf7">1.5</text>', $bodyHtml);
+        $this->assertStringContainsString('font-size="11" font-weight="700" fill="#fffdf7">2.75</text>', $bodyHtml);
+        $this->assertStringContainsString('font-size="11" font-weight="700" fill="#fffdf7">3.25</text>', $bodyHtml);
+        $this->assertStringContainsString('font-size="10" fill="#d7e3dc">Recepção</text>', $bodyHtml);
+        $this->assertStringNotContainsString('>75</text>', $bodyHtml);
+        $this->assertStringNotContainsString('font-weight="700" fill="#0f172a">Contraste técnico</text>', $bodyHtml);
     }
 
     public function test_report_studio_rejects_invalid_chart_configuration(): void
@@ -1243,6 +1883,21 @@ CSS,
                         'width' => 30,
                         'min_height' => 80,
                     ],
+                    [
+                        'id' => 'unsafe-signature',
+                        'title' => 'Assinatura importada',
+                        'surface' => 'content',
+                        'block_kind' => 'signature',
+                        'signature_image' => 'data:image/svg+xml;base64,'.base64_encode('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="50"></svg>'),
+                        'signature_image_fit' => 'stretch',
+                        'signature_image_position' => '37%; transform:rotate(45deg)',
+                        'signature_image_width' => 900,
+                        'signature_image_height' => 4,
+                        'x' => 48,
+                        'y' => 24,
+                        'width' => 30,
+                        'min_height' => 100,
+                    ],
                 ],
             ],
             'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
@@ -1258,6 +1913,7 @@ CSS,
         $this->assertStringContainsString('background-position: center center;', $bodyHtml);
         $this->assertStringContainsString('border: 1px solid rgba(148,163,184,0.35);', $bodyHtml);
         $this->assertStringContainsString('object-position:center center;', $bodyHtml);
+        $this->assertStringContainsString('width:360px; max-width:100%; height:16px; object-fit:contain; object-position:center center;', $bodyHtml);
         $this->assertStringNotContainsString('background:url(https://bad.example.test/x)', $bodyHtml);
         $this->assertStringNotContainsString('cover;position:fixed', $bodyHtml);
         $this->assertStringNotContainsString('center; background:red', $bodyHtml);
@@ -1265,6 +1921,7 @@ CSS,
         $this->assertStringNotContainsString('#143d37; position:fixed', $bodyHtml);
         $this->assertStringNotContainsString('url(javascript:alert(1))', $bodyHtml);
         $this->assertStringNotContainsString('37%; transform:rotate(45deg)', $bodyHtml);
+        $this->assertStringNotContainsString('object-fit:stretch', $bodyHtml);
     }
 
     public function test_pdf_builder_resolves_same_host_public_media_urls_to_local_paths(): void
@@ -1333,6 +1990,45 @@ CSS,
         $response->assertHeader('X-Report-Studio-Renderer', 'mpdf');
         $response->assertDownload('report-studio-'.$template->id.'-analysis-preview.pdf');
         $this->assertStringStartsWith('%PDF-', (string) $response->baseResponse->getContent());
+    }
+
+    public function test_admin_can_preview_unsaved_report_studio_draft_as_pdf(): void
+    {
+        $user = $this->verifiedAdmin();
+        $templateCount = ReportStudioTemplate::query()->count();
+
+        $response = $this->actingAs($user)->post(route('report-studios.preview-draft-pdf'), [
+            'name' => '',
+            'studio_type' => 'analysis',
+            'renderer' => 'internal',
+            'status' => 'draft',
+            'is_default' => false,
+            'theme_preset' => 'compliance',
+            'canva_design_url' => '',
+            'description' => 'Rascunho ainda não persistido no estúdio.',
+            'layout_schema' => [
+                'first_page_header_html' => '<div>Rascunho {{document_code}}</div>',
+                'default_header_html' => '<div>{{document_code}} · {{customer_name}}</div>',
+                'footer_html' => '<div>Página {PAGENO}/{nbpg}</div>',
+                'body_html' => '<h1>{report_title}</h1><section>{sample_details}</section><section>{results_table}</section><section>{analysis_chart_card}</section><div>{signature_block}</div>',
+                'styles_css' => '.report-table th{background:#143d37;color:#fff;}',
+            ],
+            'export_settings' => [
+                'paper_size' => 'A4',
+                'orientation' => 'P',
+                'margin_top' => 20,
+                'margin_bottom' => 24,
+                'margin_left' => 14,
+                'margin_right' => 14,
+                'first_page_margin_top' => 58,
+            ],
+        ]);
+
+        $response->assertOk();
+        $response->assertHeader('X-Report-Studio-Renderer', 'mpdf');
+        $response->assertDownload('report-studio-draft-analysis-preview.pdf');
+        $this->assertStringStartsWith('%PDF-', (string) $response->baseResponse->getContent());
+        $this->assertSame($templateCount, ReportStudioTemplate::query()->count());
     }
 
     public function test_admin_can_preview_analysis_report_studio_without_existing_certificates(): void
@@ -1420,10 +2116,93 @@ CSS,
         $this->assertStringContainsString('font-family:Manrope, DejaVu Sans, sans-serif', (string) data_get($payload, 'data.styles'));
         $this->assertStringContainsString('Identificação da amostra', $bodyHtml);
         $this->assertStringContainsString('Receção e cadeia de custódia', $bodyHtml);
-        $this->assertStringContainsString('Escopo analítico', $bodyHtml);
+        $this->assertStringContainsString('Âmbito analítico', $bodyHtml);
         $this->assertStringNotContainsString('{sample_details}', $bodyHtml);
         $this->assertStringNotContainsString('{collection_details}', $bodyHtml);
         $this->assertStringNotContainsString('{analytical_scope}', $bodyHtml);
+    }
+
+    public function test_analysis_report_payload_renders_result_state_chart_from_certificate_results(): void
+    {
+        $user = $this->verifiedAdmin();
+        $labCode = LabCode::withoutEvents(fn (): LabCode => LabCode::query()->create([
+            'code' => 'LAB-CHART-001',
+            'cl_month' => '06/2026',
+            'seq' => 1,
+        ]));
+        $certificate = QualityCertificate::query()->create([
+            'user_id' => $user->id,
+            'cl_id' => $labCode->id,
+            'code' => 'BA-CHART-001',
+        ]);
+        $now = now();
+
+        Result::query()->create([
+            'code_id' => $labCode->id,
+            'parameter_label' => 'Humidade',
+            'inserted_date' => $now,
+            'verified_date' => $now,
+            'approved_date' => $now,
+        ]);
+        Result::query()->create([
+            'code_id' => $labCode->id,
+            'parameter_label' => 'Cinzas',
+            'inserted_date' => $now,
+            'verified_date' => $now,
+            'approved_date' => $now,
+            'requested_counter_analysis' => true,
+        ]);
+        Result::query()->create([
+            'code_id' => $labCode->id,
+            'parameter_label' => 'Salmonella spp.',
+            'inserted_date' => $now,
+            'verified_date' => $now,
+        ]);
+        Result::query()->create([
+            'code_id' => $labCode->id,
+            'parameter_label' => 'Bolores e leveduras',
+            'inserted_date' => $now,
+        ]);
+        Result::query()->create([
+            'code_id' => $labCode->id,
+            'parameter_label' => 'pH',
+        ]);
+
+        $template = new ReportStudioTemplate([
+            'name' => 'Analysis Chart Template',
+            'studio_type' => 'analysis',
+            'renderer' => 'internal',
+            'status' => 'active',
+            'layout_schema' => [
+                'body_html' => '<h1>{certificate_code}</h1>{results_table}{analysis_chart_card}<p>{analysis_chart_values}</p>',
+            ],
+            'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
+        ]);
+
+        $payload = app(ReportStudioPdfBuilder::class)->buildAnalysisReportPayload(
+            $certificate,
+            app(GeneralSettings::class),
+            $template
+        );
+
+        $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
+
+        $this->assertStringContainsString('data-chart-type="bar"', $bodyHtml);
+        $this->assertStringContainsString('Estado dos resultados analíticos', $bodyHtml);
+        $this->assertStringContainsString('Aprovados', $bodyHtml);
+        $this->assertStringContainsString('Contra-análise', $bodyHtml);
+        $this->assertStringContainsString('class="report-table studio-avoid-break"', $bodyHtml);
+        $this->assertStringContainsString('Método', $bodyHtml);
+        $this->assertStringContainsString('Method', $bodyHtml);
+        $this->assertStringContainsString('Incerteza', $bodyHtml);
+        $this->assertStringContainsString('Contra-análise associada', $bodyHtml);
+        $this->assertStringContainsString('2, 1, 1, 1, 1', $bodyHtml);
+        $this->assertStringContainsString('5 parâmetro(s) associados ao certificado; 1 com contra-análise solicitada ou registada.', $bodyHtml);
+        $this->assertStringNotContainsString('border:1px solid #cbd5e1', $bodyHtml);
+        $this->assertStringNotContainsString('border-bottom:1px solid #cbd5e1', $bodyHtml);
+        $this->assertStringNotContainsString('{results_table}', $bodyHtml);
+        $this->assertStringNotContainsString('{analysis_chart_card}', $bodyHtml);
+        $this->assertStringNotContainsString('{analysis_chart_values}', $bodyHtml);
     }
 
     public function test_chrome_renderer_requires_optional_server_driver_when_saving(): void
@@ -1479,6 +2258,7 @@ CSS,
                 'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
             ])
             ->assertRedirect()
+            ->assertSessionHasNoErrors()
             ->assertSessionHas('success');
 
         $this->assertDatabaseHas('report_studio_templates', [

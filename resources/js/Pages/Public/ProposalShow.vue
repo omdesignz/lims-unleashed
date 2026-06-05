@@ -1,7 +1,7 @@
 <template>
   <div class="public-proposal-shell min-h-screen" :class="commercialDocumentThemeClasses">
     <!-- HEADER -->
-    <div class="bg-white shadow">
+    <div class="sticky top-0 z-20 border-b border-[#ded2bb]/80 bg-[#fffaf0]/90 shadow-[0_18px_48px_-34px_rgba(20,61,55,0.45)] backdrop-blur-xl dark:border-white/10 dark:bg-[#0b1210]/88">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center py-6">
           <div class="flex items-center">
@@ -12,14 +12,14 @@
               </div>
             </div>
             <div class="ml-4">
-              <h1 class="text-lg font-semibold text-gray-900">{{ companyName }}</h1>
-              <p class="text-sm text-gray-500">{{ companyTagline }}</p>
+              <h1 class="text-lg font-black tracking-[-0.02em] text-[#10221d] dark:text-white">{{ companyName }}</h1>
+              <p class="text-sm font-semibold text-[#78847c] dark:text-slate-400">{{ companyTagline }}</p>
             </div>
           </div>
           <div class="flex items-center gap-4">
             <div class="text-right">
-              <p class="text-sm text-gray-500">{{ $t('gestlab.general.labels.vap_proposals.public.proposal') }}</p>
-              <p class="text-lg font-bold text-blue-900">{{ proposal.proposal_number }}</p>
+              <p class="text-xs font-black uppercase tracking-[0.22em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.public.proposal') }}</p>
+              <p class="text-lg font-black text-[#143d37] dark:text-emerald-100">{{ proposal.proposal_number }}</p>
             </div>
             <div>
               <span :class="[
@@ -54,19 +54,22 @@
 
     <!-- MAIN CONTENT -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div class="overflow-hidden rounded-[34px] border border-[#ded2bb] bg-white/92 shadow-[0_30px_90px_-54px_rgba(20,61,55,0.62)] dark:border-white/10 dark:bg-slate-950/92">
         <!-- PROPOSAL HEADER -->
-        <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-8">
+        <div class="relative overflow-hidden border-b border-[#ded2bb] bg-[radial-gradient(circle_at_top_left,rgba(199,154,67,0.24),transparent_34%),linear-gradient(135deg,#fffaf0,#f6efe1_46%,#143d37_46%,#143d37)] px-6 py-8 dark:border-white/10 dark:bg-[radial-gradient(circle_at_top_left,rgba(199,154,67,0.18),transparent_34%),linear-gradient(135deg,#17231f,#101815_48%,#0b1210_48%,#0b1210)]">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 class="text-2xl font-bold text-white">
+              <span class="inline-flex items-center rounded-full border border-[#c79a43]/40 bg-white/85 px-3 py-1 text-xs font-black uppercase tracking-[0.24em] text-[#143d37] shadow-sm dark:bg-white/10 dark:text-amber-100">
+                {{ $t('gestlab.general.labels.vap_proposals.public.client_validation') }}
+              </span>
+              <h1 class="mt-5 text-3xl font-black tracking-[-0.04em] text-[#10221d] dark:text-white md:max-w-2xl lg:text-5xl">
                 {{ $t('gestlab.general.labels.vap_proposals.public.proposal_for') }} {{ proposal.customer.name }}
               </h1>
-              <p class="mt-2 text-blue-100">
+              <p class="mt-4 max-w-2xl text-sm font-semibold leading-6 text-[#59665f] dark:text-slate-300">
                 {{ $t('gestlab.general.labels.vap_proposals.public.created_on') }} {{ formatDate(proposal.created_at) }}
                 {{ $t('gestlab.general.labels.vap_proposals.public.by') }} {{ proposal.user?.name || $t('gestlab.general.labels.vap_proposals.public.unknown') }}
               </p>
-              <p v-if="proposal.expiry_date" class="mt-1 text-blue-100">
+              <p v-if="proposal.expiry_date" class="mt-1 text-sm font-semibold text-[#59665f] dark:text-slate-300">
                 {{ $t('gestlab.general.labels.vap_proposals.public.valid_until') }} {{ formatDate(proposal.expiry_date) }}
                 ({{ proposal.days_until_expiry }} {{ $t('gestlab.general.labels.vap_proposals.public.days_left') }})
               </p>
@@ -75,7 +78,7 @@
               <div class="flex items-center gap-4">
                 <button
                   @click="downloadPdf"
-                  class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-blue-900 shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800"
+                  class="inline-flex items-center gap-2 rounded-[20px] bg-[#143d37] px-5 py-3 text-sm font-black text-white shadow-[0_18px_42px_-24px_rgba(20,61,55,0.75)] transition hover:bg-[#0f302b] focus:outline-none focus:ring-2 focus:ring-[#c79a43] focus:ring-offset-2 dark:ring-offset-slate-950"
                 >
                   <ArrowDownTrayIcon class="h-5 w-5" />
                   {{ $t('gestlab.general.labels.vap_proposals.public.download_pdf') }}
@@ -83,6 +86,23 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="grid gap-4 border-b border-[#ded2bb] bg-[#fbfaf6] px-6 py-5 dark:border-white/10 dark:bg-white/5 md:grid-cols-3">
+          <article class="rounded-[24px] border border-[#ded2bb] bg-white/85 p-4 shadow-[0_18px_48px_-36px_rgba(20,61,55,0.48)] dark:border-white/10 dark:bg-white/5">
+            <p class="text-xs font-black uppercase tracking-[0.2em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.public.total_amount') }}</p>
+            <p class="mt-2 text-2xl font-black text-[#143d37] dark:text-emerald-100">{{ formatCurrency(proposal.total) }}</p>
+          </article>
+          <article class="rounded-[24px] border border-[#ded2bb] bg-white/85 p-4 shadow-[0_18px_48px_-36px_rgba(20,61,55,0.48)] dark:border-white/10 dark:bg-white/5">
+            <p class="text-xs font-black uppercase tracking-[0.2em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.public.service_items') }}</p>
+            <p class="mt-2 text-2xl font-black text-[#143d37] dark:text-emerald-100">{{ proposal.items?.length || 0 }}</p>
+          </article>
+          <article class="rounded-[24px] border border-[#ded2bb] bg-white/85 p-4 shadow-[0_18px_48px_-36px_rgba(20,61,55,0.48)] dark:border-white/10 dark:bg-white/5">
+            <p class="text-xs font-black uppercase tracking-[0.2em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.public.pricing_mode') }}</p>
+            <p class="mt-2 text-2xl font-black text-[#143d37] dark:text-emerald-100">
+              {{ proposal.use_matrix_price ? $t('gestlab.general.labels.vap_proposals.public.matrix') : $t('gestlab.general.labels.vap_proposals.public.parameter') }}
+            </p>
+          </article>
         </div>
 
         <div class="p-6">
@@ -132,12 +152,29 @@
                 </div>
                 <div class="flex justify-between">
                   <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_proposals.public.pricing_mode') }}</span>
-                  <span class="text-sm font-medium" :class="proposal.use_matrix_price ? 'text-blue-600' : 'text-gray-900'">
+                  <span class="text-sm font-medium" :class="proposal.use_matrix_price ? 'text-[#143d37] dark:text-emerald-100' : 'text-gray-900'">
                     {{ proposal.use_matrix_price ? $t('gestlab.general.labels.vap_proposals.public.matrix') : $t('gestlab.general.labels.vap_proposals.public.parameter') }}
                   </span>
                 </div>
               </div>
             </div>
+          </div>
+
+          <div v-if="hasBankingDetails" class="mb-8 rounded-[28px] border border-[#ded2bb] bg-[#fbfaf6] p-6 shadow-[0_20px_58px_-42px_rgba(20,61,55,0.45)] dark:border-white/10 dark:bg-white/5">
+            <p class="text-xs font-black uppercase tracking-[0.26em] text-[#c79a43]">{{ $t('gestlab.general.labels.vap_proposals.public.banking_details') }}</p>
+            <div class="mt-4 grid gap-3 md:grid-cols-2">
+              <div
+                v-for="row in bankingRows"
+                :key="row.label"
+                class="rounded-[18px] border border-[#ded2bb] bg-white/85 px-4 py-3 dark:border-white/10 dark:bg-slate-950/60"
+              >
+                <p class="text-xs font-bold uppercase tracking-[0.16em] text-[#78847c] dark:text-slate-400">{{ row.label }}</p>
+                <p class="mt-1 break-words text-sm font-black text-[#143d37] dark:text-emerald-100">{{ row.value }}</p>
+              </div>
+            </div>
+            <p v-if="companyBankDetails" class="mt-4 whitespace-pre-wrap text-sm font-semibold leading-6 text-[#59665f] dark:text-slate-300">
+              {{ companyBankDetails }}
+            </p>
           </div>
 
           <!-- TEMPLATE CONTENT -->
@@ -219,7 +256,7 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                       <div v-if="item.tax_amount > 0" class="text-sm">
                         <span class="text-gray-900">{{ item.tax_percentage }}%</span>
-                        <span class="block text-blue-600">+{{ formatCurrency(item.tax_amount) }}</span>
+                        <span class="block text-[#9a7a2f] dark:text-amber-200">+{{ formatCurrency(item.tax_amount) }}</span>
                       </div>
                       <div v-else class="text-sm text-gray-500">-</div>
                     </td>
@@ -275,11 +312,11 @@
                       </div>
                     </td>
                   </tr>
-                  <tr class="bg-blue-50">
+                  <tr class="bg-[#f7f1e6] dark:bg-white/5">
                     <td colspan="5" class="px-6 py-4 text-right text-lg font-bold text-gray-900">
                       {{ $t('gestlab.general.labels.vap_proposals.public.total_amount') }}
                     </td>
-                    <td colspan="2" class="px-6 py-4 text-lg font-bold text-blue-900">
+                    <td colspan="2" class="px-6 py-4 text-lg font-black text-[#143d37] dark:text-emerald-100">
                       {{ formatCurrency(proposal.total) }}
                     </td>
                   </tr>
@@ -325,7 +362,7 @@
                     type="checkbox"
                     v-model="agreement.confidentiality"
                     id="confidentiality"
-                    :class="['mt-1 h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900', form.errors.confidentiality ? 'border-red-500' : '']"
+                    :class="['mt-1 h-4 w-4 rounded border-gray-300 text-[#143d37] focus:ring-[#c79a43]', form.errors.confidentiality ? 'border-red-500' : '']"
                   />
                   <label for="confidentiality" class="ml-3 text-sm text-gray-700">
                     {{ $t('gestlab.general.labels.vap_proposals.public.confidentiality_text') }}
@@ -340,7 +377,7 @@
                     type="checkbox"
                     v-model="agreement.impartiality"
                     id="impartiality"
-                    :class="['mt-1 h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900', form.errors.impartiality ? 'border-red-500' : '']"
+                    :class="['mt-1 h-4 w-4 rounded border-gray-300 text-[#143d37] focus:ring-[#c79a43]', form.errors.impartiality ? 'border-red-500' : '']"
                   />
                   <label for="impartiality" class="ml-3 text-sm text-gray-700">
                     {{ $t('gestlab.general.labels.vap_proposals.public.impartiality_text') }}
@@ -355,7 +392,7 @@
                     type="checkbox"
                     v-model="agreement.nondisclosure"
                     id="nondisclosure"
-                    :class="['mt-1 h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900', form.errors.nondisclosure ? 'border-red-500' : '']"
+                    :class="['mt-1 h-4 w-4 rounded border-gray-300 text-[#143d37] focus:ring-[#c79a43]', form.errors.nondisclosure ? 'border-red-500' : '']"
                   />
                   <label for="nondisclosure" class="ml-3 text-sm text-gray-700">
                     {{ $t('gestlab.general.labels.vap_proposals.public.nondisclosure_text') }}
@@ -374,7 +411,7 @@
                     'inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
                     form.processing || !canSubmitAgreement
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-blue-900 to-blue-800 text-white hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2'
+                      : 'bg-[#143d37] text-white hover:bg-[#0f302b] focus:outline-none focus:ring-2 focus:ring-[#c79a43] focus:ring-offset-2'
                   ]"
                 >
                   <CheckCircleIcon class="h-5 w-5" />
@@ -463,7 +500,7 @@
                 v-model="rejectForm.reason"
                 id="reject_reason"
                 rows="4"
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
+                class="w-full rounded-[20px] border border-[#ded2bb] bg-[#fbfaf6] px-4 py-3 text-sm font-semibold text-[#33413a] focus:border-[#c79a43] focus:outline-none focus:ring-2 focus:ring-[#c79a43]/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
                 :class="{ 'border-red-500': rejectForm.errors.reason }"
                 :placeholder="$t('gestlab.general.labels.vap_proposals.public.reject_reason_placeholder')"
               ></textarea>
@@ -581,6 +618,19 @@ const canSubmitAgreement = computed(() => {
 const taxableItemsCount = computed(() => {
   return props.proposal.items?.filter(item => item.charge_tax).length || 0
 })
+
+const bankingRows = computed(() => [
+  [trans('gestlab.general.labels.vap_proposals.public.bank_name'), props.company?.bank_name],
+  [trans('gestlab.general.labels.vap_proposals.public.bank_account_name'), props.company?.bank_account_name],
+  [trans('gestlab.general.labels.vap_proposals.public.bank_account_number'), props.company?.bank_account_number],
+  ['IBAN', props.company?.bank_iban],
+  ['SWIFT', props.company?.bank_swift],
+].filter(([, value]) => Boolean(value))
+  .map(([label, value]) => ({ label, value })))
+
+const hasBankingDetails = computed(() => bankingRows.value.length > 0 || Boolean(props.company?.bank_details))
+
+const companyBankDetails = computed(() => props.company?.bank_details || '')
 
 const parsedTemplateContent = computed(() => {
   if (!props.proposal.template?.content) return ''
@@ -1167,23 +1217,6 @@ const submitRejection = async () => {
 .public-proposal-shell :deep(.border-gray-200),
 .public-proposal-shell :deep(.divide-gray-200 > :not([hidden]) ~ :not([hidden])) {
   border-color: #ded2bb !important;
-}
-
-.public-proposal-shell :deep(.bg-blue-900),
-.public-proposal-shell :deep(.from-blue-900),
-.public-proposal-shell :deep(.to-blue-800) {
-  --tw-gradient-from: #143d37 !important;
-  --tw-gradient-to: #0f302b !important;
-  background-color: #143d37 !important;
-}
-
-.public-proposal-shell :deep(.bg-blue-50) {
-  background-color: #f7f1e6 !important;
-}
-
-.public-proposal-shell :deep(.text-blue-900),
-.public-proposal-shell :deep(.text-blue-600) {
-  color: #143d37 !important;
 }
 
 .public-proposal-shell :deep(.text-gray-900) {

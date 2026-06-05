@@ -59,21 +59,19 @@ class ReportStudioPdfRenderer
     {
         $payload = $this->withPrintableCanvasGeometry($payload);
         $payload['data'] = $this->dataForMpdf($payload);
-        $customPageWidth = (float) data_get($payload, 'data.customPageWidth', 0);
-        $customPageHeight = (float) data_get($payload, 'data.customPageHeight', 0);
-        $format = $customPageWidth > 0 && $customPageHeight > 0
-            ? [$customPageWidth, $customPageHeight]
-            : ($payload['data']['format'] ?? 'A4');
+        $margins = data_get($payload, 'data.margins', $this->normalizedMargins($payload));
+        $customPageSize = $this->normalizedCustomPageSize($payload);
+        $format = $customPageSize ?? $this->normalizedPageFormat($payload);
         $format = $format === 'custom' ? 'A4' : $format;
 
         $pdf = PDF::loadView($payload['view'], $payload['data'], [], [
             'format' => $format,
-            'orientation' => $payload['data']['orientation'] ?? 'P',
-            'margin_top' => data_get($payload, 'data.margins.top', 20),
+            'orientation' => $this->normalizedPageOrientation($payload),
+            'margin_top' => data_get($margins, 'top', 20),
             'margin_header' => 5,
-            'margin_left' => data_get($payload, 'data.margins.left', 14),
-            'margin_right' => data_get($payload, 'data.margins.right', 14),
-            'margin_bottom' => data_get($payload, 'data.margins.bottom', 24),
+            'margin_left' => data_get($margins, 'left', 14),
+            'margin_right' => data_get($margins, 'right', 14),
+            'margin_bottom' => data_get($margins, 'bottom', 24),
             'margin_footer' => 10,
             'title' => $template->name,
             'author' => auth()->user()?->name,
@@ -135,30 +133,29 @@ class ReportStudioPdfRenderer
                 'view' => $payload['view'],
                 'data' => $driverData,
             ];
+            $margins = data_get($driverData, 'margins', $this->normalizedMargins($payload));
 
             $pdfBuilder = SpatiePdf::view(
                 $this->viewForDriver($payload, $driver),
                 $driverData
             )
                 ->driver($driver)
-                ->orientation(($payload['data']['orientation'] ?? 'P') === 'L' ? 'Landscape' : 'Portrait');
+                ->orientation($this->normalizedPageOrientation($payload) === 'L' ? 'Landscape' : 'Portrait');
 
-            $customPageWidth = (float) data_get($payload, 'data.customPageWidth', 0);
-            $customPageHeight = (float) data_get($payload, 'data.customPageHeight', 0);
+            $customPageSize = $this->normalizedCustomPageSize($payload);
 
-            if ($customPageWidth > 0 && $customPageHeight > 0) {
-                $pdfBuilder = $pdfBuilder->paperSize($customPageWidth, $customPageHeight, 'mm');
+            if ($customPageSize !== null) {
+                $pdfBuilder = $pdfBuilder->paperSize($customPageSize[0], $customPageSize[1], 'mm');
             } else {
-                $format = strtolower((string) ($payload['data']['format'] ?? 'A4'));
-                $pdfBuilder = $pdfBuilder->format($format === 'custom' ? 'a4' : $format);
+                $pdfBuilder = $pdfBuilder->format($this->spatiePageFormat($this->normalizedPageFormat($payload)));
             }
 
             $pdfBuilder
                 ->margins(
-                    (float) data_get($payload, 'data.margins.top', 20),
-                    (float) data_get($payload, 'data.margins.right', 14),
-                    (float) data_get($payload, 'data.margins.bottom', 24),
-                    (float) data_get($payload, 'data.margins.left', 14),
+                    (float) data_get($margins, 'top', 20),
+                    (float) data_get($margins, 'right', 14),
+                    (float) data_get($margins, 'bottom', 24),
+                    (float) data_get($margins, 'left', 14),
                     'mm'
                 )
                 ->name($filename);
@@ -206,6 +203,13 @@ class ReportStudioPdfRenderer
     private function dataForDriver(array $payload, string $driver): array
     {
         $data = $this->sanitizeDocumentCssData($payload['data']);
+        $normalizationPayload = [
+            'view' => (string) ($payload['view'] ?? 'PDFs.studios.document'),
+            'data' => $data,
+        ];
+        $data['format'] = $this->normalizedPageFormat($normalizationPayload);
+        $data['orientation'] = $this->normalizedPageOrientation($normalizationPayload);
+        $data['margins'] = $this->normalizedMargins($normalizationPayload);
 
         if (! $this->usesBrowserHeaderFooter($driver)) {
             return $data;
@@ -246,6 +250,17 @@ class ReportStudioPdfRenderer
     private function dataForMpdf(array $payload): array
     {
         $data = $this->sanitizeDocumentCssData($payload['data']);
+        $normalizationPayload = [
+            'view' => (string) ($payload['view'] ?? 'PDFs.studios.document'),
+            'data' => $data,
+        ];
+        $data['format'] = $this->normalizedPageFormat($normalizationPayload);
+        $data['orientation'] = $this->normalizedPageOrientation($normalizationPayload);
+        $data['margins'] = $this->normalizedMargins($normalizationPayload);
+        $data['fontFamily'] = $this->documentFontFamilyFromPayload([
+            'view' => (string) ($payload['view'] ?? 'PDFs.studios.document'),
+            'data' => $data,
+        ]);
         $backgroundImage = data_get($data, 'backgroundImage');
 
         $data['resolvedBackgroundImage'] = $backgroundImage
@@ -321,16 +336,14 @@ class ReportStudioPdfRenderer
      */
     private function withPrintableCanvasGeometry(array $payload): array
     {
+        $payload['data']['margins'] = $this->normalizedMargins($payload);
         $pageHeight = $this->pageHeightInMillimetres($payload);
-        $topMargin = $this->marginValue($payload, 'top', 20);
-        $bottomMargin = $this->marginValue($payload, 'bottom', 24);
-        $firstTopMargin = max(
-            0,
-            min(250, (float) data_get($payload, 'data.margins.first_top', $topMargin))
-        );
+        $topMargin = (float) data_get($payload, 'data.margins.top', 20);
+        $bottomMargin = (float) data_get($payload, 'data.margins.bottom', 24);
+        $firstTopMargin = (float) data_get($payload, 'data.margins.first_top', $topMargin);
 
-        $payload['data']['canvasPageMinHeight'] = max(40, $pageHeight - $topMargin - $bottomMargin);
-        $payload['data']['firstCanvasPageMinHeight'] = max(40, $pageHeight - $firstTopMargin - $bottomMargin);
+        $payload['data']['canvasPageMinHeight'] = (float) max(40, $pageHeight - $topMargin - $bottomMargin);
+        $payload['data']['firstCanvasPageMinHeight'] = (float) max(40, $pageHeight - $firstTopMargin - $bottomMargin);
 
         return $payload;
     }
@@ -340,22 +353,19 @@ class ReportStudioPdfRenderer
      */
     private function pageHeightInMillimetres(array $payload): float
     {
-        $customPageWidth = (float) data_get($payload, 'data.customPageWidth', 0);
-        $customPageHeight = (float) data_get($payload, 'data.customPageHeight', 0);
+        $customPageSize = $this->normalizedCustomPageSize($payload);
 
-        if ($customPageWidth > 0 && $customPageHeight > 0) {
-            $dimensions = [$customPageWidth, $customPageHeight];
+        if ($customPageSize !== null) {
+            $dimensions = $customPageSize;
         } else {
-            $dimensions = match (strtoupper((string) data_get($payload, 'data.format', 'A4'))) {
-                'A3' => [297.0, 420.0],
-                'A5' => [148.0, 210.0],
-                'LETTER' => [215.9, 279.4],
-                'LEGAL' => [215.9, 355.6],
+            $dimensions = match ($this->normalizedPageFormat($payload)) {
+                'Letter' => [215.9, 279.4],
+                'Legal' => [215.9, 355.6],
                 default => [210.0, 297.0],
             };
         }
 
-        return data_get($payload, 'data.orientation', 'P') === 'L'
+        return $this->normalizedPageOrientation($payload) === 'L'
             ? min($dimensions)
             : max($dimensions);
     }
@@ -370,6 +380,7 @@ class ReportStudioPdfRenderer
                 (string) data_get($payload, 'data.defaultHeader', '')
             ),
             'fontFamily' => $this->documentFontFamilyFromPayload($payload),
+            'styles' => (string) data_get($payload, 'data.styles', ''),
             'marginLeft' => $this->marginValue($payload, 'left', 14),
             'marginRight' => $this->marginValue($payload, 'right', 14),
         ])->render();
@@ -385,6 +396,7 @@ class ReportStudioPdfRenderer
                 (string) data_get($payload, 'data.footerHtml', '')
             ),
             'fontFamily' => $this->documentFontFamilyFromPayload($payload),
+            'styles' => (string) data_get($payload, 'data.styles', ''),
             'marginLeft' => $this->marginValue($payload, 'left', 14),
             'marginRight' => $this->marginValue($payload, 'right', 14),
         ])->render();
@@ -398,6 +410,80 @@ class ReportStudioPdfRenderer
         $value = data_get($payload, 'data.margins.'.$side, $fallback);
 
         return max(0, min(200, is_numeric($value) ? (float) $value : $fallback));
+    }
+
+    /**
+     * @param  array{view: string, data: array<string, mixed>}  $payload
+     * @return array{top: float, right: float, bottom: float, left: float, first_top: float}
+     */
+    private function normalizedMargins(array $payload): array
+    {
+        $top = $this->marginValue($payload, 'top', 20);
+        $right = $this->marginValue($payload, 'right', 14);
+        $bottom = $this->marginValue($payload, 'bottom', 24);
+        $left = $this->marginValue($payload, 'left', 14);
+        $firstTop = data_get($payload, 'data.margins.first_top', $top);
+
+        return [
+            'top' => $top,
+            'right' => $right,
+            'bottom' => $bottom,
+            'left' => $left,
+            'first_top' => (float) max(0, min(250, is_numeric($firstTop) ? (float) $firstTop : $top)),
+        ];
+    }
+
+    /**
+     * @param  array{view: string, data: array<string, mixed>}  $payload
+     */
+    private function normalizedPageFormat(array $payload): string
+    {
+        return match (strtoupper(trim((string) data_get($payload, 'data.format', 'A4')))) {
+            'LETTER' => 'Letter',
+            'LEGAL' => 'Legal',
+            'CUSTOM' => 'custom',
+            default => 'A4',
+        };
+    }
+
+    /**
+     * @param  array{view: string, data: array<string, mixed>}  $payload
+     */
+    private function normalizedPageOrientation(array $payload): string
+    {
+        return data_get($payload, 'data.orientation') === 'L' ? 'L' : 'P';
+    }
+
+    private function spatiePageFormat(string $format): string
+    {
+        return match ($format) {
+            'Letter' => 'letter',
+            'Legal' => 'legal',
+            default => 'a4',
+        };
+    }
+
+    /**
+     * @param  array{view: string, data: array<string, mixed>}  $payload
+     * @return array{0: float, 1: float}|null
+     */
+    private function normalizedCustomPageSize(array $payload): ?array
+    {
+        $width = data_get($payload, 'data.customPageWidth');
+        $height = data_get($payload, 'data.customPageHeight');
+
+        if (! is_numeric($width) || ! is_numeric($height)) {
+            return null;
+        }
+
+        $width = (float) $width;
+        $height = (float) $height;
+
+        if ($width < 50 || $height < 50 || $width > 2000 || $height > 2000) {
+            return null;
+        }
+
+        return [$width, $height];
     }
 
     /**

@@ -315,6 +315,8 @@ class VAPProposalController extends Controller
             return back()->with('error', 'A proposta não pode ser actualizada no estado actual.');
         }
 
+        $previousPdfPath = $proposal->file_path;
+
         $validated = $request->validate([
             'service_location' => 'required|string|max:255',
             'obs' => 'nullable|string',
@@ -412,6 +414,7 @@ class VAPProposalController extends Controller
                 'discount' => $totals['discount'],
                 'status' => 'REVISED',
                 'is_original' => false,
+                'file_path' => null,
             ]);
 
             // Delete old items
@@ -427,6 +430,14 @@ class VAPProposalController extends Controller
             $proposal->update(['expiry_date' => $expiryDate]);
 
             DB::commit();
+
+            if ($previousPdfPath) {
+                try {
+                    Storage::delete($previousPdfPath);
+                } catch (\Throwable $exception) {
+                    report($exception);
+                }
+            }
 
             // Send notification if needed
             $proposalWorkflowNotifier->notifyRevised($proposal->fresh(['customer', 'warehouse', 'user']));
@@ -685,17 +696,34 @@ class VAPProposalController extends Controller
 
     public function getWarehouse(Request $request)
     {
-        $query = $request->get('q', '');
-        $customerId = $request->get('customer_id');
+        $query = $request->string('q')->value();
+        $customerId = $request->integer('customer_id') ?: null;
 
-        $warehouses = Warehouse::when($customerId, function ($q) use ($customerId) {
-            $q->where('customer_id', $customerId);
-        })
-            ->when($query, function ($q) use ($query) {
-                $q->where('address', 'like', "%{$query}%");
+        $warehouses = Warehouse::query()
+            ->when($customerId, function ($builder) use ($customerId): void {
+                $builder->where('customer_id', $customerId);
             })
-            ->limit(10)
-            ->get(['id', 'address']);
+            ->when($query, function ($builder) use ($query): void {
+                $builder->where(function ($nested) use ($query): void {
+                    $nested->where('address', 'like', "%{$query}%")
+                        ->orWhere('name', 'like', "%{$query}%");
+                });
+            })
+            ->orderBy('address')
+            ->limit(20)
+            ->get(['id', 'name', 'address'])
+            ->map(function (Warehouse $warehouse): array {
+                $label = $warehouse->address ?: ($warehouse->name ?: "Armazém #{$warehouse->id}");
+
+                return [
+                    'id' => $warehouse->id,
+                    'value' => $warehouse->id,
+                    'label' => $label,
+                    'name' => $warehouse->name,
+                    'address' => $warehouse->address,
+                ];
+            })
+            ->values();
 
         return response()->json($warehouses);
     }
@@ -716,15 +744,24 @@ class VAPProposalController extends Controller
                 ->latest('id')
                 ->limit(20)
                 ->get(['id', 'proposal_no', 'proposal_year', 'service_location', 'status', 'created_at'])
-                ->map(fn (VAPProposal $proposal): array => [
-                    'id' => $proposal->id,
-                    'proposal_no' => $proposal->proposal_no,
-                    'proposal_number' => $proposal->proposal_number,
-                    'proposal_year' => $proposal->proposal_year,
-                    'service_location' => $proposal->service_location,
-                    'status' => $proposal->status,
-                    'created_at' => optional($proposal->created_at)->format('d/m/Y'),
-                ])
+                ->map(function (VAPProposal $proposal): array {
+                    $label = trim(implode(' · ', array_filter([
+                        $proposal->proposal_number,
+                        $proposal->service_location,
+                    ])));
+
+                    return [
+                        'id' => $proposal->id,
+                        'value' => $proposal->id,
+                        'label' => $label !== '' ? $label : "Proposta #{$proposal->id}",
+                        'proposal_no' => $proposal->proposal_no,
+                        'proposal_number' => $proposal->proposal_number,
+                        'proposal_year' => $proposal->proposal_year,
+                        'service_location' => $proposal->service_location,
+                        'status' => $proposal->status,
+                        'created_at' => optional($proposal->created_at)->format('d/m/Y'),
+                    ];
+                })
                 ->values()
         );
     }
@@ -739,8 +776,15 @@ class VAPProposalController extends Controller
                     $builder->where('code', 'like', "%{$query}%");
                 })
                 ->orderByDesc('id')
-                ->limit(12)
+                ->limit(20)
                 ->get(['id', 'code'])
+                ->map(fn (LabCode $labCode): array => [
+                    'id' => $labCode->id,
+                    'value' => $labCode->id,
+                    'label' => $labCode->code ?: "Código #{$labCode->id}",
+                    'code' => $labCode->code,
+                ])
+                ->values()
         );
     }
 
@@ -756,10 +800,12 @@ class VAPProposalController extends Controller
                 });
             })
             ->orderBy('description')
-            ->limit(12)
+            ->limit(20)
             ->get(['id', 'code', 'description', 'fixed_price', 'tax_id', 'charge_tax', 'tax_percentage', 'exemption_id', 'exemption_code', 'withhold_tax'])
-            ->map(fn (Matrix $matrix) => [
+            ->map(fn (Matrix $matrix): array => [
                 'id' => $matrix->id,
+                'value' => $matrix->id,
+                'label' => $matrix->description ?: ($matrix->code ?: "Matriz #{$matrix->id}"),
                 'code' => $matrix->code,
                 'description' => $matrix->description,
                 'price' => (float) $matrix->fixed_price,
@@ -769,7 +815,8 @@ class VAPProposalController extends Controller
                 'exemption_id' => $matrix->exemption_id,
                 'exemption_code' => $matrix->exemption_code,
                 'withhold_tax' => (bool) $matrix->withhold_tax,
-            ]);
+            ])
+            ->values();
 
         return response()->json($matrixes);
     }
@@ -787,10 +834,12 @@ class VAPProposalController extends Controller
                 });
             })
             ->orderBy('name')
-            ->limit(12)
+            ->limit(20)
             ->get(['id', 'name', 'code', 'price', 'tax_id', 'charge_tax', 'tax_percentage', 'exemption_id', 'exemption_code', 'withhold_tax'])
-            ->map(fn (Parameter $parameter) => [
+            ->map(fn (Parameter $parameter): array => [
                 'id' => $parameter->id,
+                'value' => $parameter->id,
+                'label' => $parameter->name ?: ($parameter->code ?: "Parâmetro #{$parameter->id}"),
                 'name' => $parameter->name,
                 'code' => $parameter->code,
                 'price' => (float) $parameter->price,
@@ -800,7 +849,8 @@ class VAPProposalController extends Controller
                 'exemption_id' => $parameter->exemption_id,
                 'exemption_code' => $parameter->exemption_code,
                 'withhold_tax' => (bool) $parameter->withhold_tax,
-            ]);
+            ])
+            ->values();
 
         return response()->json($parameters);
     }
@@ -934,13 +984,18 @@ class VAPProposalController extends Controller
      */
     private function matrixOptionPayload(Matrix $matrix): array
     {
+        $label = $matrix->description ?: ($matrix->code ?: "Matriz #{$matrix->id}");
+
         return [
+            'id' => $matrix->id,
+            'value' => $matrix->id,
+            'label' => $label,
             'item_id' => $matrix->id,
             'itemable_type' => Matrix::class,
             'itemable_id' => $matrix->id,
-            'item_description' => $matrix->description ?: $matrix->code,
-            'name' => $matrix->description ?: $matrix->code,
-            'description' => $matrix->description ?: $matrix->code,
+            'item_description' => $label,
+            'name' => $label,
+            'description' => $label,
             'price' => (float) $matrix->fixed_price,
             'unit_id' => Unit::query()->value('id'),
             'qty' => 1,
@@ -958,13 +1013,18 @@ class VAPProposalController extends Controller
      */
     private function parameterOptionPayload(Parameter $parameter): array
     {
+        $label = $parameter->name ?: ($parameter->code ?: "Parâmetro #{$parameter->id}");
+
         return [
+            'id' => $parameter->id,
+            'value' => $parameter->id,
+            'label' => $label,
             'item_id' => $parameter->id,
             'itemable_type' => Parameter::class,
             'itemable_id' => $parameter->id,
-            'item_description' => $parameter->name ?: $parameter->code,
-            'name' => $parameter->name ?: $parameter->code,
-            'description' => $parameter->description ?: $parameter->name,
+            'item_description' => $label,
+            'name' => $label,
+            'description' => $parameter->description ?: $label,
             'price' => (float) $parameter->price,
             'unit_id' => Unit::query()->value('id'),
             'qty' => 1,

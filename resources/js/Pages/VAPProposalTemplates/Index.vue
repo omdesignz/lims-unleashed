@@ -257,17 +257,17 @@
                   <EyeIcon class="h-4 w-4" />
                 </Link>
                 
-                <Link 
-                  :href="route('vap-proposals.templates.edit', template.id)"
-                  class="text-yellow-600 hover:text-yellow-800 p-1.5 rounded-lg hover:bg-yellow-50 transition-colors"
-                  :title="$t('gestlab.general.labels.vap_proposal_templates.edit')"
-                >
-                  <PencilSquareIcon class="h-4 w-4" />
-                </Link>
+              <Link 
+                :href="route('vap-proposals.templates.edit', template.id)"
+                class="rounded-lg p-1.5 text-amber-700 transition-colors hover:bg-amber-50 hover:text-amber-900 dark:text-amber-200 dark:hover:bg-amber-400/10 dark:hover:text-amber-100"
+                :title="$t('gestlab.general.labels.vap_proposal_templates.edit_label')"
+              >
+                <PencilSquareIcon class="h-4 w-4" />
+              </Link>
                 
                 <button 
                   @click="confirmDelete(template)"
-                  class="text-red-600 hover:text-red-800 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                  class="rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 hover:text-red-800 disabled:cursor-not-allowed disabled:opacity-45 dark:text-red-300 dark:hover:bg-red-400/10 dark:hover:text-red-200"
                   :title="$t('gestlab.general.labels.vap_proposal_templates.delete')"
                   :disabled="template.proposals_count > 0"
                 >
@@ -289,10 +289,10 @@
               </Link>
               
               <Link 
-                :href="route('vap-proposals.templates.edit', template.id)"
+                :href="route('vap-proposals.create', { template_id: template.id })"
                 class="inline-flex items-center gap-2 rounded-2xl bg-[#143d37] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#0f302b]"
               >
-                <PencilSquareIcon class="h-4 w-4" />
+                <DocumentTextIcon class="h-4 w-4" />
                 {{ $t('gestlab.general.labels.vap_proposal_templates.use_template') }}
               </Link>
             </div>
@@ -421,25 +421,25 @@
         {{ $t('gestlab.general.labels.vap_proposal_templates.delete_modal.message', { name: selectedTemplate?.name }) }}
       </p>
       
-      <div v-if="selectedTemplate?.proposals_count > 0" class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+      <div v-if="selectedTemplate?.proposals_count > 0" class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-500/30 dark:bg-red-500/10">
         <div class="flex items-start gap-2">
-          <ExclamationTriangleIcon class="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+          <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-300" />
           <div>
-            <p class="text-sm font-medium text-red-900">
+            <p class="text-sm font-medium text-red-900 dark:text-red-200">
               {{ $t('gestlab.general.labels.vap_proposal_templates.delete_modal.warning_title') }}
             </p>
-            <p class="text-sm text-red-700 mt-1">
+            <p class="mt-1 text-sm text-red-700 dark:text-red-300">
               {{ $t('gestlab.general.labels.vap_proposal_templates.delete_modal.warning_message', { count: selectedTemplate?.proposals_count }) }}
             </p>
           </div>
         </div>
       </div>
       
-      <div v-else class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <div v-else class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
         <div class="flex items-start gap-2">
-          <ExclamationTriangleIcon class="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+          <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-300" />
           <div>
-            <p class="text-sm font-medium text-yellow-900">
+            <p class="text-sm font-medium text-amber-900 dark:text-amber-200">
               {{ $t('gestlab.general.labels.vap_proposal_templates.delete_modal.confirm_warning') }}
             </p>
           </div>
@@ -465,8 +465,8 @@
             @dragleave="dragOver = false"
             @drop="handleFileDrop"
             :class="[
-              'border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors',
-              dragOver ? 'border-[#143d37] bg-[#f7f1e6]' : 'border-slate-300 dark:border-slate-700 hover:border-[#143d37] hover:bg-[#f7f1e6]'
+              'cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition-colors',
+              dragOver ? 'border-[#143d37] bg-[#f7f1e6] dark:border-emerald-300/40 dark:bg-emerald-400/10' : 'border-slate-300 hover:border-[#143d37] hover:bg-[#f7f1e6] dark:border-slate-700 dark:hover:border-emerald-300/40 dark:hover:bg-emerald-400/10'
             ]"
           >
             <input
@@ -537,7 +537,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { Link, router } from '@inertiajs/vue3'
 import { 
@@ -554,8 +554,6 @@ import Pagination from '@/Components/Pagination.vue'
 import ConfirmationModal from '@/Components/confirm-dialog.vue'
 import Modal from '@/Components/modal.vue'
 import debounce from 'lodash/debounce'
-import datePickerEnhanced from '@/Components/date-picker-enhanced.vue'
-import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import { useToast } from 'vue-toastification'
 import { trans } from 'laravel-vue-i18n'
 
@@ -668,16 +666,16 @@ const getCategoryColor = (category) => {
 
 const getCategoryLabel = (category) => {
   const labels = {
-    compliance: 'Conformidade ISO 17025',
-    'field-services': 'Recolha e logística',
-    chemical: 'Química',
-    microbiology: 'Microbiologia',
-    physical: 'Física',
-    environmental: 'Ambiental',
-    food: 'Alimentos',
-    general: 'Geral',
+    compliance: trans('gestlab.general.labels.vap_proposal_templates.categories.compliance'),
+    'field-services': trans('gestlab.general.labels.vap_proposal_templates.categories.field_services'),
+    chemical: trans('gestlab.general.labels.vap_proposal_templates.categories.chemical'),
+    microbiology: trans('gestlab.general.labels.vap_proposal_templates.categories.microbiology'),
+    physical: trans('gestlab.general.labels.vap_proposal_templates.categories.physical'),
+    environmental: trans('gestlab.general.labels.vap_proposal_templates.categories.environmental'),
+    food: trans('gestlab.general.labels.vap_proposal_templates.categories.food'),
+    general: trans('gestlab.general.labels.vap_proposal_templates.categories.general'),
   }
-  return labels[category] || 'Geral'
+  return labels[category] || labels.general
 }
 
 // Methods
@@ -834,11 +832,6 @@ const showUsageReport = () => {
 // Watchers
 watch([statusFilter, categoryFilter, sortBy], () => {
   debouncedSearch()
-})
-
-// Initialize
-onMounted(() => {
-  // Configurar inicializações se necessário
 })
 </script>
 

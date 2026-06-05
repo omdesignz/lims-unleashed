@@ -22,12 +22,13 @@ class ReportStudioTemplateRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|\Closure|array<mixed>|string>
      */
     public function rules(): array
     {
         $cssColorRule = 'regex:/\A(?:#[0-9a-fA-F]{3,8}|(?:rgb|rgba|hsl|hsla)\([0-9\s,.%+\-]+\)|[a-zA-Z][a-zA-Z0-9-]{2,32})\z/';
         $cssPositionRule = 'regex:/\A(?:left|right|top|bottom|center|(?:100|[1-9]?\d)(?:\.\d{1,2})?%)(?:\s+(?:left|right|top|bottom|center|(?:100|[1-9]?\d)(?:\.\d{1,2})?%))?\z/i';
+        $customPageSelected = $this->input('export_settings.paper_size') === 'custom';
 
         return [
             'name' => ['required', 'string', 'max:255'],
@@ -75,12 +76,12 @@ class ReportStudioTemplateRequest extends FormRequest
             'layout_schema.canvas_blocks.*.chart_svg' => ['nullable', 'string'],
             'layout_schema.canvas_blocks.*.chart_image_url' => ['nullable', 'string', 'max:65535'],
             'layout_schema.canvas_blocks.*.chart_type' => ['nullable', Rule::in(['bar', 'line', 'doughnut'])],
-            'layout_schema.canvas_blocks.*.chart_labels' => ['nullable'],
+            'layout_schema.canvas_blocks.*.chart_labels' => ['nullable', $this->chartTextListRule()],
             'layout_schema.canvas_blocks.*.chart_labels.*' => ['nullable', 'string', 'max:120'],
-            'layout_schema.canvas_blocks.*.chart_values' => ['nullable'],
-            'layout_schema.canvas_blocks.*.chart_values.*' => ['nullable', 'numeric'],
-            'layout_schema.canvas_blocks.*.chart_colors' => ['nullable'],
-            'layout_schema.canvas_blocks.*.chart_colors.*' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'layout_schema.canvas_blocks.*.chart_values' => ['nullable', $this->chartNumericListRule()],
+            'layout_schema.canvas_blocks.*.chart_values.*' => ['nullable', $this->chartNumericOrPlaceholderRule()],
+            'layout_schema.canvas_blocks.*.chart_colors' => ['nullable', $this->chartHexColorListRule()],
+            'layout_schema.canvas_blocks.*.chart_colors.*' => ['nullable', $this->chartHexColorOrPlaceholderRule()],
             'layout_schema.canvas_blocks.*.chart_primary_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'layout_schema.canvas_blocks.*.chart_background_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'layout_schema.canvas_blocks.*.chart_show_values' => ['sometimes', 'boolean'],
@@ -110,6 +111,10 @@ class ReportStudioTemplateRequest extends FormRequest
             'layout_schema.canvas_blocks.*.signature_name' => ['nullable', 'string', 'max:255'],
             'layout_schema.canvas_blocks.*.signature_title' => ['nullable', 'string', 'max:255'],
             'layout_schema.canvas_blocks.*.signature_image' => ['nullable', 'string', 'max:2048'],
+            'layout_schema.canvas_blocks.*.signature_image_fit' => ['nullable', Rule::in(['cover', 'contain', 'auto'])],
+            'layout_schema.canvas_blocks.*.signature_image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
+            'layout_schema.canvas_blocks.*.signature_image_width' => ['nullable', 'numeric', 'min:24', 'max:360'],
+            'layout_schema.canvas_blocks.*.signature_image_height' => ['nullable', 'numeric', 'min:16', 'max:240'],
             'layout_schema.canvas_blocks.*.signature_line_style' => ['nullable', Rule::in(['solid', 'dashed'])],
             'layout_schema.canvas_blocks.*.signature_align' => ['nullable', Rule::in(['left', 'center', 'right'])],
             'layout_schema.canvas_blocks.*.signature_show_date' => ['sometimes', 'boolean'],
@@ -127,16 +132,19 @@ class ReportStudioTemplateRequest extends FormRequest
             'layout_schema.table_border_color' => ['nullable', 'string', 'max:50', $cssColorRule],
             'layout_schema.table_font_size' => ['nullable', 'numeric', 'min:8', 'max:16'],
             'layout_schema.table_cell_padding' => ['nullable', 'numeric', 'min:2', 'max:24'],
+            'layout_schema.table_summary_background' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_summary_text_color' => ['nullable', 'string', 'max:50', $cssColorRule],
+            'layout_schema.table_summary_muted_color' => ['nullable', 'string', 'max:50', $cssColorRule],
             'layout_schema.show_canvas_grid' => ['sometimes', 'boolean'],
             'layout_schema.show_canvas_rulers' => ['sometimes', 'boolean'],
             'layout_schema.snap_to_grid' => ['sometimes', 'boolean'],
             'layout_schema.snap_grid_size' => ['nullable', 'numeric', 'min:1', 'max:24'],
             'layout_schema.page_safe_area' => ['sometimes', 'boolean'],
             'export_settings' => ['nullable', 'array'],
-            'export_settings.paper_size' => ['nullable', 'string', 'max:20'],
-            'export_settings.orientation' => ['nullable', 'string', 'max:5'],
-            'export_settings.custom_page_width' => ['nullable', 'numeric', 'min:50', 'max:2000'],
-            'export_settings.custom_page_height' => ['nullable', 'numeric', 'min:50', 'max:2000'],
+            'export_settings.paper_size' => ['nullable', Rule::in(['A4', 'Letter', 'Legal', 'custom'])],
+            'export_settings.orientation' => ['nullable', Rule::in(['P', 'L'])],
+            'export_settings.custom_page_width' => [Rule::requiredIf($customPageSelected), 'nullable', 'numeric', 'min:50', 'max:2000'],
+            'export_settings.custom_page_height' => [Rule::requiredIf($customPageSelected), 'nullable', 'numeric', 'min:50', 'max:2000'],
             'export_settings.margin_top' => ['nullable', 'numeric', 'min:0', 'max:200'],
             'export_settings.margin_right' => ['nullable', 'numeric', 'min:0', 'max:200'],
             'export_settings.margin_bottom' => ['nullable', 'numeric', 'min:0', 'max:200'],
@@ -182,5 +190,134 @@ class ReportStudioTemplateRequest extends FormRequest
                 );
             }
         });
+    }
+
+    private function chartTextListRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '' || is_array($value)) {
+                return;
+            }
+
+            if (! is_string($value)) {
+                $fail('A lista de etiquetas do gráfico deve ser texto ou uma lista.');
+
+                return;
+            }
+
+            foreach ($this->splitChartStudioList($value) as $item) {
+                if (mb_strlen($item) > 120) {
+                    $fail('Cada etiqueta do gráfico deve ter no máximo 120 caracteres.');
+
+                    return;
+                }
+            }
+        };
+    }
+
+    private function chartNumericListRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '' || is_array($value)) {
+                return;
+            }
+
+            if (! is_string($value)) {
+                $fail('Os valores do gráfico devem ser numéricos ou variáveis do estúdio.');
+
+                return;
+            }
+
+            foreach ($this->splitChartStudioList($value) as $item) {
+                if (! $this->isNumericChartValue($item) && ! $this->isStudioPlaceholder($item)) {
+                    $fail('Os valores do gráfico devem conter apenas números ou variáveis separados por vírgula, ponto e vírgula ou quebra de linha.');
+
+                    return;
+                }
+            }
+        };
+    }
+
+    private function chartHexColorListRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '' || is_array($value)) {
+                return;
+            }
+
+            if (! is_string($value)) {
+                $fail('A paleta do gráfico deve ser texto ou uma lista de cores.');
+
+                return;
+            }
+
+            foreach ($this->splitChartStudioList($value) as $item) {
+                if (! $this->isHexChartColor($item) && ! $this->isStudioPlaceholder($item)) {
+                    $fail('A paleta do gráfico deve conter apenas cores HEX no formato #RRGGBB ou variáveis do estúdio.');
+
+                    return;
+                }
+            }
+        };
+    }
+
+    private function chartNumericOrPlaceholderRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '') {
+                return;
+            }
+
+            $item = (string) $value;
+
+            if (! $this->isNumericChartValue($item) && ! $this->isStudioPlaceholder($item)) {
+                $fail('Os valores do gráfico devem ser numéricos ou variáveis do estúdio.');
+            }
+        };
+    }
+
+    private function chartHexColorOrPlaceholderRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '') {
+                return;
+            }
+
+            $item = (string) $value;
+
+            if (! $this->isHexChartColor($item) && ! $this->isStudioPlaceholder($item)) {
+                $fail('A paleta do gráfico deve conter apenas cores HEX no formato #RRGGBB ou variáveis do estúdio.');
+            }
+        };
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function splitChartStudioList(string $value): array
+    {
+        return collect(preg_split('/[\r\n;]+|(?<!\d),|,(?!\d)/', $value) ?: [])
+            ->map(fn (string $item): string => trim($item))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function isNumericChartValue(string $value): bool
+    {
+        return is_numeric(str_replace(',', '.', trim($value)));
+    }
+
+    private function isHexChartColor(string $value): bool
+    {
+        return preg_match('/^#[0-9a-fA-F]{6}$/', trim($value)) === 1;
+    }
+
+    private function isStudioPlaceholder(string $value): bool
+    {
+        $value = trim($value);
+
+        return preg_match('/^\{\{\s*[A-Za-z_][A-Za-z0-9_.-]*\s*\}\}$/', $value) === 1
+            || preg_match('/^\{\s*[A-Za-z_][A-Za-z0-9_.-]*\s*\}$/', $value) === 1;
     }
 }

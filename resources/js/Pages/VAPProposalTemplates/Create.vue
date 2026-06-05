@@ -43,10 +43,15 @@ const layoutSchema = ref({
   table_border_color: props.initialDraft?.layout_schema?.table_border_color ?? '#cbd5e1',
   table_font_size: props.initialDraft?.layout_schema?.table_font_size ?? 10,
   table_cell_padding: props.initialDraft?.layout_schema?.table_cell_padding ?? 8,
+  table_summary_background: props.initialDraft?.layout_schema?.table_summary_background ?? '#fffdf7',
+  table_summary_text_color: props.initialDraft?.layout_schema?.table_summary_text_color ?? '#15231f',
+  table_summary_muted_color: props.initialDraft?.layout_schema?.table_summary_muted_color ?? '#64748b',
 })
 
 const exportSettings = ref({
   paper_size: props.initialDraft?.export_settings?.paper_size ?? 'A4',
+  custom_page_width: props.initialDraft?.export_settings?.custom_page_width ?? null,
+  custom_page_height: props.initialDraft?.export_settings?.custom_page_height ?? null,
   orientation: props.initialDraft?.export_settings?.orientation ?? 'P',
   margin_top: props.initialDraft?.export_settings?.margin_top ?? 22,
   margin_right: props.initialDraft?.export_settings?.margin_right ?? 14,
@@ -72,6 +77,8 @@ function syncStudioSettings() {
   form.layout_schema = { ...layoutSchema.value }
   form.export_settings = {
     paper_size: exportSettings.value.paper_size || 'A4',
+    custom_page_width: exportSettings.value.paper_size === 'custom' ? Number(exportSettings.value.custom_page_width || 0) : null,
+    custom_page_height: exportSettings.value.paper_size === 'custom' ? Number(exportSettings.value.custom_page_height || 0) : null,
     orientation: exportSettings.value.orientation || 'P',
     margin_top: Number(exportSettings.value.margin_top || 0),
     margin_right: Number(exportSettings.value.margin_right || 0),
@@ -123,6 +130,7 @@ function selectPreset(preset) {
       :back-href="route('vap-proposals.templates.index')"
       :back-label="$t('gestlab.general.labels.vap_proposal_templates.create.back_label')"
       :submit-label="$t('gestlab.general.labels.vap_proposal_templates.create.submit_label')"
+      :draft-preview-href="route('vap-proposals.templates.preview-draft-pdf')"
       @select-preset="selectPreset"
       @submit="submit"
     />

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ReportStudioDraftPreviewRequest;
 use App\Http\Requests\ReportStudioTemplateRequest;
 use App\Models\QualityCertificate;
 use App\Models\ReportStudioTemplate;
@@ -164,18 +165,7 @@ class ReportStudioController extends Controller
     ) {
         abort_if(! auth()->user()->hasRole('admin'), 403);
 
-        [$payload, $filename] = match ($reportStudio->studio_type) {
-            'analysis' => $this->analysisPreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
-            'executive' => $this->executivePreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
-            'proposal' => $this->proposalPreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
-            'export_certificate' => $this->exportCertificatePreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
-            'import_certificate' => $this->importCertificatePreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
-            'quote' => $this->quotePreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
-            'invoice' => $this->invoicePreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
-            'receipt' => $this->receiptPreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
-            'credit_note' => $this->creditNotePreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
-            default => abort(422, 'Tipo de estúdio não suportado para pré-visualização PDF.'),
-        };
+        [$payload, $filename] = $this->previewPayloadFor($reportStudio, $reportStudioPdfBuilder, $settings);
 
         try {
             $renderedPdf = $reportStudioPdfRenderer->renderPreview($reportStudio, $payload, $filename);
@@ -188,6 +178,55 @@ class ReportStudioController extends Controller
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
             'X-Report-Studio-Renderer' => $renderedPdf['renderer'],
         ]);
+    }
+
+    public function previewDraftPdf(
+        ReportStudioDraftPreviewRequest $request,
+        ReportStudioPdfBuilder $reportStudioPdfBuilder,
+        ReportStudioPdfRenderer $reportStudioPdfRenderer,
+        GeneralSettings $settings
+    ) {
+        abort_if(! auth()->user()->hasRole('admin'), 403);
+
+        $validated = $request->validated();
+        $studioType = (string) $validated['studio_type'];
+        $reportStudio = new ReportStudioTemplate(array_merge($validated, [
+            'name' => $validated['name'] ?: 'Pré-visualização do estúdio',
+        ]));
+
+        [$payload] = $this->previewPayloadFor($reportStudio, $reportStudioPdfBuilder, $settings);
+        $filename = 'report-studio-draft-'.$studioType.'-preview.pdf';
+
+        try {
+            $renderedPdf = $reportStudioPdfRenderer->renderPreview($reportStudio, $payload, $filename);
+        } catch (RuntimeException $exception) {
+            abort(422, $exception->getMessage());
+        }
+
+        return response($renderedPdf['content'], 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'X-Report-Studio-Renderer' => $renderedPdf['renderer'],
+        ]);
+    }
+
+    private function previewPayloadFor(
+        ReportStudioTemplate $reportStudio,
+        ReportStudioPdfBuilder $reportStudioPdfBuilder,
+        GeneralSettings $settings
+    ): array {
+        return match ($reportStudio->studio_type) {
+            'analysis' => $this->analysisPreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
+            'executive' => $this->executivePreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
+            'proposal' => $this->proposalPreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
+            'export_certificate' => $this->exportCertificatePreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
+            'import_certificate' => $this->importCertificatePreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
+            'quote' => $this->quotePreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
+            'invoice' => $this->invoicePreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
+            'receipt' => $this->receiptPreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
+            'credit_note' => $this->creditNotePreviewPayload($reportStudio, $reportStudioPdfBuilder, $settings),
+            default => abort(422, 'Tipo de estúdio não suportado para pré-visualização PDF.'),
+        };
     }
 
     private function analysisPreviewPayload(

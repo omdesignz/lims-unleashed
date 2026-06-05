@@ -3,6 +3,12 @@
 namespace App\Models;
 
 use App\Settings\GeneralSettings;
+use Endroid\QrCode\Color\Color;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\RoundBlockSizeMode;
+use Endroid\QrCode\Writer\SvgWriter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -44,47 +50,61 @@ class VAPProposalTemplate extends Model
         return $this->hasMany(VAPProposal::class, 'template_id');
     }
 
-    public static function getPlaceholders(): array
+    /**
+     * @return array<string, string>
+     */
+    public static function getPlaceholderLabels(): array
     {
         return [
-            '{proposal_number}',
-            '{customer_name}',
-            '{customer_code}',
-            '{service_location}',
-            '{department}',
-            '{warehouse}',
-            '{created_at}',
-            '{created_by}',
-            '{tolerance_days}',
-            '{expiry_date}',
-            '{days_until_expiry}',
-            '{sub_total}',
-            '{total}',
-            '{tax}',
-            '{discount}',
-            '{global_discount_amount}',
-            '{global_discount_percentage}',
-            '{withholding_tax_amount}',
-            '{withholding_tax_percentage}',
-            '{pricing_mode}',
-            '{withhold_tax}',
-            '{observations}',
-            '{total_items}',
-            '{taxable_items}',
-            '{items_table}',
-            '{items_list}',
-            '{summary_table}',
-            '{banking_details}',
-            '{document_keywords}',
-            '{lab_signature}',
-            '{client_signature}',
-            '{signature_block}',
-            '{lab_name}',
-            '{lab_details}',
-            '{customer_details}',
-            '{bank_name}',
-            '{bank_iban}',
+            '{proposal_number}' => 'Número da proposta',
+            '{customer_name}' => 'Nome do cliente',
+            '{customer_code}' => 'Código do cliente',
+            '{service_location}' => 'Local do serviço',
+            '{department}' => 'Departamento',
+            '{warehouse}' => 'Armazém',
+            '{created_at}' => 'Data de criação',
+            '{created_by}' => 'Responsável comercial',
+            '{tolerance_days}' => 'Dias de tolerância',
+            '{expiry_date}' => 'Data de validade',
+            '{days_until_expiry}' => 'Dias até expirar',
+            '{sub_total}' => 'Subtotal',
+            '{total}' => 'Total',
+            '{tax}' => 'Imposto',
+            '{discount}' => 'Desconto',
+            '{global_discount_amount}' => 'Desconto global',
+            '{global_discount_percentage}' => 'Percentagem do desconto global',
+            '{withholding_tax_amount}' => 'Retenção na fonte',
+            '{withholding_tax_percentage}' => 'Percentagem da retenção',
+            '{pricing_mode}' => 'Modo de preço',
+            '{withhold_tax}' => 'Aplicação de retenção',
+            '{observations}' => 'Observações',
+            '{total_items}' => 'Total de itens',
+            '{taxable_items}' => 'Itens tributáveis',
+            '{items_table}' => 'Tabela de itens/serviços',
+            '{items_list}' => 'Lista de itens/serviços',
+            '{summary_table}' => 'Resumo financeiro',
+            '{banking_details}' => 'Dados bancários',
+            '{document_keywords}' => 'Palavras-chave documentais',
+            '{lab_signature}' => 'Assinatura do laboratório',
+            '{client_signature}' => 'Assinatura do cliente',
+            '{signature_block}' => 'Bloco de assinatura',
+            '{lab_name}' => 'Nome do laboratório',
+            '{lab_details}' => 'Dados do laboratório',
+            '{customer_details}' => 'Dados do cliente',
+            '{bank_name}' => 'Nome do banco',
+            '{bank_iban}' => 'IBAN',
+            '{verification_url}' => 'Ligação pública de verificação',
+            '{proposal_authenticity}' => 'QR e autenticidade da proposta',
+            '{proposal_acceptance_evidence}' => 'Evidência de aceite do cliente',
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function getPlaceholders(): array
+    {
+        return array_keys(self::getPlaceholderLabels());
     }
 
     /**
@@ -137,6 +157,9 @@ class VAPProposalTemplate extends Model
         $replacements['{customer_details}'] = self::generateCustomerDetails($proposal);
         $replacements['{bank_name}'] = $settings?->app_bank_name ?? '';
         $replacements['{bank_iban}'] = $settings?->app_bank_iban ?? '';
+        $replacements['{verification_url}'] = self::verificationUrl($proposal);
+        $replacements['{proposal_authenticity}'] = self::generateAuthenticityBlock($proposal);
+        $replacements['{proposal_acceptance_evidence}'] = self::generateAcceptanceEvidenceBlock($proposal);
 
         return $replacements;
     }
@@ -223,6 +246,120 @@ class VAPProposalTemplate extends Model
         $clientSigner = $proposal->customer?->name ?: 'Representante do cliente';
 
         return '<section style="margin-top:24px;"><table style="width:100%; border-collapse:collapse;"><tr><td style="width:48%; padding-top:26px; border-top:1px solid #143d37; color:#20332f;"><strong>'.e($labSigner).'</strong><br><span style="color:#58665f;">Validação técnica / comercial</span></td><td style="width:4%;"></td><td style="width:48%; padding-top:26px; border-top:1px solid #143d37; color:#20332f;"><strong>'.e($clientSigner).'</strong><br><span style="color:#58665f;">Aceitação da proposta</span></td></tr></table></section>';
+    }
+
+    private static function generateAuthenticityBlock(VAPProposal $proposal): string
+    {
+        $verificationUrl = self::verificationUrl($proposal);
+        $status = $proposal->status_badge['text'] ?? $proposal->status ?? 'Pendente';
+        $hash = $proposal->unique_hash ?: 'sem-hash';
+        $shortHash = str($hash)->afterLast('-')->limit(18, '')->value();
+        $qrDataUri = self::qrDataUri($verificationUrl);
+        $escapedStatus = e($status);
+        $escapedShortHash = e($shortHash);
+        $escapedVerificationUrl = e($verificationUrl);
+
+        return <<<HTML
+<section style="padding:14px 16px; border:1px solid #ded3bf; border-radius:18px; background:#fffdf7;">
+    <table style="width:100%; border-collapse:collapse;">
+        <tr>
+            <td style="width:70%; vertical-align:top; padding-right:14px;">
+                <div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#9a7a2f; font-weight:800;">Verificação da proposta</div>
+                <div style="margin-top:8px; color:#20332f;">Documento verificável por código QR e ligação pública segura.</div>
+                <div style="margin-top:8px; color:#58665f;">Estado: <strong style="color:#143d37;">{$escapedStatus}</strong></div>
+                <div style="margin-top:4px; color:#58665f;">Código de controlo: <strong style="color:#143d37;">{$escapedShortHash}</strong></div>
+                <div style="margin-top:8px; font-size:9px; color:#58665f; word-break:break-all;">{$escapedVerificationUrl}</div>
+            </td>
+            <td style="width:30%; vertical-align:top; text-align:right;">
+                <img src="{$qrDataUri}" alt="QR de verificação da proposta" style="display:inline-block; width:92px; height:92px;" />
+            </td>
+        </tr>
+    </table>
+</section>
+HTML;
+    }
+
+    private static function generateAcceptanceEvidenceBlock(VAPProposal $proposal): string
+    {
+        $proposal->loadMissing('complianceAgreement');
+
+        $agreement = $proposal->complianceAgreement;
+        $acceptedAt = $agreement?->acknowledged_at?->format('d/m/Y H:i');
+        $rejectedAt = $agreement?->rejected_at?->format('d/m/Y H:i');
+
+        if ($acceptedAt) {
+            $title = 'Aceite pelo cliente';
+            $summary = 'Conformidade, confidencialidade e imparcialidade reconhecidas no portal.';
+            $tone = '#167a58';
+            $evidenceRows = [
+                'Aceite em' => $acceptedAt,
+                'IP do cliente' => $agreement->client_ip,
+                'Confidencialidade' => $agreement->confidentiality ? 'Confirmada' : 'Não confirmada',
+                'Imparcialidade' => $agreement->impartiality ? 'Confirmada' : 'Não confirmada',
+                'Não divulgação' => $agreement->nondisclosure ? 'Confirmada' : 'Não confirmada',
+            ];
+        } elseif ($rejectedAt) {
+            $title = 'Rejeitada pelo cliente';
+            $summary = $agreement?->rejection_reason ?: 'A proposta foi rejeitada pelo cliente.';
+            $tone = '#b42318';
+            $evidenceRows = [
+                'Rejeitada em' => $rejectedAt,
+                'IP do cliente' => $agreement?->client_ip,
+            ];
+        } else {
+            $title = 'Aceite pendente';
+            $summary = 'A proposta aguarda validação do cliente no portal.';
+            $tone = '#9a7a2f';
+            $evidenceRows = [
+                'Estado' => $proposal->status_badge['text'] ?? $proposal->status ?? 'Pendente',
+                'Validade' => $proposal->expiry_date?->format('d/m/Y'),
+            ];
+        }
+
+        $rows = collect($evidenceRows)
+            ->filter()
+            ->map(fn (string $value, string $label): string => '<div style="display:flex; justify-content:space-between; gap:12px; padding:5px 0; border-bottom:1px solid #eee4d3;"><span style="color:#738076;">'.e($label).'</span><strong style="color:#143d37; text-align:right;">'.e($value).'</strong></div>')
+            ->implode('');
+        $escapedTitle = e($title);
+        $escapedSummary = e($summary);
+
+        return <<<HTML
+<section style="padding:14px 16px; border:1px solid #ded3bf; border-radius:18px; background:#ffffff;">
+    <div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#9a7a2f; font-weight:800;">Evidência de aceite</div>
+    <div style="margin-top:8px; font-weight:800; color:{$tone};">{$escapedTitle}</div>
+    <div style="margin-top:6px; color:#58665f;">{$escapedSummary}</div>
+    <div style="margin-top:10px;">{$rows}</div>
+</section>
+HTML;
+    }
+
+    private static function verificationUrl(VAPProposal $proposal): string
+    {
+        if (! $proposal->unique_hash) {
+            return '';
+        }
+
+        return route('vap-proposals.public.show', $proposal->unique_hash);
+    }
+
+    private static function qrDataUri(string $content): string
+    {
+        if ($content === '') {
+            $content = 'Proposta sem código de verificação.';
+        }
+
+        $qrCode = new QrCode(
+            data: $content,
+            encoding: new Encoding('UTF-8'),
+            errorCorrectionLevel: ErrorCorrectionLevel::Medium,
+            size: 260,
+            margin: 8,
+            roundBlockSizeMode: RoundBlockSizeMode::Margin,
+            foregroundColor: new Color(20, 61, 55),
+            backgroundColor: new Color(255, 253, 247),
+        );
+
+        return (new SvgWriter)->write($qrCode)->getDataUri();
     }
 
     private static function generateLabDetails(?GeneralSettings $settings): string

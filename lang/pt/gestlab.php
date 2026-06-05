@@ -367,7 +367,7 @@ return [
             ],
             'vap_proposals' => [
                 'title' => 'Propostas de Serviço',
-                'description' => 'Gerencie e rastreie propostas de serviço enviadas para clientes.',
+                'description' => 'Gerir e rastrear propostas de serviço enviadas aos clientes.',
                 'total' => 'total',
                 'create_new' => 'Nova Proposta',
                 'create_first' => 'Criar Primeira Proposta',
@@ -375,6 +375,10 @@ return [
                 'changes' => 'Alterações',
 
                 'surface' => [
+                    'commercial_management' => 'Gestão comercial',
+                    'templates' => 'Modelos',
+                    'template_badge' => 'Modelo: :name',
+                    'proposals_count' => ':count propostas',
                     'new_proposal' => 'Nova proposta',
                     'commercial_revision' => 'Revisão comercial',
                     'expected_code' => 'Código previsto',
@@ -396,6 +400,7 @@ return [
                     'rejected' => 'Rejeitadas',
                     'expired' => 'Vencidas',
                     'total_value' => 'Valor Total',
+                    'accepted_value' => 'Valor aceite',
                 ],
 
                 'chart' => [
@@ -403,6 +408,7 @@ return [
                     'last_7_days' => 'Últimos 7 Dias',
                     'last_30_days' => 'Últimos 30 Dias',
                     'last_90_days' => 'Últimos 90 Dias',
+                    'empty' => 'Ainda não há actividade suficiente para desenhar o gráfico deste período.',
                 ],
 
                 'list' => [
@@ -469,10 +475,19 @@ return [
                 ],
 
                 'show' => [
+                    'commercial_proposal' => 'Proposta comercial',
+                    'unidentified_customer' => 'Cliente por identificar',
+                    'base_information' => 'Informação base',
+                    'commercial_scope' => 'Âmbito comercial',
+                    'history' => 'Histórico',
+                    'system_user' => 'Sistema',
+                    'resolved_preview' => 'Pré-visualização resolvida',
+                    'resolved_preview_description' => 'Conteúdo com variáveis, dados bancários, âmbito e assinaturas aplicados a esta proposta.',
+                    'empty_template' => 'Modelo sem conteúdo configurado.',
                     'description' => 'Proposta de serviço para',
-                    'download_pdf' => 'Baixar PDF',
+                    'download_pdf' => 'Descarregar PDF',
                     'send_to_client' => 'Enviar para Cliente',
-                    'revise' => 'Revisar Proposta',
+                    'revise' => 'Rever Proposta',
                     'revision' => 'Revisão',
                     'matrix_pricing' => 'Preço de Matriz',
                     'matrix' => 'Matriz',
@@ -578,6 +593,15 @@ return [
                         'generate_pdf' => 'Gerar e anexar PDF',
                         'send_email' => 'Enviar notificação por e-mail',
                     ],
+                ],
+
+                'expiry' => [
+                    'undefined' => 'Validade por definir',
+                    'overdue' => 'Expirada há :days :unit',
+                    'one_day' => 'dia',
+                    'days' => 'dias',
+                    'one_day_left' => 'dia restante',
+                    'days_left' => 'dias restantes',
                 ],
 
                 'create' => [
@@ -717,58 +741,63 @@ return [
 
                 'public' => [
                     'proposal' => 'Proposta',
-                    'expired_warning' => 'Esta proposta expirou e não pode mais ser aceita.',
+                    'client_validation' => 'Validação do cliente',
+                    'expired_warning' => 'Esta proposta expirou e já não pode ser aceite.',
                     'proposal_for' => 'Proposta para',
                     'created_on' => 'Criada em',
                     'valid_until' => 'Válida até',
                     'days_left' => 'dias restantes',
-                    'download_pdf' => 'Baixar PDF',
-                    'customer_info' => 'Informações do Cliente',
+                    'download_pdf' => 'Descarregar PDF',
+                    'customer_info' => 'Dados do cliente',
                     'customer' => 'Cliente',
-                    'customer_code' => 'Código do Cliente',
-                    'service_location' => 'Local de Serviço',
-                    'withhold_tax' => 'Reter Imposto',
-                    'lab_info' => 'Informações do Laboratório',
+                    'customer_code' => 'Código do cliente',
+                    'service_location' => 'Local de serviço',
+                    'withhold_tax' => 'Reter imposto',
+                    'lab_info' => 'Dados do laboratório',
                     'department' => 'Departamento',
                     'warehouse' => 'Armazém',
-                    'tolerance_days' => 'Dias de Tolerância',
+                    'tolerance_days' => 'Dias de tolerância',
                     'days' => 'dias',
-                    'pricing_mode' => 'Modo de Precificação',
+                    'pricing_mode' => 'Modo de preço',
                     'matrix' => 'Matriz',
                     'parameter' => 'Parâmetro',
-                    'service_items' => 'Itens de Serviço',
-                    'item_description' => 'Descrição do Item',
+                    'service_items' => 'Itens de serviço',
+                    'item_description' => 'Descrição do item',
                     'standard' => 'Padrão',
                     'quantity' => 'Quantidade',
-                    'unit_price' => 'Preço Unitário',
+                    'unit_price' => 'Preço unitário',
                     'discount' => 'Desconto',
-                    'tax' => 'Taxa',
+                    'tax' => 'IVA',
                     'by' => 'Por',
                     'unknown' => 'Desconhecido',
                     'items' => 'Itens',
-                    'taxable_items' => 'Itens Taxados',
+                    'taxable_items' => 'Itens com IVA',
                     'total' => 'Total',
                     'subtotal' => 'Subtotal',
-                    'total_discount' => 'Desconto Total',
-                    'total_tax' => 'Taxa Total',
-                    'total_amount' => 'Valor Total',
+                    'total_discount' => 'Desconto total',
+                    'total_tax' => 'IVA total',
+                    'total_amount' => 'Valor total',
+                    'banking_details' => 'Dados bancários',
+                    'bank_name' => 'Banco',
+                    'bank_account_name' => 'Titular',
+                    'bank_account_number' => 'Conta',
                     'observations' => 'Observações',
-                    'compliance_agreement' => 'Acordo de Conformidade',
+                    'compliance_agreement' => 'Acordo de conformidade',
                     'agreement_signed' => 'Acordo assinado',
                     'signed_on' => 'Assinado em',
                     'confidentiality_text' => 'Concordo em manter confidencialidade sobre todas as informações técnicas, processos e resultados fornecidos pelo laboratório.',
                     'impartiality_text' => 'Declaro que esta proposta foi elaborada de forma imparcial, sem conflitos de interesse que possam comprometer a qualidade do serviço.',
                     'nondisclosure_text' => 'Concordo em não divulgar informações confidenciais a terceiros sem autorização prévia por escrito.',
-                    'accept_proposal' => 'Aceitar Proposta',
-                    'reject_proposal' => 'Rejeitar Proposta',
-                    'proposal_accepted' => 'Proposta Aceita',
+                    'accept_proposal' => 'Aceitar proposta',
+                    'reject_proposal' => 'Rejeitar proposta',
+                    'proposal_accepted' => 'Proposta aceite',
                     'accepted_on' => 'Aceita em',
-                    'proposal_rejected' => 'Proposta Rejeitada',
-                    'proposal_expired' => 'Proposta Expirada',
+                    'proposal_rejected' => 'Proposta rejeitada',
+                    'proposal_expired' => 'Proposta expirada',
                     'expired_on' => 'Expirada em',
-                    'reject_reason' => 'Motivo da Rejeição',
+                    'reject_reason' => 'Motivo da rejeição',
                     'reject_reason_placeholder' => 'Por favor, descreva o motivo da rejeição desta proposta...',
-                    'confirm_reject' => 'Confirmar Rejeição',
+                    'confirm_reject' => 'Confirmar rejeição',
                 ],
 
                 'delete' => [
@@ -856,7 +885,7 @@ return [
 
                 'view_details' => 'Ver detalhes',
                 'view' => 'Ver',
-                'edit' => 'Editar',
+                'edit_label' => 'Editar',
                 'delete' => 'Excluir',
                 'use_template' => 'Editar modelo',
 
@@ -1103,6 +1132,14 @@ return [
                 ],
 
                 'studio' => [
+                    'draft_preview' => [
+                        'action' => 'Pré-visualizar PDF',
+                        'generating' => 'A gerar PDF...',
+                        'error' => 'Não foi possível gerar a pré-visualização PDF deste rascunho.',
+                        'missing_route' => 'A rota de pré-visualização do rascunho não está disponível.',
+                        'panel_eyebrow' => 'Validação PDF',
+                        'panel_description' => 'Gere o PDF actual sem guardar para validar cabeçalhos, rodapés, fundo, margens, paginação, blocos e tabelas.',
+                    ],
                     'media_picker' => [
                         'title' => 'Biblioteca de media',
                         'description' => 'Escolha imagens, carimbos ou assinaturas sem copiar URLs manualmente.',
@@ -1120,7 +1157,550 @@ return [
             ],
 
             'vap_report_studios' => [
+                'index' => [
+                    'hero' => [
+                        'badge' => 'Estúdios de saída',
+                        'title' => 'Documentos laboratoriais com canvas, camadas e PDF de produção.',
+                        'description' => 'Desenhe cabeçalhos, rodapés, fundos, assinaturas, carimbos, códigos QR e blocos posicionáveis. Para composições com CSS moderno, use um renderizador Chromium para máxima fidelidade ao canvas.',
+                        'preview_pdf' => 'Pré-visualizar PDF',
+                        'new_template' => 'Novo modelo',
+                    ],
+                    'summary' => [
+                        'active_models' => [
+                            'label' => 'Modelos activos',
+                            'hint' => 'Modelos documentais controlados',
+                        ],
+                        'lab_reports' => [
+                            'label' => 'Relatórios laboratoriais',
+                            'hint' => 'Saída técnica e executiva',
+                        ],
+                        'commercial_documents' => [
+                            'label' => 'Documentos comerciais',
+                            'hint' => 'Propostas, facturas e recibos',
+                        ],
+                        'reusable_media' => [
+                            'label' => 'Multimédia reutilizável',
+                            'hint' => 'Galeria, assinaturas e marcas',
+                        ],
+                    ],
+                    'document_types' => [
+                        'analysis' => 'Análises',
+                        'executive' => 'Executivos',
+                        'proposal' => 'Propostas',
+                        'export_certificate' => 'Exportação',
+                        'import_certificate' => 'Importação',
+                        'quote' => 'Proformas',
+                        'invoice' => 'Facturas',
+                        'receipt' => 'Recibos',
+                        'credit_note' => 'Notas de crédito',
+                        'canva' => 'Canva',
+                        'chrome' => 'Chrome PDF',
+                    ],
+                    'saved' => [
+                        'title' => 'Modelos guardados',
+                        'description' => 'Os modelos abaixo controlam a saída PDF e podem ser refinados directamente no canvas.',
+                        'count' => ':count modelos na biblioteca',
+                        'default_badge' => 'Padrão',
+                        'no_description' => 'Sem descrição registada.',
+                        'updated_at' => 'Actualizado em :date',
+                        'preview_pdf' => 'Pré-visualizar PDF',
+                        'edit' => 'Editar',
+                        'archive' => 'Arquivar',
+                        'empty' => 'Ainda não existem modelos de estúdio configurados.',
+                    ],
+                    'workbench' => [
+                        'title' => 'Estúdio de relatórios',
+                        'intro' => 'Monte relatórios analíticos, executivos ou especiais com canvas editorial, blocos posicionáveis, cabeçalhos e rodapés por página e pré-visualização PDF alinhada com o builder final.',
+                        'editing_label' => 'A editar: :name',
+                        'back_label' => 'Voltar ao topo',
+                        'submit_label' => 'Guardar estúdio',
+                    ],
+                    'archive' => [
+                        'title' => 'Arquivar modelo de relatório',
+                        'message' => 'Pretende arquivar o modelo ":name"?',
+                        'warning' => 'O modelo deixa de estar disponível como opção activa, mas o histórico documental permanece preservado.',
+                        'cancel' => 'Cancelar',
+                        'confirm' => 'Arquivar modelo',
+                    ],
+                    'format' => [
+                        'now' => 'agora',
+                    ],
+                ],
+                'presets' => [
+                    'names' => [
+                        'analysis' => 'Relatório analítico acreditável',
+                        'executive' => 'Resumo executivo com gráficos',
+                        'proposal' => 'Proposta técnica-comercial',
+                        'export_certificate' => 'Certificado de exportação',
+                        'import_certificate' => 'Certificado de importação',
+                        'quote' => 'Proforma comercial',
+                        'invoice' => 'Factura fiscal',
+                        'receipt' => 'Recibo de tesouraria',
+                        'credit_note' => 'Nota de crédito financeira',
+                    ],
+                    'descriptions' => [
+                        'analysis' => 'Relatório multi-página com amostra, cadeia de custódia, escopo, resultados, incerteza, regra de decisão, gráfico e assinatura.',
+                        'executive' => 'Pacote de direcção com indicadores, gráficos, leitura de risco, clientes activos e capacidade operacional.',
+                        'proposal' => 'Proposta com escopo técnico, condições comerciais, dados bancários, autenticidade, assinatura e aceite do cliente.',
+                        'export_certificate' => 'Certificado com produto, origem, destino, expedição, observações e validação técnica.',
+                        'import_certificate' => 'Certificado com importador, portos, lotes, validade, observações e assinatura técnica.',
+                        'quote' => 'Proforma com capa editorial, itens, condições comerciais, resumo financeiro, dados bancários e assinatura.',
+                        'invoice' => 'Factura com cliente, vencimento, itens, impostos, dados bancários, paginação e validação fiscal.',
+                        'receipt' => 'Recibo com liquidação, forma de pagamento, confirmação de recebimento e assinatura de tesouraria.',
+                        'credit_note' => 'Nota de crédito com motivo de rectificação, itens corrigidos, impacto financeiro e validação.',
+                    ],
+                ],
                 'studio' => [
+                    'zoom' => [
+                        'fit' => 'Ajustar',
+                    ],
+                    'panes' => [
+                        'setup' => [
+                            'label' => 'Configurar',
+                            'description' => 'Modelo, preset, tipo e tema',
+                        ],
+                        'compose' => [
+                            'label' => 'Compor',
+                            'description' => 'Conteúdo, blocos e multimédia',
+                        ],
+                        'pdf' => [
+                            'label' => 'PDF',
+                            'description' => 'Páginas, margens e saída',
+                        ],
+                        'preview' => [
+                            'label' => 'Pré-visualizar',
+                            'description' => 'Conferir saída antes de guardar',
+                        ],
+                    ],
+                    'pdf_sections' => [
+                        'surfaces' => [
+                            'label' => 'Estrutura',
+                            'description' => 'Cabeçalhos, rodapé e fundo',
+                        ],
+                        'tables' => [
+                            'label' => 'Tabelas',
+                            'description' => 'Leitura e densidade técnica',
+                        ],
+                        'page' => [
+                            'label' => 'Página',
+                            'description' => 'Formato, orientação e margens',
+                        ],
+                        'output' => [
+                            'label' => 'Saída',
+                            'description' => 'Renderizador e validação final',
+                        ],
+                    ],
+                    'status' => [
+                        'draft' => [
+                            'label' => 'Rascunho',
+                            'description' => 'Ainda em construção e indisponível como modelo activo.',
+                        ],
+                        'active' => [
+                            'label' => 'Activo',
+                            'description' => 'Disponível para gerar novos documentos deste tipo.',
+                        ],
+                        'archived' => [
+                            'label' => 'Arquivado',
+                            'description' => 'Preservado para histórico, sem utilização em novos documentos.',
+                        ],
+                    ],
+                    'inspector_modes' => [
+                        'layout' => 'Layout',
+                        'style' => 'Estilo',
+                        'content' => 'Conteúdo',
+                        'media' => 'Multimédia',
+                    ],
+                    'document_labels' => [
+                        'analysis' => [
+                            'singular' => 'relatório analítico',
+                            'plural' => 'relatórios analíticos',
+                            'badge' => 'Studio analítico multi-página',
+                        ],
+                        'executive' => [
+                            'singular' => 'relatório executivo',
+                            'plural' => 'relatórios executivos',
+                            'badge' => 'Studio executivo multi-página',
+                        ],
+                        'export_certificate' => [
+                            'singular' => 'certificado de exportação',
+                            'plural' => 'certificados de exportação',
+                            'badge' => 'Studio de exportação multi-página',
+                        ],
+                        'import_certificate' => [
+                            'singular' => 'certificado de importação',
+                            'plural' => 'certificados de importação',
+                            'badge' => 'Studio de importação multi-página',
+                        ],
+                        'quote' => [
+                            'singular' => 'proforma',
+                            'plural' => 'proformas',
+                            'badge' => 'Studio comercial multi-página',
+                        ],
+                        'invoice' => [
+                            'singular' => 'factura',
+                            'plural' => 'facturas',
+                            'badge' => 'Studio fiscal multi-página',
+                        ],
+                        'receipt' => [
+                            'singular' => 'recibo',
+                            'plural' => 'recibos',
+                            'badge' => 'Studio de recebimento multi-página',
+                        ],
+                        'credit_note' => [
+                            'singular' => 'nota de crédito',
+                            'plural' => 'notas de crédito',
+                            'badge' => 'Studio de rectificação multi-página',
+                        ],
+                        'proposal' => [
+                            'singular' => 'proposta',
+                            'plural' => 'propostas',
+                            'badge' => 'Studio interno multi-página',
+                        ],
+                        'default' => [
+                            'singular' => 'documento',
+                            'plural' => 'documentos',
+                            'badge' => 'Studio multi-página',
+                        ],
+                    ],
+                    'document_types' => [
+                        'analysis' => 'Relatório analítico',
+                        'executive' => 'Relatório executivo',
+                        'proposal' => 'Proposta',
+                        'export_certificate' => 'Certificado de exportação',
+                        'import_certificate' => 'Certificado de importação',
+                        'quote' => 'Proforma',
+                        'invoice' => 'Factura',
+                        'receipt' => 'Recibo',
+                        'credit_note' => 'Nota de crédito',
+                        'default' => 'Documento',
+                    ],
+                    'surfaces' => [
+                        'content' => 'Corpo do documento',
+                        'first_page_header_html' => 'Cabeçalho da primeira página',
+                        'default_header_html' => 'Cabeçalho padrão',
+                        'footer_html' => 'Rodapé',
+                        'styles_css' => 'CSS adicional',
+                        'document_background' => 'Fundo do documento',
+                    ],
+                    'media_fit' => [
+                        'cover' => 'Cobrir página',
+                        'contain' => 'Conter',
+                        'auto' => 'Tamanho original',
+                    ],
+                    'media_position' => [
+                        'center_center' => 'Centro',
+                        'top_center' => 'Topo ao centro',
+                        'top_left' => 'Topo à esquerda',
+                        'top_right' => 'Topo à direita',
+                        'bottom_center' => 'Base ao centro',
+                        'bottom_left' => 'Base à esquerda',
+                        'bottom_right' => 'Base à direita',
+                        'top' => 'Topo',
+                        'bottom' => 'Base',
+                        'left' => 'Esquerda',
+                        'right' => 'Direita',
+                        'top_left_corner' => 'Canto superior esquerdo',
+                        'top_right_corner' => 'Canto superior direito',
+                        'bottom_left_corner' => 'Canto inferior esquerdo',
+                        'bottom_right_corner' => 'Canto inferior direito',
+                    ],
+                    'media_repeat' => [
+                        'no_repeat' => 'Sem repetição',
+                        'repeat_x' => 'Repetir horizontalmente',
+                        'repeat_y' => 'Repetir verticalmente',
+                        'repeat' => 'Repetir em mosaico',
+                    ],
+                    'themes' => [
+                        'corporate' => 'Corporativo premium',
+                        'compliance' => 'Conformidade / ISO',
+                        'field' => 'Recolha e operações',
+                        'minimal' => 'Editorial minimalista',
+                    ],
+                    'fonts' => [
+                        'brand' => [
+                            'label' => 'Marca GestLab / Manrope',
+                            'description' => 'A fonte principal da aplicação, limpa e séria para documentos premium.',
+                        ],
+                        'century_gothic' => [
+                            'label' => 'Century Gothic',
+                            'description' => 'Geometria limpa para relatórios, propostas e capas com presença editorial.',
+                        ],
+                        'pdf_safe' => [
+                            'label' => 'PDF seguro / DejaVu Sans',
+                            'description' => 'Fallback mais compatível com mPDF e servidores sem fontes instaladas.',
+                        ],
+                        'editorial_serif' => [
+                            'label' => 'Editorial serifado',
+                            'description' => 'Bom para capas institucionais e documentos mais formais.',
+                        ],
+                        'universal' => [
+                            'label' => 'Compatibilidade universal',
+                            'description' => 'Opção conservadora para ambientes PDF antigos.',
+                        ],
+                    ],
+                    'page_formats' => [
+                        'a4' => [
+                            'description' => 'Relatórios técnicos, certificados e propostas padrão.',
+                        ],
+                        'letter' => [
+                            'description' => 'Clientes internacionais que exigem papel norte-americano.',
+                        ],
+                        'legal' => [
+                            'description' => 'Contratos, anexos e propostas comerciais mais longas.',
+                        ],
+                        'custom' => [
+                            'label' => 'Personalizado',
+                            'description' => 'Etiquetas, formatos especiais e documentos com medidas próprias.',
+                        ],
+                    ],
+                    'orientation' => [
+                        'portrait' => 'Vertical',
+                        'landscape' => 'Horizontal',
+                        'portrait_lower' => 'vertical',
+                        'landscape_lower' => 'horizontal',
+                    ],
+                    'margin_profiles' => [
+                        'controlled' => [
+                            'label' => 'Controlado',
+                            'description' => 'Cabeçalho forte, rodapé com paginação e corpo técnico confortável.',
+                        ],
+                        'executive' => [
+                            'label' => 'Executivo',
+                            'description' => 'Mais respiro para capas, destaques, assinaturas e documentos comerciais.',
+                        ],
+                        'technical_dense' => [
+                            'label' => 'Técnico denso',
+                            'description' => 'Mais área útil para tabelas longas sem eliminar protecção de página.',
+                        ],
+                        'full_bleed' => [
+                            'label' => 'Capa / fundo total',
+                            'description' => 'Margens mínimas para páginas com fundo visual ou capa editorial.',
+                        ],
+                    ],
+                    'renderers' => [
+                        'internal' => [
+                            'label' => 'mPDF interno',
+                            'description' => 'Seguro para documentos clássicos, cabeçalhos, rodapés e tabelas. Não é 1:1 com o browser quando usa grid, flex avançado, filtros, transformações, sombras complexas ou CSS moderno.',
+                        ],
+                        'chrome' => [
+                            'label' => 'Spatie Laravel PDF · Chrome',
+                            'description' => 'Renderização Chromium para maior fidelidade ao canvas. Requer chrome-php/chrome e Chrome/Chromium no servidor.',
+                        ],
+                        'browsershot' => [
+                            'label' => 'Spatie Laravel PDF · Browsershot',
+                            'description' => 'Renderização Chromium via Puppeteer/Browsershot. Requer spatie/browsershot, Node e Chrome/Chromium no servidor.',
+                        ],
+                        'canva' => [
+                            'label' => 'Ligado ao Canva',
+                            'description' => 'Mantém uma referência externa de design. Não substitui a geração PDF interna do studio.',
+                        ],
+                        'badges' => [
+                            'available' => 'Disponível',
+                            'check_server' => 'Verificar servidor',
+                            'requires_driver' => 'Requer driver',
+                            'reference' => 'Referência',
+                        ],
+                    ],
+                    'page_scopes' => [
+                        'first' => 'Primeira página',
+                        'all' => 'Todas as páginas',
+                        'following' => 'Páginas seguintes',
+                        'specific' => 'Página específica',
+                    ],
+                    'block_kinds' => [
+                        'rich_text' => 'Conteúdo livre',
+                        'image' => 'Imagem',
+                        'chart_snapshot' => 'Gráfico / captura',
+                        'stamp' => 'Carimbo / selo',
+                        'signature' => 'Assinatura',
+                        'qr_code' => 'Código QR',
+                    ],
+                    'chart_types' => [
+                        'bar' => 'Barras',
+                        'line' => 'Linha',
+                        'doughnut' => 'Anel',
+                    ],
+                    'table_presets' => [
+                        'iso_controlled' => [
+                            'label' => 'ISO controlado',
+                            'description' => 'Cabeçalho institucional, contraste alto e bordas sóbrias para relatórios técnicos.',
+                        ],
+                        'analysis_bilingual' => [
+                            'label' => 'Análise bilingue',
+                            'description' => 'Densidade adequada para tabelas com título em português e legenda técnica em inglês.',
+                        ],
+                        'commercial_clean' => [
+                            'label' => 'Comercial limpo',
+                            'description' => 'Mais respiro para propostas, facturas e documentos que precisam de leitura executiva.',
+                        ],
+                        'traceability_compact' => [
+                            'label' => 'Rastreio compacto',
+                            'description' => 'Linhas mais densas para anexos, cadeias de custódia e listas longas sem perder legibilidade.',
+                        ],
+                    ],
+                    'canvas_layout_presets' => [
+                        'hero' => [
+                            'label' => 'Hero',
+                            'description' => 'Faixa superior ampla para capa.',
+                        ],
+                        'badge' => [
+                            'label' => 'Selo',
+                            'description' => 'Chip ou badge destacado no canto.',
+                        ],
+                        'sidebar' => [
+                            'label' => 'Lateral',
+                            'description' => 'Bloco vertical lateral para destaques.',
+                        ],
+                        'callout' => [
+                            'label' => 'Destaque',
+                            'description' => 'Destaque intermédio dentro do conteúdo.',
+                        ],
+                    ],
+                    'shadow_presets' => [
+                        'none' => 'Sem sombra',
+                        'soft' => 'Sombra suave',
+                        'elevated' => 'Elevado premium',
+                        'stamp' => 'Carimbo impresso',
+                        'glow' => 'Realce dourado',
+                    ],
+                    'css_risks' => [
+                        'flex' => 'Flexbox avançado',
+                        'filter' => 'Filtros visuais',
+                        'transform' => 'Transformações',
+                        'sticky' => 'Posicionamento sticky',
+                        'gradient' => 'Gradientes complexos',
+                        'shadow' => 'Sombras CSS',
+                    ],
+                    'pdf_surface_cards' => [
+                        'first_page_header' => [
+                            'label' => 'Abertura da primeira página',
+                            'description' => 'Identidade, título e contexto documental para a página de entrada.',
+                        ],
+                        'default_header' => [
+                            'label' => 'Cabeçalho das páginas seguintes',
+                            'description' => 'Referência compacta que acompanha documentos multi-página.',
+                        ],
+                        'footer' => [
+                            'label' => 'Rodapé e paginação',
+                            'description' => 'Controlo documental, autenticação, versão e número de página.',
+                        ],
+                    ],
+                    'quality' => [
+                        'issues' => [
+                            'empty_body' => [
+                                'title' => 'Documento sem corpo útil',
+                                'description' => 'Adicione texto, tabelas ou blocos ao corpo antes de exportar.',
+                            ],
+                            'unresolved_placeholders' => [
+                                'title' => ':count variáveis sem dados de pré-visualização',
+                                'description' => 'Revise :preview para evitar PDF com texto cru.',
+                            ],
+                            'renderer_risk' => [
+                                'title' => 'mPDF pode não reproduzir o design 1:1',
+                                'description' => ':risks exigem Chrome PDF para fidelidade superior.',
+                            ],
+                            'missing_header' => [
+                                'title' => 'Cabeçalhos por página ainda vazios',
+                                'description' => 'Configure cabeçalho da primeira página e cabeçalho padrão para documentos multi-página.',
+                            ],
+                            'missing_footer' => [
+                                'title' => 'Rodapé ou paginação não configurados',
+                                'description' => 'Inclua paginação, código do documento ou trilho de emissão no rodapé.',
+                            ],
+                            'missing_signature' => [
+                                'title' => 'Assinatura ainda não configurada',
+                                'description' => 'Adicione bloco de assinatura ou variável {signature_block} para emissão formal.',
+                            ],
+                        ],
+                        'status' => [
+                            'requires_review' => [
+                                'label' => 'Requer revisão',
+                                'description' => 'Há conteúdo que pode sair incompleto no PDF.',
+                            ],
+                            'almost_ready' => [
+                                'label' => 'Quase pronto',
+                                'description' => 'O documento exporta, mas ainda há decisões de fidelidade ou paginação.',
+                            ],
+                            'ready' => [
+                                'label' => 'Pronto para PDF',
+                                'description' => 'Variáveis, estrutura e renderizador estão coerentes para exportação.',
+                            ],
+                        ],
+                        'metrics' => [
+                            'pages' => 'Páginas',
+                            'open_variables' => 'Variáveis abertas',
+                            'css_risks' => 'Riscos CSS',
+                        ],
+                    ],
+                    'page_summaries' => [
+                        'margins' => 'Margens :top/:right/:bottom/:left mm · primeira página :firstTop mm no topo',
+                        'printable_area' => ':width x :height mm úteis',
+                    ],
+                    'export_issues' => [
+                        'custom_size' => [
+                            'title' => 'Tamanho personalizado incompleto',
+                            'description' => 'Defina largura e altura reais em milímetros para o Chrome e o mPDF gerarem a mesma página.',
+                        ],
+                        'side_margins' => [
+                            'title' => 'Margens laterais excessivas',
+                            'description' => 'A largura útil está demasiado reduzida para tabelas, assinaturas e blocos posicionáveis.',
+                        ],
+                        'vertical_margins' => [
+                            'title' => 'Margens verticais excessivas',
+                            'description' => 'O corpo do documento ficará comprimido e pode paginar de forma inesperada.',
+                        ],
+                        'narrow_area' => [
+                            'title' => 'Área útil estreita',
+                            'description' => 'Tabelas analíticas e documentos bilingues podem quebrar linhas em excesso.',
+                        ],
+                        'first_top_small' => [
+                            'title' => 'Primeira página com topo menor que o padrão',
+                            'description' => 'O cabeçalho especial da primeira página pode ficar próximo demais do conteúdo.',
+                        ],
+                        'first_top_large' => [
+                            'title' => 'Primeira página com cabeçalho muito alto',
+                            'description' => 'Capas e cabeçalhos longos devem ser intencionais para não expulsar conteúdo útil.',
+                        ],
+                    ],
+                    'export_status' => [
+                        'requires_adjustment' => [
+                            'label' => 'Requer ajuste',
+                            'description' => 'As dimensões podem comprometer o PDF final.',
+                        ],
+                        'review_before_export' => [
+                            'label' => 'Rever antes de exportar',
+                            'description' => 'A página é válida, mas há riscos de paginação.',
+                        ],
+                        'safe' => [
+                            'label' => 'Configuração segura',
+                            'description' => 'Página, margens e área útil estão coerentes.',
+                        ],
+                    ],
+                    'preview_meta' => [
+                        'first_page' => [
+                            'title' => 'Primeira página',
+                            'subtitle' => 'Capa, hero e enquadramento inicial.',
+                        ],
+                        'following_pages' => [
+                            'title' => 'Páginas seguintes',
+                            'subtitle' => 'Continuação com cabeçalho padrão e paginação recorrente.',
+                        ],
+                    ],
+                    'advanced_composition' => [
+                        'eyebrow' => 'Ferramentas avançadas',
+                        'title' => 'Biblioteca, variáveis e edição técnica',
+                        'description' => 'Use esta área apenas quando precisar de snippets HTML, variáveis rápidas ou ajustes técnicos fora do canvas principal.',
+                        'action' => 'Abrir',
+                        'close' => 'Fechar',
+                    ],
+                    'draft_preview' => [
+                        'action' => 'Pré-visualizar PDF',
+                        'generating' => 'A gerar PDF...',
+                        'saved_preview' => 'Abrir PDF guardado',
+                        'error' => 'Não foi possível gerar a pré-visualização PDF deste rascunho.',
+                        'missing_route' => 'A rota de pré-visualização do rascunho não está disponível.',
+                        'renderer_unavailable' => 'Este renderizador precisa de um driver instalado no servidor antes de pré-visualizar.',
+                    ],
                     'background_upload' => [
                         'title' => 'Carregar fundo SVG/imagem',
                         'description' => 'Arraste ou selecione SVG, PNG, JPEG, WebP, GIF ou AVIF. O ficheiro fica disponível na galeria e pode ser aplicado como fundo do documento.',
