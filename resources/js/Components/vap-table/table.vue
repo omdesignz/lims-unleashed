@@ -1,17 +1,17 @@
 <template>
   <div class="space-y-6">
     <!-- TABLE COMMAND SURFACE -->
-    <section class="overflow-hidden rounded-[2.25rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_24px_80px_rgb(20_61_55/0.10)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
+    <section class="ds-command-surface overflow-hidden">
       <div class="px-5 py-5 sm:px-7 sm:py-6">
         <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div class="min-w-0">
-            <p class="text-xs font-black uppercase tracking-[0.22em] text-[#6b7b74] dark:text-[#83978d]">
+            <p class="ds-kicker">
               {{ $t('gestlab.general.titles.search_and_filters') }}
             </p>
-            <h1 class="mt-2 text-2xl font-black tracking-tight text-[#15231f] dark:text-[#f7f1e7]">
+            <h1 class="ds-heading mt-2 text-2xl">
               {{ $t('gestlab.general.titles.records_list') }}
             </h1>
-            <p class="mt-1 text-sm font-medium text-[#5f6f68] dark:text-[#a9bbb4]">
+            <p class="ds-copy mt-1 text-sm">
               {{ props.pagination.total ?? props.data.length }} {{ $t('gestlab.general.labels.records') }}
             </p>
           </div>
@@ -24,7 +24,7 @@
             <button
               v-if="props.createAction && hasPermission('add_' + props.model)"
               type="button"
-              class="inline-flex h-12 items-center gap-2 rounded-2xl bg-[rgb(var(--primary-800-rgb))] px-4 text-sm font-semibold text-white shadow-[0_12px_30px_rgb(var(--primary-900-rgb)/0.14)] transition-all duration-200 hover:bg-[rgb(var(--primary-700-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.28)] focus:ring-offset-2 focus:ring-offset-[#fffdf7] dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f] dark:hover:bg-[rgb(var(--primary-300-rgb))] dark:focus:ring-offset-[#07110f]"
+              class="ds-button ds-button-primary h-12"
               @click="$emit('create-record')"
             >
               <SquaresPlusIcon class="h-5 w-5" />
@@ -33,7 +33,7 @@
           </div>
         </div>
 
-        <div class="mt-5 rounded-[1.75rem] border border-[#ded3bf] bg-white/85 p-2 shadow-[inset_0_1px_0_rgb(255_255_255/0.75)] dark:border-[#25443c] dark:bg-[#10231f]/80 dark:shadow-none">
+        <div class="ds-command-toolbar mt-5 p-2">
           <div class="grid gap-2 xl:grid-cols-[minmax(18rem,1fr)_auto] xl:items-center">
           <div class="relative min-w-0">
             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
@@ -43,7 +43,7 @@
               v-model="filters.globalFilter"
               type="search"
               :placeholder="$t('gestlab.general.search_input_placeholder')"
-              class="block h-12 w-full rounded-[1.35rem] border border-transparent bg-[#fffdf7] pl-11 pr-3 text-sm font-semibold text-[#15231f] placeholder:text-[#8d9b94] transition-colors duration-200 focus:border-[rgb(var(--primary-500-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.18)] dark:bg-[#07110f] dark:text-[#f7f1e7] dark:placeholder:text-[#657970]"
+              class="ds-field h-12 border-transparent pl-11 pr-3"
               @input="updateQuery"
             />
           </div>
@@ -327,7 +327,7 @@
     </section>
 
     <!-- DATA TABLE CARD -->
-    <div class="overflow-hidden rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_24px_80px_rgb(20_61_55/0.10)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
+    <div class="ds-card overflow-hidden">
       <!-- Table Header -->
       <div v-if="props.actions?.length && (allSelected || selectedRows.length)" class="border-b border-[#ded3bf] bg-[#f7f1e7] px-5 py-4 dark:border-[#25443c] dark:bg-[#10231f] sm:px-7">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -441,7 +441,7 @@
             v-if="props.createAction && hasPermission('add_' + props.model)"
             @click="$emit('create-record')"
             type="button"
-            class="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[rgb(var(--primary-800-rgb))] px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgb(var(--primary-900-rgb)/0.14)] transition-colors duration-200 hover:bg-[rgb(var(--primary-700-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.28)] focus:ring-offset-2 focus:ring-offset-[#fffdf7] dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f] dark:hover:bg-[rgb(var(--primary-300-rgb))] dark:focus:ring-offset-[#07110f]"
+            class="ds-button ds-button-primary mt-6"
           >
             <SquaresPlusIcon class="h-5 w-5" />
             {{ $t("gestlab.general.buttons.new_record") }}

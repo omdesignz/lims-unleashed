@@ -221,7 +221,7 @@
                                 'text-red-600 dark:text-red-300': result.verification_status === 'rejected',
                                 'text-blue-900 dark:text-blue-300': !result.verification_status || result.verification_status === 'pending'
                               }">
-                          {{ result.verified_value || result.inserted_value || '-' }}
+                          {{ formatResultValue(result.verified_value ?? result.inserted_value, result) || '-' }}
                         </span>
                         
                         <!-- Unit -->
@@ -241,7 +241,7 @@
                       <div v-if="valueWasChanged(result)" class="flex items-center gap-2 text-xs">
                         <span class="text-slate-500 dark:text-slate-400">Valor original:</span>
                         <span class="text-slate-600 line-through dark:text-slate-400">
-                          {{ result.original_value || '-' }}
+                          {{ formatResultValue(result.original_value, result) || '-' }}
                           <span v-if="result.unit_id?.code">{{ result.unit_id.code }}</span>
                         </span>
                       </div>
@@ -256,9 +256,25 @@
                           <label class="mb-1 block text-xs font-medium text-slate-700 dark:text-slate-300">
                             Valor
                           </label>
+                          <div v-if="isQualitativeResult(result)" class="mb-2 flex flex-wrap items-center gap-2">
+                            <button
+                              v-for="option in qualitativeOptions(result)"
+                              :key="option"
+                              type="button"
+                              @click="applyQualitativeOption(result, option)"
+                              :class="[
+                                'rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-inset transition',
+                                currentEditableValue(result) === option
+                                  ? 'bg-blue-900 text-white ring-blue-900 dark:bg-blue-400 dark:text-slate-950 dark:ring-blue-300'
+                                  : 'bg-white text-slate-700 ring-slate-300 hover:bg-blue-50 hover:text-blue-900 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700 dark:hover:bg-blue-500/10 dark:hover:text-blue-200'
+                              ]"
+                            >
+                              {{ option }}
+                            </button>
+                          </div>
                           <div class="relative">
                             <input 
-                              :value="editedValues[getResultUniqueId(result)]?.value || result.verified_value || result.inserted_value || ''"
+                              :value="editedValues[getResultUniqueId(result)]?.value ?? result.verified_value ?? result.inserted_value ?? ''"
                               @input="handleInputChange(getResultUniqueId(result), 'value', $event.target.value)"
                               type="text"
                               class="block w-full rounded-xl border-0 bg-white py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 dark:bg-slate-900 dark:text-white dark:ring-slate-700 dark:placeholder:text-slate-500 dark:focus:ring-blue-400 sm:text-sm sm:leading-6"
@@ -268,6 +284,20 @@
                             <div v-if="result.unit_id?.code" class="absolute inset-y-0 right-0 flex items-center pr-3">
                               <span class="text-sm text-slate-500 dark:text-slate-400">{{ result.unit_id.code }}</span>
                             </div>
+                          </div>
+                          <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+                            <p v-if="currentEditableValue(result) && formatResultValue(currentEditableValue(result), result) !== currentEditableValue(result)"
+                               class="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                              Visualização: {{ formatResultValue(currentEditableValue(result), result) }}
+                            </p>
+                            <button
+                              v-if="!isQualitativeResult(result)"
+                              type="button"
+                              @click="toggleResultDisplayFormat(result)"
+                              class="ml-auto rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-blue-600 hover:text-blue-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-400 dark:hover:text-blue-200"
+                            >
+                              {{ displayFormatLabel(result) }}
+                            </button>
                           </div>
                         </div>
                         
@@ -490,6 +520,7 @@ import {
   ExclamationTriangleIcon,
   ChatBubbleBottomCenterTextIcon
 } from "@heroicons/vue/24/outline";
+import { ResultsDataService } from '@/Services/ResultsDataService.js';
 
 const props = defineProps({
     form: Object,
@@ -527,6 +558,33 @@ const getResultUniqueId = (result) => {
     return `temp-${Math.random().toString(36).substr(2, 9)}`;
 };
 
+const isQualitativeResult = (result) => ResultsDataService.isQualitativeResult(result);
+
+const qualitativeOptions = (result) => ResultsDataService.getQualitativeOptions(result);
+
+const formatResultValue = (value, result) => ResultsDataService.formatResultValue(value, result);
+
+const currentEditableValue = (result) => {
+    return editedValues.value[getResultUniqueId(result)]?.value ?? result.verified_value ?? result.inserted_value ?? '';
+};
+
+const displayFormatLabel = (result) => (
+    ResultsDataService.getDisplayFormat(result) === 'scientific'
+        ? 'Notação normal'
+        : 'Notação científica'
+);
+
+const applyQualitativeOption = (result, value) => {
+    handleInputChange(getResultUniqueId(result), 'value', value);
+};
+
+const toggleResultDisplayFormat = (result) => {
+    ResultsDataService.setDisplayFormat(
+        result,
+        ResultsDataService.getDisplayFormat(result) === 'scientific' ? 'standard' : 'scientific'
+    );
+};
+
 // Check if a specific result is in edit mode
 const isEditing = (result) => {
     const resultId = getResultUniqueId(result);
@@ -555,12 +613,12 @@ const initializeVerification = () => {
         
         // Store original value for comparison
         if (!result.original_value) {
-            result.original_value = result.inserted_value || '';
+            result.original_value = result.inserted_value ?? '';
         }
         
         // Ensure verified_value is set
         if (!result.verified_value) {
-            result.verified_value = result.inserted_value || '';
+            result.verified_value = result.inserted_value ?? '';
         }
 
         if (!result.uncertainty_value) {
@@ -589,7 +647,7 @@ const toggleEditMode = (result) => {
         editingResults.value[resultId] = true;
         
         // Store the current value for editing
-        const currentValue = result.verified_value || result.inserted_value || '';
+        const currentValue = result.verified_value ?? result.inserted_value ?? '';
         const currentUncertainty = result.uncertainty_value || ''; // ✅ NEW: Capture uncertainty
 
         // Store both in editedValues
@@ -704,7 +762,7 @@ const toggleVerification = (result, status) => {
 
 // Check if value was changed from original
 const valueWasChanged = (result) => {
-    const currentValue = result.verified_value || result.inserted_value || '';
+    const currentValue = result.verified_value ?? result.inserted_value ?? '';
     const originalValue = result.original_value || '';
     return currentValue !== originalValue;
 };
@@ -748,6 +806,11 @@ const prepareSubmissionData = () => {
         type_id: result.type_id,
         category_label: result.category_label,
         uncertainty_value: result.uncertainty_value,
+        display_format: ResultsDataService.getDisplayFormat(result),
+        extra_data: {
+            ...(result.extra_data || {}),
+            display_format: ResultsDataService.getDisplayFormat(result),
+        },
         sumC: result.sumC,
         volume: result.volume,
         n1: result.n1,

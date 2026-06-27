@@ -1,1 +1,0 @@
-import{c as e,e as t,I as l,O as o}from"./editor-collab-B-hT7rw0.js";const n={class:"block text-sm font-semibold text-slate-800 dark:text-slate-100"},c={key:0},r={key:1},p={__name:"input-label",props:{value:String},setup(s){return(a,i)=>(e(),t("label",n,[s.value?(e(),t("span",c,l(s.value),1)):(e(),t("span",r,[o(a.$slots,"default")]))]))}};export{p as _};

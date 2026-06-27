@@ -9,17 +9,12 @@
             <CalendarIcon class="h-4 w-4 inline mr-1" />
             Intervalo de Datas
           </label>
-          <select
-            v-model="filters.dateRange"
-            @change="updateCharts"
-            :class="inputClass"
-          >
-            <option value="7d">Últimos 7 Dias</option>
-            <option value="30d">Últimos 30 Dias</option>
-            <option value="90d">Últimos 90 Dias</option>
-            <option value="1y">Último Ano</option>
-            <option value="custom">Intervalo Personalizado</option>
-          </select>
+          <SimpleSelect
+            v-model="selectedDateRange"
+            :options="dateRangeOptions"
+            label=""
+            placeholder="Seleccione um intervalo"
+          />
         </div>
 
         <!-- CATEGORY FILTER -->
@@ -28,16 +23,12 @@
             <TagIcon class="h-4 w-4 inline mr-1" />
             Categoria
           </label>
-          <select
-            v-model="filters.categoryId"
-            @change="updateCharts"
-            :class="inputClass"
-          >
-            <option value="">Todas</option>
-            <option v-for="category in categories" :key="category.id" :value="category.id">
-              {{ category.name }}
-            </option>
-          </select>
+          <SimpleSelect
+            v-model="selectedCategory"
+            :options="categoryOptions"
+            label=""
+            placeholder="Todas"
+          />
         </div>
 
         <!-- WAREHOUSE FILTER -->
@@ -46,16 +37,12 @@
             <BuildingLibraryIcon class="h-4 w-4 inline mr-1" />
             Armazém
           </label>
-          <select
-            v-model="filters.warehouseId"
-            @change="updateCharts"
-            :class="inputClass"
-          >
-            <option value="">Todos os Armazéns</option>
-            <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
-              {{ warehouse.name }}
-            </option>
-          </select>
+          <SimpleSelect
+            v-model="selectedWarehouse"
+            :options="warehouseOptions"
+            label=""
+            placeholder="Todos os Armazéns"
+          />
         </div>
 
         <!-- CUSTOM DATE RANGE -->
@@ -63,20 +50,11 @@
           <label :class="labelClass">
             Período Personalizado
           </label>
-          <div class="grid grid-cols-2 gap-2">
-            <input
-              v-model="filters.startDate"
-              type="date"
-              @change="updateCharts"
-              :class="inputClass"
-            />
-            <input
-              v-model="filters.endDate"
-              type="date"
-              @change="updateCharts"
-              :class="inputClass"
-            />
-          </div>
+          <DatePickerEnhanced
+            :model-value="{ start: filters.startDate, end: filters.endDate }"
+            range
+            @update:model-value="updateCustomDateRange"
+          />
         </div>
       </div>
     </div>
@@ -88,7 +66,7 @@
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 :class="titleClass">
-              <ArrowTrendingUpIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
+              <ArrowTrendingUpIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
               Tendência de Consumo de Reagentes
             </h3>
             <p :class="mutedClass">Tendência de consumo de reagentes por dia</p>
@@ -110,7 +88,7 @@
           :options="consumptionChartOptions"
           :series="consumptionSeries"
         />
-        <div v-else class="flex h-[300px] items-center justify-center text-slate-400 dark:text-slate-500">
+        <div v-else class="ds-empty-state min-h-[300px]">
           Nenhuma informação de consumo disponível
         </div>
       </div>
@@ -120,7 +98,7 @@
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 :class="titleClass">
-              <ChartPieIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
+              <ChartPieIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
               Distribuição de Estoque por Categoria
             </h3>
             <p :class="mutedClass">Níveis de estoque atuais em todas as categorias</p>
@@ -143,7 +121,7 @@
           :options="stockChartOptions"
           :series="stockSeries"
         />
-        <div v-else class="flex h-[300px] items-center justify-center text-slate-400 dark:text-slate-500">
+        <div v-else class="ds-empty-state min-h-[300px]">
           Sem Dados Disponíveis
         </div>
       </div>
@@ -153,7 +131,7 @@
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 :class="titleClass">
-              <ArchiveBoxIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
+              <ArchiveBoxIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
               Desempenho do Fornecedor
             </h3>
             <p :class="mutedClass">
@@ -170,7 +148,7 @@
                     :series="supplierSeries"
                 />
             </div>
-            <div v-else class="flex h-[350px] flex-col items-center justify-center text-slate-400 dark:text-slate-500">
+            <div v-else class="ds-empty-state min-h-[350px]">
                 <ChartBarIcon class="h-12 w-12 mb-2 opacity-20" />
                 <p class="text-sm">Nenhuma entrega encontrada para os filtros selecionados.</p>
             </div>
@@ -181,7 +159,7 @@
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 :class="titleClass">
-              <ChartBarIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
+              <ChartBarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
               Comparação Mensal de Consumo
             </h3>
             <p :class="mutedClass">Padrões de uso mensais</p>
@@ -194,7 +172,7 @@
           :options="monthlyChartOptions"
           :series="monthlySeries"
         />
-        <div v-else class="flex h-[300px] items-center justify-center text-slate-400 dark:text-slate-500">
+        <div v-else class="ds-empty-state min-h-[300px]">
           Sem Dados Disponíveis
         </div>
       </div>
@@ -204,7 +182,7 @@
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 :class="titleClass">
-              <TrophyIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
+              <TrophyIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
               Reagentos Mais Consumidos
             </h3>
             <p :class="mutedClass">Reagentos mais frequentemente consumidos</p>
@@ -225,7 +203,7 @@
           :options="topReagentsChartOptions"
           :series="topReagentsSeries"
         />
-        <div v-else class="flex h-[300px] items-center justify-center text-slate-400 dark:text-slate-500">
+        <div v-else class="ds-empty-state min-h-[300px]">
           Sem Dados Disponíveis
         </div>
       </div>
@@ -234,15 +212,17 @@
     <!-- ADDITIONAL METRICS -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
       <!-- TOTAL CONSUMPTION -->
-      <div class="bg-gradient-to-r from-blue-900 to-blue-800 rounded-xl shadow-sm p-6 text-white">
+      <div class="ds-card relative overflow-hidden border-t-4 border-t-[rgb(var(--primary-600-rgb))] p-5">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium opacity-90">Consumo Total</p>
-            <p class="text-2xl font-bold mt-1">{{ formatNumber(totalConsumption) }} unidades</p>
+            <p class="ds-kicker">Consumo Total</p>
+            <p class="mt-2 text-2xl font-black text-[var(--ds-text)]">{{ formatNumber(totalConsumption) }} unidades</p>
           </div>
-          <BeakerIcon class="h-8 w-8 opacity-50" />
+          <div class="rounded-2xl bg-[rgb(var(--primary-50-rgb))] p-3 text-[rgb(var(--primary-700-rgb))] dark:bg-[rgb(var(--primary-500-rgb)/0.14)] dark:text-[rgb(var(--accent-200-rgb))]">
+            <BeakerIcon class="h-6 w-6" />
+          </div>
         </div>
-        <div class="mt-4 text-sm opacity-80">
+        <div class="mt-5 space-y-2 text-sm text-[var(--ds-text-muted)]">
           <div class="flex justify-between">
             <span>Este mês:</span>
             <span class="font-semibold">{{ formatNumber(monthlyConsumption) }} unidades</span>
@@ -254,35 +234,39 @@
         </div>
       </div>
 
-      <div class="bg-gradient-to-r from-green-900 to-green-800 rounded-xl shadow-sm p-6 text-white">
+      <div class="ds-card relative overflow-hidden border-t-4 border-t-emerald-500 p-5">
         <div class="flex items-center justify-between">
             <div>
-            <p class="text-sm font-medium opacity-90">Uso Médio Diário</p>
-            <p class="text-2xl font-bold mt-1">{{ formatNumber(dailyAverage) }}</p>
+            <p class="ds-kicker">Uso Médio Diário</p>
+            <p class="mt-2 text-2xl font-black text-[var(--ds-text)]">{{ formatNumber(dailyAverage) }}</p>
             </div>
-            <ArrowTrendingUpIcon class="h-8 w-8 opacity-50" />
+            <div class="rounded-2xl bg-emerald-50 p-3 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+              <ArrowTrendingUpIcon class="h-6 w-6" />
+            </div>
         </div>
-        <div class="mt-4 text-sm">
-            <span :class="['font-semibold px-2 py-0.5 rounded', usageChange >= 0 ? 'bg-red-500/30' : 'bg-green-500/30']">
+        <div class="mt-5 text-sm text-[var(--ds-text-muted)]">
+            <span :class="['rounded-full px-2 py-1 font-bold', usageChange >= 0 ? 'bg-red-500/10 text-red-700 dark:text-red-300' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300']">
             {{ usageChange >= 0 ? '↑' : '↓' }} {{ Math.abs(usageChange) }}%
             </span>
-            <span class="opacity-70 ml-2">vs Período Anterior</span>
+            <span class="ml-2">vs Período Anterior</span>
         </div>
         </div>
 
       <div :class="[
-        'rounded-xl shadow-sm p-6 text-white relative group transition-all duration-300',
-        criticalAlerts > 0 ? 'bg-gradient-to-r from-red-900 to-red-800' : 'bg-gradient-to-r from-orange-900 to-orange-800'
+        'ds-card relative group overflow-visible border-t-4 p-5 transition-all duration-300',
+        criticalAlerts > 0 ? 'border-t-red-500' : 'border-t-amber-500'
         ]">
         <div class="flex items-center justify-between">
             <div>
-            <p class="text-sm font-medium opacity-90">Alertas de Inventário</p>
-            <p class="text-2xl font-bold mt-1">{{ reorderAlerts + expiringAlerts + criticalAlerts }}</p>
+            <p class="ds-kicker">Alertas de Inventário</p>
+            <p class="mt-2 text-2xl font-black text-[var(--ds-text)]">{{ reorderAlerts + expiringAlerts + criticalAlerts }}</p>
             </div>
-            <BellAlertIcon class="h-8 w-8 opacity-50" />
+            <div class="rounded-2xl bg-amber-50 p-3 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+              <BellAlertIcon class="h-6 w-6" />
+            </div>
         </div>
 
-        <div class="mt-4 text-sm opacity-80">
+        <div class="mt-5 space-y-2 text-sm text-[var(--ds-text-muted)]">
             <div class="flex justify-between">
             <span>Crítico / Expirado:</span>
             <span class="font-semibold">{{ criticalAlerts }}</span>
@@ -297,8 +281,8 @@
             </div>
         </div>
 
-        <div class="invisible absolute top-0 left-full z-50 ml-4 w-64 rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 shadow-xl transition-all group-hover:visible dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
-            <h4 class="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Atenção de Prioridade</h4>
+        <div class="ds-floating-panel invisible absolute left-0 top-full z-50 mt-3 w-full p-4 opacity-0 transition-all group-hover:visible group-hover:opacity-100 sm:left-auto sm:right-0 sm:w-80">
+            <h4 class="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--ds-text-soft)]">Atenção de Prioridade</h4>
             
             <div v-if="alertDetails.critical.length" class="mb-3">
             <p class="text-[10px] font-bold text-red-600 uppercase mb-1">Crítico / Sem Estoque</p>
@@ -315,19 +299,19 @@
             </div>
 
             <div v-if="alertDetails.expiring.length">
-            <p class="text-[10px] font-bold text-blue-600 uppercase mb-1">Expirando em Breve</p>
+            <p class="mb-1 text-[10px] font-bold uppercase text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]">Expirando em Breve</p>
             <ul class="text-xs space-y-1">
                 <li v-for="item in alertDetails.expiring" :key="item" class="truncate">• {{ item }}</li>
             </ul>
             </div>
             
-            <p v-if="reorderAlerts + expiringAlerts + criticalAlerts === 0" class="text-xs italic text-slate-500 dark:text-slate-400">
+            <p v-if="reorderAlerts + expiringAlerts + criticalAlerts === 0" class="text-xs italic text-[var(--ds-text-muted)]">
             Todos os níveis de estoque estão saudáveis.
             </p>
 
             <button 
                 @click="generateDrafts"
-                class="inline-flex items-center gap-2 rounded-xl bg-blue-900 px-4 py-2 text-white shadow-sm transition-colors hover:bg-blue-800 dark:bg-blue-500 dark:hover:bg-blue-400"
+                class="ds-button ds-button-primary mt-3 w-full text-xs"
                 >
                 <ShoppingCartIcon class="h-4 w-4" />
                 Gerar Rascunhos de Reabastecimento
@@ -337,15 +321,17 @@
         </div>
 
       <!-- INVENTORY VALUE -->
-      <div class="bg-gradient-to-r from-purple-900 to-purple-800 rounded-xl shadow-sm p-6 text-white">
+      <div class="ds-card relative overflow-hidden border-t-4 border-t-[rgb(var(--accent-400-rgb))] p-5">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium opacity-90">Valor de Inventário</p>
-            <p class="text-2xl font-bold mt-1">${{ formatNumber(inventoryValue) }}</p>
+            <p class="ds-kicker">Valor de Inventário</p>
+            <p class="mt-2 text-2xl font-black text-[var(--ds-text)]">${{ formatNumber(inventoryValue) }}</p>
           </div>
-          <CurrencyDollarIcon class="h-8 w-8 opacity-50" />
+          <div class="rounded-2xl bg-[rgb(var(--accent-100-rgb)/0.72)] p-3 text-[rgb(var(--accent-700-rgb))] dark:bg-[rgb(var(--accent-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
+            <CurrencyDollarIcon class="h-6 w-6" />
+          </div>
         </div>
-        <div class="mt-4 text-sm opacity-80">
+        <div class="mt-5 space-y-2 text-sm text-[var(--ds-text-muted)]">
           <div class="flex justify-between">
             <span>Reagentes:</span>
             <span class="font-semibold">${{ formatNumber(reagentsValue) }}</span>
@@ -359,16 +345,16 @@
     </div>
 
     <!-- DETAILED CONSUMPTION TABLE -->
-    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-        <h3 class="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
-          <TableCellsIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
+    <div class="ds-table-shell">
+      <div class="ds-table-summary">
+        <h3 class="flex items-center gap-2 text-lg font-extrabold text-[var(--ds-text)]">
+          <TableCellsIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
           Histórico de Consumo Detalhado
         </h3>
       </div>
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-          <thead class="bg-slate-50 dark:bg-slate-900/80">
+        <table class="min-w-full">
+          <thead class="ds-table-head">
             <tr>
               <th :class="tableHeadClass">
                 Data
@@ -399,39 +385,39 @@
                 </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
+          <tbody class="ds-table-body">
             <tr
               v-for="consumption in consumptionHistory"
               :key="consumption.id"
-              class="hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
+              class="ds-table-row"
               :class="{'bg-red-50/50 dark:bg-red-950/20': isUrgent(consumption)}"
             >
               <td :class="tableCellClass">
                 {{ formatDate(consumption.date) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-slate-950 dark:text-white">{{ consumption.reagent_name }}</div>
-                <div class="text-sm text-slate-500 dark:text-slate-400">{{ consumption.item?.code || 'N/A' }}</div>
+                <div class="text-sm font-bold text-[var(--ds-text)]">{{ consumption.reagent_name }}</div>
+                <div class="text-sm text-[var(--ds-text-muted)]">{{ consumption.item?.code || 'N/A' }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <span class="ds-chip">
                   {{ consumption.quantity_used }} unidades
                 </span>
               </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
+              <td class="whitespace-nowrap px-6 py-4 text-sm text-[var(--ds-text-muted)]">
                 {{ consumption.used_by || 'N/A' }}
               </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
+              <td class="whitespace-nowrap px-6 py-4 text-sm text-[var(--ds-text-muted)]">
                 {{ consumption.warehouse?.name || 'N/A' }}
               </td>
-              <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
+              <td class="px-6 py-4 text-sm text-[var(--ds-text-muted)]">
                 {{ consumption.remarks || '-' }}
               </td>
 
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="w-full max-w-[120px]">
                     <div class="flex items-center justify-between mb-1">
-                    <span class="text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                    <span class="text-[10px] font-medium text-[var(--ds-text-muted)]">
                         {{ consumption.current_stock }} / {{ consumption.min_level * 2 }} 
                     </span>
                     <span :class="[
@@ -441,7 +427,7 @@
                         {{ getStockStatusLabel(consumption) }}
                     </span>
                     </div>
-                    <div class="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-800">
+                    <div class="h-1.5 w-full rounded-full bg-[var(--ds-panel-muted)]">
                     <div 
                         :class="['h-1.5 rounded-full transition-all duration-500', getProgressBarColor(consumption)]"
                         :style="{ width: getStockPercentage(consumption) + '%' }"
@@ -466,15 +452,15 @@
                 <div v-if="consumption.days_remaining !== null" class="flex flex-col">
                     <span :class="[
                     'font-bold',
-                    consumption.days_remaining < 7 ? 'text-red-600 dark:text-red-300' : 'text-slate-900 dark:text-slate-100'
+                    consumption.days_remaining < 7 ? 'text-red-600 dark:text-red-300' : 'text-[var(--ds-text)]'
                     ]">
                     {{ consumption.days_remaining }} dias restantes
                     </span>
-                    <span class="text-[10px] text-slate-500 dark:text-slate-400">
+                    <span class="text-[10px] text-[var(--ds-text-muted)]">
                     Est: {{ formatDate(consumption.predicted_out_date) }}
                     </span>
                 </div>
-                <div v-else class="text-xs italic text-slate-400 dark:text-slate-500">
+                <div v-else class="text-xs italic text-[var(--ds-text-soft)]">
                     Nenhuma utilização recente
                 </div>
                 </td>
@@ -483,10 +469,10 @@
           </tbody>
         </table>
       </div>
-      <div v-if="consumptionHistory?.length === 0" class="p-12 text-center">
-        <BeakerIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
-        <h3 class="mt-4 text-sm font-semibold text-slate-950 dark:text-white">Nenhum registro de consumo encontrado</h3>
-        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Comece a usar reagentes para ver o histórico de consumo</p>
+      <div v-if="consumptionHistory?.length === 0" class="ds-empty-state m-5 min-h-52">
+        <BeakerIcon class="mx-auto h-12 w-12 text-[var(--ds-text-soft)]" />
+        <h3 class="mt-4 text-sm font-bold text-[var(--ds-text)]">Nenhum registro de consumo encontrado</h3>
+        <p class="mt-2 text-sm text-[var(--ds-text-muted)]">Comece a usar reagentes para ver o histórico de consumo</p>
       </div>
     </div>
   </div>
@@ -495,6 +481,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { router } from '@inertiajs/vue3'
+import DatePickerEnhanced from '@/Components/date-picker-enhanced.vue'
+import SimpleSelect from '@/Components/simple-select.vue'
 import {
   CalendarIcon,
   TagIcon,
@@ -520,14 +508,13 @@ const props = defineProps({
   warehouses: Array,
 })
 
-const panelClass = 'rounded-3xl border border-slate-200 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 dark:border-slate-800 dark:bg-slate-950 dark:ring-white/10'
-const labelClass = 'block text-sm font-semibold text-slate-700 dark:text-slate-200'
-const inputClass = 'w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-blue-600 focus:ring-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400 dark:focus:ring-blue-400'
-const titleClass = 'flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white'
-const mutedClass = 'mt-1 text-sm text-slate-500 dark:text-slate-400'
-const smallButtonClass = 'inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-500 dark:hover:text-blue-200'
-const tableHeadClass = 'px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400'
-const tableCellClass = 'whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100'
+const panelClass = 'ds-panel p-5 sm:p-6'
+const labelClass = 'ds-field-label flex items-center gap-1.5'
+const titleClass = 'flex items-center gap-2 text-base font-extrabold text-[var(--ds-text)]'
+const mutedClass = 'mt-1 text-sm text-[var(--ds-text-muted)]'
+const smallButtonClass = 'ds-button ds-button-secondary min-h-0 px-3 py-2 text-xs'
+const tableHeadClass = 'ds-table-heading px-6 py-3 text-left'
+const tableCellClass = 'ds-table-cell whitespace-nowrap px-6 py-4'
 
 const isDarkMode = ref(false)
 let themeObserver = null
@@ -542,10 +529,10 @@ const chartTheme = computed(() => ({
   },
   chart: {
     background: 'transparent',
-    foreColor: isDarkMode.value ? '#cbd5e1' : '#475569',
+    foreColor: isDarkMode.value ? '#d7e2dd' : '#31413b',
   },
   grid: {
-    borderColor: isDarkMode.value ? '#1e293b' : '#e2e8f0',
+    borderColor: isDarkMode.value ? '#25443c' : '#ded3bf',
     strokeDashArray: 5,
   },
   tooltip: {
@@ -560,6 +547,63 @@ const filters = ref({
   startDate: '',
   endDate: '',
 })
+
+const dateRangeOptions = [
+  { value: '7d', label: 'Últimos 7 Dias' },
+  { value: '30d', label: 'Últimos 30 Dias' },
+  { value: '90d', label: 'Últimos 90 Dias' },
+  { value: '1y', label: 'Último Ano' },
+  { value: 'custom', label: 'Intervalo Personalizado' },
+]
+
+const categoryOptions = computed(() => [
+  { value: '', label: 'Todas' },
+  ...(props.categories ?? []).map(category => ({
+    value: category.id,
+    label: category.name,
+  })),
+])
+
+const warehouseOptions = computed(() => [
+  { value: '', label: 'Todos os Armazéns' },
+  ...(props.warehouses ?? []).map(warehouse => ({
+    value: warehouse.id,
+    label: warehouse.name,
+  })),
+])
+
+const selectedDateRange = computed({
+  get: () => dateRangeOptions.find(option => option.value === filters.value.dateRange) ?? dateRangeOptions[1],
+  set: option => {
+    filters.value.dateRange = option?.value ?? '30d'
+    updateCharts()
+  },
+})
+
+const selectedCategory = computed({
+  get: () => categoryOptions.value.find(option => String(option.value) === String(filters.value.categoryId)) ?? categoryOptions.value[0],
+  set: option => {
+    filters.value.categoryId = option?.value ?? ''
+    updateCharts()
+  },
+})
+
+const selectedWarehouse = computed({
+  get: () => warehouseOptions.value.find(option => String(option.value) === String(filters.value.warehouseId)) ?? warehouseOptions.value[0],
+  set: option => {
+    filters.value.warehouseId = option?.value ?? ''
+    updateCharts()
+  },
+})
+
+const updateCustomDateRange = value => {
+  filters.value.startDate = value?.start ?? ''
+  filters.value.endDate = value?.end ?? ''
+
+  if (filters.value.startDate && filters.value.endDate) {
+    updateCharts()
+  }
+}
 
 const alertDetails = ref({
   reorder: [],
@@ -624,7 +668,7 @@ const consumptionChartOptions = computed(() => ({
       speed: 800
     }
   },
-  colors: ['#1e3a8a', '#10b981', '#f59e0b', '#dc2626'],
+  colors: ['#143d37', '#1f7a68', '#d6a43a', '#b54747'],
   stroke: {
     curve: 'smooth',
     width: 3
@@ -681,7 +725,7 @@ const stockChartOptions = computed(() => ({
     height: 300,
     toolbar: { show: true }
   },
-  colors: ['#1e3a8a', '#1e40af', '#1d4ed8', '#3b82f6', '#60a5fa', '#93c5fd'],
+  colors: ['#143d37', '#1f7a68', '#4f9688', '#7ab8aa', '#d6a43a', '#ecd89e'],
   
   // This is used by the PIE chart
   labels: stockLabels.value, 
@@ -730,7 +774,7 @@ const monthlyChartOptions = computed(() => ({
     height: 300,
     toolbar: { show: true }
   },
-  colors: ['#1e3a8a', '#94a3b8'], // High contrast colors for years
+  colors: ['#143d37', '#d6a43a'],
   plotOptions: {
     bar: {
       horizontal: false,
@@ -762,7 +806,7 @@ const topReagentsChartOptions = computed(() => ({
       show: true
     }
   },
-  colors: ['#1e3a8a'],
+  colors: ['#1f7a68'],
   plotOptions: {
     bar: {
       borderRadius: 4,
@@ -838,7 +882,7 @@ const topReagentsChartOptions = computed(() => ({
 //     labels: { show: true }
 //   },
 //   // Ensure colors are defined, otherwise bars might be white on white
-//   colors: ['#1e3a8a', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'], 
+//   colors: ['#143d37', '#1f7a68', '#10b981', '#d6a43a', '#ef4444'],
 // }));
 
 const supplierChartOptions = computed(() => ({
@@ -879,7 +923,7 @@ const supplierChartOptions = computed(() => ({
     categories: supplierLabels.value,
     max: 100,
   },
-  colors: ['#1e3a8a', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
+  colors: ['#143d37', '#1f7a68', '#10b981', '#d6a43a', '#ef4444'],
   legend: { show: false },
   grid: chartTheme.value.grid,
   tooltip: chartTheme.value.tooltip,
@@ -902,7 +946,7 @@ const sparklineOptions = computed(() => ({
       opacityTo: 0.05,
     }
   },
-  colors: ['#3b82f6'], // Matching your blue theme
+  colors: ['#1f7a68'],
   tooltip: { ...chartTheme.value.tooltip, fixed: { enabled: false }, x: { show: false }, marker: { show: false } }
 }));
 
@@ -966,14 +1010,15 @@ const updateCharts = async () => {
     })
 
     
-    const data = response.data
-    const months = data.monthlyComparison || []
-    const stockData = data.stockDistribution || [];
+    const data = response.data ?? {}
+    const metrics = data.metrics ?? {}
+    const months = Array.isArray(data.monthlyComparison) ? data.monthlyComparison : []
+    const stockData = Array.isArray(data.stockDistribution) ? data.stockDistribution : []
 
     // const performance = data.metrics.supplierPerformance || [];
 
-    const supplierPerformance = Array.isArray(data.metrics?.supplierPerformance)
-      ? data.metrics.supplierPerformance
+    const supplierPerformance = Array.isArray(metrics.supplierPerformance)
+      ? metrics.supplierPerformance
       : []
     const sortedPerformance = [...supplierPerformance].sort((a, b) => b.on_time_rate - a.on_time_rate);
 
@@ -1000,12 +1045,16 @@ const updateCharts = async () => {
 
 
     // Update the new alert details
-    alertDetails.value = data.metrics.alertDetails || { reorder: [], expiring: [], critical: [] }
+    alertDetails.value = {
+      reorder: Array.isArray(metrics.alertDetails?.reorder) ? metrics.alertDetails.reorder : [],
+      expiring: Array.isArray(metrics.alertDetails?.expiring) ? metrics.alertDetails.expiring : [],
+      critical: Array.isArray(metrics.alertDetails?.critical) ? metrics.alertDetails.critical : [],
+    }
     
     // Update basic metric counts
-    reorderAlerts.value = data.metrics.reorderAlerts
-    criticalAlerts.value = data.metrics.criticalAlerts
-    expiringAlerts.value = data.metrics.expiringAlerts
+    reorderAlerts.value = Number(metrics.reorderAlerts ?? 0)
+    criticalAlerts.value = Number(metrics.criticalAlerts ?? 0)
+    expiringAlerts.value = Number(metrics.expiringAlerts ?? 0)
 
 
     // 1. Save the labels (Category Names) for both chart types
@@ -1114,19 +1163,19 @@ const updateCharts = async () => {
     }]
     
     // Update consumption history
-    consumptionHistory.value = data.consumptionHistory
+    consumptionHistory.value = Array.isArray(data.consumptionHistory) ? data.consumptionHistory : []
     
     // Update metrics
-    totalConsumption.value = data.metrics.totalConsumption
-    monthlyConsumption.value = data.metrics.monthlyConsumption
-    dailyAverage.value = data.metrics.dailyAverage
-    usageChange.value = data.metrics.usageChange
-    reorderAlerts.value = data.metrics.reorderAlerts
-    criticalAlerts.value = data.metrics.criticalAlerts
-    expiringAlerts.value = data.metrics.expiringAlerts
-    inventoryValue.value = data.metrics.inventoryValue
-    reagentsValue.value = data.metrics.reagentsValue
-    equipmentValue.value = data.metrics.equipmentValue
+    totalConsumption.value = Number(metrics.totalConsumption ?? 0)
+    monthlyConsumption.value = Number(metrics.monthlyConsumption ?? 0)
+    dailyAverage.value = Number(metrics.dailyAverage ?? 0)
+    usageChange.value = Number(metrics.usageChange ?? 0)
+    reorderAlerts.value = Number(metrics.reorderAlerts ?? 0)
+    criticalAlerts.value = Number(metrics.criticalAlerts ?? 0)
+    expiringAlerts.value = Number(metrics.expiringAlerts ?? 0)
+    inventoryValue.value = Number(metrics.inventoryValue ?? 0)
+    reagentsValue.value = Number(metrics.reagentsValue ?? 0)
+    equipmentValue.value = Number(metrics.equipmentValue ?? 0)
     
   } catch (error) {
     console.error('Error updating charts:', error)

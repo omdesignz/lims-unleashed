@@ -1,0 +1,1 @@
+import{c as n,e as o,O as s}from"./editor-collab-D2mRKXXK.js";const r=["type"],c={__name:"danger-button",props:{type:{type:String,default:"button"}},setup(t){return(e,a)=>(n(),o("button",{type:t.type,class:"ds-button ds-button-danger"},[s(e.$slots,"default")],8,r))}};export{c as _};

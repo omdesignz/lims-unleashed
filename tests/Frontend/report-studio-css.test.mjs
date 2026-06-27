@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { chartSvgPalette, normalizeStudioChartList, normalizedHexColor, sanitizeStudioChartSvg, splitStudioChartList } from '../../resources/js/Support/report-studio-chart-palette.mjs'
 import { scopeReportStudioPreviewCss } from '../../resources/js/Support/report-studio-css.mjs'
@@ -12,6 +13,9 @@ import {
   proposalTemplatePreviewPageDimensions,
   proposalTemplatePreviewPageFormatLabel,
 } from '../../resources/js/Support/proposal-template-preview-geometry.mjs'
+
+const proposalStudioWorkbenchSource = readFileSync(new URL('../../resources/js/Components/proposal-template/studio-workbench.vue', import.meta.url), 'utf8')
+const reportStudioWorkbenchSource = readFileSync(new URL('../../resources/js/Components/report-studio/studio-workbench.vue', import.meta.url), 'utf8')
 
 test('scopes document root aliases and complex selector lists', () => {
   const scoped = scopeReportStudioPreviewCss(`
@@ -135,6 +139,17 @@ test('studio chart svg sanitizer preserves chart markup and strips executable sv
   assert.equal(sanitizeStudioChartSvg('<svg><rect /></svg><p>fora do svg</p>'), '<svg><rect /></svg>')
 })
 
+test('proposal template studio uses shared chart and media preview hardening', () => {
+  assert.match(proposalStudioWorkbenchSource, /normalizeStudioChartList/)
+  assert.match(proposalStudioWorkbenchSource, /sanitizeStudioChartSvg/)
+  assert.match(proposalStudioWorkbenchSource, /chartSvgPalette/)
+  assert.match(proposalStudioWorkbenchSource, /safePreviewMediaUrl/)
+  assert.match(proposalStudioWorkbenchSource, /safePreviewCssUrl/)
+  assert.match(proposalStudioWorkbenchSource, /const sanitizedChartSvg = sanitizeStudioChartSvg/)
+  assert.doesNotMatch(proposalStudioWorkbenchSource, /\.split\(\s*\/\\\[\\n,\;\]\+\//)
+  assert.doesNotMatch(proposalStudioWorkbenchSource, /\$\{interpolatePreviewHtml\(block\.chart_svg\)\}/)
+})
+
 test('studio preview media helpers reject executable urls and escape attributes', () => {
   assert.equal(safePreviewMediaUrl('/storage/report-studio/logo.svg'), '/storage/report-studio/logo.svg')
   assert.equal(safePreviewMediaUrl('https://lims-unleashed.test/storage/media/stamp.png'), 'https://lims-unleashed.test/storage/media/stamp.png')
@@ -160,6 +175,54 @@ test('studio upload targets resolve to stable media asset roles', () => {
   assert.equal(uploadedStudioAssetKind({ scope: 'asset-url' }), 'uploaded_asset')
   assert.equal(uploadedStudioAssetKind({ scope: 'selected-block', field: 'image_url' }), 'uploaded_image')
   assert.equal(uploadedStudioAssetKind(), 'uploaded_image')
+})
+
+test('report studio media picker uses the product shell and keeps manual urls advanced', () => {
+  const mediaPickerSource = reportStudioWorkbenchSource.slice(
+    reportStudioWorkbenchSource.indexOf('<div v-if="mediaPickerOpen"'),
+    reportStudioWorkbenchSource.indexOf('<div v-else class="mt-5 rounded-3xl border border-dashed', reportStudioWorkbenchSource.indexOf('<div v-if="mediaPickerOpen"')),
+  )
+
+  assert.match(mediaPickerSource, /bg-\[#06100e\]\/80/)
+  assert.match(mediaPickerSource, /max-w-6xl/)
+  assert.match(mediaPickerSource, /border-\[#ded3bf\]/)
+  assert.match(mediaPickerSource, /studioCopy\('media_picker\.eyebrow'\)/)
+  assert.match(mediaPickerSource, /studioCopy\('media_picker\.manual_advanced'\)/)
+  assert.match(mediaPickerSource, /<details class="mt-3/)
+  assert.doesNotMatch(mediaPickerSource, /Galeria documental/)
+  assert.doesNotMatch(mediaPickerSource, /Ligação manual avançada/)
+  assert.doesNotMatch(mediaPickerSource, /bg-primary|text-primary|border-primary|ring-primary/)
+})
+
+test('report studio exposes conditional snippets for optional PDF sections', () => {
+  assert.match(reportStudioWorkbenchSource, /const conditionalSnippetLibrary = \[/)
+  assert.match(reportStudioWorkbenchSource, /\{if:observations\}/)
+  assert.match(reportStudioWorkbenchSource, /\{endif:observations\}/)
+  assert.match(reportStudioWorkbenchSource, /\{\{ifnot:observations\}\}/)
+  assert.match(reportStudioWorkbenchSource, /\{\{endif:observations\}\}/)
+  assert.match(reportStudioWorkbenchSource, /\.\.\.conditionalSnippetLibrary/)
+})
+
+test('report studio preview resolves conditional blocks before placeholder replacement', () => {
+  assert.match(reportStudioWorkbenchSource, /function resolvePreviewConditionalBlocks/)
+  assert.match(reportStudioWorkbenchSource, /function previewValueIsTruthy/)
+  assert.match(reportStudioWorkbenchSource, /resolvePreviewConditionalBlocks\(String\(html \|\| ''\), replacements\)\.replace\(placeholderTokenPattern/)
+  assert.match(reportStudioWorkbenchSource, /isConditionalPlaceholderKey\(key\)/)
+  assert.match(reportStudioWorkbenchSource, /ifnot:\(\[a-zA-Z0-9_\]\+\)/)
+})
+
+test('document studios normalize canvas block placement before PDF preview and save', () => {
+  for (const source of [reportStudioWorkbenchSource, proposalStudioWorkbenchSource]) {
+    assert.match(source, /function normalizeCanvasBlockPlacement\(block, fallbackPageNumber = currentPreviewPage\.value \|\| 1\)/)
+    assert.match(source, /function normalizeSelectedCanvasBlockPlacement/)
+    assert.match(source, /function normalizeCanvasBlockPlacements\(\)[\s\S]*canvasBlocks\.value\.forEach\(\(block\) => normalizeCanvasBlockPlacement\(block\)\)/)
+    assert.match(source, /canvasSurfaceOptions\.some\(\(option\) => option\.value === block\.surface\)/)
+    assert.match(source, /block\.surface = 'content'/)
+    assert.match(source, /block\.surface !== 'content'[\s\S]*block\.page_scope = 'all'[\s\S]*block\.page_number = null/)
+    assert.match(source, /block\.page_scope === 'specific'[\s\S]*fallbackPageNumber/)
+    assert.match(source, /selectedCanvasBlock\.value\?\.surface[\s\S]*selectedCanvasBlock\.value\?\.page_scope[\s\S]*selectedCanvasBlock\.value\?\.page_number/)
+    assert.match(source, /normalizeCanvasBlockPlacements\(\)[\s\S]*props\.layoutSchema\.variable_catalog = translatedPlaceholders\.value/)
+  }
 })
 
 test('studio image focal helpers normalize keywords and percentage coordinates', () => {

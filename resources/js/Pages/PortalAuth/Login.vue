@@ -1,15 +1,15 @@
 <template>
-  <div class="relative min-h-screen overflow-hidden bg-[#07110f] py-8 text-[#f7f1e7] sm:py-12 lg:py-24" :class="commercialDocumentThemeClasses">
+  <div class="relative min-h-screen overflow-hidden bg-[#07110f] py-3 text-[#f7f1e7] sm:py-12 lg:py-24" :class="commercialDocumentThemeClasses">
     <Head title="Login" />
     
     <div class="pointer-events-none absolute -left-24 top-0 h-[32rem] w-[32rem] rounded-full bg-[#1f7a68]/25 blur-3xl"></div>
     <div class="pointer-events-none absolute bottom-0 right-0 h-[36rem] w-[36rem] rounded-full bg-accent-300/18 blur-3xl"></div>
     <div class="pointer-events-none absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-[#fffaf0]/10 to-transparent"></div>
     <div class="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <div class="grid grid-cols-1 items-center gap-6 lg:grid-cols-2 lg:gap-16">
         
         <!-- LEFT COLUMN - Features & Introduction -->
-        <div class="space-y-10">
+        <div class="hidden space-y-10 lg:block">
           <!-- Brand Section -->
           <div class="flex items-center gap-4">
             <img v-if="brandLogoUrl" class="h-12 max-w-48 object-contain" :src="brandLogoUrl" :alt="brandAppName" />
@@ -68,10 +68,21 @@
 
         <!-- RIGHT COLUMN - Login Form -->
         <div class="relative">
+          <div class="mb-4 flex items-center justify-between gap-4 lg:hidden">
+            <div class="flex min-w-0 items-center gap-3">
+              <img v-if="brandLogoUrl" class="h-10 max-w-40 object-contain" :src="brandLogoUrl" :alt="brandAppName" />
+              <img v-else class="h-10 w-auto" src="../../../images/sncqa_logo.svg" :alt="brandAppName" />
+              <span class="truncate text-sm font-extrabold text-white">{{ brandAppName }}</span>
+            </div>
+            <span class="rounded-full border border-[#ded3bf]/20 bg-[#fffaf0]/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-accent-100">
+              {{ $t('gestlab.pages.portal_login.portal_title') }}
+            </span>
+          </div>
+
           <!-- Login Card -->
           <div class="overflow-hidden rounded-[2rem] border border-[#ded3bf] bg-[#fffaf0]/96 shadow-2xl shadow-black/30 backdrop-blur-xl dark:border-[#25443c] dark:bg-[#0c1714]/95">
             <!-- Card Header with Gradient -->
-            <div class="bg-gradient-to-r from-[#143d37] via-[#165649] to-[#1f7a68] px-8 py-6">
+            <div class="bg-gradient-to-r from-[#143d37] via-[#165649] to-[#1f7a68] px-5 py-5 sm:px-8 sm:py-6">
               <div class="flex items-center justify-between">
                 <div class="space-y-1">
                   <h2 class="text-xl font-bold text-white">
@@ -90,10 +101,10 @@
             </div>
 
             <!-- Card Content -->
-            <div class="p-8">
-              <form @submit.prevent="submit" class="space-y-6">
+            <div class="p-5 sm:p-8">
+              <form @submit.prevent="submit" class="space-y-4 sm:space-y-6">
                 <!-- Email Field -->
-                <div class="space-y-3">
+                <div class="space-y-2 sm:space-y-3">
                   <div class="flex items-center justify-between">
                     <label for="email" class="flex items-center gap-2 text-sm font-bold text-[#15231f] dark:text-[#f7f1e7]">
                       <svg class="h-4 w-4 text-[#143d37] dark:text-accent-200" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -117,7 +128,7 @@
                       autocomplete="email"
                       required
                       :class="[
-                        'block w-full rounded-2xl border px-4 py-3 pl-11 text-sm font-medium transition-all duration-200 focus:outline-none',
+                        'ds-field pl-11',
                         form.errors.email 
                           ? 'border-red-300 bg-red-50 text-red-900 placeholder-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20' 
                           : 'border-[#d8cfbe] bg-[#fffdf7] text-[#15231f] placeholder:text-slate-400 focus:border-[#1f7a68] focus:ring-2 focus:ring-[#1f7a68]/20 dark:border-[#25443c] dark:bg-[#07110f]/70 dark:text-[#f7f1e7]'
@@ -139,7 +150,7 @@
                 </div>
 
                 <!-- Password Field -->
-                <div class="space-y-3">
+                <div class="space-y-2 sm:space-y-3">
                   <div class="flex items-center justify-between">
                     <label for="password" class="flex items-center gap-2 text-sm font-bold text-[#15231f] dark:text-[#f7f1e7]">
                       <svg class="h-4 w-4 text-[#143d37] dark:text-accent-200" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -163,7 +174,7 @@
                       autocomplete="current-password"
                       required
                       :class="[
-                        'block w-full rounded-2xl border px-4 py-3 pl-11 text-sm font-medium transition-all duration-200 focus:outline-none',
+                        'ds-field pl-11',
                         form.errors.password 
                           ? 'border-red-300 bg-red-50 text-red-900 placeholder-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20' 
                           : 'border-[#d8cfbe] bg-[#fffdf7] text-[#15231f] placeholder:text-slate-400 focus:border-[#1f7a68] focus:ring-2 focus:ring-[#1f7a68]/20 dark:border-[#25443c] dark:bg-[#07110f]/70 dark:text-[#f7f1e7]'
@@ -192,7 +203,7 @@
                       id="remember" 
                       name="remember" 
                       type="checkbox" 
-                      class="h-4 w-4 rounded border-[#d8cfbe] text-[#143d37] focus:ring-[#1f7a68] focus:ring-offset-0 dark:border-[#25443c]"
+                      class="ds-checkbox"
                     />
                   </div>
                   <div class="ml-3 text-sm">
@@ -305,14 +316,14 @@
             </div>
 
             <!-- Card Footer -->
-            <div class="border-t border-[#ded3bf] bg-[#f4efe4] px-8 py-4 dark:border-[#25443c] dark:bg-[#07110f]/80">
+            <div class="border-t border-[#ded3bf] bg-[#f4efe4] px-5 py-3 sm:px-8 sm:py-4 dark:border-[#25443c] dark:bg-[#07110f]/80">
               <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                 <span>{{ brandAppName }}</span>
                 <span class="flex items-center gap-1">
                   <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
                   </svg>
-                  v{{ $t('gestlab.app.version') }}
+                  {{ $t('gestlab.app.version') }}
                 </span>
               </div>
             </div>

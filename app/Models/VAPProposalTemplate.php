@@ -177,9 +177,49 @@ class VAPProposalTemplate extends Model
      */
     public static function parseContent(string $content, VAPProposal $proposal, ?GeneralSettings $settings = null): string
     {
-        $replacements = self::templateReplacements(self::placeholderValues($proposal, $settings));
+        $values = self::placeholderValues($proposal, $settings);
+        $content = self::resolveConditionalBlocks($content, $values);
+        $replacements = self::templateReplacements($values);
 
         return strtr($content, $replacements);
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    private static function resolveConditionalBlocks(string $content, array $values): string
+    {
+        $patterns = [
+            '/\{if:([a-zA-Z0-9_]+)\}([\s\S]*?)\{endif:\1\}/',
+            '/\{\{if:([a-zA-Z0-9_]+)\}\}([\s\S]*?)\{\{endif:\1\}\}/',
+        ];
+
+        foreach ($patterns as $pattern) {
+            $content = (string) preg_replace_callback(
+                $pattern,
+                fn (array $matches): string => self::placeholderIsTruthy($values['{'.$matches[1].'}'] ?? null)
+                    ? (string) $matches[2]
+                    : '',
+                $content
+            );
+        }
+
+        return $content;
+    }
+
+    private static function placeholderIsTruthy(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (float) $value !== 0.0;
+        }
+
+        $normalized = str(trim((string) $value))->lower()->toString();
+
+        return ! in_array($normalized, ['', '0', 'false', 'no', 'não', 'nao', '—', '-'], true);
     }
 
     /**

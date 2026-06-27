@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\Sample;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Validator;
 
 class ResultRequest extends FormRequest
@@ -88,6 +89,8 @@ class ResultRequest extends FormRequest
                 'results.*.is_calculated' => 'boolean',
                 'results.*.is_override' => 'boolean',
                 'results.*.calculation_metadata' => 'nullable|array',
+                'results.*.extra_data' => 'nullable|array',
+                'results.*.display_format' => 'nullable|in:standard,scientific',
                 'results.*.calculated_at' => 'date',
                 'signature' => 'nullable|string',
             ];
@@ -154,6 +157,8 @@ class ResultRequest extends FormRequest
                 'results.*.is_calculated' => 'boolean',
                 'results.*.is_override' => 'boolean',
                 'results.*.calculation_metadata' => 'nullable|array',
+                'results.*.extra_data' => 'nullable|array',
+                'results.*.display_format' => 'nullable|in:standard,scientific',
                 'results.*.calculated_at' => 'date',
                 'signature' => 'nullable|string',
 
@@ -290,6 +295,8 @@ class ResultRequest extends FormRequest
                         'is_calculated' => $item['is_calculated'] ?? false,
                         'is_override' => $item['is_override'] ?? false,
                         'calculation_metadata' => $item['calculation_metadata'] ?? null,
+                        'extra_data' => $this->prepareResultExtraData($item),
+                        'display_format' => $this->displayFormatFromResult($item),
                     ];
                 })->toArray(),
             ]);
@@ -357,6 +364,8 @@ class ResultRequest extends FormRequest
                         'is_calculated' => $item['is_calculated'] ?? false,
                         'is_override' => $item['is_override'] ?? false,
                         'calculation_metadata' => $item['calculation_metadata'] ?? null,
+                        'extra_data' => $this->prepareResultExtraData($item),
+                        'display_format' => $this->displayFormatFromResult($item),
                     ];
                 })->toArray(),
             ]);
@@ -420,6 +429,8 @@ class ResultRequest extends FormRequest
                         'is_calculated' => $item['is_calculated'] ?? false,
                         'is_override' => $item['is_override'] ?? false,
                         'calculation_metadata' => $item['calculation_metadata'] ?? null,
+                        'extra_data' => $this->prepareResultExtraData($item),
+                        'display_format' => $this->displayFormatFromResult($item),
                     ];
                 })->toArray(),
             ]);
@@ -535,5 +546,36 @@ class ResultRequest extends FormRequest
                 }
             });
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     * @return array<string, mixed>
+     */
+    private function prepareResultExtraData(array $result): array
+    {
+        $extraData = data_get($result, 'extra_data', []);
+
+        if ($extraData instanceof Collection) {
+            $extraData = $extraData->toArray();
+        }
+
+        if (! is_array($extraData)) {
+            $extraData = [];
+        }
+
+        $extraData['display_format'] = $this->displayFormatFromResult($result);
+
+        return $extraData;
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     */
+    private function displayFormatFromResult(array $result): string
+    {
+        $displayFormat = data_get($result, 'display_format', data_get($result, 'extra_data.display_format'));
+
+        return $displayFormat === 'scientific' ? 'scientific' : 'standard';
     }
 }

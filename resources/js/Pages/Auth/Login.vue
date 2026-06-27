@@ -11,10 +11,10 @@
     <div class="relative min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <!-- Login Container -->
       <div class="max-w-6xl w-full mx-auto">
-        <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.8fr)] gap-10 lg:gap-14">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.8fr)] lg:gap-14">
           
           <!-- Left Column - Brand & Welcome -->
-          <div class="flex flex-col justify-center">
+          <div class="hidden flex-col justify-center lg:flex">
             <div class="mx-auto max-w-xl rounded-[2rem] border border-[#ded3bf]/15 bg-[#fffaf0]/[0.07] p-6 shadow-2xl shadow-black/30 backdrop-blur-xl lg:mx-0 lg:p-8">
               <!-- Logo -->
               <div class="flex items-center gap-4 mb-8">
@@ -113,8 +113,26 @@
           <!-- Right Column - Login Form -->
           <div class="flex items-center justify-center">
             <div class="w-full max-w-md">
+              <div class="mb-5 flex items-center justify-between gap-4 px-1 lg:hidden">
+                <img
+                  v-if="brandLogoUrl"
+                  class="h-10 max-w-44 object-contain"
+                  :src="brandLogoUrl"
+                  :alt="brandAppName"
+                />
+                <img
+                  v-else
+                  class="h-10 w-auto"
+                  src="../../../images/sncqa_logo.svg"
+                  :alt="brandAppName"
+                />
+                <span class="rounded-full border border-[#ded3bf]/20 bg-[#fffaf0]/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-accent-100">
+                  {{ $t('gestlab.pages.login.internal_area') }}
+                </span>
+              </div>
+
               <!-- Login Card -->
-              <div class="rounded-[2rem] border border-[#ded3bf] bg-[#fffaf0]/96 p-8 shadow-2xl shadow-black/30 backdrop-blur-xl dark:border-[#25443c] dark:bg-[#0c1714]/95">
+              <div class="rounded-[2rem] border border-[#ded3bf] bg-[#fffaf0]/96 p-5 shadow-2xl shadow-black/30 backdrop-blur-xl dark:border-[#25443c] dark:bg-[#0c1714]/95 sm:p-8">
                 <div class="text-center mb-8">
                   <h2 class="mb-2 text-2xl font-extrabold text-[#15231f] dark:text-[#f7f1e7]">
                     {{ $t('gestlab.pages.login.sign_in') }}
@@ -133,7 +151,7 @@
 
                   <!-- Email Input -->
                   <div class="space-y-2">
-                    <label for="email" class="block text-sm font-bold text-[#15231f] dark:text-[#f7f1e7]">
+                    <label for="email" class="ds-field-label block">
                       {{ $t('gestlab.pages.login.email_input_title') }}
                     </label>
                     <div class="relative">
@@ -149,7 +167,7 @@
                         type="email"
                         autocomplete="email"
                         :class="[
-                        'block w-full rounded-2xl border border-[#d8cfbe] bg-[#fffdf7] py-3 pl-10 pr-4 text-sm font-medium text-[#15231f] placeholder:text-slate-400 backdrop-blur-sm transition-all duration-200 focus:border-[#1f7a68] focus:ring-2 focus:ring-[#1f7a68]/20 dark:border-[#25443c] dark:bg-[#07110f]/70 dark:text-[#f7f1e7]',
+                        'ds-field pl-10',
                           form.errors.email ? 'border-red-300 focus:border-red-300 focus:ring-2 focus:ring-red-500/20' : ''
                         ]"
                         :placeholder="$t('gestlab.pages.login.email_placeholder')"
@@ -163,7 +181,7 @@
                   <!-- Password Input -->
                   <div class="space-y-2">
                     <div class="flex items-center justify-between">
-                      <label for="password" class="block text-sm font-bold text-[#15231f] dark:text-[#f7f1e7]">
+                      <label for="password" class="ds-field-label block">
                         {{ $t('gestlab.pages.login.password_input_title') }}
                       </label>
                       <Link 
@@ -186,7 +204,7 @@
                         name="password"
                         autocomplete="current-password"
                         :class="[
-                        'block w-full rounded-2xl border border-[#d8cfbe] bg-[#fffdf7] py-3 pl-10 pr-12 text-sm font-medium text-[#15231f] placeholder:text-slate-400 backdrop-blur-sm transition-all duration-200 focus:border-[#1f7a68] focus:ring-2 focus:ring-[#1f7a68]/20 dark:border-[#25443c] dark:bg-[#07110f]/70 dark:text-[#f7f1e7]',
+                        'ds-field pl-10 pr-12',
                           form.errors.password ? 'border-red-300 focus:border-red-300 focus:ring-2 focus:ring-red-500/20' : ''
                         ]"
                         :placeholder="$t('gestlab.pages.login.password_placeholder')"
@@ -220,7 +238,7 @@
                       id="remember-me"
                       name="remember-me"
                       type="checkbox"
-                      class="h-4 w-4 rounded border-[#d8cfbe] text-[#143d37] transition-colors duration-200 focus:ring-2 focus:ring-[#1f7a68]/20 focus:ring-offset-0 dark:border-[#25443c] dark:text-accent-200"
+                      class="ds-checkbox"
                     />
                     <label for="remember-me" class="ml-3 text-sm font-medium text-slate-700 dark:text-slate-300">
                       {{ $t('gestlab.pages.login.remember_input_title') }}
@@ -278,7 +296,7 @@
                     <svg v-else class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12.75 11.25 15 15 9.75M4.5 9.75V7.5A2.25 2.25 0 0 1 6.75 5.25h10.5A2.25 2.25 0 0 1 19.5 7.5v9A2.25 2.25 0 0 1 17.25 18.75H6.75A2.25 2.25 0 0 1 4.5 16.5v-6.75Z" />
                     </svg>
-                    <span>{{ passkeyProcessing ? 'A preparar passkey…' : 'Entrar com passkey' }}</span>
+                    <span>{{ passkeyProcessing ? $t('gestlab.pages.login.passkey_processing') : $t('gestlab.pages.login.passkey_button') }}</span>
                   </button>
 
                   <p v-if="$page.props.errors?.social" class="text-sm text-red-600">
@@ -346,7 +364,7 @@
                       </Link>
                     </p>
                     <p class="text-xs font-medium text-slate-400">
-                      {{ $t('gestlab.pages.login.copyright') }} • 
+                      {{ $t('gestlab.pages.login.copyright', { year: currentYear }) }} •
                       {{ $t('gestlab.pages.login.version') }}
                     </p>
                   </div>
@@ -388,6 +406,7 @@ const showPassword = ref(false);
 const passkeyProcessing = ref(false);
 const passkeyResponse = ref('');
 const passkeyLoginForm = ref(null);
+const currentYear = new Date().getFullYear();
 const page = usePage();
 const socialProviders = page.props.socialAuth?.providers ?? [];
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';

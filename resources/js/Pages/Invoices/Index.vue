@@ -9,6 +9,7 @@ import comboboxEnhanced from '@/Components/combobox-enhanced.vue';
 import { usePermission } from '@/Composables/usePermissions'
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { EyeIcon } from "@heroicons/vue/24/outline";
+import ModuleHero from '@/Components/base/ModuleHero.vue'
 
 const { hasPermission } = usePermission();
 
@@ -139,46 +140,44 @@ const showPaymentConfirmation = ref(false);
 </script>
 <template>
 <div class="space-y-6" :class="commercialDocumentThemeClasses">
-<div class="mb-6 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100 dark:border-slate-800 dark:bg-slate-950 dark:ring-slate-800">
-  <div class="relative isolate px-5 py-6 sm:px-7">
-    <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(var(--color-primary-500-rgb,59,130,246),0.18),transparent_32%),linear-gradient(135deg,rgba(248,250,252,0.96),rgba(255,255,255,0.9))] dark:bg-[radial-gradient(circle_at_top_left,rgba(var(--color-primary-400-rgb,96,165,250),0.20),transparent_34%),linear-gradient(135deg,rgba(15,23,42,0.98),rgba(2,6,23,0.96))]" />
-    <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary-700 dark:text-primary-300">Comercial</p>
-        <h1 class="mt-3 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-3xl">{{ $t('gestlab.general.labels.invoices.page_title') }}</h1>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-          Emissão, cobrança e acompanhamento fiscal com uma visão clara do estado das facturas.
-        </p>
-      </div>
-      <div class="grid grid-cols-2 gap-3 sm:flex">
-        <div class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Registos</p>
-          <p class="mt-1 text-xl font-semibold text-slate-950 dark:text-white">{{ props.record?.total ?? props.record?.data?.length ?? 0 }}</p>
-        </div>
-        <div class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Fluxo</p>
-          <p class="mt-1 text-sm font-semibold text-slate-950 dark:text-white">Facturação</p>
-        </div>
-      </div>
-    </div>
+<ModuleHero
+  :eyebrow="$t('gestlab.general.labels.commercial_documents.commercial_area')"
+  :title="$t('gestlab.general.labels.invoices.page_title')"
+  :description="$t('gestlab.general.labels.invoices.index_description')"
+>
+  <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <article class="ds-card bg-[var(--ds-panel-raised)] p-4">
+      <p class="ds-kicker text-[0.64rem]">
+        {{ $t('gestlab.general.labels.commercial_documents.records') }}
+      </p>
+      <p class="mt-2 text-2xl font-black tabular-nums text-[var(--ds-text)]">
+        {{ props.record?.total ?? props.record?.data?.length ?? 0 }}
+      </p>
+    </article>
+    <article class="ds-card bg-[var(--ds-panel-raised)] p-4">
+      <p class="ds-kicker text-[0.64rem]">
+        {{ $t('gestlab.general.labels.commercial_documents.flow') }}
+      </p>
+      <p class="mt-2 text-sm font-black text-[var(--ds-text)]">
+        {{ $t('gestlab.general.labels.invoices.index_flow') }}
+      </p>
+    </article>
   </div>
-</div>
+</ModuleHero>
 
 <records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="handleEdit">
   <template v-slot:actions="id">
-    <!-- content for the actions slot -->
-
       <Link
                     :href="route('invoices.show', {invoice: id})"
-                    class="text-ft-gray hover:text-blue-900 transform transition-all duration-200 hover:scale-150"
+                    class="ds-table-action"
                   >
-                  <EyeIcon class="h-4 w-4" />
+                  <EyeIcon class="h-5 w-5" />
             </Link>
     
-    <button type="button" @click="() => {form.id = id.id; actionId='mark_as_paid'; showDeleteConfirmation = true;}" class="text-ft-gray hover:text-blue-900 transform transition-all duration-200 hover:scale-150 ml-4" v-if="!id.data.deleted && hasPermission('add_receipts') && !id.data.status">
+    <button type="button" @click="() => {form.id = id.id; actionId='mark_as_paid'; showDeleteConfirmation = true;}" class="ds-table-action" v-if="!id.data.deleted && hasPermission('add_receipts') && !id.data.status">
       <div class="flex">
 
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />
       </svg>
 
@@ -186,30 +185,21 @@ const showPaymentConfirmation = ref(false);
 
     </button>
   </template>
-</records-table> <br>
+</records-table>
 
 <confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="showPaymentConfirmation = true, showDeleteConfirmation=false" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" :confirm="trans('gestlab.general.buttons.yes')" :cancel="trans('gestlab.general.buttons.no')" />
 <confirm-dialog @canceled="showPaymentConfirmation=false" @close="showPaymentConfirmation=false" @confirmed="submit" v-if="showPaymentConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" :confirm="trans('gestlab.general.buttons.submit')" :cancel="trans('gestlab.general.buttons.cancel')">
-  <div class="mt-4">
-      <div class="mb-3 inline-flex rounded-full bg-primary-900 px-3 py-1 text-xs font-semibold leading-4 text-white dark:bg-primary-500/20 dark:text-primary-100"><p class="text-xs">{{ $t('gestlab.general.labels.invoices.payment_type') }}</p></div>
-      <div>
-        <div class="rounded-full bg-primary-900 px-4 text-white dark:bg-primary-500/20 sm:px-0">
-          <!-- <h3 class="text-base font-semibold leading-7 text-gray-900">Resumo</h3>
-          <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-500">Personal details and application.</p> -->
-        </div>
-        <div class="mt-6 border-t border-slate-100 dark:border-slate-800">
-          <dl class="divide-y divide-slate-100 dark:divide-slate-800">
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-slate-900 dark:text-slate-100">{{ $t('gestlab.general.labels.invoices.payment_type') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-slate-700 dark:text-slate-300 sm:col-span-2 sm:mt-0">
-              <combobox-enhanced :hasError="form.errors.payment_method" v-model="form.payment_method" :load-options="loadPaymentCategories"/>
-              </dd>
-            </div>
-          </dl>
-        </div>
-      </div>
-
+  <div class="mt-4 space-y-4">
+    <p class="ds-kicker">
+      {{ $t('gestlab.general.labels.invoices.payment_type') }}
+    </p>
+    <div class="ds-card bg-[var(--ds-panel-raised)] p-4">
+      <label class="ds-field-label">
+        {{ $t('gestlab.general.labels.invoices.payment_type') }}
+      </label>
+      <combobox-enhanced :hasError="form.errors.payment_method" v-model="form.payment_method" :load-options="loadPaymentCategories"/>
     </div>
+  </div>
 </confirm-dialog>
 </div>
 </template>

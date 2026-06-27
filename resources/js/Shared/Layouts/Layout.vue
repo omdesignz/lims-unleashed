@@ -1,24 +1,15 @@
 <template>
-  <div class="lims-app-shell min-h-screen bg-[#f4efe4] text-[#15231f] dark:bg-[#07110f] dark:text-[#f7f1e7]" :style="brandingCssVariables" :data-theme-preset="themePreset">
+  <div class="lims-app-shell ds-app-canvas" :style="brandingCssVariables" :data-theme-preset="themePreset">
     <backend-modal />
     <ToastList />
 
     <!-- Impersonation banner -->
     <div
       v-if="impersonation"
-      class="relative isolate flex items-center gap-x-6 overflow-hidden bg-gray-50 px-6 py-2.5 sm:px-3.5 sm:before:flex-1"
+      class="ds-impersonation-banner relative isolate flex items-center gap-x-6 px-6 py-2.5 sm:px-3.5 sm:before:flex-1"
     >
-      <div
-        class="absolute left-[max(-7rem,calc(50%-52rem))] top-1/2 -z-10 -translate-y-1/2 transform-gpu blur-2xl"
-        aria-hidden="true"
-      >
-        <div
-          class="aspect-[577/310] w-[36.0625rem] bg-gradient-to-r from-[#ff80b5] to-[#9089fc] opacity-30"
-          style="clip-path: polygon(74.8% 41.9%, 97.2% 73.2%, 100% 34.9%, 92.5% 0.4%, 87.5% 0%, 75% 28.6%, 58.5% 54.6%, 50.1% 56.8%, 46.9% 44%, 48.3% 17.4%, 24.7% 53.9%, 0% 27.9%, 11.9% 74.2%, 24.9% 54.1%, 68.6% 100%, 74.8% 41.9%)"
-        />
-      </div>
       <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <p class="text-sm leading-6 text-gray-900">
+        <p class="text-sm font-medium leading-6">
           <strong class="font-semibold">{{ trans('gestlab.general.labels.impersonation.title') }}</strong>
           <svg viewBox="0 0 2 2" class="mx-2 inline h-0.5 w-0.5 fill-current" aria-hidden="true">
             <circle cx="1" cy="1" r="1" />
@@ -28,7 +19,7 @@
         <Link
           as="button"
           @click="router.get(route('users.stopimpersonating'), {}, { preserveState: false, replace: true })"
-          class="flex-none rounded-full bg-gray-900 px-3.5 py-1 text-sm font-semibold text-white shadow-sm hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
+          class="ds-button ds-button-primary min-h-0 flex-none rounded-full px-3.5 py-1.5"
         >
           {{ trans('gestlab.general.buttons.leave_impersonation') }}
           <span aria-hidden="true">&rarr;</span>
@@ -80,7 +71,7 @@
               </TransitionChild>
 
               <div
-                class="flex grow flex-col gap-y-5 overflow-y-auto bg-[#fffaf0] px-4 pb-4 text-[#15231f] scrollbar-thin dark:bg-[#07110f] dark:text-[#f7f1e7]"
+                class="ds-surface flex grow flex-col gap-y-5 overflow-y-auto px-4 pb-4 scrollbar-thin"
               >
                 <div class="flex h-16 shrink-0 items-center">
 <Link :href="route('dashboard')">
@@ -110,13 +101,12 @@
     <div
       :class="[
         desktopSidebarOpen ? 'translate-x-0 opacity-100' : '-translate-x-[110%] opacity-0 pointer-events-none',
-      'hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-80 lg:flex-col lg:bg-[#f4efe4] lg:px-4 lg:py-4 lg:transition-all lg:duration-300 dark:lg:bg-[#07110f]',
+      'hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-80 lg:flex-col lg:px-4 lg:py-4 lg:transition-all lg:duration-300',
       ]"
     >
       <div
-        class="relative flex grow flex-col gap-y-4 overflow-y-auto rounded-[2rem] border border-[#ded3bf]/80 bg-[#fffaf0]/92 px-4 pb-4 pt-2 shadow-[0_28px_90px_rgba(20,61,55,0.14)] ring-1 ring-[#143d37]/5 backdrop-blur-xl scrollbar-thin dark:border-[#25443c]/80 dark:bg-[#0c1714]/92 dark:shadow-black/35 dark:ring-white/5"
+        class="ds-sidebar-panel relative flex grow flex-col gap-y-4 overflow-y-auto px-4 pb-4 pt-2 scrollbar-thin"
       >
-        <div class="pointer-events-none absolute inset-x-4 top-0 h-28 rounded-b-[2rem] bg-gradient-to-b from-primary-500/12 to-transparent dark:from-accent-300/10" />
         <div class="flex h-16 shrink-0 items-center px-2">
 <Link :href="route('dashboard')" class="flex items-center gap-3 transition-opacity hover:opacity-80">
                 <img
@@ -141,7 +131,7 @@
     <div :class="desktopSidebarOpen ? 'lg:pl-80' : 'lg:pl-0'" class="min-h-screen transition-all duration-300">
       <!-- Topbar -->
       <div
-        class="sticky top-0 z-40 mx-0 flex h-16 shrink-0 items-center gap-x-4 border-b border-[#ded3bf]/80 bg-[#fffaf0]/92 px-4 shadow-[0_18px_45px_rgba(20,61,55,0.06)] backdrop-blur-md dark:border-[#25443c]/80 dark:bg-[#0c1714]/92 dark:shadow-black/20 sm:gap-x-6 sm:px-6 lg:top-3 lg:mx-4 lg:rounded-[1.6rem] lg:border lg:px-6"
+        class="ds-topbar sticky top-0 z-40 mx-0 flex h-16 shrink-0 items-center gap-x-4 border-b px-4 sm:gap-x-6 sm:px-6 lg:top-3 lg:mx-4 lg:rounded-[1.6rem] lg:border lg:px-6"
       >
         <button type="button" class="-m-2.5 p-2.5 text-gray-400 lg:hidden" @click="sidebarOpen = true">
           <span class="sr-only">Abrir menu lateral</span>
@@ -154,7 +144,7 @@
           <div class="relative flex flex-1 items-center">
             <button
               type="button"
-              class="hidden items-center gap-2 rounded-full border border-[#ded3bf] bg-[#fffdf7] px-3 py-1.5 text-xs font-bold text-[#15231f] shadow-sm transition hover:border-primary-300 hover:text-primary-700 dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:hover:border-primary-400 dark:hover:text-accent-200 lg:inline-flex"
+              class="ds-button ds-button-secondary hidden min-h-0 rounded-full px-3 py-1.5 text-xs lg:inline-flex"
               :title="desktopSidebarOpen ? 'Ocultar menu lateral' : 'Mostrar menu lateral'"
               @click="toggleDesktopSidebar"
             >

@@ -1,86 +1,190 @@
 <script setup>
-import { ref } from 'vue';
-import { useForm } from '@inertiajs/vue3';
-import { VPerfectSignature } from 'v-perfect-signature';
-import { XMarkIcon, ArrowDownTrayIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { computed, ref } from 'vue'
+import { VPerfectSignature } from 'v-perfect-signature'
+import {
+  ArrowDownTrayIcon,
+  CheckIcon,
+  PencilSquareIcon,
+  XMarkIcon,
+} from '@heroicons/vue/24/outline'
 
 const props = defineProps({
-  currentSignature: String,
+  currentSignature: {
+    type: String,
+    default: '',
+  },
   title: {
     type: String,
     default: '',
   },
+})
 
-});
+const emit = defineEmits(['save', 'delete'])
 
-const emit = defineEmits(['save', 'delete']);
-
-const signaturePad = ref();
+const signaturePad = ref()
+const hasDraft = ref(false)
+const errorMessage = ref('')
 
 const strokeOptions = {
-    size: 16,
-    thinning: 0.75,
-    smoothing: 0.5,
-    streamline: 0.5,
-  };
-
-function toDataURL() {
-    const dataURL = signaturePad.value?.toDataURL();
-    console.log(dataURL);
+  size: 4,
+  thinning: 0.72,
+  smoothing: 0.55,
+  streamline: 0.55,
+  color: '#143d37',
 }
 
-function clear() {
-    signaturePad.value?.clear();
+const hasExistingSignature = computed(() => props.currentSignature.length > 0)
+
+const markDraft = () => {
+  hasDraft.value = true
+  errorMessage.value = ''
 }
 
-function download() {
-    if (signaturePad.value?.isEmpty()) {
-    alert('Empty signature pad!')
+const clear = () => {
+  signaturePad.value?.clear()
+  hasDraft.value = false
+  errorMessage.value = ''
+}
+
+const getSignatureData = () => {
+  if (!signaturePad.value || signaturePad.value.isEmpty()) {
+    errorMessage.value = 'gestlab.general.labels.signature.empty_error'
+
+    return null
+  }
+
+  errorMessage.value = ''
+
+  return signaturePad.value.toDataURL()
+}
+
+const download = () => {
+  const signatureData = getSignatureData()
+
+  if (!signatureData) {
     return
-}
+  }
 
   const link = document.createElement('a')
-  link.download = 'signature.png'
-  link.href = signaturePad.value?.toDataURL()
+  link.download = 'assinatura.png'
+  link.href = signatureData
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
 }
 
+const save = () => {
+  const signatureData = getSignatureData()
+
+  if (signatureData) {
+    emit('save', signatureData)
+  }
+}
 </script>
+
 <template>
-    <div class="mx-auto max-w-none">
-        <div class="overflow-hidden bg-white sm:rounded-lg sm:shadow-sm">
-    <div class="border-b border-gray-200 bg-white px-4 py-5 sm:px-6">
-        <div class="-ml-4 -mt-4 flex flex-wrap items-center justify-between sm:flex-nowrap">
-        <div class="ml-4 mt-4">
-            <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-gray-400">{{ $t('gestlab.general.labels.signature.title') }}</h3>
-            <p class="mt-1 text-sm text-gray-500">{{ $t('gestlab.general.labels.signature.description') }}</p>
+  <section class="ds-panel overflow-hidden">
+    <header class="flex flex-col gap-4 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex min-w-0 items-start gap-3">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-700-rgb)/0.1)] text-[rgb(var(--primary-800-rgb)/1)] dark:text-[rgb(var(--accent-100-rgb)/1)]">
+          <PencilSquareIcon class="h-5 w-5" aria-hidden="true" />
+        </span>
+        <div class="min-w-0">
+          <h3 class="text-base font-extrabold text-[color:var(--ds-text)]">
+            {{ props.title || $t('gestlab.general.labels.signature.title') }}
+          </h3>
+          <p class="mt-1 text-sm text-[color:var(--ds-text-muted)]">
+            {{ $t('gestlab.general.labels.signature.description') }}
+          </p>
         </div>
-        <div class="ml-4 mt-4 shrink-0">
-            <span class="isolate inline-flex rounded-md shadow-xs">
-                <button :disabled="props?.currentSignature?.length"  @click="clear" type="button" class="relative inline-flex items-center rounded-l-md bg-white px-2 py-2 text-gray-500 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10 text-sm">
-                <span class="sr-only">{{ $t('gestlab.general.buttons.clear') }}</span>
-                <XMarkIcon class="h-5 w-5" aria-hidden="true" /> {{ $t('gestlab.general.buttons.clear') }}
-                </button>
-                <button v-if="!props?.currentSignature?.length"  @click="download" type="button" class="relative -ml-px inline-flex items-center bg-white px-2 py-2 text-gray-500 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10 text-sm">
-                <span class="sr-only">{{ $t('gestlab.general.buttons.download') }}</span>
-                <ArrowDownTrayIcon class="h-5 w-5" aria-hidden="true" /> {{ $t('gestlab.general.buttons.download') }}
-                </button>
-                
-                <button :disabled="props?.currentSignature?.length || signaturePad?.isEmpty()"  @click="$emit('save', signaturePad.toDataURL())" type="button" class="relative -ml-px inline-flex items-center rounded-r-md bg-white px-2 py-2 text-gray-500 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-10 text-sm">
-                <span class="sr-only">{{ $t('gestlab.general.buttons.submit') }}</span>
-                Confirmar Assinatura
-                </button>
-            </span>
+      </div>
+
+      <span
+        v-if="hasExistingSignature"
+        class="inline-flex w-fit items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-extrabold text-emerald-800 dark:bg-emerald-500/12 dark:text-emerald-200"
+      >
+        <CheckIcon class="h-4 w-4" aria-hidden="true" />
+        {{ $t('gestlab.general.labels.signature.signature_verified') }}
+      </span>
+    </header>
+
+    <div class="space-y-4 p-5 sm:p-6">
+      <div
+        v-if="hasExistingSignature"
+        class="ds-empty-state flex min-h-44 items-center justify-center p-5"
+      >
+        <img
+          :src="props.currentSignature"
+          :alt="$t('gestlab.general.labels.signature.current_signature')"
+          class="max-h-36 max-w-full object-contain"
+        />
+      </div>
+
+      <template v-else>
+        <div
+          class="relative overflow-hidden rounded-[1.4rem] border border-dashed border-[color:var(--ds-border-strong)] bg-[#fffdf7] shadow-inner"
+          @pointerdown="markDraft"
+        >
+          <VPerfectSignature
+            ref="signaturePad"
+            :stroke-options="strokeOptions"
+            class="h-44 w-full cursor-crosshair sm:h-52"
+          />
+
+          <div
+            v-if="!hasDraft"
+            class="pointer-events-none absolute inset-0 flex items-center justify-center p-6"
+          >
+            <div class="text-center">
+              <PencilSquareIcon class="mx-auto h-8 w-8 text-[rgb(var(--primary-700-rgb)/0.4)]" aria-hidden="true" />
+              <p class="mt-2 text-sm font-bold text-[rgb(var(--primary-900-rgb)/0.64)]">
+                {{ $t('gestlab.general.labels.signature.draw_signature_here') }}
+              </p>
+            </div>
+          </div>
         </div>
+
+        <p
+          v-if="errorMessage"
+          role="alert"
+          class="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 dark:bg-rose-500/10 dark:text-rose-200"
+        >
+          {{ $t(errorMessage) }}
+        </p>
+
+        <div class="flex flex-col-reverse gap-2 border-t border-[color:var(--ds-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="ds-button ds-button-secondary"
+              :disabled="!hasDraft"
+              @click="clear"
+            >
+              <XMarkIcon class="h-4 w-4" aria-hidden="true" />
+              {{ $t('gestlab.general.buttons.clear') }}
+            </button>
+            <button
+              type="button"
+              class="ds-button ds-button-secondary"
+              :disabled="!hasDraft"
+              @click="download"
+            >
+              <ArrowDownTrayIcon class="h-4 w-4" aria-hidden="true" />
+              {{ $t('gestlab.general.buttons.download') }}
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="ds-button ds-button-primary"
+            :disabled="!hasDraft"
+            @click="save"
+          >
+            <CheckIcon class="h-4 w-4" aria-hidden="true" />
+            {{ $t('gestlab.general.labels.signature.confirm') }}
+          </button>
         </div>
+      </template>
     </div>
-
-    <img v-if="props?.currentSignature?.length" :src="props?.currentSignature" alt="">
-    <VPerfectSignature v-else :stroke-options="strokeOptions" ref="signaturePad" />
-
-</div>
-</div>
-
+  </section>
 </template>

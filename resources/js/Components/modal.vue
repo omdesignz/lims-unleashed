@@ -11,7 +11,7 @@
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <div class="fixed inset-0 bg-[#07110f]/70 backdrop-blur-md transition-opacity" />
+        <div class="ds-modal-backdrop fixed inset-0 transition-opacity" />
       </TransitionChild>
 
       <div class="fixed inset-0 z-10 overflow-y-auto" scroll-region>
@@ -26,7 +26,7 @@
             leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
           >
             <DialogPanel
-              class="relative w-full transform overflow-hidden rounded-[1.75rem] border border-[#ded3bf] bg-[#fffdf7] text-left shadow-[0_30px_120px_rgb(7_17_15/0.28)] ring-1 ring-white/60 transition-all dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10 sm:my-8"
+              class="ds-modal-panel relative w-full transform overflow-hidden text-left transition-all sm:my-8"
               :class="maxWidthClass"
             >
               <slot v-if="show" />

@@ -1,6 +1,6 @@
 <template>
-  <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-    <h3 class="mb-4 text-lg font-semibold text-slate-950 dark:text-slate-100">
+  <div class="ds-panel p-5 sm:p-6">
+    <h3 class="mb-5 text-lg font-extrabold text-[var(--ds-text)]">
       {{ $t('gestlab.general.labels.vap_labels.print_settings') }}
     </h3>
     
@@ -8,10 +8,10 @@
       <!-- Include Cutouts -->
       <div class="flex items-center justify-between">
         <div>
-          <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label class="ds-field-label mb-1 block">
             {{ $t('gestlab.general.labels.vap_labels.include_cutouts') }}
           </label>
-          <p class="text-xs text-slate-500 dark:text-slate-400">
+          <p class="ds-field-hint">
             {{ $t('gestlab.general.labels.vap_labels.cutout_info') }}
           </p>
         </div>
@@ -19,14 +19,14 @@
           <input
             v-model="settings.include_cutouts"
             type="checkbox"
-            class="h-4 w-4 rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600 dark:bg-slate-900"
+            class="ds-checkbox"
           />
         </div>
       </div>
       
       <!-- Labels Per Page -->
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+        <label class="ds-field-label block">
           {{ $t('gestlab.general.labels.vap_labels.labels_per_page') }}
         </label>
         <input
@@ -34,9 +34,9 @@
           type="range"
           min="1"
           max="12"
-          class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-primary-700 dark:bg-slate-700"
+          class="h-2 w-full cursor-pointer appearance-none rounded-full bg-[var(--ds-panel-muted)] accent-[rgb(var(--primary-700-rgb))]"
         />
-        <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+        <div class="flex justify-between text-xs text-[var(--ds-text-muted)]">
           <span>1</span>
           <span class="font-medium">{{ settings.labels_per_page }}</span>
           <span>12</span>
@@ -45,7 +45,7 @@
       
       <!-- Margin -->
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+        <label class="ds-field-label block">
           {{ $t('gestlab.general.labels.vap_labels.margin') }}
         </label>
         <div class="flex items-center gap-2">
@@ -55,9 +55,9 @@
             min="0"
             max="20"
             step="1"
-            class="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-slate-200 accent-primary-700 dark:bg-slate-700"
+            class="h-2 flex-1 cursor-pointer appearance-none rounded-full bg-[var(--ds-panel-muted)] accent-[rgb(var(--primary-700-rgb))]"
           />
-          <span class="w-12 text-right text-sm text-slate-600 dark:text-slate-300">
+          <span class="w-12 text-right text-sm font-bold text-[var(--ds-text-muted)]">
             {{ settings.margin }}mm
           </span>
         </div>
@@ -69,7 +69,7 @@
       <!-- Columns & Rows for Grid -->
       <div class="grid grid-cols-2 gap-4">
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label class="ds-field-label block">
             {{ $t('gestlab.general.labels.vap_labels.columns') }}
           </label>
           <input
@@ -77,11 +77,11 @@
             type="number"
             min="1"
             max="10"
-            class="block w-full rounded-2xl border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            class="ds-field"
           />
         </div>
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label class="ds-field-label block">
             {{ $t('gestlab.general.labels.vap_labels.rows') }}
           </label>
           <input
@@ -89,14 +89,14 @@
             type="number"
             min="1"
             max="20"
-            class="block w-full rounded-2xl border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            class="ds-field"
           />
         </div>
       </div>
       
       <!-- Spacing -->
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+        <label class="ds-field-label block">
           {{ $t('gestlab.general.labels.vap_labels.spacing') }}
         </label>
         <div class="flex items-center gap-2">
@@ -106,9 +106,9 @@
             min="0"
             max="20"
             step="1"
-            class="h-2 flex-1 cursor-pointer appearance-none rounded-lg bg-slate-200 accent-primary-700 dark:bg-slate-700"
+            class="h-2 flex-1 cursor-pointer appearance-none rounded-full bg-[var(--ds-panel-muted)] accent-[rgb(var(--primary-700-rgb))]"
           />
-          <span class="w-12 text-right text-sm text-slate-600 dark:text-slate-300">
+          <span class="w-12 text-right text-sm font-bold text-[var(--ds-text-muted)]">
             {{ settings.spacing }}mm
           </span>
         </div>
@@ -116,12 +116,12 @@
       
       <!-- Page Size -->
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+        <label class="ds-field-label block">
           {{ $t('gestlab.general.labels.vap_labels.page_size') }}
         </label>
         <select
           v-model="settings.page_size"
-          class="block w-full rounded-2xl border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+          class="ds-field"
         >
           <option value="A4">A4</option>
           <option value="A3">A3</option>
@@ -132,7 +132,7 @@
       
       <!-- Orientation -->
       <div class="space-y-2">
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+        <label class="ds-field-label block">
           {{ $t('gestlab.general.labels.vap_labels.orientation') }}
         </label>
         <div class="flex gap-2">
@@ -140,10 +140,10 @@
             type="button"
             @click="settings.orientation = 'portrait'"
             :class="[
-              'flex-1 rounded-2xl border py-2 text-sm font-medium transition',
+              'ds-button flex-1',
               settings.orientation === 'portrait'
-                ? 'border-primary-700 bg-primary-50 text-primary-900 dark:border-primary-500 dark:bg-primary-500/15 dark:text-primary-100'
-                : 'border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+                ? 'ds-button-primary'
+                : 'ds-button-secondary'
             ]"
           >
             {{ $t('gestlab.general.labels.vap_labels.portrait') }}
@@ -152,10 +152,10 @@
             type="button"
             @click="settings.orientation = 'landscape'"
             :class="[
-              'flex-1 rounded-2xl border py-2 text-sm font-medium transition',
+              'ds-button flex-1',
               settings.orientation === 'landscape'
-                ? 'border-primary-700 bg-primary-50 text-primary-900 dark:border-primary-500 dark:bg-primary-500/15 dark:text-primary-100'
-                : 'border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+                ? 'ds-button-primary'
+                : 'ds-button-secondary'
             ]"
           >
             {{ $t('gestlab.general.labels.vap_labels.landscape') }}

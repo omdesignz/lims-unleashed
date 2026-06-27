@@ -11,7 +11,7 @@
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" />
+        <div class="ds-modal-backdrop fixed inset-0 transition-opacity" />
       </TransitionChild>
 
       <div class="fixed inset-0 z-10 overflow-y-auto">
@@ -26,32 +26,32 @@
             leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
           >
             <DialogPanel
-              class="relative w-full transform overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white shadow-[0_30px_120px_rgba(15,23,42,0.22)] ring-1 ring-slate-200/60 transition-all dark:border-slate-700/80 dark:bg-gray-900 dark:ring-slate-700/60 sm:my-8"
+              class="ds-modal-panel relative w-full transform overflow-hidden transition-all sm:my-8"
               :class="size"
             >
               <!-- Content -->
-              <div class="bg-gradient-to-b from-white to-slate-50/80 px-6 pb-4 pt-6 dark:from-gray-900 dark:to-slate-950">
+              <div class="px-6 pb-5 pt-6">
                 <div class="sm:flex sm:items-start gap-4">
                   <!-- Icon -->
                   <div
-                    class="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 shadow-sm sm:mx-0 sm:h-11 sm:w-11"
+                    class="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--ds-border)] shadow-sm sm:mx-0 sm:h-11 sm:w-11"
                     :class="iconContainerClass"
                   >
                     <component :is="iconComponent" class="h-6 w-6" :class="iconColorClass" />
                   </div>
 
                   <div class="mt-3 text-center sm:mt-0 sm:text-left flex-1">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400 dark:text-slate-500">
+                    <p class="ds-kicker">
                       Confirmação
                     </p>
                     <DialogTitle
                       as="h3"
-                      class="mt-1 text-lg font-semibold leading-6 text-gray-900 dark:text-gray-100"
+                      class="ds-heading mt-1 text-lg leading-6"
                     >
                       {{ props.title }}
                     </DialogTitle>
                     <div v-if="props.description" class="mt-2">
-                      <p class="text-sm text-gray-500 dark:text-gray-400">
+                      <p class="ds-copy text-sm">
                         {{ props.description }}
                       </p>
                     </div>
@@ -63,18 +63,18 @@
               <!-- Footer -->
               <div
                 v-if="!hideButtons"
-                class="flex flex-col-reverse gap-3 border-t border-gray-200 bg-white/90 px-6 py-4 backdrop-blur dark:border-gray-700 dark:bg-slate-950/90 sm:flex-row sm:justify-end"
+                class="flex flex-col-reverse gap-3 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-6 py-4 sm:flex-row sm:justify-end"
               >
                 <button
                   type="button"
-                  class="inline-flex w-full sm:w-auto justify-center rounded-xl bg-white dark:bg-gray-800 px-4 py-2.5 text-sm font-semibold text-gray-900 dark:text-gray-200 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
+                  class="ds-button ds-button-secondary w-full sm:w-auto"
                   @click="open = false; $emit('canceled')"
                 >
                   {{ props.cancel }}
                 </button>
                 <button
                   type="button"
-                  class="inline-flex w-full sm:w-auto justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-150"
+                  class="ds-button w-full sm:w-auto"
                   :class="confirmButtonClass"
                   @click="open = false; $emit('confirmed', true)"
                 >
@@ -156,9 +156,9 @@ const variantConfig = computed(() => {
     },
     question: {
       icon: QuestionMarkCircleIcon,
-      iconBg: 'bg-blue-50 dark:bg-blue-500/10',
-      iconColor: 'text-blue-600 dark:text-blue-400',
-      buttonBg: 'bg-blue-600 hover:bg-blue-500 focus-visible:outline-blue-600',
+      iconBg: 'bg-[rgb(var(--primary-50-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)]',
+      iconColor: 'text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]',
+      buttonBg: 'ds-button-primary',
     },
     security: {
       icon: ShieldExclamationIcon,
@@ -168,9 +168,9 @@ const variantConfig = computed(() => {
     },
     info: {
       icon: ArrowPathIcon,
-      iconBg: 'bg-sky-50 dark:bg-sky-500/10',
-      iconColor: 'text-sky-600 dark:text-sky-400',
-      buttonBg: 'bg-primary-600 hover:bg-primary-500 focus-visible:outline-primary-600',
+      iconBg: 'bg-[rgb(var(--primary-50-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)]',
+      iconColor: 'text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]',
+      buttonBg: 'ds-button-primary',
     },
     success: {
       icon: CheckCircleIcon,

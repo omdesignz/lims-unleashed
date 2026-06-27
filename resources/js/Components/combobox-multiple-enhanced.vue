@@ -226,17 +226,16 @@ const availableOptions = computed(() => {
       as="div"
       by="value"
     >
-      <ComboboxLabel v-if="props.titleLabel" class="mb-1 block text-sm font-semibold leading-6 text-[#31413b] dark:text-[#d7e2dd]">
+      <ComboboxLabel v-if="props.titleLabel" class="ds-field-label mb-2 block">
         {{ props.titleLabel }}
       </ComboboxLabel>
       
       <div class="relative w-full">
         <div class="relative min-h-[38px]">
           <div
-            class="relative w-full cursor-default overflow-hidden rounded-2xl border border-[#d8cbb8] bg-[#fffdf7] text-left shadow-sm ring-1 ring-white/70 transition-all duration-200 focus-within:border-[rgb(var(--primary-500-rgb))] focus-within:ring-2 focus-within:ring-[rgb(var(--primary-500-rgb)/0.22)] dark:border-[#315149] dark:bg-[#10231f] dark:ring-white/10 sm:text-sm"
-            :class="{
-              'border-red-300 ring-red-300 dark:border-red-500/50': props.hasError
-            }"
+            class="ds-combobox-control cursor-default text-left"
+            :data-invalid="props.hasError"
+            :data-disabled="props.disableInput"
             @click="focusInput"
           >
             <div v-if="props.multiple && Array.isArray(props.modelValue) && props.modelValue.length > 0" 
@@ -244,14 +243,14 @@ const availableOptions = computed(() => {
                 <div
                 v-for="(option, index) in props.modelValue.filter(item => !item.missing)"
                 :key="option.value"
-                class="group inline-flex flex-shrink-0 items-center gap-1 rounded-full bg-[rgb(var(--primary-100-rgb))] px-2 py-0.5 text-xs font-semibold text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-500-rgb)/0.16)] dark:text-[rgb(var(--primary-100-rgb))]"
+                class="ds-chip group"
               >
                 <span class="truncate max-w-[120px]">{{ option.label }}</span>
                 <button
                   type="button"
                   @click.stop="removeOption(index)"
-                  class="flex-shrink-0 text-[rgb(var(--primary-700-rgb))] transition-colors hover:text-[rgb(var(--primary-900-rgb))] focus:outline-none dark:text-[rgb(var(--primary-200-rgb))] dark:hover:text-white"
-                  aria-label="Remove"
+                  class="flex-shrink-0 text-current opacity-70 transition-opacity hover:opacity-100 focus:outline-none"
+                  :aria-label="$t('gestlab.general.buttons.remove')"
                 >
                   <XMarkIcon class="w-3 h-3" />
                 </button>
@@ -259,7 +258,7 @@ const availableOptions = computed(() => {
               
               <ComboboxInput
                 ref="inputRef"
-                class="min-w-[50px] flex-shrink border-0 bg-transparent px-1 py-1 text-sm font-medium text-[#15231f] focus:border-transparent focus:outline-none focus:ring-0 dark:text-[#f7f1e7]"
+                class="min-w-[50px] flex-shrink border-0 bg-transparent px-1 py-1 text-sm font-semibold text-[var(--ds-text)] placeholder:text-[var(--ds-text-soft)] focus:border-transparent focus:outline-none focus:ring-0"
                 :displayValue="() => ''"
                 @change="query = $event.target.value"
                 :placeholder="props.modelValue.length > 0 ? '' : props.placeholder"
@@ -270,12 +269,7 @@ const availableOptions = computed(() => {
             <template v-if="!props.multiple || !Array.isArray(props.modelValue) || props.modelValue.length === 0">
               <ComboboxInput
                 ref="inputRef"
-                class="w-full border-0 bg-transparent py-2.5 pl-3.5 pr-10 text-sm font-medium text-[#15231f] placeholder:text-[#8d9b94] focus:outline-none focus:ring-0 dark:text-[#f7f1e7] dark:placeholder:text-[#657970]"
-                :class="[
-                  props.hasError 
-                    ? 'text-red-900 placeholder-red-300 dark:text-red-300 dark:placeholder-red-400/70' 
-                    : ''
-                ]"
+                class="w-full border-0 bg-transparent py-3 pl-4 pr-10 text-sm font-semibold text-[var(--ds-text)] placeholder:text-[var(--ds-text-soft)] focus:outline-none focus:ring-0"
                 :displayValue="(option) => option?.label || ''"
                 @change="query = $event.target.value"
                 :placeholder="props.placeholder"
@@ -286,9 +280,9 @@ const availableOptions = computed(() => {
             <button
               v-if="!props.multiple && props.modelValue"
               @click.stop="clear"
-              class="absolute inset-y-0 right-6 flex items-center px-2 text-[#8d9b94] hover:text-[rgb(var(--primary-800-rgb))] focus:outline-none dark:text-[#657970] dark:hover:text-[rgb(var(--primary-200-rgb))]"
+              class="absolute inset-y-0 right-6 flex items-center px-2 text-[var(--ds-text-soft)] transition-colors hover:text-[rgb(var(--primary-700-rgb))] focus:outline-none"
               type="button"
-              aria-label="Clear selection"
+              :aria-label="$t('gestlab.general.buttons.clear')"
             >
               <XMarkIcon class="h-4 w-4" />
             </button>
@@ -297,7 +291,7 @@ const availableOptions = computed(() => {
               class="absolute inset-y-0 right-0 flex items-center rounded-r-2xl px-3 focus:outline-none"
             >
               <ChevronUpDownIcon
-                class="h-5 w-5 text-[#8d9b94] dark:text-[#657970]"
+                class="h-5 w-5 text-[var(--ds-text-soft)]"
                 aria-hidden="true"
               />
             </ComboboxButton>
@@ -318,7 +312,7 @@ const availableOptions = computed(() => {
           @after-leave="query = ''"
         >
           <ComboboxOptions
-            class="absolute z-50 mt-2 max-h-72 w-full overflow-auto rounded-2xl border border-[#ded3bf] bg-[#fffdf7]/98 p-2 text-sm shadow-[0_24px_80px_rgb(20_61_55/0.18)] ring-1 ring-white/70 backdrop-blur-sm focus:outline-none dark:border-[#25443c] dark:bg-[#07110f]/98 dark:ring-white/10"
+            class="ds-floating-panel absolute z-50 mt-2 max-h-72 w-full overflow-auto p-2 text-sm focus:outline-none"
           >
             <div
               v-if="
@@ -328,14 +322,14 @@ const availableOptions = computed(() => {
                 !queryOption &&
                 !props.createOption
               "
-              class="relative cursor-default select-none rounded-xl px-4 py-3 text-sm font-medium text-[#5f6f68] dark:text-[#a9bbb4]"
+              class="relative cursor-default select-none rounded-xl px-4 py-3 text-sm font-semibold text-[var(--ds-text-muted)]"
             >
               {{ props.noResultsLabel || $t('gestlab.general.messages.no_items') }}
             </div>
 
             <div
               v-if="internalLoading || props.loading"
-              class="relative flex cursor-default select-none items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-[#5f6f68] dark:text-[#a9bbb4]"
+              class="relative flex cursor-default select-none items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-[var(--ds-text-muted)]"
             >
               <svg class="h-4 w-4 animate-spin text-primary-700 dark:text-primary-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -357,11 +351,8 @@ const availableOptions = computed(() => {
                 v-slot="{active}"
               >
                 <li
-                  class="relative cursor-pointer select-none rounded-xl py-2.5 pl-10 pr-4 text-sm"
-                  :class="{
-                    'bg-[rgb(var(--primary-800-rgb))] text-white dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f]': active,
-                    'text-[#15231f] dark:text-[#f7f1e7]': !active,
-                  }"
+                  class="ds-option"
+                  :class="{ 'ds-option-active': active }"
                 >
                   {{ $t('gestlab.general.buttons.create') }} "{{ queryOption.label }}"
                 </li>
@@ -374,11 +365,8 @@ const availableOptions = computed(() => {
                 v-slot="{active}"
               >
                 <li
-                  class="relative cursor-pointer select-none rounded-xl py-2.5 pl-10 pr-4 text-sm"
-                  :class="{
-                    'bg-[rgb(var(--primary-800-rgb))] text-white dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f]': active,
-                    'text-[#15231f] dark:text-[#f7f1e7]': !active,
-                  }"
+                  class="ds-option"
+                  :class="{ 'ds-option-active': active }"
                 >
                   <div class="flex items-center justify-between">
                     <span
@@ -387,7 +375,7 @@ const availableOptions = computed(() => {
                     >
                       {{ option.label }}
                     </span>
-                    <span v-if="isSelected(option)" :class="{'text-white dark:text-[#07110f]': active, 'text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-200-rgb))]': !active}">
+                    <span v-if="isSelected(option)" class="text-current">
                       <CheckIcon class="h-5 w-5" aria-hidden="true" />
                     </span>
                   </div>

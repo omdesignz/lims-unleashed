@@ -1,12 +1,12 @@
 <template>
-  <nav class="flex flex-col gap-3 rounded-[1.5rem] border border-[#ded3bf] bg-[#fffdf7]/85 px-4 py-3 shadow-sm backdrop-blur dark:border-[#25443c] dark:bg-[#07110f]/80 sm:flex-row sm:items-center sm:justify-between" aria-label="Pagination">
-    <p class="order-2 text-sm font-medium text-slate-600 dark:text-slate-300 sm:order-1">
+  <nav class="ds-pagination flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between" aria-label="Pagination">
+    <p class="order-2 text-sm font-semibold text-[var(--ds-text-muted)] sm:order-1">
       {{ $t('gestlab.pagination.showing') }}
-      <span class="font-bold text-[#15231f] dark:text-[#f7f1e7]">{{ from }}</span>
+      <span class="font-extrabold text-[var(--ds-text)]">{{ from }}</span>
       {{ $t('gestlab.pagination.to') }}
-      <span class="font-bold text-[#15231f] dark:text-[#f7f1e7]">{{ to }}</span>
+      <span class="font-extrabold text-[var(--ds-text)]">{{ to }}</span>
       {{ $t('gestlab.pagination.of') }}
-      <span class="font-bold text-[#15231f] dark:text-[#f7f1e7]">{{ total }}</span>
+      <span class="font-extrabold text-[var(--ds-text)]">{{ total }}</span>
       {{ $t('gestlab.pagination.records') }}
     </p>
 
@@ -16,10 +16,10 @@
         :disabled="noPreviousPage"
         @click="loadPage(1)"
         :class="[
-          'inline-flex items-center justify-center rounded-xl p-2 text-sm transition-colors duration-150',
+          'ds-icon-button h-9 w-9 rounded-xl',
           noPreviousPage
-            ? 'cursor-not-allowed text-slate-300 dark:text-slate-600'
-            : 'text-slate-500 hover:bg-[#eef7f3] hover:text-[rgb(var(--primary-800-rgb))] dark:text-slate-400 dark:hover:bg-[#10231f] dark:hover:text-[#f7f1e7]',
+            ? 'cursor-not-allowed opacity-35'
+            : '',
         ]"
       >
         <span class="sr-only">{{ $t('First page') }}</span>
@@ -31,10 +31,10 @@
         :disabled="noPreviousPage"
         @click="loadPage(current_page - 1)"
         :class="[
-          'inline-flex items-center justify-center rounded-xl p-2 text-sm transition-colors duration-150',
+          'ds-icon-button h-9 w-9 rounded-xl',
           noPreviousPage
-            ? 'cursor-not-allowed text-slate-300 dark:text-slate-600'
-            : 'text-slate-500 hover:bg-[#eef7f3] hover:text-[rgb(var(--primary-800-rgb))] dark:text-slate-400 dark:hover:bg-[#10231f] dark:hover:text-[#f7f1e7]',
+            ? 'cursor-not-allowed opacity-35'
+            : '',
         ]"
       >
         <span class="sr-only">{{ $t('Previous') }}</span>
@@ -42,16 +42,16 @@
       </button>
 
       <!-- Page input -->
-      <div class="flex items-center gap-1.5 rounded-2xl bg-[#f7f1e7] px-1.5 py-1 ring-1 ring-[#ded3bf] dark:bg-[#10231f] dark:ring-[#25443c]">
+      <div class="flex items-center gap-1.5 rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-1.5 py-1">
         <input
           type="number"
           min="1"
           :max="last_page"
           v-model="data.page"
           @keydown.enter="loadPage(data.page)"
-          class="w-14 rounded-xl border-0 bg-white px-1 py-1.5 text-center text-sm font-bold tabular-nums text-[#15231f] shadow-sm ring-1 ring-inset ring-[#d8cfbe] focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb))] dark:bg-[#07110f] dark:text-[#f7f1e7] dark:ring-[#25443c] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          class="ds-field min-h-0 w-14 rounded-xl px-1 py-1.5 text-center text-sm font-extrabold tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
-        <span class="text-xs font-semibold text-slate-400 dark:text-slate-500">/ {{ last_page }}</span>
+        <span class="text-xs font-semibold text-[var(--ds-text-soft)]">/ {{ last_page }}</span>
       </div>
 
       <!-- Next -->
@@ -59,10 +59,10 @@
         :disabled="noNextPage"
         @click="loadPage(current_page + 1)"
         :class="[
-          'inline-flex items-center justify-center rounded-xl p-2 text-sm transition-colors duration-150',
+          'ds-icon-button h-9 w-9 rounded-xl',
           noNextPage
-            ? 'cursor-not-allowed text-slate-300 dark:text-slate-600'
-            : 'text-slate-500 hover:bg-[#eef7f3] hover:text-[rgb(var(--primary-800-rgb))] dark:text-slate-400 dark:hover:bg-[#10231f] dark:hover:text-[#f7f1e7]',
+            ? 'cursor-not-allowed opacity-35'
+            : '',
         ]"
       >
         <span class="sr-only">{{ $t('Next') }}</span>
@@ -74,10 +74,10 @@
         :disabled="noNextPage"
         @click="loadPage(last_page)"
         :class="[
-          'inline-flex items-center justify-center rounded-xl p-2 text-sm transition-colors duration-150',
+          'ds-icon-button h-9 w-9 rounded-xl',
           noNextPage
-            ? 'cursor-not-allowed text-slate-300 dark:text-slate-600'
-            : 'text-slate-500 hover:bg-[#eef7f3] hover:text-[rgb(var(--primary-800-rgb))] dark:text-slate-400 dark:hover:bg-[#10231f] dark:hover:text-[#f7f1e7]',
+            ? 'cursor-not-allowed opacity-35'
+            : '',
         ]"
       >
         <span class="sr-only">{{ $t('Last page') }}</span>

@@ -397,8 +397,8 @@ const onSelectedItem = (item) => {
 
         <!-- Credit Note Settings Card -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-                <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+            <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-6 py-4">
+                <h2 class="ds-heading flex items-center gap-2 text-lg">
                     <DocumentDuplicateIcon class="h-5 w-5" />
                     {{ $t('gestlab.general.labels.credit_notes.credit_note_settings') }}
                 </h2>
@@ -407,7 +407,7 @@ const onSelectedItem = (item) => {
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <!-- Source Invoice -->
                     <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700">
+                        <label class="ds-field-label">
                             {{ $t('gestlab.general.labels.credit_notes.invoice_id') }}
                         </label>
                         <comboboxEnhanced 
@@ -424,7 +424,7 @@ const onSelectedItem = (item) => {
 
                     <!-- Customer -->
                     <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                        <label class="ds-field-label flex items-center gap-1">
                             <UserIcon class="h-4 w-4" />
                             {{ $t('gestlab.general.labels.credit_notes.customer_id') }}
                         </label>
@@ -441,7 +441,7 @@ const onSelectedItem = (item) => {
 
                     <!-- Warehouse -->
                     <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                        <label class="ds-field-label flex items-center gap-1">
                             <BuildingOfficeIcon class="h-4 w-4" />
                             {{ $t('gestlab.general.labels.credit_notes.warehouse_id') }}
                         </label>
@@ -460,13 +460,13 @@ const onSelectedItem = (item) => {
 
                     <!-- Internal Reference -->
                     <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700">
+                        <label class="ds-field-label">
                             {{ $t('gestlab.general.labels.credit_notes.internal_ref') }}
                         </label>
                         <input 
                             v-model="form.internal_ref" 
                             type="text" 
-                            class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
+                            class="ds-field"
                             :placeholder="$t('gestlab.general.labels.credit_notes.placeholders.enter_reference')"
                         />
                         <p v-if="form.errors.internal_ref" class="text-xs text-red-600">
@@ -479,7 +479,7 @@ const onSelectedItem = (item) => {
                 <div class="mt-6 pt-6 border-t border-gray-200">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-2">
-                            <label class="block text-sm font-medium text-gray-700">
+                            <label class="ds-field-label">
                                 {{ $t('gestlab.general.labels.credit_notes.reason') }}
                             </label>
                             <comboboxEnhanced
@@ -512,8 +512,8 @@ const onSelectedItem = (item) => {
                             type="button" 
                             @click="form.use_matrix_price = !form.use_matrix_price"
                             :class="[
-                                'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2',
-                                form.use_matrix_price ? 'bg-blue-900' : 'bg-gray-200'
+                                'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)]',
+                                form.use_matrix_price ? 'bg-[rgb(var(--primary-700-rgb))]' : 'bg-[var(--ds-border)]'
                             ]"
                             :aria-checked="form.use_matrix_price"
                             role="switch"
@@ -545,7 +545,7 @@ const onSelectedItem = (item) => {
                     <button 
                         @click="addItem" 
                         type="button"
-                        class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
+                        class="ds-button ds-button-primary px-4 py-2.5 text-sm"
                     >
                         <PlusCircleIcon class="h-5 w-5" />
                         {{ $t('gestlab.general.buttons.add_item') }}
@@ -567,7 +567,7 @@ const onSelectedItem = (item) => {
                 <button 
                     @click="addItem" 
                     type="button"
-                    class="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
+                    class="ds-button ds-button-primary mt-6 px-4 py-2.5 text-sm"
                 >
                     <PlusCircleIcon class="h-5 w-5" />
                     {{ $t('gestlab.general.buttons.add_first_item') }}
@@ -600,13 +600,9 @@ const onSelectedItem = (item) => {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white">
-                        <tr 
-                            v-for="(item, index) in itemsWithSubTotal" 
+                        <tr
+                            v-for="(item, index) in itemsWithSubTotal"
                             :key="index"
-                            v-motion
-                            :initial="{ opacity: 0, y: 10 }"
-                            :enter="{ opacity: 1, y: 0 }"
-                            :delay="index * 50"
                             class="hover:bg-gray-50 transition-colors duration-150"
                         >
                             <!-- Item Selection -->
@@ -632,7 +628,7 @@ const onSelectedItem = (item) => {
                                         v-model="item.item.obs" 
                                         :placeholder="$t('gestlab.general.labels.credit_notes.obs')" 
                                         rows="1"
-                                        class="block w-full border-0 border-b border-transparent p-0 pb-1 resize-none focus:ring-0 focus:border-blue-900 text-sm placeholder-gray-400"
+                                        class="ds-field min-h-16 resize-none py-2 text-sm"
                                     />
                                 </div>
                             </td>
@@ -645,7 +641,7 @@ const onSelectedItem = (item) => {
                                         type="number" 
                                         step="1"
                                         min="0"
-                                        class="w-20 rounded-md border border-gray-300 px-3 py-1.5 text-center text-sm focus:border-blue-900 focus:ring-blue-900"
+                                        class="ds-field w-20 text-center"
                                     />
                                     <comboboxEnhanced 
                                         v-model="item.item.unit_id" 
@@ -667,7 +663,7 @@ const onSelectedItem = (item) => {
                                         type="number" 
                                         step="0.01"
                                         min="0"
-                                        class="w-32 rounded-md border border-gray-300 px-3 py-1.5 text-right text-sm focus:border-blue-900 focus:ring-blue-900"
+                                        class="ds-field w-32 text-right"
                                     />
                                 </div>
                             </td>
@@ -679,11 +675,11 @@ const onSelectedItem = (item) => {
                                         v-model="item.item.discount_amount" 
                                         type="number"
                                         min="0"
-                                        class="w-24 rounded-md border border-gray-300 px-3 py-1.5 text-right text-sm focus:border-blue-900 focus:ring-blue-900"
+                                        class="ds-field w-24 text-right"
                                     />
                                     <select 
                                         v-model="item.item.discount_id" 
-                                        class="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-900 focus:ring-blue-900"
+                                        class="ds-field px-2 py-1.5 text-sm"
                                     >
                                         <option 
                                             v-for="(type, typeIndex) in props.discount_categories" 
@@ -711,7 +707,7 @@ const onSelectedItem = (item) => {
                                 <button 
                                     @click="removeItem(index)"
                                     type="button"
-                                    class="text-red-600 hover:text-red-900 transition-colors duration-200 p-1 rounded-md hover:bg-red-50"
+                                    class="ds-table-action-danger"
                                     :title="$t('gestlab.general.buttons.remove_item')"
                                 >
                                     <TrashIcon class="h-5 w-5" />
@@ -786,14 +782,14 @@ const onSelectedItem = (item) => {
         <!-- Observations -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-2">
+                <label class="ds-field-label flex items-center gap-2">
                     <InformationCircleIcon class="h-4 w-4" />
                     {{ $t('gestlab.general.labels.credit_notes.obs') }}
                 </label>
                 <textarea 
                     v-model="form.obs" 
                     rows="3"
-                    class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900 sm:text-sm"
+                    class="ds-field min-h-28 py-3"
                     :placeholder="$t('gestlab.general.labels.credit_notes.placeholders.observations')"
                 />
                 <p v-if="form.errors.obs" class="text-xs text-red-600">
@@ -826,8 +822,8 @@ const onSelectedItem = (item) => {
                     :class="[
                         'inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
                         form.processing || form.items.length === 0
-                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-blue-900 to-blue-800 text-white hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2'
+                            ? 'cursor-not-allowed bg-[var(--ds-border)] text-[var(--ds-muted)]'
+                            : 'ds-button-primary'
                     ]"
                 >
                     <ReceiptRefundIcon class="h-5 w-5" />

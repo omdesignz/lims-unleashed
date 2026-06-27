@@ -20,6 +20,83 @@ export class ResultsDataService {
         return result[field] ?? null;
     }
 
+    static hasResultValue(value) {
+        return value !== null
+            && value !== undefined
+            && String(value).trim() !== '';
+    }
+
+    static isQualitativeResult(result) {
+        return Boolean(
+            result?.result_is_qualitative
+            || result?.parameter_id?.result_is_qualitative
+            || result?.result_type === 'qualitative'
+            || result?.parameter_id?.result_type === 'qualitative'
+        );
+    }
+
+    static getQualitativeOptions(result) {
+        const options = result?.result_options || result?.parameter_id?.result_options;
+
+        if (Array.isArray(options) && options.length > 0) {
+            return options;
+        }
+
+        return this.isQualitativeResult(result) ? ['Presença', 'Ausência'] : [];
+    }
+
+    static getDisplayFormat(result) {
+        return result?.display_format || result?.extra_data?.display_format || 'standard';
+    }
+
+    static setDisplayFormat(result, displayFormat) {
+        if (!result) {
+            return;
+        }
+
+        const normalizedFormat = displayFormat === 'scientific' ? 'scientific' : 'standard';
+        result.display_format = normalizedFormat;
+        result.extra_data = {
+            ...(result.extra_data || {}),
+            display_format: normalizedFormat,
+        };
+    }
+
+    static normalizeNumericValue(value) {
+        if (!this.hasResultValue(value)) {
+            return null;
+        }
+
+        const normalized = String(value).trim().replace(',', '.');
+
+        if (normalized === '' || Number.isNaN(Number(normalized))) {
+            return null;
+        }
+
+        return Number(normalized);
+    }
+
+    static formatResultValue(value, result = null) {
+        if (!this.hasResultValue(value)) {
+            return '';
+        }
+
+        if (this.getDisplayFormat(result) !== 'scientific') {
+            return value;
+        }
+
+        const numericValue = this.normalizeNumericValue(value);
+
+        if (numericValue === null) {
+            return value;
+        }
+
+        const decimalPlaces = Number(result?.decimal_places ?? result?.parameter_id?.decimal_places ?? 2);
+        const precision = Number.isFinite(decimalPlaces) ? Math.min(Math.max(decimalPlaces, 0), 8) : 2;
+
+        return numericValue.toExponential(precision).replace('e', ' × 10^');
+    }
+
     static getDeclaredCalculationParameters(result) {
         return Array.isArray(result?.calculation_parameters)
             ? result.calculation_parameters.filter(Boolean)
@@ -54,7 +131,16 @@ export class ResultsDataService {
             volume: result.volume || 1,
             parameter_id: { 
                 ...result.parameter_id, 
-                code: result.parameter_id?.code || result.parameter_code
+                code: result.parameter_id?.code || result.parameter_code,
+                result_options: result.parameter_id?.result_options || result.result_options || [],
+                result_is_qualitative: Boolean(result.parameter_id?.result_is_qualitative || result.result_is_qualitative),
+            },
+            result_is_qualitative: Boolean(result.result_is_qualitative || result.parameter_id?.result_is_qualitative),
+            result_options: result.result_options || result.parameter_id?.result_options || [],
+            display_format: result.display_format || result.extra_data?.display_format || 'standard',
+            extra_data: {
+                ...(result.extra_data || {}),
+                display_format: result.display_format || result.extra_data?.display_format || 'standard',
             },
             requires_calculation: result.requires_calculation || false,
             calculation_metadata: result.calculation_metadata || null,

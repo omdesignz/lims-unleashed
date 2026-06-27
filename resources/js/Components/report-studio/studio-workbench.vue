@@ -968,9 +968,14 @@ const previewReplacementMap = computed(() => ({
 const placeholderTokenPattern = /{{\s*[\w.:/-]+\s*}}|{\s*[\w.:/-]+\s*}/g
 const pageBreakTagPattern = /<pagebreak\b[^>]*\/?>/i
 const paginationPlaceholderKeys = new Set(['PAGENO', 'nbpg'])
+const conditionalPlaceholderPrefixes = ['if:', 'ifnot:', 'endif:']
 
 function normalisePlaceholderToken(token) {
   return String(token || '').replace(/^\{+|\}+$/g, '').trim()
+}
+
+function isConditionalPlaceholderKey(key) {
+  return conditionalPlaceholderPrefixes.some((prefix) => String(key || '').startsWith(prefix))
 }
 
 const normalisedPreviewReplacements = computed(() => {
@@ -995,13 +1000,46 @@ function interpolatePreviewHtml(html, scopedReplacements = {}) {
     ...scopedReplacements,
   }
 
-  return String(html || '').replace(placeholderTokenPattern, (token) => {
+  return resolvePreviewConditionalBlocks(String(html || ''), replacements).replace(placeholderTokenPattern, (token) => {
     const key = normalisePlaceholderToken(token)
 
     return Object.prototype.hasOwnProperty.call(replacements, key)
       ? replacements[key]
       : token
   })
+}
+
+function resolvePreviewConditionalBlocks(html, replacements) {
+  const blocks = [
+    { pattern: /\{if:([a-zA-Z0-9_]+)\}([\s\S]*?)\{endif:\1\}/g, invert: false },
+    { pattern: /\{\{if:([a-zA-Z0-9_]+)\}\}([\s\S]*?)\{\{endif:\1\}\}/g, invert: false },
+    { pattern: /\{ifnot:([a-zA-Z0-9_]+)\}([\s\S]*?)\{endif:\1\}/g, invert: true },
+    { pattern: /\{\{ifnot:([a-zA-Z0-9_]+)\}\}([\s\S]*?)\{\{endif:\1\}\}/g, invert: true },
+  ]
+
+  return blocks.reduce((currentHtml, block) => currentHtml.replace(block.pattern, (_match, key, content) => {
+    const isTruthy = previewValueIsTruthy(replacements[key])
+    const shouldRender = block.invert ? !isTruthy : isTruthy
+
+    return shouldRender ? content : ''
+  }), html)
+}
+
+function previewValueIsTruthy(value) {
+  if (typeof value === 'boolean') {
+    return value
+  }
+
+  if (typeof value === 'number') {
+    return value !== 0
+  }
+
+  const normalized = String(value ?? '')
+    .replace(/<[^>]*>/g, '')
+    .trim()
+    .toLowerCase()
+
+  return !['', '0', '0.0', '0.00', '0,0', '0,00', 'false', 'no', 'não', 'nao', '—', '-'].includes(normalized)
 }
 
 const contentPreview = computed(() => {
@@ -1036,6 +1074,52 @@ const visiblePreviewPages = computed(() => {
     },
   ]
 })
+
+function normalizeCanvasBlockPlacement(block, fallbackPageNumber = currentPreviewPage.value || 1) {
+  if (!block) {
+    return
+  }
+
+  if (!canvasSurfaceOptions.some((option) => option.value === block.surface)) {
+    block.surface = 'content'
+  }
+
+  if (block.surface !== 'content') {
+    block.page_scope = 'all'
+    block.page_number = null
+
+    return
+  }
+
+  block.page_scope = block.page_scope || 'first'
+
+  if (block.page_scope === 'specific') {
+    const pageNumber = Number(block.page_number)
+    block.page_number = Number.isInteger(pageNumber) && pageNumber >= 1
+      ? pageNumber
+      : fallbackPageNumber
+
+    return
+  }
+
+  block.page_number = null
+}
+
+function normalizeSelectedCanvasBlockPlacement(block = selectedCanvasBlock.value) {
+  normalizeCanvasBlockPlacement(block)
+}
+
+function normalizeCanvasBlockPlacements() {
+  canvasBlocks.value.forEach((block) => normalizeCanvasBlockPlacement(block))
+}
+
+watch(() => [
+  selectedCanvasBlock.value?.id,
+  selectedCanvasBlock.value?.surface,
+  selectedCanvasBlock.value?.page_scope,
+  selectedCanvasBlock.value?.page_number,
+  currentPreviewPage.value,
+], () => normalizeSelectedCanvasBlockPlacement(), { immediate: true })
 
 const previewPageStyle = computed(() => {
   const image = safePreviewCssUrl(props.layoutSchema.background_image_path)
@@ -1168,7 +1252,7 @@ const unresolvedPlaceholders = computed(() => {
     matches.forEach((token) => {
       const key = normalisePlaceholderToken(token)
 
-      if (!key || paginationPlaceholderKeys.has(key) || Object.prototype.hasOwnProperty.call(replacements, key)) {
+      if (!key || paginationPlaceholderKeys.has(key) || isConditionalPlaceholderKey(key) || Object.prototype.hasOwnProperty.call(replacements, key)) {
         return
       }
 
@@ -1697,6 +1781,29 @@ function previewContentBlocksForPage(pageNumber) {
   return previewContentBlocks.value.filter((block) => shouldRenderContentBlockOnPage(block, pageNumber))
 }
 
+const conditionalSnippetLibrary = [
+  {
+    label: 'Secção condicional',
+    description: 'Mostra o conteúdo apenas quando a variável tiver valor no PDF gerado.',
+    html: `
+{if:observations}
+<section style="border-left:4px solid #d9b05f; background:#fffaf0; padding:18px 20px; border-radius:18px; margin:20px 0;">
+  {observations}
+</section>
+{endif:observations}`.trim(),
+  },
+  {
+    label: 'Alternativa se vazio',
+    description: 'Mostra uma mensagem de fallback quando a variável não tiver valor.',
+    html: `
+{{ifnot:observations}}
+<section style="border:1px dashed #ded3bf; color:#64748b; padding:16px 18px; border-radius:18px; margin:20px 0;">
+  Sem observações adicionais registadas.
+</section>
+{{endif:observations}}`.trim(),
+  },
+]
+
 const snippetLibraries = {
   analysis: [
     {
@@ -1794,7 +1901,10 @@ const snippetLibraries = {
 }
 
 const snippetLibrary = computed(() => {
-  return snippetLibraries[props.form.studio_type] ?? snippetLibraries.analysis
+  return [
+    ...(snippetLibraries[props.form.studio_type] ?? snippetLibraries.analysis),
+    ...conditionalSnippetLibrary,
+  ]
 })
 
 function appendSnippet(html) {
@@ -4023,6 +4133,7 @@ async function previewDraftPdf() {
 
   syncTableStylesCss()
   syncDocumentStylesCss()
+  normalizeCanvasBlockPlacements()
   props.layoutSchema.variable_catalog = translatedPlaceholders.value
   draftPreviewBusy.value = true
 
@@ -4050,6 +4161,7 @@ function submit() {
 
   syncTableStylesCss()
   syncDocumentStylesCss()
+  normalizeCanvasBlockPlacements()
   props.layoutSchema.variable_catalog = translatedPlaceholders.value
   emit('submit')
 }
@@ -6565,21 +6677,22 @@ function submit() {
       </p>
     </div>
 
-    <div v-if="mediaPickerOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm" @click.self="mediaPickerOpen = false">
-      <div class="max-h-[86vh] w-full max-w-5xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl dark:bg-slate-950">
-        <div class="flex flex-col gap-3 border-b border-slate-200 px-6 py-5 dark:border-slate-800 md:flex-row md:items-center md:justify-between">
+    <div v-if="mediaPickerOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-[#06100e]/80 p-4 backdrop-blur-sm" @click.self="mediaPickerOpen = false">
+      <div class="max-h-[88vh] w-full max-w-6xl overflow-hidden rounded-[2.4rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_40px_120px_rgba(6,16,14,0.34)] dark:border-[#29483f] dark:bg-[#07110f]">
+        <div class="flex flex-col gap-4 border-b border-[#ded3bf] bg-[linear-gradient(135deg,#fffdf7,#f4efe4)] px-6 py-5 dark:border-[#29483f] dark:bg-[linear-gradient(135deg,#0d1d19,#07110f)] md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 class="text-lg font-semibold text-slate-950 dark:text-white">{{ studioCopy('media_picker.title') }}</h2>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ studioCopy('media_picker.description') }}</p>
-            <div class="mt-2 inline-flex rounded-full bg-primary-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-primary-800 dark:bg-primary-950/40 dark:text-primary-200">
+            <div class="text-[10px] font-black uppercase tracking-[0.22em] text-[#d9b05f]">{{ studioCopy('media_picker.eyebrow') }}</div>
+            <h2 class="mt-1 text-xl font-black tracking-tight text-[#15231f] dark:text-[#fffdf7]">{{ studioCopy('media_picker.title') }}</h2>
+            <p class="mt-1 max-w-2xl text-sm font-medium leading-6 text-[#6b7b74] dark:text-[#b8c9c0]">{{ studioCopy('media_picker.description') }}</p>
+            <div class="mt-3 inline-flex rounded-full border border-[#ded3bf] bg-white/80 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#143d37] shadow-sm dark:border-[#29483f] dark:bg-[#10231f] dark:text-[#d9b05f]">
               {{ studioCopy('media_picker.target_label', { target: mediaPickerTargetLabel }) }}
             </div>
           </div>
-          <button type="button" @click="mediaPickerOpen = false" class="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
+          <button type="button" @click="mediaPickerOpen = false" class="rounded-2xl border border-[#ded3bf] bg-white/80 px-4 py-2 text-sm font-black text-[#20332f] transition hover:bg-[#f4efe4] dark:border-[#29483f] dark:bg-[#10231f] dark:text-[#fffdf7] dark:hover:bg-[#143d37]">
             {{ studioCopy('media_picker.close') }}
           </button>
         </div>
-        <div class="max-h-[68vh] overflow-y-auto p-6">
+        <div class="max-h-[70vh] overflow-y-auto p-6">
           <input
             ref="mediaPickerUploadInput"
             type="file"
@@ -6589,10 +6702,10 @@ function submit() {
           />
           <button
             type="button"
-            class="mb-5 w-full rounded-[1.8rem] border border-dashed p-5 text-left transition"
+            class="mb-5 w-full rounded-[2rem] border border-dashed p-5 text-left transition"
             :class="mediaPickerUploadDragging
-              ? 'border-primary-500 bg-primary-50 dark:border-primary-300 dark:bg-primary-500/10'
-              : 'border-slate-300 bg-slate-50 hover:border-primary-400 hover:bg-primary-50/60 dark:border-slate-700 dark:bg-slate-900/70 dark:hover:border-primary-500/60 dark:hover:bg-primary-500/10'"
+              ? 'border-[#d9b05f] bg-[#fff7e1] dark:border-[#d9b05f] dark:bg-[#d9b05f]/10'
+              : 'border-[#d8cbb8] bg-white/70 hover:border-[#d9b05f] hover:bg-[#fffaf0] dark:border-[#29483f] dark:bg-[#10231f]/80 dark:hover:border-[#d9b05f]/70 dark:hover:bg-[#d9b05f]/10'"
             @click="pickMediaPickerUpload"
             @dragenter.prevent="mediaPickerUploadDragging = true"
             @dragover.prevent="mediaPickerUploadDragging = true"
@@ -6601,32 +6714,32 @@ function submit() {
           >
             <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div class="flex items-start gap-3">
-                <div class="rounded-2xl bg-primary-900 p-3 text-white shadow-lg shadow-primary-950/10 dark:bg-primary-500">
+                <div class="rounded-2xl bg-[#143d37] p-3 text-[#fffdf7] shadow-lg shadow-[#143d37]/20">
                   <PhotoIcon class="h-5 w-5" />
                 </div>
                 <div>
-                  <div class="text-sm font-black text-slate-950 dark:text-white">{{ studioCopy('media_picker.add_title') }}</div>
-                  <p class="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  <div class="text-sm font-black text-[#15231f] dark:text-[#fffdf7]">{{ studioCopy('media_picker.add_title') }}</div>
+                  <p class="mt-1 text-xs font-medium leading-5 text-[#6b7b74] dark:text-[#a9bcb2]">
                     {{ studioCopy('media_picker.add_description') }}
                   </p>
                 </div>
               </div>
-              <span class="rounded-full bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-primary-800 shadow-sm dark:bg-slate-950 dark:text-primary-200">
+              <span class="rounded-full border border-[#eadfca] bg-[#fffdf7] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#9a7a2f] shadow-sm dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#d9b05f]">
                 {{ studioCopy('media_picker.allowed_badge') }}
               </span>
             </div>
-            <div v-if="mediaPickerUploadBusy" class="mt-4 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-              <div class="h-full rounded-full bg-primary-700 transition-all dark:bg-primary-400" :style="{ width: `${mediaPickerUploadProgress}%` }" />
+            <div v-if="mediaPickerUploadBusy" class="mt-4 h-2 overflow-hidden rounded-full bg-[#eadfca] dark:bg-[#29483f]">
+              <div class="h-full rounded-full bg-[#d9b05f] transition-all" :style="{ width: `${mediaPickerUploadProgress}%` }" />
             </div>
             <p v-if="mediaPickerUploadError" class="mt-3 text-xs font-semibold text-red-600 dark:text-red-300">{{ mediaPickerUploadError }}</p>
           </button>
 
-          <div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+          <div class="rounded-[2rem] border border-[#ded3bf] bg-white/75 p-4 shadow-sm dark:border-[#29483f] dark:bg-[#0d1d19]/80">
             <input
               v-model="mediaPickerSearch"
               type="search"
               :placeholder="studioCopy('media_picker.search_placeholder')"
-              class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              class="block w-full rounded-2xl border border-[#ded3bf] bg-[#fffdf7] px-4 py-3 text-sm font-semibold text-[#15231f] shadow-sm placeholder:text-[#8a9a92] focus:border-[#d9b05f] focus:outline-none focus:ring-2 focus:ring-[#d9b05f]/20 dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#fffdf7] dark:placeholder:text-[#789087]"
             />
 
             <div class="mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -6636,33 +6749,38 @@ function submit() {
                 type="button"
                 class="inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-black uppercase tracking-[0.12em] transition"
                 :class="mediaPickerKind === option.value
-                  ? 'border-primary-700 bg-primary-900 text-white shadow-lg shadow-primary-950/10 dark:border-primary-400 dark:bg-primary-500 dark:text-slate-950'
-                  : 'border-slate-200 bg-white text-slate-600 hover:border-primary-300 hover:text-primary-800 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-primary-500/70 dark:hover:text-primary-100'"
+                  ? 'border-[#143d37] bg-[#143d37] text-[#fffdf7] shadow-lg shadow-[#143d37]/12 dark:border-[#d9b05f] dark:bg-[#d9b05f] dark:text-[#07110f]'
+                  : 'border-[#ded3bf] bg-[#fffdf7] text-[#6b7b74] hover:border-[#d9b05f] hover:text-[#143d37] dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#b8c9c0] dark:hover:border-[#d9b05f]/70 dark:hover:text-[#fffdf7]'"
                 @click="mediaPickerKind = option.value"
               >
                 <span>{{ option.label }}</span>
-                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500 dark:bg-slate-800 dark:text-slate-300" :class="mediaPickerKind === option.value ? '!bg-white/20 !text-white dark:!bg-slate-950/20 dark:!text-slate-950' : ''">
+                <span class="rounded-full bg-[#f4efe4] px-2 py-0.5 text-[10px] text-[#6b7b74] dark:bg-[#10231f] dark:text-[#b8c9c0]" :class="mediaPickerKind === option.value ? '!bg-white/20 !text-white dark:!bg-[#07110f]/20 dark:!text-[#07110f]' : ''">
                   {{ option.count }}
                 </span>
               </button>
             </div>
 
-            <div class="mt-3 grid gap-2 rounded-[1.4rem] border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-950 sm:grid-cols-[minmax(0,1fr)_150px]">
-              <input
-                v-model="mediaPickerManualUrl"
-                type="url"
-                :placeholder="studioCopy('media_picker.manual_url_placeholder')"
-                class="block w-full rounded-2xl border-0 bg-transparent px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0 dark:text-slate-100 dark:placeholder:text-slate-500"
-              />
-              <button
-                type="button"
-                class="rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45 dark:bg-primary-600 dark:hover:bg-primary-500"
-                :disabled="!mediaPickerManualUrl.trim()"
-                @click="applyMediaPickerManualUrl"
-              >
-                {{ studioCopy('media_picker.apply_url') }}
-              </button>
-            </div>
+            <details class="mt-3 rounded-[1.4rem] border border-[#eadfca] bg-[#fffaf0]/80 p-3 dark:border-[#29483f] dark:bg-[#07110f]">
+              <summary class="cursor-pointer text-xs font-black uppercase tracking-[0.14em] text-[#6b7b74] dark:text-[#a9bcb2]">
+                {{ studioCopy('media_picker.manual_advanced') }}
+              </summary>
+              <div class="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px]">
+                <input
+                  v-model="mediaPickerManualUrl"
+                  type="url"
+                  :placeholder="studioCopy('media_picker.manual_url_placeholder')"
+                  class="block w-full rounded-2xl border border-[#ded3bf] bg-[#fffdf7] px-3 py-2.5 text-sm font-semibold text-[#15231f] placeholder:text-[#8a9a92] focus:border-[#d9b05f] focus:outline-none focus:ring-2 focus:ring-[#d9b05f]/20 dark:border-[#29483f] dark:bg-[#10231f] dark:text-[#fffdf7] dark:placeholder:text-[#789087]"
+                />
+                <button
+                  type="button"
+                  class="rounded-2xl bg-[#143d37] px-4 py-2.5 text-sm font-black text-[#fffdf7] transition hover:bg-[#0e2c27] disabled:cursor-not-allowed disabled:opacity-45 dark:bg-[#d9b05f] dark:text-[#07110f] dark:hover:bg-[#efc76f]"
+                  :disabled="!mediaPickerManualUrl.trim()"
+                  @click="applyMediaPickerManualUrl"
+                >
+                  {{ studioCopy('media_picker.apply_url') }}
+                </button>
+              </div>
+            </details>
           </div>
 
           <swiper-container
@@ -6681,28 +6799,28 @@ function submit() {
               <button
                 type="button"
                 @click="applyMediaPickerAsset(asset)"
-                class="group w-full overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 text-left transition hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900"
+                class="group w-full overflow-hidden rounded-3xl border border-[#ded3bf] bg-[#fffdf7] text-left transition hover:-translate-y-0.5 hover:border-[#d9b05f] hover:shadow-lg dark:border-[#29483f] dark:bg-[#10231f]"
               >
-                <div class="flex h-44 items-center justify-center bg-slate-100 dark:bg-slate-900/80">
+                <div class="flex h-44 items-center justify-center bg-[#f4efe4] dark:bg-[#07110f]/80">
                   <img :src="asset.url" :alt="asset.label" class="h-full w-full object-contain p-4 transition group-hover:scale-105" />
                 </div>
                 <div class="p-4">
                   <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
-                      <div class="truncate text-sm font-semibold text-slate-950 dark:text-white">{{ asset.label }}</div>
-                      <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ asset.source }}</div>
+                      <div class="truncate text-sm font-black text-[#15231f] dark:text-[#fffdf7]">{{ asset.label }}</div>
+                      <div class="mt-1 text-xs font-medium text-[#6b7b74] dark:text-[#a9bcb2]">{{ asset.source }}</div>
                     </div>
-                    <span class="shrink-0 rounded-full bg-primary-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-primary-800 dark:bg-primary-950/40 dark:text-primary-200">
+                    <span class="shrink-0 rounded-full border border-[#eadfca] bg-[#fffaf0] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#9a7a2f] dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#d9b05f]">
                       {{ mediaKindLabel(mediaKindValue(asset)) }}
                     </span>
                   </div>
-                  <div v-if="asset.author" class="mt-1 text-[11px] text-slate-400 dark:text-slate-500">{{ asset.author }}</div>
+                  <div v-if="asset.author" class="mt-1 text-[11px] font-medium text-[#8a9a92] dark:text-[#789087]">{{ asset.author }}</div>
                 </div>
               </button>
             </swiper-slide>
           </swiper-container>
 
-          <div v-else class="mt-5 rounded-3xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          <div v-else class="mt-5 rounded-3xl border border-dashed border-[#ded3bf] bg-white/60 p-8 text-center text-sm font-semibold text-[#6b7b74] dark:border-[#29483f] dark:bg-[#10231f]/60 dark:text-[#a9bcb2]">
             {{ studioCopy('media_picker.empty') }}
           </div>
         </div>

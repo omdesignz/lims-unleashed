@@ -301,14 +301,14 @@ const hasActiveChild = (item) => {
 </script>
 
 <template>
-    <nav class="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden rounded-[2rem] border border-[#ded3bf]/80 bg-[#f8f4ea]/92 p-3 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-[#23443c] dark:bg-[#07110f]/92 dark:shadow-[0_24px_70px_rgba(0,0,0,0.35)]">
+    <nav class="ds-nav-shell">
         <div class="relative">
             <MagnifyingGlassIcon class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-600 dark:text-accent-200" />
             <input
                 v-model="searchQuery"
                 type="search"
                 :placeholder="$t('gestlab.general.search_input_placeholder')"
-                class="block w-full rounded-2xl border border-[#ded3bf]/90 bg-[#fffdf7]/92 py-3 pl-10 pr-3 text-sm font-bold text-[#15231f] shadow-inner shadow-[#143d37]/5 transition-all duration-200 placeholder:text-slate-400 focus:border-primary-500 focus:bg-white focus:ring-2 focus:ring-primary-500/20 dark:border-[#25443c] dark:bg-[#07110f]/80 dark:text-[#f7f1e7] dark:placeholder:text-slate-500 dark:focus:bg-[#10231f]"
+                class="ds-field py-3 pl-10 pr-3"
             />
         </div>
 
@@ -317,7 +317,7 @@ const hasActiveChild = (item) => {
                 <li v-for="item in filteredNavigation" :key="item.title">
                     <div
                         v-if="item.separator"
-                        class="mb-2 mt-4 px-3 text-[10px] font-black uppercase tracking-[0.24em] text-primary-700/65 dark:text-accent-200/70"
+                        class="ds-nav-section-label mb-2 mt-4 px-3"
                     >
                         {{ navLabel({ title: item.separatorLabel || 'gestlab.menu.navigation' }) }}
                     </div>
@@ -327,15 +327,12 @@ const hasActiveChild = (item) => {
                         :href="item.href"
                         prefetch
                         :class="[
-                            isActive(item)
-                                ? 'bg-[#0f3d37] text-white shadow-lg shadow-[#0f3d37]/20 dark:bg-primary-600'
-                                : 'text-slate-700 hover:bg-white hover:text-[#15231f] hover:shadow-sm dark:text-slate-300 dark:hover:bg-[#10231f] dark:hover:text-[#f7f1e7]',
-                            'group flex items-center gap-3 rounded-[1.35rem] px-3 py-2.5 text-sm font-black transition-all duration-150'
+                            isActive(item) ? 'ds-nav-item-active' : '',
+                            'ds-nav-item group'
                         ]"
                     >
                         <span :class="[
-                            isActive(item) ? 'bg-white/15 text-white' : 'bg-white text-primary-700 ring-1 ring-[#ded3bf] group-hover:ring-primary-200 dark:bg-[#07110f] dark:text-accent-200 dark:ring-[#25443c]',
-                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl transition'
+                            'ds-nav-icon',
                         ]">
                             <component :is="item.icon" class="h-5 w-5" aria-hidden="true" />
                         </span>
@@ -350,25 +347,22 @@ const hasActiveChild = (item) => {
                     >
                         <DisclosureButton
                             :class="[
-                                hasActiveChild(item)
-                                    ? 'bg-white text-[#15231f] shadow-sm ring-1 ring-[#ded3bf]/90 dark:bg-[#10231f] dark:text-[#f7f1e7] dark:ring-[#25443c]'
-                                    : 'text-slate-700 hover:bg-white hover:text-[#15231f] hover:shadow-sm dark:text-slate-300 dark:hover:bg-[#10231f]/90 dark:hover:text-[#f7f1e7]',
-                                'group flex w-full items-center gap-3 rounded-[1.35rem] px-3 py-2.5 text-sm font-black transition-all duration-150'
+                                hasActiveChild(item) ? 'ds-nav-item-active' : '',
+                                'ds-nav-item group'
                             ]"
                         >
                             <span :class="[
-                                hasActiveChild(item) ? 'bg-primary-700 text-white dark:bg-primary-500' : 'bg-white text-primary-700 ring-1 ring-[#ded3bf] group-hover:ring-primary-200 dark:bg-[#07110f] dark:text-accent-200 dark:ring-[#25443c]',
-                                'flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl transition'
+                                'ds-nav-icon',
                             ]">
                                 <component :is="item.icon" class="h-5 w-5" aria-hidden="true" />
                             </span>
                             <span class="min-w-0 flex-1 truncate text-left">{{ navLabel(item) }}</span>
-                            <span class="rounded-full bg-[#f8f4ea] px-2 py-0.5 text-[10px] font-black text-slate-500 dark:bg-[#07110f] dark:text-slate-400">
+                            <span class="rounded-full bg-[var(--ds-panel-muted)] px-2 py-0.5 text-[10px] font-extrabold text-[var(--ds-text-soft)]">
                                 {{ visibleChildren(item).length }}
                             </span>
                             <ChevronRightIcon
                                 :class="[
-                                    open ? 'rotate-90 text-primary-700 dark:text-accent-200' : 'text-slate-400 dark:text-slate-600',
+                                    open ? 'rotate-90 text-current' : 'text-[var(--ds-text-soft)]',
                                     'h-4 w-4 shrink-0 transition-transform duration-200'
                                 ]"
                             />
@@ -382,16 +376,14 @@ const hasActiveChild = (item) => {
                             leave-from-class="opacity-100 max-h-[1200px]"
                             leave-to-class="opacity-0 max-h-0"
                         >
-                            <DisclosurePanel as="ul" class="ml-5 mt-1 space-y-1 overflow-hidden border-l border-[#ded3bf] pl-3 dark:border-[#25443c]">
+                            <DisclosurePanel as="ul" class="ds-nav-subtree space-y-1 overflow-hidden">
                                 <li v-for="subItem in visibleChildren(item)" :key="subItem.title">
                                     <Link
                                         :href="subItem.href"
                                         prefetch
                                         :class="[
-                                            isActive(subItem)
-                                                ? 'bg-primary-50 text-primary-900 ring-1 ring-primary-100 dark:bg-primary-400/10 dark:text-accent-100 dark:ring-primary-300/20'
-                                                : 'text-slate-500 hover:bg-white hover:text-[#15231f] dark:text-slate-400 dark:hover:bg-[#10231f]/80 dark:hover:text-[#f7f1e7]',
-                                            'block rounded-2xl px-3 py-2 text-sm font-bold transition-all duration-150'
+                                            isActive(subItem) ? 'ds-nav-subitem-active' : '',
+                                            'ds-nav-subitem'
                                         ]"
                                     >
                                         {{ navLabel(subItem) }}
@@ -404,14 +396,14 @@ const hasActiveChild = (item) => {
             </ul>
         </div>
 
-        <div class="border-t border-[#ded3bf] pt-3 dark:border-[#25443c]">
+        <div class="border-t border-[var(--ds-border)] pt-3">
             <Link
                 :href="route('logout')"
-                class="group flex w-full items-center gap-3 rounded-[1.35rem] px-3 py-2.5 text-sm font-bold text-slate-500 transition-all duration-150 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-500/10 dark:hover:text-red-300"
+                class="ds-nav-item group text-[var(--ds-text-soft)] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-300"
                 method="post"
                 as="button"
             >
-                <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-white ring-1 ring-[#ded3bf] transition group-hover:text-red-600 dark:bg-[#07110f] dark:ring-[#25443c]">
+                <span class="ds-nav-icon group-hover:border-red-200 group-hover:text-red-600 dark:group-hover:border-red-500/25">
                     <PowerIcon class="h-5 w-5" aria-hidden="true" />
                 </span>
                 {{ $t('gestlab.menu.logout') }}

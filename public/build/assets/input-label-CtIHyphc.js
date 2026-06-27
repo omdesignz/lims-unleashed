@@ -1,0 +1,1 @@
+import{c as e,e as s,I as l,O as o}from"./editor-collab-D2mRKXXK.js";const n={class:"ds-field-label block"},c={key:0},r={key:1},p={__name:"input-label",props:{value:String},setup(t){return(a,i)=>(e(),s("label",n,[t.value?(e(),s("span",c,l(t.value),1)):(e(),s("span",r,[o(a.$slots,"default")]))]))}};export{p as _};

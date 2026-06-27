@@ -1,5 +1,5 @@
 <template>
-  <tbody class="divide-y divide-[#ded3bf] bg-[#fffdf7] dark:divide-[#25443c] dark:bg-[#07110f]">
+  <tbody class="ds-surface divide-y divide-[var(--ds-border)]">
     <tr 
       v-for="row in rows" 
       :key="row.id" 
@@ -7,7 +7,7 @@
         'transition-colors duration-150',
         isSelected(row.id) 
           ? 'bg-[rgb(var(--primary-50-rgb)/0.65)] hover:bg-[rgb(var(--primary-50-rgb)/0.9)] dark:bg-[rgb(var(--primary-500-rgb)/0.12)] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.18)]' 
-          : 'hover:bg-[#f7f1e7]/70 dark:hover:bg-[#10231f]/70'
+          : 'hover:bg-[var(--ds-panel-subtle)]'
       ]"
     >
       <!-- Checkbox Cell -->
@@ -33,7 +33,7 @@
         :key="column.field" 
         class="whitespace-nowrap px-6 py-5 text-sm"
         :class="[
-          'text-[#31413b] dark:text-[#d7e2dd]',
+          'text-[var(--ds-text-muted)]',
           column.align === 'right' ? 'text-right' : 'text-left',
           column.nowrap === false ? 'whitespace-normal' : 'whitespace-nowrap'
         ]"
@@ -49,11 +49,11 @@
           </span>
         </div>
         
-        <div v-else-if="column.type === 'date'" class="font-medium text-[#31413b] dark:text-[#d7e2dd]">
+        <div v-else-if="column.type === 'date'" class="font-medium text-[var(--ds-text-muted)]">
           {{ formatDate(row[column.field]) }}
         </div>
         
-        <div v-else-if="column.type === 'currency'" class="font-medium text-[#31413b] dark:text-[#d7e2dd]">
+        <div v-else-if="column.type === 'currency'" class="font-medium text-[var(--ds-text-muted)]">
           {{ formatCurrency(row[column.field]) }}
         </div>
         
@@ -62,7 +62,7 @@
             class="inline-block h-2 w-2 rounded-full"
             :class="getStatusColor(row[column.field])"
           />
-          <span class="font-medium text-[#31413b] dark:text-[#d7e2dd]">
+          <span class="font-medium text-[var(--ds-text-muted)]">
             {{ row[column.field] }}
           </span>
         </div>
@@ -85,7 +85,7 @@
             </div>
           </div>
           <div class="ml-3">
-            <div class="font-medium text-[#31413b] dark:text-[#d7e2dd]">
+            <div class="font-medium text-[var(--ds-text-muted)]">
               {{ row[column.field] }}
             </div>
             <div v-if="column.subtitle_field" class="text-sm text-[#73827b] dark:text-[#8ea49b]">
@@ -100,7 +100,7 @@
           :name="`column-${column.field}`" 
           :row="row"
         >
-          <div class="font-medium text-[#31413b] dark:text-[#d7e2dd]">
+          <div class="font-medium text-[var(--ds-text-muted)]">
             {{ row[column.field] }}
           </div>
         </slot>

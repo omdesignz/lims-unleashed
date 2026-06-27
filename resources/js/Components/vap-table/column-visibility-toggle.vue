@@ -2,7 +2,7 @@
   <Menu as="div" class="relative inline-block text-left">
     <MenuButton
       :class="[
-        'inline-flex h-12 items-center justify-center rounded-2xl border border-[#ded3bf] bg-[#f7f1e7] text-sm font-black text-[#31413b] shadow-sm transition hover:bg-white hover:text-[#143d37] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.24)] focus:ring-offset-2 focus:ring-offset-[#fffdf7] disabled:cursor-not-allowed disabled:opacity-30 dark:border-[#315149] dark:bg-[#10231f] dark:text-[#d7e2dd] dark:hover:bg-[#152f29] dark:hover:text-[#f7f1e7] dark:focus:ring-offset-[#07110f]',
+        'ds-button ds-button-secondary h-12',
         props.compact ? 'w-12 px-0' : 'gap-2 px-4',
       ]"
       :title="$t('gestlab.general.labels.columns')"
@@ -21,9 +21,9 @@
       leave-from-class="transform opacity-100 scale-100"
       leave-to-class="transform opacity-0 scale-95"
     >
-      <MenuItems class="absolute right-0 z-20 mt-3 w-80 origin-top-right overflow-hidden rounded-[1.6rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_26px_80px_rgb(20_61_55/0.18)] ring-1 ring-white/70 focus:outline-none dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
-        <div class="border-b border-[#ded3bf] bg-[#f7f1e7] px-4 py-4 dark:border-[#25443c] dark:bg-[#10231f]">
-          <p class="text-xs font-black uppercase tracking-[0.2em] text-[#6b7b74] dark:text-[#83978d]">
+      <MenuItems class="ds-card absolute right-0 z-20 mt-3 w-80 origin-top-right overflow-hidden focus:outline-none">
+        <div class="ds-surface-subtle border-b px-4 py-4">
+          <p class="ds-kicker">
             {{ $t('gestlab.general.labels.columns') }}
           </p>
           <p class="mt-1 text-sm font-semibold text-[#15231f] dark:text-[#f7f1e7]">

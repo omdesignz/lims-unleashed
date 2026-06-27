@@ -186,6 +186,51 @@ class ReportStudioWorkflowTest extends TestCase
         $this->assertStringContainsString('Importador alimentar certificado', $serializedPayloads);
     }
 
+    public function test_report_studio_templates_resolve_conditional_blocks_in_body_and_canvas_layers(): void
+    {
+        $studio = new ReportStudioTemplate([
+            'name' => 'Conditional Analysis Studio',
+            'studio_type' => 'analysis',
+            'renderer' => 'internal',
+            'status' => 'active',
+            'layout_schema' => [
+                'body_html' => <<<'HTML'
+<section>
+    {if:uncertainty_statement}<strong class="uncertainty-visible">Incerteza disponível</strong>{endif:uncertainty_statement}
+    {if:missing_value}<span class="missing-body">Não deve aparecer</span>{endif:missing_value}
+    {{ifnot:missing_value}}<span class="unless-visible">Secção alternativa</span>{{endif:missing_value}}
+</section>
+HTML,
+                'canvas_blocks' => [
+                    [
+                        'id' => 'conditional-canvas-note',
+                        'surface' => 'content',
+                        'block_kind' => 'rich_text',
+                        'content_html' => '{if:customer_name}<span class="canvas-visible">{{customer_name}}</span>{endif:customer_name}{if:missing_value}<span class="missing-canvas">Oculto</span>{endif:missing_value}',
+                        'x' => 5,
+                        'y' => 5,
+                        'width' => 40,
+                        'min_height' => 24,
+                        'z_index' => 20,
+                    ],
+                ],
+            ],
+            'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
+        ]);
+
+        $payload = app(ReportStudioPdfBuilder::class)->buildAnalysisStudioPreviewPayload($studio, app(GeneralSettings::class));
+        $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
+
+        $this->assertStringContainsString('uncertainty-visible', $bodyHtml);
+        $this->assertStringContainsString('unless-visible', $bodyHtml);
+        $this->assertStringContainsString('canvas-visible', $bodyHtml);
+        $this->assertStringNotContainsString('{{customer_name}}', $bodyHtml);
+        $this->assertStringNotContainsString('missing-body', $bodyHtml);
+        $this->assertStringNotContainsString('missing-canvas', $bodyHtml);
+        $this->assertStringNotContainsString('{if:', $bodyHtml);
+        $this->assertStringNotContainsString('{{ifnot:', $bodyHtml);
+    }
+
     public function test_admin_can_create_and_update_report_studio_templates(): void
     {
         $user = $this->verifiedAdmin();
@@ -613,6 +658,114 @@ CSS,
             $this->assertStringNotContainsString('{bank_iban}', $bodyHtml);
             $this->assertStringNotContainsString('{bank_swift}', $bodyHtml);
             $this->assertStringNotContainsString('{bank_details}', $bodyHtml);
+        } finally {
+            $settings = app(GeneralSettings::class);
+            $settings->fill($original);
+            $settings->save();
+        }
+    }
+
+    public function test_quote_preview_canvas_blocks_resolve_full_commercial_context(): void
+    {
+        $settings = app(GeneralSettings::class);
+        $original = [
+            'app_bank_name' => $settings->app_bank_name,
+            'app_bank_account_name' => $settings->app_bank_account_name,
+            'app_bank_account_number' => $settings->app_bank_account_number,
+            'app_bank_iban' => $settings->app_bank_iban,
+            'app_bank_swift' => $settings->app_bank_swift,
+            'app_bank_details' => $settings->app_bank_details,
+        ];
+        $studio = new ReportStudioTemplate([
+            'name' => 'Quote Preview Context',
+            'studio_type' => 'quote',
+            'renderer' => 'internal',
+            'status' => 'active',
+            'layout_schema' => [
+                'first_page_header_html' => '<div class="quote-preview-header">{{document_code}} · {customer_name}</div>',
+                'footer_html' => '<div class="quote-preview-footer">{document_keywords}</div>',
+                'body_html' => '<section>{quote_number}</section>',
+                'canvas_blocks' => [
+                    [
+                        'id' => 'quote-preview-header-bank',
+                        'title' => 'Banco no cabeçalho',
+                        'block_kind' => 'rich_text',
+                        'surface' => 'first_page_header_html',
+                        'x' => 0,
+                        'y' => 0,
+                        'width' => 60,
+                        'min_height' => 40,
+                        'z_index' => 10,
+                        'padding' => 8,
+                        'content_html' => '<div class="header-bank">{{bank_name}} · {bank_iban}</div>',
+                    ],
+                    [
+                        'id' => 'quote-preview-body-bank',
+                        'title' => 'Banco no corpo',
+                        'block_kind' => 'rich_text',
+                        'surface' => 'content',
+                        'page_scope' => 'first',
+                        'x' => 0,
+                        'y' => 0,
+                        'width' => 60,
+                        'min_height' => 80,
+                        'z_index' => 10,
+                        'padding' => 8,
+                        'content_html' => '<div class="body-bank">{banking_details}<p>{bank_account_name}</p><p>{bank_account_number}</p><p>{bank_swift}</p><p>{bank_details}</p></div>',
+                    ],
+                    [
+                        'id' => 'quote-preview-footer-bank',
+                        'title' => 'Banco no rodapé',
+                        'block_kind' => 'rich_text',
+                        'surface' => 'footer_html',
+                        'x' => 0,
+                        'y' => 0,
+                        'width' => 60,
+                        'min_height' => 40,
+                        'z_index' => 10,
+                        'padding' => 8,
+                        'content_html' => '<div class="footer-bank">{document_number} · {{bank_account_number}}</div>',
+                    ],
+                ],
+            ],
+            'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
+        ]);
+
+        try {
+            $settings->fill([
+                'app_bank_name' => 'Banco de Pré-visualização',
+                'app_bank_account_name' => 'Laboratório Pré-visualização',
+                'app_bank_account_number' => '0011223344',
+                'app_bank_iban' => 'AO06000000000000112233440',
+                'app_bank_swift' => 'PREVAOLU',
+                'app_bank_details' => 'Referenciar sempre o número da proforma.',
+            ]);
+            $settings->save();
+
+            $payload = app(ReportStudioPdfBuilder::class)->buildQuotePreviewPayload($studio, $settings);
+            $combinedHtml = implode("\n", [
+                (string) data_get($payload, 'data.firstPageHeader'),
+                (string) data_get($payload, 'data.bodyHtml'),
+                (string) data_get($payload, 'data.footerHtml'),
+            ]);
+
+            $this->assertStringContainsString('quote-preview-header', $combinedHtml);
+            $this->assertStringContainsString('header-bank', $combinedHtml);
+            $this->assertStringContainsString('body-bank', $combinedHtml);
+            $this->assertStringContainsString('footer-bank', $combinedHtml);
+            $this->assertStringContainsString('Banco de Pré-visualização', $combinedHtml);
+            $this->assertStringContainsString('Laboratório Pré-visualização', $combinedHtml);
+            $this->assertStringContainsString('0011223344', $combinedHtml);
+            $this->assertStringContainsString('AO06000000000000112233440', $combinedHtml);
+            $this->assertStringContainsString('PREVAOLU', $combinedHtml);
+            $this->assertStringContainsString('Referenciar sempre o número da proforma.', $combinedHtml);
+            $this->assertStringContainsString('PP 05/2026/0048', $combinedHtml);
+            $this->assertStringContainsString('Palavras-chave / Keywords:', $combinedHtml);
+            $this->assertStringNotContainsString('{banking_details}', $combinedHtml);
+            $this->assertStringNotContainsString('{{bank_name}}', $combinedHtml);
+            $this->assertStringNotContainsString('{bank_account_name}', $combinedHtml);
+            $this->assertStringNotContainsString('{{bank_account_number}}', $combinedHtml);
+            $this->assertStringNotContainsString('{document_number}', $combinedHtml);
         } finally {
             $settings = app(GeneralSettings::class);
             $settings->fill($original);
@@ -1478,6 +1631,63 @@ CSS,
             strpos($bodyHtml, 'stamp.png'),
             strpos($bodyHtml, $signatureDataUri)
         );
+    }
+
+    public function test_report_studio_rejects_non_renderable_canvas_surfaces(): void
+    {
+        $response = $this->actingAs($this->verifiedAdmin())
+            ->post(route('report-studios.store'), [
+                'name' => 'Invalid Surface Template',
+                'studio_type' => 'executive',
+                'renderer' => 'internal',
+                'status' => 'draft',
+                'is_default' => false,
+                'layout_schema' => [
+                    'body_html' => '<h1>Resumo executivo</h1>',
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'non-renderable-surface-layer',
+                            'surface' => 'styles_css',
+                            'block_kind' => 'rich_text',
+                            'content_html' => '<p>Não deve ser persistido como canvas.</p>',
+                        ],
+                    ],
+                ],
+                'export_settings' => ['paper_size' => 'A4'],
+            ]);
+
+        $response->assertSessionHasErrors([
+            'layout_schema.canvas_blocks.0.surface',
+        ]);
+    }
+
+    public function test_report_studio_requires_page_number_for_specific_content_canvas_blocks(): void
+    {
+        $response = $this->actingAs($this->verifiedAdmin())
+            ->post(route('report-studios.store'), [
+                'name' => 'Missing Specific Page Template',
+                'studio_type' => 'executive',
+                'renderer' => 'internal',
+                'status' => 'draft',
+                'is_default' => false,
+                'layout_schema' => [
+                    'body_html' => '<h1>Resumo executivo</h1>',
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'missing-specific-page-layer',
+                            'surface' => 'content',
+                            'block_kind' => 'rich_text',
+                            'content_html' => '<p>Camada posicionada numa página específica.</p>',
+                            'page_scope' => 'specific',
+                        ],
+                    ],
+                ],
+                'export_settings' => ['paper_size' => 'A4'],
+            ]);
+
+        $response->assertSessionHasErrors([
+            'layout_schema.canvas_blocks.0.page_number',
+        ]);
     }
 
     public function test_report_studio_rejects_invalid_qr_customisation(): void
@@ -2478,9 +2688,13 @@ CSS,
         Result::query()->create([
             'code_id' => $labCode->id,
             'parameter_label' => 'Humidade',
+            'approved_value' => '0.000012',
             'inserted_date' => $now,
             'verified_date' => $now,
             'approved_date' => $now,
+            'extra_data' => [
+                'display_format' => 'scientific',
+            ],
         ]);
         Result::query()->create([
             'code_id' => $labCode->id,
@@ -2533,6 +2747,7 @@ CSS,
         $this->assertStringContainsString('Método', $bodyHtml);
         $this->assertStringContainsString('Method', $bodyHtml);
         $this->assertStringContainsString('Incerteza', $bodyHtml);
+        $this->assertStringContainsString('1.20 × 10^-5', $bodyHtml);
         $this->assertStringContainsString('Contra-análise associada', $bodyHtml);
         $this->assertStringContainsString('2, 1, 1, 1, 1', $bodyHtml);
         $this->assertStringContainsString('5 parâmetro(s) associados ao certificado; 1 com contra-análise solicitada ou registada.', $bodyHtml);

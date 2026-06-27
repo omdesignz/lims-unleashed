@@ -28,11 +28,11 @@ const emit = defineEmits(["remove"]);
 const variantConfig = computed(() => {
     const variants = {
         success: {
-            wrapper: 'border-primary-200/80 bg-[#fffaf0]/95 text-[#15231f] shadow-primary-100 ring-1 ring-primary-100/80 dark:border-primary-300/20 dark:bg-[#0c1714]/95 dark:text-[#f7f1e7] dark:ring-primary-300/10',
+            wrapper: 'border-[rgb(var(--primary-200-rgb)/0.8)] bg-[var(--ds-panel-raised)] text-[var(--ds-text)] ring-1 ring-[rgb(var(--primary-100-rgb)/0.7)] dark:border-[rgb(var(--primary-300-rgb)/0.2)] dark:ring-[rgb(var(--primary-300-rgb)/0.1)]',
             iconClass: 'text-emerald-500 dark:text-emerald-400',
-            titleClass: 'text-[#15231f] dark:text-[#f7f1e7]',
-            messageClass: 'text-slate-600 dark:text-slate-300',
-            actionClass: 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-200',
+            titleClass: 'text-[var(--ds-text)]',
+            messageClass: 'text-[var(--ds-text-muted)]',
+            actionClass: 'text-[var(--ds-text-soft)] hover:text-[var(--ds-text)]',
             icon: CheckCircleIcon,
         },
         error: {
@@ -52,11 +52,11 @@ const variantConfig = computed(() => {
             icon: ExclamationTriangleIcon,
         },
         info: {
-            wrapper: 'border-accent-200/80 bg-accent-50/95 text-[#15231f] shadow-accent-100 ring-1 ring-accent-100/80 dark:border-accent-300/20 dark:bg-[#10231f]/95 dark:text-accent-100 dark:ring-accent-300/10',
-            iconClass: 'text-primary-600 dark:text-accent-200',
-            titleClass: 'text-[#15231f] dark:text-accent-100',
-            messageClass: 'text-slate-700 dark:text-slate-300',
-            actionClass: 'text-primary-600 hover:text-primary-800 dark:text-accent-200 dark:hover:text-accent-100',
+            wrapper: 'border-[rgb(var(--accent-300-rgb)/0.55)] bg-[var(--ds-panel-raised)] text-[var(--ds-text)] ring-1 ring-[rgb(var(--accent-200-rgb)/0.5)] dark:border-[rgb(var(--accent-300-rgb)/0.2)] dark:ring-[rgb(var(--accent-300-rgb)/0.1)]',
+            iconClass: 'text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]',
+            titleClass: 'text-[var(--ds-text)]',
+            messageClass: 'text-[var(--ds-text-muted)]',
+            actionClass: 'text-[var(--ds-text-soft)] hover:text-[var(--ds-text)]',
             icon: InformationCircleIcon,
         },
     };
@@ -65,7 +65,7 @@ const variantConfig = computed(() => {
 });
 </script>
 <template>
-    <div :class="variantConfig.wrapper" class="pointer-events-auto w-full max-w-md overflow-hidden rounded-[1.6rem] border shadow-[0_20px_60px_rgba(20,61,55,0.18)] backdrop-blur">
+    <div :class="variantConfig.wrapper" class="pointer-events-auto w-full max-w-md overflow-hidden rounded-[1.6rem] border shadow-[var(--ds-shadow-card)] backdrop-blur">
         <div class="p-4 sm:p-5">
             <div class="flex items-start gap-3">
                 <div class="flex-shrink-0">

@@ -151,11 +151,9 @@ function handleUpdateModelValue(selected) {
     @update:model-value="handleUpdateModelValue"
     :multiple="props.multiple"
   >
-  <!-- <ComboboxLabel class="block text-sm font-medium leading-6 text-gray-900">{{ props.titleLabel }}</ComboboxLabel> -->
-  
     <div class="relative">
       <div
-        class="relative flex min-h-12 flex-col overflow-hidden rounded-2xl border border-slate-300/90 bg-white/95 text-left shadow-sm ring-1 ring-white/50 transition-all focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900/90 dark:ring-slate-800/60 sm:text-sm sm:leading-6"
+        class="ds-combobox-control flex flex-col text-left sm:text-sm sm:leading-6"
       >
       <div class="flex flex-auto flex-wrap gap-1.5 px-2 py-2">
       <div
@@ -163,27 +161,29 @@ function handleUpdateModelValue(selected) {
               as="template"
               :key="option.value"
               :value="option"
-        class="relative m-1 flex items-center justify-center rounded-full border border-primary-200 bg-primary-100 px-2 py-1 font-medium text-primary-800 dark:border-primary-500/20 dark:bg-primary-500/15 dark:text-primary-200"
+        class="ds-chip m-1"
     >
         <div class="text-xs font-normal leading-none max-w-full flex-initial">
         {{ $t(option.label) }}
         </div>
         <div class="flex flex-auto flex-row-reverse">
-        <div @click="removeOption(index)">
+        <button
+          type="button"
+          class="rounded-full transition-colors hover:text-[rgb(var(--primary-600-rgb))] focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)] dark:hover:text-[rgb(var(--accent-100-rgb))]"
+          :aria-label="`${$t('gestlab.general.buttons.remove')} ${$t(option.label)}`"
+          @click.stop="removeOption(index)"
+        >
             <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" 
-            class="feather feather-x ml-2 h-4 w-4 cursor-pointer rounded-full transition-colors hover:text-primary-500 dark:hover:text-primary-100">
+            class="ml-1 h-4 w-4">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
-        </div>
-        <div>
-
-        </div> 
+        </button>
         </div>
     </div>
       <div class="flex-1">
         <ComboboxInput
-          class="min-w-28 rounded-xl border-0 bg-transparent py-1.5 pl-2 pr-10 text-sm text-slate-900 placeholder:text-slate-400 focus:border-transparent focus:ring-0 dark:text-slate-100 dark:placeholder:text-slate-500"
+          class="min-w-28 rounded-xl border-0 bg-transparent py-1.5 pl-2 pr-10 text-sm text-[var(--ds-text)] placeholder:text-[var(--ds-text-soft)] focus:border-transparent focus:ring-0"
           :displayValue="option => option?.label"
           @change="query = $event.target.value"
           :placeholder="props.placeholder"
@@ -193,7 +193,7 @@ function handleUpdateModelValue(selected) {
           class="absolute inset-y-0 right-0 flex items-center rounded-r-2xl px-3 focus:outline-none"
         >
           <ChevronUpDownIcon
-            class="h-5 w-5 text-gray-400 dark:text-gray-500"
+            class="h-5 w-5 text-[var(--ds-text-soft)]"
             aria-hidden="true"
           />
         </ComboboxButton>
@@ -207,7 +207,7 @@ function handleUpdateModelValue(selected) {
         @after-leave="query = ''"
       >
         <ComboboxOptions
-          class="absolute z-50 mt-2 max-h-72 w-full overflow-auto rounded-2xl border border-slate-200 bg-white/98 p-2 text-sm shadow-2xl ring-1 ring-slate-900/5 backdrop-blur-sm focus:outline-none dark:border-slate-700 dark:bg-slate-900/98 dark:ring-slate-100/5"
+          class="ds-floating-panel absolute z-50 mt-2 max-h-72 w-full overflow-auto p-2 text-sm focus:outline-none"
         >
           <div
             v-if="
@@ -216,14 +216,14 @@ function handleUpdateModelValue(selected) {
               !queryOption &&
               !props.createOption
             "
-            class="relative cursor-default select-none rounded-xl px-4 py-3 text-sm text-gray-700 dark:text-gray-400"
+            class="relative cursor-default select-none rounded-xl px-4 py-3 text-sm text-[var(--ds-text-soft)]"
           >
             {{ props.noResultsLabel || $t('gestlab.general.messages.no_items') }}
           </div>
 
           <div
             v-if="isLoading"
-            class="relative cursor-default select-none rounded-xl px-4 py-3 text-sm text-gray-700 dark:text-gray-400"
+            class="relative cursor-default select-none rounded-xl px-4 py-3 text-sm text-[var(--ds-text-soft)]"
           >
             {{ props.loadingLabel || $t('gestlab.general.buttons.searching') }}
           </div>
@@ -238,11 +238,8 @@ function handleUpdateModelValue(selected) {
               v-slot="{active}"
             >
               <li
-                class="relative cursor-default select-none rounded-xl py-2.5 pl-10 pr-4 text-sm"
-                :class="{
-                  'bg-primary-900 text-white dark:bg-primary-700': active,
-                  'text-slate-900 dark:text-slate-100': !active,
-                }"
+                class="ds-option"
+                :class="{ 'ds-option-active': active }"
               >
                 {{ $t('gestlab.general.buttons.create') }} "{{ queryOption.label }}"
               </li>
@@ -255,11 +252,8 @@ function handleUpdateModelValue(selected) {
               v-slot="{selected, active}"
             >
               <li
-                class="relative cursor-default select-none rounded-xl py-2.5 pl-10 pr-4 text-sm"
-                :class="{
-                  'bg-primary-900 text-white dark:bg-primary-700': active,
-                  'text-slate-900 dark:text-slate-100': !active,
-                }"
+                class="ds-option"
+                :class="{ 'ds-option-active': active }"
               >
                 <span
                   class="block truncate"
@@ -269,8 +263,7 @@ function handleUpdateModelValue(selected) {
                 </span>
                 <span
                   v-if="selected"
-                  class="absolute inset-y-0 left-0 flex items-center pl-3"
-                  :class="{'text-white': active, 'text-primary-700 dark:text-primary-300': !active}"
+                  class="ds-option-check"
                 >
                   <CheckIcon
                     class="h-5 w-5"

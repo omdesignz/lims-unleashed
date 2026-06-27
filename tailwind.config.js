@@ -45,10 +45,10 @@ module.exports = {
           900: '#164e63',
         },
         surface: {
-          DEFAULT: '#ffffff',
-          dim: '#f8fafc',
-          raised: '#ffffff',
-          border: '#e2e8f0',
+          DEFAULT: 'var(--color-surface)',
+          dim: 'var(--color-surface-dim)',
+          raised: 'var(--color-surface-raised)',
+          border: 'var(--color-border)',
         },
         success: {
           50: '#ecfdf5',

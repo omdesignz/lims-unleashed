@@ -558,6 +558,10 @@ defineOptions({
 
 const props = defineProps({
   proposal: Object,
+  parsedTemplateContent: {
+    type: String,
+    default: '',
+  },
   isExpired: Boolean,
   company: {
     type: Object,
@@ -633,6 +637,7 @@ const hasBankingDetails = computed(() => bankingRows.value.length > 0 || Boolean
 const companyBankDetails = computed(() => props.company?.bank_details || '')
 
 const parsedTemplateContent = computed(() => {
+  if (props.parsedTemplateContent) return props.parsedTemplateContent
   if (!props.proposal.template?.content) return ''
   
   // Parse template content with proposal data

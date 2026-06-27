@@ -355,16 +355,16 @@ const onSelectedItem = (item) => {
           </div>
 
           <div class="sm:col-span-2">
-            <label for="internal_ref" class="block text-sm font-medium leading-6 text-gray-900">Referência</label>
+            <label for="internal_ref" class="ds-field-label">{{ $t('gestlab.general.labels.receipts.internal_ref') }}</label>
             <div class="mt-2">
-              <input v-model="form.internal_ref" type="text" name="`internal_ref" id="`internal_ref" class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange-800 sm:text-sm sm:leading-6" placeholder="" />
+              <input v-model="form.internal_ref" type="text" name="`internal_ref" id="`internal_ref" class="ds-field" placeholder="" />
             </div>
             <p v-if="form.errors.internal_ref" class="mt-2 text-xs text-red-600" id="internal_ref-error">{{ form.errors.internal_ref }}</p>
           </div>
 
           <div class="sm:col-span-2">
             <div class="mt-8 flex items-center justify-end">
-              <button @click="submit" class="inline-flex justify-center rounded-md bg-blue-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-900">Registrar</button>
+              <button @click="submit" class="ds-button ds-button-primary px-4 py-2 text-sm">{{ $t('gestlab.general.buttons.update') }}</button>
             </div>
           </div>
 
@@ -373,11 +373,11 @@ const onSelectedItem = (item) => {
       <div class="border-b border-gray-900/10 pb-6">
         <h2 class="text-base font-semibold leading-7 text-gray-900 flex items-center">
           {{ form.items.length }} Iten(s)
-          <button @click="addItem" class="hover:text-blue-900 transform transition-all duration-200 hover:scale-150 ml-auto">
+          <button @click="addItem" class="ds-table-action ml-auto">
             <PlusCircleIcon class="h-5 w-5" />
           </button>
         </h2>
-        <p class="mt-1 text-sm leading-6 text-gray-600">Itens associados à factura: {{ form.name }}</p>
+        <p class="mt-1 text-sm leading-6 text-gray-600">{{ $t('gestlab.general.labels.receipts.items_tagline') }} {{ form.name }}</p>
       </div>
 
 
@@ -396,32 +396,26 @@ const onSelectedItem = (item) => {
             </colgroup>
             <thead class="border-b border-gray-300 text-gray-900">
               <tr>
-                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">Item</th>
-                <th scope="col" class="hidden px-3 py-3.5 text-center text-sm font-semibold text-gray-900 sm:table-cell">QTD</th>
-                <th scope="col" class="hidden px-3 py-3.5 text-right text-sm font-semibold text-gray-900 sm:table-cell">Preço UN</th>
-                <th scope="col" class="hidden px-3 py-3.5 text-right text-sm font-semibold text-gray-900 sm:table-cell">Desconto</th>
-                <th scope="col" class="py-3.5 pl-3 pr-4 text-right text-sm font-semibold text-gray-900 sm:pr-0">Total</th>
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">{{ $t('gestlab.general.labels.receipts.item_id') }}</th>
+                <th scope="col" class="hidden px-3 py-3.5 text-center text-sm font-semibold text-gray-900 sm:table-cell">{{ $t('gestlab.general.labels.receipts.qty') }}</th>
+                <th scope="col" class="hidden px-3 py-3.5 text-right text-sm font-semibold text-gray-900 sm:table-cell">{{ $t('gestlab.general.labels.receipts.unit_price') }}</th>
+                <th scope="col" class="hidden px-3 py-3.5 text-right text-sm font-semibold text-gray-900 sm:table-cell">{{ $t('gestlab.general.labels.receipts.discount') }}</th>
+                <th scope="col" class="py-3.5 pl-3 pr-4 text-right text-sm font-semibold text-gray-900 sm:pr-0">{{ $t('gestlab.general.labels.receipts.total') }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(item, index) in itemsWithSubTotal" :key="index" class="border-b border-gray-200"
-                v-motion
-                :initial="{ opacity: 0, y: 100 }"
-                :enter="{ opacity: 1, y: 0, scale: 1 }"
-                :variants="{ custom: { scale: 2 } }"
-                :delay="100"
-              >
+              <tr v-for="(item, index) in itemsWithSubTotal" :key="index" class="border-b border-gray-200">
                 <td class="max-w-0 py-5 pl-4 pr-3 text-sm sm:pl-0 align-top">
                   <div class="text-gray-900">
                       <combobox v-model="item.item.item_id" :load-options="loadParameters" @update:model-value="onSelectedItem(item)"/>
                   </div>
                   <div class="mt-2 truncate text-gray-500">
-                          <textarea v-model="item.item.obs" placeholder="observações sobre o artigo..." rows="2" :name="`obs-${index+1}`" :id="`obs-${index+1}`" class="block w-full border-0 border-b border-transparent p-0 pb-2 resize-none focus:ring-0 focus:border-indigo-600 sm:text-sm focus:border-ft-orange" />
+                          <textarea v-model="item.item.obs" :placeholder="$t('gestlab.general.labels.receipts.obs')" rows="2" :name="`obs-${index+1}`" :id="`obs-${index+1}`" class="ds-field min-h-20 resize-none py-2 text-sm" />
                   </div>
                 </td>
                 <td class="hidden px-3 py-5 text-right text-sm text-gray-500 sm:table-cell align-top">
                   <div class="relative rounded-md shadow-sm">
-                    <input v-model="item.item.qty" type="number" step="1" :name="`qty-${index+1}`" :id="`qty-${index+1}`" class="w-full rounded-md border-0 bg-white py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange-800 sm:text-sm sm:leading-6 text-center" placeholder="0.00" />
+                    <input v-model="item.item.qty" type="number" step="1" :name="`qty-${index+1}`" :id="`qty-${index+1}`" class="ds-field text-center" placeholder="0.00" />
                     <div class="mt-2 text-gray-500 z-50">
                       <combobox v-model="item.item.unit_id" :load-options="loadUnits"/>
                     </div>
@@ -429,7 +423,7 @@ const onSelectedItem = (item) => {
                 </td>
                 <td class="hidden px-3 py-5 text-right text-sm text-gray-500 sm:table-cell align-top">
                   <div class="relative rounded-md shadow-sm">
-                    <input v-model="item.unit_price" type="number" step=".01" :name="`unit_price-${index+1}`" :id="`unit_price-${index+1}`" class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange-800 sm:text-sm sm:leading-6 text-right" placeholder="0.00" />
+                    <input v-model="item.unit_price" type="number" step=".01" :name="`unit_price-${index+1}`" :id="`unit_price-${index+1}`" class="ds-field text-right" placeholder="0.00" />
                   </div>
                     <div class="mt-2">
                       <combobox v-model="item.item.itemable_id" :load-options="loadLabCodes" placeholder="CL"/> 
@@ -437,22 +431,22 @@ const onSelectedItem = (item) => {
                 </td>
                 <td class="py-5 pl-3 pr-4 text-right text-sm text-gray-500 sm:pr-0 align-top">
                   <div class="relative rounded-md shadow-sm">
-                    <input v-model="item.item.discount_amount" type="number" :name="`discount_amount-${index+1}`" :id="`discount_amount-${index+1}`" class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange-800 sm:text-sm sm:leading-6" placeholder="0.00" />
+                    <input v-model="item.item.discount_amount" type="number" :name="`discount_amount-${index+1}`" :id="`discount_amount-${index+1}`" class="ds-field pr-28" placeholder="0.00" />
                     <div class="absolute inset-y-0 right-0 flex items-center">
-                      <select v-model="item.item.discount_id" :id="`discount_id-${index+1}`" :name="`discount_id-${index+1}`" class="focus:ring-ft-orange focus:border-ft-orange h-full py-0 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md">
+                      <select v-model="item.item.discount_id" :id="`discount_id-${index+1}`" :name="`discount_id-${index+1}`" class="h-full rounded-xl border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-3 text-sm text-[var(--ds-text)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)]">
                         <option v-for="(type, index) in props.discount_categories" :key="index" :value="type.value" :selected="item.item.discount_id">{{ type.label }}</option>
                       </select>
                     </div>
                   </div>
                   <div class="mt-2 flex items-center justify-end">
-                    <button @click="submitItem(item)" class="inline-flex justify-center rounded-md bg-blue-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-900">Registrar Item</button>
+                    <button @click="submitItem(item)" class="ds-button ds-button-primary px-3 py-2 text-sm">{{ $t('gestlab.general.buttons.update') }}</button>
                   </div>
                 </td>
                 <td class="py-5 pl-3 pr-4 text-right text-sm text-gray-500 sm:pr-0 align-top">
                   <div class="relative text-gray-900">
                       {{ parseFloat(item.total).toFixed(2) }}
                     <div class="mt-2">
-                      <button @click="removeItem(index)" class="hover:text-blue-900 transform transition-all duration-200 hover:scale-150 ml-auto">
+                      <button @click="removeItem(index)" class="ds-table-action ml-auto">
                         <TrashIcon class="h-5 w-5" />
                       </button>
                     </div>
@@ -462,23 +456,23 @@ const onSelectedItem = (item) => {
             </tbody>
             <tfoot>
               <tr>
-                <th scope="row" colspan="4" class="hidden pl-4 pr-3 pt-6 text-right text-sm font-normal text-gray-500 sm:table-cell sm:pl-0">Subtotal</th>
-                <th scope="row" class="pl-6 pr-3 pt-6 text-left text-sm font-normal text-gray-500 sm:hidden">Subtotal</th>
+                <th scope="row" colspan="4" class="hidden pl-4 pr-3 pt-6 text-right text-sm font-normal text-gray-500 sm:table-cell sm:pl-0">{{ $t('gestlab.general.labels.receipts.subtotal') }}</th>
+                <th scope="row" class="pl-6 pr-3 pt-6 text-left text-sm font-normal text-gray-500 sm:hidden">{{ $t('gestlab.general.labels.receipts.subtotal') }}</th>
                 <td class="pl-3 pr-6 pt-6 text-right text-sm text-gray-500 sm:pr-0">{{ subTotal }}</td>
               </tr>
               <tr>
-                <th scope="row" colspan="4" class="hidden pl-4 pr-3 pt-4 text-right text-sm font-normal text-gray-500 sm:table-cell sm:pl-0">Descontos</th>
-                <th scope="row" class="pl-6 pr-3 pt-4 text-left text-sm font-normal text-gray-500 sm:hidden">Descontos</th>
+                <th scope="row" colspan="4" class="hidden pl-4 pr-3 pt-4 text-right text-sm font-normal text-gray-500 sm:table-cell sm:pl-0">{{ $t('gestlab.general.labels.receipts.discount_total') }}</th>
+                <th scope="row" class="pl-6 pr-3 pt-4 text-left text-sm font-normal text-gray-500 sm:hidden">{{ $t('gestlab.general.labels.receipts.discount_total') }}</th>
                 <td class="pl-3 pr-6 pt-4 text-right text-sm text-gray-500 sm:pr-0">{{ discountTotal }}</td>
               </tr>
               <tr>
-                <th scope="row" colspan="4" class="hidden pl-4 pr-3 pt-4 text-right text-sm font-normal text-gray-500 sm:table-cell sm:pl-0">Taxas</th>
-                <th scope="row" class="pl-6 pr-3 pt-4 text-left text-sm font-normal text-gray-500 sm:hidden">Taxas</th>
+                <th scope="row" colspan="4" class="hidden pl-4 pr-3 pt-4 text-right text-sm font-normal text-gray-500 sm:table-cell sm:pl-0">{{ $t('gestlab.general.labels.receipts.tax_total') }}</th>
+                <th scope="row" class="pl-6 pr-3 pt-4 text-left text-sm font-normal text-gray-500 sm:hidden">{{ $t('gestlab.general.labels.receipts.tax_total') }}</th>
                 <td class="pl-3 pr-6 pt-4 text-right text-sm text-gray-500 sm:pr-0">{{ taxTotal }}</td>
               </tr>
               <tr>
-                <th scope="row" colspan="4" class="hidden pl-4 pr-3 pt-4 text-right text-sm font-semibold text-gray-900 sm:table-cell sm:pl-0">Total</th>
-                <th scope="row" class="pl-6 pr-3 pt-4 text-left text-sm font-semibold text-gray-900 sm:hidden">Total</th>
+                <th scope="row" colspan="4" class="hidden pl-4 pr-3 pt-4 text-right text-sm font-semibold text-gray-900 sm:table-cell sm:pl-0">{{ $t('gestlab.general.labels.receipts.total') }}</th>
+                <th scope="row" class="pl-6 pr-3 pt-4 text-left text-sm font-semibold text-gray-900 sm:hidden">{{ $t('gestlab.general.labels.receipts.total') }}</th>
                 <td class="pl-3 pr-4 pt-4 text-right text-sm font-semibold text-gray-900 sm:pr-0">
                   {{ invoiceTotal }}
                 </td>
@@ -494,16 +488,13 @@ const onSelectedItem = (item) => {
     </div>
 
     <div class="sm:col-span-full">
-      <label for="obs" class="block text-sm font-medium leading-6 text-gray-900">Observações</label>
+      <label for="obs" class="ds-field-label">{{ $t('gestlab.general.labels.receipts.obs') }}</label>
       <div class="mt-2">
-        <textarea v-model="form.obs" type="text" name="obs" id="obs" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
+        <textarea v-model="form.obs" type="text" name="obs" id="obs" class="ds-field min-h-28 py-3" />
       </div>
       <p v-if="form.errors.obs" class="mt-2 text-xs text-red-600" id="obs">{{ form.errors.obs }}</p>
     </div>
 
-    <!-- <div class="mt-6 flex items-center justify-end gap-x-6">
-      <button @click="submit" class="inline-flex justify-center rounded-md bg-blue-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-900">Registrar</button>
-    </div> -->
   </form>
 
 </template>

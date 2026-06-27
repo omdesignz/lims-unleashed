@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-[1.5rem] border border-[#e8ddcd] bg-[#fffdf7]/70 p-3 shadow-inner shadow-white/40 dark:border-[#25443c] dark:bg-[#07110f]/40 dark:shadow-none">
+  <div class="ds-card overflow-hidden p-3">
     <ApexChart
       :type="type"
       :height="height"

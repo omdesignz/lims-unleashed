@@ -149,14 +149,15 @@ function clear() {
       @update:model-value="handleUpdateModelValue"
       as="div"
     >
-      <ComboboxLabel v-if="props.titleLabel" class="mb-2 block text-sm font-semibold leading-6 text-[#31413b] dark:text-[#d7e2dd]">{{ props.titleLabel }}</ComboboxLabel>
+      <ComboboxLabel v-if="props.titleLabel" class="ds-field-label mb-2 block">{{ props.titleLabel }}</ComboboxLabel>
       <div class="relative mt-1">
         <div
-          class="relative w-full cursor-default overflow-hidden rounded-2xl border border-[#d8cbb8] bg-[#fffdf7] text-left shadow-sm ring-1 ring-white/70 transition-all duration-200 focus-within:border-[rgb(var(--primary-500-rgb))] focus-within:ring-2 focus-within:ring-[rgb(var(--primary-500-rgb)/0.22)] dark:border-[#315149] dark:bg-[#10231f] dark:ring-white/10 sm:text-sm"
+          class="ds-combobox-control cursor-default text-left"
+          :data-invalid="props.hasError"
+          :data-disabled="props.disableInput"
         >
           <ComboboxInput
-            class="w-full border-0 bg-transparent py-3 pl-4 pr-14 text-sm font-medium text-[#15231f] placeholder:text-[#8d9b94] focus:ring-0 dark:text-[#f7f1e7] dark:placeholder:text-[#657970]"
-            :class="[props.hasError ? 'text-danger-700 placeholder-danger-300 dark:text-danger-300' : '']"
+            class="w-full border-0 bg-transparent py-3 pl-4 pr-14 text-sm font-semibold text-[var(--ds-text)] placeholder:text-[var(--ds-text-soft)] focus:ring-0"
             :displayValue="option => option?.label"
             @change="query = $event.target.value"
             :placeholder="props.placeholder"
@@ -167,12 +168,12 @@ function clear() {
           >
             <XMarkIcon
               v-if="props.modelValue"
-              class="h-4.5 w-4.5 text-[#8d9b94] transition-colors hover:text-[rgb(var(--primary-800-rgb))] dark:text-[#657970] dark:hover:text-[rgb(var(--primary-200-rgb))]"
+              class="h-4.5 w-4.5 text-[var(--ds-text-soft)] transition-colors hover:text-[rgb(var(--primary-700-rgb))]"
               aria-hidden="true"
               @click.stop="clear"
             />
             <ChevronUpDownIcon
-              class="h-5 w-5 text-[#8d9b94] dark:text-[#657970]"
+              class="h-5 w-5 text-[var(--ds-text-soft)]"
               aria-hidden="true"
             />
           </ComboboxButton>
@@ -192,7 +193,7 @@ function clear() {
           @after-leave="query = ''"
         >
           <ComboboxOptions
-            class="absolute z-[9999] mt-2 max-h-72 w-full overflow-auto rounded-2xl border border-[#ded3bf] bg-[#fffdf7]/98 p-2 text-sm shadow-[0_24px_80px_rgb(20_61_55/0.18)] ring-1 ring-white/70 backdrop-blur-sm focus:outline-none dark:border-[#25443c] dark:bg-[#07110f]/98 dark:ring-white/10"
+            class="ds-floating-panel absolute z-[9999] mt-2 max-h-72 w-full overflow-auto p-2 text-sm focus:outline-none"
           >
             <div
               v-if="
@@ -202,14 +203,14 @@ function clear() {
                 !queryOption &&
                 !props.createOption
               "
-              class="relative cursor-default select-none rounded-xl px-4 py-3 text-sm font-medium text-[#5f6f68] dark:text-[#a9bbb4]"
+              class="relative cursor-default select-none rounded-xl px-4 py-3 text-sm font-semibold text-[var(--ds-text-muted)]"
             >
               {{ $t('gestlab.general.messages.no_items') }}
             </div>
 
             <div
               v-if="isLoading || props.loading"
-              class="relative flex cursor-default select-none items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-[#5f6f68] dark:text-[#a9bbb4]"
+              class="relative flex cursor-default select-none items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-[var(--ds-text-muted)]"
             >
               <svg class="h-4 w-4 animate-spin text-primary-700 dark:text-primary-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -228,11 +229,8 @@ function clear() {
                 v-slot="{active}"
               >
                 <li
-                  class="relative cursor-default select-none rounded-xl py-2.5 pl-10 pr-4 text-sm"
-                  :class="{
-                    'bg-[rgb(var(--primary-800-rgb))] text-white dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f]': active,
-                    'text-[#15231f] dark:text-[#f7f1e7]': !active,
-                  }"
+                  class="ds-option"
+                  :class="{ 'ds-option-active': active }"
                 >
                   {{ $t('gestlab.general.buttons.create') }} "{{ queryOption.label }}"
                 </li>
@@ -245,11 +243,8 @@ function clear() {
                 v-slot="{selected, active}"
               >
                 <li
-                  class="relative cursor-default select-none rounded-xl py-2.5 pl-10 pr-4 text-sm"
-                  :class="{
-                    'bg-[rgb(var(--primary-800-rgb))] text-white dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f]': active,
-                    'text-[#15231f] dark:text-[#f7f1e7]': !active,
-                  }"
+                  class="ds-option"
+                  :class="{ 'ds-option-active': active }"
                 >
                   <span
                     class="block truncate"
@@ -259,8 +254,7 @@ function clear() {
                   </span>
                   <span
                     v-if="selected"
-                    class="absolute inset-y-0 left-0 flex items-center pl-3"
-                    :class="{'text-white dark:text-[#07110f]': active, 'text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-200-rgb))]': !active}"
+                    class="ds-option-check"
                   >
                     <CheckIcon
                       class="h-5 w-5"

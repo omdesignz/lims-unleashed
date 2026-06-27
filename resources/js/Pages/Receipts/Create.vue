@@ -314,8 +314,8 @@ const handleConfirmSubmit = () => {
         <!-- CUSTOMER INFORMATION SECTION -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <!-- GRADIENT HEADER -->
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+          <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-6 py-4">
+            <h2 class="ds-heading flex items-center gap-2 text-lg">
               <UserIcon class="h-5 w-5" />
               {{ $t('gestlab.general.labels.receipts.customer_info') }}
             </h2>
@@ -327,7 +327,7 @@ const handleConfirmSubmit = () => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <!-- CUSTOMER FIELD -->
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label class="ds-field-label flex items-center gap-1">
                   <UserIcon class="h-4 w-4" />
                   {{ $t('gestlab.general.labels.receipts.customer_id') }}
                   <span class="text-red-500">*</span>
@@ -346,7 +346,7 @@ const handleConfirmSubmit = () => {
 
               <!-- WAREHOUSE FIELD -->
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label class="ds-field-label flex items-center gap-1">
                   <BuildingOfficeIcon class="h-4 w-4" />
                   {{ $t('gestlab.general.labels.receipts.warehouse_id') }}
                   <span class="text-red-500">*</span>
@@ -381,7 +381,7 @@ const handleConfirmSubmit = () => {
               <button 
                 @click="addItem"
                 type="button"
-                class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
+                class="ds-button ds-button-primary px-4 py-2.5 text-sm"
               >
                 <PlusCircleIcon class="h-5 w-5" />
                 {{ $t('gestlab.general.buttons.add_item') }}
@@ -401,7 +401,7 @@ const handleConfirmSubmit = () => {
             <button 
               @click="addItem"
               type="button"
-              class="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
+              class="ds-button ds-button-primary mt-6 px-4 py-2.5 text-sm"
             >
               <PlusCircleIcon class="h-5 w-5" />
               {{ $t('gestlab.general.buttons.add_first_item') }}
@@ -415,13 +415,9 @@ const handleConfirmSubmit = () => {
               v-for="(item, index) in itemsWithPendingValues"
               :key="index"
               class="group relative bg-white rounded-lg border border-gray-200 hover:border-blue-900 transition-all duration-200 overflow-hidden shadow-sm"
-              v-motion
-              :initial="{ opacity: 0, y: 20 }"
-              :enter="{ opacity: 1, y: 0 }"
-              :delay="index * 50"
             >
               <!-- ITEM HEADER -->
-              <div class="bg-gradient-to-r from-blue-50 to-white px-4 py-3 border-b border-gray-200">
+              <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-4 py-3">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-3">
                     <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-900 text-white font-semibold">
@@ -439,7 +435,7 @@ const handleConfirmSubmit = () => {
                   <button 
                     @click="removeItem(index)"
                     type="button"
-                    class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition-all duration-200 p-1 rounded-full hover:bg-red-50"
+                    class="ds-table-action-danger"
                     :title="$t('gestlab.general.buttons.remove')"
                   >
                     <TrashIcon class="h-5 w-5" />
@@ -452,7 +448,7 @@ const handleConfirmSubmit = () => {
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <!-- Invoice Selection -->
                   <div class="lg:col-span-2 space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
+                    <label class="ds-field-label">
                       {{ $t('gestlab.general.labels.receipts.invoice_id') }}
                       <span class="text-red-500">*</span>
                     </label>
@@ -472,7 +468,7 @@ const handleConfirmSubmit = () => {
 
                   <!-- Payment Method -->
                   <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
+                    <label class="ds-field-label">
                       {{ $t('gestlab.general.labels.receipts.payment_id') }}
                       <span class="text-red-500">*</span>
                     </label>
@@ -486,7 +482,7 @@ const handleConfirmSubmit = () => {
 
                   <!-- Paid Amount -->
                   <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
+                    <label class="ds-field-label">
                       {{ $t('gestlab.general.labels.receipts.paid_amount') }}
                       <span class="text-red-500">*</span>
                     </label>
@@ -500,7 +496,7 @@ const handleConfirmSubmit = () => {
                         step="0.01"
                         min="0"
                         :max="item.invoice_pending_amount"
-                        class="pl-9 w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900 sm:text-sm"
+                        class="ds-field pl-9"
                         placeholder="0.00"
                       />
                     </div>
@@ -508,13 +504,13 @@ const handleConfirmSubmit = () => {
 
                   <!-- Observations -->
                   <div class="md:col-span-2 lg:col-span-4 space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
+                    <label class="ds-field-label">
                       {{ $t('gestlab.general.labels.receipts.obs') }}
                     </label>
                     <textarea
                       v-model="item.item.obs"
                       rows="2"
-                      class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900 sm:text-sm"
+                      class="ds-field min-h-20 py-2"
                       :placeholder="$t('gestlab.general.labels.receipts.placeholders.observations')"
                     />
                   </div>
@@ -559,21 +555,21 @@ const handleConfirmSubmit = () => {
 
         <!-- OBSERVATIONS SECTION -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
+          <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-6 py-4">
+            <h2 class="ds-heading flex items-center gap-2 text-lg">
               <DocumentTextIcon class="h-5 w-5" />
               {{ $t('gestlab.general.labels.receipts.additional_info') }}
             </h2>
           </div>
           <div class="p-6">
             <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
+              <label class="ds-field-label">
                 {{ $t('gestlab.general.labels.receipts.obs') }}
               </label>
               <textarea
                 v-model="form.obs"
                 rows="4"
-                class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900 sm:text-sm"
+                class="ds-field min-h-28 py-3"
                 :placeholder="$t('gestlab.general.labels.receipts.placeholders.observations')"
               />
               <p v-if="form.errors.obs" class="text-xs text-red-600">
@@ -598,8 +594,8 @@ const handleConfirmSubmit = () => {
               :class="[
                 'w-full inline-flex justify-center items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
                 form.processing || !isFormValid
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-900 to-blue-800 text-white hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2'
+                  ? 'cursor-not-allowed bg-[var(--ds-border)] text-[var(--ds-muted)]'
+                  : 'ds-button-primary'
               ]"
             >
               <ClipboardDocumentCheckIcon class="h-5 w-5" />
@@ -711,7 +707,7 @@ const handleConfirmSubmit = () => {
         <button 
           @click="addItem"
           type="button"
-          class="inline-flex items-center gap-2 rounded-lg border border-blue-900 px-4 py-2.5 text-sm font-semibold text-blue-900 shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
+          class="ds-button ds-button-secondary px-4 py-2.5 text-sm"
         >
           <PlusCircleIcon class="h-4 w-4" />
           {{ $t('gestlab.general.buttons.add_another_item') }}
@@ -723,8 +719,8 @@ const handleConfirmSubmit = () => {
           :class="[
             'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200',
             !isFormValid
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-900 hover:bg-blue-800'
+              ? 'cursor-not-allowed bg-[var(--ds-border)] text-[var(--ds-muted)]'
+              : 'ds-button-primary'
           ]"
         >
           <ClipboardDocumentCheckIcon class="h-4 w-4" />

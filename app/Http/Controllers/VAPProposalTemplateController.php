@@ -12,6 +12,7 @@ use App\Support\ReportStudioAssetLibrary;
 use App\Support\ReportStudioPdfBuilder;
 use App\Support\ReportStudioPdfRenderer;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -19,6 +20,16 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class VAPProposalTemplateController extends Controller
 {
+    /**
+     * @var array<int, string>
+     */
+    private const CANVAS_SURFACES = [
+        'content',
+        'first_page_header_html',
+        'default_header_html',
+        'footer_html',
+    ];
+
     // public function index()
     // {
     //     $templates = VAPProposalTemplate::with('user')
@@ -120,7 +131,7 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks' => 'nullable|array',
             'layout_schema.canvas_blocks.*.id' => 'nullable|string|max:100',
             'layout_schema.canvas_blocks.*.title' => 'nullable|string|max:255',
-            'layout_schema.canvas_blocks.*.surface' => 'nullable|string|max:100',
+            'layout_schema.canvas_blocks.*.surface' => $this->canvasSurfaceRule(),
             'layout_schema.canvas_blocks.*.block_kind' => 'nullable|string|in:rich_text,signature,image,stamp,qr_code,chart_snapshot',
             'layout_schema.canvas_blocks.*.content_html' => 'nullable|string',
             'layout_schema.canvas_blocks.*.image_url' => 'nullable|string|max:2048',
@@ -153,15 +164,15 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks.*.min_height' => 'nullable|numeric|min:0|max:4000',
             'layout_schema.canvas_blocks.*.z_index' => 'nullable|numeric|min:0|max:999',
             'layout_schema.canvas_blocks.*.padding' => 'nullable|numeric|min:0|max:400',
-            'layout_schema.canvas_blocks.*.background_color' => 'nullable|string|max:100',
+            'layout_schema.canvas_blocks.*.background_color' => ['nullable', 'string', 'max:100', $cssColorRule],
             'layout_schema.canvas_blocks.*.background_image' => 'nullable|string|max:2048',
             'layout_schema.canvas_blocks.*.background_image_fit' => 'nullable|string|in:cover,contain,auto',
             'layout_schema.canvas_blocks.*.background_image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
-            'layout_schema.canvas_blocks.*.overlay_color' => 'nullable|string|max:100',
+            'layout_schema.canvas_blocks.*.overlay_color' => ['nullable', 'string', 'max:100', $cssColorRule],
             'layout_schema.canvas_blocks.*.overlay_opacity' => 'nullable|numeric|min:0|max:1',
-            'layout_schema.canvas_blocks.*.text_color' => 'nullable|string|max:100',
+            'layout_schema.canvas_blocks.*.text_color' => ['nullable', 'string', 'max:100', $cssColorRule],
             'layout_schema.canvas_blocks.*.border_width' => 'nullable|numeric|min:0|max:40',
-            'layout_schema.canvas_blocks.*.border_color' => 'nullable|string|max:100',
+            'layout_schema.canvas_blocks.*.border_color' => ['nullable', 'string', 'max:100', $cssColorRule],
             'layout_schema.canvas_blocks.*.border_radius' => 'nullable|numeric|min:0|max:2000',
             'layout_schema.canvas_blocks.*.opacity' => 'nullable|numeric|min:0.05|max:1',
             'layout_schema.canvas_blocks.*.text_align' => 'nullable|string|in:left,center,right,justify',
@@ -183,9 +194,9 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks.*.page_scope' => 'nullable|string|in:first,all,following,specific',
             'layout_schema.canvas_blocks.*.page_number' => 'nullable|integer|min:1|max:999',
             'layout_schema.background_image_path' => 'nullable|string|max:2048',
-            'layout_schema.background_size' => 'nullable|string|max:50',
+            'layout_schema.background_size' => 'nullable|string|in:cover,contain,auto',
             'layout_schema.background_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
-            'layout_schema.background_repeat' => 'nullable|string|max:50',
+            'layout_schema.background_repeat' => 'nullable|string|in:no-repeat,repeat,repeat-x,repeat-y',
             'layout_schema.table_header_background' => ['nullable', 'string', 'max:50', $cssColorRule],
             'layout_schema.table_header_text_color' => ['nullable', 'string', 'max:50', $cssColorRule],
             'layout_schema.table_border_color' => ['nullable', 'string', 'max:50', $cssColorRule],
@@ -205,6 +216,8 @@ class VAPProposalTemplateController extends Controller
             'export_settings.margin_left' => 'nullable|numeric|min:0|max:200',
             'export_settings.first_page_margin_top' => 'nullable|numeric|min:0|max:250',
         ]);
+
+        $this->ensureRenderableCanvasBlockPlacement($validated);
 
         $template = VAPProposalTemplate::create([
             'name' => $validated['name'],
@@ -343,7 +356,7 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks' => 'nullable|array',
             'layout_schema.canvas_blocks.*.id' => 'nullable|string|max:100',
             'layout_schema.canvas_blocks.*.title' => 'nullable|string|max:255',
-            'layout_schema.canvas_blocks.*.surface' => 'nullable|string|max:100',
+            'layout_schema.canvas_blocks.*.surface' => $this->canvasSurfaceRule(),
             'layout_schema.canvas_blocks.*.block_kind' => 'nullable|string|in:rich_text,signature,image,stamp,qr_code,chart_snapshot',
             'layout_schema.canvas_blocks.*.content_html' => 'nullable|string',
             'layout_schema.canvas_blocks.*.image_url' => 'nullable|string|max:2048',
@@ -376,15 +389,15 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks.*.min_height' => 'nullable|numeric|min:0|max:4000',
             'layout_schema.canvas_blocks.*.z_index' => 'nullable|numeric|min:0|max:999',
             'layout_schema.canvas_blocks.*.padding' => 'nullable|numeric|min:0|max:400',
-            'layout_schema.canvas_blocks.*.background_color' => 'nullable|string|max:100',
+            'layout_schema.canvas_blocks.*.background_color' => ['nullable', 'string', 'max:100', $cssColorRule],
             'layout_schema.canvas_blocks.*.background_image' => 'nullable|string|max:2048',
             'layout_schema.canvas_blocks.*.background_image_fit' => 'nullable|string|in:cover,contain,auto',
             'layout_schema.canvas_blocks.*.background_image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
-            'layout_schema.canvas_blocks.*.overlay_color' => 'nullable|string|max:100',
+            'layout_schema.canvas_blocks.*.overlay_color' => ['nullable', 'string', 'max:100', $cssColorRule],
             'layout_schema.canvas_blocks.*.overlay_opacity' => 'nullable|numeric|min:0|max:1',
-            'layout_schema.canvas_blocks.*.text_color' => 'nullable|string|max:100',
+            'layout_schema.canvas_blocks.*.text_color' => ['nullable', 'string', 'max:100', $cssColorRule],
             'layout_schema.canvas_blocks.*.border_width' => 'nullable|numeric|min:0|max:40',
-            'layout_schema.canvas_blocks.*.border_color' => 'nullable|string|max:100',
+            'layout_schema.canvas_blocks.*.border_color' => ['nullable', 'string', 'max:100', $cssColorRule],
             'layout_schema.canvas_blocks.*.border_radius' => 'nullable|numeric|min:0|max:2000',
             'layout_schema.canvas_blocks.*.opacity' => 'nullable|numeric|min:0.05|max:1',
             'layout_schema.canvas_blocks.*.text_align' => 'nullable|string|in:left,center,right,justify',
@@ -406,9 +419,9 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks.*.page_scope' => 'nullable|string|in:first,all,following,specific',
             'layout_schema.canvas_blocks.*.page_number' => 'nullable|integer|min:1|max:999',
             'layout_schema.background_image_path' => 'nullable|string|max:2048',
-            'layout_schema.background_size' => 'nullable|string|max:50',
+            'layout_schema.background_size' => 'nullable|string|in:cover,contain,auto',
             'layout_schema.background_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
-            'layout_schema.background_repeat' => 'nullable|string|max:50',
+            'layout_schema.background_repeat' => 'nullable|string|in:no-repeat,repeat,repeat-x,repeat-y',
             'layout_schema.table_header_background' => ['nullable', 'string', 'max:50', $cssColorRule],
             'layout_schema.table_header_text_color' => ['nullable', 'string', 'max:50', $cssColorRule],
             'layout_schema.table_border_color' => ['nullable', 'string', 'max:50', $cssColorRule],
@@ -428,6 +441,8 @@ class VAPProposalTemplateController extends Controller
             'export_settings.margin_left' => 'nullable|numeric|min:0|max:200',
             'export_settings.first_page_margin_top' => 'nullable|numeric|min:0|max:250',
         ]);
+
+        $this->ensureRenderableCanvasBlockPlacement($validated);
 
         $proposalTemplate->update($validated);
 
@@ -551,7 +566,7 @@ class VAPProposalTemplateController extends Controller
         $cssColorRule = 'regex:/\A(?:#[0-9a-fA-F]{3,8}|(?:rgb|rgba|hsl|hsla)\([0-9\s,.%+\-]+\)|[a-zA-Z][a-zA-Z0-9-]{2,32})\z/';
         $cssPositionRule = 'regex:/\A(?:left|right|top|bottom|center|(?:100|[1-9]?\d)(?:\.\d{1,2})?%)(?:\s+(?:left|right|top|bottom|center|(?:100|[1-9]?\d)(?:\.\d{1,2})?%))?\z/i';
 
-        return $request->validate([
+        $validated = $request->validate([
             'name' => 'nullable|string|max:255',
             'category' => 'nullable|string|max:100',
             'description' => 'nullable|string|max:5000',
@@ -570,7 +585,7 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks' => 'nullable|array',
             'layout_schema.canvas_blocks.*.id' => 'nullable|string|max:100',
             'layout_schema.canvas_blocks.*.title' => 'nullable|string|max:255',
-            'layout_schema.canvas_blocks.*.surface' => 'nullable|string|max:100',
+            'layout_schema.canvas_blocks.*.surface' => $this->canvasSurfaceRule(),
             'layout_schema.canvas_blocks.*.block_kind' => 'nullable|string|in:rich_text,signature,image,stamp,qr_code,chart_snapshot',
             'layout_schema.canvas_blocks.*.content_html' => 'nullable|string',
             'layout_schema.canvas_blocks.*.image_url' => 'nullable|string|max:2048',
@@ -633,9 +648,9 @@ class VAPProposalTemplateController extends Controller
             'layout_schema.canvas_blocks.*.page_scope' => 'nullable|string|in:first,all,following,specific',
             'layout_schema.canvas_blocks.*.page_number' => 'nullable|integer|min:1|max:999',
             'layout_schema.background_image_path' => 'nullable|string|max:2048',
-            'layout_schema.background_size' => 'nullable|string|max:50',
+            'layout_schema.background_size' => 'nullable|string|in:cover,contain,auto',
             'layout_schema.background_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
-            'layout_schema.background_repeat' => 'nullable|string|max:50',
+            'layout_schema.background_repeat' => 'nullable|string|in:no-repeat,repeat,repeat-x,repeat-y',
             'layout_schema.table_header_background' => ['nullable', 'string', 'max:50', $cssColorRule],
             'layout_schema.table_header_text_color' => ['nullable', 'string', 'max:50', $cssColorRule],
             'layout_schema.table_border_color' => ['nullable', 'string', 'max:50', $cssColorRule],
@@ -655,6 +670,10 @@ class VAPProposalTemplateController extends Controller
             'export_settings.margin_left' => 'nullable|numeric|min:0|max:200',
             'export_settings.first_page_margin_top' => 'nullable|numeric|min:0|max:250',
         ]);
+
+        $this->ensureRenderableCanvasBlockPlacement($validated);
+
+        return $validated;
     }
 
     public function toggleStatus(VAPProposalTemplate $proposalTemplate)
@@ -686,6 +705,45 @@ class VAPProposalTemplateController extends Controller
                 'success' => false,
                 'message' => 'Não foi possível alterar o estado do modelo: '.$e->getMessage(),
             ], 500);
+        }
+    }
+
+    private function canvasSurfaceRule(): string
+    {
+        return 'nullable|string|max:100|in:'.implode(',', self::CANVAS_SURFACES);
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     *
+     * @throws ValidationException
+     */
+    private function ensureRenderableCanvasBlockPlacement(array $validated): void
+    {
+        $blocks = data_get($validated, 'layout_schema.canvas_blocks', []);
+
+        if (! is_array($blocks)) {
+            return;
+        }
+
+        $errors = [];
+
+        foreach ($blocks as $index => $block) {
+            if (! is_array($block)) {
+                continue;
+            }
+
+            if (
+                ($block['surface'] ?? 'content') === 'content'
+                && ($block['page_scope'] ?? null) === 'specific'
+                && blank($block['page_number'] ?? null)
+            ) {
+                $errors["layout_schema.canvas_blocks.{$index}.page_number"] = 'Indique a página específica onde este objecto deve aparecer no PDF.';
+            }
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
         }
     }
 

@@ -18,12 +18,58 @@ use App\Support\DuplicateSubmissionGuard;
 use App\Support\EquipmentMetrologyGate;
 use App\Support\PersonnelQualificationGate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
 class ResultController extends Controller
 {
+    private const RESULT_DISPLAY_FORMAT_STANDARD = 'standard';
+
+    private const RESULT_DISPLAY_FORMAT_SCIENTIFIC = 'scientific';
+
+    private const QUALITATIVE_RESULT_OPTIONS = ['Presença', 'Ausência'];
+
+    /**
+     * @return array<int, string>
+     */
+    private function qualitativeResultOptions(bool $isQualitative): array
+    {
+        return $isQualitative ? self::QUALITATIVE_RESULT_OPTIONS : [];
+    }
+
+    /**
+     * @return array{display_format: string}
+     */
+    private function defaultResultExtraData(): array
+    {
+        return [
+            'display_format' => self::RESULT_DISPLAY_FORMAT_STANDARD,
+        ];
+    }
+
+    private function resultDisplayFormat(Result $result): string
+    {
+        $displayFormat = data_get($result->extra_data, 'display_format');
+
+        return $displayFormat === self::RESULT_DISPLAY_FORMAT_SCIENTIFIC
+            ? self::RESULT_DISPLAY_FORMAT_SCIENTIFIC
+            : self::RESULT_DISPLAY_FORMAT_STANDARD;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function resultExtraData(Result $result): array
+    {
+        return collect($result->extra_data)
+            ->merge([
+                'display_format' => $this->resultDisplayFormat($result),
+            ])
+            ->all();
+    }
+
     public function getDefaultResultsData()
     {
         abort_if(! auth()->user()->can('view_results'), 403, '');
@@ -65,6 +111,8 @@ class ResultController extends Controller
             }
 
             return collect($sample->analysis->profile->parameters)->map(function ($item) use ($sample) {
+                $isQualitative = (bool) $item->result_is_qualitative;
+
                 return [
                     'sample_id' => request()->sample_id,
                     'code_id' => [
@@ -80,7 +128,8 @@ class ResultController extends Controller
                         'value' => $item->id,
                         'label' => $item->name,
                         'name' => $item->name,
-                        'result_is_qualitative' => $item->pivot->result_is_qualitative,
+                        'result_is_qualitative' => $isQualitative,
+                        'result_options' => $this->qualitativeResultOptions($isQualitative),
                         'decimal_places' => $item->decimal_places,
                         'requires_calculation' => $item->requires_calculation,
                         'formula_expression' => $item->formula_expression,
@@ -91,6 +140,9 @@ class ResultController extends Controller
                         'code' => $item->code,
                     ],
                     'formula' => $item->formula,
+                    'result_is_qualitative' => $isQualitative,
+                    'result_options' => $this->qualitativeResultOptions($isQualitative),
+                    'display_format' => self::RESULT_DISPLAY_FORMAT_STANDARD,
 
                     // Added
                     'decimal_places' => $item->decimal_places,
@@ -154,7 +206,7 @@ class ResultController extends Controller
                     'inserted_date' => null,
                     'verified_date' => null,
                     'approved_date' => null,
-                    'extra_data' => null,
+                    'extra_data' => $this->defaultResultExtraData(),
                     'min_ref_value' => $item->pivot->min_ref_value,
                     'max_ref_value' => $item->pivot->max_ref_value,
                     'ref_val_origin' => $item->pivot->ref_val_origin,
@@ -181,6 +233,8 @@ class ResultController extends Controller
             )->where('sample_id', '=', $sampleId)->get();
 
             return collect($results)->map(function ($item) {
+                $isQualitative = (bool) $item->parameter?->result_is_qualitative;
+
                 return [
                     'result_id' => $item->id,
                     'sample_id' => $item->sample_id,
@@ -197,7 +251,8 @@ class ResultController extends Controller
                         'value' => $item->parameter_id,
                         'label' => $item->parameter_label,
                         'name' => $item->parameter?->name,
-                        'result_is_qualitative' => $item->result_is_qualitative,
+                        'result_is_qualitative' => $isQualitative,
+                        'result_options' => $this->qualitativeResultOptions($isQualitative),
                         'decimal_places' => $item->parameter?->decimal_places,
                         'requires_calculation' => $item->parameter?->requires_calculation ?? false,
                         'formula_expression' => $item->parameter?->formula_expression,
@@ -208,6 +263,9 @@ class ResultController extends Controller
                         'code' => $item->parameter?->code,
                     ],
                     'formula' => $item->parameter?->formula,
+                    'result_is_qualitative' => $isQualitative,
+                    'result_options' => $this->qualitativeResultOptions($isQualitative),
+                    'display_format' => $this->resultDisplayFormat($item),
 
                     // Added
                     'decimal_places' => $item->parameter?->decimal_places,
@@ -269,7 +327,7 @@ class ResultController extends Controller
                     'inserted_date' => $item->inserted_date,
                     'verified_date' => null,
                     'approved_date' => null,
-                    'extra_data' => null,
+                    'extra_data' => $this->resultExtraData($item),
                     'min_ref_value' => $item->min_ref_value,
                     'max_ref_value' => $item->max_ref_value,
                     'ref_val_origin' => $item->ref_val_origin,
@@ -297,6 +355,8 @@ class ResultController extends Controller
             )->where('sample_id', '=', $sampleId)->get();
 
             return collect($results)->map(function ($item) {
+                $isQualitative = (bool) $item->parameter?->result_is_qualitative;
+
                 return [
                     'result_id' => $item->id,
                     'sample_id' => $item->sample_id,
@@ -314,7 +374,8 @@ class ResultController extends Controller
                         'value' => $item->parameter_id,
                         'label' => $item->parameter_label,
                         'name' => $item->parameter?->name,
-                        'result_is_qualitative' => $item->result_is_qualitative,
+                        'result_is_qualitative' => $isQualitative,
+                        'result_options' => $this->qualitativeResultOptions($isQualitative),
                         'decimal_places' => $item->decimal_places,
                         'requires_calculation' => $item->requires_calculation ?? false,
                         'formula_expression' => $item->formula_expression,
@@ -325,6 +386,9 @@ class ResultController extends Controller
                         'code' => $item->parameter?->code,
                     ],
                     'formula' => $item->formula,
+                    'result_is_qualitative' => $isQualitative,
+                    'result_options' => $this->qualitativeResultOptions($isQualitative),
+                    'display_format' => $this->resultDisplayFormat($item),
 
                     // Added
                     'decimal_places' => $item->decimal_places,
@@ -386,7 +450,7 @@ class ResultController extends Controller
                     'inserted_date' => $item->inserted_date,
                     'verified_date' => $item->verified_date,
                     'approved_date' => null,
-                    'extra_data' => null,
+                    'extra_data' => $this->resultExtraData($item),
                     'min_ref_value' => $item->min_ref_value,
                     'max_ref_value' => $item->max_ref_value,
                     'ref_val_origin' => $item->ref_val_origin,
@@ -445,6 +509,8 @@ class ResultController extends Controller
             }
 
             return collect($sample->counteranalysis->profile->parameters)->map(function ($item) use ($sample) {
+                $isQualitative = (bool) $item->result_is_qualitative;
+
                 return [
                     'sample_id' => request()->sample_id,
                     'code_id' => [
@@ -460,7 +526,8 @@ class ResultController extends Controller
                         'value' => $item->id,
                         'label' => $item->name,
                         'name' => $item->name,
-                        'result_is_qualitative' => $item->pivot->result_is_qualitative,
+                        'result_is_qualitative' => $isQualitative,
+                        'result_options' => $this->qualitativeResultOptions($isQualitative),
                         'decimal_places' => $item->decimal_places,
                         'requires_calculation' => $item->requires_calculation,
                         'formula_expression' => $item->formula_expression,
@@ -471,6 +538,9 @@ class ResultController extends Controller
                         'code' => $item->code,
                     ],
                     'formula' => $item->formula,
+                    'result_is_qualitative' => $isQualitative,
+                    'result_options' => $this->qualitativeResultOptions($isQualitative),
+                    'display_format' => self::RESULT_DISPLAY_FORMAT_STANDARD,
                     'decimal_places' => $item->decimal_places,
                     'requires_calculation' => $item->requires_calculation,
                     'formula_expression' => $item->formula_expression,
@@ -525,7 +595,7 @@ class ResultController extends Controller
                     'inserted_date' => null,
                     'verified_date' => null,
                     'approved_date' => null,
-                    'extra_data' => null,
+                    'extra_data' => $this->defaultResultExtraData(),
                     'min_ref_value' => $item->pivot->min_ref_value,
                     'max_ref_value' => $item->pivot->max_ref_value,
                     'ref_val_origin' => $item->pivot->ref_val_origin,
@@ -553,6 +623,8 @@ class ResultController extends Controller
             )->where('sample_id', '=', $sampleId)->get();
 
             return collect($results)->map(function ($item) {
+                $isQualitative = (bool) $item->parameter?->result_is_qualitative;
+
                 return [
                     'result_id' => $item->id,
                     'sample_id' => $item->sample_id,
@@ -569,7 +641,8 @@ class ResultController extends Controller
                         'value' => $item->parameter_id,
                         'label' => $item->parameter_label,
                         'name' => $item->parameter?->name,
-                        'result_is_qualitative' => $item->result_is_qualitative,
+                        'result_is_qualitative' => $isQualitative,
+                        'result_options' => $this->qualitativeResultOptions($isQualitative),
                         'decimal_places' => $item->parameter?->decimal_places,
                         'requires_calculation' => $item->parameter?->requires_calculation ?? false,
                         'formula_expression' => $item->parameter?->formula_expression,
@@ -580,6 +653,9 @@ class ResultController extends Controller
                         'code' => $item->parameter?->code,
                     ],
                     'formula' => $item->parameter?->formula,
+                    'result_is_qualitative' => $isQualitative,
+                    'result_options' => $this->qualitativeResultOptions($isQualitative),
+                    'display_format' => $this->resultDisplayFormat($item),
                     'decimal_places' => $item->parameter?->decimal_places,
                     'requires_calculation' => $item->parameter?->requires_calculation ?? false,
                     'formula_expression' => $item->parameter?->formula_expression,
@@ -633,7 +709,7 @@ class ResultController extends Controller
                     'inserted_date' => $item->inserted_date,
                     'verified_date' => null,
                     'approved_date' => null,
-                    'extra_data' => null,
+                    'extra_data' => $this->resultExtraData($item),
                     'min_ref_value' => $item->min_ref_value,
                     'max_ref_value' => $item->max_ref_value,
                     'ref_val_origin' => $item->ref_val_origin,
@@ -661,6 +737,8 @@ class ResultController extends Controller
             )->where('sample_id', '=', $sampleId)->get();
 
             return collect($results)->map(function ($item) {
+                $isQualitative = (bool) $item->parameter?->result_is_qualitative;
+
                 return [
                     'result_id' => $item->id,
                     'sample_id' => $item->sample_id,
@@ -678,7 +756,8 @@ class ResultController extends Controller
                         'value' => $item->parameter_id,
                         'label' => $item->parameter_label,
                         'name' => $item->parameter?->name,
-                        'result_is_qualitative' => $item->result_is_qualitative,
+                        'result_is_qualitative' => $isQualitative,
+                        'result_options' => $this->qualitativeResultOptions($isQualitative),
                         'decimal_places' => $item->parameter?->decimal_places,
                         'requires_calculation' => $item->parameter?->requires_calculation ?? false,
                         'formula_expression' => $item->parameter?->formula_expression,
@@ -689,6 +768,9 @@ class ResultController extends Controller
                         'code' => $item->parameter?->code,
                     ],
                     'formula' => $item->parameter?->formula,
+                    'result_is_qualitative' => $isQualitative,
+                    'result_options' => $this->qualitativeResultOptions($isQualitative),
+                    'display_format' => $this->resultDisplayFormat($item),
                     'decimal_places' => $item->parameter?->decimal_places,
                     'requires_calculation' => $item->parameter?->requires_calculation ?? false,
                     'formula_expression' => $item->parameter?->formula_expression,
@@ -742,7 +824,7 @@ class ResultController extends Controller
                     'inserted_date' => $item->inserted_date,
                     'verified_date' => $item->verified_date,
                     'approved_date' => null,
-                    'extra_data' => null,
+                    'extra_data' => $this->resultExtraData($item),
                     'min_ref_value' => $item->min_ref_value,
                     'max_ref_value' => $item->max_ref_value,
                     'ref_val_origin' => $item->ref_val_origin,
@@ -1166,6 +1248,9 @@ class ResultController extends Controller
             $existingExtra = collect($result['extra_data'] ?? []);
 
             $result['extra_data'] = $existingExtra->merge([
+                'display_format' => data_get($result, 'display_format', $existingExtra->get('display_format', self::RESULT_DISPLAY_FORMAT_STANDARD)) === self::RESULT_DISPLAY_FORMAT_SCIENTIFIC
+                    ? self::RESULT_DISPLAY_FORMAT_SCIENTIFIC
+                    : self::RESULT_DISPLAY_FORMAT_STANDARD,
                 'specification_check' => [
                     'action' => $action,
                     'value' => $value,
@@ -1180,6 +1265,14 @@ class ResultController extends Controller
                     'equipment_id' => data_get($result, 'equipment_id'),
                 ],
             ])->all();
+
+            Arr::forget($result, [
+                'display_format',
+                'result_options',
+                'parameter_id.result_options',
+                'parameter_id.result_is_qualitative',
+                'parameter_id.display_format',
+            ]);
 
             return $result;
         })->all();

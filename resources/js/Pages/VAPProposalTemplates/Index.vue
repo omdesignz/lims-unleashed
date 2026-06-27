@@ -1,593 +1,556 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <section class="overflow-hidden rounded-[34px] border border-[#ded2bb] bg-[#fbfaf6] shadow-[0_26px_70px_-44px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950">
-      <div class="bg-[radial-gradient(circle_at_top_left,rgba(199,154,67,0.22),transparent_34%),linear-gradient(135deg,#fffaf0,#f7f1e6_58%,#143d37_58%,#143d37)] px-6 py-7 dark:bg-[radial-gradient(circle_at_top_left,rgba(199,154,67,0.18),transparent_34%),linear-gradient(135deg,#17231f,#101815_58%,#0b1210_58%,#0b1210)] sm:px-8">
-        <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-          <div class="max-w-4xl">
-            <span class="inline-flex items-center gap-2 rounded-full border border-[#c79a43]/40 bg-white/85 px-3 py-1 text-xs font-black uppercase tracking-[0.24em] text-[#143d37] shadow-sm dark:bg-white/10 dark:text-amber-100">
-              <DocumentDuplicateIcon class="h-4 w-4 text-[#c79a43]" />
-              {{ $t('gestlab.general.labels.vap_proposal_templates.surface.library') }}
-            </span>
-            <h1 class="mt-5 text-3xl font-black tracking-[-0.04em] text-[#10221d] dark:text-white sm:text-5xl">
-              {{ $t('gestlab.general.labels.vap_proposal_templates.title') }}
-            </h1>
-            <p class="mt-4 max-w-3xl text-base font-medium leading-7 text-[#59665f] dark:text-slate-300">
-              {{ $t('gestlab.general.labels.vap_proposal_templates.description') }}
-              <span class="font-black text-[#143d37] dark:text-emerald-100">
-                {{ templates.total }} {{ $t('gestlab.general.labels.vap_proposal_templates.total') }}
-              </span>
-            </p>
-          </div>
+  <div
+    :class="commercialDocumentThemeClasses"
+    class="space-y-6"
+  >
+    <ModuleHero
+      :eyebrow="$t('gestlab.general.labels.vap_proposal_templates.surface.library')"
+      :title="$t('gestlab.general.labels.vap_proposal_templates.title')"
+      :description="$t('gestlab.general.labels.vap_proposal_templates.description')"
+    >
+      <template #actions>
+        <span class="ds-chip">
+          {{ totalTemplates }} {{ $t('gestlab.general.labels.vap_proposal_templates.total') }}
+        </span>
+        <Link
+          :href="route('vap-proposals.templates.create')"
+          class="ds-button ds-button-primary"
+        >
+          <PlusCircleIcon class="h-5 w-5" />
+          {{ $t('gestlab.general.labels.vap_proposal_templates.create_new') }}
+        </Link>
+      </template>
 
-          <Link
-            :href="route('vap-proposals.templates.create')"
-            class="inline-flex items-center justify-center gap-2 rounded-[20px] bg-[#143d37] px-5 py-3 text-sm font-black text-white shadow-[0_18px_42px_-24px_rgba(20,61,55,0.75)] transition hover:bg-[#0f302b] focus:outline-none focus:ring-2 focus:ring-[#c79a43] focus:ring-offset-2 dark:ring-offset-slate-950"
-          >
-            <PlusCircleIcon class="h-5 w-5" />
-            {{ $t('gestlab.general.labels.vap_proposal_templates.create_new') }}
-          </Link>
-        </div>
-      </div>
-
-      <div class="grid gap-4 border-t border-[#ded2bb] bg-white/55 px-6 py-5 dark:border-white/10 dark:bg-white/5 sm:grid-cols-2 xl:grid-cols-4 sm:px-8">
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <article
           v-for="stat in templateStatCards"
           :key="stat.key"
-          class="rounded-[24px] border border-[#ded2bb] bg-white/85 p-4 shadow-[0_18px_48px_-36px_rgba(20,61,55,0.48)] dark:border-white/10 dark:bg-white/5"
+          class="ds-card flex items-start justify-between gap-4 bg-[var(--ds-panel-raised)] p-4"
         >
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <p class="text-xs font-black uppercase tracking-[0.18em] text-[#78847c] dark:text-slate-400">{{ $t(stat.labelKey) }}</p>
-              <p class="mt-3 text-2xl font-black tracking-[-0.04em] text-[#10221d] dark:text-white">{{ stat.value }}</p>
-            </div>
-            <span :class="['flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px]', stat.tone]">
-              <component :is="stat.icon" class="h-5 w-5" />
-            </span>
+          <div>
+            <p class="ds-kicker text-[0.64rem]">
+              {{ $t(stat.labelKey) }}
+            </p>
+            <p class="mt-2 text-2xl font-black tabular-nums text-[var(--ds-text)]">
+              {{ stat.value }}
+            </p>
           </div>
+          <span :class="['flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border', stat.tone]">
+            <component
+              :is="stat.icon"
+              class="h-5 w-5"
+            />
+          </span>
         </article>
       </div>
-    </section>
+    </ModuleHero>
 
-    <!-- FILTERS & SEARCH -->
-    <div class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
-      <div class="mb-5 flex items-center justify-between gap-4">
-        <div>
-          <p class="text-xs font-black uppercase tracking-[0.28em] text-[#c79a43]">{{ $t('gestlab.general.labels.vap_proposal_templates.surface.search') }}</p>
-          <h2 class="mt-2 text-2xl font-black tracking-[-0.03em] text-[#10221d] dark:text-white">{{ $t('gestlab.general.labels.vap_proposal_templates.surface.refine_library') }}</h2>
-        </div>
-      </div>
-      <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div class="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center">
-          <div class="relative flex-1 max-w-md">
-            <MagnifyingGlassIcon class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              v-model="search"
-              type="search"
-              :placeholder="$t('gestlab.general.labels.vap_proposal_templates.search_placeholder')"
-              class="w-full rounded-[20px] border border-[#ded2bb] bg-[#fbfaf6] py-3 pl-11 pr-4 text-sm font-semibold text-[#33413a] shadow-sm outline-none transition placeholder:text-[#9aa59d] focus:border-[#c79a43] focus:ring-2 focus:ring-[#c79a43]/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-500"
-              @input="debouncedSearch"
-            />
-          </div>
-          
-          <select 
-            v-model="statusFilter"
-            class="rounded-[20px] border border-[#ded2bb] bg-[#fbfaf6] px-4 py-3 text-sm font-black text-[#143d37] shadow-sm outline-none transition focus:border-[#c79a43] focus:ring-2 focus:ring-[#c79a43]/30 dark:border-white/10 dark:bg-white/5 dark:text-emerald-100"
-          >
-            <option value="all">{{ $t('gestlab.general.labels.vap_proposal_templates.filters.all') }}</option>
-            <option value="active">{{ $t('gestlab.general.labels.vap_proposal_templates.filters.active') }}</option>
-            <option value="inactive">{{ $t('gestlab.general.labels.vap_proposal_templates.filters.inactive') }}</option>
-          </select>
-          
-          <select 
-            v-model="categoryFilter"
-            class="rounded-[20px] border border-[#ded2bb] bg-[#fbfaf6] px-4 py-3 text-sm font-black text-[#143d37] shadow-sm outline-none transition focus:border-[#c79a43] focus:ring-2 focus:ring-[#c79a43]/30 dark:border-white/10 dark:bg-white/5 dark:text-emerald-100"
-          >
-            <option value="all">{{ $t('gestlab.general.labels.vap_proposal_templates.filters.all_categories') }}</option>
-            <option value="general">{{ $t('gestlab.general.labels.vap_proposal_templates.categories.general') }}</option>
-            <option value="compliance">{{ $t('gestlab.general.labels.vap_proposal_templates.categories.compliance') }}</option>
-            <option value="field-services">{{ $t('gestlab.general.labels.vap_proposal_templates.categories.field_services') }}</option>
-            <option value="chemical">{{ $t('gestlab.general.labels.vap_proposal_templates.categories.chemical') }}</option>
-            <option value="microbiology">{{ $t('gestlab.general.labels.vap_proposal_templates.categories.microbiology') }}</option>
-            <option value="physical">{{ $t('gestlab.general.labels.vap_proposal_templates.categories.physical') }}</option>
-            <option value="environmental">{{ $t('gestlab.general.labels.vap_proposal_templates.categories.environmental') }}</option>
-            <option value="food">{{ $t('gestlab.general.labels.vap_proposal_templates.categories.food') }}</option>
-          </select>
-        </div>
-        
-        <div class="flex items-center gap-2">
-          <button
-            @click="resetFilters"
-            class="inline-flex items-center gap-2 rounded-[20px] border border-[#ded2bb] bg-[#fbfaf6] px-4 py-3 text-sm font-black text-[#143d37] shadow-sm transition hover:border-[#c79a43] hover:bg-[#fff7e5] dark:border-white/10 dark:bg-white/5 dark:text-emerald-100 dark:hover:bg-white/10"
-          >
-            <ArrowPathIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.vap_proposal_templates.reset_filters') }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- TEMPLATES GRID -->
-    <div class="overflow-hidden rounded-[28px] border border-[#d8cbb4] bg-white/95 shadow-[0_18px_50px_-30px_rgba(20,61,55,0.28)] dark:border-white/10 dark:bg-slate-950/85">
-      <div class="border-b border-[#ded2bb] px-6 py-4 dark:border-white/10">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-            <ListBulletIcon class="h-5 w-5 text-[#143d37] dark:text-emerald-200" />
-            {{ $t('gestlab.general.labels.vap_proposal_templates.list.title') }}
-            <span class="ml-2 text-sm font-normal text-slate-500 dark:text-slate-400">
-              ({{ templates.total }} {{ $t('gestlab.general.buttons.items') }})
-            </span>
+    <section class="ds-command-surface p-5 sm:p-6">
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div class="max-w-2xl">
+          <p class="ds-kicker">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.surface.search') }}
+          </p>
+          <h2 class="ds-heading mt-2 text-2xl">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.surface.refine_library') }}
           </h2>
-          <div class="flex items-center gap-2">
-            <span class="text-sm text-slate-500 dark:text-slate-400">
-              {{ $t('gestlab.general.labels.vap_proposal_templates.sort_by') }}
-            </span>
-            <select 
-              v-model="sortBy"
-              class="rounded-2xl border border-[#d8cbb4] bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-[#143d37] focus:outline-none focus:ring-2 focus:ring-[#143d37]/20 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100"
-            >
-              <option value="name">{{ $t('gestlab.general.labels.vap_proposal_templates.sort.name') }}</option>
-              <option value="created_at">{{ $t('gestlab.general.labels.vap_proposal_templates.sort.newest') }}</option>
-              <option value="proposals_count">{{ $t('gestlab.general.labels.vap_proposal_templates.sort.most_used') }}</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- EMPTY STATE -->
-      <div v-if="templates.data.length === 0" class="p-12 text-center">
-        <DocumentDuplicateIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
-        <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
-          {{ $t('gestlab.general.labels.vap_proposal_templates.empty_state.title') }}
-        </h3>
-        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          {{ $t('gestlab.general.labels.vap_proposal_templates.empty_state.description') }}
-        </p>
-        <Link 
-          :href="route('vap-proposals.templates.create')"
-          class="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#143d37] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#0f302b] focus:outline-none focus:ring-2 focus:ring-[#c79a43] focus:ring-offset-2"
-        >
-          <PlusCircleIcon class="h-5 w-5" />
-          {{ $t('gestlab.general.labels.vap_proposal_templates.create_first') }}
-        </Link>
-      </div>
-
-      <!-- TEMPLATES GRID -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-        <!-- TEMPLATE CARD -->
-        <div 
-          v-for="template in templates.data"
-          :key="template.id"
-          class="group relative overflow-hidden rounded-[24px] border border-[#d8cbb4] bg-white/95 transition-all duration-200 hover:border-[#143d37] hover:shadow-[0_20px_55px_-32px_rgba(20,61,55,0.55)] dark:border-white/10 dark:bg-slate-950/85"
-          v-motion
-          :initial="{ opacity: 0, y: 20 }"
-          :enter="{ opacity: 1, y: 0 }"
-        >
-          <!-- CARD HEADER -->
-          <div class="p-6">
-            <div class="flex items-start justify-between">
-              <div class="flex items-center gap-3">
-                <div :class="[
-                  'flex h-10 w-10 items-center justify-center rounded-lg',
-                  getCategoryColor(template.category).bg
-                ]">
-                  <component 
-                    :is="getCategoryIcon(template.category)" 
-                    class="h-5 w-5"
-                    :class="getCategoryColor(template.category).text"
-                  />
-                </div>
-                <div>
-                  <h3 class="text-sm font-semibold text-slate-900 group-hover:text-[#143d37] dark:text-white dark:group-hover:text-emerald-200">
-                    {{ template.name }}
-                  </h3>
-                  <div class="flex items-center gap-2 mt-1">
-                    <span class="text-xs text-slate-500 dark:text-slate-400">
-                      {{ getCategoryLabel(template.category) }}
-                    </span>
-                    <span class="text-xs text-slate-400">•</span>
-                    <span class="text-xs text-slate-500 dark:text-slate-400">
-                      {{ template.user.name }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- STATUS BADGE -->
-              <span :class="[
-                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                template.is_active
-                  ? 'bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-200'
-                  : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200'
-              ]">
-                {{ template.is_active ? $t('gestlab.general.labels.vap_proposal_templates.active') : $t('gestlab.general.labels.vap_proposal_templates.inactive') }}
-              </span>
-            </div>
-
-            <!-- TEMPLATE PREVIEW -->
-            <div class="mt-4">
-              <div class="text-sm text-slate-600 line-clamp-3 h-12 dark:text-slate-300">
-                {{ stripHtml(template.content) }}
-              </div>
-            </div>
-
-            <!-- STATISTICS -->
-            <div class="mt-6 grid grid-cols-3 gap-4">
-              <div class="text-center">
-                <div class="text-lg font-bold text-[#143d37] dark:text-emerald-200">
-                  {{ template.proposals_count || 0 }}
-                </div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">
-                  {{ $t('gestlab.general.labels.vap_proposal_templates.used') }}
-                </div>
-              </div>
-              
-              <div class="text-center">
-                <div class="text-lg font-bold text-slate-900 dark:text-white">
-                  {{ calculateAcceptanceRate(template) }}%
-                </div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">
-                  {{ $t('gestlab.general.labels.vap_proposal_templates.acceptance_rate') }}
-                </div>
-              </div>
-              
-              <div class="text-center">
-                <div class="text-lg font-bold text-green-900">
-                  {{ formatDate(template.updated_at) }}
-                </div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">
-                  {{ $t('gestlab.general.labels.vap_proposal_templates.last_updated') }}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- CARD FOOTER -->
-          <div class="border-t border-[#ded2bb] bg-[#f7f1e6]/70 px-6 py-4 dark:border-white/10 dark:bg-white/5">
-            <div class="flex items-center justify-between">
-              <div class="text-xs text-slate-500 dark:text-slate-400">
-                {{ $t('gestlab.general.labels.vap_proposal_templates.created_on') }} {{ formatDate(template.created_at) }}
-              </div>
-              
-              <div class="flex items-center gap-2">
-                <Link 
-                  :href="route('vap-proposals.templates.show', template.id)"
-                  class="rounded-lg p-1.5 text-[#143d37] transition-colors hover:bg-white hover:text-[#0f302b] dark:text-emerald-200 dark:hover:bg-white/10"
-                  :title="$t('gestlab.general.labels.vap_proposal_templates.view_details')"
-                >
-                  <EyeIcon class="h-4 w-4" />
-                </Link>
-                
-              <Link 
-                :href="route('vap-proposals.templates.edit', template.id)"
-                class="rounded-lg p-1.5 text-amber-700 transition-colors hover:bg-amber-50 hover:text-amber-900 dark:text-amber-200 dark:hover:bg-amber-400/10 dark:hover:text-amber-100"
-                :title="$t('gestlab.general.labels.vap_proposal_templates.edit_label')"
-              >
-                <PencilSquareIcon class="h-4 w-4" />
-              </Link>
-                
-                <button 
-                  @click="confirmDelete(template)"
-                  class="rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50 hover:text-red-800 disabled:cursor-not-allowed disabled:opacity-45 dark:text-red-300 dark:hover:bg-red-400/10 dark:hover:text-red-200"
-                  :title="$t('gestlab.general.labels.vap_proposal_templates.delete')"
-                  :disabled="template.proposals_count > 0"
-                >
-                  <TrashIcon class="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <!-- QUICK ACTIONS OVERLAY -->
-          <div class="absolute inset-0 flex items-center justify-center bg-[#0b1513]/70 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-            <div class="flex items-center gap-2">
-              <Link 
-                :href="route('vap-proposals.templates.show', template.id)"
-                class="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-[#263c36] shadow-sm hover:bg-[#f7f1e6]"
-              >
-                <EyeIcon class="h-4 w-4" />
-                {{ $t('gestlab.general.labels.vap_proposal_templates.view') }}
-              </Link>
-              
-              <Link 
-                :href="route('vap-proposals.create', { template_id: template.id })"
-                class="inline-flex items-center gap-2 rounded-2xl bg-[#143d37] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#0f302b]"
-              >
-                <DocumentTextIcon class="h-4 w-4" />
-                {{ $t('gestlab.general.labels.vap_proposal_templates.use_template') }}
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- PAGINATION -->
-      <div v-if="templates.data.length > 0" class="border-t border-[#ded2bb] px-6 py-4 dark:border-white/10">
-        <Pagination :links="templates.links" :from="templates.from" :to="templates.to" :total="templates.total" :current_page="templates.current_page" :last_page="templates.last_page" />
-      </div>
-    </div>
-
-    <!-- QUICK ACTIONS PANEL -->
-    <div class="rounded-[28px] border border-[#d8cbb4] bg-white/95 p-6 shadow-[0_18px_50px_-30px_rgba(20,61,55,0.28)] dark:border-white/10 dark:bg-slate-950/85">
-      <h2 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-        {{ $t('gestlab.general.labels.vap_proposal_templates.quick_actions.title') }}
-      </h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <button
-          @click="importTemplate"
-          class="group rounded-2xl border border-slate-200 p-4 text-left transition-all duration-200 hover:border-[#d8cbb4] hover:bg-[#f7f1e6] dark:border-slate-800 dark:hover:bg-emerald-400/10"
-        >
-          <div class="flex items-center gap-3 mb-3">
-            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f7f1e6] dark:bg-emerald-400/10">
-              <ArrowDownTrayIcon class="h-5 w-5 text-[#143d37] dark:text-emerald-200" />
-            </div>
-            <div>
-              <h3 class="font-semibold text-slate-900 group-hover:text-[#143d37] dark:text-white dark:group-hover:text-emerald-200">
-                {{ $t('gestlab.general.labels.vap_proposal_templates.quick_actions.import') }}
-              </h3>
-            </div>
-          </div>
-          <p class="text-sm text-slate-600 dark:text-slate-300">
-            {{ $t('gestlab.general.labels.vap_proposal_templates.quick_actions.import_desc') }}
-          </p>
-        </button>
-        
-        <button
-          @click="exportTemplates"
-          class="group rounded-2xl border border-slate-200 p-4 text-left transition-all duration-200 hover:border-green-700 hover:bg-green-50 dark:border-slate-800 dark:hover:bg-green-400/10"
-        >
-          <div class="flex items-center gap-3 mb-3">
-            <div class="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
-              <ArrowUpTrayIcon class="h-5 w-5 text-green-900" />
-            </div>
-            <div>
-              <h3 class="font-semibold text-slate-900 group-hover:text-green-900 dark:text-white dark:group-hover:text-green-200">
-                {{ $t('gestlab.general.labels.vap_proposal_templates.quick_actions.export') }}
-              </h3>
-            </div>
-          </div>
-          <p class="text-sm text-slate-600 dark:text-slate-300">
-            {{ $t('gestlab.general.labels.vap_proposal_templates.quick_actions.export_desc') }}
-          </p>
-        </button>
-        
-        <button
-          @click="showUsageReport"
-          class="group rounded-2xl border border-slate-200 p-4 text-left transition-all duration-200 hover:border-amber-700 hover:bg-amber-50 dark:border-slate-800 dark:hover:bg-amber-400/10"
-        >
-          <div class="flex items-center gap-3 mb-3">
-            <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-400/10">
-              <ChartBarIcon class="h-5 w-5 text-amber-900 dark:text-amber-200" />
-            </div>
-            <div>
-              <h3 class="font-semibold text-slate-900 group-hover:text-amber-900 dark:text-white dark:group-hover:text-amber-200">
-                {{ $t('gestlab.general.labels.vap_proposal_templates.quick_actions.report') }}
-              </h3>
-            </div>
-          </div>
-          <p class="text-sm text-slate-600 dark:text-slate-300">
-            {{ $t('gestlab.general.labels.vap_proposal_templates.quick_actions.report_desc') }}
-          </p>
-        </button>
-      </div>
-
-      <div class="mt-5 flex flex-col gap-4 border-t border-[#ded2bb] pt-5 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h3 class="text-sm font-semibold text-slate-900 dark:text-white">
-            {{ $t('gestlab.general.labels.vap_proposal_templates.surface.presets') }}
-          </h3>
-          <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
+          <p class="ds-copy mt-2 text-sm">
             {{ $t('gestlab.general.labels.vap_proposal_templates.surface.presets_help') }}
           </p>
         </div>
 
-        <div class="flex items-center gap-3">
-          <label class="text-sm text-slate-600 dark:text-slate-300">
-            {{ $t('gestlab.general.labels.vap_proposal_templates.surface.export_format') }}
-          </label>
-          <select v-model="exportFormat" class="rounded-2xl border border-[#d8cbb4] bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-[#143d37] focus:outline-none focus:ring-2 focus:ring-[#143d37]/20 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100">
-            <option value="xlsx">Excel (.xlsx)</option>
-            <option value="csv">CSV (.csv)</option>
-            <option value="json">JSON (.json)</option>
-          </select>
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            class="ds-button ds-button-secondary"
+            @click="resetFilters"
+          >
+            <ArrowPathIcon class="h-4 w-4" />
+            {{ $t('gestlab.general.labels.vap_proposal_templates.reset_filters') }}
+          </button>
+          <button
+            type="button"
+            class="ds-button ds-button-secondary"
+            @click="importTemplate"
+          >
+            <ArrowDownTrayIcon class="h-4 w-4" />
+            {{ $t('gestlab.general.labels.vap_proposal_templates.quick_actions.import') }}
+          </button>
+          <button
+            type="button"
+            class="ds-button ds-button-secondary"
+            @click="exportTemplates"
+          >
+            <ArrowUpTrayIcon class="h-4 w-4" />
+            {{ $t('gestlab.general.labels.vap_proposal_templates.quick_actions.export') }}
+          </button>
         </div>
       </div>
 
-      <div v-if="props.presets.length" class="mt-5 grid gap-4 md:grid-cols-3">
-        <Link
-          v-for="preset in props.presets"
-          :key="preset.slug"
-          :href="route('vap-proposals.templates.create', { preset: preset.slug })"
-          class="rounded-2xl border border-slate-200 bg-[#f7f1e6]/70 p-4 text-left transition hover:border-[#143d37] hover:bg-[#f7f1e6] dark:border-slate-800 dark:bg-white/5 dark:hover:bg-emerald-400/10"
+      <div class="mt-5 grid gap-3 lg:grid-cols-[minmax(16rem,1.3fr)_repeat(4,minmax(11rem,1fr))]">
+        <BaseInput
+          v-model="search"
+          type="search"
+          :label="$t('gestlab.general.labels.vap_proposal_templates.surface.search')"
+          :placeholder="$t('gestlab.general.labels.vap_proposal_templates.search_placeholder')"
         >
-          <div class="text-sm font-semibold text-slate-900 dark:text-white">{{ preset.name }}</div>
-          <div class="mt-1 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{{ getCategoryLabel(preset.category) }}</div>
-          <p class="mt-3 text-sm text-slate-600 dark:text-slate-300">{{ preset.description }}</p>
+          <template #leading>
+            <MagnifyingGlassIcon class="h-5 w-5" />
+          </template>
+        </BaseInput>
+
+        <BaseSelect
+          v-model="statusFilter"
+          :label="$t('gestlab.general.labels.vap_proposal_templates.show.status')"
+        >
+          <option value="all">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.filters.all') }}
+          </option>
+          <option value="active">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.filters.active') }}
+          </option>
+          <option value="inactive">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.filters.inactive') }}
+          </option>
+        </BaseSelect>
+
+        <BaseSelect
+          v-model="categoryFilter"
+          :label="$t('gestlab.general.labels.vap_proposal_templates.show.category')"
+        >
+          <option value="all">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.filters.all_categories') }}
+          </option>
+          <option
+            v-for="category in categoryOptions"
+            :key="category"
+            :value="category"
+          >
+            {{ getCategoryLabel(category) }}
+          </option>
+        </BaseSelect>
+
+        <BaseSelect
+          v-model="sortBy"
+          :label="$t('gestlab.general.labels.vap_proposal_templates.sort_by')"
+        >
+          <option value="created_at">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.sort.newest') }}
+          </option>
+          <option value="name">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.sort.name') }}
+          </option>
+          <option value="proposals_count">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.sort.most_used') }}
+          </option>
+        </BaseSelect>
+
+        <BaseSelect
+          v-model="exportFormat"
+          :label="$t('gestlab.general.labels.vap_proposal_templates.surface.export_format')"
+        >
+          <option value="xlsx">
+            Excel (.xlsx)
+          </option>
+          <option value="csv">
+            CSV (.csv)
+          </option>
+          <option value="json">
+            JSON (.json)
+          </option>
+        </BaseSelect>
+      </div>
+    </section>
+
+    <section class="ds-table-shell">
+      <div class="ds-table-summary px-5 py-4 sm:px-6">
+        <div>
+          <p class="ds-kicker">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.list.title') }}
+          </p>
+          <h2 class="ds-heading mt-1 text-xl">
+            {{ resultSummary }}
+          </h2>
+        </div>
+        <Link
+          :href="route('vap-proposals.templates.create')"
+          class="ds-button ds-button-primary"
+        >
+          <PlusCircleIcon class="h-5 w-5" />
+          {{ $t('gestlab.general.labels.vap_proposal_templates.create_new') }}
         </Link>
       </div>
-    </div>
-  </div>
 
-  <!-- DELETE CONFIRMATION MODAL -->
-  <ConfirmationModal
-    :show="showDeleteModal"
-    @close="showDeleteModal = false"
-    @confirm="deleteTemplate"
-  >
-    <template #title>
-      {{ $t('gestlab.general.labels.vap_proposal_templates.delete_modal.title') }}
-    </template>
-    <template #content>
-      <p class="text-sm text-slate-600 dark:text-slate-300">
-        {{ $t('gestlab.general.labels.vap_proposal_templates.delete_modal.message', { name: selectedTemplate?.name }) }}
-      </p>
-      
-      <div v-if="selectedTemplate?.proposals_count > 0" class="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-500/30 dark:bg-red-500/10">
-        <div class="flex items-start gap-2">
-          <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-300" />
-          <div>
-            <p class="text-sm font-medium text-red-900 dark:text-red-200">
-              {{ $t('gestlab.general.labels.vap_proposal_templates.delete_modal.warning_title') }}
-            </p>
-            <p class="mt-1 text-sm text-red-700 dark:text-red-300">
-              {{ $t('gestlab.general.labels.vap_proposal_templates.delete_modal.warning_message', { count: selectedTemplate?.proposals_count }) }}
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      <div v-else class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
-        <div class="flex items-start gap-2">
-          <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-300" />
-          <div>
-            <p class="text-sm font-medium text-amber-900 dark:text-amber-200">
-              {{ $t('gestlab.general.labels.vap_proposal_templates.delete_modal.confirm_warning') }}
-            </p>
-          </div>
-        </div>
-      </div>
-    </template>
-  </ConfirmationModal>
-
-  <!-- IMPORT MODAL -->
-  <Modal :show="showImportModal" @close="showImportModal = false" max-width="lg">
-    <div class="p-6">
-      <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-        {{ $t('gestlab.general.labels.vap_proposal_templates.import.title') }}
-      </h2>
-      
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
-            {{ $t('gestlab.general.labels.vap_proposal_templates.import.select_file') }}
-          </label>
-          <div 
-            @dragover.prevent="dragOver = true"
-            @dragleave="dragOver = false"
-            @drop="handleFileDrop"
-            :class="[
-              'cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition-colors',
-              dragOver ? 'border-[#143d37] bg-[#f7f1e6] dark:border-emerald-300/40 dark:bg-emerald-400/10' : 'border-slate-300 hover:border-[#143d37] hover:bg-[#f7f1e6] dark:border-slate-700 dark:hover:border-emerald-300/40 dark:hover:bg-emerald-400/10'
-            ]"
+      <div
+        v-if="!templateRows.length"
+        class="p-5 sm:p-8"
+      >
+        <div class="ds-empty-state p-8 text-center">
+          <DocumentDuplicateIcon class="mx-auto h-12 w-12 text-[var(--ds-text-soft)]" />
+          <h3 class="ds-heading mt-4 text-base">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.empty_state.title') }}
+          </h3>
+          <p class="ds-copy mx-auto mt-2 max-w-md text-sm">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.empty_state.description') }}
+          </p>
+          <Link
+            :href="route('vap-proposals.templates.create')"
+            class="ds-button ds-button-primary mt-6"
           >
-            <input
-              type="file"
-              ref="fileInput"
-              @change="handleFileSelect"
-              accept=".json,.txt,.xlsx,.csv"
-              class="hidden"
-            />
-            
-            <CloudArrowUpIcon class="mx-auto h-12 w-12 text-slate-400" />
-            <p class="mt-4 text-sm text-slate-600 dark:text-slate-300">
-              {{ $t('gestlab.general.labels.vap_proposal_templates.import.drag_drop') }}
+            <PlusCircleIcon class="h-5 w-5" />
+            {{ $t('gestlab.general.labels.vap_proposal_templates.create_first') }}
+          </Link>
+        </div>
+      </div>
+
+      <div v-else>
+        <div class="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
+          <article
+            v-for="template in templateRows"
+            :key="template.id"
+            class="group flex min-h-full flex-col overflow-hidden rounded-[1.55rem] border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] shadow-[var(--ds-shadow-control)] transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
+          >
+            <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex min-w-0 items-start gap-3">
+                  <span :class="['flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border', categoryIconClass(template.category)]">
+                    <component
+                      :is="getCategoryIcon(template.category)"
+                      class="h-5 w-5"
+                    />
+                  </span>
+                  <div class="min-w-0">
+                    <h3 class="truncate text-base font-black text-[var(--ds-text)]">
+                      {{ template.name }}
+                    </h3>
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                      <span class="ds-chip">
+                        {{ getCategoryLabel(template.category) }}
+                      </span>
+                      <span :class="statusBadgeClass(template.is_active)">
+                        {{ template.is_active ? $t('gestlab.general.labels.vap_proposal_templates.active') : $t('gestlab.general.labels.vap_proposal_templates.inactive') }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex shrink-0 items-center gap-1">
+                  <Link
+                    :href="route('vap-proposals.templates.show', template.id)"
+                    class="ds-table-action"
+                    :title="$t('gestlab.general.labels.vap_proposal_templates.view_details')"
+                  >
+                    <EyeIcon class="h-5 w-5" />
+                  </Link>
+                  <Link
+                    :href="route('vap-proposals.templates.edit', template.id)"
+                    class="ds-table-action"
+                    :title="$t('gestlab.general.labels.vap_proposal_templates.edit_label')"
+                  >
+                    <PencilSquareIcon class="h-5 w-5" />
+                  </Link>
+                  <button
+                    type="button"
+                    class="ds-table-action ds-table-action-danger disabled:cursor-not-allowed disabled:opacity-40"
+                    :title="$t('gestlab.general.labels.vap_proposal_templates.delete')"
+                    :disabled="Number(template.proposals_count || 0) > 0"
+                    @click="confirmDelete(template)"
+                  >
+                    <TrashIcon class="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-1 flex-col p-4">
+              <p class="line-clamp-3 min-h-[4.5rem] text-sm font-semibold leading-6 text-[var(--ds-text-muted)]">
+                {{ stripHtml(template.content) || template.description || '—' }}
+              </p>
+
+              <div class="mt-5 grid grid-cols-3 gap-2">
+                <div class="rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3 text-center">
+                  <p class="text-lg font-black tabular-nums text-[var(--ds-text)]">
+                    {{ Number(template.proposals_count || 0) }}
+                  </p>
+                  <p class="mt-1 text-[0.66rem] font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">
+                    {{ $t('gestlab.general.labels.vap_proposal_templates.used') }}
+                  </p>
+                </div>
+                <div class="rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3 text-center">
+                  <p class="text-lg font-black tabular-nums text-[var(--ds-text)]">
+                    {{ calculateAcceptanceRate(template) }}%
+                  </p>
+                  <p class="mt-1 text-[0.66rem] font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">
+                    {{ $t('gestlab.general.labels.vap_proposal_templates.acceptance_rate') }}
+                  </p>
+                </div>
+                <div class="rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3 text-center">
+                  <p class="text-sm font-black tabular-nums text-[var(--ds-text)]">
+                    {{ formatDate(template.updated_at) }}
+                  </p>
+                  <p class="mt-1 text-[0.66rem] font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">
+                    {{ $t('gestlab.general.labels.vap_proposal_templates.last_updated') }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="mt-auto flex flex-col gap-3 border-t border-[var(--ds-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-xs font-semibold text-[var(--ds-text-muted)]">
+                  {{ $t('gestlab.general.labels.vap_proposal_templates.created_on') }} {{ formatDate(template.created_at) }}
+                </p>
+                <Link
+                  :href="route('vap-proposals.create', { template_id: template.id })"
+                  class="ds-button ds-button-secondary w-full sm:w-auto"
+                >
+                  <DocumentTextIcon class="h-4 w-4" />
+                  {{ $t('gestlab.general.labels.vap_proposal_templates.use_template') }}
+                </Link>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="border-t border-[var(--ds-border)] px-2 py-3">
+          <Pagination
+            :links="paginationLinks"
+            :from="paginationMeta.from"
+            :to="paginationMeta.to"
+            :total="paginationMeta.total"
+            :current_page="paginationMeta.currentPage"
+            :last_page="paginationMeta.lastPage"
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="ds-panel p-5 sm:p-6">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p class="ds-kicker">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.surface.presets') }}
+          </p>
+          <h2 class="ds-heading mt-2 text-2xl">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.quick_actions.title') }}
+          </h2>
+          <p class="ds-copy mt-2 max-w-3xl text-sm">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.surface.presets_help') }}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="ds-button ds-button-secondary"
+          @click="showUsageReport"
+        >
+          <ChartBarIcon class="h-4 w-4" />
+          {{ $t('gestlab.general.labels.vap_proposal_templates.quick_actions.report') }}
+        </button>
+      </div>
+
+      <div
+        v-if="presetRows.length"
+        class="mt-5 grid gap-4 md:grid-cols-3"
+      >
+        <Link
+          v-for="preset in presetRows"
+          :key="preset.slug"
+          :href="route('vap-proposals.templates.create', { preset: preset.slug })"
+          class="rounded-[1.35rem] border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4 text-left shadow-[var(--ds-shadow-control)] transition hover:-translate-y-0.5 hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-sm font-black text-[var(--ds-text)]">
+                {{ preset.name }}
+              </p>
+              <p class="mt-1 text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">
+                {{ getCategoryLabel(preset.category) }}
+              </p>
+            </div>
+            <DocumentDuplicateIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
+          </div>
+          <p class="ds-copy mt-3 line-clamp-3 text-sm">
+            {{ preset.description }}
+          </p>
+        </Link>
+      </div>
+    </section>
+
+    <confirm-dialog
+      v-if="selectedTemplate && showDeleteModal"
+      :title="$t('gestlab.general.labels.vap_proposal_templates.delete_modal.title')"
+      :description="$t('gestlab.general.labels.vap_proposal_templates.delete_modal.message', { name: selectedTemplate?.name })"
+      :cancel="$t('gestlab.general.buttons.cancel')"
+      :confirm="$t('gestlab.general.labels.vap_proposal_templates.delete')"
+      variant="danger"
+      @confirmed="deleteTemplate"
+      @canceled="cancelDelete"
+    />
+
+    <Modal
+      :show="showImportModal"
+      max-width="lg"
+      @close="closeImportModal"
+    >
+      <div class="p-5 sm:p-6">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="ds-kicker">
+              {{ $t('gestlab.general.labels.vap_proposal_templates.quick_actions.import') }}
             </p>
-            <button
-              type="button"
-              @click="$refs.fileInput.click()"
-              class="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#143d37] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#0f302b]"
-            >
-              {{ $t('gestlab.general.labels.vap_proposal_templates.import.browse_files') }}
-            </button>
-            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              JSON, TXT, Excel (.xlsx) ou CSV
+            <h2 class="ds-heading mt-2 text-xl">
+              {{ $t('gestlab.general.labels.vap_proposal_templates.import.title') }}
+            </h2>
+            <p class="ds-copy mt-2 text-sm">
+              {{ $t('gestlab.general.labels.vap_proposal_templates.import.file_types') }}
             </p>
           </div>
+          <button
+            type="button"
+            class="ds-icon-button"
+            @click="closeImportModal"
+          >
+            <XMarkIcon class="h-5 w-5" />
+          </button>
         </div>
-        
-        <div v-if="importFile" class="bg-slate-50 dark:bg-slate-900/70 rounded-lg p-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-slate-900 dark:text-white">
+
+        <div
+          class="mt-5 cursor-pointer rounded-[1.5rem] border-2 border-dashed p-8 text-center transition"
+          :class="dragOver ? 'border-[rgb(var(--primary-500-rgb))] bg-[rgb(var(--primary-50-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)]' : 'border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] hover:border-[rgb(var(--primary-300-rgb))]'"
+          @click="openFilePicker"
+          @dragover.prevent="dragOver = true"
+          @dragleave="dragOver = false"
+          @drop="handleFileDrop"
+        >
+          <input
+            ref="fileInput"
+            type="file"
+            accept=".json,.txt,.xlsx,.csv"
+            class="hidden"
+            @change="handleFileSelect"
+          />
+          <CloudArrowUpIcon class="mx-auto h-12 w-12 text-[var(--ds-text-soft)]" />
+          <p class="mt-4 text-sm font-bold text-[var(--ds-text)]">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.import.drag_drop') }}
+          </p>
+          <span class="ds-button ds-button-secondary mt-4">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.import.browse_files') }}
+          </span>
+          <p class="mt-3 text-xs font-semibold text-[var(--ds-text-muted)]">
+            {{ $t('gestlab.general.labels.vap_proposal_templates.import.file_types') }}
+          </p>
+        </div>
+
+        <div
+          v-if="importFile"
+          class="mt-4 rounded-[1.25rem] border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4"
+        >
+          <div class="flex items-center justify-between gap-4">
+            <div class="min-w-0">
+              <p class="truncate text-sm font-black text-[var(--ds-text)]">
                 {{ importFile.name }}
               </p>
-              <p class="text-xs text-slate-500 dark:text-slate-400">
+              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
                 {{ formatFileSize(importFile.size) }}
               </p>
             </div>
             <button
+              type="button"
+              class="ds-table-action ds-table-action-danger"
               @click="importFile = null"
-              class="text-red-600 hover:text-red-800"
             >
               <XMarkIcon class="h-5 w-5" />
             </button>
           </div>
         </div>
-      </div>
 
-      <div class="mt-6 flex items-center justify-end gap-3">
-        <button
-          @click="showImportModal = false"
-          class="rounded-lg border border-slate-300 dark:border-slate-700 bg-white px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:bg-slate-900/70"
-        >
-          {{ $t('gestlab.general.buttons.cancel') }}
-        </button>
-        <button
-          @click="processImport"
-          :disabled="!importFile"
-          :class="[
-            'rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm',
-            importFile ? 'bg-[#143d37] hover:bg-[#0f302b]' : 'bg-slate-400 cursor-not-allowed'
-          ]"
-        >
-          {{ $t('gestlab.general.labels.vap_proposal_templates.import.process') }}
-        </button>
+        <div class="mt-6 flex flex-col-reverse gap-3 border-t border-[var(--ds-border)] pt-4 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            class="ds-button ds-button-secondary"
+            @click="closeImportModal"
+          >
+            {{ $t('gestlab.general.buttons.cancel') }}
+          </button>
+          <button
+            type="button"
+            class="ds-button ds-button-primary disabled:cursor-not-allowed disabled:opacity-45"
+            :disabled="!importFile"
+            @click="processImport"
+          >
+            {{ $t('gestlab.general.labels.vap_proposal_templates.import.process') }}
+          </button>
+        </div>
       </div>
-    </div>
-  </Modal>
+    </Modal>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { computed, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
-import { 
-  DocumentDuplicateIcon, PlusCircleIcon, DocumentTextIcon,
-  CheckCircleIcon, NoSymbolIcon, ChartBarIcon,
-  MagnifyingGlassIcon, ArrowPathIcon, ListBulletIcon,
-  EyeIcon, PencilSquareIcon, TrashIcon,
-  ArrowDownTrayIcon, ArrowUpTrayIcon,
-  ExclamationTriangleIcon, CloudArrowUpIcon, XMarkIcon,
-  BeakerIcon, BugAntIcon, CpuChipIcon,
-  GlobeAltIcon, CakeIcon, DocumentChartBarIcon
+import {
+  ArrowDownTrayIcon,
+  ArrowPathIcon,
+  ArrowUpTrayIcon,
+  BeakerIcon,
+  BugAntIcon,
+  CakeIcon,
+  ChartBarIcon,
+  CheckCircleIcon,
+  CloudArrowUpIcon,
+  CpuChipIcon,
+  DocumentChartBarIcon,
+  DocumentDuplicateIcon,
+  DocumentTextIcon,
+  EyeIcon,
+  GlobeAltIcon,
+  MagnifyingGlassIcon,
+  NoSymbolIcon,
+  PencilSquareIcon,
+  PlusCircleIcon,
+  TrashIcon,
+  XMarkIcon,
 } from '@heroicons/vue/24/outline'
-import Pagination from '@/Components/Pagination.vue'
-import ConfirmationModal from '@/Components/confirm-dialog.vue'
-import Modal from '@/Components/modal.vue'
 import debounce from 'lodash/debounce'
-import { useToast } from 'vue-toastification'
 import { trans } from 'laravel-vue-i18n'
+import { useToast } from 'vue-toastification'
+import BaseInput from '@/Components/base/BaseInput.vue'
+import BaseSelect from '@/Components/base/BaseSelect.vue'
+import ConfirmDialog from '@/Components/confirm-dialog.vue'
+import Modal from '@/Components/modal.vue'
+import ModuleHero from '@/Components/base/ModuleHero.vue'
+import Pagination from '@/Components/Pagination.vue'
+import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 
 const props = defineProps({
-  templates: Object,
-  filters: Object,
+  templates: {
+    type: Object,
+    default: () => ({}),
+  },
+  filters: {
+    type: Object,
+    default: () => ({}),
+  },
   presets: {
     type: Array,
     default: () => [],
   },
 })
 
-const search = ref(props.filters.search || '')
-const statusFilter = ref(props.filters.status || 'all')
-const categoryFilter = ref(props.filters.category || 'all')
-const sortBy = ref(props.filters.sort || 'created_at')
+const toast = useToast()
+const search = ref(props.filters?.search ?? '')
+const statusFilter = ref(props.filters?.status ?? 'all')
+const categoryFilter = ref(props.filters?.category ?? 'all')
+const sortBy = ref(props.filters?.sort ?? 'created_at')
 const showDeleteModal = ref(false)
 const showImportModal = ref(false)
 const selectedTemplate = ref(null)
 const importFile = ref(null)
 const dragOver = ref(false)
 const exportFormat = ref('xlsx')
-const toast = useToast()
+const fileInput = ref(null)
 
-const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-
-const downloadFilename = (response, fallback) => {
-  const disposition = response.headers.get('Content-Disposition') || response.headers.get('content-disposition') || ''
-  const match = disposition.match(/filename="?([^"]+)"?/i)
-
-  return match?.[1] || fallback
-}
-
-// Category icons mapping
+const categoryOptions = ['general', 'compliance', 'field-services', 'chemical', 'microbiology', 'physical', 'environmental', 'food']
 const categoryIcons = {
   compliance: CheckCircleIcon,
   'field-services': GlobeAltIcon,
@@ -599,144 +562,177 @@ const categoryIcons = {
   general: DocumentChartBarIcon,
 }
 
-const categoryColors = {
-  compliance: { bg: 'bg-emerald-100 dark:bg-emerald-500/15', text: 'text-emerald-900 dark:text-emerald-200' },
-  'field-services': { bg: 'bg-amber-100 dark:bg-amber-500/15', text: 'text-amber-900 dark:text-amber-200' },
-  chemical: { bg: 'bg-sky-100 dark:bg-sky-500/15', text: 'text-sky-900 dark:text-sky-200' },
-  microbiology: { bg: 'bg-green-100 dark:bg-green-500/15', text: 'text-green-900 dark:text-green-200' },
-  physical: { bg: 'bg-yellow-100 dark:bg-yellow-500/15', text: 'text-yellow-900 dark:text-yellow-200' },
-  environmental: { bg: 'bg-emerald-100 dark:bg-emerald-500/15', text: 'text-emerald-900 dark:text-emerald-200' },
-  food: { bg: 'bg-red-100 dark:bg-red-500/15', text: 'text-red-900 dark:text-red-200' },
-  general: { bg: 'bg-slate-100 dark:bg-slate-800', text: 'text-slate-900 dark:text-slate-200' },
-}
+const templateRows = computed(() => Array.isArray(props.templates?.data) ? props.templates.data : [])
+const presetRows = computed(() => Array.isArray(props.presets) ? props.presets : [])
+const paginationLinks = computed(() => Array.isArray(props.templates?.links) ? props.templates.links : [])
+const totalTemplates = computed(() => Number(props.templates?.total ?? templateRows.value.length))
+const activeTemplatesCount = computed(() => templateRows.value.filter((template) => template.is_active).length)
+const inactiveTemplatesCount = computed(() => templateRows.value.filter((template) => !template.is_active).length)
+const totalProposalsCount = computed(() => templateRows.value.reduce((sum, template) => sum + Number(template.proposals_count || 0), 0))
 
-// Computed Properties
-const activeTemplatesCount = computed(() => {
-  return props.templates.data.filter(t => t.is_active).length
-})
+const paginationMeta = computed(() => ({
+  from: Number(props.templates?.from ?? (templateRows.value.length ? 1 : 0)),
+  to: Number(props.templates?.to ?? templateRows.value.length),
+  total: totalTemplates.value,
+  currentPage: Number(props.templates?.current_page ?? 1),
+  lastPage: Number(props.templates?.last_page ?? 1),
+}))
 
-const inactiveTemplatesCount = computed(() => {
-  return props.templates.data.filter(t => !t.is_active).length
-})
-
-const totalProposalsCount = computed(() => {
-  return props.templates.data.reduce((sum, template) => {
-    return sum + (template.proposals_count || 0)
-  }, 0)
-})
+const resultSummary = computed(() => trans('gestlab.general.labels.vap_proposal_templates.list.summary', {
+  from: paginationMeta.value.from,
+  to: paginationMeta.value.to,
+  total: paginationMeta.value.total,
+}))
 
 const templateStatCards = computed(() => [
   {
     key: 'total',
     labelKey: 'gestlab.general.labels.vap_proposal_templates.stats.total',
-    value: props.templates.total,
+    value: totalTemplates.value,
     icon: DocumentTextIcon,
-    tone: 'bg-[#f7f1e6] text-[#143d37] dark:bg-emerald-400/10 dark:text-emerald-100',
+    tone: 'border-[rgb(var(--primary-200-rgb))] bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--primary-300-rgb)/0.22)] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-100-rgb))]',
   },
   {
     key: 'active',
     labelKey: 'gestlab.general.labels.vap_proposal_templates.stats.active',
     value: activeTemplatesCount.value,
     icon: CheckCircleIcon,
-    tone: 'bg-emerald-50 text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-100',
+    tone: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-300/20 dark:bg-emerald-400/10 dark:text-emerald-100',
   },
   {
     key: 'inactive',
     labelKey: 'gestlab.general.labels.vap_proposal_templates.stats.inactive',
     value: inactiveTemplatesCount.value,
     icon: NoSymbolIcon,
-    tone: 'bg-[#fbfaf6] text-[#59665f] dark:bg-white/10 dark:text-slate-300',
+    tone: 'border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[var(--ds-text-muted)]',
   },
   {
     key: 'used',
     labelKey: 'gestlab.general.labels.vap_proposal_templates.stats.used',
     value: totalProposalsCount.value,
     icon: ChartBarIcon,
-    tone: 'bg-amber-50 text-amber-800 dark:bg-amber-400/10 dark:text-amber-100',
+    tone: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-100',
   },
 ])
 
-const getCategoryIcon = (category) => {
-  return categoryIcons[category] || DocumentChartBarIcon
+const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+
+const downloadFilename = (response, fallback) => {
+  const disposition = response.headers.get('Content-Disposition') || response.headers.get('content-disposition') || ''
+  const match = disposition.match(/filename="?([^"]+)"?/i)
+
+  return match?.[1] || fallback
 }
 
-const getCategoryColor = (category) => {
-  return categoryColors[category] || categoryColors.general
+const getCategoryIcon = (category) => categoryIcons[category] || DocumentChartBarIcon
+
+const categoryIconClass = (category) => {
+  const classes = {
+    compliance: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-300/20 dark:bg-emerald-400/10 dark:text-emerald-100',
+    'field-services': 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-100',
+    chemical: 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-300/20 dark:bg-sky-400/10 dark:text-sky-100',
+    microbiology: 'border-green-200 bg-green-50 text-green-800 dark:border-green-300/20 dark:bg-green-400/10 dark:text-green-100',
+    physical: 'border-yellow-200 bg-yellow-50 text-yellow-800 dark:border-yellow-300/20 dark:bg-yellow-400/10 dark:text-yellow-100',
+    environmental: 'border-teal-200 bg-teal-50 text-teal-800 dark:border-teal-300/20 dark:bg-teal-400/10 dark:text-teal-100',
+    food: 'border-red-200 bg-red-50 text-red-800 dark:border-red-300/20 dark:bg-red-400/10 dark:text-red-100',
+    general: 'border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[var(--ds-text-muted)]',
+  }
+
+  return classes[category] || classes.general
+}
+
+const statusBadgeClass = (isActive) => {
+  return isActive
+    ? 'inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-black text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200'
+    : 'inline-flex items-center rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-2.5 py-0.5 text-xs font-black text-[var(--ds-text-muted)]'
 }
 
 const getCategoryLabel = (category) => {
-  const labels = {
-    compliance: trans('gestlab.general.labels.vap_proposal_templates.categories.compliance'),
-    'field-services': trans('gestlab.general.labels.vap_proposal_templates.categories.field_services'),
-    chemical: trans('gestlab.general.labels.vap_proposal_templates.categories.chemical'),
-    microbiology: trans('gestlab.general.labels.vap_proposal_templates.categories.microbiology'),
-    physical: trans('gestlab.general.labels.vap_proposal_templates.categories.physical'),
-    environmental: trans('gestlab.general.labels.vap_proposal_templates.categories.environmental'),
-    food: trans('gestlab.general.labels.vap_proposal_templates.categories.food'),
-    general: trans('gestlab.general.labels.vap_proposal_templates.categories.general'),
-  }
-  return labels[category] || labels.general
+  const key = category === 'field-services' ? 'field_services' : category
+
+  return trans(`gestlab.general.labels.vap_proposal_templates.categories.${key}`) || trans('gestlab.general.labels.vap_proposal_templates.categories.general')
 }
 
-// Methods
-const debouncedSearch = debounce(() => {
-  router.get(route('vap-proposals.templates.index'), 
-    { 
-      search: search.value, 
-      status: statusFilter.value,
-      category: categoryFilter.value,
-      sort: sortBy.value
-    },
-    { preserveState: true }
-  )
-}, 500)
+const applyFilters = debounce(() => {
+  router.get(route('vap-proposals.templates.index'), {
+    search: search.value,
+    status: statusFilter.value,
+    category: categoryFilter.value,
+    sort: sortBy.value,
+  }, {
+    preserveState: true,
+    preserveScroll: true,
+    replace: true,
+  })
+}, 350)
 
 const resetFilters = () => {
   search.value = ''
   statusFilter.value = 'all'
   categoryFilter.value = 'all'
   sortBy.value = 'created_at'
-  debouncedSearch()
+  router.get(route('vap-proposals.templates.index'), {}, {
+    preserveState: true,
+    preserveScroll: true,
+    replace: true,
+  })
 }
 
 const formatDate = (date) => {
-  if (!date) return ''
+  if (!date) {
+    return '—'
+  }
+
   return new Date(date).toLocaleDateString('pt-AO', {
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric'
+    year: 'numeric',
   })
 }
 
 const stripHtml = (html) => {
-  if (!html) return ''
-  const stripped = html.replace(/<[^>]*>/g, '')
-  return stripped.length > 150 ? stripped.substring(0, 150) + '...' : stripped
+  if (!html) {
+    return ''
+  }
+
+  const stripped = String(html).replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+
+  return stripped.length > 150 ? `${stripped.substring(0, 150)}...` : stripped
 }
 
 const calculateAcceptanceRate = (template) => {
-  if (!template.proposals_count || template.proposals_count === 0) return 0
+  const proposalsCount = Number(template.proposals_count || 0)
 
-  const acceptedProposals = Number(template.accepted_proposals_count || 0)
-  return Math.round((acceptedProposals / template.proposals_count) * 100)
+  if (!proposalsCount) {
+    return 0
+  }
+
+  return Math.round((Number(template.accepted_proposals_count || 0) / proposalsCount) * 100)
 }
 
 const confirmDelete = (template) => {
-  if (template.proposals_count > 0) {
+  if (Number(template.proposals_count || 0) > 0) {
     toast.warning(trans('gestlab.general.labels.vap_proposal_templates.notifications.cannot_delete_in_use'))
     return
   }
-  
+
   selectedTemplate.value = template
   showDeleteModal.value = true
 }
 
+const cancelDelete = () => {
+  showDeleteModal.value = false
+  selectedTemplate.value = null
+}
+
 const deleteTemplate = () => {
+  if (!selectedTemplate.value?.id) {
+    cancelDelete()
+    return
+  }
+
   router.delete(route('vap-proposals.templates.destroy', selectedTemplate.value.id), {
-    onSuccess: () => {
-      showDeleteModal.value = false
-      selectedTemplate.value = null
-    }
+    onSuccess: cancelDelete,
   })
 }
 
@@ -744,37 +740,52 @@ const importTemplate = () => {
   showImportModal.value = true
 }
 
+const closeImportModal = () => {
+  showImportModal.value = false
+  dragOver.value = false
+}
+
+const openFilePicker = () => {
+  fileInput.value?.click()
+}
+
 const handleFileDrop = (event) => {
   event.preventDefault()
   dragOver.value = false
-  
-  const files = event.dataTransfer.files
-  if (files.length > 0) {
+
+  const files = event.dataTransfer?.files
+  if (files?.length) {
     importFile.value = files[0]
   }
 }
 
 const handleFileSelect = (event) => {
   const files = event.target.files
-  if (files.length > 0) {
+  if (files?.length) {
     importFile.value = files[0]
   }
 }
 
 const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 Bytes'
+  if (!bytes) {
+    return '0 Bytes'
+  }
+
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+
+  return `${Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
 }
 
 const processImport = async () => {
-  if (!importFile.value) return
-  
+  if (!importFile.value) {
+    return
+  }
+
   const formData = new FormData()
   formData.append('template_file', importFile.value)
-  
+
   try {
     const response = await fetch(route('vap-proposals.templates.import'), {
       method: 'POST',
@@ -786,7 +797,7 @@ const processImport = async () => {
       body: formData,
     })
     const payload = await response.json()
-    
+
     if (!response.ok || !payload.success) {
       throw new Error(payload.message || trans('gestlab.general.labels.vap_proposal_templates.notifications.import_request_error'))
     }
@@ -809,7 +820,7 @@ const exportTemplates = async () => {
     if (!response.ok) {
       throw new Error(trans('gestlab.general.labels.vap_proposal_templates.notifications.export_request_error'))
     }
-    
+
     const blob = await response.blob()
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -829,12 +840,5 @@ const showUsageReport = () => {
   toast.info(trans('gestlab.general.labels.vap_proposal_templates.notifications.usage_report'))
 }
 
-// Watchers
-watch([statusFilter, categoryFilter, sortBy], () => {
-  debouncedSearch()
-})
+watch([search, statusFilter, categoryFilter, sortBy], applyFilters)
 </script>
-
-<style scoped>
-
-</style>

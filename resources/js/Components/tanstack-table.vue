@@ -128,7 +128,7 @@ function executeAction(selected) {
 watch(
   query,
   debounce(function (value) {
-    router.get(router.page.url, value, {
+    router.get(page.url, value, {
       preserveState: false,
       preserveScroll: true,
       replace: true,
@@ -184,9 +184,9 @@ const isDark = computed(() => page.props?.darkMode ?? false);
 
 </script>
 <template>
-    <div class="overflow-hidden rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7]/95 shadow-[0_24px_80px_rgb(20_61_55/0.10)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f]/95 dark:ring-white/10">
+    <div class="space-y-6">
         
-        <div class="px-4 py-5 sm:px-6 lg:px-8">
+        <section class="ds-command-surface px-4 py-5 sm:px-6 lg:px-8">
             <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div class="sm:flex-auto">
                 <form class="flex w-full md:ml-0" action="#" method="GET">
@@ -196,7 +196,7 @@ const isDark = computed(() => page.props?.darkMode ?? false);
                     <label for="desktop-search-field" class="sr-only">{{
                         $t("gestlab.general.search_input_placeholder")
                     }}</label>
-                    <div class="relative w-full text-[#5f6f68] focus-within:text-[rgb(var(--primary-700-rgb))] dark:text-[#a9bbb4] dark:focus-within:text-[rgb(var(--primary-200-rgb))]">
+                    <div class="relative w-full text-[var(--ds-text-soft)] focus-within:text-[rgb(var(--primary-700-rgb))]">
                         <div
                         class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4"
                         >
@@ -209,7 +209,7 @@ const isDark = computed(() => page.props?.darkMode ?? false);
                         v-model="query.search"
                         name="mobile-search-field"
                         id="mobile-search-field"
-                        class="h-full w-full rounded-2xl border border-[#d8cbb8] bg-white py-3 pl-11 pr-4 text-base font-medium text-[#15231f] shadow-sm placeholder:text-[#8d9b94] transition-colors duration-200 focus:border-[rgb(var(--primary-500-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.22)] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:placeholder:text-[#657970] sm:hidden"
+                        class="ds-field pl-11 text-base sm:hidden"
                         :placeholder="$t('gestlab.general.search_input_placeholder')"
                         type="search"
                         />
@@ -217,7 +217,7 @@ const isDark = computed(() => page.props?.darkMode ?? false);
                         v-model="query.search"
                         name="desktop-search-field"
                         id="desktop-search-field"
-                        class="hidden h-full w-full rounded-2xl border border-[#d8cbb8] bg-white py-3 pl-11 pr-4 text-sm font-medium text-[#15231f] shadow-sm placeholder:text-[#8d9b94] transition-colors duration-200 focus:border-[rgb(var(--primary-500-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.22)] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:placeholder:text-[#657970] sm:block"
+                        class="ds-field hidden pl-11 sm:block"
                         :placeholder="$t('gestlab.general.search_input_placeholder')"
                         type="search"
                         />
@@ -248,7 +248,7 @@ const isDark = computed(() => page.props?.darkMode ?? false);
                         <template #default="{ togglePopover }">
                         <button
                             type="button"
-                            class="inline-flex items-center gap-x-2 rounded-2xl border border-[#d8cbb8] bg-white/95 px-3.5 py-2.5 text-sm font-semibold text-[#31413b] shadow-sm transition-all duration-200 hover:border-[rgb(var(--primary-300-rgb))] hover:bg-[#f7f1e7] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.22)] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#d7e2dd] dark:hover:border-[rgb(var(--primary-500-rgb)/0.55)] dark:hover:bg-[#16342e] disabled:cursor-not-allowed disabled:opacity-30"
+                            class="ds-button ds-button-secondary"
                             @click="togglePopover"
                         >
                             <CalendarDaysIcon class="h-5 w-5 text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-200-rgb))]" aria-hidden="true" />
@@ -259,7 +259,7 @@ const isDark = computed(() => page.props?.darkMode ?? false);
                         <div class="w-full px-3 pb-3" v-if="query.date !== null">
                             <button
                             type="button"
-                            class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[rgb(var(--primary-800-rgb))] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[rgb(var(--primary-700-rgb))] dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f] dark:hover:bg-[rgb(var(--primary-300-rgb))]"
+                            class="ds-button ds-button-secondary w-full"
                             @click="query.date = null"
                             >
                             <XMarkIcon class="h-5 w-5" aria-hidden="true" />
@@ -271,7 +271,7 @@ const isDark = computed(() => page.props?.darkMode ?? false);
 
                     <Menu as="div" class="relative inline-block text-left">
                             <div>
-                            <MenuButton class="inline-flex items-center gap-x-1.5 rounded-2xl border border-[#d8cbb8] bg-white/95 px-3.5 py-2.5 text-sm font-semibold text-[#31413b] shadow-sm transition-all duration-200 hover:border-[rgb(var(--primary-300-rgb))] hover:bg-[#f7f1e7] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#d7e2dd] dark:hover:bg-[#16342e] disabled:cursor-not-allowed disabled:opacity-30">
+                            <MenuButton class="ds-button ds-button-secondary">
                                 
                                 <FunnelIcon class="-ml-1 mr-2 h-5 w-5 text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-200-rgb))]" aria-hidden="true" />
                                 {{ $t('gestlab.general.buttons.filters') }}
@@ -279,17 +279,17 @@ const isDark = computed(() => page.props?.darkMode ?? false);
                             </div>
 
                             <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
-                            <MenuItems class="absolute right-0 z-50 mt-2 w-64 origin-top-right overflow-hidden rounded-2xl border border-[#ded3bf] bg-[#fffdf7] shadow-[0_24px_80px_rgb(20_61_55/0.16)] ring-1 ring-white/70 focus:outline-none dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
+                            <MenuItems class="ds-floating-panel absolute right-0 z-50 mt-2 w-64 origin-top-right focus:outline-none">
                                 <div class="px-4 py-3 mb-2">
-                                    <p class="text-sm font-semibold text-[#15231f] dark:text-[#f7f1e7]">
+                                    <p class="ds-heading text-sm">
                                         {{ $t('gestlab.filter.available_filters') }}
                                     </p>
                                 </div>
                                 <MenuItem as="div" class="px-4 mb-2">
                                     <button v-for="(filter, index) in filters" :key="index" @click="() => { query.filter =  filter.id}"
                                     type="button"
-                                    class="mt-2 w-full rounded-full bg-[rgb(var(--primary-800-rgb))] px-3 py-2 text-left text-xs font-semibold text-white shadow-sm ring-1 ring-inset ring-[rgb(var(--primary-800-rgb))] hover:bg-[rgb(var(--primary-700-rgb))] dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f] dark:ring-[rgb(var(--primary-500-rgb))]">
-                                    <p class="text-sm text-white">
+                                    class="ds-button ds-button-secondary mt-2 w-full justify-start text-left">
+                                    <p class="text-sm">
                                         {{ $t(filter.label) }}
                                     </p>
                                 </button> <br>
@@ -299,17 +299,17 @@ const isDark = computed(() => page.props?.darkMode ?? false);
                             </MenuItems>
                             </transition>
                         </Menu>
-                    <button v-if="props.createAction && hasPermission('add_' + props.model)"  @click="$emit('create-record')" type="button" class="inline-flex items-center rounded-2xl border border-[#d8cbb8] bg-white/95 px-3.5 py-2.5 text-sm font-semibold text-[#31413b] shadow-sm transition-all duration-200 hover:border-[rgb(var(--primary-300-rgb))] hover:bg-[#f7f1e7] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#d7e2dd] dark:hover:bg-[#16342e] disabled:cursor-not-allowed disabled:opacity-30">
+                    <button v-if="props.createAction && hasPermission('add_' + props.model)"  @click="$emit('create-record')" type="button" class="ds-button ds-button-primary">
                         <SquaresPlusIcon
                             class="-ml-1 mr-2 h-5 w-5 text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-200-rgb))]"
                             aria-hidden="true"
                         />
                         {{ $t("gestlab.general.buttons.new_record") }}
                     </button>
-                    <button type="button" class="inline-flex items-center rounded-2xl border border-[#d8cbb8] bg-white/95 px-3.5 py-2.5 text-sm font-semibold text-[#31413b] shadow-sm transition-all duration-200 hover:bg-[#f7f1e7] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#d7e2dd] dark:hover:bg-[#16342e] disabled:cursor-not-allowed disabled:opacity-30">{{ $t('gestlab.general.labels.all') }}</button>
+                    <button type="button" class="ds-button ds-button-secondary">{{ $t('gestlab.general.labels.all') }}</button>
                     <Menu as="div" class="relative inline-block text-left">
                             <div>
-                            <MenuButton class="inline-flex items-center gap-x-1.5 rounded-2xl border border-[#d8cbb8] bg-white/95 px-3.5 py-2.5 text-sm font-semibold text-[#31413b] shadow-sm transition-all duration-200 hover:bg-[#f7f1e7] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#d7e2dd] dark:hover:bg-[#16342e] disabled:cursor-not-allowed disabled:opacity-30">
+                            <MenuButton class="ds-button ds-button-secondary">
                                 
                                 <EyeIcon class="-ml-1 mr-2 h-5 w-5 text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-200-rgb))]" aria-hidden="true" />
                                 {{ $t('gestlab.general.labels.columns') }}
@@ -317,12 +317,12 @@ const isDark = computed(() => page.props?.darkMode ?? false);
                             </div>
 
                             <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
-                            <MenuItems class="absolute right-0 z-50 mt-2 w-64 origin-top-right overflow-hidden rounded-2xl border border-[#ded3bf] bg-[#fffdf7] shadow-[0_24px_80px_rgb(20_61_55/0.16)] ring-1 ring-white/70 focus:outline-none dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
+                            <MenuItems class="ds-floating-panel absolute right-0 z-50 mt-2 w-64 origin-top-right focus:outline-none">
                                 <div class="px-4 py-3">
-                                <p class="text-sm text-[#31413b] dark:text-[#d7e2dd]">
+                                <p class="text-sm text-[var(--ds-text-muted)]">
                                 <label class="inline-flex items-center gap-2 font-semibold">
                                     <input
-                                    class="rounded-full border-[#d8cbb8] text-[rgb(var(--primary-700-rgb))] focus:ring-[rgb(var(--primary-500-rgb))] dark:border-[#315149] dark:bg-[#10231f]"
+                                    class="ds-checkbox"
                                         type="checkbox"
                                         :checked="table.getIsAllColumnsVisible()"
                                         @input="toggleAllColumnsVisibility"
@@ -331,15 +331,15 @@ const isDark = computed(() => page.props?.darkMode ?? false);
                                     </label>
                                 </p>
                                 </div>
-                                <div class="border-t border-[#e8ddcd] py-1 dark:border-[#25443c]">
+                                <div class="border-t border-[var(--ds-border)] py-1">
                                 <MenuItem as="div" class="px-4 py-3">
                                     <div v-for="column in table.getAllLeafColumns()"
                                     class="py-1"
                                     :key="column.id">
-                                    <p class="text-sm text-[#31413b] dark:text-[#d7e2dd]">
+                                    <p class="text-sm text-[var(--ds-text-muted)]">
                                     <label class="inline-flex items-center gap-2">
                                         <input
-                                        class="rounded-full border-[#d8cbb8] text-[rgb(var(--primary-700-rgb))] focus:ring-[rgb(var(--primary-500-rgb))] dark:border-[#315149] dark:bg-[#10231f]"
+                                        class="ds-checkbox"
                                             type="checkbox"
                                             :checked="column.getIsVisible()"
                                             @input="toggleColumnVisibility(column)"
@@ -359,20 +359,21 @@ const isDark = computed(() => page.props?.darkMode ?? false);
                 
             </div>
             </div>
-            <div class="mt-6 flow-root">
-            <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+        </section>
+        <section class="ds-table-shell flow-root">
+            <div class="overflow-x-auto">
+                <div class="inline-block min-w-full align-middle">
                 <div class="relative">
-                    <div class="absolute left-14 top-0 z-10 flex h-12 items-center gap-2 rounded-2xl border border-[#ded3bf] bg-[#fffdf7]/95 px-2 shadow-sm dark:border-[#25443c] dark:bg-[#07110f]/95 sm:left-12" v-if="table.getIsAllPageRowsSelected() || table.getIsSomePageRowsSelected()">
-                    <button @click="executeAction(action.id)" v-for="(action, index) in props.actions" :key="index" type="button" class="inline-flex items-center rounded-xl border border-[#d8cbb8] bg-white px-3 py-1.5 text-sm font-semibold text-[#31413b] shadow-sm hover:bg-[#f7f1e7] disabled:cursor-not-allowed disabled:opacity-30 dark:border-[#315149] dark:bg-[#10231f] dark:text-[#d7e2dd] dark:hover:bg-[#16342e]">{{ $t(action.label) }}</button>
+                    <div class="absolute left-14 top-0 z-10 flex h-12 items-center gap-2 rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-2 shadow-sm sm:left-12" v-if="table.getIsAllPageRowsSelected() || table.getIsSomePageRowsSelected()">
+                    <button @click="executeAction(action.id)" v-for="(action, index) in props.actions" :key="index" type="button" class="ds-button ds-button-secondary min-h-0 rounded-xl px-3 py-1.5">{{ $t(action.label) }}</button>
                     </div>
                     <table class="min-w-full table-fixed overflow-hidden rounded-[1.5rem]">
-                    <thead class="bg-[#f7f1e7] dark:bg-[#10231f]">
+                    <thead class="ds-table-head">
                         <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
                             <th scope="col" class="relative px-7 sm:w-12 sm:px-6">
-                                <input type="checkbox" class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded-full border-[#d8cbb8] text-[rgb(var(--primary-700-rgb))] focus:ring-[rgb(var(--primary-500-rgb))] dark:border-[#315149] dark:bg-[#10231f]" :checked="table.getIsAllPageRowsSelected()" :indeterminate="table.getIsSomePageRowsSelected()" :onChange="table.getToggleAllPageRowsSelectedHandler()" />
+                                <input type="checkbox" class="ds-checkbox absolute left-4 top-1/2 -mt-2" :checked="table.getIsAllPageRowsSelected()" :indeterminate="table.getIsSomePageRowsSelected()" :onChange="table.getToggleAllPageRowsSelectedHandler()" />
                             </th>
-                            <th v-for="header in headerGroup.headers" :key="header.id" :class="header.column.getCanSort() ? 'cursor-pointer select-none' : ''" class="min-w-[12rem] py-3.5 pr-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[#5f6f68] dark:text-[#a9bbb4]" @click="header.column.getToggleSortingHandler()?.($event)">
+                            <th v-for="header in headerGroup.headers" :key="header.id" :class="header.column.getCanSort() ? 'cursor-pointer select-none' : ''" class="ds-table-heading min-w-[12rem] py-3.5 pr-3 text-left" @click="header.column.getToggleSortingHandler()?.($event)">
                                 <FlexRender
                                     :render="header.column.columnDef.header"
                                     :props="header.getContext()"
@@ -384,25 +385,25 @@ const isDark = computed(() => page.props?.darkMode ?? false);
                                 </span>
                                 
                             </th>
-                            <th scope="col" class="min-w-[12rem] py-3.5 pr-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-[#5f6f68] dark:text-[#a9bbb4]">
+                            <th scope="col" class="ds-table-heading min-w-[12rem] py-3.5 pr-3 text-left">
                                 {{ $t('gestlab.general.labels.actions') }}
                             </th>
                         </tr>
                         
                         
                     </thead>
-                    <tbody class="divide-y divide-[#e8ddcd] bg-[#fffdf7] dark:divide-[#25443c] dark:bg-[#07110f]">
-                        <tr v-for="row in table.getRowModel().rows" :key="row.id" class="transition-colors duration-150 hover:bg-[#f7f1e7]/70 dark:hover:bg-[#10231f]/80">
+                    <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
+                        <tr v-for="row in table.getRowModel().rows" :key="row.id" class="ds-table-row">
                             <td class="relative px-7 sm:w-12 sm:px-6">
-                                <input type="checkbox" class="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded-full border-[#d8cbb8] text-[rgb(var(--primary-700-rgb))] focus:ring-[rgb(var(--primary-500-rgb))] dark:border-[#315149] dark:bg-[#10231f]" :value="row.id" :checked="row.getIsSelected()" :onChange="row.getToggleSelectedHandler()" :disabled="!row.getCanSelect()" />
+                                <input type="checkbox" class="ds-checkbox absolute left-4 top-1/2 -mt-2" :value="row.id" :checked="row.getIsSelected()" :onChange="row.getToggleSelectedHandler()" :disabled="!row.getCanSelect()" />
                             </td>
-                            <td class="whitespace-nowrap py-4 text-sm font-medium text-[#31413b] dark:text-[#d7e2dd]" v-for="cell in row.getVisibleCells()" :key="cell.id">
+                            <td class="ds-table-cell whitespace-nowrap py-4" v-for="cell in row.getVisibleCells()" :key="cell.id">
                                 <FlexRender
                                     :render="cell.column.columnDef.cell"
                                     :props="cell.getContext()"
                                 />
                             </td>
-                            <td class="whitespace-nowrap py-4 text-sm text-[#5f6f68] dark:text-[#a9bbb4]">
+                            <td class="ds-table-cell whitespace-nowrap py-4">
                                 <slot
                                 name="actions"
                                 :id="row.original.id"
@@ -430,8 +431,7 @@ const isDark = computed(() => page.props?.darkMode ?? false);
                 </div>
                 </div>
             </div>
-            </div>
-        </div>
+        </section>
 
     </div>
 </template>

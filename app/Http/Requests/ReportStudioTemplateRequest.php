@@ -12,6 +12,16 @@ use Spatie\Browsershot\Browsershot;
 class ReportStudioTemplateRequest extends FormRequest
 {
     /**
+     * @var array<int, string>
+     */
+    private const CANVAS_SURFACES = [
+        'content',
+        'first_page_header_html',
+        'default_header_html',
+        'footer_html',
+    ];
+
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
@@ -53,7 +63,7 @@ class ReportStudioTemplateRequest extends FormRequest
             'layout_schema.document_font_family' => ['nullable', 'string', 'max:150'],
             'layout_schema.canvas_blocks.*.id' => ['nullable', 'string', 'max:100'],
             'layout_schema.canvas_blocks.*.title' => ['nullable', 'string', 'max:255'],
-            'layout_schema.canvas_blocks.*.surface' => ['nullable', 'string', 'max:100'],
+            'layout_schema.canvas_blocks.*.surface' => ['nullable', 'string', 'max:100', Rule::in(self::CANVAS_SURFACES)],
             'layout_schema.canvas_blocks.*.block_kind' => ['nullable', Rule::in(['rich_text', 'signature', 'image', 'stamp', 'qr_code', 'chart_snapshot'])],
             'layout_schema.canvas_blocks.*.asset_id' => ['nullable', 'string', 'max:100'],
             'layout_schema.canvas_blocks.*.asset_label' => ['nullable', 'string', 'max:255'],
@@ -189,7 +199,35 @@ class ReportStudioTemplateRequest extends FormRequest
                     'O renderizador Browsershot requer o pacote opcional spatie/browsershot, Node e Chrome/Chromium no servidor.'
                 );
             }
+
+            $this->validateCanvasBlockPlacement($validator);
         });
+    }
+
+    private function validateCanvasBlockPlacement(Validator $validator): void
+    {
+        $blocks = $this->input('layout_schema.canvas_blocks', []);
+
+        if (! is_array($blocks)) {
+            return;
+        }
+
+        foreach ($blocks as $index => $block) {
+            if (! is_array($block)) {
+                continue;
+            }
+
+            if (
+                ($block['surface'] ?? 'content') === 'content'
+                && ($block['page_scope'] ?? null) === 'specific'
+                && blank($block['page_number'] ?? null)
+            ) {
+                $validator->errors()->add(
+                    "layout_schema.canvas_blocks.{$index}.page_number",
+                    'Indique a página específica onde este objecto deve aparecer no PDF.'
+                );
+            }
+        }
     }
 
     private function chartTextListRule(): \Closure

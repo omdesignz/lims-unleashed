@@ -68,7 +68,7 @@ class ReportStudioPdfBuilder
             ? View::make($bodyView, ['model' => $certificate])->render()
             : $this->defaultAnalysisBodyHtml();
         $bodyHtml = data_get($layout, 'body_html') ?: $defaultBodyHtml;
-        $bodyHtml = strtr($bodyHtml, $placeholderValues);
+        $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
         return [
             'view' => 'PDFs.studios.document',
@@ -133,7 +133,10 @@ class ReportStudioPdfBuilder
             'issue_date' => $placeholderValues['{issue_date}'],
         ];
         $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
-        $bodyHtml = strtr(data_get($layout, 'body_html') ?: $this->defaultAnalysisBodyHtml(), $placeholderValues);
+        $bodyHtml = $this->renderTemplateHtml(
+            (string) (data_get($layout, 'body_html') ?: $this->defaultAnalysisBodyHtml()),
+            $placeholderValues
+        );
 
         return [
             'view' => 'PDFs.studios.document',
@@ -207,7 +210,7 @@ class ReportStudioPdfBuilder
                 'payload' => $payload,
             ])->render();
         } else {
-            $bodyHtml = strtr($bodyHtml, $placeholderValues);
+            $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
         }
 
         return [
@@ -352,7 +355,7 @@ class ReportStudioPdfBuilder
 
         $bodyTemplate = data_get($layout, 'body_html');
         $bodyHtml = filled($bodyTemplate)
-            ? strtr((string) $bodyTemplate, $this->placeholderReplacements($proposalPlaceholderValues))
+            ? $this->renderTemplateHtml((string) $bodyTemplate, $proposalPlaceholderValues)
             : View::make('PDFs.studios.proposal-body', [
                 'proposal' => $proposal,
                 'parsedContent' => $parsedContent,
@@ -430,15 +433,15 @@ class ReportStudioPdfBuilder
             $template->user?->name ?? 'Utilizador do sistema',
             'Pré-visualização do modelo com estrutura editorial, blocos de assinatura e variáveis activas.'
         );
-        $parsedContent = strtr($template->content, $this->placeholderReplacements($previewValues));
+        $parsedContent = $this->renderTemplateHtml($template->content, $previewValues);
         $previewValues['{proposal_content}'] = $parsedContent;
         $previewValues['{parsed_content}'] = $parsedContent;
         $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($previewValues));
 
         $bodyTemplate = data_get($layout, 'body_html');
-        $bodyHtml = strtr(
+        $bodyHtml = $this->renderTemplateHtml(
             filled($bodyTemplate) ? (string) $bodyTemplate : $template->content,
-            $this->placeholderReplacements($previewValues)
+            $previewValues
         );
 
         return [
@@ -512,7 +515,10 @@ class ReportStudioPdfBuilder
         $previewValues['{proposal_content}'] = '<section class="document-callout studio-avoid-break"><strong>Cláusulas técnicas e comerciais</strong><br>Âmbito, métodos, decisão, prazos e aceite preparados para validação do cliente.</section>';
         $previewValues['{parsed_content}'] = $previewValues['{proposal_content}'];
         $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($previewValues));
-        $bodyHtml = strtr(data_get($layout, 'body_html') ?: $this->defaultProposalPreviewBodyHtml(), $this->placeholderReplacements($previewValues));
+        $bodyHtml = $this->renderTemplateHtml(
+            (string) (data_get($layout, 'body_html') ?: $this->defaultProposalPreviewBodyHtml()),
+            $previewValues
+        );
 
         return [
             'view' => 'PDFs.studios.document',
@@ -584,7 +590,7 @@ class ReportStudioPdfBuilder
         $placeholderValues = $this->exportCertificatePlaceholderValues($certificate, $settings);
         $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
         $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultExportCertificateBodyHtml();
-        $bodyHtml = strtr($bodyHtml, $placeholderValues);
+        $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
         return [
             'view' => 'PDFs.studios.document',
@@ -651,7 +657,7 @@ class ReportStudioPdfBuilder
             'destination_country' => 'Namíbia',
         ];
 
-        $bodyHtml = strtr(
+        $bodyHtml = $this->renderTemplateHtml(
             data_get($layout, 'body_html') ?: $this->defaultExportCertificateBodyHtml(),
             [
                 '{certificate_number}' => 'EXP-2026-0041',
@@ -752,7 +758,7 @@ class ReportStudioPdfBuilder
         $placeholderValues = $this->importCertificatePlaceholderValues($certificate, $settings);
         $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
         $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultImportCertificateBodyHtml();
-        $bodyHtml = strtr($bodyHtml, $placeholderValues);
+        $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
         return [
             'view' => 'PDFs.studios.document',
@@ -819,7 +825,7 @@ class ReportStudioPdfBuilder
             'destination_country' => 'Angola',
         ];
 
-        $bodyHtml = strtr(
+        $bodyHtml = $this->renderTemplateHtml(
             data_get($layout, 'body_html') ?: $this->defaultImportCertificateBodyHtml(),
             [
                 '{certificate_number}' => 'IMP-2026-0038',
@@ -920,7 +926,7 @@ class ReportStudioPdfBuilder
         $placeholderValues = $this->quotePlaceholderValues($quote, $settings);
         $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
         $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultQuoteBodyHtml();
-        $bodyHtml = strtr($bodyHtml, $placeholderValues);
+        $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
         return [
             'view' => 'PDFs.studios.document',
@@ -986,38 +992,41 @@ class ReportStudioPdfBuilder
             'expiry_date' => now()->addDays(15)->format('d/m/Y'),
         ];
 
-        $bodyHtml = strtr(
+        $placeholderValues = [
+            '{quote_number}' => 'PP 05/2026/0048',
+            '{document_number}' => 'PP 05/2026/0048',
+            '{customer_name}' => 'Cliente industrial de referência, Lda.',
+            '{service_location}' => 'Luanda · Unidade Industrial',
+            '{issue_date}' => now()->format('d/m/Y'),
+            '{expiry_date}' => now()->addDays(15)->format('d/m/Y'),
+            '{items_table}' => $this->reportTableHtml(
+                [
+                    ['label' => 'Serviço', 'translation' => 'Service'],
+                    ['label' => 'Qtd.', 'translation' => 'Qty.', 'align' => 'right'],
+                    ['label' => 'Valor', 'translation' => 'Amount', 'align' => 'right'],
+                ],
+                [
+                    ['Ensaios microbiológicos', '1', 'AOA 52.500,00'],
+                    ['Metais pesados', '1', 'AOA 45.000,00'],
+                ]
+            ),
+            '{summary_table}' => $this->financialSummaryTableHtml([
+                ['label' => 'Subtotal', 'value' => 'AOA 97.500,00'],
+                ['label' => 'IVA', 'value' => 'AOA 13.650,00'],
+                ['label' => 'Total', 'value' => 'AOA 111.150,00', 'emphasis' => true],
+            ]),
+            '{observations}' => 'Pré-visualização de proforma com composição comercial, paginação, resumo financeiro e assinatura.',
+            '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>Direcção Comercial</strong><br />Validação e emissão da proforma</div>',
+            '{lab_details}' => $this->labDetailsHtml($settings),
+            '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente industrial de referência, Lda.'),
+            '{banking_details}' => $this->bankingDetailsHtml($settings),
+            ...$this->bankPlaceholderValues($settings),
+            '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, proforma, proposta'),
+        ];
+        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
+        $bodyHtml = $this->renderTemplateHtml(
             data_get($layout, 'body_html') ?: $this->defaultQuoteBodyHtml(),
-            [
-                '{quote_number}' => 'PP 05/2026/0048',
-                '{customer_name}' => 'Cliente industrial de referência, Lda.',
-                '{service_location}' => 'Luanda · Unidade Industrial',
-                '{issue_date}' => now()->format('d/m/Y'),
-                '{expiry_date}' => now()->addDays(15)->format('d/m/Y'),
-                '{items_table}' => $this->reportTableHtml(
-                    [
-                        ['label' => 'Serviço', 'translation' => 'Service'],
-                        ['label' => 'Qtd.', 'translation' => 'Qty.', 'align' => 'right'],
-                        ['label' => 'Valor', 'translation' => 'Amount', 'align' => 'right'],
-                    ],
-                    [
-                        ['Ensaios microbiológicos', '1', 'AOA 52.500,00'],
-                        ['Metais pesados', '1', 'AOA 45.000,00'],
-                    ]
-                ),
-                '{summary_table}' => $this->financialSummaryTableHtml([
-                    ['label' => 'Subtotal', 'value' => 'AOA 97.500,00'],
-                    ['label' => 'IVA', 'value' => 'AOA 13.650,00'],
-                    ['label' => 'Total', 'value' => 'AOA 111.150,00', 'emphasis' => true],
-                ]),
-                '{observations}' => 'Pré-visualização de proforma com composição comercial, paginação, resumo financeiro e assinatura.',
-                '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>Direcção Comercial</strong><br />Validação e emissão da proforma</div>',
-                '{lab_details}' => $this->labDetailsHtml($settings),
-                '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente industrial de referência, Lda.'),
-                '{banking_details}' => $this->bankingDetailsHtml($settings),
-                ...$this->bankPlaceholderValues($settings),
-                '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, proforma, proposta'),
-            ]
+            $placeholderValues
         );
 
         return [
@@ -1028,25 +1037,25 @@ class ReportStudioPdfBuilder
                     data_get($layout, 'first_page_header_html') ?: $this->defaultQuoteFirstPageHeader($settings),
                     data_get($layout, 'canvas_blocks', []),
                     'first_page_header_html',
-                    $headerContext
+                    $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
                     data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · {{customer_name}}</div>',
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
-                    $headerContext
+                    $surfaceContext
                 ),
                 'footerHtml' => $this->buildSurfaceHtml(
                     data_get($layout, 'footer_html') ?: $this->defaultQuoteFooter(),
                     data_get($layout, 'canvas_blocks', []),
                     'footer_html',
-                    $headerContext
+                    $surfaceContext
                 ),
                 'bodyHtml' => $this->buildSurfaceHtml(
                     $bodyHtml,
                     data_get($layout, 'canvas_blocks', []),
                     'content',
-                    $headerContext
+                    $surfaceContext
                 ),
                 'styles' => $this->stylesCss($layout),
                 'backgroundImage' => data_get($layout, 'background_image_path'),
@@ -1089,7 +1098,7 @@ class ReportStudioPdfBuilder
         $placeholderValues = $this->invoicePlaceholderValues($invoice, $settings);
         $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
         $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultInvoiceBodyHtml();
-        $bodyHtml = strtr($bodyHtml, $placeholderValues);
+        $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
         return [
             'view' => 'PDFs.studios.document',
@@ -1159,7 +1168,7 @@ class ReportStudioPdfBuilder
         $placeholderValues = $this->receiptPlaceholderValues($receipt, $settings);
         $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
         $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultReceiptBodyHtml();
-        $bodyHtml = strtr($bodyHtml, $placeholderValues);
+        $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
         return [
             'view' => 'PDFs.studios.document',
@@ -1229,7 +1238,7 @@ class ReportStudioPdfBuilder
         $placeholderValues = $this->creditNotePlaceholderValues($creditNote, $settings);
         $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
         $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultCreditNoteBodyHtml();
-        $bodyHtml = strtr($bodyHtml, $placeholderValues);
+        $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
         return [
             'view' => 'PDFs.studios.document',
@@ -1402,7 +1411,7 @@ class ReportStudioPdfBuilder
             ])
             ->all();
 
-        return strtr($template, $replacements);
+        return strtr($this->resolveConditionalBlocks($template, $data), $replacements);
     }
 
     /**
@@ -1497,7 +1506,77 @@ class ReportStudioPdfBuilder
     }
 
     /**
-     * @param  array<string, string|int>  $values
+     * @param  array<string, mixed>  $values
+     */
+    private function renderTemplateHtml(string $template, array $values): string
+    {
+        return strtr(
+            $this->resolveConditionalBlocks($template, $values),
+            $this->placeholderReplacements($values)
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    private function resolveConditionalBlocks(string $template, array $values): string
+    {
+        $blocks = [
+            ['pattern' => '/\{if:([a-zA-Z0-9_]+)\}([\s\S]*?)\{endif:\1\}/', 'invert' => false],
+            ['pattern' => '/\{\{if:([a-zA-Z0-9_]+)\}\}([\s\S]*?)\{\{endif:\1\}\}/', 'invert' => false],
+            ['pattern' => '/\{ifnot:([a-zA-Z0-9_]+)\}([\s\S]*?)\{endif:\1\}/', 'invert' => true],
+            ['pattern' => '/\{\{ifnot:([a-zA-Z0-9_]+)\}\}([\s\S]*?)\{\{endif:\1\}\}/', 'invert' => true],
+        ];
+
+        foreach ($blocks as $block) {
+            $template = (string) preg_replace_callback(
+                $block['pattern'],
+                function (array $matches) use ($values, $block): string {
+                    $isTruthy = $this->placeholderIsTruthy(
+                        $this->valueForConditionalPlaceholder($values, (string) $matches[1])
+                    );
+                    $shouldRender = (bool) $block['invert'] ? ! $isTruthy : $isTruthy;
+
+                    return $shouldRender ? (string) $matches[2] : '';
+                },
+                $template
+            );
+        }
+
+        return $template;
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    private function valueForConditionalPlaceholder(array $values, string $key): mixed
+    {
+        foreach ([$key, '{'.$key.'}', '{{'.$key.'}}'] as $candidate) {
+            if (array_key_exists($candidate, $values)) {
+                return $values[$candidate];
+            }
+        }
+
+        return null;
+    }
+
+    private function placeholderIsTruthy(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (float) $value !== 0.0;
+        }
+
+        $normalized = str(trim(strip_tags((string) $value)))->lower()->toString();
+
+        return ! in_array($normalized, ['', '0', '0.0', '0.00', '0,0', '0,00', 'false', 'no', 'não', 'nao', '—', '-'], true);
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
      * @return array<string, string>
      */
     private function placeholderReplacements(array $values): array
@@ -2383,9 +2462,9 @@ HTML;
         ];
         $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholders));
 
-        $bodyHtml = strtr(
+        $bodyHtml = $this->renderTemplateHtml(
             data_get($layout, 'body_html') ?: $defaultBodyHtml,
-            $this->placeholderReplacements($placeholders)
+            $placeholders
         );
 
         return [
@@ -2745,7 +2824,7 @@ HTML;
             ->map(function ($result): array {
                 $parameter = $result->parameter_label ?: $result->parameter?->name ?: 'Parâmetro';
                 $method = $result->standard_label ?: $result->standard?->name ?: $result->protocol_label ?: $result->protocol?->name ?: 'Método registado';
-                $value = $result->approved_value ?: $result->verified_value ?: $result->inserted_value ?: '—';
+                $value = $this->formatAnalysisResultValue($result);
                 $unit = $result->unit_label ?: $result->unit?->name ?: '—';
                 $uncertainty = $result->uncertainty_value ?: data_get($result->calculation_metadata, 'uncertainty') ?: '—';
                 $status = $result->approved_date ? 'Aprovado' : ($result->verified_date ? 'Verificado' : ($result->inserted_date ? 'Inserido' : 'Pendente'));
@@ -2786,6 +2865,24 @@ HTML;
             $rows,
             'Sem resultados registados.'
         );
+    }
+
+    private function formatAnalysisResultValue(mixed $result): string
+    {
+        $value = $result->approved_value ?: $result->verified_value ?: $result->inserted_value;
+
+        if (blank($value)) {
+            return '—';
+        }
+
+        if (data_get($result->extra_data, 'display_format') !== 'scientific' || ! is_numeric((string) $value)) {
+            return (string) $value;
+        }
+
+        $decimalPlaces = (int) ($result->parameter?->decimal_places ?? $result->decimal_places ?? 2);
+        $precision = min(max($decimalPlaces, 0), 8);
+
+        return str_replace('E', ' × 10^', sprintf('%.'.$precision.'E', (float) $value));
     }
 
     /**

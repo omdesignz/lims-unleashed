@@ -7,6 +7,7 @@ import { router, Link } from "@inertiajs/vue3";
 import { trans } from 'laravel-vue-i18n';
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { EyeIcon } from "@heroicons/vue/24/outline";
+import ModuleHero from '@/Components/base/ModuleHero.vue'
 
 
 const props = defineProps({
@@ -101,41 +102,41 @@ const showDeleteConfirmation = ref(false);
 </script>
 <template>
 <div class="space-y-6" :class="commercialDocumentThemeClasses">
-<div class="mb-6 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100 dark:border-slate-800 dark:bg-slate-950 dark:ring-slate-800">
-  <div class="relative isolate px-5 py-6 sm:px-7">
-    <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(var(--color-primary-500-rgb,59,130,246),0.18),transparent_32%),linear-gradient(135deg,rgba(248,250,252,0.96),rgba(255,255,255,0.9))] dark:bg-[radial-gradient(circle_at_top_left,rgba(var(--color-primary-400-rgb,96,165,250),0.20),transparent_34%),linear-gradient(135deg,rgba(15,23,42,0.98),rgba(2,6,23,0.96))]" />
-    <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary-700 dark:text-primary-300">Comercial</p>
-        <h1 class="mt-3 text-2xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-3xl">{{ $t('gestlab.general.labels.quotes.page_title') }}</h1>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-          Prepare propostas comerciais, acompanhe aprovações e converta documentos sem perder rastreabilidade.
-        </p>
-      </div>
-      <div class="grid grid-cols-2 gap-3 sm:flex">
-        <div class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Registos</p>
-          <p class="mt-1 text-xl font-semibold text-slate-950 dark:text-white">{{ props.record?.total ?? props.record?.data?.length ?? 0 }}</p>
-        </div>
-        <div class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
-          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Fluxo</p>
-          <p class="mt-1 text-sm font-semibold text-slate-950 dark:text-white">Propostas</p>
-        </div>
-      </div>
-    </div>
+<ModuleHero
+  :eyebrow="$t('gestlab.general.labels.commercial_documents.commercial_area')"
+  :title="$t('gestlab.general.labels.quotes.page_title')"
+  :description="$t('gestlab.general.labels.quotes.index_description')"
+>
+  <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <article class="ds-card bg-[var(--ds-panel-raised)] p-4">
+      <p class="ds-kicker text-[0.64rem]">
+        {{ $t('gestlab.general.labels.commercial_documents.records') }}
+      </p>
+      <p class="mt-2 text-2xl font-black tabular-nums text-[var(--ds-text)]">
+        {{ props.record?.total ?? props.record?.data?.length ?? 0 }}
+      </p>
+    </article>
+    <article class="ds-card bg-[var(--ds-panel-raised)] p-4">
+      <p class="ds-kicker text-[0.64rem]">
+        {{ $t('gestlab.general.labels.commercial_documents.flow') }}
+      </p>
+      <p class="mt-2 text-sm font-black text-[var(--ds-text)]">
+        {{ $t('gestlab.general.labels.quotes.index_flow') }}
+      </p>
+    </article>
   </div>
-</div>
+</ModuleHero>
 
 <records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="handleEdit">
   <template #actions="{ id }">
       <Link
                     :href="route('quotes.show', {quote: id})"
-                    class="text-ft-gray hover:text-blue-900 transform transition-all duration-200 hover:scale-150"
+                    class="ds-table-action"
                   >
-                  <EyeIcon class="h-4 w-4" />
+                  <EyeIcon class="h-5 w-5" />
             </Link>
     </template>
-</records-table> <br>
+</records-table>
 
 <confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" :confirm="trans('gestlab.general.buttons.yes')" :cancel="trans('gestlab.general.buttons.no')" />
 </div>

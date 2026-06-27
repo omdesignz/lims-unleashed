@@ -246,16 +246,14 @@ const masks = ref({
 
 <template>
   <div class="space-y-8">
-    <!-- Unified card: toolbar + table -->
-    <section class="overflow-hidden rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_24px_80px_rgb(20_61_55/0.10)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
-      <!-- Toolbar -->
+    <section class="ds-command-surface">
       <div class="space-y-5 px-5 py-5 sm:px-7 sm:py-6">
         <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div>
-            <p class="text-xs font-black uppercase tracking-[0.22em] text-[#6b7b74] dark:text-[#83978d]">
-              Pesquisa e filtros
+            <p class="ds-kicker">
+              {{ $t("gestlab.general.titles.search_and_filters") }}
             </p>
-            <h2 class="mt-2 text-lg font-black tracking-tight text-[#15231f] dark:text-[#f7f1e7]">
+            <h2 class="ds-heading mt-2 text-lg">
               {{ $t("gestlab.general.titles.records_list") }}
             </h2>
           </div>
@@ -263,7 +261,7 @@ const masks = ref({
           <div class="flex flex-wrap items-center gap-2 xl:justify-end">
             <span
               v-if="totalRecords"
-              class="inline-flex items-center gap-1.5 rounded-full border border-[#ded3bf] bg-[#f7f1e7] px-3 py-1.5 text-xs font-semibold text-[#5f6f68] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#a9bbb4]"
+              class="inline-flex items-center gap-1.5 rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-1.5 text-xs font-bold text-[var(--ds-text-muted)]"
             >
               {{ resultSummary }}
             </span>
@@ -276,7 +274,7 @@ const masks = ref({
             <button
               v-if="props.createAction && hasPermission('add_' + props.model)"
               type="button"
-              class="inline-flex items-center justify-center rounded-2xl bg-[rgb(var(--primary-800-rgb))] px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgb(var(--primary-900-rgb)/0.14)] transition-colors duration-150 hover:bg-[rgb(var(--primary-700-rgb))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary-500-rgb)/0.32)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fffdf7] dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f] dark:hover:bg-[rgb(var(--primary-300-rgb))] dark:focus-visible:ring-offset-[#07110f]"
+              class="ds-button ds-button-primary"
               @click="$emit('create-record')"
             >
               <SquaresPlusIcon class="mr-2 h-5 w-5" />
@@ -285,44 +283,46 @@ const masks = ref({
           </div>
         </div>
 
-        <div class="grid gap-3 xl:grid-cols-[minmax(18rem,1.3fr)_minmax(13rem,0.6fr)_minmax(24rem,1.4fr)_auto] xl:items-center">
+        <div class="ds-command-toolbar grid gap-3 p-3 lg:grid-cols-[minmax(16rem,1fr)_auto] lg:items-center">
           <div class="relative min-w-0">
               <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <MagnifyingGlassIcon class="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                <MagnifyingGlassIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
               </div>
               <input
                 v-model="query.search"
                 type="search"
                 :placeholder="$t('gestlab.general.search_input_placeholder')"
-                class="block w-full rounded-2xl border-[#d8cbb8] bg-white py-3 pl-10 pr-3 text-sm font-medium text-[#15231f] placeholder:text-[#8d9b94] shadow-sm transition focus:border-[rgb(var(--primary-500-rgb))] focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.22)] dark:border-[#315149] dark:bg-[#07110f] dark:text-[#f7f1e7] dark:placeholder:text-[#657970]"
+                class="ds-field pl-10"
               />
           </div>
 
-          <select-filter :filters="filters" @execute="changeFilter" />
+          <div class="grid min-w-0 gap-2 sm:grid-cols-2 lg:flex lg:items-center lg:justify-end">
+            <select-filter :filters="filters" @execute="changeFilter" />
 
-          <date-picker
-            v-model.range.string="query.date"
-            locale="pt-PT"
-            color="blue"
-            mode="date"
-            range
-            :input-debounce="500"
-            :masks="masks"
-            @update:model-value="updateRange"
-          />
+            <date-picker
+              v-model.range.string="query.date"
+              locale="pt-PT"
+              color="primary"
+              mode="date"
+              range
+              :input-debounce="500"
+              :masks="masks"
+              @update:model-value="updateRange"
+            />
 
-          <button
-            v-if="hasActiveQuery"
-            type="button"
-            class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#ded3bf] bg-[#fffdf7] px-4 text-sm font-semibold text-[#5f6f68] transition-colors duration-150 hover:bg-[#f7f1e7] hover:text-[#15231f] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#a9bbb4] dark:hover:bg-[#16342e] dark:hover:text-[#f7f1e7]"
-            @click="clearQueryFilters"
-          >
-            <AdjustmentsHorizontalIcon class="h-4 w-4" />
-            <span>{{ $t("gestlab.general.buttons.clear") }}</span>
-          </button>
+            <button
+              v-if="hasActiveQuery"
+              type="button"
+              class="ds-button ds-button-secondary sm:col-span-2 lg:col-span-1"
+              @click="clearQueryFilters"
+            >
+              <AdjustmentsHorizontalIcon class="h-4 w-4" />
+              <span>{{ $t("gestlab.general.buttons.clear") }}</span>
+            </button>
+          </div>
         </div>
 
-        <div v-if="selectedRecordIds.length" class="rounded-[1.5rem] border border-[rgb(var(--primary-200-rgb)/0.75)] bg-[rgb(var(--primary-50-rgb)/0.7)] p-3 dark:border-[rgb(var(--primary-300-rgb)/0.18)] dark:bg-[rgb(var(--primary-500-rgb)/0.1)]">
+        <div v-if="selectedRecordIds.length" class="rounded-[1.35rem] border border-[rgb(var(--primary-200-rgb)/0.75)] bg-[rgb(var(--primary-50-rgb)/0.7)] p-3 dark:border-[rgb(var(--primary-300-rgb)/0.18)] dark:bg-[rgb(var(--primary-500-rgb)/0.1)]">
           <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-100-rgb))]">
               {{ selectedRecordIds.length }} {{ $t("gestlab.general.labels.selected_records") }}
@@ -335,23 +335,24 @@ const masks = ref({
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- Divider + table header -->
+    <section class="ds-table-shell">
       <div
-        class="flex items-center justify-between border-y border-[#ded3bf] bg-[#f7f1e7]/85 px-5 py-4 dark:border-[#25443c] dark:bg-[#10231f]/80 sm:px-7"
+        class="ds-table-summary px-5 py-4 sm:px-7"
       >
         <div>
-          <p class="text-sm font-semibold text-[#15231f] dark:text-[#f7f1e7]">
+          <p class="ds-heading text-sm">
             {{ $t("gestlab.general.titles.records_list") }}
           </p>
-          <p class="mt-0.5 text-xs font-medium text-[#5f6f68] dark:text-[#a9bbb4]">
+          <p class="mt-0.5 text-xs font-semibold text-[var(--ds-text-muted)]">
             {{ totalRecords }} {{ $t("gestlab.general.labels.records") }}
           </p>
         </div>
 
         <button
           type="button"
-          class="inline-flex items-center rounded-full border border-[#d8cbb8] bg-white px-3 py-1.5 text-xs font-semibold text-[#5f6f68] transition hover:bg-[#fffaf0] dark:border-[#315149] dark:bg-[#07110f] dark:text-[#a9bbb4] dark:hover:bg-[#10231f] md:hidden"
+          class="ds-button ds-button-secondary min-h-0 rounded-full px-3 py-1.5 text-xs md:hidden"
           @click="toggleSelectAll"
         >
           {{ allVisibleSelected ? $t("gestlab.general.labels.clear_selection") : $t("gestlab.general.buttons.select_all") }}
@@ -361,7 +362,7 @@ const masks = ref({
       <!-- Records -->
       <div v-if="record.data.length">
         <!-- Mobile cards -->
-        <div class="divide-y divide-[#ded3bf] dark:divide-[#25443c] md:hidden">
+        <div class="divide-y divide-[var(--ds-border)] md:hidden">
           <article
             v-for="item in record.data"
             :key="item.id"
@@ -372,13 +373,13 @@ const masks = ref({
                 <input
                   v-model="item.selected"
                   type="checkbox"
-                  class="h-4 w-4 rounded border-[#d8cbb8] text-[rgb(var(--primary-700-rgb))] focus:ring-[rgb(var(--primary-500-rgb))] dark:border-[#315149] dark:bg-[#07110f]"
+                  class="ds-checkbox"
                 />
                 <div>
-                  <p class="text-sm font-semibold text-[#15231f] dark:text-[#f7f1e7]">
+                  <p class="ds-heading text-sm">
                     {{ item[displayFields[0]?.value] ?? `#${item.id}` }}
                   </p>
-                  <p class="text-xs font-medium text-[#5f6f68] dark:text-[#a9bbb4]">
+                  <p class="text-xs font-semibold text-[var(--ds-text-muted)]">
                     ID {{ item.id }}
                   </p>
                 </div>
@@ -391,22 +392,22 @@ const masks = ref({
               <div
                 v-for="field in displayFields"
                 :key="`${item.id}-${field.value}`"
-                class="rounded-2xl border border-[#e8ddcd] bg-[#f7f1e7]/70 px-3 py-2 dark:border-[#25443c] dark:bg-[#10231f]/70"
+                class="rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2"
               >
-                <dt class="text-[11px] font-semibold uppercase tracking-wide text-[#73827b] dark:text-[#8ea49b]">
+                <dt class="ds-table-heading">
                   {{ $t(field.name) }}
                 </dt>
-                <dd class="mt-1 break-words text-sm font-medium text-[#15231f] dark:text-[#f7f1e7]">
+                <dd class="mt-1 break-words text-sm font-semibold text-[var(--ds-text)]">
                   {{ item[field.value] ?? "—" }}
                 </dd>
               </div>
             </dl>
 
-            <div class="flex flex-wrap items-center gap-2 border-t border-[#ded3bf] pt-3 text-sm font-medium dark:border-[#25443c]">
+            <div class="flex flex-wrap items-center gap-2 border-t border-[var(--ds-border)] pt-3 text-sm font-medium">
               <button
                 v-if="item.deleted && hasPermission('restore_' + props.model)"
                 type="button"
-                class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold text-[rgb(var(--primary-700-rgb))] transition-colors duration-150 hover:bg-[rgb(var(--primary-50-rgb)/0.8)] hover:text-[rgb(var(--primary-900-rgb))] dark:text-[rgb(var(--primary-200-rgb))] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.12)]"
+                class="ds-table-action"
                 @click="() => { recordId = item.id; actionId = 'restore'; recordUrl = item.links.restore_path; showDeleteConfirmation = true; }"
               >
                 {{ $t("gestlab.actions.restore") }}
@@ -415,7 +416,7 @@ const masks = ref({
               <button
                 v-if="!item.deleted && !props.slideOverEdit && hasPermission('edit_' + props.model)"
                 type="button"
-                class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold text-[rgb(var(--primary-700-rgb))] transition-colors duration-150 hover:bg-[rgb(var(--primary-50-rgb)/0.8)] hover:text-[rgb(var(--primary-900-rgb))] dark:text-[rgb(var(--primary-200-rgb))] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.12)]"
+                class="ds-table-action"
                 @click="() => { recordId = item.id; actionId = 'edit'; recordUrl = item.links.edit_path; showDeleteConfirmation = true; }"
               >
                 {{ $t("gestlab.actions.edit") }}
@@ -424,7 +425,7 @@ const masks = ref({
               <button
                 v-if="!item.deleted && props.slideOverEdit && hasPermission('edit_' + props.model)"
                 type="button"
-                class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold text-[rgb(var(--primary-700-rgb))] transition-colors duration-150 hover:bg-[rgb(var(--primary-50-rgb)/0.8)] hover:text-[rgb(var(--primary-900-rgb))] dark:text-[rgb(var(--primary-200-rgb))] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.12)]"
+                class="ds-table-action"
                 @click="() => { recordId = item; actionId = 'edit_slide'; showDeleteConfirmation = true; }"
               >
                 {{ $t("gestlab.actions.edit") }}
@@ -433,7 +434,7 @@ const masks = ref({
               <Link
                 v-if="!item.deleted && hasPermission('add_' + props.model) && !item?.placed_analysis && item.links.collection_type === 'programmed'"
                 :href="item.links.place_analysis_path"
-                class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold text-[rgb(var(--primary-700-rgb))] transition-colors duration-150 hover:bg-[rgb(var(--primary-50-rgb)/0.8)] hover:text-[rgb(var(--primary-900-rgb))] dark:text-[rgb(var(--primary-200-rgb))] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.12)]"
+                class="ds-table-action"
               >
                 {{ $t("gestlab.actions.insert") }}
               </Link>
@@ -441,7 +442,7 @@ const masks = ref({
               <button
                 v-if="!item.deleted && hasPermission('delete_' + props.model)"
                 type="button"
-                class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold text-rose-600 transition-colors duration-150 hover:bg-rose-50 hover:text-rose-800 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                class="ds-table-action ds-table-action-danger"
                 @click="() => { recordId = item.id; actionId = 'delete'; recordUrl = item.links.delete_path; showDeleteConfirmation = true; }"
               >
                 {{ $t("gestlab.actions.delete") }}
@@ -451,7 +452,7 @@ const masks = ref({
                 v-if="!item.deleted && hasPermission('view_' + props.model) && item?.links?.pdf_path"
                 :href="item.links.pdf_path"
                 target="_blank"
-                class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold text-[rgb(var(--primary-700-rgb))] transition-colors duration-150 hover:bg-[rgb(var(--primary-50-rgb)/0.8)] hover:text-[rgb(var(--primary-900-rgb))] dark:text-[rgb(var(--primary-200-rgb))] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.12)]"
+                class="ds-table-action"
               >
                 PDF
               </a>
@@ -460,7 +461,7 @@ const masks = ref({
                 v-if="!item.deleted && hasPermission('view_' + props.model) && item?.links?.pdf_collection_term"
                 :href="item.links.pdf_collection_term"
                 target="_blank"
-                class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold text-[rgb(var(--primary-700-rgb))] transition-colors duration-150 hover:bg-[rgb(var(--primary-50-rgb)/0.8)] hover:text-[rgb(var(--primary-900-rgb))] dark:text-[rgb(var(--primary-200-rgb))] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.12)]"
+                class="ds-table-action"
               >
                 {{ $t("gestlab.general.labels.collection_term") }}
               </a>
@@ -472,43 +473,42 @@ const masks = ref({
 
         <!-- Desktop table -->
         <div class="hidden md:block overflow-x-auto">
-          <table class="min-w-full divide-y divide-[#ded3bf] dark:divide-[#25443c]">
-            <thead>
-              <tr class="bg-[#f7f1e7]/85 dark:bg-[#10231f]/85">
+          <table class="min-w-full">
+            <thead class="ds-table-head">
+              <tr>
                 <th class="py-4 pl-7 pr-3 text-left">
                   <input
                     :checked="allVisibleSelected"
                     type="checkbox"
-                    class="h-4 w-4 rounded border-[#d8cbb8] text-[rgb(var(--primary-700-rgb))] focus:ring-[rgb(var(--primary-500-rgb))] dark:border-[#315149] dark:bg-[#07110f]"
+                    class="ds-checkbox"
                     @change="toggleSelectAll"
                   />
                 </th>
-                <th v-if="props.hasQr" class="px-4 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#73827b] dark:text-[#8ea49b]"></th>
+                <th v-if="props.hasQr" class="ds-table-heading px-4 py-4 text-left"></th>
                 <th
                   v-for="field in displayFields"
                   :key="field.value"
-                  class="px-4 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#73827b] dark:text-[#8ea49b]"
+                  class="ds-table-heading px-4 py-4 text-left"
                 >
                   {{ $t(field.name) }}
                 </th>
-                <th class="px-7 py-4 text-right text-[11px] font-black uppercase tracking-[0.18em] text-[#73827b] dark:text-[#8ea49b]">
+                <th class="ds-table-heading px-7 py-4 text-right">
                   {{ $t("gestlab.actions.action") }}
                 </th>
               </tr>
             </thead>
 
-            <tbody class="divide-y divide-[#ded3bf] dark:divide-[#25443c]">
+            <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
               <tr
-                v-for="(row, idx) in record.data"
+                v-for="row in record.data"
                 :key="row.id"
-                :class="idx % 2 === 0 ? 'bg-[#fffdf7] dark:bg-[#07110f]' : 'bg-[#f7f1e7]/45 dark:bg-[#10231f]/35'"
-                class="transition-colors duration-100 hover:bg-[rgb(var(--primary-50-rgb)/0.5)] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.1)]"
+                class="ds-table-row"
               >
                 <td class="py-5 pl-7 pr-3">
                   <input
                     v-model="row.selected"
                     type="checkbox"
-                    class="h-4 w-4 rounded border-[#d8cbb8] text-[rgb(var(--primary-700-rgb))] focus:ring-[rgb(var(--primary-500-rgb))] dark:border-[#315149] dark:bg-[#07110f]"
+                    class="ds-checkbox"
                   />
                 </td>
 
@@ -519,7 +519,7 @@ const masks = ref({
                 <td
                   v-for="field in displayFields"
                   :key="`${row.id}-${field.value}`"
-                  class="whitespace-nowrap px-4 py-5 text-sm font-medium text-[#31413b] dark:text-[#d7e2dd]"
+                  class="ds-table-cell whitespace-nowrap px-4 py-5"
                 >
                   {{ row[field.value] ?? "—" }}
                 </td>
@@ -529,7 +529,7 @@ const masks = ref({
                     <button
                       v-if="row.deleted && hasPermission('restore_' + props.model)"
                       type="button"
-                      class="rounded-full px-2.5 py-1.5 text-[#5f6f68] transition-colors duration-150 hover:bg-[rgb(var(--primary-50-rgb)/0.8)] hover:text-[rgb(var(--primary-800-rgb))] dark:text-[#a9bbb4] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.12)] dark:hover:text-[rgb(var(--primary-100-rgb))]"
+                      class="ds-table-action"
                       @click="() => { recordId = row.id; actionId = 'restore'; recordUrl = row.links.restore_path; showDeleteConfirmation = true; }"
                     >
                       {{ $t("gestlab.actions.restore") }}
@@ -538,7 +538,7 @@ const masks = ref({
                     <button
                       v-if="!row.deleted && !props.slideOverEdit && hasPermission('edit_' + props.model)"
                       type="button"
-                      class="rounded-full px-2.5 py-1.5 text-[#5f6f68] transition-colors duration-150 hover:bg-[rgb(var(--primary-50-rgb)/0.8)] hover:text-[rgb(var(--primary-800-rgb))] dark:text-[#a9bbb4] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.12)] dark:hover:text-[rgb(var(--primary-100-rgb))]"
+                      class="ds-table-action"
                       @click="() => { recordId = row.id; actionId = 'edit'; recordUrl = row.links.edit_path; showDeleteConfirmation = true; }"
                     >
                       {{ $t("gestlab.actions.edit") }}
@@ -547,7 +547,7 @@ const masks = ref({
                     <button
                       v-if="!row.deleted && props.slideOverEdit && hasPermission('edit_' + props.model)"
                       type="button"
-                      class="rounded-full px-2.5 py-1.5 text-[#5f6f68] transition-colors duration-150 hover:bg-[rgb(var(--primary-50-rgb)/0.8)] hover:text-[rgb(var(--primary-800-rgb))] dark:text-[#a9bbb4] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.12)] dark:hover:text-[rgb(var(--primary-100-rgb))]"
+                      class="ds-table-action"
                       @click="() => { recordId = row; actionId = 'edit_slide'; showDeleteConfirmation = true; }"
                     >
                       {{ $t("gestlab.actions.edit") }}
@@ -556,7 +556,7 @@ const masks = ref({
                     <Link
                       v-if="!row.deleted && hasPermission('add_' + props.model) && !row?.placed_analysis && row.links.collection_type === 'programmed'"
                       :href="row.links.place_analysis_path"
-                      class="rounded-full px-2.5 py-1.5 text-[#5f6f68] transition-colors duration-150 hover:bg-[rgb(var(--primary-50-rgb)/0.8)] hover:text-[rgb(var(--primary-800-rgb))] dark:text-[#a9bbb4] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.12)] dark:hover:text-[rgb(var(--primary-100-rgb))]"
+                      class="ds-table-action"
                     >
                       {{ $t("gestlab.actions.insert") }}
                     </Link>
@@ -564,7 +564,7 @@ const masks = ref({
                     <button
                       v-if="!row.deleted && hasPermission('delete_' + props.model)"
                       type="button"
-                      class="rounded-full px-2.5 py-1.5 text-[#5f6f68] transition-colors duration-150 hover:bg-rose-50 hover:text-rose-700 dark:text-[#a9bbb4] dark:hover:bg-rose-500/10 dark:hover:text-rose-300"
+                      class="ds-table-action ds-table-action-danger"
                       @click="() => { recordId = row.id; actionId = 'delete'; recordUrl = row.links.delete_path; showDeleteConfirmation = true; }"
                     >
                       {{ $t("gestlab.actions.delete") }}
@@ -574,7 +574,7 @@ const masks = ref({
                       v-if="!row.deleted && hasPermission('view_' + props.model) && row?.links?.pdf_path"
                       :href="row.links.pdf_path"
                       target="_blank"
-                      class="rounded-full px-2.5 py-1.5 text-[#5f6f68] transition-colors duration-150 hover:bg-[rgb(var(--primary-50-rgb)/0.8)] hover:text-[rgb(var(--primary-800-rgb))] dark:text-[#a9bbb4] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.12)] dark:hover:text-[rgb(var(--primary-100-rgb))]"
+                      class="ds-table-action"
                     >
                       PDF
                     </a>
@@ -583,7 +583,7 @@ const masks = ref({
                       v-if="!row.deleted && hasPermission('view_' + props.model) && row?.links?.pdf_collection_term"
                       :href="row.links.pdf_collection_term"
                       target="_blank"
-                      class="rounded-full px-2.5 py-1.5 text-[#5f6f68] transition-colors duration-150 hover:bg-[rgb(var(--primary-50-rgb)/0.8)] hover:text-[rgb(var(--primary-800-rgb))] dark:text-[#a9bbb4] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.12)] dark:hover:text-[rgb(var(--primary-100-rgb))]"
+                      class="ds-table-action"
                     >
                       {{ $t("gestlab.general.labels.collection_term") }}
                     </a>

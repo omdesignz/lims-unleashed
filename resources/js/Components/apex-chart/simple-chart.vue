@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-[1.75rem] border border-[#ded3bf] bg-[#fffaf0]/95 p-4 shadow-[0_24px_80px_rgba(7,17,15,0.10)] ring-1 ring-white/60 dark:border-[#25443c] dark:bg-[#07110f]/90 dark:ring-white/10">
+  <div class="ds-card overflow-hidden p-4">
     <apexchart 
       :key="chartThemeKey"
       v-if="options && series"
@@ -8,7 +8,7 @@
       :options="options"
       :series="series"
     />
-    <div v-else class="flex h-64 items-center justify-center rounded-2xl border border-dashed border-slate-300/80 bg-white/60 text-sm font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400">
+    <div v-else class="ds-empty-state min-h-64">
       {{ $t('gestlab.general.chart.loading') }}
     </div>
   </div>

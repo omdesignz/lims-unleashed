@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\VerifyAnalysisResults;
 use App\Models\AnalysisCategory;
 use App\Models\CollectionProduct;
 use App\Models\Complaint;
@@ -44,6 +45,7 @@ use App\Models\Warehouse;
 use App\Models\Worksheet;
 use App\Settings\GeneralSettings;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -639,6 +641,24 @@ class LimsWriteSmokeTest extends TestCase
             'result_is_qualitative' => false,
         ]);
 
+        $qualitativeParameter = Parameter::query()->create([
+            'name' => 'Payload Qualitative Parameter '.$suffix,
+            'code' => 'PQP-'.$suffix,
+            'description' => 'Qualitative parameter for quick result options.',
+            'price' => 0,
+            'charge_tax' => false,
+            'withhold_tax' => false,
+            'active' => true,
+            'tax_percentage' => 0,
+            'optimal_analysis_time' => '24h',
+            'requires_calculation' => false,
+            'formula_expression' => null,
+            'calculation_parameters' => [],
+            'decimal_places' => 0,
+            'result_type' => 'qualitative',
+            'result_is_qualitative' => true,
+        ]);
+
         $profile->parameters()->attach($calculatedParameter->id, [
             'unit_id' => $unit->id,
             'unit_label' => $unit->code,
@@ -652,6 +672,25 @@ class LimsWriteSmokeTest extends TestCase
             'category_label' => $resultCategory->name,
             'min_ref_value' => 0,
             'max_ref_value' => 100,
+            'dilutions' => json_encode([]),
+            'extra_data' => json_encode([]),
+            'count' => true,
+            'ref_val_origin' => 'payload-test',
+        ]);
+
+        $profile->parameters()->attach($qualitativeParameter->id, [
+            'unit_id' => $unit->id,
+            'unit_label' => $unit->code,
+            'protocol_id' => $protocol->id,
+            'protocol_label' => $protocol->code,
+            'nwp_id' => $nwp->id,
+            'nwp_label' => $nwp->code,
+            'standard_id' => $standard->id,
+            'standard_label' => $standard->code,
+            'category_id' => $resultCategory->id,
+            'category_label' => $resultCategory->name,
+            'min_ref_value' => null,
+            'max_ref_value' => null,
             'dilutions' => json_encode([]),
             'extra_data' => json_encode([]),
             'count' => true,
@@ -710,6 +749,74 @@ class LimsWriteSmokeTest extends TestCase
             data_get($calculatedPayload, 'calculation_parameters')
         );
         $this->assertSame('({DENSITY} * {MASS}) / {VOLUME}', data_get($calculatedPayload, 'formula_expression'));
+
+        $qualitativePayload = collect($payload)->firstWhere('parameter_id.value', $qualitativeParameter->id);
+
+        $this->assertNotNull($qualitativePayload);
+        $this->assertTrue((bool) data_get($qualitativePayload, 'result_is_qualitative'));
+        $this->assertTrue((bool) data_get($qualitativePayload, 'parameter_id.result_is_qualitative'));
+        $this->assertSame(['Presença', 'Ausência'], data_get($qualitativePayload, 'result_options'));
+        $this->assertSame(['Presença', 'Ausência'], data_get($qualitativePayload, 'parameter_id.result_options'));
+        $this->assertSame('standard', data_get($qualitativePayload, 'display_format'));
+        $this->assertSame('standard', data_get($qualitativePayload, 'extra_data.display_format'));
+    }
+
+    public function test_result_verification_preserves_scientific_display_format(): void
+    {
+        Queue::fake();
+
+        $user = $this->verifiedAdmin();
+        $sample = Sample::query()
+            ->with(['analysis.department', 'analysis.profile.parameters', 'results'])
+            ->has('results')
+            ->whereHas('analysis.profile.parameters')
+            ->firstOrFail();
+
+        $department = $sample->analysis?->department;
+        $this->assertNotNull($department);
+        $this->qualifyUser($user, ['verify_results'], $department);
+
+        $payload = $this->actingAs($user)
+            ->getJson(route('results.getDefaultResultsData', [
+                'action' => 'verify',
+                'sample_id' => $sample->id,
+            ]))
+            ->assertOk()
+            ->json();
+
+        $this->assertNotEmpty($payload);
+
+        foreach ($payload as &$result) {
+            if (is_numeric(data_get($result, 'verified_value'))) {
+                $result['uncertainty_value'] = data_get($result, 'uncertainty_value') ?: '0.01';
+            }
+        }
+        unset($result);
+
+        $payload[0]['display_format'] = 'scientific';
+        $payload[0]['extra_data'] = array_merge(
+            $payload[0]['extra_data'] ?? [],
+            ['display_format' => 'scientific']
+        );
+
+        $this->from(route('analysis.index', ['category' => 'verify']))
+            ->actingAs($user)
+            ->post(route('results.store'), [
+                'action' => 'verify',
+                'signature' => self::PNG_SIGNATURE,
+                'sample_id' => [
+                    'value' => $sample->id,
+                    'label' => (string) $sample->id,
+                ],
+                'results' => $payload,
+            ])
+            ->assertRedirect(route('analysis.index', ['category' => 'verify']))
+            ->assertSessionHasNoErrors();
+
+        Queue::assertPushed(VerifyAnalysisResults::class, function (VerifyAnalysisResults $job): bool {
+            return data_get($job->results, '0.extra_data.display_format') === 'scientific'
+                && data_get($job->results, '0.display_format') === null;
+        });
     }
 
     public function test_counter_analysis_results_payload_exposes_calculation_control_metadata(): void

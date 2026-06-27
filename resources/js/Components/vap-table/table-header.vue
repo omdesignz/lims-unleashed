@@ -1,5 +1,5 @@
 <template>
-  <thead class="border-b border-[#ded3bf] bg-[#f7f1e7]/95 dark:border-[#25443c] dark:bg-[#10231f]/95">
+  <thead class="ds-surface-subtle border-b">
     <tr>
       <!-- Checkbox Header -->
       <th scope="col" class="relative px-6 py-4">
@@ -25,7 +25,7 @@
         :class="[
           'group px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em]',
           column.sortable ? 'cursor-pointer transition-colors duration-150 hover:bg-white/80 dark:hover:bg-[#152f29]' : '',
-          sortField === column.field ? 'active-sort-col bg-[rgb(var(--primary-50-rgb)/0.75)] text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-500-rgb)/0.12)] dark:text-[rgb(var(--primary-100-rgb))]' : 'text-[#31413b] dark:text-[#d7e2dd]'
+          sortField === column.field ? 'active-sort-col bg-[rgb(var(--primary-50-rgb)/0.75)] text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-500-rgb)/0.12)] dark:text-[rgb(var(--primary-100-rgb))]' : 'text-[var(--ds-text-muted)]'
         ]"
         :title="column.sortable ? $t('Click to sort') : ''"
       >

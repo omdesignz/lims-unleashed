@@ -122,9 +122,9 @@
              @click="openIndividualEntryForResult(result)"
              class="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 transition-all duration-200 hover:border-primary-500 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
              :class="{
-               'border-emerald-200 bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-500/10': getResultDisplayValue(result) && String(getResultDisplayValue(result)).trim() !== '',
+               'border-emerald-200 bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-500/10': hasResultDisplayValue(result),
                'border-primary-200 bg-primary-50 dark:border-primary-500/30 dark:bg-primary-500/10': result.requires_calculation,
-               'border-slate-200 dark:border-slate-800': !getResultDisplayValue(result) || String(getResultDisplayValue(result)).trim() === ''
+               'border-slate-200 dark:border-slate-800': !hasResultDisplayValue(result)
              }">
           <div class="flex items-start justify-between">
             <div class="flex-1">
@@ -153,9 +153,9 @@
               </p>
               
               <!-- Value Display -->
-              <div v-if="getResultDisplayValue(result) && String(getResultDisplayValue(result)).trim() !== ''" class="mt-2">
+              <div v-if="hasResultDisplayValue(result)" class="mt-2">
                 <div class="text-lg font-bold text-emerald-900 dark:text-emerald-200">
-                  {{ getResultDisplayValue(result) }}
+                  {{ getFormattedResultDisplayValue(result) }}
                   <span v-if="result.unit_label" class="text-sm font-normal text-slate-600 dark:text-slate-400">
                     {{ result.unit_label }}
                   </span>
@@ -179,7 +179,7 @@
             
             <!-- Status Icon -->
             <div class="ml-2">
-              <CheckCircleIcon v-if="getResultDisplayValue(result) && String(getResultDisplayValue(result)).trim() !== ''" 
+              <CheckCircleIcon v-if="hasResultDisplayValue(result)"
                                class="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
               <ClockIcon v-else class="h-5 w-5 text-slate-400 dark:text-slate-500" />
             </div>
@@ -206,7 +206,7 @@
           <div class="mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <button @click.stop="openIndividualEntryForResult(result)"
                     class="w-full rounded-full bg-primary-50 py-1.5 text-center text-sm font-semibold text-primary-900 transition hover:bg-primary-100 hover:text-primary-700 dark:bg-primary-500/10 dark:text-primary-200 dark:hover:bg-primary-500/20">
-              {{ getResultDisplayValue(result) && String(getResultDisplayValue(result)).trim() !== '' ? 'Editar Resultado' : 'Inserir Resultado' }}
+              {{ hasResultDisplayValue(result) ? 'Editar Resultado' : 'Inserir Resultado' }}
             </button>
           </div>
         </div>
@@ -262,9 +262,9 @@
                   <ClockIcon class="h-3 w-3" />
                   Aguardando {{ getCalculationReadiness(result).missingVariables.join(', ') }}
                 </div>
-                <div v-if="getResultDisplayValue(result)" class="space-y-1">
+                <div v-if="hasResultDisplayValue(result)" class="space-y-1">
                   <div class="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                    {{ getResultDisplayValue(result) }} {{ result.unit_id?.code }}
+                    {{ getFormattedResultDisplayValue(result) }} {{ result.unit_id?.code }}
                   </div>
                   <div v-if="result.uncertainty_value" 
                        class="text-xs text-slate-500 dark:text-slate-400">
@@ -550,6 +550,14 @@ const hasCalculatedParameters = computed(() => {
 
 const getResultDisplayValue = (result) => {
     return ResultsDataService.getResultValue(result, props.action)
+}
+
+const hasResultDisplayValue = (result) => {
+    return ResultsDataService.hasResultValue(getResultDisplayValue(result))
+}
+
+const getFormattedResultDisplayValue = (result) => {
+    return ResultsDataService.formatResultValue(getResultDisplayValue(result), result)
 }
 
 const getCalculationReadiness = (result) => {

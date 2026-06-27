@@ -1,702 +1,631 @@
 <template>
-  <div class="vap-label-editor space-y-8" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="overflow-hidden rounded-[2.25rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_28px_90px_rgba(20,61,55,0.12)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
-      <div class="relative isolate flex flex-col gap-6 overflow-hidden p-6 sm:flex-row sm:items-center sm:justify-between">
-        <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_8%_0%,rgba(217,176,95,0.28),transparent_36%),linear-gradient(135deg,#fffdf7,#f7f1e7)] dark:bg-[radial-gradient(circle_at_8%_0%,rgba(217,176,95,0.18),transparent_34%),linear-gradient(135deg,#07110f,#10231f)]"></div>
-        <div>
-          <div class="inline-flex rounded-full border border-[#ded3bf] bg-white/80 px-3 py-1 text-xs font-black uppercase tracking-[0.24em] text-[#143d37] dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#f1d78b]">
-            Label Studio
-          </div>
-          <h1 class="mt-5 flex items-center gap-3 text-3xl font-black tracking-tight text-[#15231f] dark:text-[#f7f1e7]">
-            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#143d37] text-[#f1d78b] shadow-[0_16px_40px_rgba(20,61,55,0.22)] dark:bg-[#f1d78b] dark:text-[#07110f]">
-              <TagIcon class="h-6 w-6" />
-            </span>
-            {{ pageTitle }}
-          </h1>
-          <p class="mt-4 max-w-3xl text-sm font-medium leading-6 text-[#475a53] dark:text-[#cbd8cf]">
-            {{ pageDescription }}
-            <span v-if="selectedTemplate" class="font-black text-[#143d37] dark:text-[#f1d78b]">
-              {{ selectedTemplate.name }}
-            </span>
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="inline-flex items-center rounded-full border border-[#ded3bf] bg-white/80 px-4 py-2 text-sm font-black text-[#143d37] dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#f1d78b]">
-            {{ templates.length }} {{ $t('gestlab.general.labels.vap_labels.available_templates') }}
-          </span>
-        </div>
+  <div class="space-y-6">
+    <ModuleHero
+      :eyebrow="$t('gestlab.general.labels.vap_labels.index.eyebrow')"
+      :title="pageTitle"
+      :description="pageDescription"
+    >
+      <template #actions>
+        <span class="ds-chip">
+          {{ templatesList.length }} {{ $t('gestlab.general.labels.vap_labels.available_templates') }}
+        </span>
+      </template>
+
+      <div
+        v-if="selectedTemplate"
+        class="ds-card bg-[var(--ds-panel-raised)] p-4"
+      >
+        <p class="ds-kicker text-[0.64rem]">
+          {{ $t('gestlab.general.labels.vap_labels.index.stats_scope') }}
+        </p>
+        <p class="mt-2 text-sm font-black text-[var(--ds-text)]">
+          {{ selectedTemplate.name }}
+        </p>
       </div>
-    </div>
+    </ModuleHero>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- LEFT COLUMN (2/3 width) -->
-      <div class="lg:col-span-2 space-y-6">
-        <!-- BASIC SETTINGS CARD -->
-        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <!-- GRADIENT HEADER -->
-          <div class="border-b border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-800 dark:bg-slate-950/60">
-            <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
-              <Cog6ToothIcon class="h-5 w-5 text-primary-600 dark:text-primary-300" />
-              {{ $t('gestlab.general.labels.vap_labels.basic_settings') }}
-            </h2>
-          </div>
-          
-          <!-- CARD CONTENT -->
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- NAME -->
-              <div class="space-y-2">
-                <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
-                  <TagIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_labels.name') }}
-                  <span class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="form.name"
-                  type="text"
-                  :placeholder="$t('gestlab.general.labels.vap_labels.name_placeholder')"
-                  :class="[
-                    'block w-full rounded-2xl border bg-white text-sm text-slate-900 shadow-sm focus:ring-2 focus:ring-offset-0 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500',
-                    form.errors.name 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                      : 'border-slate-300 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700'
-                  ]"
-                />
-                <p v-if="form.errors.name" class="text-xs text-red-600">
-                  {{ form.errors.name }}
-                </p>
-              </div>
-
-              <!-- TYPE -->
-              <div class="space-y-2">
-                <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
-                  <TagIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_labels.type') }}
-                  <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="form.type"
-                  :class="[
-                    'block w-full rounded-2xl border bg-white text-sm text-slate-900 shadow-sm focus:ring-2 focus:ring-offset-0 dark:bg-slate-950 dark:text-slate-100',
-                    form.errors.type 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                      : 'border-slate-300 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700'
-                  ]"
-                >
-                  <option value="equipment">{{ $t('gestlab.general.labels.vap_labels.types.equipment') }}</option>
-                  <option value="material">{{ $t('gestlab.general.labels.vap_labels.types.material') }}</option>
-                  <option value="sample">{{ $t('gestlab.general.labels.vap_labels.types.sample') }}</option>
-                  <option value="custom">{{ $t('gestlab.general.labels.vap_labels.types.custom') }}</option>
-                </select>
-                <p v-if="form.errors.type" class="text-xs text-red-600">
-                  {{ form.errors.type }}
-                </p>
-              </div>
-
-              <div class="space-y-3 md:col-span-2">
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  Origem operacional da etiqueta
-                </label>
-                <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-                  <button
-                    v-for="option in sourceTypeOptions"
-                    :key="option.value"
-                    type="button"
-                    @click="form.source_type = option.value; form.source_id = null"
-                    :class="[
-                      'rounded-2xl border px-4 py-3 text-left text-sm transition',
-                      form.source_type === option.value
-                        ? 'border-primary-400 bg-primary-50 text-primary-900 dark:border-primary-500/60 dark:bg-primary-500/10 dark:text-primary-100'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-primary-200 hover:bg-primary-50/50 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10'
-                    ]"
-                  >
-                    <div class="font-semibold">{{ option.label }}</div>
-                    <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ option.description }}</div>
-                  </button>
-                </div>
-              </div>
-
-              <div v-if="availableSources.length" class="space-y-2 md:col-span-2">
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  Registo de origem
-                </label>
-                <select
-                  v-model="form.source_id"
-                  class="block w-full rounded-2xl border border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-                >
-                  <option :value="null">Selecionar origem</option>
-                  <option v-for="source in availableSources" :key="source.id" :value="source.id">
-                    {{ source.label }}
-                  </option>
-                </select>
-              </div>
-
-              <!-- WIDTH -->
-              <div class="space-y-2">
-                <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
-                  <ArrowsPointingOutIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_labels.width') }}
-                  <span class="text-red-500">*</span>
-                </label>
-                <div class="flex items-center gap-2">
-                  <input
-                    v-model="form.width"
-                    type="number"
-                    step="0.1"
-                    min="1"
-                    max="1000"
-                    :placeholder="$t('gestlab.general.labels.vap_labels.width_placeholder')"
-                    :class="[
-                      'block w-full rounded-2xl border bg-white text-sm text-slate-900 shadow-sm focus:ring-2 focus:ring-offset-0 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500',
-                      form.errors.width 
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                        : 'border-slate-300 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700'
-                    ]"
-                  />
-                  <span class="whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">mm</span>
-                </div>
-                <p v-if="form.errors.width" class="text-xs text-red-600">
-                  {{ form.errors.width }}
-                </p>
-              </div>
-
-              <!-- HEIGHT -->
-              <div class="space-y-2">
-                <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
-                  <ArrowsPointingOutIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_labels.height') }}
-                  <span class="text-red-500">*</span>
-                </label>
-                <div class="flex items-center gap-2">
-                  <input
-                    v-model="form.height"
-                    type="number"
-                    step="0.1"
-                    min="1"
-                    max="1000"
-                    :placeholder="$t('gestlab.general.labels.vap_labels.height_placeholder')"
-                    :class="[
-                      'block w-full rounded-2xl border bg-white text-sm text-slate-900 shadow-sm focus:ring-2 focus:ring-offset-0 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500',
-                      form.errors.height 
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                        : 'border-slate-300 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700'
-                    ]"
-                  />
-                  <span class="whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">mm</span>
-                </div>
-                <p v-if="form.errors.height" class="text-xs text-red-600">
-                  {{ form.errors.height }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CONTENT CARD -->
-        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <div class="border-b border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-800 dark:bg-slate-950/60">
-            <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
-              <DocumentTextIcon class="h-5 w-5 text-primary-600 dark:text-primary-300" />
-              {{ $t('gestlab.general.labels.vap_labels.content') }}
-            </h2>
-          </div>
-          
-          <div class="p-6">
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                {{ $t('gestlab.general.labels.vap_labels.label_content') }}
-                <span class="text-red-500">*</span>
-              </label>
-              <textarea
-                v-model="form.content"
-                rows="4"
-                :placeholder="$t('gestlab.general.labels.vap_labels.content_placeholder')"
-                :class="[
-                  'block w-full rounded-2xl border bg-white text-sm text-slate-900 shadow-sm focus:ring-2 focus:ring-offset-0 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500',
-                  form.errors.content 
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                    : 'border-slate-300 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700'
-                ]"
-              />
-              <p v-if="form.errors.content" class="text-xs text-red-600">
-                {{ form.errors.content }}
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_25rem]">
+      <div class="space-y-6">
+        <section class="ds-panel p-5 sm:p-6">
+          <div class="flex items-start gap-3">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
+              <Cog6ToothIcon class="h-5 w-5" />
+            </span>
+            <div>
+              <p class="ds-kicker">
+                {{ $t('gestlab.general.labels.vap_labels.basic_settings') }}
               </p>
-              <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                <span>{{ $t('gestlab.general.labels.vap_labels.template_variables') }}:</span>
-                <code
-                  v-for="placeholder in supportedPlaceholders"
-                  :key="placeholder"
-                  class="rounded bg-slate-100 px-2 py-1 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              <h2 class="ds-heading mt-1 text-xl">
+                {{ $t('gestlab.general.labels.vap_labels.editor.identity_title') }}
+              </h2>
+              <p class="ds-copy mt-1 text-sm">
+                {{ $t('gestlab.general.labels.vap_labels.editor.identity_description') }}
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-5 grid gap-4 md:grid-cols-2">
+            <BaseInput
+              v-model="form.name"
+              :label="$t('gestlab.general.labels.vap_labels.name')"
+              :placeholder="$t('gestlab.general.labels.vap_labels.name_placeholder')"
+              :error="form.errors.name"
+              required
+            >
+              <template #leading>
+                <TagIcon class="h-5 w-5" />
+              </template>
+            </BaseInput>
+
+            <BaseSelect
+              v-model="form.type"
+              :label="$t('gestlab.general.labels.vap_labels.type')"
+              :error="form.errors.type"
+              required
+            >
+              <option value="equipment">
+                {{ $t('gestlab.general.labels.vap_labels.types.equipment') }}
+              </option>
+              <option value="material">
+                {{ $t('gestlab.general.labels.vap_labels.types.material') }}
+              </option>
+              <option value="sample">
+                {{ $t('gestlab.general.labels.vap_labels.types.sample') }}
+              </option>
+              <option value="custom">
+                {{ $t('gestlab.general.labels.vap_labels.types.custom') }}
+              </option>
+            </BaseSelect>
+
+            <BaseInput
+              v-model="form.width"
+              type="number"
+              step="0.1"
+              min="1"
+              max="1000"
+              :label="$t('gestlab.general.labels.vap_labels.width')"
+              :placeholder="$t('gestlab.general.labels.vap_labels.width_placeholder')"
+              :error="form.errors.width"
+              required
+            >
+              <template #leading>
+                <ArrowsPointingOutIcon class="h-5 w-5" />
+              </template>
+              <template #trailing>
+                <span class="text-xs font-black uppercase tracking-[0.14em]">mm</span>
+              </template>
+            </BaseInput>
+
+            <BaseInput
+              v-model="form.height"
+              type="number"
+              step="0.1"
+              min="1"
+              max="1000"
+              :label="$t('gestlab.general.labels.vap_labels.height')"
+              :placeholder="$t('gestlab.general.labels.vap_labels.height_placeholder')"
+              :error="form.errors.height"
+              required
+            >
+              <template #leading>
+                <ArrowsPointingOutIcon class="h-5 w-5 rotate-90" />
+              </template>
+              <template #trailing>
+                <span class="text-xs font-black uppercase tracking-[0.14em]">mm</span>
+              </template>
+            </BaseInput>
+          </div>
+
+          <div class="mt-5">
+            <p class="ds-field-label">
+              {{ $t('gestlab.general.labels.vap_labels.editor.source_title') }}
+            </p>
+            <div class="mt-2 grid gap-3 md:grid-cols-3">
+              <button
+                v-for="option in sourceTypeOptions"
+                :key="option.value"
+                type="button"
+                :class="[
+                  'rounded-[1.35rem] border p-4 text-left transition duration-200',
+                  form.source_type === option.value
+                    ? 'border-[rgb(var(--primary-300-rgb)/0.8)] bg-[rgb(var(--primary-50-rgb)/0.82)] text-[rgb(var(--primary-900-rgb))] shadow-[var(--ds-shadow-control)] dark:border-[rgb(var(--accent-200-rgb)/0.38)] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-100-rgb))]'
+                    : 'border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text)] hover:border-[rgb(var(--primary-300-rgb)/0.58)] hover:bg-[var(--ds-panel-subtle)]'
+                ]"
+                @click="selectSourceType(option.value)"
+              >
+                <span class="text-sm font-black">{{ option.label }}</span>
+                <span class="mt-1 block text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ option.description }}</span>
+              </button>
+            </div>
+          </div>
+
+          <div
+            v-if="availableSources.length"
+            class="mt-5"
+          >
+            <BaseSelect
+              v-model="form.source_id"
+              :label="$t('gestlab.general.labels.vap_labels.editor.source_record')"
+            >
+              <option value="">
+                {{ $t('gestlab.general.labels.vap_labels.editor.select_source') }}
+              </option>
+              <option
+                v-for="source in availableSources"
+                :key="source.id"
+                :value="source.id"
+              >
+                {{ source.label }}
+              </option>
+            </BaseSelect>
+          </div>
+        </section>
+
+        <section class="ds-panel p-5 sm:p-6">
+          <div class="flex items-start gap-3">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
+              <DocumentTextIcon class="h-5 w-5" />
+            </span>
+            <div>
+              <p class="ds-kicker">
+                {{ $t('gestlab.general.labels.vap_labels.label_content') }}
+              </p>
+              <h2 class="ds-heading mt-1 text-xl">
+                {{ $t('gestlab.general.labels.vap_labels.editor.content_title') }}
+              </h2>
+              <p class="ds-copy mt-1 text-sm">
+                {{ $t('gestlab.general.labels.vap_labels.editor.content_description') }}
+              </p>
+            </div>
+          </div>
+
+          <BaseTextarea
+            v-model="form.content"
+            class="mt-5"
+            rows="5"
+            :label="$t('gestlab.general.labels.vap_labels.content')"
+            :placeholder="$t('gestlab.general.labels.vap_labels.content_placeholder')"
+            :error="form.errors.content"
+            required
+          />
+
+          <div class="mt-4 flex flex-wrap items-center gap-2">
+            <span class="text-xs font-black uppercase tracking-[0.16em] text-[var(--ds-text-muted)]">
+              {{ $t('gestlab.general.labels.vap_labels.template_variables') }}
+            </span>
+            <code
+              v-for="placeholder in supportedPlaceholders"
+              :key="placeholder"
+              class="rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-2.5 py-1 text-xs font-black text-[var(--ds-text-muted)]"
+            >
+              {{ placeholder }}
+            </code>
+          </div>
+
+          <div
+            v-if="sourcePreview"
+            class="mt-4 rounded-[1.35rem] border border-[rgb(var(--primary-200-rgb)/0.72)] bg-[rgb(var(--primary-50-rgb)/0.72)] p-4 text-sm font-semibold leading-6 text-[rgb(var(--primary-900-rgb))] dark:border-[rgb(var(--accent-200-rgb)/0.22)] dark:bg-[rgb(var(--primary-400-rgb)/0.1)] dark:text-[rgb(var(--accent-100-rgb))]"
+          >
+            {{ $t('gestlab.general.labels.vap_labels.editor.source_hint') }}
+          </div>
+        </section>
+
+        <section class="ds-panel p-5 sm:p-6">
+          <div class="flex items-start gap-3">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
+              <PaintBrushIcon class="h-5 w-5" />
+            </span>
+            <div>
+              <p class="ds-kicker">
+                {{ $t('gestlab.general.labels.vap_labels.appearance') }}
+              </p>
+              <h2 class="ds-heading mt-1 text-xl">
+                {{ $t('gestlab.general.labels.vap_labels.editor.appearance_title') }}
+              </h2>
+            </div>
+          </div>
+
+          <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div
+              v-for="colorControl in colorControls"
+              :key="colorControl.field"
+              class="ds-card bg-[var(--ds-panel-raised)] p-4"
+            >
+              <label class="ds-field-label">
+                {{ colorControl.label }}
+              </label>
+              <div class="mt-2 flex items-center gap-3">
+                <input
+                  v-model="form[colorControl.field]"
+                  type="color"
+                  class="h-12 w-16 cursor-pointer rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel)] p-1"
+                />
+                <BaseInput
+                  v-model="form[colorControl.field]"
+                  :placeholder="colorControl.placeholder"
+                  :error="form.errors[colorControl.field]"
+                />
+              </div>
+            </div>
+
+            <div class="ds-card bg-[var(--ds-panel-raised)] p-4">
+              <label class="ds-field-label">
+                {{ $t('gestlab.general.labels.vap_labels.font_size') }}
+              </label>
+              <input
+                v-model="form.font_size"
+                type="range"
+                min="6"
+                max="72"
+                class="mt-4 h-2 w-full cursor-pointer appearance-none rounded-full bg-[var(--ds-panel-muted)] accent-[rgb(var(--primary-700-rgb))]"
+              />
+              <div class="mt-3 flex justify-between text-xs font-black text-[var(--ds-text-muted)]">
+                <span>6px</span>
+                <span>{{ form.font_size }}px</span>
+                <span>72px</span>
+              </div>
+              <p
+                v-if="form.errors.font_size"
+                class="ds-field-error mt-2"
+              >
+                {{ form.errors.font_size }}
+              </p>
+            </div>
+
+            <div class="ds-card bg-[var(--ds-panel-raised)] p-4">
+              <label class="ds-field-label">
+                {{ $t('gestlab.general.labels.vap_labels.border_width') }}
+              </label>
+              <input
+                v-model="form.border_width"
+                type="range"
+                min="0"
+                max="10"
+                class="mt-4 h-2 w-full cursor-pointer appearance-none rounded-full bg-[var(--ds-panel-muted)] accent-[rgb(var(--primary-700-rgb))]"
+              />
+              <div class="mt-3 flex justify-between text-xs font-black text-[var(--ds-text-muted)]">
+                <span>0px</span>
+                <span>{{ form.border_width }}px</span>
+                <span>10px</span>
+              </div>
+              <p
+                v-if="form.errors.border_width"
+                class="ds-field-error mt-2"
+              >
+                {{ form.errors.border_width }}
+              </p>
+            </div>
+
+            <div class="ds-card bg-[var(--ds-panel-raised)] p-4 md:col-span-2 xl:col-span-1">
+              <label class="ds-field-label">
+                {{ $t('gestlab.general.labels.vap_labels.text_alignment') }}
+              </label>
+              <div class="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  v-for="align in alignmentOptions"
+                  :key="align.value"
+                  type="button"
+                  :class="[
+                    'ds-button min-h-0 justify-center px-3 py-2',
+                    form.text_alignment === align.value ? 'ds-button-primary' : 'ds-button-secondary'
+                  ]"
+                  :title="align.label"
+                  @click="form.text_alignment = align.value"
                 >
-                  {{ placeholder }}
-                </code>
-              </div>
-              <div v-if="sourcePreview" class="rounded-2xl border border-primary-100 bg-primary-50 px-4 py-3 text-xs text-primary-900 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-200">
-                Esta etiqueta pode ser gerada automaticamente a partir do registo selecionado, reutilizando código, lote, cliente, armazém e datas relevantes.
+                  {{ align.short }}
+                </button>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- APPEARANCE CARD -->
-        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <div class="border-b border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-800 dark:bg-slate-950/60">
-            <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
-              <PaintBrushIcon class="h-5 w-5 text-primary-600 dark:text-primary-300" />
-              {{ $t('gestlab.general.labels.vap_labels.appearance') }}
-            </h2>
-          </div>
-          
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <!-- BACKGROUND COLOR -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  {{ $t('gestlab.general.labels.vap_labels.background_color') }}
-                </label>
-                <div class="flex items-center gap-3">
-                  <input
-                    v-model="form.background_color"
-                    type="color"
-                    class="h-10 w-20 cursor-pointer rounded-2xl border border-slate-300 dark:border-slate-700"
-                  />
-                  <input
-                    v-model="form.background_color"
-                    type="text"
-                    :class="[
-                      'block w-full rounded-2xl border bg-white text-sm text-slate-900 shadow-sm focus:ring-2 focus:ring-offset-0 dark:bg-slate-950 dark:text-slate-100',
-                      form.errors.background_color 
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                        : 'border-slate-300 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700'
-                    ]"
-                    placeholder="#ffffff"
-                  />
-                </div>
-                <p v-if="form.errors.background_color" class="text-xs text-red-600">
-                  {{ form.errors.background_color }}
-                </p>
-              </div>
-
-              <!-- TEXT COLOR -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  {{ $t('gestlab.general.labels.vap_labels.text_color') }}
-                </label>
-                <div class="flex items-center gap-3">
-                  <input
-                    v-model="form.text_color"
-                    type="color"
-                    class="h-10 w-20 cursor-pointer rounded-2xl border border-slate-300 dark:border-slate-700"
-                  />
-                  <input
-                    v-model="form.text_color"
-                    type="text"
-                    :class="[
-                      'block w-full rounded-2xl border bg-white text-sm text-slate-900 shadow-sm focus:ring-2 focus:ring-offset-0 dark:bg-slate-950 dark:text-slate-100',
-                      form.errors.text_color 
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                        : 'border-slate-300 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700'
-                    ]"
-                    placeholder="#000000"
-                  />
-                </div>
-                <p v-if="form.errors.text_color" class="text-xs text-red-600">
-                  {{ form.errors.text_color }}
-                </p>
-              </div>
-
-              <!-- FONT SIZE -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  {{ $t('gestlab.general.labels.vap_labels.font_size') }}
-                </label>
-                <input
-                  v-model="form.font_size"
-                  type="range"
-                  min="6"
-                  max="72"
-                  class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 dark:bg-slate-800"
-                />
-                <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400">
-                  <span>6px</span>
-                  <span class="font-medium">{{ form.font_size }}px</span>
-                  <span>72px</span>
-                </div>
-                <p v-if="form.errors.font_size" class="text-xs text-red-600">
-                  {{ form.errors.font_size }}
-                </p>
-              </div>
-
-              <!-- TEXT ALIGNMENT -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  {{ $t('gestlab.general.labels.vap_labels.text_alignment') }}
-                </label>
-                <div class="flex gap-2">
-                  <button
-                    v-for="align in ['left', 'center', 'right', 'justify']"
-                    :key="align"
-                    @click="form.text_alignment = align"
-                    :class="[
-                      'flex-1 rounded-2xl border py-2 text-sm font-medium transition',
-                      form.text_alignment === align
-                        ? 'border-primary-400 bg-primary-50 text-primary-900 dark:border-primary-500/60 dark:bg-primary-500/10 dark:text-primary-100'
-                        : 'border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800'
-                    ]"
-                    :title="$t('gestlab.general.labels.vap_labels.align_' + align)"
-                  >
-                    {{ align.charAt(0).toUpperCase() + align.slice(1) }}
-                  </button>
-                </div>
-                <p v-if="form.errors.text_alignment" class="text-xs text-red-600">
-                  {{ form.errors.text_alignment }}
-                </p>
-              </div>
-
-              <!-- BORDER WIDTH -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  {{ $t('gestlab.general.labels.vap_labels.border_width') }}
-                </label>
-                <input
-                  v-model="form.border_width"
-                  type="range"
-                  min="0"
-                  max="10"
-                  class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 dark:bg-slate-800"
-                />
-                <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400">
-                  <span>0px</span>
-                  <span class="font-medium">{{ form.border_width }}px</span>
-                  <span>10px</span>
-                </div>
-                <p v-if="form.errors.border_width" class="text-xs text-red-600">
-                  {{ form.errors.border_width }}
-                </p>
-              </div>
-
-              <!-- BORDER COLOR -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                  {{ $t('gestlab.general.labels.vap_labels.border_color') }}
-                </label>
-                <div class="flex items-center gap-3">
-                  <input
-                    v-model="form.border_color"
-                    type="color"
-                    class="h-10 w-20 cursor-pointer rounded-2xl border border-slate-300 dark:border-slate-700"
-                  />
-                  <input
-                    v-model="form.border_color"
-                    type="text"
-                    :class="[
-                      'block w-full rounded-2xl border bg-white text-sm text-slate-900 shadow-sm focus:ring-2 focus:ring-offset-0 dark:bg-slate-950 dark:text-slate-100',
-                      form.errors.border_color 
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                        : 'border-slate-300 focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700'
-                    ]"
-                    placeholder="#000000"
-                  />
-                </div>
-                <p v-if="form.errors.border_color" class="text-xs text-red-600">
-                  {{ form.errors.border_color }}
-                </p>
-              </div>
+        <section class="ds-panel p-5 sm:p-6">
+          <div class="flex items-start gap-3">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
+              <QrCodeIcon class="h-5 w-5" />
+            </span>
+            <div>
+              <p class="ds-kicker">
+                {{ $t('gestlab.general.labels.vap_labels.features') }}
+              </p>
+              <h2 class="ds-heading mt-1 text-xl">
+                {{ $t('gestlab.general.labels.vap_labels.editor.traceability_title') }}
+              </h2>
+              <p class="ds-copy mt-1 text-sm">
+                {{ $t('gestlab.general.labels.vap_labels.editor.traceability_description') }}
+              </p>
             </div>
           </div>
-        </div>
 
-        <!-- ADVANCED ELEMENTS CARD -->
-        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <div class="border-b border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-800 dark:bg-slate-950/60">
-            <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-950 dark:text-white">
-              <QrCodeIcon class="h-5 w-5 text-primary-600 dark:text-primary-300" />
-              Elementos de rastreabilidade
-            </h2>
-          </div>
-
-          <div class="grid gap-5 p-6 xl:grid-cols-3">
+          <div class="mt-5 grid gap-4 xl:grid-cols-2">
             <article
               v-for="element in advancedElements"
               :key="element.key"
-              class="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/50"
+              class="ds-card bg-[var(--ds-panel-raised)] p-4"
             >
               <div class="flex items-start justify-between gap-3">
                 <div>
-                  <p class="text-sm font-black text-slate-950 dark:text-white">{{ element.label }}</p>
-                  <p class="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">{{ element.description }}</p>
+                  <h3 class="text-sm font-black text-[var(--ds-text)]">
+                    {{ element.label }}
+                  </h3>
+                  <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">
+                    {{ element.description }}
+                  </p>
                 </div>
                 <button
                   type="button"
-                  @click="form[element.enabledField] = !form[element.enabledField]"
                   :class="[
-                    'relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition focus:outline-none focus:ring-2 focus:ring-primary-500/30',
-                    form[element.enabledField]
-                      ? 'bg-[#143d37] dark:bg-[#f1d78b]'
-                      : 'bg-slate-300 dark:bg-slate-700'
+                    'relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)]',
+                    form[element.enabledField] ? 'bg-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--accent-200-rgb))]' : 'bg-[var(--ds-panel-muted)]'
                   ]"
+                  @click="form[element.enabledField] = !form[element.enabledField]"
                 >
                   <span
                     :class="[
-                      'inline-block h-5 w-5 transform rounded-full bg-white shadow transition dark:bg-[#07110f]',
+                      'inline-block h-5 w-5 transform rounded-full bg-white shadow transition dark:bg-[rgb(var(--primary-950-rgb))]',
                       form[element.enabledField] ? 'translate-x-6' : 'translate-x-1'
                     ]"
                   />
                 </button>
               </div>
 
-              <div v-if="form[element.enabledField]" class="mt-4 space-y-3">
-                <label class="block">
-                  <span class="text-xs font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{{ element.contentLabel }}</span>
-                  <input
-                    v-model="form[element.contentField]"
-                    type="text"
-                    class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-                    :placeholder="element.placeholder"
-                  />
-                </label>
-                <div class="grid gap-3 sm:grid-cols-2">
-                  <label class="block">
-                    <span class="text-xs font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{{ element.sizeLabel }}</span>
-                    <input
-                      v-model="form[element.sizeField]"
-                      type="number"
-                      min="1"
-                      max="80"
-                      class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-                    />
-                  </label>
-                  <label v-if="element.secondarySizeField" class="block">
-                    <span class="text-xs font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{{ element.secondarySizeLabel }}</span>
-                    <input
-                      v-model="form[element.secondarySizeField]"
-                      type="number"
-                      min="1"
-                      max="80"
-                      class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-                    />
-                  </label>
-                </div>
+              <div
+                v-if="form[element.enabledField]"
+                class="mt-4 grid gap-3 sm:grid-cols-2"
+              >
+                <BaseInput
+                  v-model="form[element.contentField]"
+                  class="sm:col-span-2"
+                  :label="element.contentLabel"
+                  :placeholder="element.placeholder"
+                />
+                <BaseInput
+                  v-model="form[element.sizeField]"
+                  type="number"
+                  min="1"
+                  max="80"
+                  :label="element.sizeLabel"
+                />
+                <BaseInput
+                  v-if="element.secondarySizeField"
+                  v-model="form[element.secondarySizeField]"
+                  type="number"
+                  min="1"
+                  max="80"
+                  :label="element.secondarySizeLabel"
+                />
               </div>
             </article>
 
-            <article class="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/50 xl:col-span-3">
+            <article class="ds-card bg-[var(--ds-panel-raised)] p-4 xl:col-span-2">
               <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  <p class="text-sm font-black text-slate-950 dark:text-white">Logótipo ou imagem auxiliar</p>
-                  <p class="mt-1 max-w-2xl text-xs leading-5 text-slate-500 dark:text-slate-400">
-                    Use uma referência de media já carregada para incluir logo, selo ou marca visual na etiqueta. O PDF Chrome respeita a composição persistida.
+                  <h3 class="text-sm font-black text-[var(--ds-text)]">
+                    {{ $t('gestlab.general.labels.vap_labels.editor.logo_title') }}
+                  </h3>
+                  <p class="mt-1 max-w-2xl text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">
+                    {{ $t('gestlab.general.labels.vap_labels.editor.logo_description') }}
                   </p>
                 </div>
                 <button
                   type="button"
-                  @click="form.logo_path = form.logo_path ? null : ''"
                   :class="[
-                    'relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition focus:outline-none focus:ring-2 focus:ring-primary-500/30',
-                    form.logo_path !== null
-                      ? 'bg-[#143d37] dark:bg-[#f1d78b]'
-                      : 'bg-slate-300 dark:bg-slate-700'
+                    'relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)]',
+                    form.logo_path !== null ? 'bg-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--accent-200-rgb))]' : 'bg-[var(--ds-panel-muted)]'
                   ]"
+                  @click="form.logo_path = form.logo_path !== null ? null : ''"
                 >
                   <span
                     :class="[
-                      'inline-block h-5 w-5 transform rounded-full bg-white shadow transition dark:bg-[#07110f]',
+                      'inline-block h-5 w-5 transform rounded-full bg-white shadow transition dark:bg-[rgb(var(--primary-950-rgb))]',
                       form.logo_path !== null ? 'translate-x-6' : 'translate-x-1'
                     ]"
                   />
                 </button>
               </div>
-              <div v-if="form.logo_path !== null" class="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_10rem]">
-                <label class="block">
-                  <span class="text-xs font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.vap_labels.logo_file') }}</span>
-                  <input
-                    v-model="form.logo_path"
-                    type="text"
-                    class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-                    placeholder="/storage/media/logo.svg"
-                  />
-                </label>
-                <label class="block">
-                  <span class="text-xs font-black uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.vap_labels.logo_size') }}</span>
-                  <input
-                    v-model="form.logo_size"
-                    type="number"
-                    min="1"
-                    max="80"
-                    class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-                  />
-                </label>
+              <div
+                v-if="form.logo_path !== null"
+                class="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_10rem]"
+              >
+                <BaseInput
+                  v-model="form.logo_path"
+                  :label="$t('gestlab.general.labels.vap_labels.logo_file')"
+                  placeholder="/storage/media/logo.svg"
+                />
+                <BaseInput
+                  v-model="form.logo_size"
+                  type="number"
+                  min="1"
+                  max="80"
+                  :label="$t('gestlab.general.labels.vap_labels.logo_size')"
+                />
               </div>
             </article>
           </div>
-        </div>
+        </section>
       </div>
 
-      <!-- RIGHT COLUMN (1/3 width) -->
-      <div class="space-y-6">
-        <!-- PREVIEW CARD -->
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
+      <aside class="space-y-6 xl:sticky xl:top-6 xl:self-start">
+        <section class="ds-panel p-5 sm:p-6">
+          <p class="ds-kicker">
             {{ $t('gestlab.general.labels.vap_labels.preview') }}
-          </h3>
-          <div class="flex items-center justify-center rounded-3xl bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_36%),linear-gradient(135deg,#f8fafc,#eef2ff)] p-4 ring-1 ring-slate-200 dark:bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.16),transparent_36%),linear-gradient(135deg,#020617,#0f172a)] dark:ring-slate-800">
-            <div 
-              class="relative border border-slate-300 shadow-2xl shadow-slate-900/10 dark:border-slate-700 dark:shadow-black/30"
-              :style="{
-                width: (form.width * 3) + 'px',
-                height: (form.height * 3) + 'px',
-                backgroundColor: form.background_color,
-                color: form.text_color,
-                fontSize: form.font_size + 'px',
-                borderWidth: form.border_width + 'px',
-                borderColor: form.border_color,
-                textAlign: form.text_alignment,
-                padding: '10px',
-                overflow: 'hidden'
-              }"
+          </p>
+          <h2 class="ds-heading mt-1 text-xl">
+            {{ $t('gestlab.general.labels.vap_labels.editor.preview_title') }}
+          </h2>
+
+          <div class="mt-5 rounded-[1.6rem] border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
+            <div
+              class="relative mx-auto flex items-center justify-center overflow-hidden rounded-[1rem] shadow-2xl shadow-black/10 ring-1 ring-black/5 dark:shadow-black/35"
+              :style="previewStyle"
             >
-              <div class="h-full flex items-center justify-center">
-                <div>
-                  {{ form.content || $t('gestlab.general.labels.vap_labels.preview_text') }}
-                </div>
+              <div class="whitespace-pre-line px-3 text-center">
+                {{ form.content || $t('gestlab.general.labels.vap_labels.preview_text') }}
               </div>
             </div>
           </div>
-          <div class="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
+          <p class="mt-4 text-center text-sm font-black text-[var(--ds-text-muted)]">
             {{ form.width }} × {{ form.height }} mm
-          </div>
-        </div>
+          </p>
+        </section>
 
-        <!-- TEMPLATES CARD -->
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
+        <section class="ds-panel p-5 sm:p-6">
+          <p class="ds-kicker">
             {{ $t('gestlab.general.labels.vap_labels.templates.title') }}
-          </h3>
-          <div class="space-y-3">
-            <div 
-              v-for="template in templates"
+          </p>
+          <h2 class="ds-heading mt-1 text-xl">
+            {{ $t('gestlab.general.labels.vap_labels.editor.template_title') }}
+          </h2>
+
+          <div class="mt-4 max-h-[24rem] space-y-3 overflow-y-auto pr-1">
+            <button
+              v-for="template in templatesList"
               :key="template.id"
-              @click="applyTemplate(template)"
+              type="button"
               :class="[
-                'cursor-pointer rounded-2xl border p-3 transition-all duration-200',
+                'w-full rounded-[1.25rem] border p-4 text-left transition duration-200',
                 selectedTemplate?.id === template.id
-                  ? 'border-primary-400 bg-primary-50 dark:border-primary-500/60 dark:bg-primary-500/10'
-                  : 'border-slate-200 hover:border-primary-300 hover:bg-primary-50/70 dark:border-slate-800 dark:hover:border-primary-500/40 dark:hover:bg-primary-500/10'
+                  ? 'border-[rgb(var(--primary-300-rgb)/0.8)] bg-[rgb(var(--primary-50-rgb)/0.82)] dark:border-[rgb(var(--accent-200-rgb)/0.32)] dark:bg-[rgb(var(--primary-400-rgb)/0.12)]'
+                  : 'border-[var(--ds-border)] bg-[var(--ds-panel-raised)] hover:bg-[var(--ds-panel-subtle)]'
               ]"
+              @click="applyTemplate(template)"
             >
-              <div class="flex items-center justify-between">
-                <div>
-                  <h4 class="text-sm font-medium text-slate-900 dark:text-white">{{ template.name }}</h4>
-                  <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ template.description }}</p>
-                </div>
-                <span v-if="template.is_featured" class="inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+              <span class="flex items-start justify-between gap-3">
+                <span>
+                  <span class="block text-sm font-black text-[var(--ds-text)]">{{ template.name }}</span>
+                  <span class="mt-1 block text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ template.description }}</span>
+                </span>
+                <span
+                  v-if="template.is_featured"
+                  class="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[0.62rem] font-black uppercase tracking-[0.12em] text-amber-800 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200"
+                >
                   {{ $t('gestlab.general.labels.vap_labels.featured') }}
                 </span>
-              </div>
-            </div>
+              </span>
+            </button>
           </div>
-        </div>
+        </section>
 
-        <!-- LAB & DEPARTMENT CARD -->
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
+        <section class="ds-panel p-5 sm:p-6">
+          <p class="ds-kicker">
             {{ $t('gestlab.general.labels.vap_labels.assignment') }}
-          </h3>
-          <div class="space-y-4">
-            <!-- LAB -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                {{ $t('gestlab.general.labels.vap_labels.lab') }}
-              </label>
-              <select
-                v-model="form.lab_id"
-                class="block w-full rounded-2xl border border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+          </p>
+          <div class="mt-4 space-y-4">
+            <BaseSelect
+              v-model="form.lab_id"
+              :label="$t('gestlab.general.labels.vap_labels.lab')"
+            >
+              <option value="">
+                {{ $t('gestlab.general.labels.vap_labels.select_lab') }}
+              </option>
+              <option
+                v-for="lab in labsList"
+                :key="lab.id"
+                :value="lab.id"
               >
-                <option value="">{{ $t('gestlab.general.labels.vap_labels.select_lab') }}</option>
-                <option v-for="lab in labs" :key="lab.id" :value="lab.id">
-                  {{ lab.name }}
-                </option>
-              </select>
-            </div>
+                {{ lab.name }}
+              </option>
+            </BaseSelect>
 
-            <!-- DEPARTMENT -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                {{ $t('gestlab.general.labels.vap_labels.department') }}
-              </label>
-              <select
-                v-model="form.department_id"
-                class="block w-full rounded-2xl border border-slate-300 bg-white text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            <BaseSelect
+              v-model="form.department_id"
+              :label="$t('gestlab.general.labels.vap_labels.department')"
+            >
+              <option value="">
+                {{ $t('gestlab.general.labels.vap_labels.select_department') }}
+              </option>
+              <option
+                v-for="dept in departmentsList"
+                :key="dept.id"
+                :value="dept.id"
               >
-                <option value="">{{ $t('gestlab.general.labels.vap_labels.select_department') }}</option>
-                <option v-for="dept in departments" :key="dept.id" :value="dept.id">
-                  {{ dept.name }}
-                </option>
-              </select>
-            </div>
+                {{ dept.name }}
+              </option>
+            </BaseSelect>
           </div>
-        </div>
+        </section>
 
-        <!-- ACTIONS CARD -->
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
+        <section class="ds-panel p-5 sm:p-6">
+          <p class="ds-kicker">
             {{ $t('gestlab.general.labels.vap_labels.actions.title') }}
-          </h3>
-          <div class="space-y-4">
-            <button 
-              @click="submit"
+          </p>
+          <div class="mt-4 space-y-3">
+            <button
+              type="button"
+              class="ds-button ds-button-primary w-full"
               :disabled="form.processing"
-              :class="[
-                'w-full inline-flex justify-center items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
-                form.processing
-                  ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500'
-                  : 'bg-primary-600 text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900'
-              ]"
+              @click="submit"
             >
               <CheckIcon class="h-5 w-5" />
               {{ form.processing ? $t('gestlab.general.labels.vap_labels.buttons.processing') : submitLabel }}
             </button>
-            
+
             <Link
               :href="props.label ? route('vap_labels.labels.show', props.label.id) : route('vap_labels.labels.index')"
-              class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              class="ds-button ds-button-secondary w-full"
             >
               <ArrowLeftIcon class="h-5 w-5" />
               {{ $t('gestlab.general.labels.vap_labels.buttons.cancel') }}
             </Link>
           </div>
-        </div>
-      </div>
+        </section>
+      </aside>
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { useForm, Link } from '@inertiajs/vue3'
+import { Link, useForm } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
-import { 
-  TagIcon, 
-  Cog6ToothIcon, 
-  DocumentTextIcon, 
-  PaintBrushIcon,
-  CheckIcon, 
+import {
   ArrowLeftIcon,
   ArrowsPointingOutIcon,
-  QrCodeIcon
+  CheckIcon,
+  Cog6ToothIcon,
+  DocumentTextIcon,
+  PaintBrushIcon,
+  QrCodeIcon,
+  TagIcon,
 } from '@heroicons/vue/24/outline'
+import BaseInput from '@/Components/base/BaseInput.vue'
+import BaseSelect from '@/Components/base/BaseSelect.vue'
+import BaseTextarea from '@/Components/base/BaseTextarea.vue'
+import ModuleHero from '@/Components/base/ModuleHero.vue'
 
 const props = defineProps({
-  templates: Array,
-  selectedTemplateId: Number,
-  labs: Array,
-  departments: Array,
-  defaultSettings: Object,
-  label: Object,
-  sourcePreview: Object,
-  sourceOptions: Object,
+  templates: {
+    type: Array,
+    default: () => [],
+  },
+  selectedTemplateId: {
+    type: Number,
+    default: null,
+  },
+  labs: {
+    type: Array,
+    default: () => [],
+  },
+  departments: {
+    type: Array,
+    default: () => [],
+  },
+  defaultSettings: {
+    type: Object,
+    default: () => ({}),
+  },
+  label: {
+    type: Object,
+    default: null,
+  },
+  sourcePreview: {
+    type: Object,
+    default: null,
+  },
+  sourceOptions: {
+    type: Object,
+    default: () => ({}),
+  },
   supportedPlaceholders: {
     type: Array,
     default: () => ['{name}', '{code}', '{lot}'],
@@ -704,6 +633,10 @@ const props = defineProps({
 })
 
 const selectedTemplate = ref(null)
+const templatesList = computed(() => Array.isArray(props.templates) ? props.templates : [])
+const labsList = computed(() => Array.isArray(props.labs) ? props.labs : [])
+const departmentsList = computed(() => Array.isArray(props.departments) ? props.departments : [])
+
 const pageTitle = computed(() => props.label
   ? trans('gestlab.general.labels.vap_labels.edit_title')
   : trans('gestlab.general.labels.vap_labels.create_title'))
@@ -714,13 +647,25 @@ const submitLabel = computed(() => props.label
   ? trans('gestlab.general.labels.vap_labels.buttons.update_label')
   : trans('gestlab.general.labels.vap_labels.buttons.save_label'))
 
-const sourceTypeOptions = [
-  { value: 'sample_entry', label: 'Amostra', description: 'Receção, retenção, QR e rastreabilidade analítica.' },
-  { value: 'equipment', label: 'Equipamento', description: 'Identificação, estado metrológico e manutenção.' },
-  { value: 'reagent', label: 'Reagente / material', description: 'Lote, validade, armazenagem e stock.' },
-]
+const sourceTypeOptions = computed(() => [
+  {
+    value: 'sample_entry',
+    label: trans('gestlab.general.labels.vap_labels.editor.source_sample'),
+    description: trans('gestlab.general.labels.vap_labels.editor.source_sample_description'),
+  },
+  {
+    value: 'equipment',
+    label: trans('gestlab.general.labels.vap_labels.editor.source_equipment'),
+    description: trans('gestlab.general.labels.vap_labels.editor.source_equipment_description'),
+  },
+  {
+    value: 'reagent',
+    label: trans('gestlab.general.labels.vap_labels.editor.source_reagent'),
+    description: trans('gestlab.general.labels.vap_labels.editor.source_reagent_description'),
+  },
+])
 
-const advancedElements = [
+const advancedElements = computed(() => [
   {
     key: 'qr',
     label: trans('gestlab.general.labels.vap_labels.qr_code'),
@@ -745,7 +690,32 @@ const advancedElements = [
     secondarySizeLabel: trans('gestlab.general.labels.vap_labels.barcode_height'),
     placeholder: '{code}',
   },
-]
+])
+
+const alignmentOptions = computed(() => [
+  { value: 'left', label: trans('gestlab.general.labels.vap_labels.align_left'), short: 'L' },
+  { value: 'center', label: trans('gestlab.general.labels.vap_labels.align_center'), short: 'C' },
+  { value: 'right', label: trans('gestlab.general.labels.vap_labels.align_right'), short: 'R' },
+  { value: 'justify', label: trans('gestlab.general.labels.vap_labels.align_justify'), short: 'J' },
+])
+
+const colorControls = computed(() => [
+  {
+    field: 'background_color',
+    label: trans('gestlab.general.labels.vap_labels.background_color'),
+    placeholder: '#ffffff',
+  },
+  {
+    field: 'text_color',
+    label: trans('gestlab.general.labels.vap_labels.text_color'),
+    placeholder: '#000000',
+  },
+  {
+    field: 'border_color',
+    label: trans('gestlab.general.labels.vap_labels.border_color'),
+    placeholder: '#000000',
+  },
+])
 
 const form = useForm({
   name: props.label?.name || '',
@@ -793,11 +763,27 @@ const availableSources = computed(() => {
   return []
 })
 
+const previewStyle = computed(() => ({
+  width: `${Math.min(Number(form.width || 50) * 3, 320)}px`,
+  minHeight: `${Math.min(Number(form.height || 25) * 3, 220)}px`,
+  backgroundColor: form.background_color,
+  color: form.text_color,
+  fontSize: `${form.font_size}px`,
+  border: `${form.border_width}px solid ${form.border_color}`,
+  textAlign: form.text_alignment,
+}))
+
+const selectSourceType = (sourceType) => {
+  form.source_type = sourceType
+  form.source_id = null
+}
+
 const applyTemplate = (template) => {
   selectedTemplate.value = template
   form.template_id = template.id
+
   if (template.template_data) {
-    Object.keys(template.template_data).forEach(key => {
+    Object.keys(template.template_data).forEach((key) => {
       if (key in form) {
         form[key] = template.template_data[key]
       }
@@ -806,11 +792,11 @@ const applyTemplate = (template) => {
 }
 
 onMounted(() => {
-  if (props.label || ! props.selectedTemplateId) {
+  if (props.label || !props.selectedTemplateId) {
     return
   }
 
-  const preselectedTemplate = props.templates?.find((template) => template.id === props.selectedTemplateId)
+  const preselectedTemplate = templatesList.value.find((template) => template.id === props.selectedTemplateId)
 
   if (preselectedTemplate) {
     applyTemplate(preselectedTemplate)
@@ -820,69 +806,9 @@ onMounted(() => {
 const submit = () => {
   if (props.label) {
     form.put(route('vap_labels.labels.update', props.label.id))
-  } else {
-    form.post(route('vap_labels.labels.store'))
+    return
   }
+
+  form.post(route('vap_labels.labels.store'))
 }
 </script>
-
-<style scoped>
-.vap-label-editor :is(.rounded-3xl.border.border-slate-200.bg-white, .rounded-3xl.border.border-slate-200.bg-white.p-6) {
-  border-color: #ded3bf;
-  background: #fffdf7;
-  box-shadow: 0 22px 70px rgb(20 61 55 / 0.09);
-}
-
-.vap-label-editor :is(.border-b.border-slate-200.bg-slate-50) {
-  border-color: #ded3bf;
-  background: #f7f1e7;
-}
-
-.vap-label-editor :is(input:not([type='range']):not([type='color']), select, textarea) {
-  border-color: #d8cfbe;
-  background: #fffdf7;
-  color: #15231f;
-  font-weight: 500;
-  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
-}
-
-.vap-label-editor :is(input:not([type='range']):not([type='color']), select, textarea):focus {
-  border-color: #143d37;
-  box-shadow: 0 0 0 4px rgb(20 61 55 / 0.12);
-}
-
-.vap-label-editor input[type='color'] {
-  overflow: hidden;
-  border-color: #d8cfbe;
-  background: #fffdf7;
-  padding: 0.2rem;
-}
-
-:global(.dark) .vap-label-editor :is(.rounded-3xl.border.border-slate-200.bg-white, .rounded-3xl.border.border-slate-200.bg-white.p-6) {
-  border-color: #25443c;
-  background: #07110f;
-  box-shadow: 0 22px 70px rgb(0 0 0 / 0.24);
-}
-
-:global(.dark) .vap-label-editor :is(.border-b.border-slate-200.bg-slate-50) {
-  border-color: #25443c;
-  background: #10231f;
-}
-
-:global(.dark) .vap-label-editor :is(input:not([type='range']):not([type='color']), select, textarea) {
-  border-color: #25443c;
-  background: #081512;
-  color: #f7f1e7;
-  color-scheme: dark;
-}
-
-:global(.dark) .vap-label-editor :is(input:not([type='range']):not([type='color']), select, textarea):focus {
-  border-color: #f1d78b;
-  box-shadow: 0 0 0 4px rgb(241 215 139 / 0.14);
-}
-
-:global(.dark) .vap-label-editor input[type='color'] {
-  border-color: #25443c;
-  background: #081512;
-}
-</style>

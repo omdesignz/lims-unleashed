@@ -96,6 +96,23 @@
                   </span>
                 </label>
                 <div class="relative">
+                  <div v-if="selectedParameterIsQualitative" class="mb-3 flex flex-wrap items-center gap-2">
+                    <button
+                      v-for="option in selectedParameterQualitativeOptions"
+                      :key="option"
+                      type="button"
+                      @click="applyQualitativeOption(option)"
+                      :class="[
+                        'rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-inset transition',
+                        resultValue === option
+                          ? 'bg-primary-900 text-white ring-primary-900 dark:bg-primary-400 dark:text-slate-950 dark:ring-primary-300'
+                          : 'bg-white text-[#31413b] ring-[#ded3bf] hover:bg-primary-50 hover:text-primary-900 dark:bg-slate-900 dark:text-[#d7e2dd] dark:ring-[#25443c] dark:hover:bg-primary-500/10 dark:hover:text-primary-200'
+                      ]"
+                    >
+                      {{ option }}
+                    </button>
+                  </div>
+
                   <input v-model="resultValue"
                          type="text"
                          :disabled="selectedParameter.requires_calculation"
@@ -105,6 +122,20 @@
                        class="absolute inset-y-0 right-0 flex items-center pr-3">
                     <CalculatorIcon class="h-5 w-5 text-amber-600 dark:text-amber-300" />
                   </div>
+                </div>
+                <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+                  <p v-if="resultValue && formattedResultValue !== resultValue"
+                     class="text-xs font-semibold text-[#51645d] dark:text-[#b7c6c0]">
+                    Visualização: {{ formattedResultValue }}
+                  </p>
+                  <button
+                    v-if="!selectedParameterIsQualitative"
+                    type="button"
+                    @click="toggleDisplayFormat"
+                    class="ml-auto rounded-full border border-[#ded3bf] bg-white px-3 py-1.5 text-xs font-semibold text-[#31413b] transition hover:border-primary-500 hover:text-primary-900 dark:border-[#25443c] dark:bg-slate-900 dark:text-[#d7e2dd] dark:hover:border-primary-400 dark:hover:text-primary-200"
+                  >
+                    {{ displayFormatLabel }}
+                  </button>
                 </div>
                 <p v-if="selectedParameter.requires_calculation" class="mt-1 text-xs font-medium text-amber-700 dark:text-amber-300">
                   Use a calculadora para determinar este valor
@@ -180,6 +211,7 @@ import {
   CalculatorIcon,
   ScaleIcon
 } from "@heroicons/vue/24/outline";
+import { ResultsDataService } from '@/Services/ResultsDataService.js';
 
 const props = defineProps({
   sampleId: Number,
@@ -239,15 +271,17 @@ const filteredParameters = computed(() => {
   return props.parameters.filter(param => {
     // For analyze: show parameters without inserted value
     if (props.action === 'analyze') {
-      return !param.inserted_value || param.inserted_value === '' || param.requires_calculation
+      return !ResultsDataService.hasResultValue(param.inserted_value) || param.requires_calculation
     }
     // For verify: show parameters with inserted value but without verification
     if (props.action === 'verify') {
-      return param.inserted_value && (!param.verified_value || param.verified_value === '')
+      return ResultsDataService.hasResultValue(param.inserted_value)
+        && !ResultsDataService.hasResultValue(param.verified_value)
     }
     // For approve: show parameters with verification but without approval
     if (props.action === 'approve') {
-      return param.verified_value && (!param.approved_value || param.approved_value === '')
+      return ResultsDataService.hasResultValue(param.verified_value)
+        && !ResultsDataService.hasResultValue(param.approved_value)
     }
     return true
   })
@@ -257,6 +291,18 @@ const selectedParameter = computed(() => {
   if (!selectedParameterId.value) return null
   return props.parameters.find(param => getParameterUniqueId(param) === selectedParameterId.value)
 })
+
+const selectedParameterIsQualitative = computed(() => ResultsDataService.isQualitativeResult(selectedParameter.value))
+
+const selectedParameterQualitativeOptions = computed(() => ResultsDataService.getQualitativeOptions(selectedParameter.value))
+
+const formattedResultValue = computed(() => ResultsDataService.formatResultValue(resultValue.value, selectedParameter.value))
+
+const displayFormatLabel = computed(() => (
+  ResultsDataService.getDisplayFormat(selectedParameter.value) === 'scientific'
+    ? 'Notação normal'
+    : 'Notação científica'
+))
 
 const hasExistingValue = (param) => {
   switch (props.action) {
@@ -269,8 +315,8 @@ const hasExistingValue = (param) => {
 
 const getExistingValueText = (param) => {
   const value = hasExistingValue(param)
-  if (!value) return ''
-  return `${value} ${param.unit_label || ''}`.trim()
+  if (!ResultsDataService.hasResultValue(value)) return ''
+  return `${ResultsDataService.formatResultValue(value, param)} ${param.unit_label || ''}`.trim()
 }
 
 const canSave = computed(() => {
@@ -296,6 +342,21 @@ const openCalculationForParameter = () => {
   emit('open-calculation', selectedParameter.value)
 }
 
+const applyQualitativeOption = (value) => {
+  resultValue.value = value
+}
+
+const toggleDisplayFormat = () => {
+  if (!selectedParameter.value) {
+    return
+  }
+
+  ResultsDataService.setDisplayFormat(
+    selectedParameter.value,
+    ResultsDataService.getDisplayFormat(selectedParameter.value) === 'scientific' ? 'standard' : 'scientific'
+  )
+}
+
 const saveIndividualResult = () => {
   if (!selectedParameter.value || (!canSave.value && !selectedParameter.value.requires_calculation)) return
 
@@ -318,6 +379,13 @@ const saveIndividualResult = () => {
     unit_label: selectedParameter.value.unit_label,
     type_id: selectedParameter.value.type_id?.value || selectedParameter.value.type_id,
     category_label: selectedParameter.value.category_label,
+    result_is_qualitative: ResultsDataService.isQualitativeResult(selectedParameter.value),
+    result_options: ResultsDataService.getQualitativeOptions(selectedParameter.value),
+    display_format: ResultsDataService.getDisplayFormat(selectedParameter.value),
+    extra_data: {
+      ...(selectedParameter.value.extra_data || {}),
+      display_format: ResultsDataService.getDisplayFormat(selectedParameter.value),
+    },
     
     // Set value based on action
     ...(props.action === 'analyze' && { 
@@ -375,17 +443,17 @@ watch(selectedParameter, (newParam) => {
   if (newParam) {
     switch (props.action) {
       case 'analyze':
-        resultValue.value = newParam.inserted_value || ''
+        resultValue.value = newParam.inserted_value ?? ''
         uncertaintyValue.value = newParam.uncertainty_value || ''
         notes.value = newParam.insertion_notes || ''
         break
       case 'verify':
-        resultValue.value = newParam.verified_value || newParam.inserted_value || ''
+        resultValue.value = newParam.verified_value ?? newParam.inserted_value ?? ''
         uncertaintyValue.value = newParam.uncertainty_value || ''
         notes.value = newParam.verification_notes || ''
         break
       case 'approve':
-        resultValue.value = newParam.approved_value || newParam.verified_value || ''
+        resultValue.value = newParam.approved_value ?? newParam.verified_value ?? ''
         uncertaintyValue.value = newParam.uncertainty_value || ''
         notes.value = newParam.approval_notes || ''
         break

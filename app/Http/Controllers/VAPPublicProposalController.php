@@ -35,8 +35,13 @@ class VAPPublicProposalController extends Controller
                 ->log('viewed_by_client');
         }
 
+        $parsedTemplateContent = $proposal->template?->content
+            ? VAPProposalTemplate::parseContent($proposal->template->content, $proposal, $settings)
+            : null;
+
         return Inertia::render('Public/ProposalShow', [
             'proposal' => $proposal,
+            'parsedTemplateContent' => $parsedTemplateContent,
             'isExpired' => $proposal->expiry_date && now()->gt($proposal->expiry_date),
             'company' => [
                 'name' => $settings->app_client_lab_name ?: $settings->app_client_name ?: $settings->app_name ?: config('app.name'),

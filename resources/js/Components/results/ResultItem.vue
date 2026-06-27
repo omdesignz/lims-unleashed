@@ -3,6 +3,7 @@ import { computed } from "vue";
 import Combobox from '@/Components/combobox.vue';
 import { TrashIcon } from "@heroicons/vue/24/outline";
 import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
+import { ResultsDataService } from '@/Services/ResultsDataService.js';
 
 const props = defineProps({
     result: Object,
@@ -18,13 +19,38 @@ const props = defineProps({
 
 const emit = defineEmits(['remove', 'update']);
 
+function normalizeCalculationParameters(value) {
+    if (Array.isArray(value)) {
+        return value;
+    }
+
+    if (!value) {
+        return [];
+    }
+
+    try {
+        const parsed = JSON.parse(value);
+
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
 function loadParameters(query, setOptions) {
     return loadSelectOptions('/parameters/getParameter', query, setOptions, result => ({
         value: result.id,
         label: result.code,
         name: result.name,
         code: result.code,
+        result_is_qualitative: result.result_is_qualitative,
+        result_options: result.result_is_qualitative ? ['Presença', 'Ausência'] : [],
+        decimal_places: result.decimal_places,
+        result_type: result.result_type,
         requires_calculation: result.requires_calculation,
+        formula_id: result.formula_id,
+        formula_expression: result.formula_expression,
+        calculation_parameters: normalizeCalculationParameters(result.calculation_parameters),
     }));
 }
 
@@ -46,15 +72,45 @@ const isOutOfRange = computed(() => {
     return false;
 });
 
+const isQualitative = computed(() => ResultsDataService.isQualitativeResult(props.result));
+
+const qualitativeOptions = computed(() => ResultsDataService.getQualitativeOptions(props.result));
+
+const formattedInsertedValue = computed(() => ResultsDataService.formatResultValue(props.result.inserted_value, props.result));
+
+const displayFormatLabel = computed(() => (
+    ResultsDataService.getDisplayFormat(props.result) === 'scientific'
+        ? 'Notação normal'
+        : 'Notação científica'
+));
+
 // Handle value change
 const handleValueChange = (value) => {
     props.result.inserted_value = value;
     emit('update', props.index, props.result);
 };
 
+const applyQualitativeOption = (value) => {
+    handleValueChange(value);
+};
+
+const toggleDisplayFormat = () => {
+    ResultsDataService.setDisplayFormat(
+        props.result,
+        ResultsDataService.getDisplayFormat(props.result) === 'scientific' ? 'standard' : 'scientific'
+    );
+
+    emit('update', props.index, props.result);
+};
+
 // Handle parameter selection
 const handleParameterSelect = (selected) => {
     props.result.parameter_id = selected;
+    props.result.result_is_qualitative = Boolean(selected?.result_is_qualitative);
+    props.result.result_options = selected?.result_options || (selected?.result_is_qualitative ? ['Presença', 'Ausência'] : []);
+    props.result.decimal_places = selected?.decimal_places ?? props.result.decimal_places;
+    props.result.result_type = selected?.result_type ?? props.result.result_type;
+    props.result.requires_calculation = Boolean(selected?.requires_calculation);
     
     // You might want to auto-fill unit or other fields based on parameter
     if (selected && selected.unit_id) {
@@ -144,6 +200,23 @@ const handleParameterSelect = (selected) => {
         </label>
         
         <div v-if="!isReadOnly">
+            <div v-if="isQualitative" class="mb-3 flex flex-wrap items-center gap-2">
+                <button
+                    v-for="option in qualitativeOptions"
+                    :key="option"
+                    type="button"
+                    @click="applyQualitativeOption(option)"
+                    :class="[
+                        'rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-inset transition',
+                        result.inserted_value === option
+                            ? 'bg-primary-900 text-white ring-primary-900 dark:bg-primary-400 dark:text-slate-950 dark:ring-primary-300'
+                            : 'bg-white text-[#31413b] ring-[#ded3bf] hover:bg-primary-50 hover:text-primary-900 dark:bg-slate-900 dark:text-[#d7e2dd] dark:ring-[#25443c] dark:hover:bg-primary-500/10 dark:hover:text-primary-200'
+                    ]"
+                >
+                    {{ option }}
+                </button>
+            </div>
+
             <input 
                 v-model="result.inserted_value"
                 @input="handleValueChange($event.target.value)"
@@ -158,6 +231,22 @@ const handleParameterSelect = (selected) => {
                 ]"
                 :placeholder="result.requires_calculation ? 'Será calculado automaticamente' : 'Introduza o resultado'"
             />
+
+            <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+                <p v-if="result.inserted_value && formattedInsertedValue !== result.inserted_value"
+                   class="text-xs font-semibold text-[#51645d] dark:text-[#b7c6c0]">
+                    Visualização: {{ formattedInsertedValue }}
+                </p>
+
+                <button
+                    v-if="!isQualitative"
+                    type="button"
+                    @click="toggleDisplayFormat"
+                    class="ml-auto rounded-full border border-[#ded3bf] bg-white px-3 py-1.5 text-xs font-semibold text-[#31413b] transition hover:border-primary-500 hover:text-primary-900 dark:border-[#25443c] dark:bg-slate-900 dark:text-[#d7e2dd] dark:hover:border-primary-400 dark:hover:text-primary-200"
+                >
+                    {{ displayFormatLabel }}
+                </button>
+            </div>
             
             <!-- Reference Range Warning -->
             <div v-if="isOutOfRange" class="mt-2 flex items-center text-xs font-semibold text-red-600 dark:text-red-300">
@@ -185,7 +274,7 @@ const handleParameterSelect = (selected) => {
         
         <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold dark:border-slate-800 dark:bg-slate-900"
              :class="{ 'text-red-600 dark:text-red-300': isOutOfRange, 'text-slate-700 dark:text-slate-200': !isOutOfRange }">
-            {{ result.inserted_value || '-' }} {{ result.unit_id?.code }} 
+            {{ formattedInsertedValue || '-' }} {{ result.unit_id?.code }}
         </div>
     </div>
 

@@ -6,7 +6,7 @@
       :is-range="true"
       :locale="props.locale"
       :color="props.color"
-      :is-dark="props.isDark"
+      :is-dark="effectiveIsDark"
       :disabled="props.disabled"
       :min-date="props.minDate"
       :max-date="props.maxDate"
@@ -17,16 +17,16 @@
     >
       <template #default="{ inputValue, inputEvents }">
         <div class="space-y-2">
-          <label v-if="props.label" class="block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
+          <label v-if="props.label" class="ds-field-label block">
             {{ props.label }}
-            <span v-if="props.required" class="text-red-500 ml-0.5">*</span>
+            <span v-if="props.required" class="ds-field-required">*</span>
           </label>
           
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div class="flex-1">
               <div class="relative">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <CalendarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--primary-200-rgb))]" />
+                  <CalendarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
                 </div>
                 <input
                   v-maska="'####-##-##'"
@@ -38,16 +38,16 @@
                   :class="inputClasses(props.hasError || props.startError || manualErrors.start)"
                 />
               </div>
-              <p v-if="manualErrors.start" class="mt-1 text-xs font-semibold text-red-500">{{ $t('gestlab.general.labels.invalid_date') }}</p>
-              <p v-else-if="props.startError" class="mt-1 text-xs font-semibold text-red-600 dark:text-red-400">{{ props.startError }}</p>
+              <p v-if="manualErrors.start" class="ds-field-error mt-1">{{ $t('gestlab.general.labels.invalid_date') }}</p>
+              <p v-else-if="props.startError" class="ds-field-error mt-1">{{ props.startError }}</p>
             </div>
 
-            <ArrowLongRightIcon class="hidden h-5 w-5 text-[#8d9b94] dark:text-[#657970] sm:block" />
+            <ArrowLongRightIcon class="hidden h-5 w-5 text-[var(--ds-text-soft)] sm:block" />
 
             <div class="flex-1">
               <div class="relative">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <CalendarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--primary-200-rgb))]" />
+                  <CalendarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
                 </div>
                 <input
                   v-maska="'####-##-##'"
@@ -62,13 +62,13 @@
                   v-if="props.showClear && (inputValue.start || inputValue.end)"
                   type="button"
                   @click.stop="clearSelection"
-                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-[#8d9b94] transition-colors duration-200 hover:text-[rgb(var(--primary-800-rgb))] dark:text-[#657970] dark:hover:text-[rgb(var(--primary-200-rgb))]"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--ds-text-soft)] transition-colors duration-200 hover:text-[rgb(var(--primary-700-rgb))]"
                 >
                   <XMarkIcon class="h-5 w-5" />
                 </button>
               </div>
-              <p v-if="manualErrors.end" class="mt-1 text-xs font-semibold text-red-500">{{ $t('gestlab.general.labels.invalid_date') }}</p>
-              <p v-else-if="props.endError" class="mt-1 text-xs font-semibold text-red-600 dark:text-red-400">{{ props.endError }}</p>
+              <p v-if="manualErrors.end" class="ds-field-error mt-1">{{ $t('gestlab.general.labels.invalid_date') }}</p>
+              <p v-else-if="props.endError" class="ds-field-error mt-1">{{ props.endError }}</p>
             </div>
           </div>
         </div>
@@ -80,7 +80,7 @@
       v-model="dateValue"
       :locale="props.locale"
       :color="props.color"
-      :is-dark="props.isDark"
+      :is-dark="effectiveIsDark"
       :disabled="props.disabled"
       :min-date="props.minDate"
       :max-date="props.maxDate"
@@ -91,13 +91,13 @@
     >
       <template #default="{ inputValue, inputEvents }">
         <div class="space-y-2">
-          <label v-if="props.label" class="block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
+          <label v-if="props.label" class="ds-field-label block">
             {{ props.label }}
-            <span v-if="props.required" class="text-red-500 ml-0.5">*</span>
+            <span v-if="props.required" class="ds-field-required">*</span>
           </label>
           <div class="relative">
             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <CalendarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--primary-200-rgb))]" />
+              <CalendarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
             </div>
             <input
               v-maska="'####-##-##'"
@@ -112,13 +112,13 @@
               v-if="props.showClear && inputValue"
               type="button"
               @click.stop="clearSelection"
-              class="absolute inset-y-0 right-0 flex items-center pr-3 text-[#8d9b94] transition-colors duration-200 hover:text-[rgb(var(--primary-800-rgb))] dark:text-[#657970] dark:hover:text-[rgb(var(--primary-200-rgb))]"
+              class="absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--ds-text-soft)] transition-colors duration-200 hover:text-[rgb(var(--primary-700-rgb))]"
             >
               <XMarkIcon class="h-4 w-4" />
             </button>
           </div>
-          <p v-if="manualErrors.single" class="mt-1 text-xs font-semibold text-red-500">{{ $t('gestlab.general.labels.invalid_date') }}</p>
-          <p v-else-if="props.hasError" class="mt-1 text-xs font-semibold text-red-600 dark:text-red-400">{{ props.errorMessage }}</p>
+          <p v-if="manualErrors.single" class="ds-field-error mt-1">{{ $t('gestlab.general.labels.invalid_date') }}</p>
+          <p v-else-if="props.hasError" class="ds-field-error mt-1">{{ props.errorMessage }}</p>
         </div>
       </template>
     </VDatePicker>
@@ -126,7 +126,7 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { DatePicker as VDatePicker } from 'v-calendar';
 import { vMaska } from "maska/vue"
 import 'v-calendar/dist/style.css';
@@ -154,6 +154,27 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue"]);
 
 const manualErrors = reactive({ start: false, end: false, single: false });
+const hasDarkClass = ref(false);
+let darkModeObserver;
+
+const syncDarkClass = () => {
+  hasDarkClass.value = document.documentElement.classList.contains('dark');
+};
+
+onMounted(() => {
+  syncDarkClass();
+  darkModeObserver = new MutationObserver(syncDarkClass);
+  darkModeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class'],
+  });
+});
+
+onBeforeUnmount(() => {
+  darkModeObserver?.disconnect();
+});
+
+const effectiveIsDark = computed(() => props.isDark || hasDarkClass.value);
 
 const dateMasks = computed(() => ({
   input: 'YYYY-MM-DD',
@@ -216,9 +237,8 @@ const dateValue = computed({
 });
 
 const inputClasses = (error) => [
-  'block w-full rounded-2xl border py-3 pl-10 pr-10 text-sm font-medium shadow-sm ring-1 transition-all duration-200 placeholder:text-[#8d9b94] focus:outline-none focus:ring-2 focus:ring-offset-0 dark:placeholder:text-[#657970]',
-  props.disabled ? 'cursor-not-allowed border-[#ddd2bf] bg-[#ede5d6] text-slate-500 ring-[#ddd2bf] dark:border-[#25443c] dark:bg-[#10231f]/70 dark:text-slate-400 dark:ring-[#25443c]' : 'border-[#d8cbb8] bg-[#fffdf7] text-[#15231f] ring-white/70 dark:border-[#315149] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:ring-white/10',
-  error ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-500/20 dark:border-danger-500' : 'focus:border-[rgb(var(--primary-500-rgb))] focus:ring-[rgb(var(--primary-500-rgb)/0.22)] dark:focus:border-[rgb(var(--primary-300-rgb))] dark:focus:ring-[rgb(var(--primary-300-rgb)/0.2)]'
+  'ds-field pl-10 pr-10',
+  error ? 'border-danger-500' : '',
 ];
 
 function clearSelection() {
@@ -229,83 +249,3 @@ function clearSelection() {
   emit("update:modelValue", props.range ? { start: null, end: null } : null);
 }
 </script>
-
-<style>
-.vc-container {
-  border: 1px solid #ded3bf !important;
-  border-radius: 1.5rem !important;
-  background: rgb(255 253 247 / 0.98) !important;
-  box-shadow: 0 28px 90px rgb(7 17 15 / 0.18) !important;
-  color: #15231f !important;
-  font-family: "Manrope", sans-serif !important;
-  overflow: hidden;
-}
-
-.vc-popover-content-wrapper {
-  z-index: 9999 !important;
-}
-
-.vc-header,
-.vc-weekdays,
-.vc-weeks {
-  padding-inline: 0.75rem !important;
-}
-
-.vc-title,
-.vc-weekday {
-  color: #31413b !important;
-  font-weight: 800 !important;
-}
-
-.vc-arrow {
-  border-radius: 9999px !important;
-  color: #31413b !important;
-  transition: background-color 150ms ease, color 150ms ease;
-}
-
-.vc-arrow:hover,
-.vc-title:hover {
-  background: #eef7f3 !important;
-  color: rgb(var(--primary-800-rgb)) !important;
-}
-
-.vc-day-content {
-  border-radius: 0.9rem !important;
-  font-weight: 700 !important;
-}
-
-.vc-day-content:hover {
-  background: rgb(var(--primary-100-rgb)) !important;
-  color: rgb(var(--primary-900-rgb)) !important;
-}
-
-.vc-highlight,
-.vc-highlight-bg-solid {
-  background: rgb(var(--primary-800-rgb)) !important;
-}
-
-.vc-highlight-content-solid,
-.vc-highlight-content-light {
-  color: #fffdf7 !important;
-}
-
-.dark .vc-container {
-  border-color: #25443c !important;
-  background: rgb(7 17 15 / 0.98) !important;
-  box-shadow: 0 28px 90px rgb(0 0 0 / 0.44) !important;
-  color: #f7f1e7 !important;
-}
-
-.dark .vc-title,
-.dark .vc-weekday,
-.dark .vc-arrow {
-  color: #d7e2dd !important;
-}
-
-.dark .vc-arrow:hover,
-.dark .vc-title:hover,
-.dark .vc-day-content:hover {
-  background: #10231f !important;
-  color: #f1d78b !important;
-}
-</style>

@@ -6,8 +6,10 @@ import {
   proposalTemplatePreviewPageDimensions,
   proposalTemplatePreviewPageFormatLabel,
 } from '@/Support/proposal-template-preview-geometry.mjs'
+import { chartSvgPalette, normalizeStudioChartList, normalizedHexColor, sanitizeStudioChartSvg } from '@/Support/report-studio-chart-palette.mjs'
 import { imagePositionCoordinates, imagePositionStringFromCoordinates } from '@/Support/report-studio-image-position.mjs'
 import { uploadedStudioAssetKind } from '@/Support/report-studio-media-assets.mjs'
+import { escapePreviewHtmlAttribute, escapePreviewHtmlText, safePreviewCssUrl, safePreviewMediaUrl } from '@/Support/report-studio-preview-safety.mjs'
 import axios from 'axios'
 import { create as createQrCode } from 'qrcode'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -504,8 +506,54 @@ const visiblePreviewPages = computed(() => {
   ]
 })
 
+function normalizeCanvasBlockPlacement(block, fallbackPageNumber = currentPreviewPage.value || 1) {
+  if (!block) {
+    return
+  }
+
+  if (!canvasSurfaceOptions.some((option) => option.value === block.surface)) {
+    block.surface = 'content'
+  }
+
+  if (block.surface !== 'content') {
+    block.page_scope = 'all'
+    block.page_number = null
+
+    return
+  }
+
+  block.page_scope = block.page_scope || 'first'
+
+  if (block.page_scope === 'specific') {
+    const pageNumber = Number(block.page_number)
+    block.page_number = Number.isInteger(pageNumber) && pageNumber >= 1
+      ? pageNumber
+      : fallbackPageNumber
+
+    return
+  }
+
+  block.page_number = null
+}
+
+function normalizeSelectedCanvasBlockPlacement(block = selectedCanvasBlock.value) {
+  normalizeCanvasBlockPlacement(block)
+}
+
+function normalizeCanvasBlockPlacements() {
+  canvasBlocks.value.forEach((block) => normalizeCanvasBlockPlacement(block))
+}
+
+watch(() => [
+  selectedCanvasBlock.value?.id,
+  selectedCanvasBlock.value?.surface,
+  selectedCanvasBlock.value?.page_scope,
+  selectedCanvasBlock.value?.page_number,
+  currentPreviewPage.value,
+], () => normalizeSelectedCanvasBlockPlacement(), { immediate: true })
+
 const previewPageStyle = computed(() => {
-  const image = props.layoutSchema.background_image_path
+  const image = safePreviewCssUrl(props.layoutSchema.background_image_path)
   const baseStyle = {
     fontFamily: props.layoutSchema.document_font_family || '"Century Gothic", DejaVu Sans, sans-serif',
   }
@@ -513,10 +561,10 @@ const previewPageStyle = computed(() => {
   return image
     ? {
         ...baseStyle,
-        backgroundImage: `url('${image}')`,
-        backgroundSize: props.layoutSchema.background_size || 'cover',
-        backgroundPosition: props.layoutSchema.background_position || 'center center',
-        backgroundRepeat: props.layoutSchema.background_repeat || 'no-repeat',
+        backgroundImage: image,
+        backgroundSize: safeCssImageFitValue(props.layoutSchema.background_size, 'cover'),
+        backgroundPosition: safeCssPositionValue(props.layoutSchema.background_position, 'center center'),
+        backgroundRepeat: safeCssRepeatValue(props.layoutSchema.background_repeat, 'no-repeat'),
       }
     : baseStyle
 })
@@ -1062,6 +1110,11 @@ function duplicateCanvasBlock(block) {
 }
 
 function canvasBlockStyle(block) {
+  const blockBackgroundColor = safeCssColorValue(block.background_color, 'rgba(255,255,255,0.88)')
+  const blockTextColor = safeCssColorValue(block.text_color, '')
+  const blockBorderColor = safeCssColorValue(block.border_color, 'rgba(148,163,184,0.4)')
+  const blockBackgroundImage = safePreviewCssUrl(interpolatePreviewHtml(block.background_image || ''))
+
   return {
     position: 'absolute',
     left: `${Number(block.x || 0)}%`,
@@ -1071,16 +1124,16 @@ function canvasBlockStyle(block) {
     zIndex: Number(block.z_index || 10),
     padding: `${Number(block.padding || 0)}px`,
     borderRadius: `${Number(block.border_radius || 0)}px`,
-    background: block.background_color || 'rgba(255,255,255,0.88)',
-    backgroundImage: block.background_image ? `url('${block.background_image}')` : undefined,
-    backgroundSize: block.background_image ? (block.background_image_fit || 'cover') : undefined,
-    backgroundPosition: block.background_image ? (block.background_image_position || 'center center') : undefined,
-    backgroundRepeat: block.background_image ? 'no-repeat' : undefined,
+    background: blockBackgroundColor,
+    backgroundImage: blockBackgroundImage || undefined,
+    backgroundSize: blockBackgroundImage ? safeCssImageFitValue(block.background_image_fit, 'cover') : undefined,
+    backgroundPosition: blockBackgroundImage ? safeCssPositionValue(block.background_image_position, 'center center') : undefined,
+    backgroundRepeat: blockBackgroundImage ? 'no-repeat' : undefined,
     border: Number(block.border_width || 0) > 0
-      ? `${Number(block.border_width || 0)}px solid ${block.border_color || 'rgba(148,163,184,0.4)'}`
+      ? `${Number(block.border_width || 0)}px solid ${blockBorderColor}`
       : 'none',
     opacity: clamp(Number(block.opacity ?? 1), 0.05, 1),
-    color: block.text_color || undefined,
+    color: blockTextColor || undefined,
     textAlign: block.text_align || 'left',
     fontSize: block.font_size ? `${Number(block.font_size)}px` : undefined,
     lineHeight: block.line_height ? String(block.line_height) : undefined,
@@ -1104,16 +1157,7 @@ function canvasBlockOverlayStyle(block) {
 }
 
 function chartListValue(value) {
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item ?? '').trim())
-      .filter(Boolean)
-  }
-
-  return String(value || '')
-    .split(/[\n,;]+/)
-    .map((item) => item.trim())
-    .filter(Boolean)
+  return normalizeStudioChartList(value)
 }
 
 function chartNumericValues(block) {
@@ -1135,7 +1179,8 @@ function chartLabelValues(block, values) {
 
 function chartColorValues(block) {
   const configuredColors = chartListValue(block.chart_colors)
-    .filter((value) => /^#[0-9a-fA-F]{6}$/.test(value))
+    .map((value) => normalizedHexColor(value, ''))
+    .filter(Boolean)
 
   return configuredColors.length ? configuredColors : defaultChartPalette
 }
@@ -1163,6 +1208,7 @@ function generatedChartSvg(block) {
   const backgroundColor = colorInputValue(block.chart_background_color, '#f8f4ea')
   const primaryColor = colorInputValue(block.chart_primary_color, colors[0] || '#143d37')
   const showValues = block.chart_show_values !== false
+  const palette = chartSvgPalette(backgroundColor)
 
   if (type === 'doughnut') {
     const total = values.reduce((sum, value) => sum + Math.max(value, 0), 0) || 1
@@ -1178,10 +1224,10 @@ function generatedChartSvg(block) {
     const legend = labels.map((label, index) => {
       const y = 70 + (index * 26)
 
-      return `<g><rect x="250" y="${y - 10}" width="12" height="12" rx="3" fill="${colors[index % colors.length]}"/><text x="272" y="${y}" font-size="12" fill="#334155">${escapeSvgText(interpolatePreviewHtml(label))}</text><text x="520" y="${y}" font-size="12" font-weight="700" fill="#0f172a" text-anchor="end">${values[index]}</text></g>`
+      return `<g><rect x="250" y="${y - 10}" width="12" height="12" rx="3" fill="${colors[index % colors.length]}"/><text x="272" y="${y}" font-size="12" fill="${palette.muted}">${escapeSvgText(interpolatePreviewHtml(label))}</text><text x="520" y="${y}" font-size="12" font-weight="700" fill="${palette.ink}" text-anchor="end">${values[index]}</text></g>`
     }).join('')
 
-    return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="#0f172a">${title}</text><circle cx="130" cy="128" r="40" fill="none" stroke="#e2e8f0" stroke-width="18"/>${rings}<text x="130" y="126" text-anchor="middle" font-size="18" font-weight="800" fill="${primaryColor}">${total}</text><text x="130" y="144" text-anchor="middle" font-size="10" fill="#64748b">total</text>${legend}</svg>`
+    return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="${palette.ink}">${title}</text><circle cx="130" cy="128" r="40" fill="none" stroke="${palette.grid}" stroke-width="18"/>${rings}<text x="130" y="126" text-anchor="middle" font-size="18" font-weight="800" fill="${palette.ink}">${total}</text><text x="130" y="144" text-anchor="middle" font-size="10" fill="${palette.muted}">total</text>${legend}</svg>`
   }
 
   if (type === 'line') {
@@ -1195,10 +1241,10 @@ function generatedChartSvg(block) {
       const x = 58 + (index * (470 / Math.max(values.length - 1, 1)))
       const y = 202 - ((value / maxValue) * 132)
 
-      return `<g><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${colors[index % colors.length]}" stroke="#fffaf0" stroke-width="2"/>${showValues ? `<text x="${x.toFixed(1)}" y="${(y - 12).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="#0f172a">${value}</text>` : ''}<text x="${x.toFixed(1)}" y="230" text-anchor="middle" font-size="10" fill="#64748b">${escapeSvgText(interpolatePreviewHtml(labels[index] || `S${index + 1}`))}</text></g>`
+      return `<g><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${colors[index % colors.length]}" stroke="${palette.markerStroke}" stroke-width="2"/>${showValues ? `<text x="${x.toFixed(1)}" y="${(y - 12).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="${palette.ink}">${value}</text>` : ''}<text x="${x.toFixed(1)}" y="230" text-anchor="middle" font-size="10" fill="${palette.muted}">${escapeSvgText(interpolatePreviewHtml(labels[index] || `S${index + 1}`))}</text></g>`
     }).join('')
 
-    return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="#0f172a">${title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="#cbd5e1"/><line x1="52" y1="70" x2="52" y2="202" stroke="#cbd5e1"/><polyline points="${points}" fill="none" stroke="${primaryColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${markers}</svg>`
+    return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="${palette.ink}">${title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="${palette.grid}"/><line x1="52" y1="70" x2="52" y2="202" stroke="${palette.grid}"/><polyline points="${points}" fill="none" stroke="${primaryColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${markers}</svg>`
   }
 
   const slot = 470 / Math.max(values.length, 1)
@@ -1208,10 +1254,10 @@ function generatedChartSvg(block) {
     const y = 202 - height
     const width = Math.max(18, slot * 0.7)
 
-    return `<g><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${width.toFixed(1)}" height="${height.toFixed(1)}" rx="10" fill="${colors[index % colors.length]}"/>${showValues ? `<text x="${(x + width / 2).toFixed(1)}" y="${(y - 10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="#0f172a">${value}</text>` : ''}<text x="${(x + width / 2).toFixed(1)}" y="230" text-anchor="middle" font-size="10" fill="#64748b">${escapeSvgText(interpolatePreviewHtml(labels[index] || `S${index + 1}`))}</text></g>`
+    return `<g><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${width.toFixed(1)}" height="${height.toFixed(1)}" rx="10" fill="${colors[index % colors.length]}"/>${showValues ? `<text x="${(x + width / 2).toFixed(1)}" y="${(y - 10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="${palette.ink}">${value}</text>` : ''}<text x="${(x + width / 2).toFixed(1)}" y="230" text-anchor="middle" font-size="10" fill="${palette.muted}">${escapeSvgText(interpolatePreviewHtml(labels[index] || `S${index + 1}`))}</text></g>`
   }).join('')
 
-  return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="#0f172a">${title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="#cbd5e1"/><line x1="52" y1="70" x2="52" y2="202" stroke="#cbd5e1"/>${bars}</svg>`
+  return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="${palette.ink}">${title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="${palette.grid}"/><line x1="52" y1="70" x2="52" y2="202" stroke="${palette.grid}"/>${bars}</svg>`
 }
 
 function canvasBlockContentHtml(block) {
@@ -1230,12 +1276,16 @@ function canvasBlockContentHtml(block) {
     const signatureImagePosition = safeCssPositionValue(block.signature_image_position || 'center center', 'center center')
     const signatureImageWidth = clamp(Number(block.signature_image_width || 180), 24, 360)
     const signatureImageHeight = clamp(Number(block.signature_image_height || 72), 16, 240)
-    const signatureImage = block.signature_image
-      ? `<img src="${block.signature_image}" alt="Assinatura" style="display:block; width:${signatureImageWidth}px; max-width:100%; height:${signatureImageHeight}px; object-fit:${signatureImageFit}; object-position:${signatureImagePosition};" />`
+    const signatureImageUrl = safePreviewMediaUrl(interpolatePreviewHtml(block.signature_image || ''))
+    const signatureImage = signatureImageUrl
+      ? `<img src="${escapePreviewHtmlAttribute(signatureImageUrl)}" alt="Assinatura" style="display:block; width:${signatureImageWidth}px; max-width:100%; height:${signatureImageHeight}px; object-fit:${signatureImageFit}; object-position:${signatureImagePosition};" />`
       : ''
+    const signatureLabel = escapePreviewHtmlText(interpolatePreviewHtml(block.signature_label || ''))
+    const signatureName = escapePreviewHtmlText(interpolatePreviewHtml(block.signature_name || ''))
+    const signatureTitle = escapePreviewHtmlText(interpolatePreviewHtml(block.signature_title || ''))
 
     const dateLabel = block.signature_show_date
-      ? `<div class="mt-2 text-[11px] text-slate-500">${interpolatePreviewHtml(block.signature_date_label || 'Data: ____ / ____ / ______')}</div>`
+      ? `<div class="mt-2 text-[11px] text-slate-500">${escapePreviewHtmlText(interpolatePreviewHtml(block.signature_date_label || 'Data: ____ / ____ / ______'))}</div>`
       : ''
 
     return `
@@ -1243,9 +1293,9 @@ function canvasBlockContentHtml(block) {
         ${signatureImage ? `<div>${signatureImage}</div>` : ''}
         <div class="w-full ${lineStyle}"></div>
         <div class="space-y-1">
-          ${block.signature_label ? `<div class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">${interpolatePreviewHtml(block.signature_label)}</div>` : ''}
-          ${block.signature_name ? `<div class="text-sm font-semibold text-slate-900">${interpolatePreviewHtml(block.signature_name)}</div>` : ''}
-          ${block.signature_title ? `<div class="text-xs text-slate-600">${interpolatePreviewHtml(block.signature_title)}</div>` : ''}
+          ${signatureLabel ? `<div class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">${signatureLabel}</div>` : ''}
+          ${signatureName ? `<div class="text-sm font-semibold text-slate-900">${signatureName}</div>` : ''}
+          ${signatureTitle ? `<div class="text-xs text-slate-600">${signatureTitle}</div>` : ''}
           ${dateLabel}
         </div>
       </div>
@@ -1253,26 +1303,28 @@ function canvasBlockContentHtml(block) {
   }
 
   if (['image', 'stamp'].includes(block.block_kind)) {
-    const imageUrl = block.image_url || block.background_image
+    const imageUrl = safePreviewMediaUrl(interpolatePreviewHtml(block.image_url || block.background_image || ''))
 
     if (!imageUrl) {
       return '<div class="flex h-full min-h-24 items-center justify-center rounded-2xl border border-dashed border-slate-300 text-xs text-slate-500">Selecione uma imagem da galeria</div>'
     }
 
-    return `<img src="${imageUrl}" alt="${interpolatePreviewHtml(block.image_alt || block.title || 'Imagem')}" style="display:block; width:100%; height:100%; min-height:inherit; object-fit:${imageObjectFit(block)}; object-position:${imageObjectPosition(block)};" />`
+    return `<img src="${escapePreviewHtmlAttribute(imageUrl)}" alt="${escapePreviewHtmlAttribute(interpolatePreviewHtml(block.image_alt || block.title || 'Imagem'))}" style="display:block; width:100%; height:100%; min-height:inherit; object-fit:${imageObjectFit(block)}; object-position:${imageObjectPosition(block)};" />`
   }
 
   if (block.block_kind === 'chart_snapshot') {
+    const sanitizedChartSvg = sanitizeStudioChartSvg(interpolatePreviewHtml(block.chart_svg || ''))
     const chartTitle = block.chart_title
-      ? `<div class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">${interpolatePreviewHtml(block.chart_title)}</div>`
+      ? `<div class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">${escapePreviewHtmlText(interpolatePreviewHtml(block.chart_title))}</div>`
       : ''
     const chartCaption = block.chart_caption
-      ? `<div class="mt-3 text-xs leading-relaxed text-slate-500">${interpolatePreviewHtml(block.chart_caption)}</div>`
+      ? `<div class="mt-3 text-xs leading-relaxed text-slate-500">${escapePreviewHtmlText(interpolatePreviewHtml(block.chart_caption))}</div>`
       : ''
-    const chartGraphic = block.chart_svg
-      ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${interpolatePreviewHtml(block.chart_svg)}</div>`
-      : block.chart_image_url
-        ? `<img src="${interpolatePreviewHtml(block.chart_image_url)}" alt="${interpolatePreviewHtml(block.chart_title || block.title || 'Gráfico')}" style="display:block; margin-top:12px; width:100%; min-height:140px; object-fit:contain;" />`
+    const chartImageUrl = safePreviewMediaUrl(interpolatePreviewHtml(block.chart_image_url || ''))
+    const chartGraphic = sanitizedChartSvg
+      ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${sanitizedChartSvg}</div>`
+      : chartImageUrl
+        ? `<img src="${escapePreviewHtmlAttribute(chartImageUrl)}" alt="${escapePreviewHtmlAttribute(interpolatePreviewHtml(block.chart_title || block.title || 'Gráfico'))}" style="display:block; margin-top:12px; width:100%; min-height:140px; object-fit:contain;" />`
         : generatedChartSvg(block)
           ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${generatedChartSvg(block)}</div>`
           : '<div class="mt-3 flex min-h-36 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-center text-xs text-slate-500">Defina rótulos e valores para gerar o gráfico ou use SVG/imagem exportada.</div>'
@@ -1528,6 +1580,40 @@ function imageObjectFit(block) {
   return mediaObjectFit(block?.image_fit || 'contain')
 }
 
+function safeCssColorValue(value, fallback = '') {
+  const color = String(value || '').trim()
+
+  if (!color) {
+    return fallback
+  }
+
+  if (/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(color)) {
+    return color
+  }
+
+  if (/^(?:rgb|rgba|hsl|hsla)\([0-9\s,.%+-]+\)$/i.test(color)) {
+    return color
+  }
+
+  if (/^[a-z][a-z0-9-]{2,32}$/i.test(color)) {
+    return color
+  }
+
+  return fallback
+}
+
+function safeCssImageFitValue(value, fallback = 'cover') {
+  const fit = String(value || '').trim()
+
+  return ['cover', 'contain', 'auto'].includes(fit) ? fit : fallback
+}
+
+function safeCssRepeatValue(value, fallback = 'no-repeat') {
+  const repeat = String(value || '').trim()
+
+  return ['no-repeat', 'repeat', 'repeat-x', 'repeat-y'].includes(repeat) ? repeat : fallback
+}
+
 function safeCssPositionValue(value, fallback = 'center center') {
   const position = String(value || '').trim()
 
@@ -1771,7 +1857,7 @@ const tableStyleSettings = computed(() => ({
 }))
 
 function colorInputValue(value, fallback = '#143d37') {
-  return /^#[0-9a-f]{6}$/i.test(String(value || '')) ? value : fallback
+  return normalizedHexColor(value, fallback)
 }
 
 function setSelectedBlockColor(field, value) {
@@ -2039,6 +2125,7 @@ function syncAssetUrlFromBackground() {
 }
 
 function draftPreviewPayload() {
+  normalizeCanvasBlockPlacements()
   props.layoutSchema.variable_catalog = translatedPlaceholders.value
 
   return {
@@ -2151,6 +2238,7 @@ async function previewDraftPdf() {
 }
 
 function submit() {
+  normalizeCanvasBlockPlacements()
   props.layoutSchema.variable_catalog = translatedPlaceholders.value
   emit('submit')
 }

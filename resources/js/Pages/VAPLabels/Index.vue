@@ -1,357 +1,439 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="overflow-hidden rounded-[2.25rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_28px_90px_rgba(20,61,55,0.12)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
-      <div class="grid gap-0 lg:grid-cols-[minmax(0,1fr)_25rem]">
-        <div class="relative isolate p-6 sm:p-8">
-          <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_8%_0%,rgba(217,176,95,0.28),transparent_36%),linear-gradient(135deg,#fffdf7,#f7f1e7)] dark:bg-[radial-gradient(circle_at_8%_0%,rgba(217,176,95,0.18),transparent_34%),linear-gradient(135deg,#07110f,#10231f)]" />
-          <div class="inline-flex rounded-full border border-[#ded3bf] bg-white/80 px-3 py-1 text-xs font-black uppercase tracking-[0.24em] text-[#143d37] dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#f1d78b]">
-            Label Studio
-          </div>
-          <h1 class="mt-5 flex items-center gap-3 text-3xl font-black tracking-tight text-[#15231f] dark:text-[#f7f1e7]">
-            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#143d37] text-[#f1d78b] shadow-[0_16px_40px_rgba(20,61,55,0.22)] dark:bg-[#f1d78b] dark:text-[#07110f]">
-              <TagIcon class="h-6 w-6" />
-            </span>
-            {{ $t('gestlab.general.labels.vap_labels.title') }}
-          </h1>
-          <p class="mt-4 max-w-3xl text-sm font-medium leading-6 text-[#475a53] dark:text-[#cbd8cf]">
-            Desenhe, controle e imprima etiquetas para amostras, equipamentos, reagentes e materiais com dimensões, cores, QR, estado e laboratório associados.
+  <div class="space-y-6">
+    <ModuleHero
+      :eyebrow="$t('gestlab.general.labels.vap_labels.index.eyebrow')"
+      :title="$t('gestlab.general.labels.vap_labels.title')"
+      :description="$t('gestlab.general.labels.vap_labels.index.description')"
+    >
+      <template #actions>
+        <Link
+          :href="route('vap_labels.labels.create')"
+          class="ds-button ds-button-primary"
+        >
+          <PlusCircleIcon class="h-5 w-5" />
+          {{ $t('gestlab.general.labels.vap_labels.buttons.create_label') }}
+        </Link>
+      </template>
+
+      <div class="grid gap-3 md:grid-cols-3">
+        <article
+          v-for="statCard in labelStatCards"
+          :key="statCard.label"
+          class="ds-card bg-[var(--ds-panel-raised)] p-4"
+        >
+          <p class="ds-kicker text-[0.64rem]">
+            {{ statCard.label }}
           </p>
-          <div class="mt-6 flex flex-wrap gap-3">
-            <Link
-              :href="route('vap_labels.labels.create')"
-              class="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#143d37] px-4 py-3 text-sm font-black text-white shadow-[0_16px_40px_rgba(20,61,55,0.20)] transition hover:bg-[#0f2f2a] dark:bg-[#f1d78b] dark:text-[#07110f] dark:hover:bg-[#f6e7bf]"
-            >
-              <PlusCircleIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.vap_labels.buttons.create_label') }}
-            </Link>
-            <span class="inline-flex items-center justify-center rounded-2xl border border-[#ded3bf] bg-white/80 px-4 py-3 text-sm font-black text-[#143d37] dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#f1d78b]">
-              {{ stats.total }} {{ $t('gestlab.general.labels.vap_labels.total_labels') }}
-            </span>
-          </div>
-        </div>
-        <aside class="border-t border-[#ded3bf] bg-[#f7f1e7] p-6 dark:border-[#25443c] dark:bg-[#081512] lg:border-l lg:border-t-0">
-          <div class="grid gap-4">
-            <div
-              v-for="statCard in labelStatCards"
-              :key="statCard.label"
-              class="rounded-3xl border border-white/70 bg-white/80 p-4 shadow-sm dark:border-[#25443c] dark:bg-[#07110f]"
-            >
-              <p class="text-xs font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#83978d]">{{ statCard.label }}</p>
-              <p class="mt-2 text-3xl font-black text-[#143d37] dark:text-[#f1d78b]">{{ statCard.value }}</p>
-              <p class="mt-1 text-xs leading-5 text-[#475a53] dark:text-[#cbd8cf]">{{ statCard.hint }}</p>
-            </div>
-          </div>
-        </aside>
+          <p class="mt-2 text-2xl font-black text-[var(--ds-text)]">
+            {{ statCard.value }}
+          </p>
+          <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">
+            {{ statCard.hint }}
+          </p>
+        </article>
       </div>
-    </div>
+    </ModuleHero>
 
-    <!-- FILTERS CARD -->
-    <div class="rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] p-6 shadow-[0_24px_80px_rgba(20,61,55,0.09)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10 sm:p-7">
-      <div class="mb-6 flex flex-col gap-2">
-        <p class="text-xs font-black uppercase tracking-[0.22em] text-[#6b7b74] dark:text-[#83978d]">Filtro documental</p>
-        <h2 class="text-xl font-black text-[#15231f] dark:text-[#f7f1e7]">Encontre a etiqueta certa antes de imprimir</h2>
-      </div>
-      <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-        <div class="space-y-2">
-          <label class="block text-sm font-bold text-[#31413b] dark:text-[#d7e2dd]">
-            {{ $t('gestlab.general.labels.vap_labels.search') }}
-          </label>
-          <input
-            v-model="filters.search"
-            type="search"
-            :placeholder="$t('gestlab.general.labels.vap_labels.search_placeholder')"
-            class="block w-full rounded-2xl border-[#d8cfbe] bg-white px-4 py-3 text-sm font-medium text-[#15231f] shadow-sm transition focus:border-[#143d37] focus:ring-4 focus:ring-[#143d37]/10 dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:placeholder:text-[#657970]"
-          />
-        </div>
-        <div class="space-y-2">
-          <label class="block text-sm font-bold text-[#31413b] dark:text-[#d7e2dd]">
-            {{ $t('gestlab.general.labels.vap_labels.type') }}
-          </label>
-          <select
-            v-model="filters.type"
-            class="block w-full rounded-2xl border-[#d8cfbe] bg-white px-4 py-3 text-sm font-medium text-[#15231f] shadow-sm transition focus:border-[#143d37] focus:ring-4 focus:ring-[#143d37]/10 dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f7f1e7]"
-          >
-            <option value="">{{ $t('gestlab.general.labels.vap_labels.all_types') }}</option>
-            <option value="equipment">{{ $t('gestlab.general.labels.vap_labels.types.equipment') }}</option>
-            <option value="material">{{ $t('gestlab.general.labels.vap_labels.types.material') }}</option>
-            <option value="sample">{{ $t('gestlab.general.labels.vap_labels.types.sample') }}</option>
-            <option value="custom">{{ $t('gestlab.general.labels.vap_labels.types.custom') }}</option>
-          </select>
-        </div>
-        <div class="space-y-2">
-          <label class="block text-sm font-bold text-[#31413b] dark:text-[#d7e2dd]">
-            {{ $t('gestlab.general.labels.vap_labels.lab') }}
-          </label>
-          <select
-            v-model="filters.lab_id"
-            class="block w-full rounded-2xl border-[#d8cfbe] bg-white px-4 py-3 text-sm font-medium text-[#15231f] shadow-sm transition focus:border-[#143d37] focus:ring-4 focus:ring-[#143d37]/10 dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f7f1e7]"
-          >
-            <option value="">{{ $t('gestlab.general.labels.vap_labels.all_labs') }}</option>
-            <option v-for="lab in labs" :key="lab.id" :value="lab.id">
-              {{ lab.name }}
-            </option>
-          </select>
-        </div>
-        <div class="space-y-2">
-          <label class="block text-sm font-bold text-[#31413b] dark:text-[#d7e2dd]">
-            {{ $t('gestlab.general.labels.vap_labels.status') }}
-          </label>
-          <select
-            v-model="filters.status"
-            class="block w-full rounded-2xl border-[#d8cfbe] bg-white px-4 py-3 text-sm font-medium text-[#15231f] shadow-sm transition focus:border-[#143d37] focus:ring-4 focus:ring-[#143d37]/10 dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f7f1e7]"
-          >
-            <option value="">{{ $t('gestlab.general.labels.vap_labels.all_status') }}</option>
-            <option value="active">{{ $t('gestlab.general.labels.vap_labels.active') }}</option>
-            <option value="inactive">{{ $t('gestlab.general.labels.vap_labels.inactive') }}</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- STATS CARD -->
-    <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-      <div class="rounded-3xl border border-[#ded3bf] bg-[#fffdf7] p-6 shadow-sm dark:border-[#25443c] dark:bg-[#07110f]">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-bold text-[#6b7b74] dark:text-[#a9bbb4]">{{ $t('gestlab.general.labels.vap_labels.total_labels') }}</p>
-            <p class="mt-2 text-3xl font-black text-[#143d37] dark:text-[#f1d78b]">{{ stats.total }}</p>
-          </div>
-          <TagIcon class="h-10 w-10 text-primary-200 dark:text-primary-500/40" />
-        </div>
-      </div>
-      <div class="rounded-3xl border border-[#ded3bf] bg-[#fffdf7] p-6 shadow-sm dark:border-[#25443c] dark:bg-[#07110f]">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-bold text-[#6b7b74] dark:text-[#a9bbb4]">{{ $t('gestlab.general.labels.vap_labels.active_labels') }}</p>
-            <p class="mt-2 text-3xl font-black text-emerald-600 dark:text-emerald-300">{{ stats.active }}</p>
-          </div>
-          <CheckCircleIcon class="h-10 w-10 text-green-200 dark:text-green-500/40" />
-        </div>
-      </div>
-      <div v-for="typeStat in stats.by_type" :key="typeStat.type" class="rounded-3xl border border-[#ded3bf] bg-[#fffdf7] p-6 shadow-sm dark:border-[#25443c] dark:bg-[#07110f]">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-bold text-[#6b7b74] dark:text-[#a9bbb4]">{{ $t('gestlab.general.labels.vap_labels.types.' + typeStat.type) }}</p>
-            <p class="mt-2 text-3xl font-black text-[#15231f] dark:text-[#f7f1e7]">{{ typeStat.count }}</p>
-          </div>
-          <div class="h-10 w-10 rounded-full flex items-center justify-center" :class="typeColor(typeStat.type)">
-            <TagIcon class="h-6 w-6 text-white" />
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- VISUAL GALLERY -->
-    <section v-if="labels.data.length" class="rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] p-6 shadow-[0_24px_80px_rgba(20,61,55,0.09)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10 sm:p-7">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <section class="ds-command-surface p-5 sm:p-6">
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p class="text-xs font-black uppercase tracking-[0.22em] text-[#6b7b74] dark:text-[#83978d]">Galeria operacional</p>
-          <h2 class="mt-2 text-xl font-black text-[#15231f] dark:text-[#f7f1e7]">Pré-visualize antes de editar ou imprimir</h2>
-          <p class="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#475a53] dark:text-[#cbd8cf]">
-            As etiquetas aparecem como cartões físicos para facilitar validação visual rápida de cor, dimensão, tipo e destino.
+          <p class="ds-kicker">
+            {{ $t('gestlab.general.labels.vap_labels.index.filters_eyebrow') }}
+          </p>
+          <h2 class="ds-heading mt-2 text-2xl">
+            {{ $t('gestlab.general.labels.vap_labels.index.filters_title') }}
+          </h2>
+          <p class="ds-copy mt-2 max-w-3xl text-sm">
+            {{ $t('gestlab.general.labels.vap_labels.index.filters_description') }}
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="ds-chip">
+            {{ resultSummary }}
+          </span>
+          <button
+            v-if="hasActiveFilters"
+            type="button"
+            class="ds-button ds-button-secondary"
+            @click="clearFilters"
+          >
+            <AdjustmentsHorizontalIcon class="h-4 w-4" />
+            {{ $t('gestlab.general.buttons.clear') }}
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-5 grid gap-3 lg:grid-cols-[minmax(16rem,1.45fr)_repeat(3,minmax(12rem,1fr))]">
+        <BaseInput
+          v-model="filters.search"
+          type="search"
+          :label="$t('gestlab.general.labels.vap_labels.search')"
+          :placeholder="$t('gestlab.general.labels.vap_labels.search_placeholder')"
+        >
+          <template #leading>
+            <MagnifyingGlassIcon class="h-5 w-5" />
+          </template>
+        </BaseInput>
+
+        <BaseSelect
+          v-model="filters.type"
+          :label="$t('gestlab.general.labels.vap_labels.type')"
+        >
+          <option value="">
+            {{ $t('gestlab.general.labels.vap_labels.all_types') }}
+          </option>
+          <option value="equipment">
+            {{ $t('gestlab.general.labels.vap_labels.types.equipment') }}
+          </option>
+          <option value="material">
+            {{ $t('gestlab.general.labels.vap_labels.types.material') }}
+          </option>
+          <option value="sample">
+            {{ $t('gestlab.general.labels.vap_labels.types.sample') }}
+          </option>
+          <option value="custom">
+            {{ $t('gestlab.general.labels.vap_labels.types.custom') }}
+          </option>
+        </BaseSelect>
+
+        <BaseSelect
+          v-model="filters.lab_id"
+          :label="$t('gestlab.general.labels.vap_labels.lab')"
+        >
+          <option value="">
+            {{ $t('gestlab.general.labels.vap_labels.all_labs') }}
+          </option>
+          <option
+            v-for="lab in labsList"
+            :key="lab.id"
+            :value="lab.id"
+          >
+            {{ lab.name }}
+          </option>
+        </BaseSelect>
+
+        <BaseSelect
+          v-model="filters.status"
+          :label="$t('gestlab.general.labels.vap_labels.status')"
+        >
+          <option value="">
+            {{ $t('gestlab.general.labels.vap_labels.all_status') }}
+          </option>
+          <option value="active">
+            {{ $t('gestlab.general.labels.vap_labels.active') }}
+          </option>
+          <option value="inactive">
+            {{ $t('gestlab.general.labels.vap_labels.inactive') }}
+          </option>
+        </BaseSelect>
+      </div>
+    </section>
+
+    <section
+      v-if="visibleGalleryLabels.length"
+      class="ds-panel p-5 sm:p-6"
+    >
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p class="ds-kicker">
+            {{ $t('gestlab.general.labels.vap_labels.index.gallery_eyebrow') }}
+          </p>
+          <h2 class="ds-heading mt-2 text-2xl">
+            {{ $t('gestlab.general.labels.vap_labels.index.gallery_title') }}
+          </h2>
+          <p class="ds-copy mt-2 max-w-3xl text-sm">
+            {{ $t('gestlab.general.labels.vap_labels.index.gallery_description') }}
           </p>
         </div>
         <Link
           :href="route('vap_labels.labels.create')"
-          class="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#ded3bf] bg-white px-4 py-3 text-sm font-black text-[#143d37] shadow-sm transition hover:border-[#d9b05f] hover:bg-[#f7f1e7] dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f1d78b] dark:hover:bg-[#16342e]"
+          class="ds-button ds-button-secondary"
         >
           <PlusCircleIcon class="h-5 w-5" />
-          Nova etiqueta
+          {{ $t('gestlab.general.labels.vap_labels.buttons.add_label') }}
         </Link>
       </div>
 
-      <div class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <article
-          v-for="label in labels.data.slice(0, 6)"
+          v-for="label in visibleGalleryLabels"
           :key="`gallery-${label.id}`"
-          class="group overflow-hidden rounded-[1.75rem] border border-[#ded3bf] bg-white/78 shadow-sm transition hover:-translate-y-0.5 hover:border-[#d9b05f] hover:shadow-[0_24px_70px_rgba(20,61,55,0.13)] dark:border-[#25443c] dark:bg-[#081512]"
+          class="group rounded-[1.7rem] border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4 shadow-[var(--ds-shadow-control)] transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
         >
-          <div class="p-5">
-            <div
-              class="relative flex min-h-36 items-center justify-center overflow-hidden rounded-[1.35rem] border p-4 text-center shadow-inner"
-              :style="labelPreviewStyle(label)"
-            >
-              <div class="absolute left-3 top-3 rounded-full bg-white/80 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#143d37] ring-1 ring-black/5">
-                {{ label.width }} × {{ label.height }} mm
-              </div>
-              <p class="max-w-[15rem] whitespace-pre-line text-sm font-black leading-6">
-                {{ labelContentPreview(label, 92) }}
+          <div
+            class="relative flex min-h-36 items-center justify-center overflow-hidden rounded-[1.25rem] border p-5 text-center shadow-inner"
+            :style="labelPreviewStyle(label)"
+          >
+            <span class="absolute left-3 top-3 rounded-full bg-white/85 px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.14em] text-slate-800 shadow-sm ring-1 ring-black/5 dark:bg-slate-950/85 dark:text-slate-100">
+              {{ label.width }} × {{ label.height }} mm
+            </span>
+            <p class="max-w-[15rem] whitespace-pre-line text-sm font-black leading-6">
+              {{ labelContentPreview(label, 92) }}
+            </p>
+          </div>
+
+          <div class="mt-4 flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h3 class="truncate text-base font-black text-[var(--ds-text)]">
+                {{ label.name }}
+              </h3>
+              <p class="mt-1 truncate text-xs font-semibold text-[var(--ds-text-muted)]">
+                {{ label.lab?.name || $t('gestlab.general.labels.vap_labels.index.no_lab') }}
               </p>
             </div>
+            <span :class="typeBadgeClass(label.type)">
+              {{ $t('gestlab.general.labels.vap_labels.types.' + label.type) }}
+            </span>
+          </div>
 
-            <div class="mt-4 flex items-start justify-between gap-3">
-              <div>
-                <h3 class="text-base font-black text-[#15231f] dark:text-[#f7f1e7]">{{ label.name }}</h3>
-                <p class="mt-1 text-xs font-medium text-[#5f6f68] dark:text-[#a9bbb4]">
-                  {{ label.lab?.name || 'Sem laboratório definido' }}
-                </p>
-              </div>
-              <span :class="typeBadgeClass(label.type)">
-                {{ $t('gestlab.general.labels.vap_labels.types.' + label.type) }}
-              </span>
-            </div>
-
-            <div class="mt-4 grid grid-cols-3 gap-2">
-              <Link
-                :href="route('vap_labels.labels.show', label.id)"
-                class="inline-flex items-center justify-center rounded-2xl border border-[#ded3bf] bg-[#f7f1e7] px-3 py-2 text-xs font-black text-[#143d37] transition hover:bg-white dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f1d78b] dark:hover:bg-[#16342e]"
-              >
-                <EyeIcon class="h-4 w-4" />
-              </Link>
-              <Link
-                :href="route('vap_labels.labels.edit', label.id)"
-                class="inline-flex items-center justify-center rounded-2xl border border-[#ded3bf] bg-[#f7f1e7] px-3 py-2 text-xs font-black text-[#143d37] transition hover:bg-white dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f1d78b] dark:hover:bg-[#16342e]"
-              >
-                <PencilIcon class="h-4 w-4" />
-              </Link>
-              <button
-                type="button"
-                @click="previewPdf(label)"
-                class="inline-flex items-center justify-center rounded-2xl bg-[#143d37] px-3 py-2 text-xs font-black text-white transition hover:bg-[#0f2f2a] dark:bg-[#f1d78b] dark:text-[#07110f] dark:hover:bg-[#f6e7bf]"
-                title="Pré-visualizar PDF"
-              >
-                PDF
-              </button>
-            </div>
+          <div class="mt-4 flex items-center gap-2">
+            <Link
+              :href="route('vap_labels.labels.show', label.id)"
+              class="ds-table-action"
+              :title="$t('gestlab.general.labels.vap_labels.buttons.view')"
+            >
+              <EyeIcon class="h-4 w-4" />
+            </Link>
+            <Link
+              :href="route('vap_labels.labels.edit', label.id)"
+              class="ds-table-action"
+              :title="$t('gestlab.general.labels.vap_labels.buttons.edit')"
+            >
+              <PencilIcon class="h-4 w-4" />
+            </Link>
+            <button
+              type="button"
+              class="ds-button ds-button-primary ml-auto min-h-0 rounded-full px-3 py-2 text-xs"
+              :title="$t('gestlab.general.labels.vap_labels.buttons.preview_pdf')"
+              @click="previewPdf(label)"
+            >
+              {{ $t('gestlab.general.labels.vap_labels.preview_pdf') }}
+            </button>
           </div>
         </article>
       </div>
     </section>
 
-    <!-- LABELS LIST -->
-    <div class="overflow-hidden rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_24px_80px_rgba(20,61,55,0.10)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
-      <div class="border-b border-[#ded3bf] bg-[#f7f1e7] px-6 py-5 dark:border-[#25443c] dark:bg-[#10231f]">
-        <div class="flex items-center justify-between">
-          <h2 class="flex items-center gap-2 text-lg font-black text-[#15231f] dark:text-[#f7f1e7]">
-            <ListBulletIcon class="h-5 w-5 text-[#143d37] dark:text-[#f1d78b]" />
+    <section class="ds-table-shell">
+      <div class="ds-table-summary px-5 py-4 sm:px-6">
+        <div>
+          <p class="ds-kicker">
+            {{ $t('gestlab.general.labels.vap_labels.index.records_eyebrow') }}
+          </p>
+          <h2 class="ds-heading mt-1 text-xl">
             {{ $t('gestlab.general.labels.vap_labels.list') }}
-            <span class="ml-2 rounded-full border border-[#ded3bf] bg-white px-3 py-1 text-xs font-bold text-[#6b7b74] dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#a9bbb4]">
-              ({{ labels.total }} {{ $t('gestlab.general.labels.vap_labels.general.items') }})
-            </span>
           </h2>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
+            {{ resultSummary }}
+          </p>
         </div>
       </div>
 
-      <!-- EMPTY STATE -->
-      <div v-if="labels.data.length === 0" class="p-12 text-center">
-        <TagIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600" />
-        <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
-          {{ $t('gestlab.general.labels.vap_labels.empty_state.title') }}
-        </h3>
-        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          {{ $t('gestlab.general.labels.vap_labels.empty_state.description') }}
-        </p>
-        <Link
-          :href="route('vap_labels.labels.create')"
-          class="mt-6 inline-flex items-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
-        >
-          <PlusCircleIcon class="h-5 w-5" />
-          {{ $t('gestlab.general.labels.vap_labels.buttons.create_first_label') }}
-        </Link>
+      <div
+        v-if="!labelRows.length"
+        class="p-5 sm:p-8"
+      >
+        <div class="ds-empty-state p-8 text-center">
+          <TagIcon class="mx-auto h-12 w-12 text-[var(--ds-text-soft)]" />
+          <h3 class="ds-heading mt-4 text-base">
+            {{ $t('gestlab.general.labels.vap_labels.empty_state.title') }}
+          </h3>
+          <p class="ds-copy mx-auto mt-2 max-w-md text-sm">
+            {{ $t('gestlab.general.labels.vap_labels.empty_state.description') }}
+          </p>
+          <Link
+            :href="route('vap_labels.labels.create')"
+            class="ds-button ds-button-primary mt-6"
+          >
+            <PlusCircleIcon class="h-5 w-5" />
+            {{ $t('gestlab.general.labels.vap_labels.buttons.create_first_label') }}
+          </Link>
+        </div>
       </div>
 
-      <!-- LABELS TABLE -->
       <div v-else>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead class="bg-[#f7f1e7]/90 dark:bg-[#10231f]/90">
+        <div class="divide-y divide-[var(--ds-border)] lg:hidden">
+          <article
+            v-for="label in labelRows"
+            :key="`card-${label.id}`"
+            class="space-y-4 px-5 py-5"
+          >
+            <div class="flex items-start gap-3">
+              <div
+                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm ring-1 ring-black/5"
+                :style="labelIconStyle(label)"
+              >
+                <TagIcon class="h-6 w-6" />
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="truncate text-base font-black text-[var(--ds-text)]">
+                    {{ label.name }}
+                  </h3>
+                  <span :class="statusBadgeClass(label.is_active)">
+                    {{ label.is_active ? $t('gestlab.general.labels.vap_labels.active') : $t('gestlab.general.labels.vap_labels.inactive') }}
+                  </span>
+                </div>
+                <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">
+                  {{ labelContentPreview(label, 64) }}
+                </p>
+              </div>
+            </div>
+
+            <dl class="grid gap-2 sm:grid-cols-3">
+              <div class="rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2">
+                <dt class="ds-table-heading">
+                  {{ $t('gestlab.general.labels.vap_labels.type') }}
+                </dt>
+                <dd class="mt-1">
+                  <span :class="typeBadgeClass(label.type)">
+                    {{ $t('gestlab.general.labels.vap_labels.types.' + label.type) }}
+                  </span>
+                </dd>
+              </div>
+              <div class="rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2">
+                <dt class="ds-table-heading">
+                  {{ $t('gestlab.general.labels.vap_labels.dimensions') }}
+                </dt>
+                <dd class="mt-1 text-sm font-bold text-[var(--ds-text)]">
+                  {{ label.width }} × {{ label.height }} mm
+                </dd>
+              </div>
+              <div class="rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2">
+                <dt class="ds-table-heading">
+                  {{ $t('gestlab.general.labels.vap_labels.lab') }}
+                </dt>
+                <dd class="mt-1 text-sm font-bold text-[var(--ds-text)]">
+                  {{ label.lab?.name || '—' }}
+                </dd>
+              </div>
+            </dl>
+
+            <div class="flex flex-wrap items-center gap-2 border-t border-[var(--ds-border)] pt-3">
+              <Link
+                :href="route('vap_labels.labels.show', label.id)"
+                class="ds-table-action"
+              >
+                {{ $t('gestlab.general.labels.vap_labels.buttons.view') }}
+              </Link>
+              <Link
+                :href="route('vap_labels.labels.edit', label.id)"
+                class="ds-table-action"
+              >
+                {{ $t('gestlab.general.labels.vap_labels.buttons.edit') }}
+              </Link>
+              <button
+                type="button"
+                class="ds-table-action"
+                @click="toggleStatus(label)"
+              >
+                {{ label.is_active ? $t('gestlab.general.labels.vap_labels.buttons.deactivate') : $t('gestlab.general.labels.vap_labels.buttons.activate') }}
+              </button>
+              <button
+                type="button"
+                class="ds-table-action ds-table-action-danger"
+                @click="confirmDelete(label)"
+              >
+                {{ $t('gestlab.general.labels.vap_labels.buttons.delete_label') }}
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <div class="hidden overflow-x-auto lg:block">
+          <table class="min-w-full divide-y divide-[var(--ds-border)]">
+            <thead class="ds-table-head">
               <tr>
-                <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
+                <th scope="col" class="px-6 py-4 text-left ds-table-heading">
                   {{ $t('gestlab.general.labels.vap_labels.name') }}
                 </th>
-                <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
+                <th scope="col" class="px-6 py-4 text-left ds-table-heading">
                   {{ $t('gestlab.general.labels.vap_labels.type') }}
                 </th>
-                <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
+                <th scope="col" class="px-6 py-4 text-left ds-table-heading">
                   {{ $t('gestlab.general.labels.vap_labels.dimensions') }}
                 </th>
-                <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
+                <th scope="col" class="px-6 py-4 text-left ds-table-heading">
                   {{ $t('gestlab.general.labels.vap_labels.lab') }}
                 </th>
-                <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
+                <th scope="col" class="px-6 py-4 text-left ds-table-heading">
                   {{ $t('gestlab.general.labels.vap_labels.status') }}
                 </th>
-                <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
+                <th scope="col" class="px-6 py-4 text-right ds-table-heading">
                   {{ $t('gestlab.general.labels.vap_labels.actions.title') }}
                 </th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-[#ded3bf] bg-[#fffdf7] dark:divide-[#25443c] dark:bg-[#07110f]">
-              <tr 
-                v-for="label in labels.data" 
+            <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
+              <tr
+                v-for="label in labelRows"
                 :key="label.id"
-                class="transition-colors duration-150 hover:bg-[#f7f1e7]/70 dark:hover:bg-[#10231f]/70"
-                v-motion
-                :initial="{ opacity: 0, y: 10 }"
-                :enter="{ opacity: 1, y: 0 }"
-                :delay="100"
+                class="ds-table-row"
               >
-                <td class="whitespace-nowrap px-6 py-5">
-                  <div class="flex items-center">
-                    <div class="h-10 w-10 flex-shrink-0">
-                      <div class="flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm ring-1 ring-black/5" :style="{ backgroundColor: label.background_color, color: label.text_color, border: `${label.border_width}px solid ${label.border_color}` }">
-                        <TagIcon class="h-6 w-6" />
-                      </div>
+                <td class="px-6 py-5">
+                  <div class="flex items-center gap-4">
+                    <div
+                      class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm ring-1 ring-black/5"
+                      :style="labelIconStyle(label)"
+                    >
+                      <TagIcon class="h-6 w-6" />
                     </div>
-                    <div class="ml-4">
-                      <div class="text-sm font-semibold text-slate-900 dark:text-white">
+                    <div class="min-w-0">
+                      <p class="truncate text-sm font-black text-[var(--ds-text)]">
                         {{ label.name }}
-                      </div>
-                      <div class="text-sm text-slate-500 dark:text-slate-400">
-                        {{ labelContentPreview(label, 30) }}
-                      </div>
+                      </p>
+                      <p class="mt-1 max-w-xs truncate text-sm font-semibold text-[var(--ds-text-muted)]">
+                        {{ labelContentPreview(label, 52) }}
+                      </p>
                     </div>
                   </div>
                 </td>
-                <td class="whitespace-nowrap px-6 py-5">
+                <td class="px-6 py-5">
                   <span :class="typeBadgeClass(label.type)">
                     {{ $t('gestlab.general.labels.vap_labels.types.' + label.type) }}
                   </span>
                 </td>
-                <td class="whitespace-nowrap px-6 py-5 text-sm font-medium text-[#31413b] dark:text-[#d7e2dd]">
+                <td class="ds-table-cell whitespace-nowrap px-6 py-5">
                   {{ label.width }} × {{ label.height }} mm
                 </td>
-                <td class="whitespace-nowrap px-6 py-5 text-sm font-medium text-[#31413b] dark:text-[#d7e2dd]">
-                  {{ label.lab?.name || '-' }}
+                <td class="ds-table-cell whitespace-nowrap px-6 py-5">
+                  {{ label.lab?.name || '—' }}
                 </td>
-                <td class="whitespace-nowrap px-6 py-5">
+                <td class="px-6 py-5">
                   <span :class="statusBadgeClass(label.is_active)">
                     {{ label.is_active ? $t('gestlab.general.labels.vap_labels.active') : $t('gestlab.general.labels.vap_labels.inactive') }}
                   </span>
                 </td>
-                <td class="whitespace-nowrap px-6 py-5 text-sm font-medium">
-                  <div class="flex items-center gap-2">
+                <td class="px-6 py-5">
+                  <div class="flex items-center justify-end gap-1">
                     <Link
                       :href="route('vap_labels.labels.show', label.id)"
-                      class="rounded-lg p-1 text-primary-700 hover:bg-primary-50 hover:text-primary-800 dark:text-primary-300 dark:hover:bg-primary-500/10 dark:hover:text-primary-200"
+                      class="ds-table-action"
                       :title="$t('gestlab.general.labels.vap_labels.buttons.view')"
                     >
                       <EyeIcon class="h-5 w-5" />
                     </Link>
                     <Link
                       :href="route('vap_labels.labels.edit', label.id)"
-                      class="rounded-lg p-1 text-primary-700 hover:bg-primary-50 hover:text-primary-800 dark:text-primary-300 dark:hover:bg-primary-500/10 dark:hover:text-primary-200"
+                      class="ds-table-action"
                       :title="$t('gestlab.general.labels.vap_labels.buttons.edit')"
                     >
                       <PencilIcon class="h-5 w-5" />
                     </Link>
                     <button
-                      @click="toggleStatus(label)"
-                      :class="[
-                        'p-1 rounded',
-                        label.is_active
-                          ? 'text-amber-500 hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10'
-                          : 'text-green-500 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-500/10'
-                      ]"
+                      type="button"
+                      class="ds-table-action"
                       :title="label.is_active ? $t('gestlab.general.labels.vap_labels.buttons.deactivate') : $t('gestlab.general.labels.vap_labels.buttons.activate')"
+                      @click="toggleStatus(label)"
                     >
                       <PowerIcon class="h-5 w-5" />
                     </button>
                     <button
+                      type="button"
+                      class="ds-table-action ds-table-action-danger"
+                      :title="$t('gestlab.general.labels.vap_labels.buttons.delete_label')"
                       @click="confirmDelete(label)"
-                      class="rounded-lg p-1 text-red-600 hover:bg-red-50 hover:text-red-800 dark:text-red-400 dark:hover:bg-red-500/10 dark:hover:text-red-300"
-                      :title="$t('gestlab.general.labels.vap_labels.buttons.delete')"
                     >
                       <TrashIcon class="h-5 w-5" />
                     </button>
@@ -362,87 +444,129 @@
           </table>
         </div>
 
-        <!-- PAGINATION -->
-        <div class="border-t border-[#ded3bf] px-6 py-5 dark:border-[#25443c]">
-          <Pagination :links="labels.links" />
+        <div
+          v-if="paginationLinks.length"
+          class="border-t border-[var(--ds-border)] px-5 py-4 sm:px-6"
+        >
+          <Pagination :links="paginationLinks" />
         </div>
       </div>
-    </div>
+    </section>
+
+    <confirm-dialog
+      v-if="showDeleteConfirmation"
+      :title="$t('gestlab.general.labels.vap_labels.delete_label')"
+      :description="$t('gestlab.general.labels.vap_labels.confirm_delete_label_irreversible')"
+      :cancel="$t('gestlab.general.buttons.cancel')"
+      :confirm="$t('gestlab.general.labels.vap_labels.buttons.delete_label')"
+      variant="danger"
+      @confirmed="deleteLabel"
+      @canceled="resetDeleteConfirmation"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { Link, router } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
-import { 
-  TagIcon, 
-  PlusCircleIcon, 
-  ListBulletIcon, 
-  EyeIcon, 
-  PencilIcon, 
-  TrashIcon, 
-  PowerIcon,
-  CheckCircleIcon 
-} from '@heroicons/vue/24/outline'
 import { debounce } from 'lodash'
+import {
+  AdjustmentsHorizontalIcon,
+  EyeIcon,
+  MagnifyingGlassIcon,
+  PencilIcon,
+  PlusCircleIcon,
+  PowerIcon,
+  TagIcon,
+  TrashIcon,
+} from '@heroicons/vue/24/outline'
+import BaseInput from '@/Components/base/BaseInput.vue'
+import BaseSelect from '@/Components/base/BaseSelect.vue'
+import ConfirmDialog from '@/Components/confirm-dialog.vue'
+import ModuleHero from '@/Components/base/ModuleHero.vue'
 import Pagination from '@/Components/Pagination.vue'
 
 const props = defineProps({
-  labels: Object,
-  filters: Object,
-  stats: Object,
-  labs: Array,
-  departments: Array,
+  labels: {
+    type: Object,
+    default: () => ({}),
+  },
+  filters: {
+    type: Object,
+    default: () => ({}),
+  },
+  stats: {
+    type: Object,
+    default: () => ({}),
+  },
+  labs: {
+    type: Array,
+    default: () => [],
+  },
+  departments: {
+    type: Array,
+    default: () => [],
+  },
 })
 
-const filters = ref(props.filters)
+const filters = ref({
+  search: props.filters?.search ?? '',
+  type: props.filters?.type ?? '',
+  lab_id: props.filters?.lab_id ?? '',
+  status: props.filters?.status ?? '',
+})
+
+const showDeleteConfirmation = ref(false)
+const labelPendingDelete = ref(null)
+
+const labelRows = computed(() => Array.isArray(props.labels?.data) ? props.labels.data : [])
+const labsList = computed(() => Array.isArray(props.labs) ? props.labs : [])
+const paginationLinks = computed(() => Array.isArray(props.labels?.links) ? props.labels.links : [])
+const totalRecords = computed(() => Number(props.labels?.total ?? labelRows.value.length))
+const activeRecords = computed(() => Number(props.stats?.active ?? labelRows.value.filter((label) => Boolean(label.is_active)).length))
+const typeStats = computed(() => Array.isArray(props.stats?.by_type) ? props.stats.by_type : [])
+const visibleGalleryLabels = computed(() => labelRows.value.slice(0, 6))
+const hasActiveFilters = computed(() => Object.values(filters.value).some((value) => String(value ?? '').trim() !== ''))
+const resultSummary = computed(() => trans('gestlab.general.labels.vap_labels.index.result_summary', {
+  count: totalRecords.value,
+}))
 
 const labelStatCards = computed(() => [
   {
-    label: 'Activas',
-    value: props.stats?.active || 0,
-    hint: 'Etiquetas disponíveis para uso e impressão.',
+    label: trans('gestlab.general.labels.vap_labels.index.stats_active'),
+    value: activeRecords.value,
+    hint: trans('gestlab.general.labels.vap_labels.index.stats_active_hint'),
   },
   {
-    label: 'Tipos controlados',
-    value: props.stats?.by_type?.length || 0,
-    hint: 'Famílias de etiquetas configuradas neste workspace.',
+    label: trans('gestlab.general.labels.vap_labels.index.stats_types'),
+    value: typeStats.value.length,
+    hint: trans('gestlab.general.labels.vap_labels.index.stats_types_hint'),
   },
   {
-    label: 'Filtro actual',
-    value: filters.value?.type
-      ? trans('gestlab.general.labels.vap_labels.types.' + filters.value.type)
+    label: trans('gestlab.general.labels.vap_labels.index.stats_scope'),
+    value: filters.value.type
+      ? trans(`gestlab.general.labels.vap_labels.types.${filters.value.type}`)
       : trans('gestlab.general.labels.vap_labels.all_types'),
-    hint: 'Escopo actualmente aplicado à listagem.',
+    hint: trans('gestlab.general.labels.vap_labels.index.stats_scope_hint'),
   },
 ])
 
 const typeBadgeClass = (type) => {
   const classes = {
-    equipment: 'bg-sky-100 text-sky-800 dark:bg-sky-500/10 dark:text-sky-200',
-    material: 'bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-200',
-    sample: 'bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-500/10 dark:text-fuchsia-200',
-    custom: 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200',
+    equipment: 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-200',
+    material: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200',
+    sample: 'border-fuchsia-200 bg-fuchsia-50 text-fuchsia-800 dark:border-fuchsia-400/20 dark:bg-fuchsia-500/10 dark:text-fuchsia-200',
+    custom: 'border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[var(--ds-text-muted)]',
   }
-  return `inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${classes[type] || 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200'}`
+
+  return `inline-flex items-center rounded-full border px-3 py-1 text-xs font-black ${classes[type] || classes.custom}`
 }
 
 const statusBadgeClass = (isActive) => {
-  return isActive 
-    ? 'inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-200'
-    : 'inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200'
-}
-
-const typeColor = (type) => {
-  const colors = {
-    equipment: 'bg-blue-500',
-    material: 'bg-green-500',
-    sample: 'bg-purple-500',
-    custom: 'bg-gray-500',
-  }
-  return colors[type] || 'bg-gray-500'
+  return isActive
+    ? 'inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200'
+    : 'inline-flex items-center rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-1 text-xs font-black text-[var(--ds-text-muted)]'
 }
 
 const labelContentPreview = (label, length = 64) => {
@@ -455,23 +579,42 @@ const labelContentPreview = (label, length = 64) => {
   return content.length > length ? `${content.substring(0, length)}...` : content
 }
 
-const labelPreviewStyle = (label) => ({
+const labelIconStyle = (label) => ({
   backgroundColor: label?.background_color || '#fffdf7',
-  borderColor: label?.border_color || '#d8cfbe',
-  borderWidth: `${label?.border_width || 1}px`,
+  border: `${label?.border_width || 1}px solid ${label?.border_color || '#d8cfbe'}`,
   color: label?.text_color || '#15231f',
+})
+
+const labelPreviewStyle = (label) => ({
+  ...labelIconStyle(label),
   fontSize: `${Math.max(Number(label?.font_size || 12), 10)}px`,
   textAlign: label?.text_alignment || 'center',
 })
 
 const previewPdf = (label) => {
-  window.open(route('vap_labels.preview-pdf', label.id), '_blank')
+  window.open(route('vap_labels.preview-pdf', label.id), '_blank', 'noopener')
 }
 
 const confirmDelete = (label) => {
-  if (confirm(trans('gestlab.general.labels.vap_labels.confirm_delete_label'))) {
-    router.delete(route('vap_labels.labels.destroy', label.id))
+  labelPendingDelete.value = label
+  showDeleteConfirmation.value = true
+}
+
+const resetDeleteConfirmation = () => {
+  showDeleteConfirmation.value = false
+  labelPendingDelete.value = null
+}
+
+const deleteLabel = () => {
+  if (!labelPendingDelete.value?.id) {
+    resetDeleteConfirmation()
+    return
   }
+
+  router.delete(route('vap_labels.labels.destroy', labelPendingDelete.value.id), {
+    preserveScroll: true,
+    onFinish: resetDeleteConfirmation,
+  })
 }
 
 const toggleStatus = (label) => {
@@ -480,13 +623,22 @@ const toggleStatus = (label) => {
   })
 }
 
-// Debounce filter changes
 const applyFilters = debounce(() => {
   router.get(route('vap_labels.labels.index'), filters.value, {
     preserveState: true,
     preserveScroll: true,
+    replace: true,
   })
 }, 300)
+
+const clearFilters = () => {
+  filters.value = {
+    search: '',
+    type: '',
+    lab_id: '',
+    status: '',
+  }
+}
 
 watch(filters, applyFilters, { deep: true })
 </script>

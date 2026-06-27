@@ -1,17 +1,17 @@
 <template>
   <div class="space-y-6">
     <!-- Disk Selector -->
-    <div v-if="props?.disks?.length > 1" class="rounded-3xl border border-primary-100 bg-gradient-to-r from-primary-50 via-white to-white p-4 shadow-sm dark:border-primary-500/20 dark:from-primary-500/10 dark:via-slate-900 dark:to-slate-950">
+    <div v-if="props?.disks?.length > 1" class="ds-panel p-4 sm:p-5">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-primary-100 dark:bg-slate-900 dark:ring-primary-500/20">
-            <CloudArrowDownIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+          <div class="flex h-10 w-10 items-center justify-center rounded-2xl bg-[rgb(var(--primary-700-rgb)/0.1)] text-[rgb(var(--primary-800-rgb)/1)] dark:text-[rgb(var(--accent-100-rgb)/1)]">
+            <CloudArrowDownIcon class="h-5 w-5" />
           </div>
           <div>
-            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h3 class="text-sm font-semibold text-[color:var(--ds-text)]">
               {{ $t('gestlab.general.labels.backups.storage_disk') }}
             </h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400">
+            <p class="text-xs text-[color:var(--ds-text-muted)]">
               {{ $t('gestlab.general.labels.backups.select_storage_location') }}
             </p>
           </div>
@@ -19,13 +19,12 @@
         
         <select
           v-model="selectedDisk"
-          class="rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+          class="ds-field min-w-52"
         >
           <option 
             v-for="disk in props.disks" 
             :key="disk" 
             :value="disk"
-            class="text-slate-700 dark:text-slate-100"
           >
             {{ disk }}
           </option>
@@ -34,14 +33,14 @@
     </div>
 
     <!-- Backups Table -->
-    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950/80">
+    <div class="ds-table-shell">
       <!-- Table Header -->
-      <div class="border-b border-slate-200 bg-slate-50/80 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/70">
+      <div class="ds-table-summary px-5 py-4 sm:px-6">
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h3 class="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
-            <CloudArrowDownIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+          <h3 class="flex flex-wrap items-center gap-2 text-lg font-semibold text-[color:var(--ds-text)]">
+            <CloudArrowDownIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)] dark:text-[rgb(var(--accent-100-rgb)/1)]" />
             {{ $t('gestlab.general.labels.backups.stored_backups') }}
-            <span class="ml-2 text-sm font-normal text-slate-500 dark:text-slate-400">
+            <span class="ds-chip ml-1">
               ({{ props.backups?.length || 0 }} {{ $t('gestlab.general.labels.backups.items') }})
             </span>
           </h3>
@@ -50,20 +49,20 @@
 
       <!-- Table -->
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-          <thead class="bg-slate-50 dark:bg-slate-900">
+        <table class="min-w-full">
+          <thead class="ds-table-head">
             <tr>
-              <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              <th scope="col" class="ds-table-heading px-6 py-3.5 text-left">
                 <div class="flex items-center gap-1">
                   {{ $t('gestlab.general.labels.backups.status.path') }}
                 </div>
               </th>
-              <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              <th scope="col" class="ds-table-heading px-6 py-3.5 text-left">
                 <div class="flex items-center gap-1">
                   {{ $t('gestlab.general.labels.backups.status.created_at') }}
                 </div>
               </th>
-              <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              <th scope="col" class="ds-table-heading px-6 py-3.5 text-left">
                 <div class="flex items-center gap-1">
                   {{ $t('gestlab.general.labels.backups.status.size') }}
                 </div>
@@ -73,7 +72,7 @@
               </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
+          <tbody class="ds-table-body divide-y">
             <!-- Backup Rows -->
             <backup-row
               v-for="backup in props.backups"
@@ -87,16 +86,16 @@
 
             <!-- Empty State -->
             <tr v-if="props.backups?.length === 0">
-              <td colspan="4" class="px-6 py-12 text-center">
-                <div class="flex flex-col items-center gap-3">
-                  <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-900">
-                    <CloudArrowDownIcon class="h-6 w-6 text-slate-400" />
+              <td colspan="4" class="p-5 text-center">
+                <div class="ds-empty-state flex flex-col items-center gap-3 px-6 py-10">
+                  <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-[color:var(--ds-panel-subtle)]">
+                    <CloudArrowDownIcon class="h-6 w-6 text-[color:var(--ds-text-soft)]" />
                   </div>
                   <div>
-                    <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    <h3 class="text-sm font-semibold text-[color:var(--ds-text)]">
                       {{ $t('gestlab.general.labels.backups.no_backups_found') }}
                     </h3>
-                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    <p class="mt-1 text-sm text-[color:var(--ds-text-muted)]">
                       {{ $t('gestlab.general.labels.backups.create_backup_to_get_started') }}
                     </p>
                   </div>
@@ -108,16 +107,16 @@
       </div>
 
       <!-- Table Footer -->
-      <div v-if="props.backups?.length > 0" class="border-t border-slate-200 bg-slate-50/70 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/50">
-        <div class="flex items-center justify-between">
-          <div class="text-sm text-slate-500 dark:text-slate-400">
+      <div v-if="props.backups?.length > 0" class="border-t border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-5 py-4 sm:px-6">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div class="text-sm text-[color:var(--ds-text-muted)]">
             {{ $t('gestlab.general.labels.backups.showing') }}
-            <span class="font-semibold text-slate-700 dark:text-slate-200">{{ props.backups?.length }}</span>
+            <span class="font-semibold text-[color:var(--ds-text)]">{{ props.backups?.length }}</span>
             {{ $t('gestlab.general.labels.backups.backups') }}
           </div>
-          <div class="text-xs text-slate-500 dark:text-slate-400">
+          <div class="text-xs text-[color:var(--ds-text-muted)]">
             {{ $t('gestlab.general.labels.backups.disk') }}:
-            <span class="font-semibold text-primary-700 dark:text-primary-300">{{ props.activeDisk }}</span>
+            <span class="font-semibold text-[rgb(var(--primary-800-rgb)/1)] dark:text-[rgb(var(--accent-100-rgb)/1)]">{{ props.activeDisk }}</span>
           </div>
         </div>
       </div>
@@ -172,7 +171,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits([
-  'setModalVisibility',
   'delete',
   'update:activeDisk'
 ]);
@@ -190,19 +188,16 @@ const selectedDisk = computed({
 })
 
 const openDeleteModal = (backup) => {
-  emit('setModalVisibility', true);
   deleteModalOpen.value = true;
   deletingBackup.value = backup;
 }
 
-const closeDeleteModal = (backup) => {
-  emit('setModalVisibility', false);
+const closeDeleteModal = () => {
   deleteModalOpen.value = false;
   deletingBackup.value = null;
 }
 
 const confirmDelete = () => {
-  emit('setModalVisibility', false);
   deleteModalOpen.value = false;
   
   emit('delete', {
@@ -221,29 +216,3 @@ const confirmationDialogDescription = computed(() => {
   return trans('gestlab.actions.confirmation_dialog_description.delete');
 })
 </script>
-
-<style scoped>
-/* Smooth hover transitions */
-tbody tr {
-  transition: background-color 0.2s ease;
-}
-
-/* Custom scrollbar for table */
-.overflow-x-auto::-webkit-scrollbar {
-  height: 8px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-track {
-  background: rgb(241 245 249 / 0.7);
-  border-radius: 4px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb {
-  background: rgb(148 163 184 / 0.8);
-  border-radius: 4px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb:hover {
-  background: rgb(100 116 139 / 0.95);
-}
-</style>

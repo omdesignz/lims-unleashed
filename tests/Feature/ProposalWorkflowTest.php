@@ -353,6 +353,61 @@ class ProposalWorkflowTest extends TestCase
         }
     }
 
+    public function test_public_proposal_show_uses_backend_parsed_template_content(): void
+    {
+        $user = $this->verifiedAdmin();
+        $proposal = $this->draftProposal($user);
+        $settings = app(GeneralSettings::class);
+        $original = [
+            'app_bank_name' => $settings->app_bank_name,
+            'app_bank_account_name' => $settings->app_bank_account_name,
+            'app_bank_account_number' => $settings->app_bank_account_number,
+            'app_bank_iban' => $settings->app_bank_iban,
+            'app_bank_swift' => $settings->app_bank_swift,
+            'app_bank_details' => $settings->app_bank_details,
+        ];
+
+        try {
+            $settings->fill([
+                'app_bank_name' => 'Banco Portal',
+                'app_bank_account_name' => 'Laboratório Portal',
+                'app_bank_account_number' => '0099887766',
+                'app_bank_iban' => 'AO06000000000099887766000',
+                'app_bank_swift' => 'BPORAOLU',
+                'app_bank_details' => 'Transferência identificada pelo número da proposta.',
+            ]);
+            $settings->save();
+
+            VAPProposalTemplate::query()->whereKey($proposal->template_id)->update([
+                'user_id' => $user->id,
+                'content' => '<section>{proposal_authenticity}</section><section>{proposal_acceptance_evidence}</section><p>{banking_details}</p><p>{{bank_account_number}}</p><p>{{bank_swift}}</p>{if:observations}<p class="conditional-observation">{observations}</p>{endif:observations}{if:unknown_field}<p class="hidden-clause">Não deve aparecer</p>{endif:unknown_field}',
+            ]);
+
+            $this->get(route('vap-proposals.public.show', $proposal->unique_hash))
+                ->assertOk()
+                ->assertInertia(fn ($page) => $page
+                    ->component('Public/ProposalShow')
+                    ->where('proposal.id', $proposal->id)
+                    ->where('parsedTemplateContent', fn (string $content): bool => str_contains($content, 'Verificação da proposta')
+                        && str_contains($content, 'Evidência de aceite')
+                        && str_contains($content, 'Banco Portal')
+                        && str_contains($content, '0099887766')
+                        && str_contains($content, 'BPORAOLU')
+                        && str_contains($content, 'data:image/svg+xml')
+                        && str_contains($content, 'conditional-observation')
+                        && str_contains($content, 'Smoke proposal')
+                        && ! str_contains($content, 'hidden-clause')
+                        && ! str_contains($content, '{if:observations}')
+                        && ! str_contains($content, '{proposal_authenticity}')
+                        && ! str_contains($content, '{{bank_account_number}}'))
+                );
+        } finally {
+            $settings = app(GeneralSettings::class);
+            $settings->fill($original);
+            $settings->save();
+        }
+    }
+
     public function test_vap_proposal_show_exposes_template_author_and_compliance_payload(): void
     {
         $user = $this->verifiedAdmin();
@@ -740,6 +795,129 @@ class ProposalWorkflowTest extends TestCase
         $this->assertSame(250, data_get($template->export_settings, 'custom_page_width'));
         $this->assertSame(180, data_get($template->export_settings, 'custom_page_height'));
         $this->assertSame('L', data_get($template->export_settings, 'orientation'));
+    }
+
+    public function test_proposal_template_rejects_non_renderable_canvas_surfaces(): void
+    {
+        $user = $this->verifiedAdmin();
+
+        $this->actingAs($user)
+            ->post(route('vap-proposals.templates.store'), [
+                'name' => 'Proposal Invalid Canvas Surface',
+                'content' => '<p>Proposta</p>',
+                'layout_schema' => [
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'invalid-surface-layer',
+                            'surface' => 'styles_css',
+                            'block_kind' => 'rich_text',
+                            'content_html' => '<p>Camada não renderizável.</p>',
+                        ],
+                    ],
+                ],
+            ])
+            ->assertSessionHasErrors([
+                'layout_schema.canvas_blocks.0.surface',
+            ]);
+    }
+
+    public function test_proposal_template_requires_page_number_for_specific_content_canvas_blocks(): void
+    {
+        $user = $this->verifiedAdmin();
+
+        $this->actingAs($user)
+            ->post(route('vap-proposals.templates.preview-draft-pdf'), [
+                'name' => 'Proposal Missing Specific Page',
+                'content' => '<p>Proposta</p>',
+                'layout_schema' => [
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'missing-specific-page-layer',
+                            'surface' => 'content',
+                            'block_kind' => 'rich_text',
+                            'content_html' => '<p>Camada numa página específica.</p>',
+                            'page_scope' => 'specific',
+                        ],
+                    ],
+                ],
+            ])
+            ->assertSessionHasErrors([
+                'layout_schema.canvas_blocks.0.page_number',
+            ]);
+    }
+
+    public function test_proposal_template_rejects_unsafe_canvas_css_values(): void
+    {
+        $user = $this->verifiedAdmin();
+
+        $this->actingAs($user)
+            ->post(route('vap-proposals.templates.store'), [
+                'name' => 'Unsafe Proposal Studio Template',
+                'content' => '<p>Proposta</p>',
+                'layout_schema' => [
+                    'background_size' => 'cover; position:fixed',
+                    'background_position' => 'center; position:fixed',
+                    'background_repeat' => 'repeat no-repeat',
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'unsafe-proposal-layer',
+                            'surface' => 'content',
+                            'block_kind' => 'rich_text',
+                            'content_html' => '<p>Camada</p>',
+                            'background_color' => '#f8f4ea; background:url(https://bad.example.test/x)',
+                            'overlay_color' => 'rgba(20,61,55,0.2); color:red',
+                            'text_color' => '#143d37; position:fixed',
+                            'border_color' => 'url(javascript:alert(1))',
+                        ],
+                    ],
+                ],
+            ])
+            ->assertSessionHasErrors([
+                'layout_schema.background_size',
+                'layout_schema.background_position',
+                'layout_schema.background_repeat',
+                'layout_schema.canvas_blocks.0.background_color',
+                'layout_schema.canvas_blocks.0.overlay_color',
+                'layout_schema.canvas_blocks.0.text_color',
+                'layout_schema.canvas_blocks.0.border_color',
+            ]);
+
+        $template = VAPProposalTemplate::query()->create([
+            'name' => 'Safe Proposal Studio Template',
+            'category' => 'general',
+            'content' => '<p>Proposta</p>',
+            'user_id' => $user->id,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('vap-proposals.templates.update', $template), [
+                'name' => $template->name,
+                'content' => $template->content,
+                'layout_schema' => [
+                    'background_size' => 'contain',
+                    'background_repeat' => 'repeat-x',
+                    'canvas_blocks' => [
+                        [
+                            'id' => 'safe-proposal-layer',
+                            'surface' => 'content',
+                            'block_kind' => 'rich_text',
+                            'content_html' => '<p>Camada segura</p>',
+                            'background_color' => 'rgba(255,255,255,0.96)',
+                            'overlay_color' => 'rgba(20,61,55,0.15)',
+                            'text_color' => '#143d37',
+                            'border_color' => '#ded3bf',
+                        ],
+                    ],
+                ],
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $template->refresh();
+
+        $this->assertSame('repeat-x', data_get($template->layout_schema, 'background_repeat'));
+        $this->assertSame('rgba(255,255,255,0.96)', data_get($template->layout_schema, 'canvas_blocks.0.background_color'));
     }
 
     public function test_proposal_pdf_payload_uses_template_layout_and_content_page_scopes(): void

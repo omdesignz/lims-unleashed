@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen bg-[#f4efe4] text-[#15231f] dark:bg-[#07110f] dark:text-[#f7f1e7]" :style="brandingCssVariables" :data-theme-preset="themePreset">
-    <header class="sticky top-0 z-40 border-b border-[#ded3bf]/80 bg-[#fffaf0]/92 shadow-[0_18px_45px_rgba(20,61,55,0.07)] backdrop-blur dark:border-[#25443c]/80 dark:bg-[#0c1714]/92 dark:shadow-black/20">
+  <div class="lims-app-shell ds-app-canvas" :style="brandingCssVariables" :data-theme-preset="themePreset">
+    <header class="ds-topbar sticky top-0 z-40 border-b">
       <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <div class="flex items-center gap-4">
           <button
             type="button"
-            class="rounded-xl border border-[#ded3bf] bg-[#fffdf7] p-2 text-slate-600 lg:hidden dark:border-[#25443c] dark:bg-[#10231f] dark:text-slate-200"
+            class="ds-icon-button lg:hidden"
             @click="sidebarOpen = true"
           >
             <Bars3Icon class="h-5 w-5" />
@@ -34,7 +34,7 @@
           <div class="relative">
             <button
               type="button"
-              class="flex items-center gap-2 rounded-2xl border border-[#ded3bf] bg-[#fffdf7] px-3 py-2 text-sm font-bold text-[#15231f] transition hover:border-primary-300 dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f7f1e7]"
+              class="ds-button ds-button-secondary min-h-0 px-3 py-2"
               @click="languageMenuOpen = !languageMenuOpen"
             >
               <span>{{ activeLanguageLabel }}</span>
@@ -58,7 +58,7 @@
 
           <Link
             :href="route('portal.requests.index', { new: 1 })"
-            class="hidden rounded-2xl bg-primary-700 px-4 py-2.5 text-sm font-bold text-white shadow-[0_16px_40px_rgba(20,61,55,0.18)] transition hover:bg-primary-800 md:inline-flex"
+            class="ds-button ds-button-primary hidden md:inline-flex"
           >
             {{ labels.newRequest }}
           </Link>
@@ -112,7 +112,7 @@
     <Dialog as="div" class="lg:hidden" :open="sidebarOpen" @close="sidebarOpen = false">
       <div class="fixed inset-0 z-50">
         <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" @click="sidebarOpen = false" />
-        <DialogPanel class="fixed inset-y-0 left-0 flex w-full max-w-xs flex-col border-r border-[#ded3bf] bg-[#fffaf0] shadow-xl dark:border-[#25443c] dark:bg-[#07110f]">
+        <DialogPanel class="ds-surface fixed inset-y-0 left-0 flex w-full max-w-xs flex-col border-r shadow-xl">
           <div class="flex items-center justify-between border-b border-[#ded3bf] px-5 py-4 dark:border-[#25443c]">
             <div>
               <div class="text-sm font-bold text-[#15231f] dark:text-[#f7f1e7]">{{ labels.navigation }}</div>
@@ -141,7 +141,7 @@
 
     <div class="mx-auto flex max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:px-8">
       <aside class="hidden w-72 shrink-0 lg:block">
-        <div class="sticky top-24 rounded-[2rem] border border-[#ded3bf] bg-[#fffaf0]/92 p-4 shadow-[0_24px_70px_rgba(20,61,55,0.10)] backdrop-blur dark:border-[#25443c] dark:bg-[#0c1714]/92 dark:shadow-black/25">
+        <div class="ds-sidebar-panel sticky top-24 p-4">
           <div class="rounded-[1.5rem] bg-gradient-to-br from-primary-700 to-primary-950 p-4 text-white shadow-[0_18px_45px_rgba(20,61,55,0.22)]">
             <div class="text-sm font-bold">{{ page.props?.auth?.user?.name || labels.customer }}</div>
             <div class="mt-1 text-xs text-slate-300">{{ page.props?.auth?.user?.customer || page.props?.auth?.user?.email }}</div>

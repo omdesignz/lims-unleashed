@@ -24,27 +24,29 @@ const downloadUrl = computed(() => {
 </script>
 
 <template>
-    <tr class="bg-white transition-colors duration-200 hover:bg-primary-50/70 dark:bg-slate-950/40 dark:hover:bg-slate-800/70">
-        <td class="px-6 py-4 whitespace-nowrap font-mono text-xs text-slate-700 dark:text-slate-200">{{ path }}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">{{ date }}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-800 dark:text-slate-100">{{ size }}</td>
+    <tr class="ds-table-row">
+        <td class="ds-table-cell whitespace-nowrap px-6 py-4 font-mono text-xs">{{ path }}</td>
+        <td class="ds-table-cell whitespace-nowrap px-6 py-4">{{ date }}</td>
+        <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold text-[color:var(--ds-text)]">{{ size }}</td>
         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
           <div class="inline-flex items-center justify-end gap-2">
             <a
                 :href="downloadUrl"
                 target="_blank"
                 rel="noopener nofollow"
-                title="Download"
-                class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:-translate-y-0.5 hover:border-primary-300 hover:text-primary-700 hover:shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-primary-500 dark:hover:text-primary-200"
+                :title="$t('gestlab.general.buttons.download')"
+                :aria-label="$t('gestlab.general.buttons.download')"
+                class="ds-icon-button"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75v6.75m0 0l-3-3m3 3l3-3m-8.25 6a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
               </svg>
             </a>
             <button
-                title="Delete"
-                class="inline-flex h-9 w-9 items-center justify-center rounded-xl border transition"
-                :class="deletable ? 'border-rose-200 bg-white text-rose-500 hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 hover:shadow-sm dark:border-rose-500/30 dark:bg-slate-900 dark:text-rose-300 dark:hover:bg-rose-500/10' : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-700'"
+                :title="$t('gestlab.general.buttons.delete')"
+                :aria-label="$t('gestlab.general.buttons.delete')"
+                class="ds-icon-button"
+                :class="deletable ? 'ds-table-action-danger' : 'cursor-not-allowed opacity-35'"
                 :disabled="!deletable"
                 @click.prevent="emit('delete', {disk: disk, path: path})"
             >
