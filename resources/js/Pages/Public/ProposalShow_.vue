@@ -573,7 +573,7 @@ const submitAgreement = () => {
   form.impartiality = agreement.value.impartiality
   form.nondisclosure = agreement.value.nondisclosure
 
-  form.post(route('proposals.api.accept', props.proposal.id), {
+  form.post(route('proposals.api.accept', props.proposal.unique_hash), {
     preserveScroll: true,
     onSuccess: () => {
       // Show success message or redirect
@@ -590,7 +590,7 @@ const submitRejection = () => {
     return
   }
 
-  rejectForm.post(route('proposals.api.reject', props.proposal.id), {
+  rejectForm.post(route('proposals.api.reject', props.proposal.unique_hash), {
     preserveScroll: true,
     onSuccess: () => {
       showRejectModal.value = false

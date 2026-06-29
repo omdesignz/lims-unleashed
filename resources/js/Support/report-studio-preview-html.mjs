@@ -1,3 +1,98 @@
+export const studioPlaceholderTokenPattern = /{{\s*[\w.:/-]+\s*}}|{\s*[\w.:/-]+\s*}/g
+
+const studioConditionalPlaceholderPrefixes = ['if:', 'ifnot:', 'endif:']
+
+export function normaliseStudioPreviewPlaceholderToken(token) {
+  return String(token || '').replace(/^\{+|\}+$/g, '').trim()
+}
+
+export function isStudioConditionalPlaceholderKey(key) {
+  return studioConditionalPlaceholderPrefixes.some((prefix) => String(key || '').startsWith(prefix))
+}
+
+export function normalizeStudioPreviewReplacements(replacementMap = {}) {
+  const replacements = {}
+
+  Object.entries(replacementMap || {}).forEach(([placeholder, replacement]) => {
+    const key = normaliseStudioPreviewPlaceholderToken(placeholder)
+
+    if (!key) {
+      return
+    }
+
+    replacements[key] = replacement ?? ''
+  })
+
+  return replacements
+}
+
+export function interpolateStudioPreviewHtml(html, replacementMap = {}) {
+  const replacements = normalizeStudioPreviewReplacements(replacementMap)
+
+  return resolveStudioPreviewConditionalBlocks(String(html || ''), replacements).replace(studioPlaceholderTokenPattern, (token) => {
+    const key = normaliseStudioPreviewPlaceholderToken(token)
+
+    return Object.prototype.hasOwnProperty.call(replacements, key)
+      ? replacements[key]
+      : token
+  })
+}
+
+export function resolveStudioPreviewConditionalBlocks(html, replacementMap = {}) {
+  const replacements = normalizeStudioPreviewReplacements(replacementMap)
+  const blocks = [
+    { pattern: /\{if:([a-zA-Z0-9_]+)\}([\s\S]*?)\{endif:\1\}/g, invert: false },
+    { pattern: /\{\{if:([a-zA-Z0-9_]+)\}\}([\s\S]*?)\{\{endif:\1\}\}/g, invert: false },
+    { pattern: /\{ifnot:([a-zA-Z0-9_]+)\}([\s\S]*?)\{endif:\1\}/g, invert: true },
+    { pattern: /\{\{ifnot:([a-zA-Z0-9_]+)\}\}([\s\S]*?)\{\{endif:\1\}\}/g, invert: true },
+  ]
+
+  return blocks.reduce((currentHtml, block) => currentHtml.replace(block.pattern, (_match, key, content) => {
+    const isTruthy = studioPreviewValueIsTruthy(replacements[key])
+    const shouldRender = block.invert ? !isTruthy : isTruthy
+
+    return shouldRender ? content : ''
+  }), html)
+}
+
+export function studioPreviewValueIsTruthy(value) {
+  if (typeof value === 'boolean') {
+    return value
+  }
+
+  if (typeof value === 'number') {
+    return value !== 0
+  }
+
+  const normalized = String(value ?? '')
+    .replace(/<[^>]*>/g, '')
+    .trim()
+    .toLowerCase()
+
+  return !['', '0', '0.0', '0.00', '0,0', '0,00', 'false', 'no', 'não', 'nao', '—', '-'].includes(normalized)
+}
+
+export function normaliseStudioPreviewHexColor(value, fallback = '#143d37') {
+  const color = String(value ?? '').trim()
+
+  return /^#[0-9a-f]{6}$/i.test(color) ? color : fallback
+}
+
+export function studioThemeColorReplacements(settings = {}) {
+  const primaryColor = normaliseStudioPreviewHexColor(settings.app_primary_color ?? settings.primary_color, '#143d37')
+  const secondaryColor = normaliseStudioPreviewHexColor(settings.app_secondary_color ?? settings.secondary_color, '#f8f4ea')
+  const accentColor = normaliseStudioPreviewHexColor(settings.app_accent_color ?? settings.accent_color, '#d9b05f')
+
+  return {
+    '{brand_primary_color}': primaryColor,
+    '{brand_secondary_color}': secondaryColor,
+    '{brand_accent_color}': accentColor,
+    '{app_primary_color}': primaryColor,
+    '{app_secondary_color}': secondaryColor,
+    '{app_accent_color}': accentColor,
+  }
+}
+
 const reportTable = (columns, rows, emptyMessage = 'Sem dados registados.') => {
   const headerHtml = columns
     .map(({ label, translation = '', align = 'left' }) => {

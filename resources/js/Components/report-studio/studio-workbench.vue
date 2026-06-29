@@ -1,13 +1,21 @@
 <script setup>
 import fancyTextarea from '@/Components/fancy-textarea.vue'
-import { chartSvgPalette, normalizeStudioChartList, normalizedHexColor, sanitizeStudioChartSvg } from '@/Support/report-studio-chart-palette.mjs'
+import { generatedStudioChartSvg, normalizedHexColor, sanitizeStudioChartSvg } from '@/Support/report-studio-chart-palette.mjs'
+import {
+  interpolateStudioPreviewHtml,
+  isStudioConditionalPlaceholderKey,
+  normaliseStudioPreviewPlaceholderToken,
+  normalizeStudioPreviewReplacements,
+  studioPlaceholderTokenPattern,
+  studioThemeColorReplacements,
+} from '@/Support/report-studio-preview-html.mjs'
 import { escapePreviewHtmlAttribute, escapePreviewHtmlText, safePreviewCssUrl, safePreviewMediaUrl } from '@/Support/report-studio-preview-safety.mjs'
 import { buildReportStudioPreviewCss } from '@/Support/report-studio-preview-styles.mjs'
+import { generatedStudioQrCodeDataUri } from '@/Support/report-studio-qr-code.mjs'
 import { uploadedStudioAssetKind } from '@/Support/report-studio-media-assets.mjs'
 import axios from 'axios'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Head, Link } from '@inertiajs/vue3'
-import { create as createQrCode } from 'qrcode'
+import { Head, Link, usePage } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
 import {
   ArrowUturnLeftIcon,
@@ -91,6 +99,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['submit', 'update:studio-type'])
+const page = usePage()
 
 const contentLength = computed(() => props.layoutSchema.body_html?.length ?? 0)
 const mediaAssetUrl = ref(props.layoutSchema.background_image_path || '')
@@ -410,6 +419,31 @@ const blockKindOptions = [
   { value: 'stamp', label: studioCopy('block_kinds.stamp', {}, 'Carimbo / selo') },
   { value: 'signature', label: studioCopy('block_kinds.signature', {}, 'Assinatura') },
   { value: 'qr_code', label: studioCopy('block_kinds.qr_code', {}, 'Código QR') },
+]
+
+const textAlignmentOptions = [
+  { value: 'left', label: studioCopy('text_align.left', {}, 'Esquerda') },
+  { value: 'center', label: studioCopy('text_align.center', {}, 'Centro') },
+  { value: 'right', label: studioCopy('text_align.right', {}, 'Direita') },
+  { value: 'justify', label: studioCopy('text_align.justify', {}, 'Justificado') },
+]
+
+const signatureLineStyleOptions = [
+  { value: 'solid', label: studioCopy('signature_line_styles.solid', {}, 'Contínua') },
+  { value: 'dashed', label: studioCopy('signature_line_styles.dashed', {}, 'Tracejada') },
+]
+
+const signatureAlignOptions = [
+  { value: 'left', label: studioCopy('signature_align.left', {}, 'Esquerda') },
+  { value: 'center', label: studioCopy('signature_align.center', {}, 'Centro') },
+  { value: 'right', label: studioCopy('signature_align.right', {}, 'Direita') },
+]
+
+const qrErrorCorrectionOptions = [
+  { value: 'low', label: studioCopy('qr_error_correction.low', {}, 'Baixa · QR mais simples') },
+  { value: 'medium', label: studioCopy('qr_error_correction.medium', {}, 'Média · uso geral') },
+  { value: 'quartile', label: studioCopy('qr_error_correction.quartile', {}, 'Alta · impressão exigente') },
+  { value: 'high', label: studioCopy('qr_error_correction.high', {}, 'Máxima · maior redundância') },
 ]
 
 const chartTypeOptions = [
@@ -889,6 +923,7 @@ const filteredMediaAssets = computed(() => {
       asset.author,
       asset.mime_type,
       asset.pdf_url,
+      asset.url,
     ].some((value) => String(value || '').toLowerCase().includes(query))
   })
 })
@@ -957,89 +992,29 @@ const canvasBlockGroups = computed(() => {
   })).filter((group) => group.blocks.length > 0)
 })
 
+const previewThemeColorReplacements = computed(() => studioThemeColorReplacements(page.props?.settings || {}))
+
 const previewReplacementMap = computed(() => ({
   '{document_code}': 'DOC-2026-001',
   '{issue_date}': '04/05/2026',
   '{lab_name}': 'Laboratório Central',
   '{customer_name}': 'Cliente industrial de referência',
   ...props.previewReplacements,
+  ...previewThemeColorReplacements.value,
 }))
 
-const placeholderTokenPattern = /{{\s*[\w.:/-]+\s*}}|{\s*[\w.:/-]+\s*}/g
 const pageBreakTagPattern = /<pagebreak\b[^>]*\/?>/i
 const paginationPlaceholderKeys = new Set(['PAGENO', 'nbpg'])
-const conditionalPlaceholderPrefixes = ['if:', 'ifnot:', 'endif:']
-
-function normalisePlaceholderToken(token) {
-  return String(token || '').replace(/^\{+|\}+$/g, '').trim()
-}
-
-function isConditionalPlaceholderKey(key) {
-  return conditionalPlaceholderPrefixes.some((prefix) => String(key || '').startsWith(prefix))
-}
 
 const normalisedPreviewReplacements = computed(() => {
-  const replacements = {}
-
-  Object.entries(previewReplacementMap.value).forEach(([placeholder, replacement]) => {
-    const key = normalisePlaceholderToken(placeholder)
-
-    if (!key) {
-      return
-    }
-
-    replacements[key] = replacement ?? ''
-  })
-
-  return replacements
+  return normalizeStudioPreviewReplacements(previewReplacementMap.value)
 })
 
 function interpolatePreviewHtml(html, scopedReplacements = {}) {
-  const replacements = {
+  return interpolateStudioPreviewHtml(html, {
     ...normalisedPreviewReplacements.value,
     ...scopedReplacements,
-  }
-
-  return resolvePreviewConditionalBlocks(String(html || ''), replacements).replace(placeholderTokenPattern, (token) => {
-    const key = normalisePlaceholderToken(token)
-
-    return Object.prototype.hasOwnProperty.call(replacements, key)
-      ? replacements[key]
-      : token
   })
-}
-
-function resolvePreviewConditionalBlocks(html, replacements) {
-  const blocks = [
-    { pattern: /\{if:([a-zA-Z0-9_]+)\}([\s\S]*?)\{endif:\1\}/g, invert: false },
-    { pattern: /\{\{if:([a-zA-Z0-9_]+)\}\}([\s\S]*?)\{\{endif:\1\}\}/g, invert: false },
-    { pattern: /\{ifnot:([a-zA-Z0-9_]+)\}([\s\S]*?)\{endif:\1\}/g, invert: true },
-    { pattern: /\{\{ifnot:([a-zA-Z0-9_]+)\}\}([\s\S]*?)\{\{endif:\1\}\}/g, invert: true },
-  ]
-
-  return blocks.reduce((currentHtml, block) => currentHtml.replace(block.pattern, (_match, key, content) => {
-    const isTruthy = previewValueIsTruthy(replacements[key])
-    const shouldRender = block.invert ? !isTruthy : isTruthy
-
-    return shouldRender ? content : ''
-  }), html)
-}
-
-function previewValueIsTruthy(value) {
-  if (typeof value === 'boolean') {
-    return value
-  }
-
-  if (typeof value === 'number') {
-    return value !== 0
-  }
-
-  const normalized = String(value ?? '')
-    .replace(/<[^>]*>/g, '')
-    .trim()
-    .toLowerCase()
-
-  return !['', '0', '0.0', '0.00', '0,0', '0,00', 'false', 'no', 'não', 'nao', '—', '-'].includes(normalized)
 }
 
 const contentPreview = computed(() => {
@@ -1123,15 +1098,20 @@ watch(() => [
 
 const previewPageStyle = computed(() => {
   const image = safePreviewCssUrl(props.layoutSchema.background_image_path)
+  const backgroundColor = safeCssColorValue(props.layoutSchema.page_background_color, '#fffdf7')
+  const style = { backgroundColor }
 
-  return image
-    ? {
-        backgroundImage: image,
-        backgroundSize: safeCssImageFitValue(props.layoutSchema.background_size, 'cover'),
-        backgroundPosition: safeCssPositionValue(props.layoutSchema.background_position, 'center center'),
-        backgroundRepeat: safeCssRepeatValue(props.layoutSchema.background_repeat, 'no-repeat'),
-      }
-    : {}
+  if (!image) {
+    return style
+  }
+
+  return {
+    ...style,
+    backgroundImage: image,
+    backgroundSize: safeCssImageFitValue(props.layoutSchema.background_size, 'cover'),
+    backgroundPosition: safeCssPositionValue(props.layoutSchema.background_position, 'center center'),
+    backgroundRepeat: safeCssRepeatValue(props.layoutSchema.background_repeat, 'no-repeat'),
+  }
 })
 
 function numericSetting(value, fallback) {
@@ -1247,12 +1227,12 @@ const unresolvedPlaceholders = computed(() => {
   const unresolved = new Map()
 
   studioSurfaceSources.value.forEach((source) => {
-    const matches = String(source.value || '').match(placeholderTokenPattern) || []
+    const matches = String(source.value || '').match(studioPlaceholderTokenPattern) || []
 
     matches.forEach((token) => {
-      const key = normalisePlaceholderToken(token)
+      const key = normaliseStudioPreviewPlaceholderToken(token)
 
-      if (!key || paginationPlaceholderKeys.has(key) || isConditionalPlaceholderKey(key) || Object.prototype.hasOwnProperty.call(replacements, key)) {
+      if (!key || paginationPlaceholderKeys.has(key) || isStudioConditionalPlaceholderKey(key) || Object.prototype.hasOwnProperty.call(replacements, key)) {
         return
       }
 
@@ -1695,6 +1675,7 @@ const exportSetupStatus = computed(() => {
 
 const previewStyleVariables = computed(() => ({
   '--studio-document-font': documentFontFamily.value,
+  '--studio-page-background-color': safeCssColorValue(props.layoutSchema.page_background_color, '#fffdf7'),
   '--studio-table-header-bg': tableStyleSettings.value.table_header_background,
   '--studio-table-header-color': tableStyleSettings.value.table_header_text_color,
   '--studio-table-border-color': tableStyleSettings.value.table_border_color,
@@ -2944,157 +2925,6 @@ function canvasBlockOverlayStyle(block) {
   }
 }
 
-function qrCodeErrorCorrectionLevel(value) {
-  return {
-    high: 'H',
-    low: 'L',
-    medium: 'M',
-    quartile: 'Q',
-  }[value] || 'L'
-}
-
-function qrCodePreviewDataUri(block) {
-  const qrContent = interpolatePreviewHtml(block.qr_content || block.content_html || '{document_code}').trim()
-
-  if (!qrContent) {
-    return ''
-  }
-
-  try {
-    const qrCode = createQrCode(qrContent, {
-      errorCorrectionLevel: qrCodeErrorCorrectionLevel(block.qr_error_correction),
-    })
-    const quietZone = clamp(Math.round(Number(block.qr_margin ?? 8)), 0, 32)
-    const moduleCount = qrCode.modules.size
-    const viewBoxSize = moduleCount + (quietZone * 2)
-    const foregroundColor = colorInputValue(block.qr_foreground_color, '#0f172a')
-    const backgroundColor = colorInputValue(block.qr_background_color, '#ffffff')
-    const modulePath = []
-
-    for (let row = 0; row < moduleCount; row += 1) {
-      for (let column = 0; column < moduleCount; column += 1) {
-        if (qrCode.modules.get(row, column)) {
-          modulePath.push(`M${column + quietZone} ${row + quietZone}h1v1h-1z`)
-        }
-      }
-    }
-
-    const svg = [
-      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBoxSize} ${viewBoxSize}" shape-rendering="crispEdges">`,
-      `<rect width="100%" height="100%" fill="${backgroundColor}"/>`,
-      `<path d="${modulePath.join('')}" fill="${foregroundColor}"/>`,
-      '</svg>',
-    ].join('')
-
-    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
-  } catch {
-    return ''
-  }
-}
-
-function chartListValue(value) {
-  return normalizeStudioChartList(value)
-}
-
-function chartNumericValues(block) {
-  return chartListValue(block.chart_values ?? block.chart_series)
-    .map((value) => Number(String(value).replace(',', '.')))
-    .filter((value) => Number.isFinite(value))
-    .slice(0, 12)
-}
-
-function chartLabelValues(block, values) {
-  const labels = chartListValue(block.chart_labels).slice(0, 12)
-
-  if (labels.length) {
-    return labels
-  }
-
-  return values.map((_, index) => `S${index + 1}`)
-}
-
-function chartColorValues(block) {
-  const configuredColors = chartListValue(block.chart_colors)
-    .filter((value) => /^#[0-9a-fA-F]{6}$/.test(value))
-
-  return configuredColors.length ? configuredColors : defaultChartPalette
-}
-
-function escapeSvgText(value) {
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-}
-
-function generatedChartSvg(block) {
-  const values = chartNumericValues(block)
-
-  if (!values.length) {
-    return ''
-  }
-
-  const labels = chartLabelValues(block, values)
-  const colors = chartColorValues(block)
-  const maxValue = Math.max(...values, 1)
-  const type = ['bar', 'line', 'doughnut'].includes(block.chart_type) ? block.chart_type : 'bar'
-  const title = escapeSvgText(interpolatePreviewHtml(block.chart_title || block.title || 'Gráfico'))
-  const backgroundColor = colorInputValue(block.chart_background_color, '#f8f4ea')
-  const primaryColor = colorInputValue(block.chart_primary_color, colors[0] || '#143d37')
-  const showValues = block.chart_show_values !== false
-  const palette = chartSvgPalette(backgroundColor)
-
-  if (type === 'doughnut') {
-    const total = values.reduce((sum, value) => sum + Math.max(value, 0), 0) || 1
-    const circumference = 251.2
-    let offset = 0
-    const rings = values.map((value, index) => {
-      const segment = (Math.max(value, 0) / total) * circumference
-      const ring = `<circle cx="130" cy="128" r="40" fill="none" stroke="${colors[index % colors.length]}" stroke-width="18" stroke-dasharray="${segment.toFixed(2)} ${(circumference - segment).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 130 128)" />`
-      offset += segment
-
-      return ring
-    }).join('')
-    const legend = labels.map((label, index) => {
-      const y = 70 + (index * 26)
-
-      return `<g><rect x="250" y="${y - 10}" width="12" height="12" rx="3" fill="${colors[index % colors.length]}"/><text x="272" y="${y}" font-size="12" fill="${palette.muted}">${escapeSvgText(interpolatePreviewHtml(label))}</text><text x="520" y="${y}" font-size="12" font-weight="700" fill="${palette.ink}" text-anchor="end">${values[index]}</text></g>`
-    }).join('')
-
-    return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="${palette.ink}">${title}</text><circle cx="130" cy="128" r="40" fill="none" stroke="${palette.grid}" stroke-width="18"/>${rings}<text x="130" y="126" text-anchor="middle" font-size="18" font-weight="800" fill="${palette.ink}">${total}</text><text x="130" y="144" text-anchor="middle" font-size="10" fill="${palette.muted}">total</text>${legend}</svg>`
-  }
-
-  if (type === 'line') {
-    const points = values.map((value, index) => {
-      const x = 58 + (index * (470 / Math.max(values.length - 1, 1)))
-      const y = 202 - ((value / maxValue) * 132)
-
-      return `${x.toFixed(1)},${y.toFixed(1)}`
-    }).join(' ')
-    const markers = values.map((value, index) => {
-      const x = 58 + (index * (470 / Math.max(values.length - 1, 1)))
-      const y = 202 - ((value / maxValue) * 132)
-
-      return `<g><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${colors[index % colors.length]}" stroke="${palette.markerStroke}" stroke-width="2"/>${showValues ? `<text x="${x.toFixed(1)}" y="${(y - 12).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="${palette.ink}">${value}</text>` : ''}<text x="${x.toFixed(1)}" y="230" text-anchor="middle" font-size="10" fill="${palette.muted}">${escapeSvgText(interpolatePreviewHtml(labels[index] || `S${index + 1}`))}</text></g>`
-    }).join('')
-
-    return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="${palette.ink}">${title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="${palette.grid}"/><line x1="52" y1="70" x2="52" y2="202" stroke="${palette.grid}"/><polyline points="${points}" fill="none" stroke="${primaryColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${markers}</svg>`
-  }
-
-  const slot = 470 / Math.max(values.length, 1)
-  const bars = values.map((value, index) => {
-    const height = Math.max(6, (value / maxValue) * 132)
-    const x = 58 + (index * slot) + Math.max(6, slot * 0.15)
-    const y = 202 - height
-    const width = Math.max(18, slot * 0.7)
-
-    return `<g><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${width.toFixed(1)}" height="${height.toFixed(1)}" rx="10" fill="${colors[index % colors.length]}"/>${showValues ? `<text x="${(x + width / 2).toFixed(1)}" y="${(y - 10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="${palette.ink}">${value}</text>` : ''}<text x="${(x + width / 2).toFixed(1)}" y="230" text-anchor="middle" font-size="10" fill="${palette.muted}">${escapeSvgText(interpolatePreviewHtml(labels[index] || `S${index + 1}`))}</text></g>`
-  }).join('')
-
-  return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="${palette.ink}">${title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="${palette.grid}"/><line x1="52" y1="70" x2="52" y2="202" stroke="${palette.grid}"/>${bars}</svg>`
-}
-
 function canvasBlockContentHtml(block) {
   if (block.block_kind === 'signature') {
     const alignClass = {
@@ -3149,6 +2979,10 @@ function canvasBlockContentHtml(block) {
 
   if (block.block_kind === 'chart_snapshot') {
     const sanitizedChartSvg = sanitizeStudioChartSvg(interpolatePreviewHtml(block.chart_svg || ''))
+    const generatedChartSvg = generatedStudioChartSvg(block, {
+      colorInputValue,
+      interpolate: interpolatePreviewHtml,
+    })
     const chartTitle = block.chart_title
       ? `<div class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">${escapePreviewHtmlText(interpolatePreviewHtml(block.chart_title))}</div>`
       : ''
@@ -3160,8 +2994,8 @@ function canvasBlockContentHtml(block) {
       ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${sanitizedChartSvg}</div>`
       : chartImageUrl
         ? `<img src="${escapePreviewHtmlAttribute(chartImageUrl)}" alt="${escapePreviewHtmlAttribute(interpolatePreviewHtml(block.chart_title || block.title || 'Gráfico'))}" style="display:block; margin-top:12px; width:100%; min-height:140px; object-fit:contain;" />`
-        : generatedChartSvg(block)
-          ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${generatedChartSvg(block)}</div>`
+        : generatedChartSvg
+          ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${generatedChartSvg}</div>`
           : '<div class="mt-3 flex min-h-36 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-center text-xs text-slate-500">Defina rótulos e valores para gerar o gráfico ou use SVG/imagem exportada.</div>'
 
     return `
@@ -3174,7 +3008,11 @@ function canvasBlockContentHtml(block) {
   }
 
   if (block.block_kind === 'qr_code') {
-    const qrDataUri = qrCodePreviewDataUri(block)
+    const qrDataUri = generatedStudioQrCodeDataUri(block, {
+      colorInputValue,
+      fallbackContent: '{document_code}',
+      interpolate: interpolatePreviewHtml,
+    })
 
     if (!qrDataUri) {
       return '<div class="flex h-full min-h-24 items-center justify-center rounded-2xl border border-dashed border-slate-300 text-center text-xs text-slate-500">Defina o conteúdo do QR para gerar a pré-visualização.</div>'
@@ -4502,7 +4340,7 @@ function submit() {
             </div>
             <div class="lg:w-72">
               <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Superfície alvo</label>
-              <select v-model="snippetTarget" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+              <select v-model="snippetTarget" class="studio-inspector-select">
                 <option v-for="option in snippetTargetOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
               </select>
             </div>
@@ -4950,7 +4788,7 @@ function submit() {
                 <div class="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-950/60">
                   <div class="text-xs font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Documento</div>
                   <label class="mt-4 block text-sm font-semibold text-slate-800 dark:text-slate-200">Fonte editorial
-                    <select v-model="props.layoutSchema.document_font_family" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <select v-model="props.layoutSchema.document_font_family" class="studio-inspector-select">
                       <option v-for="option in studioFontOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
@@ -4979,12 +4817,12 @@ function submit() {
                   </div>
                   <div class="mt-4 grid gap-3">
                     <label class="text-xs font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Ajuste
-                      <select v-model="props.layoutSchema.background_size" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm normal-case tracking-normal text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                      <select v-model="props.layoutSchema.background_size" class="studio-inspector-select studio-inspector-select--compact">
                         <option v-for="option in backgroundFitOptions" :key="`inspector-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
                       </select>
                     </label>
                     <label class="text-xs font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Posição
-                      <select v-model="props.layoutSchema.background_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm normal-case tracking-normal text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                      <select v-model="props.layoutSchema.background_position" class="studio-inspector-select studio-inspector-select--compact">
                         <option v-for="option in backgroundPositionOptions" :key="`inspector-position-${option.value}`" :value="option.value">{{ option.label }}</option>
                       </select>
                     </label>
@@ -5067,10 +4905,10 @@ function submit() {
                     <div v-if="['image', 'stamp'].includes(selectedCanvasBlock.block_kind)" v-show="editorInspectorMode === 'media'" class="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
                       <div class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Imagem / recorte</div>
                       <div class="mt-3 grid gap-2">
-                        <select v-model="selectedCanvasBlock.image_fit" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                        <select v-model="selectedCanvasBlock.image_fit" class="studio-inspector-select studio-inspector-select--compact">
                           <option v-for="option in backgroundFitOptions" :key="`selected-image-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
                         </select>
-                        <select v-model="selectedCanvasBlock.image_position" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+                        <select v-model="selectedCanvasBlock.image_position" class="studio-inspector-select studio-inspector-select--compact">
                           <option v-for="option in imagePositionOptions" :key="`selected-image-position-${option.value}`" :value="option.value">{{ option.label }}</option>
                         </select>
                       </div>
@@ -5099,24 +4937,24 @@ function submit() {
                         </div>
                       </div>
                     </div>
-                    <button v-show="editorInspectorMode === 'media'" type="button" @click="openSelectedBlockMediaPicker()" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-500">
+                    <button v-show="editorInspectorMode === 'media'" type="button" @click="openSelectedBlockMediaPicker()" class="studio-media-picker-button studio-media-picker-button--wide">
                       <PhotoIcon class="h-4 w-4" />
                       Aplicar media ao bloco
                     </button>
 
                     <div v-show="editorInspectorMode === 'layout'" class="grid grid-cols-2 gap-2">
                       <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Tipo
-                        <select v-model="selectedCanvasBlock.block_kind" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                        <select v-model="selectedCanvasBlock.block_kind" class="studio-inspector-select studio-inspector-select--compact">
                           <option v-for="option in blockKindOptions" :key="`inspector-kind-${option.value}`" :value="option.value">{{ option.label }}</option>
                         </select>
                       </label>
                       <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Superfície
-                        <select v-model="selectedCanvasBlock.surface" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                        <select v-model="selectedCanvasBlock.surface" class="studio-inspector-select studio-inspector-select--compact">
                           <option v-for="option in canvasSurfaceOptions" :key="`inspector-surface-${option.value}`" :value="option.value">{{ option.label }}</option>
                         </select>
                       </label>
                       <label v-if="selectedCanvasBlock.surface === 'content'" class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Âmbito
-                        <select v-model="selectedCanvasBlock.page_scope" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                        <select v-model="selectedCanvasBlock.page_scope" class="studio-inspector-select studio-inspector-select--compact">
                           <option v-for="option in canvasContentScopeOptions" :key="`inspector-scope-${option.value}`" :value="option.value">{{ option.label }}</option>
                         </select>
                       </label>
@@ -5195,7 +5033,7 @@ function submit() {
                       </div>
                       <div v-if="selectedCanvasBlock.block_kind === 'chart_snapshot'" class="space-y-2">
                         <input v-model="selectedCanvasBlock.chart_title" type="text" placeholder="Título do gráfico" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                        <select v-model="selectedCanvasBlock.chart_type" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                        <select v-model="selectedCanvasBlock.chart_type" class="studio-inspector-select studio-inspector-select--compact">
                           <option v-for="option in chartTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                         </select>
                         <textarea v-model="selectedCanvasBlock.chart_labels" rows="3" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" placeholder="Recepção, Validação, Emissão" />
@@ -5209,11 +5047,11 @@ function submit() {
                     </div>
 
                     <div v-show="editorInspectorMode === 'media'" class="space-y-3">
-                      <button type="button" @click="openSelectedBlockMediaPicker()" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-500">
+                      <button type="button" @click="openSelectedBlockMediaPicker()" class="studio-media-picker-button studio-media-picker-button--wide">
                         <PhotoIcon class="h-4 w-4" />
                         Aplicar {{ mediaFieldLabel(selectedBlockDefaultMediaField()) }}
                       </button>
-                      <button type="button" @click="openSelectedBlockMediaPicker('background_image')" class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-primary-200 bg-primary-50 px-4 py-3 text-sm font-semibold text-primary-900 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-100">
+                      <button type="button" @click="openSelectedBlockMediaPicker('background_image')" class="studio-media-picker-button studio-media-picker-button--wide studio-media-picker-button--secondary">
                         <PaintBrushIcon class="h-4 w-4" />
                         Aplicar fundo ao bloco
                       </button>
@@ -5616,17 +5454,12 @@ function submit() {
                     <input v-model="selectedCanvasBlock.title" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Tipo de bloco
-                    <select v-model="selectedCanvasBlock.block_kind" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                      <option value="rich_text">Conteúdo livre</option>
-                      <option value="image">Imagem</option>
-                      <option value="chart_snapshot">Gráfico / captura</option>
-                      <option value="stamp">Carimbo / selo</option>
-                      <option value="signature">Assinatura</option>
-                      <option value="qr_code">QR code</option>
+                    <select v-model="selectedCanvasBlock.block_kind" class="studio-inspector-select">
+                      <option v-for="option in blockKindOptions" :key="`inspector-kind-${option.value}`" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Superfície
-                    <select v-model="selectedCanvasBlock.surface" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <select v-model="selectedCanvasBlock.surface" class="studio-inspector-select">
                       <option v-for="option in canvasSurfaceOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
@@ -5656,26 +5489,20 @@ function submit() {
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Imagem de fundo do bloco
                     <input v-model="selectedCanvasBlock.background_image" type="text" placeholder="/storage/report-studios/blocks/hero-cover.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    <select v-if="localAssetLibrary.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'background_image')">
+                    <select v-if="localAssetLibrary.length" class="studio-gallery-select" @change="applyAssetToSelectedBlock($event.target.value, 'background_image')">
                       <option value="">Aplicar ficheiro como fundo do bloco</option>
                       <option v-for="asset in localAssetLibrary" :key="`bg-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </select>
-                    <button type="button" @click="openMediaPicker('selected-block', 'background_image')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Escolher da galeria</button>
+                    <button type="button" @click="openMediaPicker('selected-block', 'background_image')" class="studio-media-picker-button">Escolher da galeria</button>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Ajuste da imagem
-                    <select v-model="selectedCanvasBlock.background_image_fit" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                      <option value="cover">Cobrir</option>
-                      <option value="contain">Conter</option>
-                      <option value="auto">Original</option>
+                    <select v-model="selectedCanvasBlock.background_image_fit" class="studio-inspector-select">
+                      <option v-for="option in backgroundFitOptions" :key="`block-background-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Posição da imagem
-                    <select v-model="selectedCanvasBlock.background_image_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                      <option value="center center">Centro</option>
-                      <option value="top center">Topo ao centro</option>
-                      <option value="top left">Topo à esquerda</option>
-                      <option value="top right">Topo à direita</option>
-                      <option value="bottom center">Base ao centro</option>
+                    <select v-model="selectedCanvasBlock.background_image_position" class="studio-inspector-select">
+                      <option v-for="option in backgroundPositionOptions" :key="`block-background-position-${option.value}`" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Cor do overlay
@@ -5713,16 +5540,13 @@ function submit() {
                     <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">{{ selectedCanvasBlock.rotation_deg || 0 }}°</span>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Sombra
-                    <select v-model="selectedCanvasBlock.shadow_preset" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <select v-model="selectedCanvasBlock.shadow_preset" class="studio-inspector-select">
                       <option v-for="option in canvasShadowPresets" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Alinhamento do texto
-                    <select v-model="selectedCanvasBlock.text_align" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                      <option value="left">Esquerda</option>
-                      <option value="center">Centro</option>
-                      <option value="right">Direita</option>
-                      <option value="justify">Justificado</option>
+                    <select v-model="selectedCanvasBlock.text_align" class="studio-inspector-select">
+                      <option v-for="option in textAlignmentOptions" :key="`text-align-${option.value}`" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Tamanho do texto (px)
@@ -5736,7 +5560,7 @@ function submit() {
                     Bloco bloqueado para mover e redimensionar
                   </label>
                   <label v-if="selectedCanvasBlock.surface === 'content'" class="text-sm text-slate-700 dark:text-slate-300">Âmbito no PDF
-                    <select v-model="selectedCanvasBlock.page_scope" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <select v-model="selectedCanvasBlock.page_scope" class="studio-inspector-select">
                       <option v-for="option in canvasContentScopeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
@@ -5757,22 +5581,22 @@ function submit() {
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Imagem da assinatura
                     <input v-model="selectedCanvasBlock.signature_image" type="text" placeholder="/storage/signatures/director.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    <select v-if="localAssetLibrary.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'signature_image')">
+                    <select v-if="localAssetLibrary.length" class="studio-gallery-select" @change="applyAssetToSelectedBlock($event.target.value, 'signature_image')">
                       <option value="">Usar assinatura/ficheiro guardado</option>
                       <option v-for="asset in localAssetLibrary" :key="`sig-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </select>
-                    <button type="button" @click="openMediaPicker('selected-block', 'signature_image')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Escolher no media picker</button>
+                    <button type="button" @click="openMediaPicker('selected-block', 'signature_image')" class="studio-media-picker-button">Escolher no media picker</button>
                   </label>
                   <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900 sm:col-span-2">
                     <div class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Imagem impressa da assinatura</div>
                     <div class="mt-3 grid gap-3 sm:grid-cols-2">
                       <label class="text-sm text-slate-700 dark:text-slate-300">Encaixe
-                        <select v-model="selectedCanvasBlock.signature_image_fit" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                        <select v-model="selectedCanvasBlock.signature_image_fit" class="studio-inspector-select">
                           <option v-for="option in backgroundFitOptions" :key="`signature-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
                         </select>
                       </label>
                       <label class="text-sm text-slate-700 dark:text-slate-300">Foco / recorte
-                        <select v-model="selectedCanvasBlock.signature_image_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                        <select v-model="selectedCanvasBlock.signature_image_position" class="studio-inspector-select">
                           <option v-for="option in imagePositionOptions" :key="`signature-position-${option.value}`" :value="option.value">{{ option.label }}</option>
                         </select>
                       </label>
@@ -5798,16 +5622,13 @@ function submit() {
                     </div>
                   </div>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Estilo da linha
-                    <select v-model="selectedCanvasBlock.signature_line_style" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                      <option value="solid">Contínua</option>
-                      <option value="dashed">Tracejada</option>
+                    <select v-model="selectedCanvasBlock.signature_line_style" class="studio-inspector-select">
+                      <option v-for="option in signatureLineStyleOptions" :key="`signature-line-${option.value}`" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Alinhamento da assinatura
-                    <select v-model="selectedCanvasBlock.signature_align" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                      <option value="left">Esquerda</option>
-                      <option value="center">Centro</option>
-                      <option value="right">Direita</option>
+                    <select v-model="selectedCanvasBlock.signature_align" class="studio-inspector-select">
+                      <option v-for="option in signatureAlignOptions" :key="`signature-align-${option.value}`" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
                   <label class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300">
@@ -5822,24 +5643,22 @@ function submit() {
                 <div v-if="['image', 'stamp'].includes(selectedCanvasBlock.block_kind)" class="mt-4 grid gap-4 sm:grid-cols-2">
                   <label class="text-sm text-slate-700 dark:text-slate-300">Imagem / carimbo
                     <input v-model="selectedCanvasBlock.image_url" type="text" placeholder="/storage/media/stamp.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    <select v-if="localAssetLibrary.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'image_url')">
+                    <select v-if="localAssetLibrary.length" class="studio-gallery-select" @change="applyAssetToSelectedBlock($event.target.value, 'image_url')">
                       <option value="">Selecionar da galeria/assinaturas</option>
                       <option v-for="asset in localAssetLibrary" :key="`image-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </select>
-                    <button type="button" @click="openMediaPicker('selected-block', 'image_url')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Escolher no media picker</button>
+                    <button type="button" @click="openMediaPicker('selected-block', 'image_url')" class="studio-media-picker-button">Escolher no media picker</button>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Texto alternativo
                     <input v-model="selectedCanvasBlock.image_alt" type="text" placeholder="Carimbo de aprovação" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Ajuste
-                    <select v-model="selectedCanvasBlock.image_fit" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                      <option value="contain">Conter</option>
-                      <option value="cover">Cobrir</option>
-                      <option value="auto">Original</option>
+                    <select v-model="selectedCanvasBlock.image_fit" class="studio-inspector-select">
+                      <option v-for="option in backgroundFitOptions" :key="`block-image-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Foco / recorte
-                    <select v-model="selectedCanvasBlock.image_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <select v-model="selectedCanvasBlock.image_position" class="studio-inspector-select">
                       <option v-for="option in imagePositionOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
@@ -5887,7 +5706,7 @@ function submit() {
                       </div>
                     </div>
                   </div>
-                  <div class="rounded-2xl border border-primary-200 bg-primary-50 p-4 text-xs leading-relaxed text-primary-900 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">
+                  <div class="studio-inspector-tip">
                     Para pôr um carimbo sobre uma assinatura, coloque o objecto de carimbo acima da assinatura e use uma ordem visual maior.
                   </div>
                 </div>
@@ -5912,11 +5731,8 @@ function submit() {
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Tolerância de leitura
-                    <select v-model="selectedCanvasBlock.qr_error_correction" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                      <option value="low">Baixa · QR mais simples</option>
-                      <option value="medium">Média · uso geral</option>
-                      <option value="quartile">Alta · impressão exigente</option>
-                      <option value="high">Máxima · maior redundância</option>
+                    <select v-model="selectedCanvasBlock.qr_error_correction" class="studio-inspector-select">
+                      <option v-for="option in qrErrorCorrectionOptions" :key="`qr-correction-${option.value}`" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Margem de segurança
@@ -5932,7 +5748,7 @@ function submit() {
                     <input v-model="selectedCanvasBlock.chart_title" type="text" placeholder="Tendência de ensaios por mês" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Tipo de gráfico
-                    <select v-model="selectedCanvasBlock.chart_type" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <select v-model="selectedCanvasBlock.chart_type" class="studio-inspector-select">
                       <option v-for="option in chartTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
@@ -5965,11 +5781,11 @@ function submit() {
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Imagem exportada / ficheiro
                     <input v-model="selectedCanvasBlock.chart_image_url" type="text" placeholder="/storage/report-studios/charts/trend.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    <select v-if="localAssetLibrary.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'chart_image_url')">
+                    <select v-if="localAssetLibrary.length" class="studio-gallery-select" @change="applyAssetToSelectedBlock($event.target.value, 'chart_image_url')">
                       <option value="">Selecionar gráfico da galeria</option>
                       <option v-for="asset in localAssetLibrary" :key="`chart-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </select>
-                    <button type="button" @click="openMediaPicker('selected-block', 'chart_image_url')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Escolher no media picker</button>
+                    <button type="button" @click="openMediaPicker('selected-block', 'chart_image_url')" class="studio-media-picker-button">Escolher no media picker</button>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Legenda / leitura executiva
                     <input v-model="selectedCanvasBlock.chart_caption" type="text" placeholder="Inclui somente resultados validados no período selecionado." class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
@@ -6107,6 +5923,9 @@ function submit() {
                   </div>
                 </div>
                 <div class="grid content-start gap-3 sm:grid-cols-3">
+                  <label class="studio-color-field sm:col-span-3">Cor de página
+                    <input :value="colorInputValue(props.layoutSchema.page_background_color, '#fffdf7')" type="color" @input="props.layoutSchema.page_background_color = $event.target.value" />
+                  </label>
                   <label class="studio-compact-field">Ajuste
                     <select v-model="props.layoutSchema.background_size">
                       <option v-for="option in backgroundFitOptions" :key="`pdf-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
@@ -6170,6 +5989,9 @@ function submit() {
               </label>
               <label class="studio-code-field xl:col-span-2">Ligação directa do fundo
                 <input v-model="props.layoutSchema.background_image_path" type="text" @change="syncAssetUrlFromBackground" />
+              </label>
+              <label class="studio-code-field">Cor de página
+                <input v-model="props.layoutSchema.page_background_color" type="text" placeholder="#fffdf7" />
               </label>
             </div>
           </details>
@@ -7727,6 +7549,153 @@ function submit() {
 .dark .studio-color-field input {
   background: #07110f;
   border-color: #25443c;
+}
+
+.studio-inspector-select,
+.studio-gallery-select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, #9a7a2f 50%) calc(100% - 1.05rem) 52% / 0.38rem 0.38rem no-repeat,
+    linear-gradient(135deg, #fffdf7, #f8f4ea);
+  border: 1px solid #ded3bf;
+  border-radius: 1.05rem;
+  box-shadow: 0 10px 24px rgb(20 61 55 / 0.06);
+  color: #15231f;
+  display: block;
+  font-size: 0.84rem;
+  font-weight: 850;
+  letter-spacing: normal;
+  margin-top: 0.5rem;
+  min-height: 2.95rem;
+  padding: 0.72rem 2.3rem 0.72rem 0.9rem;
+  text-transform: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  width: 100%;
+}
+
+.studio-gallery-select {
+  color: #475a53;
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.studio-inspector-select--compact {
+  border-radius: 0.95rem;
+  font-size: 0.78rem;
+  margin-top: 0.25rem;
+  min-height: 2.55rem;
+  padding-bottom: 0.55rem;
+  padding-top: 0.55rem;
+}
+
+.studio-inspector-select:focus,
+.studio-gallery-select:focus {
+  border-color: #d9b05f;
+  box-shadow: 0 0 0 3px rgb(217 176 95 / 0.2), 0 14px 30px rgb(20 61 55 / 0.1);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.dark .studio-inspector-select,
+.dark .studio-gallery-select {
+  background:
+    linear-gradient(45deg, transparent 50%, #d9b05f 50%) calc(100% - 1.05rem) 52% / 0.38rem 0.38rem no-repeat,
+    linear-gradient(135deg, #07110f, #10231f);
+  border-color: #25443c;
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.24);
+  color: #f7f1e7;
+}
+
+.dark .studio-gallery-select {
+  color: #cbd8cf;
+}
+
+.dark .studio-inspector-select:focus,
+.dark .studio-gallery-select:focus {
+  border-color: #d9b05f;
+  box-shadow: 0 0 0 3px rgb(217 176 95 / 0.18), 0 14px 32px rgb(0 0 0 / 0.34);
+}
+
+.studio-media-picker-button {
+  align-items: center;
+  background: #143d37;
+  border: 1px solid #143d37;
+  border-radius: 1rem;
+  box-shadow: 0 14px 34px rgb(20 61 55 / 0.14);
+  color: #fffaf0;
+  display: inline-flex;
+  font-size: 0.74rem;
+  font-weight: 900;
+  gap: 0.45rem;
+  justify-content: center;
+  margin-top: 0.55rem;
+  min-height: 2.55rem;
+  padding: 0.62rem 0.9rem;
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.studio-media-picker-button:hover {
+  background: #0f302b;
+  border-color: #d9b05f;
+  box-shadow: 0 18px 42px rgb(20 61 55 / 0.18);
+  transform: translateY(-1px);
+}
+
+.studio-media-picker-button--wide {
+  width: 100%;
+}
+
+.studio-media-picker-button--secondary {
+  background: #fffaf0;
+  border-color: #ded3bf;
+  box-shadow: none;
+  color: #143d37;
+}
+
+.studio-media-picker-button--secondary:hover {
+  background: #f8f4ea;
+  border-color: #d9b05f;
+  box-shadow: 0 14px 34px rgb(20 61 55 / 0.08);
+}
+
+.dark .studio-media-picker-button {
+  background: #d9b05f;
+  border-color: #d9b05f;
+  box-shadow: 0 16px 38px rgb(0 0 0 / 0.28);
+  color: #07110f;
+}
+
+.dark .studio-media-picker-button:hover {
+  background: #efc76f;
+  border-color: #efc76f;
+}
+
+.dark .studio-media-picker-button--secondary {
+  background: #07110f;
+  border-color: #25443c;
+  color: #f7f1e7;
+}
+
+.dark .studio-media-picker-button--secondary:hover {
+  background: #10231f;
+  border-color: #d9b05f;
+}
+
+.studio-inspector-tip {
+  background: linear-gradient(135deg, #fffaf0, #f8f4ea);
+  border: 1px solid #ded3bf;
+  border-radius: 1rem;
+  color: #475a53;
+  font-size: 0.74rem;
+  font-weight: 750;
+  line-height: 1.65;
+  padding: 1rem;
+}
+
+.dark .studio-inspector-tip {
+  background: linear-gradient(135deg, #10231f, #07110f);
+  border-color: #25443c;
+  color: #cbd8cf;
 }
 
 .studio-danger-action {

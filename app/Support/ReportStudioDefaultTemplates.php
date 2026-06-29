@@ -178,6 +178,7 @@ class ReportStudioDefaultTemplates
             'variable_catalog' => self::variableCatalogFor($studioType),
             'canvas_blocks' => self::canvasBlocksFor($studioType, $accent),
             'document_font_family' => 'Manrope, DejaVu Sans, sans-serif',
+            'page_background_color' => '#fffdf7',
             'background_image_path' => '',
             'background_size' => 'cover',
             'background_position' => 'center center',
@@ -211,6 +212,12 @@ class ReportStudioDefaultTemplates
             '{lab_details}' => 'Dados do laboratório',
             '{customer_details}' => 'Dados do cliente',
             '{document_keywords}' => 'Palavras-chave do documento',
+            '{brand_primary_color}' => 'Cor primária da marca',
+            '{brand_secondary_color}' => 'Cor secundária da marca',
+            '{brand_accent_color}' => 'Cor de destaque da marca',
+            '{app_primary_color}' => 'Cor primária configurada',
+            '{app_secondary_color}' => 'Cor secundária configurada',
+            '{app_accent_color}' => 'Cor de destaque configurada',
         ];
 
         $catalog = match ($studioType) {
@@ -338,6 +345,11 @@ class ReportStudioDefaultTemplates
     {
         return [
             '{document_number}' => 'Número do documento',
+            '{unique_hash}' => 'Assinatura completa do documento',
+            '{hash_excerpt}' => 'Extracto da assinatura fiscal',
+            '{record_verification_payload}' => 'Payload de verificação do registo',
+            '{record_verification_evidence}' => 'Evidência de verificação do registo',
+            '{agt_validation_number}' => 'Número de validação AGT',
             '{service_location}' => 'Local do serviço',
             '{items_table}' => 'Tabela de itens',
             '{summary_table}' => 'Resumo financeiro',
@@ -570,6 +582,10 @@ HTML;
      */
     private static function headerQrBlock(string $studioType, string $accent): array
     {
+        $qrContent = self::isCommercial($studioType)
+            ? '{{record_verification_payload}}'
+            : '{{document_code}} · {{customer_name}} · {{issue_date}}';
+
         return [
             'id' => $studioType.'-default-auth-qr',
             'title' => 'QR de autenticidade',
@@ -587,7 +603,7 @@ HTML;
             'border_color' => 'rgba(222,211,191,0.95)',
             'border_radius' => 16,
             'shadow_preset' => 'none',
-            'qr_content' => '{{document_code}} · {{customer_name}} · {{issue_date}}',
+            'qr_content' => $qrContent,
             'qr_label' => 'Verificação',
             'qr_foreground_color' => $accent,
             'qr_background_color' => '#ffffff',

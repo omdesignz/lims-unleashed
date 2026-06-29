@@ -207,9 +207,7 @@ class ReportStudioPdfRenderer
             'view' => (string) ($payload['view'] ?? 'PDFs.studios.document'),
             'data' => $data,
         ];
-        $data['format'] = $this->normalizedPageFormat($normalizationPayload);
-        $data['orientation'] = $this->normalizedPageOrientation($normalizationPayload);
-        $data['margins'] = $this->normalizedMargins($normalizationPayload);
+        $data = $this->withNormalizedPageSettings($data, $normalizationPayload);
 
         if (! $this->usesBrowserHeaderFooter($driver)) {
             return $data;
@@ -254,9 +252,7 @@ class ReportStudioPdfRenderer
             'view' => (string) ($payload['view'] ?? 'PDFs.studios.document'),
             'data' => $data,
         ];
-        $data['format'] = $this->normalizedPageFormat($normalizationPayload);
-        $data['orientation'] = $this->normalizedPageOrientation($normalizationPayload);
-        $data['margins'] = $this->normalizedMargins($normalizationPayload);
+        $data = $this->withNormalizedPageSettings($data, $normalizationPayload);
         $data['fontFamily'] = $this->documentFontFamilyFromPayload([
             'view' => (string) ($payload['view'] ?? 'PDFs.studios.document'),
             'data' => $data,
@@ -275,6 +271,34 @@ class ReportStudioPdfRenderer
 
         if (is_string($data['styles'] ?? null)) {
             $data['styles'] = $this->normalizeMpdfAssetReferences($data['styles']);
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  array{view: string, data: array<string, mixed>}  $payload
+     * @return array<string, mixed>
+     */
+    private function withNormalizedPageSettings(array $data, array $payload): array
+    {
+        $format = $this->normalizedPageFormat($payload);
+        $customPageSize = $this->normalizedCustomPageSize($payload);
+
+        if ($format === 'custom' && $customPageSize === null) {
+            $format = 'A4';
+        }
+
+        $data['format'] = $format;
+        $data['orientation'] = $this->normalizedPageOrientation($payload);
+        $data['margins'] = $this->normalizedMargins($payload);
+
+        if ($customPageSize !== null) {
+            $data['customPageWidth'] = $customPageSize[0];
+            $data['customPageHeight'] = $customPageSize[1];
+        } else {
+            unset($data['customPageWidth'], $data['customPageHeight']);
         }
 
         return $data;
@@ -469,6 +493,10 @@ class ReportStudioPdfRenderer
      */
     private function normalizedCustomPageSize(array $payload): ?array
     {
+        if ($this->normalizedPageFormat($payload) !== 'custom') {
+            return null;
+        }
+
         $width = data_get($payload, 'data.customPageWidth');
         $height = data_get($payload, 'data.customPageHeight');
 

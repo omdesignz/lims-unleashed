@@ -950,6 +950,12 @@ const parseJsonResponse = async (response) => {
   return response.json()
 }
 
+const proposalOptionFromApi = (result, fallbackPrefix = 'Registo') => ({
+  ...result,
+  value: result.value ?? result.id,
+  label: result.label || result.name || result.description || result.code || `${fallbackPrefix} #${result.id}`,
+})
+
 // Initialize form with proposal data
 onMounted(() => {
   // Set template selected
@@ -1054,7 +1060,7 @@ const loadParametersBasedOnLabCode = async (code_id) => {
         itemable_id: item.item_id,
         item_selection: { 
           value: item.item_id,
-          label: item.name || item.description,
+          label: item.label || item.name || item.description || `${itemableType === 'matrix' ? 'Matriz' : 'Parâmetro'} #${item.item_id}`,
           price: item.price,
           tax_id: item.tax_id,
           charge_tax: item.charge_tax,
@@ -1063,7 +1069,7 @@ const loadParametersBasedOnLabCode = async (code_id) => {
           exemption_code: item.exemption_code,
           type: itemableType
         },
-        item_description: item.item_description || item.name,
+        item_description: item.item_description || item.label || item.name || item.description,
         standard_id: item.standard_id || null,
         standard_display: standardOptions.value.find(s => s.value === item.standard_id) || null,
         unit_id: item.unit_id || props.units[0]?.id || null,
@@ -1106,8 +1112,7 @@ function loadMatrixes(query, setOptions) {
     .then(results => {
       setOptions(
         results.map(result => ({
-          value: result.id,
-          label: result.description,
+          ...proposalOptionFromApi(result, 'Matriz'),
           price: result.price ?? result.fixed_price ?? 0,
           tax_id: result.tax_id,
           charge_tax: result.charge_tax,
@@ -1127,8 +1132,7 @@ function loadParameters(query, setOptions) {
     .then(results => {
       setOptions(
         results.map(result => ({
-          value: result.id,
-          label: result.name,
+          ...proposalOptionFromApi(result, 'Parâmetro'),
           price: result.price,
           tax_id: result.tax_id,
           charge_tax: result.charge_tax,
@@ -1147,10 +1151,7 @@ function loadLabCodes(query, setOptions) {
     .then(parseJsonResponse)
     .then(results => {
       setOptions(
-        results.map(result => ({
-          value: result.id,
-          label: result.code,
-        }))
+        results.map(result => proposalOptionFromApi(result, 'Código'))
       )
     })
     .catch(() => setOptions([]))

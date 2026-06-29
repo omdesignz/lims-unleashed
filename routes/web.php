@@ -2323,13 +2323,13 @@ Route::prefix('portal')->name('portal.')->middleware(UsePortalFortifyConfigurati
 // VAP Proposal Public Routes (for client access)
 Route::prefix('vap-proposals')->name('vap-proposals.')->group(function () {
     Route::get('/proposal/{hash}', [VAPPublicProposalController::class, 'show'])->name('public.show');
-    Route::get('/proposal/{proposal}/thankyou', [VAPPublicProposalController::class, 'thankyou'])->name('public.thankyou');
+    Route::get('/proposal/{proposal:unique_hash}/thankyou', [VAPPublicProposalController::class, 'thankyou'])->name('public.thankyou');
     Route::get('/proposal/{hash}/download', [VAPPublicProposalController::class, 'downloadPdf'])->name('public.download');
 });
 
 Route::prefix('api')->group(function () {
-    Route::post('/proposals/{proposal}/accept', [VAPProposalController::class, 'accept'])->name('proposals.api.accept');
-    Route::post('/proposals/{proposal}/reject', [VAPProposalController::class, 'reject'])->name('proposals.api.reject');
+    Route::post('/proposals/{proposal:unique_hash}/accept', [VAPProposalController::class, 'accept'])->name('proposals.api.accept');
+    Route::post('/proposals/{proposal:unique_hash}/reject', [VAPProposalController::class, 'reject'])->name('proposals.api.reject');
 });
 
 // Route::prefix('api')->group(function () {

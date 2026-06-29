@@ -34,6 +34,7 @@ const layoutSchema = ref({
   document_font_family: props.initialDraft?.layout_schema?.document_font_family ?? '"Century Gothic", DejaVu Sans, sans-serif',
   variable_catalog: props.initialDraft?.layout_schema?.variable_catalog ?? [],
   canvas_blocks: props.initialDraft?.layout_schema?.canvas_blocks ?? [],
+  page_background_color: props.initialDraft?.layout_schema?.page_background_color ?? '#fffdf7',
   background_image_path: props.initialDraft?.layout_schema?.background_image_path ?? '',
   background_size: props.initialDraft?.layout_schema?.background_size ?? 'cover',
   background_position: props.initialDraft?.layout_schema?.background_position ?? 'center center',

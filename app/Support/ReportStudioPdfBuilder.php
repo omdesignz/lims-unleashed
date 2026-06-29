@@ -26,6 +26,8 @@ class ReportStudioPdfBuilder
 {
     private const PAGE_BREAK_PATTERN = '/<pagebreak\b[^>]*\/?>/i';
 
+    private const PLACEHOLDER_PATTERN = '/\{\{\s*([\w.:\/-]+)\s*\}\}|\{\s*([\w.:\/-]+)\s*\}/';
+
     private const DEFAULT_CHART_PALETTE = ['#143d37', '#d9b05f', '#0f766e', '#475569', '#7c2d12', '#3f6f58'];
 
     public function buildAnalysisReportPayload(
@@ -58,7 +60,7 @@ class ReportStudioPdfBuilder
             'warehouse_name' => $certificate->warehouse?->name,
             'issue_date' => optional($certificate->created_at)->format('d/m/Y'),
         ];
-        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
+        $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
 
         $resultId = data_get($certificate->collection, 'result_id');
         $bodyView = $resultId
@@ -132,7 +134,7 @@ class ReportStudioPdfBuilder
             'warehouse_name' => $placeholderValues['{warehouse_name}'],
             'issue_date' => $placeholderValues['{issue_date}'],
         ];
-        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
+        $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
         $bodyHtml = $this->renderTemplateHtml(
             (string) (data_get($layout, 'body_html') ?: $this->defaultAnalysisBodyHtml()),
             $placeholderValues
@@ -203,7 +205,7 @@ class ReportStudioPdfBuilder
 
         $bodyHtml = data_get($layout, 'body_html');
         $placeholderValues = $this->executivePlaceholderValues($payload);
-        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
+        $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
 
         if (! filled($bodyHtml)) {
             $bodyHtml = View::make('PDFs.studios.executive-summary-body', [
@@ -351,7 +353,7 @@ class ReportStudioPdfBuilder
                 '{document_keywords}' => $this->documentKeywordsHtml($settings, 'proposta, análise, laboratório, ISO 17025'),
             ]
         );
-        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($proposalPlaceholderValues));
+        $surfaceContext = $this->buildSurfaceContext($headerContext, $proposalPlaceholderValues, $settings);
 
         $bodyTemplate = data_get($layout, 'body_html');
         $bodyHtml = filled($bodyTemplate)
@@ -436,7 +438,7 @@ class ReportStudioPdfBuilder
         $parsedContent = $this->renderTemplateHtml($template->content, $previewValues);
         $previewValues['{proposal_content}'] = $parsedContent;
         $previewValues['{parsed_content}'] = $parsedContent;
-        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($previewValues));
+        $surfaceContext = $this->buildSurfaceContext($headerContext, $previewValues, $settings);
 
         $bodyTemplate = data_get($layout, 'body_html');
         $bodyHtml = $this->renderTemplateHtml(
@@ -514,7 +516,7 @@ class ReportStudioPdfBuilder
         );
         $previewValues['{proposal_content}'] = '<section class="document-callout studio-avoid-break"><strong>Cláusulas técnicas e comerciais</strong><br>Âmbito, métodos, decisão, prazos e aceite preparados para validação do cliente.</section>';
         $previewValues['{parsed_content}'] = $previewValues['{proposal_content}'];
-        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($previewValues));
+        $surfaceContext = $this->buildSurfaceContext($headerContext, $previewValues, $settings);
         $bodyHtml = $this->renderTemplateHtml(
             (string) (data_get($layout, 'body_html') ?: $this->defaultProposalPreviewBodyHtml()),
             $previewValues
@@ -588,7 +590,7 @@ class ReportStudioPdfBuilder
         ];
 
         $placeholderValues = $this->exportCertificatePlaceholderValues($certificate, $settings);
-        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
+        $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
         $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultExportCertificateBodyHtml();
         $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
@@ -756,7 +758,7 @@ class ReportStudioPdfBuilder
         ];
 
         $placeholderValues = $this->importCertificatePlaceholderValues($certificate, $settings);
-        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
+        $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
         $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultImportCertificateBodyHtml();
         $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
@@ -924,7 +926,7 @@ class ReportStudioPdfBuilder
         ];
 
         $placeholderValues = $this->quotePlaceholderValues($quote, $settings);
-        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
+        $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
         $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultQuoteBodyHtml();
         $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
@@ -944,11 +946,14 @@ class ReportStudioPdfBuilder
                     'default_header_html',
                     $surfaceContext
                 ),
-                'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultQuoteFooter(),
-                    data_get($layout, 'canvas_blocks', []),
-                    'footer_html',
-                    $surfaceContext
+                'footerHtml' => $this->appendCommercialEvidenceFooter(
+                    $this->buildSurfaceHtml(
+                        data_get($layout, 'footer_html') ?: $this->defaultQuoteFooter(),
+                        data_get($layout, 'canvas_blocks', []),
+                        'footer_html',
+                        $surfaceContext
+                    ),
+                    $placeholderValues
                 ),
                 'bodyHtml' => $this->buildSurfaceHtml(
                     $bodyHtml,
@@ -1023,7 +1028,15 @@ class ReportStudioPdfBuilder
             ...$this->bankPlaceholderValues($settings),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, proforma, proposta'),
         ];
-        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
+        $placeholderValues = array_merge(
+            $placeholderValues,
+            $this->recordVerificationPlaceholderValues(
+                (string) $placeholderValues['{document_number}'],
+                'PREVIEW-'.$placeholderValues['{document_number}'],
+                $settings
+            )
+        );
+        $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
         $bodyHtml = $this->renderTemplateHtml(
             data_get($layout, 'body_html') ?: $this->defaultQuoteBodyHtml(),
             $placeholderValues
@@ -1045,11 +1058,14 @@ class ReportStudioPdfBuilder
                     'default_header_html',
                     $surfaceContext
                 ),
-                'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultQuoteFooter(),
-                    data_get($layout, 'canvas_blocks', []),
-                    'footer_html',
-                    $surfaceContext
+                'footerHtml' => $this->appendCommercialEvidenceFooter(
+                    $this->buildSurfaceHtml(
+                        data_get($layout, 'footer_html') ?: $this->defaultQuoteFooter(),
+                        data_get($layout, 'canvas_blocks', []),
+                        'footer_html',
+                        $surfaceContext
+                    ),
+                    $placeholderValues
                 ),
                 'bodyHtml' => $this->buildSurfaceHtml(
                     $bodyHtml,
@@ -1096,7 +1112,7 @@ class ReportStudioPdfBuilder
         ];
 
         $placeholderValues = $this->invoicePlaceholderValues($invoice, $settings);
-        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
+        $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
         $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultInvoiceBodyHtml();
         $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
@@ -1116,11 +1132,14 @@ class ReportStudioPdfBuilder
                     'default_header_html',
                     $surfaceContext
                 ),
-                'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultInvoiceFooter(),
-                    data_get($layout, 'canvas_blocks', []),
-                    'footer_html',
-                    $surfaceContext
+                'footerHtml' => $this->appendCommercialEvidenceFooter(
+                    $this->buildSurfaceHtml(
+                        data_get($layout, 'footer_html') ?: $this->defaultInvoiceFooter(),
+                        data_get($layout, 'canvas_blocks', []),
+                        'footer_html',
+                        $surfaceContext
+                    ),
+                    $placeholderValues
                 ),
                 'bodyHtml' => $this->buildSurfaceHtml(
                     $bodyHtml,
@@ -1166,7 +1185,7 @@ class ReportStudioPdfBuilder
         ];
 
         $placeholderValues = $this->receiptPlaceholderValues($receipt, $settings);
-        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
+        $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
         $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultReceiptBodyHtml();
         $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
@@ -1186,11 +1205,14 @@ class ReportStudioPdfBuilder
                     'default_header_html',
                     $surfaceContext
                 ),
-                'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultReceiptFooter(),
-                    data_get($layout, 'canvas_blocks', []),
-                    'footer_html',
-                    $surfaceContext
+                'footerHtml' => $this->appendCommercialEvidenceFooter(
+                    $this->buildSurfaceHtml(
+                        data_get($layout, 'footer_html') ?: $this->defaultReceiptFooter(),
+                        data_get($layout, 'canvas_blocks', []),
+                        'footer_html',
+                        $surfaceContext
+                    ),
+                    $placeholderValues
                 ),
                 'bodyHtml' => $this->buildSurfaceHtml(
                     $bodyHtml,
@@ -1236,7 +1258,7 @@ class ReportStudioPdfBuilder
         ];
 
         $placeholderValues = $this->creditNotePlaceholderValues($creditNote, $settings);
-        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholderValues));
+        $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
         $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultCreditNoteBodyHtml();
         $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
 
@@ -1256,11 +1278,14 @@ class ReportStudioPdfBuilder
                     'default_header_html',
                     $surfaceContext
                 ),
-                'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $this->defaultCreditNoteFooter(),
-                    data_get($layout, 'canvas_blocks', []),
-                    'footer_html',
-                    $surfaceContext
+                'footerHtml' => $this->appendCommercialEvidenceFooter(
+                    $this->buildSurfaceHtml(
+                        data_get($layout, 'footer_html') ?: $this->defaultCreditNoteFooter(),
+                        data_get($layout, 'canvas_blocks', []),
+                        'footer_html',
+                        $surfaceContext
+                    ),
+                    $placeholderValues
                 ),
                 'bodyHtml' => $this->buildSurfaceHtml(
                     $bodyHtml,
@@ -1404,14 +1429,10 @@ class ReportStudioPdfBuilder
 
     private function interpolate(string $template, array $data): string
     {
-        $replacements = collect($data)
-            ->mapWithKeys(fn ($value, $key) => [
-                '{{'.$key.'}}' => (string) ($value ?? ''),
-                '{'.$key.'}' => (string) ($value ?? ''),
-            ])
-            ->all();
-
-        return strtr($this->resolveConditionalBlocks($template, $data), $replacements);
+        return $this->replacePlaceholders(
+            $this->resolveConditionalBlocks($template, $data),
+            $data
+        );
     }
 
     /**
@@ -1423,6 +1444,39 @@ class ReportStudioPdfBuilder
         return collect($values)
             ->mapWithKeys(fn ($value, string $key) => [trim($key, '{}') => $value])
             ->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $headerContext
+     * @param  array<string, mixed>  $placeholderValues
+     * @return array<string, mixed>
+     */
+    private function buildSurfaceContext(array $headerContext, array $placeholderValues, GeneralSettings $settings): array
+    {
+        return array_merge(
+            $this->themePlaceholderContext($settings),
+            $headerContext,
+            $this->placeholderContextFromValues($placeholderValues)
+        );
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function themePlaceholderContext(GeneralSettings $settings): array
+    {
+        $primaryColor = $this->hexColor((string) ($settings->app_primary_color ?: ''), '#143d37');
+        $secondaryColor = $this->hexColor((string) ($settings->app_secondary_color ?: ''), '#f8f4ea');
+        $accentColor = $this->hexColor((string) ($settings->app_accent_color ?: ''), '#d9b05f');
+
+        return [
+            'brand_primary_color' => $primaryColor,
+            'brand_secondary_color' => $secondaryColor,
+            'brand_accent_color' => $accentColor,
+            'app_primary_color' => $primaryColor,
+            'app_secondary_color' => $secondaryColor,
+            'app_accent_color' => $accentColor,
+        ];
     }
 
     /**
@@ -1510,9 +1564,9 @@ class ReportStudioPdfBuilder
      */
     private function renderTemplateHtml(string $template, array $values): string
     {
-        return strtr(
+        return $this->replacePlaceholders(
             $this->resolveConditionalBlocks($template, $values),
-            $this->placeholderReplacements($values)
+            $values
         );
     }
 
@@ -1551,13 +1605,7 @@ class ReportStudioPdfBuilder
      */
     private function valueForConditionalPlaceholder(array $values, string $key): mixed
     {
-        foreach ([$key, '{'.$key.'}', '{{'.$key.'}}'] as $candidate) {
-            if (array_key_exists($candidate, $values)) {
-                return $values[$candidate];
-            }
-        }
-
-        return null;
+        return $this->valueForPlaceholder($values, $key)[1];
     }
 
     private function placeholderIsTruthy(mixed $value): bool
@@ -1584,13 +1632,52 @@ class ReportStudioPdfBuilder
         $replacements = [];
 
         foreach ($values as $key => $value) {
-            $placeholder = trim($key, '{}');
+            $placeholder = trim((string) $key, "{} \t\n\r\0\x0B");
 
-            $replacements[$key] = (string) $value;
-            $replacements['{{'.$placeholder.'}}'] = (string) $value;
+            if ($placeholder === '') {
+                continue;
+            }
+
+            $replacement = (string) ($value ?? '');
+            $replacements['{'.$placeholder.'}'] = $replacement;
+            $replacements['{{'.$placeholder.'}}'] = $replacement;
         }
 
         return $replacements;
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    private function replacePlaceholders(string $template, array $values): string
+    {
+        $template = strtr($template, $this->placeholderReplacements($values));
+
+        return (string) preg_replace_callback(
+            self::PLACEHOLDER_PATTERN,
+            function (array $matches) use ($values): string {
+                $key = (string) (($matches[1] ?? '') !== '' ? $matches[1] : ($matches[2] ?? ''));
+                [$hasValue, $value] = $this->valueForPlaceholder($values, $key);
+
+                return $hasValue ? (string) ($value ?? '') : (string) $matches[0];
+            },
+            $template
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     * @return array{0: bool, 1: mixed}
+     */
+    private function valueForPlaceholder(array $values, string $key): array
+    {
+        foreach ([$key, '{'.$key.'}', '{{'.$key.'}}'] as $candidate) {
+            if (array_key_exists($candidate, $values)) {
+                return [true, $values[$candidate]];
+            }
+        }
+
+        return [false, null];
     }
 
     private function resolveStudio(string $studioType, ?ReportStudioTemplate $overrideStudio = null): ?ReportStudioTemplate
@@ -1818,6 +1905,94 @@ HTML;
             '{bank_swift}' => $settings->app_bank_swift ?: '',
             '{bank_details}' => $settings->app_bank_details ?: '',
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function recordVerificationPlaceholderValues(string $documentNumber, ?string $uniqueHash, GeneralSettings $settings): array
+    {
+        $signature = trim((string) $uniqueHash);
+        $hashExcerpt = $this->documentHashExcerpt($signature);
+        $validationNumber = trim((string) ($settings->app_agt_validation_number ?: ''));
+        $signatureStatus = $signature !== '' ? 'Assinado' : 'Assinatura pendente';
+        $payloadParts = array_filter([
+            'Documento: '.$documentNumber,
+            'Estado: '.$signatureStatus,
+            'Extracto: '.$hashExcerpt,
+            $validationNumber !== '' ? 'Programa validado: '.$validationNumber : null,
+            $signature !== '' ? 'Assinatura: '.$signature : null,
+        ]);
+
+        return [
+            '{unique_hash}' => $signature,
+            '{document_signature}' => $signature,
+            '{hash_excerpt}' => $hashExcerpt,
+            '{signature_excerpt}' => $hashExcerpt,
+            '{record_signature_status}' => $signatureStatus,
+            '{agt_validation_number}' => $validationNumber,
+            '{record_verification_payload}' => implode(' | ', $payloadParts),
+            '{record_verification_evidence}' => $this->recordVerificationEvidenceHtml(
+                $signatureStatus,
+                $hashExcerpt,
+                $signature,
+                $validationNumber
+            ),
+        ];
+    }
+
+    private function documentHashExcerpt(string $signature): string
+    {
+        if ($signature === '') {
+            return 'PEND';
+        }
+
+        if (strlen($signature) > 30) {
+            return $signature[0].$signature[10].$signature[20].$signature[30];
+        }
+
+        return strtoupper(substr(hash('sha1', $signature), 0, 4));
+    }
+
+    private function recordVerificationEvidenceHtml(
+        string $signatureStatus,
+        string $hashExcerpt,
+        string $signature,
+        string $validationNumber
+    ): string {
+        $statusHtml = e($signatureStatus);
+        $hashExcerptHtml = e($hashExcerpt);
+        $validationHtml = $validationNumber !== ''
+            ? ' · Processado por programa validado N. '.e($validationNumber)
+            : '';
+        $signatureHtml = $signature !== ''
+            ? '<span style="word-break:break-all;">Assinatura: '.e($signature).'</span>'
+            : '<span>Assinatura completa pendente.</span>';
+
+        return <<<HTML
+<section class="commercial-record-evidence studio-avoid-break" style="margin-top:10px; border-top:1px solid #ded3bf; padding-top:6px; font-size:8.5px; color:#475a53; line-height:1.45;">
+    <strong style="color:#143d37;">Evidência do registo:</strong> {$statusHtml} · Extracto {$hashExcerptHtml}{$validationHtml}<br>
+    {$signatureHtml}
+</section>
+HTML;
+    }
+
+    /**
+     * @param  array<string, mixed>  $placeholderValues
+     */
+    private function appendCommercialEvidenceFooter(string $footerHtml, array $placeholderValues): string
+    {
+        if (str_contains($footerHtml, 'commercial-record-evidence')) {
+            return $footerHtml;
+        }
+
+        $evidenceHtml = trim((string) ($placeholderValues['{record_verification_evidence}'] ?? ''));
+
+        if ($evidenceHtml === '') {
+            return $footerHtml;
+        }
+
+        return $footerHtml."\n".$evidenceHtml;
     }
 
     private function documentKeywordsHtml(GeneralSettings $settings, string $fallback): string
@@ -2306,6 +2481,7 @@ HTML;
 
         return [
             '{quote_number}' => $quote->quote_no,
+            '{document_number}' => $quote->quote_no,
             '{customer_name}' => $quote->customer?->name ?: 'Cliente',
             '{service_location}' => $quote->warehouse?->name ?: 'Local do serviço',
             '{issue_date}' => optional($quote->date ?: $quote->created_at)->format('d/m/Y') ?: now()->format('d/m/Y'),
@@ -2317,6 +2493,7 @@ HTML;
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($quote->customer, $quote->customer?->name ?: 'Cliente'),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
+            ...$this->recordVerificationPlaceholderValues((string) $quote->quote_no, $quote->unique_hash, $settings),
             ...$this->bankPlaceholderValues($settings),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, proforma, proposta'),
         ];
@@ -2358,6 +2535,7 @@ HTML;
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($invoice->customer, $invoice->customer?->name ?: 'Cliente'),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
+            ...$this->recordVerificationPlaceholderValues((string) $invoice->inv_no, $invoice->unique_hash, $settings),
             ...$this->bankPlaceholderValues($settings),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, fiscal, factura'),
         ];
@@ -2397,6 +2575,7 @@ HTML;
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($receipt->customer, $receipt->customer?->name ?: 'Cliente'),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
+            ...$this->recordVerificationPlaceholderValues((string) $receipt->rec_no, $receipt->unique_hash, $settings),
             ...$this->bankPlaceholderValues($settings),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, tesouraria, recibo'),
         ];
@@ -2434,6 +2613,7 @@ HTML;
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($creditNote->customer, $creditNote->customer?->name ?: 'Cliente'),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
+            ...$this->recordVerificationPlaceholderValues((string) $creditNote->note_no, $creditNote->unique_hash, $settings),
             ...$this->bankPlaceholderValues($settings),
             '{document_keywords}' => $this->documentKeywordsHtml($settings, 'comercial, rectificação, nota de crédito'),
         ];
@@ -2450,17 +2630,22 @@ HTML;
     ): array {
         $layout = $studio->layout_schema ?? [];
         $export = $studio->export_settings ?? [];
-        $placeholders = array_merge($placeholders, $this->bankPlaceholderValues($settings));
+        $documentNumber = (string) ($placeholders['{document_number}'] ?? 'DOC-2026-001');
+        $placeholders = array_merge(
+            $placeholders,
+            $this->recordVerificationPlaceholderValues($documentNumber, 'PREVIEW-'.$documentNumber, $settings),
+            $this->bankPlaceholderValues($settings)
+        );
 
         $headerContext = [
             'lab_name' => $settings->app_client_lab_name ?: $settings->app_name ?: 'Laboratório',
-            'document_code' => $placeholders['{document_number}'] ?? 'DOC-2026-001',
+            'document_code' => $documentNumber,
             'customer_name' => $placeholders['{customer_name}'] ?? 'Cliente industrial de referência, Lda.',
             'issue_date' => $placeholders['{issue_date}'] ?? now()->format('d/m/Y'),
             'due_date' => $placeholders['{due_date}'] ?? now()->addDays(30)->format('d/m/Y'),
             'service_location' => $placeholders['{service_location}'] ?? 'Luanda',
         ];
-        $surfaceContext = array_merge($headerContext, $this->placeholderContextFromValues($placeholders));
+        $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholders, $settings);
 
         $bodyHtml = $this->renderTemplateHtml(
             data_get($layout, 'body_html') ?: $defaultBodyHtml,
@@ -2483,11 +2668,14 @@ HTML;
                     'default_header_html',
                     $surfaceContext
                 ),
-                'footerHtml' => $this->buildSurfaceHtml(
-                    data_get($layout, 'footer_html') ?: $defaultFooter,
-                    data_get($layout, 'canvas_blocks', []),
-                    'footer_html',
-                    $surfaceContext
+                'footerHtml' => $this->appendCommercialEvidenceFooter(
+                    $this->buildSurfaceHtml(
+                        data_get($layout, 'footer_html') ?: $defaultFooter,
+                        data_get($layout, 'canvas_blocks', []),
+                        'footer_html',
+                        $surfaceContext
+                    ),
+                    $placeholders
                 ),
                 'bodyHtml' => $this->buildSurfaceHtml(
                     $bodyHtml,
@@ -3293,8 +3481,15 @@ HTML;
             ? (string) $block['chart_type']
             : 'bar';
         $title = e($this->interpolate((string) ($block['chart_title'] ?? $block['title'] ?? 'Gráfico'), $data));
-        $backgroundColor = $this->hexColor((string) ($block['chart_background_color'] ?? '#f8f4ea'), '#f8f4ea');
-        $primaryColor = $this->hexColor((string) ($block['chart_primary_color'] ?? ($colors[0] ?? '#143d37')), '#143d37');
+        $primaryFallback = $colors[0] ?? '#143d37';
+        $backgroundColor = $this->hexColor(
+            $this->interpolate((string) ($block['chart_background_color'] ?? '#f8f4ea'), $data),
+            '#f8f4ea'
+        );
+        $primaryColor = $this->hexColor(
+            $this->interpolate((string) ($block['chart_primary_color'] ?? $primaryFallback), $data),
+            $primaryFallback
+        );
         $showValues = (bool) ($block['chart_show_values'] ?? true);
         $palette = $this->chartSvgPalette($backgroundColor);
 
@@ -3517,6 +3712,8 @@ SVG;
 
     private function hexColor(string $value, string $fallback): string
     {
+        $value = trim($value);
+
         return preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1 ? $value : $fallback;
     }
 
@@ -3636,8 +3833,14 @@ SVG;
             size: 300,
             margin: $qrMargin,
             roundBlockSizeMode: RoundBlockSizeMode::Margin,
-            foregroundColor: $this->qrCodeColor((string) ($block['qr_foreground_color'] ?? '#0f172a'), [15, 23, 42]),
-            backgroundColor: $this->qrCodeColor((string) ($block['qr_background_color'] ?? '#ffffff'), [255, 255, 255]),
+            foregroundColor: $this->qrCodeColor(
+                $this->interpolate((string) ($block['qr_foreground_color'] ?? '#0f172a'), $data),
+                [15, 23, 42]
+            ),
+            backgroundColor: $this->qrCodeColor(
+                $this->interpolate((string) ($block['qr_background_color'] ?? '#ffffff'), $data),
+                [255, 255, 255]
+            ),
         );
 
         $qrDataUri = (new SvgWriter)->write($qrCode)->getDataUri();
@@ -3659,6 +3862,8 @@ HTML;
      */
     private function qrCodeColor(string $hexColor, array $fallback): Color
     {
+        $hexColor = trim($hexColor);
+
         if (! preg_match('/^#([0-9a-fA-F]{6})$/', $hexColor, $matches)) {
             return new Color(...$fallback);
         }
@@ -3816,15 +4021,23 @@ HTML;
     private function documentControlCss(array $layout): string
     {
         $fontFamily = $this->safeCssFontFamily((string) data_get($layout, 'document_font_family', ''));
+        $pageBackgroundColor = $this->safeCssColor((string) data_get($layout, 'page_background_color', ''), '');
 
-        if ($fontFamily === '') {
+        if ($fontFamily === '' && $pageBackgroundColor === '') {
             return '';
         }
 
+        $fontFamilyCss = $fontFamily !== ''
+            ? "body.pdf-document,\n.pdf-document{font-family:{$fontFamily} !important;}"
+            : '';
+        $pageBackgroundCss = $pageBackgroundColor !== ''
+            ? "@page{background-color:{$pageBackgroundColor};}\nhtml,\nbody.pdf-document,\n.pdf-document{background-color:{$pageBackgroundColor} !important;}"
+            : '';
+
         return trim(<<<CSS
 /* studio-document-controls:start */
-body.pdf-document,
-.pdf-document{font-family:{$fontFamily} !important;}
+{$fontFamilyCss}
+{$pageBackgroundCss}
 /* studio-document-controls:end */
 CSS);
     }

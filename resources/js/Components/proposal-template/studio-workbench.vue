@@ -6,14 +6,15 @@ import {
   proposalTemplatePreviewPageDimensions,
   proposalTemplatePreviewPageFormatLabel,
 } from '@/Support/proposal-template-preview-geometry.mjs'
-import { chartSvgPalette, normalizeStudioChartList, normalizedHexColor, sanitizeStudioChartSvg } from '@/Support/report-studio-chart-palette.mjs'
+import { generatedStudioChartSvg, normalizedHexColor, sanitizeStudioChartSvg } from '@/Support/report-studio-chart-palette.mjs'
 import { imagePositionCoordinates, imagePositionStringFromCoordinates } from '@/Support/report-studio-image-position.mjs'
 import { uploadedStudioAssetKind } from '@/Support/report-studio-media-assets.mjs'
+import { interpolateStudioPreviewHtml, studioThemeColorReplacements } from '@/Support/report-studio-preview-html.mjs'
 import { escapePreviewHtmlAttribute, escapePreviewHtmlText, safePreviewCssUrl, safePreviewMediaUrl } from '@/Support/report-studio-preview-safety.mjs'
+import { generatedStudioQrCodeDataUri } from '@/Support/report-studio-qr-code.mjs'
 import axios from 'axios'
-import { create as createQrCode } from 'qrcode'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { Head, Link } from '@inertiajs/vue3'
+import { Head, Link, usePage } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
 import {
   ArrowUturnLeftIcon,
@@ -87,6 +88,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['submit', 'select-preset'])
+const page = usePage()
 
 const contentLength = computed(() => props.form.content?.length ?? 0)
 const mediaAssetUrl = ref(props.layoutSchema.background_image_path || '')
@@ -104,6 +106,8 @@ const snapToGrid = ref(true)
 const gridSize = ref(4)
 const mediaPickerOpen = ref(false)
 const mediaPickerTarget = ref({ scope: 'asset-url', field: 'image_url' })
+const mediaPickerSearch = ref('')
+const mediaPickerKind = ref('all')
 const localAssetLibrary = ref([...props.assetLibrary])
 const mediaPickerUploadInput = ref(null)
 const mediaPickerUploadBusy = ref(false)
@@ -407,6 +411,121 @@ const assetLibraryItems = computed(() => localAssetLibrary.value)
 
 const signatureAssets = computed(() => assetLibraryItems.value.filter((asset) => asset.kind === 'profile_signature' || String(asset.source || '').toLowerCase().includes('assinatura')))
 
+function mediaAssetDocumentUrl(asset) {
+  return asset?.pdf_url || asset?.url || ''
+}
+
+const mediaKindLabelMap = {
+  all: trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.kinds.all'),
+  gallery_image: trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.kinds.gallery_image'),
+  profile_signature: trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.kinds.profile_signature'),
+  uploaded_asset: trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.kinds.uploaded_asset'),
+  uploaded_background: trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.kinds.uploaded_background'),
+  uploaded_chart: trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.kinds.uploaded_chart'),
+  uploaded_image: trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.kinds.uploaded_image'),
+  uploaded_signature: trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.kinds.uploaded_signature'),
+  uploaded_stamp: trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.kinds.uploaded_stamp'),
+}
+
+function mediaKindValue(asset) {
+  const kind = String(asset.kind || '').trim()
+
+  if (kind) {
+    return kind
+  }
+
+  const source = String(asset.source || '').toLowerCase()
+
+  if (source.includes('assinatura') || source.includes('signature')) {
+    return 'profile_signature'
+  }
+
+  if (source.includes('fundo') || source.includes('background')) {
+    return 'uploaded_background'
+  }
+
+  if (source.includes('gráfico') || source.includes('grafico') || source.includes('chart')) {
+    return 'uploaded_chart'
+  }
+
+  if (source.includes('carimbo') || source.includes('selo') || source.includes('stamp')) {
+    return 'uploaded_stamp'
+  }
+
+  return source ? source.replace(/\s+/g, '_') : 'file'
+}
+
+function mediaKindLabel(kind) {
+  return mediaKindLabelMap[kind] || String(kind || trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.kinds.file'))
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
+const mediaKindOptions = computed(() => [
+  { value: 'all', label: trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.kinds.all'), count: assetLibraryItems.value.length },
+  ...[...new Set(assetLibraryItems.value.map((asset) => mediaKindValue(asset)))]
+    .map((kind) => ({
+      value: kind,
+      label: mediaKindLabel(kind),
+      count: assetLibraryItems.value.filter((asset) => mediaKindValue(asset) === kind).length,
+    })),
+])
+
+const filteredMediaAssets = computed(() => {
+  const query = mediaPickerSearch.value.trim().toLowerCase()
+
+  return assetLibraryItems.value.filter((asset) => {
+    const kindMatches = mediaPickerKind.value === 'all'
+      || mediaKindValue(asset) === mediaPickerKind.value
+
+    if (!kindMatches) {
+      return false
+    }
+
+    if (!query) {
+      return true
+    }
+
+    return [
+      asset.label,
+      asset.source,
+      asset.author,
+      asset.mime_type,
+      asset.pdf_url,
+      asset.url,
+    ].some((value) => String(value || '').toLowerCase().includes(query))
+  })
+})
+
+const mediaFieldLabelMap = {
+  image_url: trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.fields.image_url'),
+  background_image: trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.fields.background_image'),
+  signature_image: trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.fields.signature_image'),
+  chart_image_url: trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.fields.chart_image_url'),
+}
+
+function mediaFieldLabel(field) {
+  return mediaFieldLabelMap[field] || String(field || '').replaceAll('_', ' ')
+}
+
+const mediaPickerTargetLabel = computed(() => {
+  if (mediaPickerTarget.value.scope === 'document-background') {
+    return trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.target.document_background')
+  }
+
+  if (mediaPickerTarget.value.scope === 'asset-url') {
+    return trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.target.asset_url')
+  }
+
+  if (mediaPickerTarget.value.scope === 'selected-block') {
+    return trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.target.selected_block', {
+      field: mediaFieldLabel(mediaPickerTarget.value.field),
+    })
+  }
+
+  return trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.target.selected')
+})
+
 const selectedThemePreset = computed(() => {
   return themeCatalog[props.form.theme_preset] ?? themeCatalog.corporate
 })
@@ -432,7 +551,7 @@ const canvasBlockGroups = computed(() => {
   })).filter((group) => group.blocks.length > 0)
 })
 
-const previewReplacementMap = {
+const basePreviewReplacementMap = {
   bank_iban: 'AO06 0000 0000 0000 0000 0000 0',
   bank_name: 'Banco de referência',
   bank_account_name: 'Laboratório de referência',
@@ -459,18 +578,17 @@ const previewReplacementMap = {
   summary_table: '<table style="width:100%; border-collapse:collapse;"><tr><td style="border:1px solid #cbd5e1; padding:6px;">Subtotal</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right;">AOA 25.000,00</td></tr><tr><td style="border:1px solid #cbd5e1; padding:6px;">Total</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right; font-weight:700;">AOA 25.000,00</td></tr></table>',
 }
 
+const previewThemeColorReplacements = computed(() => studioThemeColorReplacements(page.props?.settings || {}))
+
+const previewReplacementMap = computed(() => ({
+  ...basePreviewReplacementMap,
+  ...previewThemeColorReplacements.value,
+}))
+
 function interpolatePreviewHtml(value, scopedReplacements = {}) {
-  const replacements = {
-    ...previewReplacementMap,
+  return interpolateStudioPreviewHtml(value, {
+    ...previewReplacementMap.value,
     ...scopedReplacements,
-  }
-
-  return String(value || '').replace(/{{\s*([\w.:/-]+)\s*}}|{\s*([\w.:/-]+)\s*}/g, (token, doubleBraceKey, singleBraceKey) => {
-    const key = doubleBraceKey || singleBraceKey
-
-    return Object.prototype.hasOwnProperty.call(replacements, key)
-      ? replacements[key]
-      : token
   })
 }
 
@@ -555,6 +673,7 @@ watch(() => [
 const previewPageStyle = computed(() => {
   const image = safePreviewCssUrl(props.layoutSchema.background_image_path)
   const baseStyle = {
+    backgroundColor: safeCssColorValue(props.layoutSchema.page_background_color, '#fffdf7'),
     fontFamily: props.layoutSchema.document_font_family || '"Century Gothic", DejaVu Sans, sans-serif',
   }
 
@@ -940,7 +1059,7 @@ function addSavedSignatureCanvasBlock(asset) {
   selectedCanvasBlock.value.title = `Assinatura guardada · ${asset.label}`
   selectedCanvasBlock.value.signature_label = 'Assinatura autorizada'
   selectedCanvasBlock.value.signature_name = asset.label || '{{lab_name}}'
-  selectedCanvasBlock.value.signature_image = asset.url
+  selectedCanvasBlock.value.signature_image = mediaAssetDocumentUrl(asset)
   selectedCanvasBlock.value.signature_image_fit = selectedCanvasBlock.value.signature_image_fit || 'contain'
   selectedCanvasBlock.value.signature_image_position = selectedCanvasBlock.value.signature_image_position || 'center center'
   selectedCanvasBlock.value.signature_image_width = selectedCanvasBlock.value.signature_image_width || 180
@@ -961,25 +1080,31 @@ function applyAssetToSelectedBlock(assetUrl, field = 'image_url') {
 
 function openMediaPicker(scope = 'selected-block', field = 'image_url') {
   mediaPickerTarget.value = { scope, field }
+  mediaPickerSearch.value = ''
+  mediaPickerKind.value = 'all'
+  mediaPickerUploadError.value = ''
+  mediaPickerUploadProgress.value = 0
   mediaPickerOpen.value = true
 }
 
 function applyMediaPickerAsset(asset) {
-  if (!asset?.url) {
+  const assetUrl = mediaAssetDocumentUrl(asset)
+
+  if (!assetUrl) {
     return
   }
 
   if (mediaPickerTarget.value.scope === 'asset-url') {
-    mediaAssetUrl.value = asset.url
+    mediaAssetUrl.value = assetUrl
   }
 
   if (mediaPickerTarget.value.scope === 'document-background') {
-    props.layoutSchema.background_image_path = asset.url
-    mediaAssetUrl.value = asset.url
+    props.layoutSchema.background_image_path = assetUrl
+    mediaAssetUrl.value = assetUrl
   }
 
   if (mediaPickerTarget.value.scope === 'selected-block') {
-    applyAssetToSelectedBlock(asset.url, mediaPickerTarget.value.field)
+    applyAssetToSelectedBlock(assetUrl, mediaPickerTarget.value.field)
   }
 
   mediaPickerOpen.value = false
@@ -1156,110 +1281,6 @@ function canvasBlockOverlayStyle(block) {
   }
 }
 
-function chartListValue(value) {
-  return normalizeStudioChartList(value)
-}
-
-function chartNumericValues(block) {
-  return chartListValue(block.chart_values)
-    .map((value) => Number(String(value).replace(',', '.')))
-    .filter((value) => Number.isFinite(value))
-    .slice(0, 12)
-}
-
-function chartLabelValues(block, values) {
-  const labels = chartListValue(block.chart_labels).slice(0, 12)
-
-  if (labels.length) {
-    return labels
-  }
-
-  return values.map((_, index) => `S${index + 1}`)
-}
-
-function chartColorValues(block) {
-  const configuredColors = chartListValue(block.chart_colors)
-    .map((value) => normalizedHexColor(value, ''))
-    .filter(Boolean)
-
-  return configuredColors.length ? configuredColors : defaultChartPalette
-}
-
-function escapeSvgText(value) {
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-}
-
-function generatedChartSvg(block) {
-  const values = chartNumericValues(block)
-
-  if (!values.length) {
-    return ''
-  }
-
-  const labels = chartLabelValues(block, values)
-  const colors = chartColorValues(block)
-  const maxValue = Math.max(...values, 1)
-  const type = ['bar', 'line', 'doughnut'].includes(block.chart_type) ? block.chart_type : 'bar'
-  const title = escapeSvgText(interpolatePreviewHtml(block.chart_title || block.title || 'Gráfico'))
-  const backgroundColor = colorInputValue(block.chart_background_color, '#f8f4ea')
-  const primaryColor = colorInputValue(block.chart_primary_color, colors[0] || '#143d37')
-  const showValues = block.chart_show_values !== false
-  const palette = chartSvgPalette(backgroundColor)
-
-  if (type === 'doughnut') {
-    const total = values.reduce((sum, value) => sum + Math.max(value, 0), 0) || 1
-    const circumference = 251.2
-    let offset = 0
-    const rings = values.map((value, index) => {
-      const segment = (Math.max(value, 0) / total) * circumference
-      const ring = `<circle cx="130" cy="128" r="40" fill="none" stroke="${colors[index % colors.length]}" stroke-width="18" stroke-dasharray="${segment.toFixed(2)} ${(circumference - segment).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 130 128)" />`
-      offset += segment
-
-      return ring
-    }).join('')
-    const legend = labels.map((label, index) => {
-      const y = 70 + (index * 26)
-
-      return `<g><rect x="250" y="${y - 10}" width="12" height="12" rx="3" fill="${colors[index % colors.length]}"/><text x="272" y="${y}" font-size="12" fill="${palette.muted}">${escapeSvgText(interpolatePreviewHtml(label))}</text><text x="520" y="${y}" font-size="12" font-weight="700" fill="${palette.ink}" text-anchor="end">${values[index]}</text></g>`
-    }).join('')
-
-    return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="${palette.ink}">${title}</text><circle cx="130" cy="128" r="40" fill="none" stroke="${palette.grid}" stroke-width="18"/>${rings}<text x="130" y="126" text-anchor="middle" font-size="18" font-weight="800" fill="${palette.ink}">${total}</text><text x="130" y="144" text-anchor="middle" font-size="10" fill="${palette.muted}">total</text>${legend}</svg>`
-  }
-
-  if (type === 'line') {
-    const points = values.map((value, index) => {
-      const x = 58 + (index * (470 / Math.max(values.length - 1, 1)))
-      const y = 202 - ((value / maxValue) * 132)
-
-      return `${x.toFixed(1)},${y.toFixed(1)}`
-    }).join(' ')
-    const markers = values.map((value, index) => {
-      const x = 58 + (index * (470 / Math.max(values.length - 1, 1)))
-      const y = 202 - ((value / maxValue) * 132)
-
-      return `<g><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${colors[index % colors.length]}" stroke="${palette.markerStroke}" stroke-width="2"/>${showValues ? `<text x="${x.toFixed(1)}" y="${(y - 12).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="${palette.ink}">${value}</text>` : ''}<text x="${x.toFixed(1)}" y="230" text-anchor="middle" font-size="10" fill="${palette.muted}">${escapeSvgText(interpolatePreviewHtml(labels[index] || `S${index + 1}`))}</text></g>`
-    }).join('')
-
-    return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="${palette.ink}">${title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="${palette.grid}"/><line x1="52" y1="70" x2="52" y2="202" stroke="${palette.grid}"/><polyline points="${points}" fill="none" stroke="${primaryColor}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${markers}</svg>`
-  }
-
-  const slot = 470 / Math.max(values.length, 1)
-  const bars = values.map((value, index) => {
-    const height = Math.max(6, (value / maxValue) * 132)
-    const x = 58 + (index * slot) + Math.max(6, slot * 0.15)
-    const y = 202 - height
-    const width = Math.max(18, slot * 0.7)
-
-    return `<g><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${width.toFixed(1)}" height="${height.toFixed(1)}" rx="10" fill="${colors[index % colors.length]}"/>${showValues ? `<text x="${(x + width / 2).toFixed(1)}" y="${(y - 10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="${palette.ink}">${value}</text>` : ''}<text x="${(x + width / 2).toFixed(1)}" y="230" text-anchor="middle" font-size="10" fill="${palette.muted}">${escapeSvgText(interpolatePreviewHtml(labels[index] || `S${index + 1}`))}</text></g>`
-  }).join('')
-
-  return `<svg class="report-chart-svg" data-chart-type="${type}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 260" role="img" aria-label="${title}" style="font-family:inherit;"><rect width="560" height="260" rx="24" fill="${backgroundColor}"/><text x="28" y="38" font-size="16" font-weight="700" fill="${palette.ink}">${title}</text><line x1="52" y1="202" x2="532" y2="202" stroke="${palette.grid}"/><line x1="52" y1="70" x2="52" y2="202" stroke="${palette.grid}"/>${bars}</svg>`
-}
-
 function canvasBlockContentHtml(block) {
   if (block.block_kind === 'signature') {
     const alignClass = {
@@ -1314,6 +1335,10 @@ function canvasBlockContentHtml(block) {
 
   if (block.block_kind === 'chart_snapshot') {
     const sanitizedChartSvg = sanitizeStudioChartSvg(interpolatePreviewHtml(block.chart_svg || ''))
+    const generatedChartSvg = generatedStudioChartSvg(block, {
+      colorInputValue,
+      interpolate: interpolatePreviewHtml,
+    })
     const chartTitle = block.chart_title
       ? `<div class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">${escapePreviewHtmlText(interpolatePreviewHtml(block.chart_title))}</div>`
       : ''
@@ -1325,8 +1350,8 @@ function canvasBlockContentHtml(block) {
       ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${sanitizedChartSvg}</div>`
       : chartImageUrl
         ? `<img src="${escapePreviewHtmlAttribute(chartImageUrl)}" alt="${escapePreviewHtmlAttribute(interpolatePreviewHtml(block.chart_title || block.title || 'Gráfico'))}" style="display:block; margin-top:12px; width:100%; min-height:140px; object-fit:contain;" />`
-        : generatedChartSvg(block)
-          ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${generatedChartSvg(block)}</div>`
+        : generatedChartSvg
+          ? `<div class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">${generatedChartSvg}</div>`
           : '<div class="mt-3 flex min-h-36 items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-center text-xs text-slate-500">Defina rótulos e valores para gerar o gráfico ou use SVG/imagem exportada.</div>'
 
     return `
@@ -1339,73 +1364,22 @@ function canvasBlockContentHtml(block) {
   }
 
   if (block.block_kind === 'qr_code') {
-    const qrDataUri = qrCodePreviewDataUri(block)
+    const qrDataUri = generatedStudioQrCodeDataUri(block, {
+      fallbackContent: '{proposal_number}',
+      interpolate: interpolatePreviewHtml,
+    })
 
     return `
       <div class="flex h-full min-h-24 flex-col items-center justify-center gap-2">
         ${qrDataUri
           ? `<img src="${qrDataUri}" alt="QR de validação" style="display:block; width:100%; max-width:112px; height:auto;" />`
           : '<div class="grid min-h-24 w-full place-items-center rounded-xl border border-dashed border-slate-300 bg-white/80 px-3 text-center text-[11px] text-slate-500">Defina o conteúdo do QR</div>'}
-        ${block.qr_label ? `<div class="text-center text-[11px] text-slate-500">${interpolatePreviewHtml(block.qr_label)}</div>` : ''}
+        ${block.qr_label ? `<div class="text-center text-[11px] text-slate-500">${escapePreviewHtmlText(interpolatePreviewHtml(block.qr_label))}</div>` : ''}
       </div>
     `.trim()
   }
 
   return interpolatePreviewHtml(block.content_html)
-}
-
-function qrCodeErrorCorrectionLevel(value) {
-  return {
-    high: 'H',
-    low: 'L',
-    medium: 'M',
-    quartile: 'Q',
-  }[value] || 'L'
-}
-
-function qrCodePreviewColor(value, fallback) {
-  return /^#[0-9a-fA-F]{6}$/.test(String(value || ''))
-    ? value
-    : fallback
-}
-
-function qrCodePreviewDataUri(block) {
-  const qrContent = interpolatePreviewHtml(block.qr_content || block.content_html || '{proposal_number}').trim()
-
-  if (!qrContent) {
-    return ''
-  }
-
-  try {
-    const qrCode = createQrCode(qrContent, {
-      errorCorrectionLevel: qrCodeErrorCorrectionLevel(block.qr_error_correction),
-    })
-    const quietZone = clamp(Math.round(Number(block.qr_margin ?? 8)), 0, 32)
-    const moduleCount = qrCode.modules.size
-    const viewBoxSize = moduleCount + (quietZone * 2)
-    const foregroundColor = qrCodePreviewColor(block.qr_foreground_color, '#0f172a')
-    const backgroundColor = qrCodePreviewColor(block.qr_background_color, '#ffffff')
-    const modulePath = []
-
-    for (let row = 0; row < moduleCount; row += 1) {
-      for (let column = 0; column < moduleCount; column += 1) {
-        if (qrCode.modules.get(row, column)) {
-          modulePath.push(`M${column + quietZone} ${row + quietZone}h1v1h-1z`)
-        }
-      }
-    }
-
-    const svg = [
-      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewBoxSize} ${viewBoxSize}" shape-rendering="crispEdges">`,
-      `<rect width="100%" height="100%" fill="${backgroundColor}"/>`,
-      `<path d="${modulePath.join('')}" fill="${foregroundColor}"/>`,
-      '</svg>',
-    ].join('')
-
-    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
-  } catch {
-    return ''
-  }
 }
 
 function selectCanvasBlock(blockId) {
@@ -2548,7 +2522,7 @@ function submit() {
                 @change="mediaAssetUrl = $event.target.value"
               >
                 <option value="">Selecionar da galeria ou assinaturas</option>
-                <option v-for="asset in assetLibraryItems" :key="asset.id" :value="asset.url">{{ asset.source }} · {{ asset.label }}</option>
+                <option v-for="asset in assetLibraryItems" :key="asset.id" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
               </select>
               <button
                 type="button"
@@ -2815,7 +2789,7 @@ function submit() {
                     <input v-model="selectedCanvasBlock.background_image" type="text" placeholder="/storage/proposals/blocks/hero-cover.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     <select v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'background_image')">
                       <option value="">Aplicar imagem como fundo do bloco</option>
-                      <option v-for="asset in assetLibraryItems" :key="`bg-${asset.id}`" :value="asset.url">{{ asset.source }} · {{ asset.label }}</option>
+                      <option v-for="asset in assetLibraryItems" :key="`bg-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </select>
                     <button type="button" @click="openMediaPicker('selected-block', 'background_image')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Galeria / upload</button>
                   </label>
@@ -2907,7 +2881,7 @@ function submit() {
                     <input v-model="selectedCanvasBlock.signature_image" type="text" placeholder="/storage/signatures/director.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     <select v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'signature_image')">
                       <option value="">Usar assinatura/imagem guardada</option>
-                      <option v-for="asset in assetLibraryItems" :key="`sig-${asset.id}`" :value="asset.url">{{ asset.source }} · {{ asset.label }}</option>
+                      <option v-for="asset in assetLibraryItems" :key="`sig-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </select>
                     <button type="button" @click="openMediaPicker('selected-block', 'signature_image')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Galeria / upload</button>
                   </label>
@@ -2977,7 +2951,7 @@ function submit() {
                     <input v-model="selectedCanvasBlock.image_url" type="text" placeholder="/storage/media/stamp.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     <select v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'image_url')">
                       <option value="">Selecionar da galeria/assinaturas</option>
-                      <option v-for="asset in assetLibraryItems" :key="`image-${asset.id}`" :value="asset.url">{{ asset.source }} · {{ asset.label }}</option>
+                      <option v-for="asset in assetLibraryItems" :key="`image-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </select>
                     <button type="button" @click="openMediaPicker('selected-block', 'image_url')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Galeria / upload</button>
                   </label>
@@ -3113,7 +3087,7 @@ function submit() {
                     <input v-model="selectedCanvasBlock.chart_image_url" type="text" placeholder="/storage/proposals/charts/scope.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     <select v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'chart_image_url')">
                       <option value="">Selecionar captura da galeria</option>
-                      <option v-for="asset in assetLibraryItems" :key="`chart-${asset.id}`" :value="asset.url">{{ asset.source }} · {{ asset.label }}</option>
+                      <option v-for="asset in assetLibraryItems" :key="`chart-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </select>
                     <button type="button" @click="openMediaPicker('selected-block', 'chart_image_url')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Escolher no media picker</button>
                   </label>
@@ -3157,6 +3131,12 @@ function submit() {
               <textarea v-model="props.layoutSchema.footer_html" rows="3" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-xs text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
             </div>
             <div class="grid gap-4 sm:grid-cols-2">
+              <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Cor da página
+                <div class="mt-2 flex gap-2">
+                  <input :value="colorInputValue(props.layoutSchema.page_background_color, '#fffdf7')" type="color" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" @input="props.layoutSchema.page_background_color = $event.target.value" />
+                  <input v-model="props.layoutSchema.page_background_color" type="text" placeholder="#fffdf7" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                </div>
+              </label>
               <label class="text-sm text-slate-700 dark:text-slate-300">Fundo
                 <input v-model="props.layoutSchema.background_image_path" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
               </label>
@@ -3545,18 +3525,22 @@ function submit() {
       </p>
     </div>
 
-    <div v-if="mediaPickerOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm" @click.self="mediaPickerOpen = false">
-      <div class="max-h-[86vh] w-full max-w-5xl overflow-hidden rounded-[2rem] border border-white/10 bg-white shadow-2xl dark:bg-slate-950">
-        <div class="flex flex-col gap-3 border-b border-slate-200 px-6 py-5 dark:border-slate-800 md:flex-row md:items-center md:justify-between">
+    <div v-if="mediaPickerOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-[#06100e]/80 p-4 backdrop-blur-sm" @click.self="mediaPickerOpen = false">
+      <div class="max-h-[88vh] w-full max-w-6xl overflow-hidden rounded-[2.4rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_40px_120px_rgba(6,16,14,0.34)] dark:border-[#29483f] dark:bg-[#07110f]">
+        <div class="flex flex-col gap-4 border-b border-[#ded3bf] bg-[linear-gradient(135deg,#fffdf7,#f4efe4)] px-6 py-5 dark:border-[#29483f] dark:bg-[linear-gradient(135deg,#0d1d19,#07110f)] md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 class="text-lg font-semibold text-slate-950 dark:text-white">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.title') }}</h2>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.description') }}</p>
+            <div class="text-[10px] font-black uppercase tracking-[0.22em] text-[#d9b05f]">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.eyebrow') }}</div>
+            <h2 class="mt-1 text-xl font-black tracking-tight text-[#15231f] dark:text-[#fffdf7]">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.title') }}</h2>
+            <p class="mt-1 max-w-2xl text-sm font-medium leading-6 text-[#6b7b74] dark:text-[#b8c9c0]">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.description') }}</p>
+            <div class="mt-3 inline-flex rounded-full border border-[#ded3bf] bg-white/80 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#143d37] shadow-sm dark:border-[#29483f] dark:bg-[#10231f] dark:text-[#d9b05f]">
+              {{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.target_label', { target: mediaPickerTargetLabel }) }}
+            </div>
           </div>
-          <button type="button" @click="mediaPickerOpen = false" class="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900">
+          <button type="button" @click="mediaPickerOpen = false" class="rounded-2xl border border-[#ded3bf] bg-white/80 px-4 py-2 text-sm font-black text-[#20332f] transition hover:bg-[#f4efe4] dark:border-[#29483f] dark:bg-[#10231f] dark:text-[#fffdf7] dark:hover:bg-[#143d37]">
             {{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.close') }}
           </button>
         </div>
-        <div class="max-h-[68vh] overflow-y-auto p-6">
+        <div class="max-h-[70vh] overflow-y-auto p-6">
           <input
             ref="mediaPickerUploadInput"
             type="file"
@@ -3564,58 +3548,97 @@ function submit() {
             class="sr-only"
             @change="handleMediaPickerUploadInput"
           />
-          <div
-            class="mb-5 rounded-[1.75rem] border border-dashed p-5 transition"
-            :class="mediaPickerUploadDragging ? 'border-primary-400 bg-primary-50/80 dark:border-primary-500 dark:bg-primary-950/30' : 'border-slate-300 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/60'"
+          <button
+            type="button"
+            :disabled="mediaPickerUploadBusy"
+            class="mb-5 w-full rounded-[2rem] border border-dashed p-5 text-left transition"
+            :class="mediaPickerUploadDragging
+              ? 'border-[#d9b05f] bg-[#fff7e1] dark:border-[#d9b05f] dark:bg-[#d9b05f]/10'
+              : 'border-[#d8cbb8] bg-white/70 hover:border-[#d9b05f] hover:bg-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#29483f] dark:bg-[#10231f]/80 dark:hover:border-[#d9b05f]/70 dark:hover:bg-[#d9b05f]/10'"
+            @click="pickMediaPickerUpload"
             @dragenter.prevent="mediaPickerUploadDragging = true"
             @dragover.prevent="mediaPickerUploadDragging = true"
             @dragleave.prevent="mediaPickerUploadDragging = false"
             @drop.prevent="handleMediaPickerDrop"
           >
-            <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div class="flex items-start gap-4">
-                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-primary-700 shadow-sm dark:bg-slate-950 dark:text-primary-200">
-                  <PhotoIcon class="h-6 w-6" />
+            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div class="flex items-start gap-3">
+                <div class="rounded-2xl bg-[#143d37] p-3 text-[#fffdf7] shadow-lg shadow-[#143d37]/20">
+                  <PhotoIcon class="h-5 w-5" />
                 </div>
                 <div>
-                  <p class="text-sm font-semibold text-slate-950 dark:text-white">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.add_title') }}</p>
-                  <p class="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+                  <div class="text-sm font-black text-[#15231f] dark:text-[#fffdf7]">{{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.add_title') }}</div>
+                  <p class="mt-1 text-xs font-medium leading-5 text-[#6b7b74] dark:text-[#a9bcb2]">
                     {{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.add_description') }}
                   </p>
-                  <p v-if="mediaPickerUploadError" class="mt-2 text-sm font-semibold text-red-600 dark:text-red-300">{{ mediaPickerUploadError }}</p>
                 </div>
               </div>
-              <button
-                type="button"
-                :disabled="mediaPickerUploadBusy"
-                class="inline-flex items-center justify-center rounded-2xl bg-primary-700 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-primary-700/20 transition hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-primary-500 dark:hover:bg-primary-400"
-                @click="pickMediaPickerUpload"
-              >
+              <span class="rounded-full border border-[#eadfca] bg-[#fffdf7] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#9a7a2f] shadow-sm dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#d9b05f]">
+                {{ mediaPickerUploadBusy ? trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.upload_progress', { progress: mediaPickerUploadProgress || 0 }) : trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.allowed_badge') }}
+              </span>
+            </div>
+            <div v-if="mediaPickerUploadBusy" class="mt-4 h-2 overflow-hidden rounded-full bg-[#eadfca] dark:bg-[#29483f]">
+              <div class="h-full rounded-full bg-[#d9b05f] transition-all" :style="{ width: `${mediaPickerUploadProgress || 8}%` }" />
+            </div>
+            <p v-if="mediaPickerUploadError" class="mt-3 text-xs font-semibold text-red-600 dark:text-red-300">{{ mediaPickerUploadError }}</p>
+            <span class="sr-only">
                 {{ mediaPickerUploadBusy ? trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.upload_progress', { progress: mediaPickerUploadProgress || 0 }) : trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.choose_file') }}
+            </span>
+          </button>
+
+          <div class="rounded-[2rem] border border-[#ded3bf] bg-white/75 p-4 shadow-sm dark:border-[#29483f] dark:bg-[#0d1d19]/80">
+            <input
+              v-model="mediaPickerSearch"
+              type="search"
+              :placeholder="trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.search_placeholder')"
+              class="block w-full rounded-2xl border border-[#ded3bf] bg-[#fffdf7] px-4 py-3 text-sm font-semibold text-[#15231f] shadow-sm placeholder:text-[#8a9a92] focus:border-[#d9b05f] focus:outline-none focus:ring-2 focus:ring-[#d9b05f]/20 dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#fffdf7] dark:placeholder:text-[#789087]"
+            />
+
+            <div class="mt-3 flex gap-2 overflow-x-auto pb-1">
+              <button
+                v-for="option in mediaKindOptions"
+                :key="option.value"
+                type="button"
+                class="inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-black uppercase tracking-[0.12em] transition"
+                :class="mediaPickerKind === option.value
+                  ? 'border-[#143d37] bg-[#143d37] text-[#fffdf7] shadow-lg shadow-[#143d37]/12 dark:border-[#d9b05f] dark:bg-[#d9b05f] dark:text-[#07110f]'
+                  : 'border-[#ded3bf] bg-[#fffdf7] text-[#6b7b74] hover:border-[#d9b05f] hover:text-[#143d37] dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#b8c9c0] dark:hover:border-[#d9b05f]/70 dark:hover:text-[#fffdf7]'"
+                @click="mediaPickerKind = option.value"
+              >
+                <span>{{ option.label }}</span>
+                <span class="rounded-full bg-[#f4efe4] px-2 py-0.5 text-[10px] text-[#6b7b74] dark:bg-[#10231f] dark:text-[#b8c9c0]" :class="mediaPickerKind === option.value ? '!bg-white/20 !text-white dark:!bg-[#07110f]/20 dark:!text-[#07110f]' : ''">
+                  {{ option.count }}
+                </span>
               </button>
             </div>
-            <div v-if="mediaPickerUploadBusy" class="mt-4 h-2 overflow-hidden rounded-full bg-white dark:bg-slate-800">
-              <div class="h-full rounded-full bg-primary-600 transition-all" :style="{ width: `${mediaPickerUploadProgress || 8}%` }" />
-            </div>
           </div>
-          <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+
+          <div v-if="filteredMediaAssets.length" class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <button
-              v-for="asset in assetLibraryItems"
+              v-for="asset in filteredMediaAssets"
               :key="`picker-${asset.id}`"
               type="button"
               @click="applyMediaPickerAsset(asset)"
-              class="group overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 text-left transition hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900"
+              class="group overflow-hidden rounded-3xl border border-[#ded3bf] bg-[#fffdf7] text-left transition hover:-translate-y-0.5 hover:border-[#d9b05f] hover:shadow-lg dark:border-[#29483f] dark:bg-[#10231f]"
             >
-              <div class="flex h-40 items-center justify-center bg-slate-100 dark:bg-slate-900/80">
+              <div class="flex h-44 items-center justify-center bg-[#f4efe4] dark:bg-[#07110f]/80">
                 <img :src="asset.url" :alt="asset.label" class="h-full w-full object-contain p-4 transition group-hover:scale-105" />
               </div>
               <div class="p-4">
-                <div class="text-sm font-semibold text-slate-950 dark:text-white">{{ asset.label }}</div>
-                <div class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ asset.source }}</div>
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="truncate text-sm font-black text-[#15231f] dark:text-[#fffdf7]">{{ asset.label }}</div>
+                    <div class="mt-1 text-xs font-medium text-[#6b7b74] dark:text-[#a9bcb2]">{{ asset.source }}</div>
+                  </div>
+                  <span class="shrink-0 rounded-full border border-[#eadfca] bg-[#fffaf0] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#9a7a2f] dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#d9b05f]">
+                    {{ mediaKindLabel(mediaKindValue(asset)) }}
+                  </span>
+                </div>
+                <div v-if="asset.author" class="mt-1 text-[11px] font-medium text-[#8a9a92] dark:text-[#789087]">{{ asset.author }}</div>
               </div>
             </button>
           </div>
-          <div v-if="!assetLibraryItems.length" class="rounded-3xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          <div v-else class="mt-5 rounded-3xl border border-dashed border-[#ded3bf] bg-white/60 p-8 text-center text-sm font-semibold text-[#6b7b74] dark:border-[#29483f] dark:bg-[#10231f]/60 dark:text-[#a9bcb2]">
             {{ trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.empty') }}
           </div>
         </div>

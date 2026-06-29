@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\GestlabMedia;
+use App\Models\Invoice;
 use App\Models\LabCode;
 use App\Models\QualityCertificate;
 use App\Models\Quote;
+use App\Models\Receipt;
 use App\Models\ReportStudioTemplate;
 use App\Models\Result;
 use App\Models\Role;
@@ -71,6 +73,7 @@ class ReportStudioWorkflowTest extends TestCase
                 ->where('systemPresets.0.layout_schema.canvas_blocks.0.block_kind', 'qr_code')
                 ->where('systemPresets.0.layout_schema.canvas_blocks.1.block_kind', 'signature')
                 ->where('systemPresets.0.layout_schema.canvas_blocks.2.id', 'analysis-decision-rule-note')
+                ->where('systemPresets.0.layout_schema.page_background_color', '#fffdf7')
                 ->where('systemPresets.0.layout_schema.body_html', fn (string $bodyHtml): bool => str_contains($bodyHtml, '{results_table}'))
                 ->where('systemPresets.0.export_settings.paper_size', 'A4')
             );
@@ -92,8 +95,13 @@ class ReportStudioWorkflowTest extends TestCase
         $this->assertContains('{sample_entry_code}', $analysisVariables);
         $this->assertContains('{analysis_chart_card}', $analysisVariables);
         $this->assertContains('{analysis_chart_values}', $analysisVariables);
+        $this->assertContains('{brand_primary_color}', $analysisVariables);
+        $this->assertContains('{brand_secondary_color}', $analysisVariables);
+        $this->assertContains('{brand_accent_color}', $analysisVariables);
         $this->assertContains('{executive_chart_values}', $executiveVariables);
+        $this->assertContains('{brand_primary_color}', $executiveVariables);
         $this->assertContains('{banking_details}', $proposalVariables);
+        $this->assertContains('{brand_primary_color}', $proposalVariables);
         $this->assertContains('{bank_account_name}', $proposalVariables);
         $this->assertContains('{bank_account_number}', $proposalVariables);
         $this->assertContains('{bank_swift}', $proposalVariables);
@@ -101,6 +109,11 @@ class ReportStudioWorkflowTest extends TestCase
         $this->assertContains('{products_table}', $exportVariables);
         $this->assertContains('{items_table}', $importVariables);
         $this->assertContains('{due_date}', $invoiceVariables);
+        $this->assertContains('{unique_hash}', $invoiceVariables);
+        $this->assertContains('{hash_excerpt}', $invoiceVariables);
+        $this->assertContains('{record_verification_payload}', $invoiceVariables);
+        $this->assertContains('{record_verification_evidence}', $invoiceVariables);
+        $this->assertContains('{agt_validation_number}', $invoiceVariables);
         $this->assertContains('{bank_iban}', $invoiceVariables);
         $this->assertContains('{bank_details}', $invoiceVariables);
     }
@@ -121,11 +134,14 @@ class ReportStudioWorkflowTest extends TestCase
         $this->assertContains('proposal-banking-details', $proposalBlocks);
         $this->assertContains('proposal-client-acceptance', $proposalBlocks);
         $this->assertContains('invoice-banking-details', $invoiceBlocks);
+        $this->assertSame('{{record_verification_payload}}', data_get($presets->get('invoice'), 'layout_schema.canvas_blocks.0.qr_content'));
         $this->assertSame('chart_snapshot', data_get($presets->get('executive'), 'layout_schema.canvas_blocks.2.block_kind'));
         $this->assertSame('{executive_chart_values}', data_get($presets->get('executive'), 'layout_schema.canvas_blocks.2.chart_values'));
         $this->assertSame('chart_snapshot', data_get($presets->get('analysis'), 'layout_schema.canvas_blocks.3.block_kind'));
         $this->assertSame('{analysis_chart_values}', data_get($presets->get('analysis'), 'layout_schema.canvas_blocks.3.chart_values'));
         $this->assertSame('signature', data_get($presets->get('proposal'), 'layout_schema.canvas_blocks.3.block_kind'));
+        $this->assertSame('#fffdf7', data_get($presets->get('analysis'), 'layout_schema.page_background_color'));
+        $this->assertSame('#fffdf7', data_get($presets->get('invoice'), 'layout_schema.page_background_color'));
     }
 
     public function test_system_presets_include_backend_body_templates_for_generated_documents(): void
@@ -252,6 +268,7 @@ HTML,
                     'body_html' => '<h1>Resumo Executivo</h1><p>KPIs e contexto.</p>',
                     'styles_css' => 'body{color:#0f172a;}',
                     'document_font_family' => 'Manrope, DejaVu Sans, sans-serif',
+                    'page_background_color' => '#fff8e7',
                     'show_canvas_grid' => false,
                     'show_canvas_rulers' => false,
                     'snap_to_grid' => false,
@@ -273,6 +290,7 @@ HTML,
         $this->assertTrue($template->is_default);
         $this->assertSame('executive', $template->studio_type);
         $this->assertSame('Manrope, DejaVu Sans, sans-serif', data_get($template->layout_schema, 'document_font_family'));
+        $this->assertSame('#fff8e7', data_get($template->layout_schema, 'page_background_color'));
         $this->assertFalse((bool) data_get($template->layout_schema, 'show_canvas_grid'));
         $this->assertFalse((bool) data_get($template->layout_schema, 'show_canvas_rulers'));
         $this->assertFalse((bool) data_get($template->layout_schema, 'snap_to_grid'));
@@ -295,6 +313,7 @@ HTML,
                     'footer_html' => '<div>Page {PAGENO}/{nbpg}</div>',
                     'body_html' => '<h1>Resumo Executivo</h1><p>Recebíveis e fornecedores.</p>',
                     'styles_css' => 'body{color:#111827;}',
+                    'page_background_color' => 'rgb(255 253 247)',
                     'show_canvas_grid' => true,
                     'show_canvas_rulers' => true,
                     'snap_to_grid' => true,
@@ -319,6 +338,7 @@ HTML,
 
         $template->refresh();
 
+        $this->assertSame('rgb(255 253 247)', data_get($template->layout_schema, 'page_background_color'));
         $this->assertTrue((bool) data_get($template->layout_schema, 'show_canvas_grid'));
         $this->assertTrue((bool) data_get($template->layout_schema, 'show_canvas_rulers'));
         $this->assertTrue((bool) data_get($template->layout_schema, 'snap_to_grid'));
@@ -804,6 +824,115 @@ CSS,
         $this->assertStringNotContainsString('{summary_table}', $bodyHtml);
     }
 
+    public function test_commercial_payloads_include_signed_record_verification_evidence(): void
+    {
+        $settings = app(GeneralSettings::class);
+        $originalValidationNumber = $settings->app_agt_validation_number;
+        $signature = '0123456789ABCDEFGHIJKLMNOPQRSTUV';
+        $customer = (object) [
+            'name' => 'Cliente fiscal de teste',
+            'address' => 'Rua da Evidência, Luanda',
+            'nif' => '5000000000',
+        ];
+        $warehouse = (object) [
+            'name' => 'Unidade Financeira',
+            'address' => 'Luanda',
+        ];
+        $issuer = (object) [
+            'name' => 'Direcção Financeira',
+        ];
+
+        $studioFor = fn (string $type): ReportStudioTemplate => new ReportStudioTemplate([
+            'name' => 'Signed '.$type.' studio',
+            'studio_type' => $type,
+            'renderer' => 'internal',
+            'status' => 'active',
+            'layout_schema' => [
+                'first_page_header_html' => '<div class="verification-header">{record_verification_payload}</div>',
+                'body_html' => '<section class="'.$type.'-verification">{document_number}{record_verification_evidence}{unique_hash}{hash_excerpt}{agt_validation_number}</section>',
+                'footer_html' => '<div class="'.$type.'-footer">{document_number}</div>',
+                'canvas_blocks' => [],
+            ],
+            'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
+        ]);
+
+        $quote = Quote::query()->firstOrFail();
+        $quote->forceFill([
+            'quote_no' => 'PP 06/2026/0048',
+            'date' => now(),
+            'due_date' => now()->addDays(15),
+            'unique_hash' => $signature,
+        ]);
+        $quote->setRelation('items', collect());
+        $quote->setRelation('customer', $customer);
+        $quote->setRelation('warehouse', $warehouse);
+        $quote->setRelation('user', $issuer);
+
+        $invoice = new Invoice([
+            'inv_no' => 'FT 06/2026/0091',
+            'date' => now(),
+            'due_date' => now()->addDays(30),
+            'sub_total' => 1000,
+            'tax' => 140,
+            'total' => 1140,
+            'unique_hash' => $signature,
+        ]);
+        $invoice->setRelation('items', collect());
+        $invoice->setRelation('customer', $customer);
+        $invoice->setRelation('warehouse', $warehouse);
+        $invoice->setRelation('user', $issuer);
+
+        $receipt = new Receipt([
+            'rec_no' => 'RG 06/2026/0021',
+            'date' => now(),
+            'unique_hash' => $signature,
+        ]);
+        $receipt->setRelation('items', collect());
+        $receipt->setRelation('customer', $customer);
+        $receipt->setRelation('warehouse', $warehouse);
+        $receipt->setRelation('user', $issuer);
+        $receipt->setRelation('type', null);
+
+        try {
+            $settings->fill([
+                'app_agt_validation_number' => 'AGT-2026-TEST',
+            ]);
+            $settings->save();
+
+            $builder = app(ReportStudioPdfBuilder::class);
+            $payloads = [
+                'quote' => $builder->buildQuotePayload($quote, $settings, $studioFor('quote')),
+                'invoice' => $builder->buildInvoicePayload($invoice, $settings, $studioFor('invoice')),
+                'receipt' => $builder->buildReceiptPayload($receipt, $settings, $studioFor('receipt')),
+            ];
+
+            foreach ($payloads as $type => $payload) {
+                $combinedHtml = implode("\n", [
+                    (string) data_get($payload, 'data.firstPageHeader'),
+                    (string) data_get($payload, 'data.bodyHtml'),
+                    (string) data_get($payload, 'data.footerHtml'),
+                ]);
+
+                $this->assertStringContainsString($type.'-verification', $combinedHtml);
+                $this->assertStringContainsString('commercial-record-evidence', $combinedHtml);
+                $this->assertStringContainsString('Documento:', $combinedHtml);
+                $this->assertStringContainsString('Extracto 0AKU', $combinedHtml);
+                $this->assertStringContainsString($signature, $combinedHtml);
+                $this->assertStringContainsString('Processado por programa validado N. AGT-2026-TEST', $combinedHtml);
+                $this->assertStringNotContainsString('{record_verification_payload}', $combinedHtml);
+                $this->assertStringNotContainsString('{record_verification_evidence}', $combinedHtml);
+                $this->assertStringNotContainsString('{unique_hash}', $combinedHtml);
+                $this->assertStringNotContainsString('{hash_excerpt}', $combinedHtml);
+            }
+        } finally {
+            $settings = app(GeneralSettings::class);
+            $settings->fill([
+                'app_agt_validation_number' => $originalValidationNumber,
+            ]);
+            $settings->save();
+        }
+    }
+
     public function test_mpdf_studio_document_preserves_data_uri_backgrounds(): void
     {
         $backgroundDataUri = 'data:image/svg+xml;base64,'.base64_encode('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"></svg>');
@@ -1173,6 +1302,10 @@ CSS,
         $this->assertSame('P', $driverData['orientation']);
         $this->assertSame('A4', $mpdfData['format']);
         $this->assertSame('P', $mpdfData['orientation']);
+        $this->assertArrayNotHasKey('customPageWidth', $driverData);
+        $this->assertArrayNotHasKey('customPageHeight', $driverData);
+        $this->assertArrayNotHasKey('customPageWidth', $mpdfData);
+        $this->assertArrayNotHasKey('customPageHeight', $mpdfData);
         $this->assertSame(253.0, data_get($geometryPayload, 'data.canvasPageMinHeight'));
 
         $letterLandscapePayload = [
@@ -1180,6 +1313,8 @@ CSS,
             'data' => [
                 'format' => 'letter',
                 'orientation' => 'L',
+                'customPageWidth' => 320,
+                'customPageHeight' => 180,
                 'margins' => [
                     'top' => 0,
                     'right' => 0,
@@ -1194,7 +1329,35 @@ CSS,
 
         $this->assertSame('Letter', $driverData['format']);
         $this->assertSame('L', $driverData['orientation']);
+        $this->assertArrayNotHasKey('customPageWidth', $driverData);
+        $this->assertArrayNotHasKey('customPageHeight', $driverData);
         $this->assertEqualsWithDelta(215.9, data_get($geometryPayload, 'data.canvasPageMinHeight'), 0.01);
+
+        $customPayload = [
+            'view' => 'PDFs.studios.document',
+            'data' => [
+                'format' => 'custom',
+                'orientation' => 'P',
+                'customPageWidth' => 320,
+                'customPageHeight' => 180,
+                'margins' => [
+                    'top' => 10,
+                    'right' => 8,
+                    'bottom' => 12,
+                    'left' => 8,
+                ],
+            ],
+        ];
+
+        $driverData = $driverMethod->invoke($renderer, $customPayload, 'chrome');
+        $mpdfData = $mpdfMethod->invoke($renderer, $customPayload);
+
+        $this->assertSame('custom', $driverData['format']);
+        $this->assertSame(320.0, $driverData['customPageWidth']);
+        $this->assertSame(180.0, $driverData['customPageHeight']);
+        $this->assertSame('custom', $mpdfData['format']);
+        $this->assertSame(320.0, $mpdfData['customPageWidth']);
+        $this->assertSame(180.0, $mpdfData['customPageHeight']);
     }
 
     public function test_canvas_geometry_uses_custom_landscape_page_and_print_margins(): void
@@ -1205,6 +1368,7 @@ CSS,
         $payload = $method->invoke(app(ReportStudioPdfRenderer::class), [
             'view' => 'PDFs.studios.document',
             'data' => [
+                'format' => 'custom',
                 'customPageWidth' => 320,
                 'customPageHeight' => 180,
                 'orientation' => 'L',
@@ -1428,6 +1592,8 @@ CSS,
             'resolvedBackgroundImage' => null,
             'format' => 'Letter',
             'orientation' => 'L',
+            'customPageWidth' => 320,
+            'customPageHeight' => 180,
             'margins' => [
                 'top' => 18,
                 'right' => 12,
@@ -1458,6 +1624,7 @@ CSS,
 
         $this->assertStringContainsString('size: Letter landscape;', $letterHtml);
         $this->assertStringContainsString('margin: 18mm 12mm 20mm 16mm;', $letterHtml);
+        $this->assertStringNotContainsString('size: 320mm 180mm;', $letterHtml);
         $this->assertStringContainsString('size: 320mm 180mm;', $customHtml);
         $this->assertStringContainsString('margin: 10mm 8mm 12mm 8mm;', $customHtml);
     }
@@ -1775,6 +1942,7 @@ CSS,
                 'is_default' => false,
                 'layout_schema' => [
                     'body_html' => '<h1>Resumo executivo</h1>',
+                    'page_background_color' => '#fffdf7; background:red',
                     'table_header_background' => '#f8f4ea; background:red',
                     'table_header_text_color' => 'rgba(20,61,55,0.95); font-size:80px',
                     'table_border_color' => 'url(javascript:alert(1))',
@@ -1809,6 +1977,7 @@ CSS,
             'layout_schema.table_summary_background',
             'layout_schema.table_summary_text_color',
             'layout_schema.table_summary_muted_color',
+            'layout_schema.page_background_color',
             'layout_schema.background_size',
             'layout_schema.background_position',
             'layout_schema.background_repeat',
@@ -2035,6 +2204,107 @@ CSS,
                 'layout_schema.canvas_blocks.0.chart_values',
                 'layout_schema.canvas_blocks.0.chart_colors',
             ]);
+    }
+
+    public function test_canvas_chart_and_qr_blocks_resolve_brand_color_placeholders_in_pdf_output(): void
+    {
+        $settings = app(GeneralSettings::class);
+        $originalSettings = [
+            'app_primary_color' => $settings->app_primary_color,
+            'app_secondary_color' => $settings->app_secondary_color,
+            'app_accent_color' => $settings->app_accent_color,
+        ];
+
+        try {
+            $settings->fill([
+                'app_primary_color' => '#245f4a',
+                'app_secondary_color' => '#fff4d6',
+                'app_accent_color' => '#d9b05f',
+            ]);
+            $settings->save();
+
+            $response = $this->actingAs($this->verifiedAdmin())
+                ->post(route('report-studios.store'), [
+                    'name' => 'Brand Placeholder Canvas Template',
+                    'studio_type' => 'executive',
+                    'renderer' => 'internal',
+                    'status' => 'active',
+                    'layout_schema' => [
+                        'body_html' => '<h1>Resumo executivo</h1>',
+                        'canvas_blocks' => [
+                            [
+                                'id' => 'brand-chart',
+                                'title' => 'Gráfico com cores da marca',
+                                'surface' => 'content',
+                                'block_kind' => 'chart_snapshot',
+                                'chart_title' => 'Ciclo técnico',
+                                'chart_type' => 'line',
+                                'chart_labels' => 'Recepção, Validação, Emissão',
+                                'chart_values' => '18, 12, 9',
+                                'chart_colors' => '{brand_primary_color}, {brand_accent_color}, #0f766e',
+                                'chart_primary_color' => '{brand_primary_color}',
+                                'chart_background_color' => '{{ brand_secondary_color }}',
+                                'chart_show_values' => true,
+                                'width' => 72,
+                                'min_height' => 240,
+                            ],
+                            [
+                                'id' => 'brand-qr',
+                                'title' => 'QR com cores da marca',
+                                'surface' => 'content',
+                                'block_kind' => 'qr_code',
+                                'qr_content' => '{{document_code}}',
+                                'qr_label' => 'Verificação digital',
+                                'qr_foreground_color' => '{{ brand_primary_color }}',
+                                'qr_background_color' => '{brand_secondary_color}',
+                                'qr_error_correction' => 'quartile',
+                                'qr_margin' => 12,
+                                'width' => 20,
+                                'min_height' => 140,
+                            ],
+                        ],
+                    ],
+                    'export_settings' => ['paper_size' => 'A4'],
+                ]);
+
+            $response->assertRedirect()
+                ->assertSessionHasNoErrors()
+                ->assertSessionHas('success');
+
+            $template = ReportStudioTemplate::query()
+                ->where('name', 'Brand Placeholder Canvas Template')
+                ->firstOrFail();
+
+            $this->assertSame('{brand_primary_color}', data_get($template->layout_schema, 'canvas_blocks.0.chart_primary_color'));
+            $this->assertSame('{{ brand_secondary_color }}', data_get($template->layout_schema, 'canvas_blocks.0.chart_background_color'));
+            $this->assertSame('{{ brand_primary_color }}', data_get($template->layout_schema, 'canvas_blocks.1.qr_foreground_color'));
+            $this->assertSame('{brand_secondary_color}', data_get($template->layout_schema, 'canvas_blocks.1.qr_background_color'));
+
+            $payload = app(ReportStudioPdfBuilder::class)->buildExecutiveReportPayload([
+                'kpis' => [],
+                'top_customers' => [],
+            ], $settings, $template);
+            $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
+
+            $this->assertStringContainsString('data-chart-type="line"', $bodyHtml);
+            $this->assertStringContainsString('stroke="#245f4a"', $bodyHtml);
+            $this->assertStringContainsString('fill="#fff4d6"', $bodyHtml);
+            $this->assertStringContainsString('fill="#d9b05f"', $bodyHtml);
+            $this->assertStringNotContainsString('{brand_primary_color}', $bodyHtml);
+            $this->assertStringNotContainsString('brand_secondary_color', $bodyHtml);
+
+            preg_match_all('/data:image\/svg\+xml;base64,([^"\']+)/', $bodyHtml, $svgDataUris);
+            $this->assertTrue(collect($svgDataUris[1])->contains(function (string $encodedSvg): bool {
+                $svg = base64_decode($encodedSvg, true);
+
+                return is_string($svg)
+                    && str_contains($svg, 'fill="#245f4a"')
+                    && str_contains($svg, 'fill="#fff4d6"');
+            }));
+        } finally {
+            $settings->fill($originalSettings);
+            $settings->save();
+        }
     }
 
     public function test_generated_chart_blocks_use_readable_ink_on_dark_backgrounds(): void
@@ -2640,6 +2910,7 @@ CSS,
                 'footer_html' => '<div>Página {PAGENO}/{nbpg}</div>',
                 'body_html' => '<h1>{report_title}</h1>{sample_details}{collection_details}{analytical_scope}',
                 'document_font_family' => 'Manrope, DejaVu Sans, sans-serif',
+                'page_background_color' => '#fff8e7',
             ],
             'export_settings' => [
                 'paper_size' => 'custom',
@@ -2662,6 +2933,8 @@ CSS,
         $this->assertSame(210, data_get($payload, 'data.customPageWidth'));
         $this->assertSame(297, data_get($payload, 'data.customPageHeight'));
         $this->assertStringContainsString('font-family:Manrope, DejaVu Sans, sans-serif', (string) data_get($payload, 'data.styles'));
+        $this->assertStringContainsString('@page{background-color:#fff8e7;}', (string) data_get($payload, 'data.styles'));
+        $this->assertStringContainsString('background-color:#fff8e7 !important;', (string) data_get($payload, 'data.styles'));
         $this->assertStringContainsString('Identificação da amostra', $bodyHtml);
         $this->assertStringContainsString('Receção e cadeia de custódia', $bodyHtml);
         $this->assertStringContainsString('Âmbito analítico', $bodyHtml);

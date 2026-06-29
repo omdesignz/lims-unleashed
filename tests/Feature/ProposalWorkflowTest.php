@@ -3,11 +3,14 @@
 namespace Tests\Feature;
 
 use App\Http\Middleware\VerifyCsrfToken;
+use App\Models\Collection as CollectionModel;
+use App\Models\CollectionProduct;
 use App\Models\Customer;
 use App\Models\Department;
 use App\Models\LabCode;
 use App\Models\Matrix;
 use App\Models\Parameter;
+use App\Models\Product;
 use App\Models\Role;
 use App\Models\Unit;
 use App\Models\User;
@@ -234,7 +237,7 @@ class ProposalWorkflowTest extends TestCase
     {
         $proposal = $this->draftProposal($this->verifiedAdmin());
 
-        $response = $this->get(route('vap-proposals.public.thankyou', $proposal));
+        $response = $this->get(route('vap-proposals.public.thankyou', $proposal->unique_hash));
 
         $response->assertSuccessful();
     }
@@ -246,7 +249,7 @@ class ProposalWorkflowTest extends TestCase
 
         $response = $this->withoutMiddleware(VerifyCsrfToken::class)
             ->postJson(
-                route('proposals.api.accept', $proposal),
+                route('proposals.api.accept', $proposal->unique_hash),
                 [
                     'confidentiality' => true,
                     'impartiality' => true,
@@ -256,7 +259,31 @@ class ProposalWorkflowTest extends TestCase
 
         $response
             ->assertSuccessful()
-            ->assertJsonPath('redirect', route('vap-proposals.public.thankyou', $proposal));
+            ->assertJsonPath('redirect', route('vap-proposals.public.thankyou', $proposal->unique_hash));
+    }
+
+    public function test_public_proposal_decision_endpoints_require_public_hashes(): void
+    {
+        $proposal = $this->draftProposal($this->verifiedAdmin());
+        $proposal->update(['status' => 'SENT']);
+
+        $this->withoutMiddleware(VerifyCsrfToken::class)
+            ->postJson('/api/proposals/'.$proposal->id.'/accept', [
+                'confidentiality' => true,
+                'impartiality' => true,
+                'nondisclosure' => true,
+            ])
+            ->assertNotFound();
+
+        $this->withoutMiddleware(VerifyCsrfToken::class)
+            ->postJson('/api/proposals/'.$proposal->id.'/reject', [
+                'reason' => 'Não deve ser possível responder com identificador sequencial.',
+            ])
+            ->assertNotFound();
+
+        $proposal->refresh();
+
+        $this->assertSame('SENT', $proposal->status);
     }
 
     public function test_public_reject_persists_customer_reason_in_compliance_payload(): void
@@ -266,13 +293,13 @@ class ProposalWorkflowTest extends TestCase
         $reason = 'O âmbito técnico precisa de revisão antes da aprovação.';
 
         $response = $this->withoutMiddleware(VerifyCsrfToken::class)
-            ->postJson(route('proposals.api.reject', $proposal), [
+            ->postJson(route('proposals.api.reject', $proposal->unique_hash), [
                 'reason' => $reason,
             ]);
 
         $response
             ->assertSuccessful()
-            ->assertJsonPath('redirect', route('vap-proposals.public.thankyou', $proposal));
+            ->assertJsonPath('redirect', route('vap-proposals.public.thankyou', $proposal->unique_hash));
 
         $proposal->refresh()->load('complianceAgreement');
 
@@ -564,6 +591,7 @@ class ProposalWorkflowTest extends TestCase
                 ->where('presets.0.layout_schema.canvas_blocks.2.block_kind', 'signature')
                 ->where('presets.0.layout_schema.canvas_blocks.3.block_kind', 'chart_snapshot')
                 ->where('presets.0.layout_schema.canvas_blocks.3.chart_title', 'Resumo visual do âmbito')
+                ->where('presets.0.layout_schema.page_background_color', '#fffdf7')
                 ->where('presets.0.content', fn (string $content) => str_contains($content, '{lab_details}')
                     && str_contains($content, '{customer_details}')
                     && str_contains($content, '{banking_details}')
@@ -654,6 +682,7 @@ class ProposalWorkflowTest extends TestCase
                     'footer_html' => '<div>Footer</div>',
                     'styles_css' => 'body{color:#0f172a;}',
                     'document_font_family' => '"Century Gothic", DejaVu Sans, sans-serif',
+                    'page_background_color' => '#fff8e7',
                     'canvas_blocks' => [
                         [
                             'id' => 'hero-band',
@@ -708,6 +737,7 @@ class ProposalWorkflowTest extends TestCase
             ->firstOrFail();
 
         $this->assertSame('top center', data_get($template->layout_schema, 'background_position'));
+        $this->assertSame('#fff8e7', data_get($template->layout_schema, 'page_background_color'));
         $this->assertSame('"Century Gothic", DejaVu Sans, sans-serif', data_get($template->layout_schema, 'document_font_family'));
         $this->assertSame('Hero band', data_get($template->layout_schema, 'canvas_blocks.0.title'));
         $this->assertSame('A4', data_get($template->export_settings, 'paper_size'));
@@ -725,6 +755,7 @@ class ProposalWorkflowTest extends TestCase
                     'default_header_html' => '<div>New Header</div>',
                     'footer_html' => '<div>New Footer</div>',
                     'styles_css' => 'body{color:#111827;}',
+                    'page_background_color' => 'rgb(255 253 247)',
                     'canvas_blocks' => [
                         [
                             'id' => 'compliance-chip',
@@ -780,6 +811,7 @@ class ProposalWorkflowTest extends TestCase
 
         $this->assertSame('Studio Proposal Template v2', $template->name);
         $this->assertSame('repeat-y', data_get($template->layout_schema, 'background_repeat'));
+        $this->assertSame('rgb(255 253 247)', data_get($template->layout_schema, 'page_background_color'));
         $this->assertSame('Compliance chip', data_get($template->layout_schema, 'canvas_blocks.0.title'));
         $this->assertSame('/storage/proposals/blocks/compliance-chip.png', data_get($template->layout_schema, 'canvas_blocks.0.background_image'));
         $this->assertSame('contain', data_get($template->layout_schema, 'canvas_blocks.0.background_image_fit'));
@@ -855,6 +887,8 @@ class ProposalWorkflowTest extends TestCase
                 'name' => 'Unsafe Proposal Studio Template',
                 'content' => '<p>Proposta</p>',
                 'layout_schema' => [
+                    'page_background_color' => '#fffdf7; background:red',
+                    'background_image_path' => 'javascript:alert(1)',
                     'background_size' => 'cover; position:fixed',
                     'background_position' => 'center; position:fixed',
                     'background_repeat' => 'repeat no-repeat',
@@ -864,6 +898,10 @@ class ProposalWorkflowTest extends TestCase
                             'surface' => 'content',
                             'block_kind' => 'rich_text',
                             'content_html' => '<p>Camada</p>',
+                            'image_url' => 'javascript:alert(1)',
+                            'background_image' => 'data:text/html;base64,PGgxPkJvb208L2gxPg==',
+                            'signature_image' => '<img src=x onerror=alert(1)>',
+                            'chart_image_url' => 'ftp://files.example.test/chart.png',
                             'background_color' => '#f8f4ea; background:url(https://bad.example.test/x)',
                             'overlay_color' => 'rgba(20,61,55,0.2); color:red',
                             'text_color' => '#143d37; position:fixed',
@@ -873,9 +911,15 @@ class ProposalWorkflowTest extends TestCase
                 ],
             ])
             ->assertSessionHasErrors([
+                'layout_schema.page_background_color',
+                'layout_schema.background_image_path',
                 'layout_schema.background_size',
                 'layout_schema.background_position',
                 'layout_schema.background_repeat',
+                'layout_schema.canvas_blocks.0.image_url',
+                'layout_schema.canvas_blocks.0.background_image',
+                'layout_schema.canvas_blocks.0.signature_image',
+                'layout_schema.canvas_blocks.0.chart_image_url',
                 'layout_schema.canvas_blocks.0.background_color',
                 'layout_schema.canvas_blocks.0.overlay_color',
                 'layout_schema.canvas_blocks.0.text_color',
@@ -895,6 +939,7 @@ class ProposalWorkflowTest extends TestCase
                 'name' => $template->name,
                 'content' => $template->content,
                 'layout_schema' => [
+                    'background_image_path' => '/storage/proposals/backgrounds/safe-paper.png',
                     'background_size' => 'contain',
                     'background_repeat' => 'repeat-x',
                     'canvas_blocks' => [
@@ -903,6 +948,10 @@ class ProposalWorkflowTest extends TestCase
                             'surface' => 'content',
                             'block_kind' => 'rich_text',
                             'content_html' => '<p>Camada segura</p>',
+                            'image_url' => 'https://assets.example.test/proposals/stamp.png',
+                            'background_image' => '/images/proposals/background-safe.png',
+                            'signature_image' => '{{ authorized_signature_url }}',
+                            'chart_image_url' => 'data:image/png;base64,iVBORw0KGgo=',
                             'background_color' => 'rgba(255,255,255,0.96)',
                             'overlay_color' => 'rgba(20,61,55,0.15)',
                             'text_color' => '#143d37',
@@ -917,6 +966,8 @@ class ProposalWorkflowTest extends TestCase
         $template->refresh();
 
         $this->assertSame('repeat-x', data_get($template->layout_schema, 'background_repeat'));
+        $this->assertSame('/storage/proposals/backgrounds/safe-paper.png', data_get($template->layout_schema, 'background_image_path'));
+        $this->assertSame('{{ authorized_signature_url }}', data_get($template->layout_schema, 'canvas_blocks.0.signature_image'));
         $this->assertSame('rgba(255,255,255,0.96)', data_get($template->layout_schema, 'canvas_blocks.0.background_color'));
     }
 
@@ -1515,7 +1566,17 @@ class ProposalWorkflowTest extends TestCase
                             'chart_labels' => ['Âmbito', 'Amostras', 'Serviços'],
                             'chart_values' => ['{proposal_chart_scope}', '{{ proposal_chart_samples }}', 8],
                             'chart_colors' => ['#143d37', '{{ proposal_chart_accent }}', '#0f766e'],
+                            'chart_primary_color' => '{brand_primary_color}',
+                            'chart_background_color' => '{{ brand_secondary_color }}',
                             'chart_show_values' => true,
+                        ],
+                        [
+                            'id' => 'proposal-qr-brand-colors',
+                            'surface' => 'content',
+                            'block_kind' => 'qr_code',
+                            'qr_content' => '{proposal_number}',
+                            'qr_foreground_color' => '{{ brand_primary_color }}',
+                            'qr_background_color' => '{brand_secondary_color}',
                         ],
                     ],
                 ],
@@ -1530,6 +1591,10 @@ class ProposalWorkflowTest extends TestCase
         $this->assertSame('{proposal_chart_scope}', data_get($template->layout_schema, 'canvas_blocks.0.chart_values.0'));
         $this->assertSame('{{ proposal_chart_samples }}', data_get($template->layout_schema, 'canvas_blocks.0.chart_values.1'));
         $this->assertSame('{{ proposal_chart_accent }}', data_get($template->layout_schema, 'canvas_blocks.0.chart_colors.1'));
+        $this->assertSame('{brand_primary_color}', data_get($template->layout_schema, 'canvas_blocks.0.chart_primary_color'));
+        $this->assertSame('{{ brand_secondary_color }}', data_get($template->layout_schema, 'canvas_blocks.0.chart_background_color'));
+        $this->assertSame('{{ brand_primary_color }}', data_get($template->layout_schema, 'canvas_blocks.1.qr_foreground_color'));
+        $this->assertSame('{brand_secondary_color}', data_get($template->layout_schema, 'canvas_blocks.1.qr_background_color'));
     }
 
     public function test_admin_can_preview_unsaved_vap_proposal_template_as_pdf(): void
@@ -1801,8 +1866,25 @@ class ProposalWorkflowTest extends TestCase
             'tax_percentage' => 14,
             'active' => true,
         ]);
+        $product = Product::query()->create([
+            'name' => 'Produto para combobox comercial',
+            'matrix_id' => $matrix->id,
+        ]);
+        $collection = CollectionModel::query()->create([
+            'customer_id' => $customer->id,
+            'warehouse_id' => $warehouse->id,
+            'processed' => false,
+            'recollection' => false,
+        ]);
+        $collectionProduct = CollectionProduct::query()->create([
+            'collection_id' => $collection->id,
+            'customer_id' => $customer->id,
+            'warehouse_id' => $warehouse->id,
+            'product_id' => $product->id,
+        ]);
         $labCode = LabCode::query()->create([
             'cl_month' => '06',
+            'collection_id' => $collectionProduct->id,
             'codeable_type' => VAPProposal::class,
             'codeable_id' => $proposal->id,
         ]);
@@ -1843,16 +1925,24 @@ class ProposalWorkflowTest extends TestCase
             ->getJson(route('vap-proposals.options.matrixes', ['q' => $matrix->description]))
             ->assertOk()
             ->assertJsonFragment([
+                'id' => $matrix->id,
                 'value' => $matrix->id,
                 'label' => $matrix->description,
+                'price' => 1250.0,
+                'charge_tax' => true,
+                'tax_percentage' => 14.0,
             ]);
 
         $this->actingAs($user)
             ->getJson(route('vap-proposals.options.parameters', ['q' => $parameter->name]))
             ->assertOk()
             ->assertJsonFragment([
+                'id' => $parameter->id,
                 'value' => $parameter->id,
                 'label' => $parameter->name,
+                'price' => 450.0,
+                'charge_tax' => true,
+                'tax_percentage' => 14.0,
             ]);
 
         $this->actingAs($user)
@@ -1861,6 +1951,21 @@ class ProposalWorkflowTest extends TestCase
             ->assertJsonFragment([
                 'value' => $labCode->id,
                 'label' => $labCode->code,
+            ]);
+
+        $this->actingAs($user)
+            ->getJson(route('vap-proposals.options.lab-code-parameters', [
+                'code_id' => $labCode->id,
+                'use_matrix_price' => true,
+            ]))
+            ->assertOk()
+            ->assertJsonFragment([
+                'value' => $matrix->id,
+                'item_id' => $matrix->id,
+                'itemable_type' => Matrix::class,
+                'item_description' => $matrix->description,
+                'label' => $matrix->description,
+                'price' => 1250.0,
             ]);
     }
 

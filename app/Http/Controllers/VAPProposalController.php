@@ -605,7 +605,7 @@ class VAPProposalController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Proposta aceite com sucesso.',
-                'redirect' => route('vap-proposals.public.thankyou', $proposal),
+                'redirect' => route('vap-proposals.public.thankyou', $proposal->unique_hash),
             ]);
 
         } catch (\Exception $e) {
@@ -690,7 +690,7 @@ class VAPProposalController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Proposta rejeitada com sucesso.',
-            'redirect' => route('vap-proposals.public.thankyou', $proposal),
+            'redirect' => route('vap-proposals.public.thankyou', $proposal->unique_hash),
         ]);
     }
 

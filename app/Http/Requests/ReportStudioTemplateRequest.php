@@ -77,8 +77,8 @@ class ReportStudioTemplateRequest extends FormRequest
             'layout_schema.canvas_blocks.*.image_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
             'layout_schema.canvas_blocks.*.qr_content' => ['nullable', 'string', 'max:2048'],
             'layout_schema.canvas_blocks.*.qr_label' => ['nullable', 'string', 'max:255'],
-            'layout_schema.canvas_blocks.*.qr_foreground_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'layout_schema.canvas_blocks.*.qr_background_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'layout_schema.canvas_blocks.*.qr_foreground_color' => ['nullable', 'string', 'max:255', $this->hexColorOrPlaceholderRule()],
+            'layout_schema.canvas_blocks.*.qr_background_color' => ['nullable', 'string', 'max:255', $this->hexColorOrPlaceholderRule()],
             'layout_schema.canvas_blocks.*.qr_error_correction' => ['nullable', Rule::in(['low', 'medium', 'quartile', 'high'])],
             'layout_schema.canvas_blocks.*.qr_margin' => ['nullable', 'integer', 'min:0', 'max:32'],
             'layout_schema.canvas_blocks.*.chart_title' => ['nullable', 'string', 'max:255'],
@@ -92,8 +92,8 @@ class ReportStudioTemplateRequest extends FormRequest
             'layout_schema.canvas_blocks.*.chart_values.*' => ['nullable', $this->chartNumericOrPlaceholderRule()],
             'layout_schema.canvas_blocks.*.chart_colors' => ['nullable', $this->chartHexColorListRule()],
             'layout_schema.canvas_blocks.*.chart_colors.*' => ['nullable', $this->chartHexColorOrPlaceholderRule()],
-            'layout_schema.canvas_blocks.*.chart_primary_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'layout_schema.canvas_blocks.*.chart_background_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'layout_schema.canvas_blocks.*.chart_primary_color' => ['nullable', 'string', 'max:255', $this->hexColorOrPlaceholderRule()],
+            'layout_schema.canvas_blocks.*.chart_background_color' => ['nullable', 'string', 'max:255', $this->hexColorOrPlaceholderRule()],
             'layout_schema.canvas_blocks.*.chart_show_values' => ['sometimes', 'boolean'],
             'layout_schema.canvas_blocks.*.x' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'layout_schema.canvas_blocks.*.y' => ['nullable', 'numeric', 'min:0', 'max:100'],
@@ -134,6 +134,7 @@ class ReportStudioTemplateRequest extends FormRequest
             'layout_schema.canvas_blocks.*.page_scope' => ['nullable', Rule::in(['first', 'all', 'following', 'specific'])],
             'layout_schema.canvas_blocks.*.page_number' => ['nullable', 'integer', 'min:1', 'max:999'],
             'layout_schema.background_image_path' => ['nullable', 'string', 'max:2048', $this->studioMediaReferenceRule()],
+            'layout_schema.page_background_color' => ['nullable', 'string', 'max:50', $cssColorRule],
             'layout_schema.background_size' => ['nullable', Rule::in(['cover', 'contain', 'auto'])],
             'layout_schema.background_position' => ['nullable', 'string', 'max:50', $cssPositionRule],
             'layout_schema.background_repeat' => ['nullable', Rule::in(['no-repeat', 'repeat', 'repeat-x', 'repeat-y'])],
@@ -325,6 +326,21 @@ class ReportStudioTemplateRequest extends FormRequest
 
             if (! $this->isHexChartColor($item) && ! $this->isStudioPlaceholder($item)) {
                 $fail('A paleta do gráfico deve conter apenas cores HEX no formato #RRGGBB ou variáveis do estúdio.');
+            }
+        };
+    }
+
+    private function hexColorOrPlaceholderRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail): void {
+            if ($value === null || $value === '') {
+                return;
+            }
+
+            $item = (string) $value;
+
+            if (! $this->isHexChartColor($item) && ! $this->isStudioPlaceholder($item)) {
+                $fail('A cor deve ser HEX no formato #RRGGBB ou uma variável do estúdio.');
             }
         };
     }

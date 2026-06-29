@@ -2,7 +2,7 @@ import { scopeReportStudioPreviewCss } from './report-studio-css.mjs'
 
 export function buildReportStudioPreviewCss(layoutStylesCss = '') {
   return `
-.studio-preview-document{font-family:var(--studio-document-font);}
+.studio-preview-document{background-color:var(--studio-page-background-color);font-family:var(--studio-document-font);}
 .studio-preview-document table{width:100% !important;font-size:var(--studio-table-font-size) !important;}
 .studio-preview-document table:not(.document-summary-table){border-collapse:collapse !important;}
 .studio-preview-document table:not(.document-summary-table) th{background:var(--studio-table-header-bg) !important;color:var(--studio-table-header-color) !important;font-size:var(--studio-table-font-size) !important;letter-spacing:.04em !important;text-transform:uppercase !important;}

@@ -11,7 +11,9 @@
             'left' => 14,
         ], is_array($margins ?? null) ? $margins : []);
 
-        $chromeFormat = match (strtoupper((string) ($format ?? 'A4'))) {
+        $rawChromeFormat = strtoupper((string) ($format ?? 'A4'));
+        $isCustomChromePage = $rawChromeFormat === 'CUSTOM';
+        $chromeFormat = match ($rawChromeFormat) {
             'LETTER' => 'Letter',
             'LEGAL' => 'Legal',
             default => 'A4',
@@ -19,7 +21,7 @@
         $chromeOrientation = ($orientation ?? 'P') === 'L' ? 'landscape' : 'portrait';
         $chromePageSize = $chromeFormat.' '.$chromeOrientation;
 
-        if (is_numeric($customPageWidth ?? null) && is_numeric($customPageHeight ?? null)) {
+        if ($isCustomChromePage && is_numeric($customPageWidth ?? null) && is_numeric($customPageHeight ?? null)) {
             $chromePageSize = (float) $customPageWidth.'mm '.(float) $customPageHeight.'mm';
         }
 

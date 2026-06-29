@@ -1149,13 +1149,13 @@ const submitAgreement = async () => {
   form.processing = true
 
   try {
-    const data = await postProposalDecision(route('proposals.api.accept', props.proposal.id), {
+    const data = await postProposalDecision(route('proposals.api.accept', props.proposal.unique_hash), {
       confidentiality: agreement.value.confidentiality,
       impartiality: agreement.value.impartiality,
       nondisclosure: agreement.value.nondisclosure,
     })
 
-    window.location.href = data.redirect || route('vap-proposals.public.thankyou', props.proposal.id)
+    window.location.href = data.redirect || route('vap-proposals.public.thankyou', props.proposal.unique_hash)
   } catch (error) {
     form.errors = error.errors || {}
     pageErrorMessage.value = error.message || 'Não foi possível aceitar a proposta. Revise os campos assinalados e tente novamente.'
@@ -1179,12 +1179,12 @@ const submitRejection = async () => {
   rejectForm.processing = true
 
   try {
-    const data = await postProposalDecision(route('proposals.api.reject', props.proposal.id), {
+    const data = await postProposalDecision(route('proposals.api.reject', props.proposal.unique_hash), {
       reason: rejectForm.reason.trim(),
     })
 
     showRejectModal.value = false
-    window.location.href = data.redirect || route('vap-proposals.public.thankyou', props.proposal.id)
+    window.location.href = data.redirect || route('vap-proposals.public.thankyou', props.proposal.unique_hash)
   } catch (error) {
     rejectForm.errors = error.errors || {}
     pageErrorMessage.value = error.message || 'Não foi possível rejeitar a proposta. Revise o motivo informado e tente novamente.'
