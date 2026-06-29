@@ -424,12 +424,12 @@ CSS;
 <section style="margin-bottom:18px;">
     <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td class="document-summary-cell" style="width:50%;"><span class="label">Cliente / Customer</span><span class="value">{customer_name}</span><span class="muted">{customer_details}</span></td>
-            <td class="document-summary-cell" style="width:50%;"><span class="label">Laboratório / Laboratory</span><span class="value">{lab_name}</span><span class="muted">{lab_details}</span></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Cliente / Customer</div><div class="value">{customer_name}</div><div class="muted">{customer_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório / Laboratory</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
         </tr>
         <tr>
-            <td class="document-summary-cell"><span class="label">Amostra / Sample</span><span class="value">{sample_product}</span><span class="muted">Matriz: {sample_matrix}<br>Lote: {sample_lot}<br>Origem: {sample_origin}</span></td>
-            <td class="document-summary-cell"><span class="label">Receção / Reception</span><span class="value">{warehouse_name}</span><span class="muted">Recebida em: {received_at}<br>Recolha: {collection_date}<br>Plano: {sampling_plan_ref}</span></td>
+            <td class="document-summary-cell"><div class="label">Amostra / Sample</div><div class="value">{sample_product}</div><div class="muted">Matriz: {sample_matrix}<br>Lote: {sample_lot}<br>Origem: {sample_origin}</div></td>
+            <td class="document-summary-cell"><div class="label">Receção / Reception</div><div class="value">{warehouse_name}</div><div class="muted">Recebida em: {received_at}<br>Recolha: {collection_date}<br>Plano: {sampling_plan_ref}</div></td>
         </tr>
     </table>
 </section>
@@ -470,12 +470,12 @@ HTML;
 <section style="margin-bottom:18px;">
     <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td class="document-summary-cell" style="width:50%;"><span class="label">Cliente / Customer</span><span class="value">{customer_name}</span><span class="muted">{customer_details}</span></td>
-            <td class="document-summary-cell" style="width:50%;"><span class="label">Laboratório / Laboratory</span><span class="value">{lab_name}</span><span class="muted">{lab_details}</span></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Cliente / Customer</div><div class="value">{customer_name}</div><div class="muted">{customer_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório / Laboratory</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
         </tr>
         <tr>
-            <td class="document-summary-cell"><span class="label">Âmbito / Scope</span><span class="value">Serviços laboratoriais propostos</span><span class="muted">O âmbito técnico deve ser aceite antes da execução.</span></td>
-            <td class="document-summary-cell"><span class="label">Condições / Terms</span><span class="value">Validade: {expiry_date}</span><span class="muted">Local: {service_location}<br>Regra de decisão: {decision_rule}</span></td>
+            <td class="document-summary-cell"><div class="label">Âmbito / Scope</div><div class="value">Serviços laboratoriais propostos</div><div class="muted">O âmbito técnico deve ser aceite antes da execução.</div></td>
+            <td class="document-summary-cell"><div class="label">Condições / Terms</div><div class="value">Validade: {expiry_date}</div><div class="muted">Local: {service_location}<br>Regra de decisão: {decision_rule}</div></td>
         </tr>
     </table>
 </section>
@@ -509,12 +509,12 @@ HTML;
 <section style="margin-bottom:18px;">
     <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td class="document-summary-cell" style="width:50%;"><span class="label">Exportador / Exporter</span><span class="value">{exporter_name}</span><span class="muted">{customer_details}</span></td>
-            <td class="document-summary-cell" style="width:50%;"><span class="label">Laboratório / Laboratory</span><span class="value">{lab_name}</span><span class="muted">{lab_details}</span></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Exportador / Exporter</div><div class="value">{exporter_name}</div><div class="muted">{customer_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório / Laboratory</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
         </tr>
         <tr>
-            <td class="document-summary-cell"><span class="label">Origem / Origin</span><span class="value">{origin_city}, {origin_country}</span><span class="muted">Exportador: {exporter_name}</span></td>
-            <td class="document-summary-cell"><span class="label">Destino / Destination</span><span class="value">{destination_city}, {destination_country}</span><span class="muted">Transporte: {transport_type}</span></td>
+            <td class="document-summary-cell"><div class="label">Origem / Origin</div><div class="value">{origin_city}, {origin_country}</div><div class="muted">Exportador: {exporter_name}</div></td>
+            <td class="document-summary-cell"><div class="label">Destino / Destination</div><div class="value">{destination_city}, {destination_country}</div><div class="muted">Transporte: {transport_type}</div></td>
         </tr>
     </table>
 </section>
@@ -532,12 +532,12 @@ HTML;
 <section style="margin-bottom:18px;">
     <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td class="document-summary-cell" style="width:50%;"><span class="label">Importador / Importer</span><span class="value">{importer_name}</span><span class="muted">{customer_details}</span></td>
-            <td class="document-summary-cell" style="width:50%;"><span class="label">Laboratório / Laboratory</span><span class="value">{lab_name}</span><span class="muted">{lab_details}</span></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Importador / Importer</div><div class="value">{importer_name}</div><div class="muted">{customer_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório / Laboratory</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
         </tr>
         <tr>
-            <td class="document-summary-cell"><span class="label">Importação / Import</span><span class="value">{destination_country}</span><span class="muted">Importador: {importer_name}<br>Exportador: {exporter_name}</span></td>
-            <td class="document-summary-cell"><span class="label">Logística / Logistics</span><span class="value">{transport_type}</span><span class="muted">Porto de saída: {port_exit}<br>Porto de entrada: {port_entry}</span></td>
+            <td class="document-summary-cell"><div class="label">Importação / Import</div><div class="value">{destination_country}</div><div class="muted">Importador: {importer_name}<br>Exportador: {exporter_name}</div></td>
+            <td class="document-summary-cell"><div class="label">Logística / Logistics</div><div class="value">{transport_type}</div><div class="muted">Porto de saída: {port_exit}<br>Porto de entrada: {port_entry}</div></td>
         </tr>
     </table>
 </section>
@@ -560,12 +560,12 @@ HTML;
 <section style="margin-bottom:18px;">
     <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td class="document-summary-cell" style="width:50%;"><span class="label">Cliente / Customer</span><span class="value">{customer_name}</span><span class="muted">{customer_details}</span></td>
-            <td class="document-summary-cell" style="width:50%;"><span class="label">Laboratório / Laboratory</span><span class="value">{lab_name}</span><span class="muted">{lab_details}</span></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Cliente / Customer</div><div class="value">{customer_name}</div><div class="muted">{customer_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório / Laboratory</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
         </tr>
         <tr>
-            <td class="document-summary-cell"><span class="label">{$termsTitle}</span><span class="value">Condições do documento</span><span class="muted">{$termsBody}</span></td>
-            <td class="document-summary-cell"><span class="label">Dados bancários / Banking</span><span class="value">Pagamento</span><span class="muted">{banking_details}</span></td>
+            <td class="document-summary-cell"><div class="label">{$termsTitle}</div><div class="value">Condições do documento</div><div class="muted">{$termsBody}</div></td>
+            <td class="document-summary-cell"><div class="label">Dados bancários / Banking</div><div class="value">Pagamento</div><div class="muted">{banking_details}</div></td>
         </tr>
     </table>
 </section>
@@ -682,6 +682,7 @@ HTML;
             'signature_align' => 'left',
             'signature_show_date' => true,
             'signature_date_label' => 'Data: {issue_date}',
+            'is_hidden' => true,
         ];
     }
 
@@ -716,6 +717,7 @@ HTML;
             'chart_primary_color' => $accent,
             'chart_background_color' => '#f8f4ea',
             'chart_show_values' => true,
+            'is_hidden' => true,
         ];
     }
 
@@ -742,6 +744,7 @@ HTML;
             'border_radius' => 24,
             'shadow_preset' => 'soft',
             'content_html' => '<p style="margin:0 0 6px; font-weight:700; color:#143d37;">Decisão e incerteza</p><p style="margin:0; color:#475a53;">{decision_rule}</p>',
+            'is_hidden' => true,
         ];
     }
 
@@ -776,6 +779,7 @@ HTML;
             'chart_primary_color' => $accent,
             'chart_background_color' => '#f8f4ea',
             'chart_show_values' => true,
+            'is_hidden' => true,
         ];
     }
 
@@ -802,6 +806,7 @@ HTML;
             'border_radius' => 24,
             'shadow_preset' => 'soft',
             'content_html' => '<p style="margin:0 0 8px; font-weight:700; color:#143d37;">Dados bancários</p>{banking_details}',
+            'is_hidden' => true,
         ];
     }
 
@@ -838,6 +843,7 @@ HTML;
             'signature_align' => 'right',
             'signature_show_date' => true,
             'signature_date_label' => 'Data de aceite: ____ / ____ / ______',
+            'is_hidden' => true,
         ];
     }
 

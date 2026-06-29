@@ -59,6 +59,8 @@
 
         table {
             break-inside: auto;
+            max-width: 100%;
+            overflow-wrap: anywhere;
         }
 
         tr, img, svg, canvas, .studio-avoid-break, .apexcharts-canvas, .report-chart {
@@ -90,6 +92,7 @@
 
         .studio-canvas-page {
             min-height: {{ $canvasPageMinHeight ?? 253 }}mm;
+            overflow: visible;
         }
 
         .studio-canvas-page-1 {
@@ -110,6 +113,25 @@
         .report-chart img {
             display: block;
             max-width: 100%;
+            height: auto;
+            overflow: visible;
+        }
+
+        .report-chart-svg {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-width: 100%;
+        }
+
+        .document-summary-table,
+        .report-chart,
+        .document-callout,
+        .signature-box,
+        .authenticity-box,
+        .commercial-record-evidence {
+            break-inside: avoid;
+            page-break-inside: avoid;
         }
 
         @if($resolvedBackgroundImageCssUrl)

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\ReportStudioTemplateFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ReportStudioTemplate extends Model
 {
-    /** @use HasFactory<\Database\Factories\ReportStudioTemplateFactory> */
+    /** @use HasFactory<ReportStudioTemplateFactory> */
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
@@ -60,7 +61,7 @@ class ReportStudioTemplate extends Model
         return self::query()
             ->forStudio($studioType)
             ->active()
-            ->orderByDesc('is_default')
+            ->where('is_default', true)
             ->latest('updated_at')
             ->first();
     }

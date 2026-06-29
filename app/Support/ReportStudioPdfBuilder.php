@@ -946,17 +946,14 @@ class ReportStudioPdfBuilder
                     'default_header_html',
                     $surfaceContext
                 ),
-                'footerHtml' => $this->appendCommercialEvidenceFooter(
-                    $this->buildSurfaceHtml(
-                        data_get($layout, 'footer_html') ?: $this->defaultQuoteFooter(),
-                        data_get($layout, 'canvas_blocks', []),
-                        'footer_html',
-                        $surfaceContext
-                    ),
-                    $placeholderValues
+                'footerHtml' => $this->buildSurfaceHtml(
+                    data_get($layout, 'footer_html') ?: $this->defaultQuoteFooter(),
+                    data_get($layout, 'canvas_blocks', []),
+                    'footer_html',
+                    $surfaceContext
                 ),
                 'bodyHtml' => $this->buildSurfaceHtml(
-                    $bodyHtml,
+                    $this->appendCommercialEvidenceBody($bodyHtml, $placeholderValues),
                     data_get($layout, 'canvas_blocks', []),
                     'content',
                     $surfaceContext
@@ -1058,17 +1055,14 @@ class ReportStudioPdfBuilder
                     'default_header_html',
                     $surfaceContext
                 ),
-                'footerHtml' => $this->appendCommercialEvidenceFooter(
-                    $this->buildSurfaceHtml(
-                        data_get($layout, 'footer_html') ?: $this->defaultQuoteFooter(),
-                        data_get($layout, 'canvas_blocks', []),
-                        'footer_html',
-                        $surfaceContext
-                    ),
-                    $placeholderValues
+                'footerHtml' => $this->buildSurfaceHtml(
+                    data_get($layout, 'footer_html') ?: $this->defaultQuoteFooter(),
+                    data_get($layout, 'canvas_blocks', []),
+                    'footer_html',
+                    $surfaceContext
                 ),
                 'bodyHtml' => $this->buildSurfaceHtml(
-                    $bodyHtml,
+                    $this->appendCommercialEvidenceBody($bodyHtml, $placeholderValues),
                     data_get($layout, 'canvas_blocks', []),
                     'content',
                     $surfaceContext
@@ -1132,17 +1126,14 @@ class ReportStudioPdfBuilder
                     'default_header_html',
                     $surfaceContext
                 ),
-                'footerHtml' => $this->appendCommercialEvidenceFooter(
-                    $this->buildSurfaceHtml(
-                        data_get($layout, 'footer_html') ?: $this->defaultInvoiceFooter(),
-                        data_get($layout, 'canvas_blocks', []),
-                        'footer_html',
-                        $surfaceContext
-                    ),
-                    $placeholderValues
+                'footerHtml' => $this->buildSurfaceHtml(
+                    data_get($layout, 'footer_html') ?: $this->defaultInvoiceFooter(),
+                    data_get($layout, 'canvas_blocks', []),
+                    'footer_html',
+                    $surfaceContext
                 ),
                 'bodyHtml' => $this->buildSurfaceHtml(
-                    $bodyHtml,
+                    $this->appendCommercialEvidenceBody($bodyHtml, $placeholderValues),
                     data_get($layout, 'canvas_blocks', []),
                     'content',
                     $surfaceContext
@@ -1205,17 +1196,14 @@ class ReportStudioPdfBuilder
                     'default_header_html',
                     $surfaceContext
                 ),
-                'footerHtml' => $this->appendCommercialEvidenceFooter(
-                    $this->buildSurfaceHtml(
-                        data_get($layout, 'footer_html') ?: $this->defaultReceiptFooter(),
-                        data_get($layout, 'canvas_blocks', []),
-                        'footer_html',
-                        $surfaceContext
-                    ),
-                    $placeholderValues
+                'footerHtml' => $this->buildSurfaceHtml(
+                    data_get($layout, 'footer_html') ?: $this->defaultReceiptFooter(),
+                    data_get($layout, 'canvas_blocks', []),
+                    'footer_html',
+                    $surfaceContext
                 ),
                 'bodyHtml' => $this->buildSurfaceHtml(
-                    $bodyHtml,
+                    $this->appendCommercialEvidenceBody($bodyHtml, $placeholderValues),
                     data_get($layout, 'canvas_blocks', []),
                     'content',
                     $surfaceContext
@@ -1278,17 +1266,14 @@ class ReportStudioPdfBuilder
                     'default_header_html',
                     $surfaceContext
                 ),
-                'footerHtml' => $this->appendCommercialEvidenceFooter(
-                    $this->buildSurfaceHtml(
-                        data_get($layout, 'footer_html') ?: $this->defaultCreditNoteFooter(),
-                        data_get($layout, 'canvas_blocks', []),
-                        'footer_html',
-                        $surfaceContext
-                    ),
-                    $placeholderValues
+                'footerHtml' => $this->buildSurfaceHtml(
+                    data_get($layout, 'footer_html') ?: $this->defaultCreditNoteFooter(),
+                    data_get($layout, 'canvas_blocks', []),
+                    'footer_html',
+                    $surfaceContext
                 ),
                 'bodyHtml' => $this->buildSurfaceHtml(
-                    $bodyHtml,
+                    $this->appendCommercialEvidenceBody($bodyHtml, $placeholderValues),
                     data_get($layout, 'canvas_blocks', []),
                     'content',
                     $surfaceContext
@@ -1980,19 +1965,19 @@ HTML;
     /**
      * @param  array<string, mixed>  $placeholderValues
      */
-    private function appendCommercialEvidenceFooter(string $footerHtml, array $placeholderValues): string
+    private function appendCommercialEvidenceBody(string $bodyHtml, array $placeholderValues): string
     {
-        if (str_contains($footerHtml, 'commercial-record-evidence')) {
-            return $footerHtml;
+        if (str_contains($bodyHtml, 'commercial-record-evidence')) {
+            return $bodyHtml;
         }
 
         $evidenceHtml = trim((string) ($placeholderValues['{record_verification_evidence}'] ?? ''));
 
         if ($evidenceHtml === '') {
-            return $footerHtml;
+            return $bodyHtml;
         }
 
-        return $footerHtml."\n".$evidenceHtml;
+        return $bodyHtml."\n".$evidenceHtml;
     }
 
     private function documentKeywordsHtml(GeneralSettings $settings, string $fallback): string
@@ -2668,17 +2653,14 @@ HTML;
                     'default_header_html',
                     $surfaceContext
                 ),
-                'footerHtml' => $this->appendCommercialEvidenceFooter(
-                    $this->buildSurfaceHtml(
-                        data_get($layout, 'footer_html') ?: $defaultFooter,
-                        data_get($layout, 'canvas_blocks', []),
-                        'footer_html',
-                        $surfaceContext
-                    ),
-                    $placeholders
+                'footerHtml' => $this->buildSurfaceHtml(
+                    data_get($layout, 'footer_html') ?: $defaultFooter,
+                    data_get($layout, 'canvas_blocks', []),
+                    'footer_html',
+                    $surfaceContext
                 ),
                 'bodyHtml' => $this->buildSurfaceHtml(
-                    $bodyHtml,
+                    $this->appendCommercialEvidenceBody($bodyHtml, $placeholders),
                     data_get($layout, 'canvas_blocks', []),
                     'content',
                     $surfaceContext
@@ -4089,9 +4071,9 @@ CSS);
 .pdf-document .document-summary-table{border-collapse:separate !important;border-spacing:0 8px !important;}
 .pdf-document .document-summary-table td{border:0 !important;padding:4px !important;}
 .pdf-document .document-summary-cell{background:{$summaryBackground} !important;border:1px solid {$borderColor} !important;border-radius:18px !important;padding:14px !important;vertical-align:top;}
-.pdf-document .document-summary-cell .label{display:block;color:{$summaryMutedColor} !important;font-size:9px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;}
-.pdf-document .document-summary-cell .value{display:block;color:{$summaryTextColor} !important;font-size:12px;font-weight:800;margin-top:4px;}
-.pdf-document .document-summary-cell .muted{display:block;color:{$summaryMutedColor} !important;font-size:10px;line-height:1.55;margin-top:6px;}
+.pdf-document .document-summary-cell .label{display:block !important;color:{$summaryMutedColor} !important;font-size:9px;font-weight:800;letter-spacing:0.12em;line-height:1.25;text-transform:uppercase;}
+.pdf-document .document-summary-cell .value{display:block !important;color:{$summaryTextColor} !important;font-size:12px;font-weight:800;line-height:1.25;margin-top:4px;}
+.pdf-document .document-summary-cell .muted{display:block !important;color:{$summaryMutedColor} !important;font-size:10px;line-height:1.55;margin-top:6px;}
 .pdf-document .document-financial-summary td{color:{$summaryTextColor};}
 .pdf-document .bilingual-label,
 .pdf-document .tg small{font-size:{$secondaryFontSize}px !important;}

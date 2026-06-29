@@ -135,11 +135,15 @@ class ReportStudioWorkflowTest extends TestCase
         $this->assertContains('proposal-client-acceptance', $proposalBlocks);
         $this->assertContains('invoice-banking-details', $invoiceBlocks);
         $this->assertSame('{{record_verification_payload}}', data_get($presets->get('invoice'), 'layout_schema.canvas_blocks.0.qr_content'));
+        $this->assertFalse((bool) data_get($presets->get('invoice'), 'layout_schema.canvas_blocks.0.is_hidden'));
         $this->assertSame('chart_snapshot', data_get($presets->get('executive'), 'layout_schema.canvas_blocks.2.block_kind'));
         $this->assertSame('{executive_chart_values}', data_get($presets->get('executive'), 'layout_schema.canvas_blocks.2.chart_values'));
         $this->assertSame('chart_snapshot', data_get($presets->get('analysis'), 'layout_schema.canvas_blocks.3.block_kind'));
         $this->assertSame('{analysis_chart_values}', data_get($presets->get('analysis'), 'layout_schema.canvas_blocks.3.chart_values'));
         $this->assertSame('signature', data_get($presets->get('proposal'), 'layout_schema.canvas_blocks.3.block_kind'));
+        $this->assertTrue((bool) collect(data_get($presets->get('analysis'), 'layout_schema.canvas_blocks'))->firstWhere('id', 'analysis-results-chart')['is_hidden']);
+        $this->assertTrue((bool) collect(data_get($presets->get('executive'), 'layout_schema.canvas_blocks'))->firstWhere('id', 'executive-studio-chart')['is_hidden']);
+        $this->assertTrue((bool) collect(data_get($presets->get('invoice'), 'layout_schema.canvas_blocks'))->firstWhere('id', 'invoice-banking-details')['is_hidden']);
         $this->assertSame('#fffdf7', data_get($presets->get('analysis'), 'layout_schema.page_background_color'));
         $this->assertSame('#fffdf7', data_get($presets->get('invoice'), 'layout_schema.page_background_color'));
     }
@@ -439,8 +443,8 @@ CSS,
         $this->assertStringContainsString('.pdf-document table:not(.document-summary-table){border-collapse:collapse;}', $styles);
         $this->assertStringContainsString('.pdf-document .document-summary-table{border-collapse:separate !important;border-spacing:0 8px !important;}', $styles);
         $this->assertStringContainsString('.pdf-document .document-summary-cell{background:#f8fafc !important;border:1px solid #94a3b8 !important;border-radius:18px !important;padding:14px !important;vertical-align:top;}', $styles);
-        $this->assertStringContainsString('.pdf-document .document-summary-cell .value{display:block;color:#0f172a !important;', $styles);
-        $this->assertStringContainsString('.pdf-document .document-summary-cell .muted{display:block;color:#475569 !important;', $styles);
+        $this->assertStringContainsString('.pdf-document .document-summary-cell .value{display:block !important;color:#0f172a !important;', $styles);
+        $this->assertStringContainsString('.pdf-document .document-summary-cell .muted{display:block !important;color:#475569 !important;', $styles);
         $this->assertStringContainsString('.pdf-document .document-financial-summary td{color:#0f172a;}', $styles);
         $this->assertStringContainsString('.custom-document-note{color:#334155;}', $styles);
         $this->assertStringNotContainsString('#ff0000', $styles);
@@ -604,6 +608,41 @@ CSS,
         $this->assertStringContainsString('QR code', (string) data_get($payload, 'data.firstPageHeader'));
         $this->assertStringContainsString('.document-hero', (string) data_get($payload, 'data.styles'));
         $this->assertNull(ReportStudioTemplate::resolveDefaultFor('executive'));
+    }
+
+    public function test_generated_documents_ignore_active_non_default_report_studio_templates(): void
+    {
+        ReportStudioTemplate::query()
+            ->where('studio_type', 'invoice')
+            ->update([
+                'status' => 'draft',
+                'is_default' => false,
+            ]);
+
+        ReportStudioTemplate::query()->create([
+            'name' => 'Active Non Default Invoice Template',
+            'studio_type' => 'invoice',
+            'renderer' => 'chrome',
+            'status' => 'active',
+            'is_default' => false,
+            'layout_schema' => [
+                'body_html' => '<section class="wrong-template">{report_title}{results_table}</section>',
+            ],
+            'export_settings' => ['paper_size' => 'A4', 'orientation' => 'P'],
+        ]);
+
+        $invoice = Invoice::query()->firstOrFail();
+        $payload = app(ReportStudioPdfBuilder::class)->buildInvoicePayload(
+            $invoice,
+            app(GeneralSettings::class)
+        );
+
+        $this->assertNull(ReportStudioTemplate::resolveDefaultFor('invoice'));
+        $this->assertSame('Factura fiscal padrão', data_get($payload, 'data.documentTitle'));
+        $this->assertStringContainsString('Factura '.(string) $invoice->inv_no, (string) data_get($payload, 'data.bodyHtml'));
+        $this->assertStringNotContainsString('wrong-template', (string) data_get($payload, 'data.bodyHtml'));
+        $this->assertStringNotContainsString('{report_title}', (string) data_get($payload, 'data.bodyHtml'));
+        $this->assertStringNotContainsString('{results_table}', (string) data_get($payload, 'data.bodyHtml'));
     }
 
     public function test_commercial_canvas_blocks_resolve_banking_details_in_generated_payloads(): void
@@ -907,13 +946,17 @@ CSS,
             ];
 
             foreach ($payloads as $type => $payload) {
+                $bodyHtml = (string) data_get($payload, 'data.bodyHtml');
+                $footerHtml = (string) data_get($payload, 'data.footerHtml');
                 $combinedHtml = implode("\n", [
                     (string) data_get($payload, 'data.firstPageHeader'),
-                    (string) data_get($payload, 'data.bodyHtml'),
-                    (string) data_get($payload, 'data.footerHtml'),
+                    $bodyHtml,
+                    $footerHtml,
                 ]);
 
                 $this->assertStringContainsString($type.'-verification', $combinedHtml);
+                $this->assertStringContainsString('commercial-record-evidence', $bodyHtml);
+                $this->assertStringNotContainsString('commercial-record-evidence', $footerHtml);
                 $this->assertStringContainsString('commercial-record-evidence', $combinedHtml);
                 $this->assertStringContainsString('Documento:', $combinedHtml);
                 $this->assertStringContainsString('Extracto 0AKU', $combinedHtml);
@@ -1624,6 +1667,10 @@ CSS,
 
         $this->assertStringContainsString('size: Letter landscape;', $letterHtml);
         $this->assertStringContainsString('margin: 18mm 12mm 20mm 16mm;', $letterHtml);
+        $this->assertStringContainsString('overflow-wrap: anywhere;', $letterHtml);
+        $this->assertStringContainsString('.report-chart-svg', $letterHtml);
+        $this->assertStringContainsString('.commercial-record-evidence', $letterHtml);
+        $this->assertStringContainsString('break-inside: avoid;', $letterHtml);
         $this->assertStringNotContainsString('size: 320mm 180mm;', $letterHtml);
         $this->assertStringContainsString('size: 320mm 180mm;', $customHtml);
         $this->assertStringContainsString('margin: 10mm 8mm 12mm 8mm;', $customHtml);

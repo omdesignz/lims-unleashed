@@ -4,10 +4,18 @@ body.pdf-document {
     background: #ffffff;
     font-size: 9pt;
     line-height: 1.45;
+    overflow-wrap: anywhere;
 }
 
 .pdf-document * {
     box-sizing: border-box;
+}
+
+.pdf-document img,
+.pdf-document svg,
+.pdf-document canvas {
+    max-width: 100%;
+    height: auto;
 }
 
 .pdf-document h1,
@@ -144,12 +152,14 @@ body.pdf-document {
 .pdf-document .muted,
 .pdf-document .label {
     color: #6b7b74;
+    overflow-wrap: anywhere;
 }
 
 .pdf-document .value,
 .pdf-document .highlight-value {
     color: #143d37;
     font-weight: 800;
+    overflow-wrap: anywhere;
 }
 
 .pdf-document .document-meta-table,
@@ -173,22 +183,33 @@ body.pdf-document {
 
 .pdf-document .document-meta-cell .label,
 .pdf-document .document-summary-cell .label {
-    display: block;
+    display: block !important;
     font-size: 7pt;
     font-weight: 900;
     letter-spacing: 0.12em;
+    line-height: 1.25;
     text-transform: uppercase;
 }
 
 .pdf-document .document-meta-cell .value,
 .pdf-document .document-summary-cell .value {
-    display: block;
+    display: block !important;
     margin-top: 1.3mm;
     font-size: 9.2pt;
+    line-height: 1.25;
+}
+
+.pdf-document .document-meta-cell .muted,
+.pdf-document .document-summary-cell .muted {
+    display: block !important;
+    line-height: 1.45;
+    margin-top: 1.5mm;
 }
 
 .pdf-document table {
     border-collapse: collapse;
+    max-width: 100%;
+    overflow-wrap: anywhere;
 }
 
 .pdf-document thead {
@@ -203,6 +224,12 @@ body.pdf-document {
 .pdf-document td,
 .pdf-document th {
     page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.pdf-document td,
+.pdf-document th {
+    min-width: 0;
 }
 
 .pdf-document .data-table,
@@ -213,6 +240,21 @@ body.pdf-document {
     border-collapse: collapse;
     border: 0.25mm solid #d8cbb8;
     margin-top: 3mm;
+}
+
+.pdf-document .report-chart,
+.pdf-document .report-chart-svg,
+.pdf-document .apexcharts-canvas,
+.pdf-document .apexcharts-svg {
+    display: block;
+    max-width: 100%;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.pdf-document .report-chart-svg {
+    width: 100%;
+    height: auto;
 }
 
 .pdf-document .data-table th,
@@ -318,6 +360,10 @@ body.pdf-document {
 .pdf-document .info-section,
 .pdf-document .signature-box,
 .pdf-document .document-shell,
-.pdf-document .document-hero {
+.pdf-document .document-hero,
+.pdf-document .document-callout,
+.pdf-document .document-summary-table,
+.pdf-document .report-chart {
     page-break-inside: avoid;
+    break-inside: avoid;
 }
