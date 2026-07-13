@@ -1,8 +1,21 @@
 <template>
   <form class="min-w-0 space-y-6 overflow-x-clip" @submit.prevent="submit">
+    <nav class="ds-panel flex overflow-x-auto px-3 sm:px-5" aria-label="Etapas do dossier CAPA">
+      <button
+        v-for="section in workflowSections"
+        :key="section.value"
+        type="button"
+        class="-mb-px min-h-12 shrink-0 border-b-2 px-4 text-sm font-bold transition"
+        :class="activeWorkflowSection === section.value ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
+        @click="activeWorkflowSection = section.value"
+      >
+        {{ section.label }}
+      </button>
+    </nav>
+
     <section class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
       <div class="space-y-6">
-        <article class="ds-panel overflow-hidden">
+        <article v-show="activeWorkflowSection === 'event'" class="ds-panel overflow-hidden">
           <div class="ds-table-summary px-5 py-4">
             <div class="flex items-start gap-3">
               <InformationCircleIcon class="mt-0.5 h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
@@ -84,7 +97,7 @@
           </div>
         </article>
 
-        <article class="ds-panel overflow-hidden">
+        <article v-show="activeWorkflowSection === 'scope'" class="ds-panel overflow-hidden">
           <div class="ds-table-summary px-5 py-4">
             <div class="flex items-start gap-3">
               <LinkIcon class="mt-0.5 h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
@@ -152,7 +165,7 @@
           </div>
         </article>
 
-        <article class="ds-panel overflow-hidden">
+        <article v-show="activeWorkflowSection === 'capa'" class="ds-panel overflow-hidden">
           <div class="ds-table-summary px-5 py-4">
             <div class="flex items-start gap-3">
               <WrenchScrewdriverIcon class="mt-0.5 h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
@@ -231,6 +244,54 @@
             </button>
           </div>
         </article>
+
+        <article v-show="activeWorkflowSection === 'evidence'" class="ds-panel overflow-hidden">
+          <div class="ds-table-summary px-5 py-4">
+            <div class="flex items-start gap-3">
+              <PaperClipIcon class="mt-0.5 h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
+              <div>
+                <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.vap_non_conformities.attachments_notes') }}</h2>
+                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">Evidência, causa raiz, prevenção e conclusão da investigação.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid gap-5 p-5 lg:grid-cols-2">
+            <div class="space-y-4">
+              <label class="ds-field-group">
+                <span class="ds-field-label">Anexar evidências</span>
+                <input type="file" multiple class="ds-field" @change="selectAttachmentFiles" />
+                <span class="ds-field-hint">PDF, imagens ou documentos até 10MB.</span>
+                <span v-if="form.errors.attachment_files" class="ds-field-error">{{ form.errors.attachment_files }}</span>
+              </label>
+
+              <div v-if="selectedAttachmentFiles.length" class="space-y-2">
+                <div v-for="(file, index) in selectedAttachmentFiles" :key="`${file.name}-${file.size}-${index}`" class="flex items-center justify-between gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm">
+                  <span class="truncate font-semibold text-[var(--ds-text)]">{{ file.name }}</span>
+                  <button type="button" class="ds-table-action ds-table-action-danger" @click="removeAttachmentFile(index)"><TrashIcon class="h-4 w-4" /><span class="sr-only">Remover {{ file.name }}</span></button>
+                </div>
+              </div>
+
+              <div v-if="existingAttachments.length" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
+                <p class="text-sm font-black text-[var(--ds-text)]">Anexos já registados</p>
+                <div class="mt-3 space-y-2">
+                  <a v-for="attachment in existingAttachments" :key="attachment.id" :href="attachment.url" target="_blank" rel="noreferrer" class="flex items-center justify-between gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-3 py-2 text-sm transition hover:border-[rgb(var(--primary-300-rgb))]">
+                    <span class="truncate font-semibold text-[var(--ds-text)]">{{ attachment.name || attachment.file_name }}</span>
+                    <span class="shrink-0 text-xs font-bold text-[var(--ds-text-soft)]">{{ attachment.human_readable_size }}</span>
+                  </a>
+                </div>
+              </div>
+
+              <BaseTextarea v-model="form.root_cause" :label="$t('gestlab.general.labels.vap_non_conformities.root_cause')" :placeholder="$t('gestlab.general.labels.vap_non_conformities.root_cause_placeholder')" rows="5" />
+            </div>
+
+            <div class="space-y-4">
+              <BaseTextarea v-model="form.corrective_actions" :label="$t('gestlab.general.labels.vap_non_conformities.corrective_actions')" placeholder="Plano corretivo global, quando não for dividido em ações individuais" rows="4" />
+              <BaseTextarea v-model="form.preventive_actions" :label="$t('gestlab.general.labels.vap_non_conformities.preventive_actions')" :placeholder="$t('gestlab.general.labels.vap_non_conformities.preventive_actions_placeholder')" rows="4" />
+              <BaseTextarea v-model="form.comments" :label="$t('gestlab.general.labels.vap_non_conformities.comments')" :placeholder="$t('gestlab.general.labels.vap_non_conformities.comments_placeholder')" rows="4" />
+            </div>
+          </div>
+        </article>
       </div>
 
       <aside class="space-y-4 xl:sticky xl:top-20 xl:self-start">
@@ -304,104 +365,38 @@
           </div>
         </article>
 
-        <article class="ds-panel overflow-hidden">
-          <div class="border-b border-[var(--ds-border)] px-5 py-4">
-            <h2 class="ds-heading flex items-center gap-2 text-base">
-              <PaperClipIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
-              {{ $t('gestlab.general.labels.vap_non_conformities.attachments_notes') }}
-            </h2>
-            <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">
-              Evidência documental, causa raiz, prevenção e comentários.
-            </p>
-          </div>
-
-          <div class="space-y-4 p-5">
-            <label class="ds-field-group">
-              <span class="ds-field-label">Anexar evidências</span>
-              <input type="file" multiple class="ds-field" @change="selectAttachmentFiles" />
-              <span class="ds-field-hint">PDF, imagens ou documentos até 10MB.</span>
-              <span v-if="form.errors.attachment_files" class="ds-field-error">{{ form.errors.attachment_files }}</span>
-            </label>
-
-            <div v-if="selectedAttachmentFiles.length" class="space-y-2">
-              <div
-                v-for="(file, index) in selectedAttachmentFiles"
-                :key="`${file.name}-${file.size}-${index}`"
-                class="flex items-center justify-between gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm"
-              >
-                <span class="truncate font-semibold text-[var(--ds-text)]">{{ file.name }}</span>
-                <button type="button" class="ds-table-action ds-table-action-danger" @click="removeAttachmentFile(index)">
-                  <TrashIcon class="h-4 w-4" />
-                  <span class="sr-only">Remover {{ file.name }}</span>
-                </button>
-              </div>
-            </div>
-
-            <div v-if="existingAttachments.length" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
-              <p class="text-sm font-black text-[var(--ds-text)]">Anexos já registados</p>
-              <div class="mt-3 space-y-2">
-                <a
-                  v-for="attachment in existingAttachments"
-                  :key="attachment.id"
-                  :href="attachment.url"
-                  target="_blank"
-                  rel="noreferrer"
-                  class="flex items-center justify-between gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-3 py-2 text-sm transition hover:border-[rgb(var(--primary-300-rgb))]"
-                >
-                  <span class="truncate font-semibold text-[var(--ds-text)]">{{ attachment.name || attachment.file_name }}</span>
-                  <span class="shrink-0 text-xs font-bold text-[var(--ds-text-soft)]">{{ attachment.human_readable_size }}</span>
-                </a>
-              </div>
-            </div>
-
-            <BaseTextarea
-              v-model="form.root_cause"
-              :label="$t('gestlab.general.labels.vap_non_conformities.root_cause')"
-              :placeholder="$t('gestlab.general.labels.vap_non_conformities.root_cause_placeholder')"
-              rows="3"
-            />
-
-            <BaseTextarea
-              v-model="form.corrective_actions"
-              :label="$t('gestlab.general.labels.vap_non_conformities.corrective_actions')"
-              placeholder="Plano corretivo global, quando não for dividido em ações individuais"
-              rows="3"
-            />
-
-            <BaseTextarea
-              v-model="form.preventive_actions"
-              :label="$t('gestlab.general.labels.vap_non_conformities.preventive_actions')"
-              :placeholder="$t('gestlab.general.labels.vap_non_conformities.preventive_actions_placeholder')"
-              rows="3"
-            />
-
-            <BaseTextarea
-              v-model="form.comments"
-              :label="$t('gestlab.general.labels.vap_non_conformities.comments')"
-              :placeholder="$t('gestlab.general.labels.vap_non_conformities.comments_placeholder')"
-              rows="3"
-            />
-          </div>
-        </article>
       </aside>
     </section>
 
-    <section class="ds-command-surface p-5">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <p class="text-sm font-semibold text-[var(--ds-text-soft)]">
+    <section class="ds-command-surface sticky bottom-2 z-20 p-2 shadow-lg shadow-black/5 sm:bottom-3 sm:p-4">
+      <div class="flex items-center justify-end gap-3 sm:justify-between">
+        <p class="hidden text-sm font-semibold text-[var(--ds-text-soft)] sm:block">
           {{ $t('gestlab.general.labels.vap_non_conformities.last_updated') }}:
           <span class="font-bold text-[var(--ds-text)]">
             {{ nonConformity?.updated_at ? formatDate(nonConformity.updated_at) : $t('gestlab.general.labels.vap_non_conformities.never') }}
           </span>
         </p>
 
-        <div class="flex flex-col gap-2 sm:flex-row">
-          <button type="button" class="ds-button ds-button-secondary" @click="cancel">
-            {{ $t('gestlab.general.labels.vap_non_conformities.buttons.cancel') }}
+        <div class="grid w-full grid-cols-[2.75rem_2.75rem_minmax(0,1fr)] gap-2 sm:flex sm:w-auto">
+          <button
+            type="button"
+            class="ds-button ds-button-secondary px-0 sm:px-4"
+            :aria-label="$t('gestlab.general.labels.vap_non_conformities.buttons.cancel')"
+            :title="$t('gestlab.general.labels.vap_non_conformities.buttons.cancel')"
+            @click="cancel"
+          >
+            <XMarkIcon class="h-4 w-4" />
+            <span class="hidden sm:inline">{{ $t('gestlab.general.labels.vap_non_conformities.buttons.cancel') }}</span>
           </button>
-          <button type="button" class="ds-button ds-button-secondary" @click="reset">
+          <button
+            type="button"
+            class="ds-button ds-button-secondary px-0 sm:px-4"
+            :aria-label="$t('gestlab.general.labels.vap_non_conformities.buttons.reset')"
+            :title="$t('gestlab.general.labels.vap_non_conformities.buttons.reset')"
+            @click="reset"
+          >
             <ArrowPathIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.vap_non_conformities.buttons.reset') }}
+            <span class="hidden sm:inline">{{ $t('gestlab.general.labels.vap_non_conformities.buttons.reset') }}</span>
           </button>
           <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing">
             <CheckCircleIcon v-if="!form.processing" class="h-4 w-4" />
@@ -435,6 +430,7 @@ import {
   TagIcon,
   TrashIcon,
   WrenchScrewdriverIcon,
+  XMarkIcon,
 } from '@heroicons/vue/24/outline'
 import { computed, ref } from 'vue'
 
@@ -488,6 +484,14 @@ const form = useForm({
 
 const selectedAttachmentFiles = ref([])
 const actions = ref(cloneInitialActions())
+const activeWorkflowSection = ref('event')
+
+const workflowSections = [
+  { value: 'event', label: 'Evento e classificação' },
+  { value: 'scope', label: 'Âmbito e rastreabilidade' },
+  { value: 'capa', label: 'Plano CAPA' },
+  { value: 'evidence', label: 'Evidência e conclusão' },
+]
 
 const severityOptions = [
   { value: 'low', label: 'Baixa' },
@@ -607,6 +611,7 @@ function submit() {
       }))
       .post(route('vap_non_conformities.update', props.nonConformity.id), {
         forceFormData: true,
+        onError: focusFirstErrorSection,
         onFinish: () => form.transform(data => data),
       })
 
@@ -615,7 +620,29 @@ function submit() {
 
   form.post(route('vap_non_conformities.store'), {
     forceFormData: true,
+    onError: focusFirstErrorSection,
   })
+}
+
+function focusFirstErrorSection(errors) {
+  const firstError = Object.keys(errors || {})[0] || ''
+
+  if (/^(sample_id|test_method|equipment_id|batch_number|occurrence_area)/.test(firstError)) {
+    activeWorkflowSection.value = 'scope'
+    return
+  }
+
+  if (/^actions/.test(firstError)) {
+    activeWorkflowSection.value = 'capa'
+    return
+  }
+
+  if (/^(attachment_files|root_cause|corrective_actions|preventive_actions|comments)/.test(firstError)) {
+    activeWorkflowSection.value = 'evidence'
+    return
+  }
+
+  activeWorkflowSection.value = 'event'
 }
 
 function reset() {

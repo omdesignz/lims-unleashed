@@ -53,9 +53,23 @@
           <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.detail }}</p>
         </article>
       </div>
+
+      <nav class="mt-5 flex overflow-x-auto border-t border-[var(--ds-border)] pt-1" aria-label="Vistas de não conformidades">
+        <button
+          v-for="view in workspaceViews"
+          :key="view.value"
+          type="button"
+          class="-mb-px inline-flex min-h-12 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-bold transition"
+          :class="workspaceView === view.value ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
+          @click="workspaceView = view.value"
+        >
+          <component :is="view.icon" class="h-4 w-4" />
+          {{ view.label }}
+        </button>
+      </nav>
     </section>
 
-    <section class="ds-command-surface p-5 sm:p-6">
+    <section v-show="workspaceView === 'register'" class="ds-command-surface p-5 sm:p-6">
       <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(16rem,1.4fr)_repeat(3,minmax(11rem,1fr))]">
         <label class="ds-field-group">
           <span class="ds-field-label">Pesquisar</span>
@@ -119,7 +133,7 @@
       </div>
     </section>
 
-    <section class="ds-command-surface overflow-hidden">
+    <section v-show="workspaceView === 'analytics'" class="ds-command-surface overflow-hidden">
       <div class="ds-table-summary px-5 py-4">
         <div>
           <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Análise CAPA</p>
@@ -164,7 +178,7 @@
       </div>
     </section>
 
-    <section class="ds-table-shell">
+    <section v-show="workspaceView === 'register'" class="ds-table-shell">
       <div class="ds-table-summary px-5 py-4">
         <div>
           <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Fila de qualidade</p>
@@ -370,6 +384,12 @@ const props = defineProps({
     default: () => [],
   },
 })
+
+const workspaceView = ref('register')
+const workspaceViews = [
+  { value: 'register', label: 'Fila CAPA', icon: ClipboardDocumentCheckIcon },
+  { value: 'analytics', label: 'Tendências e risco', icon: ChartBarSquareIcon },
+]
 
 const search = ref(props.filters.search || '')
 const statusFilter = ref(props.filters.status || '')

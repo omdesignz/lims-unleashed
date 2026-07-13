@@ -6,6 +6,12 @@ import { previewReplacementsByType } from '@/Support/report-studio-preview-html.
 import { computed, ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import { trans } from 'laravel-vue-i18n'
+import {
+  DocumentPlusIcon,
+  FolderOpenIcon,
+  MagnifyingGlassIcon,
+  PhotoIcon,
+} from '@heroicons/vue/24/outline'
 
 defineOptions({
   layout: Layout,
@@ -36,6 +42,9 @@ const props = defineProps({
 
 const editingTemplate = ref(null)
 const archiveTemplate = ref(null)
+const studioWorkspaceView = ref(props.templates.length ? 'library' : 'editor')
+const templateSearch = ref('')
+const templateTypeFilter = ref('')
 
 const studioSummaryCards = computed(() => [
   {
@@ -81,6 +90,21 @@ const documentTypeCards = computed(() => [
   { key: 'canva', labelKey: 'gestlab.general.labels.vap_report_studios.index.document_types.canva', value: props.summary.canva, accent: 'bg-[#d9b05f]' },
   { key: 'chrome', labelKey: 'gestlab.general.labels.vap_report_studios.index.document_types.chrome', value: props.summary.chrome, accent: 'bg-orange-500' },
 ])
+
+const templateTypeOptions = computed(() => {
+  return documentTypeCards.value.filter((type) => Number(type.value || 0) > 0)
+})
+
+const filteredTemplates = computed(() => {
+  const query = templateSearch.value.trim().toLocaleLowerCase()
+
+  return props.templates.filter((template) => {
+    const matchesType = !templateTypeFilter.value || template.studio_type === templateTypeFilter.value
+    const haystack = `${template.name || ''} ${template.description || ''} ${rendererLabel(template.renderer)}`.toLocaleLowerCase()
+
+    return matchesType && (!query || haystack.includes(query))
+  })
+})
 
 const rendererLabel = (renderer) => {
   return {
@@ -630,6 +654,11 @@ const resetForm = () => {
   form.export_settings = structuredClone(exportSettingsDefaults.analysis)
 }
 
+const startNewTemplate = () => {
+  resetForm()
+  studioWorkspaceView.value = 'editor'
+}
+
 const applyDefaultsForStudio = (studioType) => {
   const defaults = exportSettingsDefaults[studioType] || exportSettingsDefaults.analysis
   form.export_settings = structuredClone(defaults)
@@ -654,12 +683,16 @@ const editTemplate = (template) => {
     ...structuredClone(exportSettingsDefaults[template.studio_type] || exportSettingsDefaults.analysis),
     ...(template.export_settings || {}),
   }
+  studioWorkspaceView.value = 'editor'
 }
 
 const submit = () => {
   const options = {
     preserveScroll: true,
-    onSuccess: () => resetForm(),
+    onSuccess: () => {
+      resetForm()
+      studioWorkspaceView.value = 'library'
+    },
   }
 
   if (editingTemplate.value?.id) {
@@ -719,118 +752,139 @@ const onStudioTypeUpdate = (studioType) => {
 
 <template>
   <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="min-w-0 max-w-4xl">
-            <p class="ds-kicker">{{ $t('gestlab.general.labels.vap_report_studios.index.hero.badge') }}</p>
-            <h1 class="ds-heading mt-2 text-2xl">
-              {{ $t('gestlab.general.labels.vap_report_studios.index.hero.title') }}
-            </h1>
-            <p class="ds-copy mt-2 max-w-3xl text-sm">
-              {{ $t('gestlab.general.labels.vap_report_studios.index.hero.description') }}
-            </p>
-          </div>
-          <div class="flex flex-wrap gap-3">
-            <a
-              v-if="previewPdfHref"
-              :href="previewPdfHref"
-              target="_blank"
-              class="ds-button ds-button-secondary"
-            >
-              {{ $t('gestlab.general.labels.vap_report_studios.index.hero.preview_pdf') }}
-            </a>
-            <button
-              type="button"
-              class="ds-button ds-button-primary"
-              @click="resetForm"
-            >
-              {{ $t('gestlab.general.labels.vap_report_studios.index.hero.new_template') }}
-            </button>
-          </div>
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-5 px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
+        <div class="min-w-0 max-w-3xl">
+          <p class="ds-kicker">{{ $t('gestlab.general.labels.vap_report_studios.index.hero.badge') }}</p>
+          <h1 class="ds-heading mt-2 text-2xl">{{ $t('gestlab.general.labels.vap_report_studios.index.hero.title') }}</h1>
+          <p class="ds-copy mt-2 text-sm">{{ $t('gestlab.general.labels.vap_report_studios.index.hero.description') }}</p>
         </div>
-
-        <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
-          <div
-            v-for="card in studioSummaryCards"
-            :key="card.key"
-            class="border-b border-[var(--ds-border)] px-4 py-3 sm:[&:nth-child(odd)]:border-r sm:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0"
-          >
-            <div class="flex items-center justify-between gap-3">
-              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t(card.labelKey) }}</dt>
-              <span class="h-2 w-2 rounded-full bg-[rgb(var(--primary-600-rgb))]" />
-            </div>
-            <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ card.value }}</dd>
-            <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ $t(card.hintKey) }}</p>
-          </div>
-        </dl>
-
-      <div class="mt-5 grid gap-px overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-border)] sm:grid-cols-2 lg:grid-cols-5">
-        <article
-          v-for="card in documentTypeCards"
-          :key="card.key"
-          class="flex items-center justify-between gap-3 bg-[var(--ds-panel-raised)] px-4 py-3 text-sm font-semibold text-[var(--ds-text-muted)]"
-        >
-          <span class="inline-flex items-center gap-2">
-            <span class="h-2.5 w-2.5 rounded-full" :class="card.accent" />
-            {{ $t(card.labelKey) }}
-          </span>
-          <span class="font-bold text-[var(--ds-text)]">{{ card.value || 0 }}</span>
-        </article>
+        <button type="button" class="ds-button ds-button-primary shrink-0" @click="startNewTemplate">
+          <DocumentPlusIcon class="h-4 w-4" />
+          {{ $t('gestlab.general.labels.vap_report_studios.index.hero.new_template') }}
+        </button>
       </div>
+
+      <dl class="grid border-y border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
+        <div
+          v-for="card in studioSummaryCards"
+          :key="card.key"
+          class="border-b border-[var(--ds-border)] px-5 py-3 sm:border-r sm:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:last:border-r-0"
+        >
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t(card.labelKey) }}</dt>
+          <dd class="mt-1 flex items-baseline gap-2">
+            <span class="text-xl font-bold text-[var(--ds-text)]">{{ card.value }}</span>
+            <span class="truncate text-xs font-semibold text-[var(--ds-text-muted)]">{{ $t(card.hintKey) }}</span>
+          </dd>
+        </div>
+      </dl>
+
+      <nav class="flex overflow-x-auto px-5 sm:px-6" aria-label="Áreas do estúdio documental">
+        <button
+          type="button"
+          class="-mb-px inline-flex min-h-12 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-bold transition"
+          :class="studioWorkspaceView === 'library' ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
+          @click="studioWorkspaceView = 'library'"
+        >
+          <FolderOpenIcon class="h-4 w-4" />
+          Biblioteca de modelos
+          <span class="ds-badge ds-badge-neutral">{{ templates.length }}</span>
+        </button>
+        <button
+          type="button"
+          class="-mb-px inline-flex min-h-12 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-bold transition"
+          :class="studioWorkspaceView === 'editor' ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
+          @click="studioWorkspaceView = 'editor'"
+        >
+          <DocumentPlusIcon class="h-4 w-4" />
+          {{ editingTemplate ? 'Editar modelo' : 'Novo modelo' }}
+        </button>
+      </nav>
     </section>
 
-    <section class="ds-panel overflow-hidden">
-      <div class="flex flex-col gap-3 border-b border-[var(--ds-border)] px-5 py-4 md:flex-row md:items-center md:justify-between">
+    <section v-if="studioWorkspaceView === 'library'" class="ds-table-shell">
+      <div class="ds-table-summary gap-4 px-5 py-4 sm:px-6">
         <div>
           <p class="ds-kicker">Biblioteca controlada</p>
           <h2 class="ds-heading mt-1 text-base">{{ $t('gestlab.general.labels.vap_report_studios.index.saved.title') }}</h2>
-          <p class="ds-copy mt-1 text-sm">{{ $t('gestlab.general.labels.vap_report_studios.index.saved.description') }}</p>
         </div>
-        <div class="ds-badge ds-badge-neutral">
-          {{ $t('gestlab.general.labels.vap_report_studios.index.saved.count', { count: templates.length }) }}
+        <div class="grid w-full gap-2 sm:w-auto sm:grid-cols-[minmax(14rem,20rem)_12rem]">
+          <label class="relative block">
+            <span class="sr-only">Pesquisar modelos</span>
+            <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
+            <input v-model="templateSearch" type="search" class="ds-field pl-9" placeholder="Pesquisar modelos" />
+          </label>
+          <select v-model="templateTypeFilter" class="ds-field">
+            <option value="">Todos os tipos</option>
+            <option v-for="type in templateTypeOptions" :key="type.key" :value="type.key">{{ $t(type.labelKey) }}</option>
+          </select>
         </div>
       </div>
 
-      <div v-if="templates.length" class="divide-y divide-[var(--ds-border)]">
-        <article v-for="template in templates" :key="template.id" class="px-5 py-4 transition hover:bg-[var(--ds-panel-subtle)]">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div class="space-y-2">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="ds-badge ds-badge-neutral">{{ template.studio_type }}</span>
-                <span class="ds-badge ds-badge-info">{{ rendererLabel(template.renderer) }}</span>
-                <span class="ds-badge ds-badge-success">{{ template.status }}</span>
-                <span v-if="template.is_default" class="ds-badge ds-badge-warning">{{ $t('gestlab.general.labels.vap_report_studios.index.saved.default_badge') }}</span>
-              </div>
-              <h3 class="text-base font-bold text-[var(--ds-text)]">{{ template.name }}</h3>
-              <p class="ds-copy text-sm">{{ template.description || $t('gestlab.general.labels.vap_report_studios.index.saved.no_description') }}</p>
-              <div class="text-xs font-semibold text-[var(--ds-text-soft)]">
-                {{ $t('gestlab.general.labels.vap_report_studios.index.saved.updated_at', { date: formatDate(template.updated_at) }) }}<span v-if="template.updated_by"> · {{ template.updated_by }}</span>
-              </div>
+      <div v-if="filteredTemplates.length" class="hidden overflow-x-auto lg:block">
+        <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+          <thead class="ds-table-head">
+            <tr>
+              <th class="px-5 py-3 ds-table-heading">Modelo</th>
+              <th class="px-5 py-3 ds-table-heading">Tipo e saída</th>
+              <th class="px-5 py-3 ds-table-heading">Estado</th>
+              <th class="px-5 py-3 ds-table-heading">Última revisão</th>
+              <th class="px-5 py-3 text-right ds-table-heading">Ações</th>
+            </tr>
+          </thead>
+          <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
+            <tr v-for="template in filteredTemplates" :key="template.id" class="ds-table-row">
+              <td class="px-5 py-4">
+                <p class="font-bold text-[var(--ds-text)]">{{ template.name }}</p>
+                <p class="mt-1 max-w-md truncate text-xs font-semibold text-[var(--ds-text-muted)]">{{ template.description || $t('gestlab.general.labels.vap_report_studios.index.saved.no_description') }}</p>
+              </td>
+              <td class="px-5 py-4">
+                <p class="font-semibold text-[var(--ds-text)]">{{ $t(documentTypeCards.find((type) => type.key === template.studio_type)?.labelKey || '') }}</p>
+                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ rendererLabel(template.renderer) }}</p>
+              </td>
+              <td class="px-5 py-4">
+                <span :class="['ds-badge', template.status === 'active' ? 'ds-badge-success' : template.status === 'archived' ? 'ds-badge-neutral' : 'ds-badge-warning']">{{ template.status }}</span>
+                <span v-if="template.is_default" class="ds-badge ds-badge-info ml-1">{{ $t('gestlab.general.labels.vap_report_studios.index.saved.default_badge') }}</span>
+              </td>
+              <td class="px-5 py-4 text-xs font-semibold text-[var(--ds-text-muted)]">
+                {{ formatDate(template.updated_at) }}<span v-if="template.updated_by" class="mt-1 block">{{ template.updated_by }}</span>
+              </td>
+              <td class="px-5 py-4">
+                <div class="flex justify-end gap-1">
+                  <a :href="template.preview_pdf_path" target="_blank" class="ds-table-action" title="Pré-visualizar PDF"><PhotoIcon class="h-4 w-4" /></a>
+                  <button type="button" class="ds-table-action" title="Editar modelo" @click="editTemplate(template)"><DocumentPlusIcon class="h-4 w-4" /></button>
+                  <button type="button" class="ds-table-action ds-table-action-danger" title="Arquivar modelo" @click="destroyTemplate(template)">×</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-if="filteredTemplates.length" class="divide-y divide-[var(--ds-border)] lg:hidden">
+        <article v-for="template in filteredTemplates" :key="`mobile-${template.id}`" class="space-y-3 p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h3 class="truncate font-bold text-[var(--ds-text)]">{{ template.name }}</h3>
+              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ rendererLabel(template.renderer) }} · {{ formatDate(template.updated_at) }}</p>
             </div>
-            <div class="flex flex-wrap gap-2">
-              <a
-                :href="template.preview_pdf_path"
-                target="_blank"
-                class="ds-button ds-button-secondary"
-              >
-                {{ $t('gestlab.general.labels.vap_report_studios.index.saved.preview_pdf') }}
-              </a>
-              <button type="button" class="ds-button ds-button-secondary" @click="editTemplate(template)">
-                {{ $t('gestlab.general.labels.vap_report_studios.index.saved.edit') }}
-              </button>
-              <button type="button" class="ds-button ds-button-danger" @click="destroyTemplate(template)">
-                {{ $t('gestlab.general.labels.vap_report_studios.index.saved.archive') }}
-              </button>
-            </div>
+            <span :class="['ds-badge', template.status === 'active' ? 'ds-badge-success' : 'ds-badge-warning']">{{ template.status }}</span>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <a :href="template.preview_pdf_path" target="_blank" class="ds-button ds-button-secondary">PDF</a>
+            <button type="button" class="ds-button ds-button-secondary" @click="editTemplate(template)">Editar</button>
+            <button type="button" class="ds-button ds-button-danger" @click="destroyTemplate(template)">Arquivar</button>
           </div>
         </article>
       </div>
-      <div v-else class="ds-empty-state m-5 p-8 text-center text-sm">
-        {{ $t('gestlab.general.labels.vap_report_studios.index.saved.empty') }}
+
+      <div v-if="!filteredTemplates.length" class="ds-empty-state m-5 p-8 text-center text-sm">
+        {{ templates.length ? 'Nenhum modelo corresponde aos filtros.' : $t('gestlab.general.labels.vap_report_studios.index.saved.empty') }}
       </div>
     </section>
 
     <report-studio-workbench
+      v-else
       :title="$t('gestlab.general.labels.vap_report_studios.index.workbench.title')"
       :intro="$t('gestlab.general.labels.vap_report_studios.index.workbench.intro')"
       :form="form"

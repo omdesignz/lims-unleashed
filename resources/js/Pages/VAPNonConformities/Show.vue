@@ -53,11 +53,24 @@
           <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.detail }}</p>
         </article>
       </div>
+
+      <nav class="mt-5 flex overflow-x-auto border-t border-[var(--ds-border)] pt-1" aria-label="Secções do dossier CAPA">
+        <button
+          v-for="section in dossierSections"
+          :key="section.value"
+          type="button"
+          class="-mb-px min-h-12 shrink-0 border-b-2 px-4 text-sm font-bold transition"
+          :class="activeDossierSection === section.value ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
+          @click="activeDossierSection = section.value"
+        >
+          {{ section.label }}
+        </button>
+      </nav>
     </section>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
       <div class="space-y-6">
-        <section class="ds-panel overflow-hidden">
+        <section v-show="activeDossierSection === 'overview'" class="ds-panel overflow-hidden">
           <div class="ds-table-summary px-5 py-4">
             <div class="flex items-start gap-3">
               <InformationCircleIcon class="mt-0.5 h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
@@ -80,7 +93,7 @@
           </dl>
         </section>
 
-        <section class="ds-panel overflow-hidden">
+        <section v-show="activeDossierSection === 'overview'" class="ds-panel overflow-hidden">
           <div class="ds-table-summary px-5 py-4">
             <div class="flex items-start gap-3">
               <LinkIcon class="mt-0.5 h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
@@ -99,7 +112,7 @@
           </dl>
         </section>
 
-        <section class="ds-table-shell">
+        <section v-show="activeDossierSection === 'capa'" class="ds-table-shell">
           <div class="ds-table-summary px-5 py-4">
             <div class="flex items-start gap-3">
               <WrenchScrewdriverIcon class="mt-0.5 h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
@@ -156,7 +169,7 @@
           </div>
         </section>
 
-        <section v-if="additionalNarratives.length" class="ds-panel overflow-hidden">
+        <section v-show="activeDossierSection === 'evidence'" class="ds-panel overflow-hidden">
           <div class="ds-table-summary px-5 py-4">
             <div class="flex items-start gap-3">
               <ClipboardDocumentCheckIcon class="mt-0.5 h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
@@ -167,12 +180,13 @@
             </div>
           </div>
 
-          <div class="grid gap-4 p-5">
+          <div v-if="additionalNarratives.length" class="grid gap-4 p-5">
             <article v-for="item in additionalNarratives" :key="item.label" class="ds-card p-4">
               <h3 class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">{{ item.label }}</h3>
               <p class="mt-2 whitespace-pre-line text-sm font-semibold leading-6 text-[var(--ds-text)]">{{ item.value }}</p>
             </article>
           </div>
+          <div v-else class="ds-empty-state m-5 p-8 text-center text-sm text-[var(--ds-text-muted)]">Ainda não existem conclusões narrativas registadas.</div>
         </section>
       </div>
 
@@ -189,7 +203,7 @@
           </dl>
         </section>
 
-        <section class="ds-panel overflow-hidden">
+        <section v-show="activeDossierSection === 'evidence'" class="ds-panel overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-5 py-4">
             <h2 class="ds-heading flex items-center gap-2 text-base">
               <PaperClipIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
@@ -304,6 +318,13 @@ const props = defineProps({
 })
 
 const showDeleteModal = ref(false)
+const activeDossierSection = ref('overview')
+
+const dossierSections = [
+  { value: 'overview', label: 'Evento e rastreabilidade' },
+  { value: 'capa', label: 'Plano CAPA' },
+  { value: 'evidence', label: 'Evidência e conclusão' },
+]
 
 const statusClassMap = {
   opened: 'bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] ring-[rgb(var(--primary-200-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-100-rgb))] dark:ring-[rgb(var(--primary-300-rgb)/0.22)]',

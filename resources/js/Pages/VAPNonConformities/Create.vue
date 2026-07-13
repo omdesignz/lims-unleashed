@@ -29,16 +29,6 @@
         </Link>
       </div>
 
-      <dl class="grid grid-cols-2 divide-x divide-y divide-[var(--ds-border)] md:grid-cols-4 md:divide-y-0">
-        <div v-for="metric in intakeMetrics" :key="metric.label" class="px-5 py-4">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[var(--ds-text-soft)]">
-            <span class="lims-status-dot" :class="metric.dotClass"></span>
-            {{ metric.label }}
-          </dt>
-          <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ metric.caption }}</p>
-        </div>
-      </dl>
     </section>
 
     <NonConformityForm
@@ -79,30 +69,4 @@ const initialNonConformity = computed(() => ({
   reported_at: new Date().toISOString().slice(0, 16),
 }))
 
-const intakeMetrics = computed(() => [
-  {
-    label: 'Identificação',
-    value: props.defaultNcNumber || 'NC',
-    caption: 'Número reservado para rastreabilidade',
-    dotClass: 'lims-status-dot-instrument',
-  },
-  {
-    label: 'Laboratórios',
-    value: props.labs.length,
-    caption: 'Locais disponíveis',
-    dotClass: 'lims-status-dot-release',
-  },
-  {
-    label: 'Departamentos',
-    value: props.departments.length,
-    caption: 'Áreas de responsabilidade',
-    dotClass: 'lims-status-dot-release',
-  },
-  {
-    label: 'Fluxo',
-    value: 'CAPA',
-    caption: 'Investigação, ação e evidência',
-    dotClass: 'lims-status-dot-hold',
-  },
-])
 </script>

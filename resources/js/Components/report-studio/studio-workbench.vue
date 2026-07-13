@@ -4008,35 +4008,32 @@ function submit() {
 <template>
   <Head :title="props.title" />
 
-  <div class="report-studio-shell space-y-8 font-sans">
+  <div class="report-studio-shell space-y-5 font-sans">
     <component :is="'style'" v-text="previewScopedCss" />
 
-    <div class="relative isolate overflow-hidden rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] p-6 text-[#15231f] shadow-[0_26px_80px_rgba(20,61,55,0.10)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#f7f1e7] dark:ring-white/10 sm:p-8">
-      <div class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgb(var(--primary-200-rgb)/0.38),transparent_34%),radial-gradient(circle_at_85%_12%,rgb(var(--accent-300-rgb)/0.25),transparent_26%),linear-gradient(135deg,rgb(255_253_247/0.98),rgb(244_239_228/0.9))] dark:bg-[radial-gradient(circle_at_top_left,rgb(var(--primary-500-rgb)/0.18),transparent_34%),radial-gradient(circle_at_85%_12%,rgb(var(--accent-300-rgb)/0.14),transparent_28%),linear-gradient(135deg,#07110f,#10231f)]" />
-      <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <div class="max-w-4xl">
-          <div class="inline-flex rounded-full border border-[rgb(var(--accent-300-rgb)/0.5)] bg-[rgb(var(--accent-50-rgb)/0.8)] px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-[rgb(var(--primary-900-rgb))] shadow-sm dark:border-[rgb(var(--accent-300-rgb)/0.24)] dark:bg-[rgb(var(--accent-300-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
-            Estúdio documental
+    <div class="ds-panel overflow-hidden text-[var(--ds-text)]">
+      <div class="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="min-w-0 max-w-3xl">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="ds-kicker">Estúdio documental</span>
+            <span v-if="props.initialDraftLabel" class="ds-badge ds-badge-info">{{ props.initialDraftLabel }}</span>
           </div>
-          <h1 class="mt-4 text-3xl font-black tracking-tight text-[#15231f] dark:text-[#f7f1e7] sm:text-4xl">{{ props.title }}</h1>
-          <p class="mt-3 max-w-3xl text-sm font-medium leading-6 text-[#475a53] dark:text-[#cbd8cf]">
+          <h1 class="mt-1 truncate text-xl font-bold text-[var(--ds-text)]">{{ props.title }}</h1>
+          <p class="mt-1 max-w-3xl text-sm font-medium text-[var(--ds-text-muted)]">
             {{ props.intro }}
           </p>
-          <p v-if="props.initialDraftLabel" class="mt-4 inline-flex rounded-full border border-[#ded3bf] bg-white/70 px-3 py-1 text-xs font-bold text-[#15231f] shadow-sm dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f7f1e7]">
-            {{ props.initialDraftLabel }}
-          </p>
         </div>
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap gap-2">
           <Link
             :href="props.backHref"
-            class="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#ded3bf] bg-white/75 px-4 py-3 text-sm font-bold text-[#15231f] shadow-sm transition hover:border-[rgb(var(--primary-300-rgb))] hover:bg-white dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:hover:border-[rgb(var(--primary-400-rgb)/0.55)]"
+            class="ds-button ds-button-secondary"
           >
             <ArrowUturnLeftIcon class="h-4 w-4" />
             {{ props.backLabel }}
           </Link>
           <button
             type="button"
-            class="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#ded3bf] bg-white/75 px-4 py-3 text-sm font-bold text-[#15231f] shadow-sm transition hover:border-[rgb(var(--primary-300-rgb))] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:hover:border-[rgb(var(--primary-400-rgb)/0.55)]"
+            class="ds-button ds-button-secondary"
             :disabled="draftPreviewBusy || props.form.processing"
             @click="previewDraftPdf"
           >
@@ -4045,7 +4042,7 @@ function submit() {
           </button>
           <button
             type="button"
-            class="inline-flex items-center justify-center rounded-2xl bg-[rgb(var(--primary-800-rgb))] px-4 py-3 text-sm font-bold text-white shadow-[0_18px_45px_rgb(var(--primary-900-rgb)/0.18)] transition hover:bg-[rgb(var(--primary-700-rgb))] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[rgb(var(--accent-300-rgb))] dark:text-[#07110f] dark:hover:bg-[rgb(var(--accent-200-rgb))]"
+            class="ds-button ds-button-primary"
             :disabled="props.form.processing"
             @click="submit"
           >
@@ -4053,94 +4050,59 @@ function submit() {
           </button>
         </div>
       </div>
-      <p v-if="draftPreviewError" class="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">
+      <p v-if="draftPreviewError" class="mx-5 mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">
         {{ draftPreviewError }}
       </p>
-    </div>
-
-    <nav class="rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7]/92 p-2 shadow-[0_18px_55px_rgba(20,61,55,0.07)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f]/92 dark:ring-white/10">
-      <div class="grid gap-2 md:grid-cols-4">
+      <nav class="flex overflow-x-auto border-t border-[var(--ds-border)] px-3 sm:px-5" aria-label="Etapas do editor documental">
         <button
           v-for="pane in studioPanes"
           :key="pane.value"
           type="button"
-          class="rounded-[1.4rem] px-4 py-3 text-left transition"
+          class="-mb-px min-w-36 shrink-0 border-b-2 px-4 py-3 text-left transition"
           :class="activeStudioPane === pane.value
-            ? 'bg-[rgb(var(--primary-800-rgb))] text-white shadow-[0_16px_38px_rgb(var(--primary-900-rgb)/0.18)] dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f]'
-            : 'text-[#475a53] hover:bg-[#f4efe4] hover:text-[#15231f] dark:text-[#cbd8cf] dark:hover:bg-[#10231f] dark:hover:text-[#f7f1e7]'"
+            ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]'
+            : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
           @click="activeStudioPane = pane.value"
         >
-          <span class="block text-sm font-black">{{ pane.label }}</span>
-          <span class="mt-1 block text-xs leading-5" :class="activeStudioPane === pane.value ? 'text-white/75 dark:text-[#07110f]/70' : 'text-[#6b7b74] dark:text-[#83978d]'">
-            {{ pane.description }}
-          </span>
+          <span class="block text-sm font-bold">{{ pane.label }}</span>
+          <span class="mt-0.5 hidden text-xs font-medium text-[var(--ds-text-soft)] lg:block">{{ pane.description }}</span>
         </button>
-      </div>
-    </nav>
+      </nav>
+    </div>
 
-    <section class="rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] p-5 shadow-[0_18px_55px_rgba(20,61,55,0.06)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
-      <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div class="inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.18em]" :class="studioQualityStatus.class">
-              {{ studioQualityStatus.label }}
-            </div>
-            <h2 class="mt-3 text-xl font-black text-[#15231f] dark:text-[#f7f1e7]">Controlo de qualidade do modelo</h2>
-            <p class="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#475a53] dark:text-[#cbd8cf]">
-              {{ studioQualityStatus.description }} O estúdio valida variáveis, estrutura de páginas e riscos de renderização antes da geração do PDF.
-            </p>
-          </div>
-          <div class="grid grid-cols-3 gap-2 rounded-[1.5rem] border border-[#ded3bf] bg-[#f8f4ea] p-2 dark:border-[#25443c] dark:bg-[#10231f]">
-            <div v-for="metric in studioQualityMetrics" :key="metric.label" class="rounded-[1.15rem] bg-[#fffdf7] px-3 py-2 text-center shadow-sm dark:bg-[#07110f]">
-              <div class="text-lg font-black text-[#15231f] dark:text-[#f7f1e7]">{{ metric.value }}</div>
-              <div class="mt-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#6b7b74] dark:text-[#83978d]">{{ metric.label }}</div>
-            </div>
+    <section class="ds-command-surface px-5 py-4">
+      <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+        <div class="flex min-w-0 items-start gap-3">
+          <span class="mt-0.5 inline-flex shrink-0 rounded-full border px-2.5 py-1 text-xs font-bold" :class="studioQualityStatus.class">{{ studioQualityStatus.label }}</span>
+          <div class="min-w-0">
+            <h2 class="text-sm font-bold text-[var(--ds-text)]">Controlo de qualidade do modelo</h2>
+            <p class="mt-1 truncate text-xs font-semibold text-[var(--ds-text-muted)]">{{ studioQualityStatus.description }}</p>
+            <button
+              v-if="studioQualityIssues.length"
+              type="button"
+              class="mt-2 block max-w-full truncate text-left text-xs font-bold text-amber-700 hover:underline dark:text-amber-300"
+              @click="focusQualityIssue(studioQualityIssues[0])"
+            >
+              {{ studioQualityIssues[0].title }} · {{ studioQualityIssues.length }} ponto(s) a rever
+            </button>
+            <p v-else class="mt-2 text-xs font-bold text-emerald-700 dark:text-emerald-300">Sem bloqueios detectados na configuração atual.</p>
           </div>
         </div>
-
-        <div class="space-y-3">
-          <div v-if="studioQualityIssues.length" class="space-y-2">
-            <button
-              v-for="issue in studioQualityIssues.slice(0, 4)"
-              :key="issue.key"
-              type="button"
-              class="w-full rounded-[1.35rem] border px-4 py-3 text-left transition hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(20,61,55,0.10)]"
-              :class="issue.tone === 'critical'
-                ? 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100'
-                : issue.tone === 'warning'
-                  ? 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100'
-                  : 'border-[#ded3bf] bg-[#f8f4ea] text-[#475a53] dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#cbd8cf]'"
-              @click="focusQualityIssue(issue)"
-            >
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <div class="text-sm font-black">{{ issue.title }}</div>
-                  <p class="mt-1 text-xs font-medium leading-5 opacity-80">{{ issue.description }}</p>
-                </div>
-                <span class="shrink-0 rounded-full bg-white/70 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] dark:bg-black/20">
-                  {{ issue.pane === 'pdf' ? 'PDF' : 'Compor' }}
-                </span>
-              </div>
-            </button>
+        <div class="flex flex-wrap items-center gap-2">
+          <div v-for="metric in studioQualityMetrics" :key="metric.label" class="min-w-20 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-3 py-2 text-center">
+            <div class="text-base font-bold text-[var(--ds-text)]">{{ metric.value }}</div>
+            <div class="text-[10px] font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</div>
           </div>
-          <div v-else class="rounded-[1.35rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
-            Sem bloqueios detectados para a pré-visualização actual.
-          </div>
-          <button
-            v-if="rendererCssRisks.length"
-            type="button"
-            class="inline-flex w-full items-center justify-center rounded-2xl bg-[rgb(var(--primary-800-rgb))] px-4 py-3 text-sm font-black text-white shadow-[0_16px_40px_rgb(var(--primary-900-rgb)/0.14)] transition hover:bg-[rgb(var(--primary-700-rgb))] dark:bg-[rgb(var(--accent-300-rgb))] dark:text-[#07110f]"
-            @click="preferChromeRenderer"
-          >
-            {{ props.rendererCapabilities?.chrome?.available ? 'Usar Chrome PDF para fidelidade' : 'Rever renderizador PDF' }}
+          <button v-if="rendererCssRisks.length" type="button" class="ds-button ds-button-secondary" @click="preferChromeRenderer">
+            {{ props.rendererCapabilities?.chrome?.available ? 'Usar Chrome PDF' : 'Rever saída PDF' }}
           </button>
         </div>
       </div>
     </section>
 
-    <div v-if="props.presets.length" v-show="activeStudioPane === 'setup'" class="rounded-3xl border border-[#ded3bf] bg-[#fffdf7] p-6 shadow-[0_18px_55px_rgba(20,61,55,0.06)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
-      <h2 class="text-lg font-bold text-[#15231f] dark:text-[#f7f1e7]">Modelos base</h2>
-      <p class="mt-1 text-sm font-medium text-[#475a53] dark:text-[#cbd8cf]">Use um preset como ponto de partida e depois refine o canvas abaixo.</p>
+    <div v-if="props.presets.length" v-show="activeStudioPane === 'setup'" class="ds-panel p-5">
+      <h2 class="text-base font-bold text-[var(--ds-text)]">Modelos base</h2>
+      <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Use um preset como ponto de partida e depois refine a composição.</p>
       <swiper-container
         class="report-studio-swiper mt-5 block"
         :slides-per-view="1.05"
@@ -4155,19 +4117,19 @@ function submit() {
         >
           <button
             type="button"
-            class="min-h-44 w-full rounded-2xl border border-[#ded3bf] bg-[#f8f4ea]/85 p-4 text-left transition hover:-translate-y-0.5 hover:border-[rgb(var(--primary-300-rgb))] hover:bg-[#fffdf7] hover:shadow-[0_20px_50px_rgb(var(--primary-900-rgb)/0.10)] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.25)] dark:border-[#25443c] dark:bg-[#10231f]/70 dark:hover:border-[rgb(var(--primary-400-rgb)/0.55)] dark:hover:bg-[#10231f]"
+            class="min-h-36 w-full rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4 text-left transition hover:border-[rgb(var(--primary-300-rgb))] hover:bg-[var(--ds-panel-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)]"
             @click="applyBaseModelPreset(preset)"
           >
             <div class="flex items-start justify-between gap-3">
               <div>
-                <div class="text-sm font-bold text-[#15231f] dark:text-[#f7f1e7]">{{ preset.name }}</div>
-                <div class="mt-1 text-xs font-bold uppercase tracking-wide text-[#6b7b74] dark:text-[#83978d]">{{ studioTypeLabel(preset.category) }}</div>
+                <div class="text-sm font-bold text-[var(--ds-text)]">{{ preset.name }}</div>
+                <div class="mt-1 text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ studioTypeLabel(preset.category) }}</div>
               </div>
               <span class="rounded-full bg-[rgb(var(--accent-50-rgb))] px-2.5 py-1 text-[11px] font-black text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--accent-300-rgb)/0.14)] dark:text-[rgb(var(--accent-200-rgb))]">
                 Usar
               </span>
             </div>
-            <p class="mt-3 text-sm leading-6 text-[#475a53] dark:text-[#cbd8cf]">{{ preset.description }}</p>
+            <p class="mt-3 text-sm leading-6 text-[var(--ds-text-muted)]">{{ preset.description }}</p>
           </button>
         </swiper-slide>
       </swiper-container>

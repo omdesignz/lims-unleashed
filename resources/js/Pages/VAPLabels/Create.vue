@@ -24,9 +24,22 @@
       </div>
     </ModuleHero>
 
+    <nav class="ds-panel flex overflow-x-auto px-3 sm:px-5" aria-label="Etapas do editor de etiquetas">
+      <button
+        v-for="section in editorSections"
+        :key="section.value"
+        type="button"
+        class="-mb-px min-h-12 shrink-0 border-b-2 px-4 text-sm font-bold transition"
+        :class="editorSection === section.value ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
+        @click="editorSection = section.value"
+      >
+        {{ section.label }}
+      </button>
+    </nav>
+
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_25rem]">
       <div class="space-y-6">
-        <section class="ds-panel p-5 sm:p-6">
+        <section v-show="editorSection === 'identity'" class="ds-panel p-5 sm:p-6">
           <div class="flex items-start gap-3">
             <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
               <Cog6ToothIcon class="h-5 w-5" />
@@ -161,7 +174,7 @@
           </div>
         </section>
 
-        <section class="ds-panel p-5 sm:p-6">
+        <section v-show="editorSection === 'content'" class="ds-panel p-5 sm:p-6">
           <div class="flex items-start gap-3">
             <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
               <DocumentTextIcon class="h-5 w-5" />
@@ -210,7 +223,7 @@
           </div>
         </section>
 
-        <section class="ds-panel p-5 sm:p-6">
+        <section v-show="editorSection === 'appearance'" class="ds-panel p-5 sm:p-6">
           <div class="flex items-start gap-3">
             <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
               <PaintBrushIcon class="h-5 w-5" />
@@ -319,7 +332,7 @@
           </div>
         </section>
 
-        <section class="ds-panel p-5 sm:p-6">
+        <section v-show="editorSection === 'traceability'" class="ds-panel p-5 sm:p-6">
           <div class="flex items-start gap-3">
             <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
               <QrCodeIcon class="h-5 w-5" />
@@ -446,7 +459,20 @@
       </div>
 
       <aside class="space-y-6 xl:sticky xl:top-6 xl:self-start">
-        <section class="ds-panel p-5 sm:p-6">
+        <nav class="ds-panel flex p-1" aria-label="Ferramentas do editor de etiquetas">
+          <button
+            v-for="section in inspectorSections"
+            :key="section.value"
+            type="button"
+            class="min-h-10 flex-1 rounded-md px-2 text-xs font-bold transition"
+            :class="inspectorSection === section.value ? 'bg-[rgb(var(--primary-800-rgb))] text-white dark:bg-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--primary-950-rgb))]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]'"
+            @click="inspectorSection = section.value"
+          >
+            {{ section.label }}
+          </button>
+        </nav>
+
+        <section v-show="inspectorSection === 'preview'" class="ds-panel p-5 sm:p-6">
           <p class="ds-kicker">
             {{ $t('gestlab.general.labels.vap_labels.preview') }}
           </p>
@@ -469,7 +495,7 @@
           </p>
         </section>
 
-        <section class="ds-panel p-5 sm:p-6">
+        <section v-show="inspectorSection === 'templates'" class="ds-panel p-5 sm:p-6">
           <p class="ds-kicker">
             {{ $t('gestlab.general.labels.vap_labels.templates.title') }}
           </p>
@@ -506,7 +532,7 @@
           </div>
         </section>
 
-        <section class="ds-panel p-5 sm:p-6">
+        <section v-show="inspectorSection === 'assignment'" class="ds-panel p-5 sm:p-6">
           <p class="ds-kicker">
             {{ $t('gestlab.general.labels.vap_labels.assignment') }}
           </p>
@@ -633,7 +659,22 @@ const props = defineProps({
 })
 
 const selectedTemplate = ref(null)
+const editorSection = ref('identity')
+const inspectorSection = ref('preview')
 const templatesList = computed(() => Array.isArray(props.templates) ? props.templates : [])
+
+const editorSections = [
+  { value: 'identity', label: 'Identificação' },
+  { value: 'content', label: 'Conteúdo' },
+  { value: 'appearance', label: 'Aparência' },
+  { value: 'traceability', label: 'Rastreabilidade' },
+]
+
+const inspectorSections = [
+  { value: 'preview', label: 'Prévia' },
+  { value: 'templates', label: 'Modelos' },
+  { value: 'assignment', label: 'Âmbito' },
+]
 const labsList = computed(() => Array.isArray(props.labs) ? props.labs : [])
 const departmentsList = computed(() => Array.isArray(props.departments) ? props.departments : [])
 

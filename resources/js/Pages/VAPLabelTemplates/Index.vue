@@ -164,131 +164,39 @@
       </div>
 
       <div v-else>
-        <div class="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
+        <div class="divide-y divide-[var(--ds-border)]">
           <article
             v-for="template in templateRows"
             :key="template.id"
-            class="group flex min-h-full flex-col overflow-hidden rounded-[1.55rem] border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] shadow-[var(--ds-shadow-control)] transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
+            class="grid gap-4 px-5 py-4 transition hover:bg-[var(--ds-panel-subtle)] lg:grid-cols-[9rem_minmax(0,1fr)_auto] lg:items-center"
           >
-            <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <h3 class="truncate text-base font-black text-[var(--ds-text)]">
-                      {{ template.name }}
-                    </h3>
-                    <span
-                      v-if="template.is_featured"
-                      class="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[0.62rem] font-black uppercase tracking-[0.12em] text-amber-800 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200"
-                    >
-                      {{ $t('gestlab.general.labels.vap_labels.templates.featured') }}
-                    </span>
-                  </div>
-                  <div class="mt-2 flex flex-wrap items-center gap-2">
-                    <span :class="categoryBadgeClass(template.category)">
-                      {{ categoryLabel(template.category) }}
-                    </span>
-                    <span :class="statusBadgeClass(template.is_active)">
-                      {{ template.is_active ? $t('gestlab.general.labels.vap_labels.templates.active') : $t('gestlab.general.labels.vap_labels.templates.inactive') }}
-                    </span>
-                  </div>
-                </div>
-                <div class="flex shrink-0 items-center gap-1">
-                  <button
-                    type="button"
-                    class="ds-table-action"
-                    :title="template.is_featured ? $t('gestlab.general.labels.vap_labels.buttons.remove_featured') : $t('gestlab.general.labels.vap_labels.buttons.mark_featured')"
-                    @click="toggleFeatured(template)"
-                  >
-                    <StarIcon :class="['h-5 w-5', template.is_featured ? 'fill-amber-500 text-amber-500' : '']" />
-                  </button>
-                  <button
-                    type="button"
-                    class="ds-table-action ds-table-action-danger"
-                    :title="$t('gestlab.general.labels.vap_labels.buttons.delete')"
-                    @click="confirmDelete(template)"
-                  >
-                    <TrashIcon class="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
+            <div class="flex h-20 items-center justify-center overflow-hidden rounded-md border p-2 text-center text-[0.6rem] font-black leading-tight" :style="templatePreviewStyle(template)">
+              {{ templatePreviewText(template) }}
             </div>
 
-            <div class="flex flex-1 flex-col p-4">
-              <p class="line-clamp-2 text-sm font-semibold leading-6 text-[var(--ds-text-muted)]">
-                {{ template.description || $t('gestlab.general.labels.vap_labels.templates.no_description') }}
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <h3 class="truncate text-base font-black text-[var(--ds-text)]">{{ template.name }}</h3>
+                <span :class="categoryBadgeClass(template.category)">{{ categoryLabel(template.category) }}</span>
+                <span :class="statusBadgeClass(template.is_active)">{{ template.is_active ? $t('gestlab.general.labels.vap_labels.templates.active') : $t('gestlab.general.labels.vap_labels.templates.inactive') }}</span>
+                <span v-if="template.is_featured" class="ds-badge ds-badge-warning">{{ $t('gestlab.general.labels.vap_labels.templates.featured') }}</span>
+              </div>
+              <p class="mt-1 line-clamp-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ template.description || $t('gestlab.general.labels.vap_labels.templates.no_description') }}</p>
+              <p class="mt-2 text-xs font-semibold text-[var(--ds-text-soft)]">
+                {{ template.template_data?.width || 50 }} × {{ template.template_data?.height || 25 }} mm · {{ formatDate(template.updated_at) }}
+                <span v-if="template.template_data?.has_qr_code"> · QR</span><span v-if="template.template_data?.has_barcode"> · {{ template.template_data?.barcode_type || 'CODE128' }}</span>
               </p>
-
-              <div class="mt-4 rounded-[1.25rem] border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
-                <p class="ds-table-heading mb-2">
-                  {{ $t('gestlab.general.labels.vap_labels.templates.preview') }}
-                </p>
-                <div
-                  class="mx-auto flex h-28 items-center justify-center overflow-hidden rounded-xl border p-3 text-center shadow-inner"
-                  :style="templatePreviewStyle(template)"
-                >
-                  <span class="truncate text-xs font-black">
-                    {{ templatePreviewText(template) }}
-                  </span>
-                </div>
-                <p class="mt-2 text-center text-xs font-bold text-[var(--ds-text-muted)]">
-                  {{ template.template_data?.width || 50 }} × {{ template.template_data?.height || 25 }} mm
-                </p>
-              </div>
-
-              <div class="mt-4 flex flex-wrap gap-2">
-                <span
-                  v-if="template.template_data?.has_qr_code"
-                  class="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-black text-sky-800 dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-200"
-                >
-                  {{ $t('gestlab.general.labels.vap_labels.qr_code') }}
-                </span>
-                <span
-                  v-if="template.template_data?.has_barcode"
-                  class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200"
-                >
-                  {{ template.template_data?.barcode_type || 'CODE128' }}
-                </span>
-                <span
-                  v-if="template.template_data?.logo_path"
-                  class="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-black text-amber-800 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200"
-                >
-                  {{ $t('gestlab.general.labels.vap_labels.logo') }}
-                </span>
-              </div>
-
-              <div class="mt-auto flex items-center justify-between gap-3 border-t border-[var(--ds-border)] pt-4">
-                <span class="text-xs font-semibold text-[var(--ds-text-muted)]">
-                  {{ formatDate(template.updated_at) }}
-                </span>
-                <div class="flex items-center gap-1">
-                  <Link
-                    :href="route('vap_labels.label-templates.edit', template.id)"
-                    class="ds-table-action"
-                    :title="$t('gestlab.general.labels.vap_labels.buttons.edit')"
-                  >
-                    <PencilIcon class="h-5 w-5" />
-                  </Link>
-                  <button
-                    type="button"
-                    class="ds-table-action"
-                    :title="template.is_active ? $t('gestlab.general.labels.vap_labels.buttons.deactivate') : $t('gestlab.general.labels.vap_labels.buttons.activate')"
-                    @click="toggleStatus(template)"
-                  >
-                    <PowerIcon class="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
             </div>
 
-            <div class="border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
-              <Link
-                :href="route('vap_labels.labels.create', { template_id: template.id })"
-                class="ds-button ds-button-secondary w-full"
-              >
+            <div class="flex flex-wrap items-center gap-1 lg:justify-end">
+              <Link :href="route('vap_labels.labels.create', { template_id: template.id })" class="ds-button ds-button-secondary mr-1">
                 <PlusCircleIcon class="h-4 w-4" />
                 {{ $t('gestlab.general.labels.vap_labels.buttons.use_template') }}
               </Link>
+              <Link :href="route('vap_labels.label-templates.edit', template.id)" class="ds-table-action" :title="$t('gestlab.general.labels.vap_labels.buttons.edit')"><PencilIcon class="h-5 w-5" /></Link>
+              <button type="button" class="ds-table-action" :title="template.is_featured ? $t('gestlab.general.labels.vap_labels.buttons.remove_featured') : $t('gestlab.general.labels.vap_labels.buttons.mark_featured')" @click="toggleFeatured(template)"><StarIcon :class="['h-5 w-5', template.is_featured ? 'fill-amber-500 text-amber-500' : '']" /></button>
+              <button type="button" class="ds-table-action" :title="template.is_active ? $t('gestlab.general.labels.vap_labels.buttons.deactivate') : $t('gestlab.general.labels.vap_labels.buttons.activate')" @click="toggleStatus(template)"><PowerIcon class="h-5 w-5" /></button>
+              <button type="button" class="ds-table-action ds-table-action-danger" :title="$t('gestlab.general.labels.vap_labels.buttons.delete')" @click="confirmDelete(template)"><TrashIcon class="h-5 w-5" /></button>
             </div>
           </article>
         </div>

@@ -7,6 +7,13 @@
     >
       <template #actions>
         <Link
+          :href="route('vap_labels.label-templates.index')"
+          class="ds-button ds-button-secondary"
+        >
+          <DocumentDuplicateIcon class="h-5 w-5" />
+          {{ $t('gestlab.general.labels.vap_labels.templates.title') }}
+        </Link>
+        <Link
           :href="route('vap_labels.labels.create')"
           class="ds-button ds-button-primary"
         >
@@ -130,91 +137,6 @@
       </div>
     </section>
 
-    <section
-      v-if="visibleGalleryLabels.length"
-      class="ds-panel p-5 sm:p-6"
-    >
-      <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p class="ds-kicker">
-            {{ $t('gestlab.general.labels.vap_labels.index.gallery_eyebrow') }}
-          </p>
-          <h2 class="ds-heading mt-2 text-2xl">
-            {{ $t('gestlab.general.labels.vap_labels.index.gallery_title') }}
-          </h2>
-          <p class="ds-copy mt-2 max-w-3xl text-sm">
-            {{ $t('gestlab.general.labels.vap_labels.index.gallery_description') }}
-          </p>
-        </div>
-        <Link
-          :href="route('vap_labels.labels.create')"
-          class="ds-button ds-button-secondary"
-        >
-          <PlusCircleIcon class="h-5 w-5" />
-          {{ $t('gestlab.general.labels.vap_labels.buttons.add_label') }}
-        </Link>
-      </div>
-
-      <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <article
-          v-for="label in visibleGalleryLabels"
-          :key="`gallery-${label.id}`"
-          class="group rounded-[1.7rem] border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4 shadow-[var(--ds-shadow-control)] transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
-        >
-          <div
-            class="relative flex min-h-36 items-center justify-center overflow-hidden rounded-[1.25rem] border p-5 text-center shadow-inner"
-            :style="labelPreviewStyle(label)"
-          >
-            <span class="absolute left-3 top-3 rounded-full bg-white/85 px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.14em] text-slate-800 shadow-sm ring-1 ring-black/5 dark:bg-slate-950/85 dark:text-slate-100">
-              {{ label.width }} × {{ label.height }} mm
-            </span>
-            <p class="max-w-[15rem] whitespace-pre-line text-sm font-black leading-6">
-              {{ labelContentPreview(label, 92) }}
-            </p>
-          </div>
-
-          <div class="mt-4 flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <h3 class="truncate text-base font-black text-[var(--ds-text)]">
-                {{ label.name }}
-              </h3>
-              <p class="mt-1 truncate text-xs font-semibold text-[var(--ds-text-muted)]">
-                {{ label.lab?.name || $t('gestlab.general.labels.vap_labels.index.no_lab') }}
-              </p>
-            </div>
-            <span :class="typeBadgeClass(label.type)">
-              {{ $t('gestlab.general.labels.vap_labels.types.' + label.type) }}
-            </span>
-          </div>
-
-          <div class="mt-4 flex items-center gap-2">
-            <Link
-              :href="route('vap_labels.labels.show', label.id)"
-              class="ds-table-action"
-              :title="$t('gestlab.general.labels.vap_labels.buttons.view')"
-            >
-              <EyeIcon class="h-4 w-4" />
-            </Link>
-            <Link
-              :href="route('vap_labels.labels.edit', label.id)"
-              class="ds-table-action"
-              :title="$t('gestlab.general.labels.vap_labels.buttons.edit')"
-            >
-              <PencilIcon class="h-4 w-4" />
-            </Link>
-            <button
-              type="button"
-              class="ds-button ds-button-primary ml-auto min-h-0 rounded-full px-3 py-2 text-xs"
-              :title="$t('gestlab.general.labels.vap_labels.buttons.preview_pdf')"
-              @click="previewPdf(label)"
-            >
-              {{ $t('gestlab.general.labels.vap_labels.preview_pdf') }}
-            </button>
-          </div>
-        </article>
-      </div>
-    </section>
-
     <section class="ds-table-shell">
       <div class="ds-table-summary px-5 py-4 sm:px-6">
         <div>
@@ -260,11 +182,8 @@
             class="space-y-4 px-5 py-5"
           >
             <div class="flex items-start gap-3">
-              <div
-                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm ring-1 ring-black/5"
-                :style="labelIconStyle(label)"
-              >
-                <TagIcon class="h-6 w-6" />
+              <div class="flex h-12 w-20 shrink-0 items-center justify-center overflow-hidden rounded-md border p-1 text-[0.5rem] font-black leading-tight" :style="labelPreviewStyle(label)">
+                {{ labelContentPreview(label, 18) }}
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
@@ -373,11 +292,8 @@
               >
                 <td class="px-6 py-5">
                   <div class="flex items-center gap-4">
-                    <div
-                      class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm ring-1 ring-black/5"
-                      :style="labelIconStyle(label)"
-                    >
-                      <TagIcon class="h-6 w-6" />
+                    <div class="flex h-12 w-20 shrink-0 items-center justify-center overflow-hidden rounded-md border p-1 text-center text-[0.5rem] font-black leading-tight" :style="labelPreviewStyle(label)">
+                      {{ labelContentPreview(label, 18) }}
                     </div>
                     <div class="min-w-0">
                       <p class="truncate text-sm font-black text-[var(--ds-text)]">
@@ -473,6 +389,7 @@ import { trans } from 'laravel-vue-i18n'
 import { debounce } from 'lodash'
 import {
   AdjustmentsHorizontalIcon,
+  DocumentDuplicateIcon,
   EyeIcon,
   MagnifyingGlassIcon,
   PencilIcon,
@@ -526,7 +443,6 @@ const paginationLinks = computed(() => Array.isArray(props.labels?.links) ? prop
 const totalRecords = computed(() => Number(props.labels?.total ?? labelRows.value.length))
 const activeRecords = computed(() => Number(props.stats?.active ?? labelRows.value.filter((label) => Boolean(label.is_active)).length))
 const typeStats = computed(() => Array.isArray(props.stats?.by_type) ? props.stats.by_type : [])
-const visibleGalleryLabels = computed(() => labelRows.value.slice(0, 6))
 const hasActiveFilters = computed(() => Object.values(filters.value).some((value) => String(value ?? '').trim() !== ''))
 const resultSummary = computed(() => trans('gestlab.general.labels.vap_labels.index.result_summary', {
   count: totalRecords.value,
@@ -590,10 +506,6 @@ const labelPreviewStyle = (label) => ({
   fontSize: `${Math.max(Number(label?.font_size || 12), 10)}px`,
   textAlign: label?.text_alignment || 'center',
 })
-
-const previewPdf = (label) => {
-  window.open(route('vap_labels.preview-pdf', label.id), '_blank', 'noopener')
-}
 
 const confirmDelete = (label) => {
   labelPendingDelete.value = label

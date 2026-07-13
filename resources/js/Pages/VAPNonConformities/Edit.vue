@@ -36,16 +36,6 @@
         </div>
       </div>
 
-      <dl class="grid grid-cols-2 divide-x divide-y divide-[var(--ds-border)] md:grid-cols-4 md:divide-y-0">
-        <div v-for="metric in dossierMetrics" :key="metric.label" class="px-5 py-4">
-          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[var(--ds-text-soft)]">
-            <span class="lims-status-dot" :class="metric.dotClass"></span>
-            {{ metric.label }}
-          </dt>
-          <dd class="mt-2 text-xl font-bold" :class="metric.valueClass">{{ metric.value }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ metric.caption }}</p>
-        </div>
-      </dl>
     </section>
 
     <NonConformityForm
@@ -92,52 +82,6 @@ const statusDotClasses = {
   closed: 'bg-[var(--ds-text-soft)]',
 }
 
-const severityClasses = {
-  low: 'text-emerald-700 dark:text-emerald-300',
-  medium: 'text-amber-700 dark:text-amber-300',
-  high: 'text-orange-700 dark:text-orange-300',
-  critical: 'text-rose-700 dark:text-rose-300',
-}
-
 const statusChipClass = computed(() => statusChipClasses[props.nonConformity.status] || statusChipClasses.opened)
 const statusDotClass = computed(() => statusDotClasses[props.nonConformity.status] || statusDotClasses.opened)
-
-const dossierMetrics = computed(() => [
-  {
-    label: 'Severidade',
-    value: props.nonConformity.severity || 'medium',
-    caption: 'Prioridade do desvio',
-    valueClass: severityClasses[props.nonConformity.severity] || severityClasses.medium,
-    dotClass: props.nonConformity.severity === 'critical' ? 'lims-status-dot-critical' : 'lims-status-dot-hold',
-  },
-  {
-    label: 'Ações',
-    value: props.nonConformity.actions?.length || 0,
-    caption: 'Correções e CAPA registadas',
-    valueClass: 'text-[var(--ds-text)]',
-    dotClass: 'lims-status-dot-instrument',
-  },
-  {
-    label: 'Laboratório',
-    value: props.nonConformity.lab?.name || '--',
-    caption: 'Origem técnica do evento',
-    valueClass: 'text-[var(--ds-text)]',
-    dotClass: 'lims-status-dot-release',
-  },
-  {
-    label: 'Prazo',
-    value: props.nonConformity.due_date ? new Date(props.nonConformity.due_date).toLocaleDateString('pt-PT') : '--',
-    caption: 'Data alvo para resolução',
-    valueClass: isOverdue(props.nonConformity) ? 'text-rose-700 dark:text-rose-300' : 'text-[var(--ds-text)]',
-    dotClass: isOverdue(props.nonConformity) ? 'lims-status-dot-critical' : 'lims-status-dot-hold',
-  },
-])
-
-function isOverdue(nonConformity) {
-  if (!nonConformity.due_date || nonConformity.status === 'closed') {
-    return false
-  }
-
-  return new Date(nonConformity.due_date) < new Date()
-}
 </script>

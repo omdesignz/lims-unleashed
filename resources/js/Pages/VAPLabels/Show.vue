@@ -30,53 +30,38 @@
       </template>
     </ModuleHero>
 
-    <div class="grid gap-4 lg:grid-cols-3">
-      <article class="ds-card bg-[var(--ds-panel-raised)] p-5">
-        <p class="ds-kicker">
-          {{ $t('gestlab.general.labels.vap_labels.show.pdf_card') }}
-        </p>
-        <h2 class="ds-heading mt-2 text-xl">
-          {{ rendererTitle }}
-        </h2>
-        <p class="ds-copy mt-3 text-sm">
-          {{ pdfRenderer?.chrome?.description || $t('gestlab.general.labels.vap_labels.show.pdf_description') }}
-        </p>
-        <p
-          v-if="pdfRenderer?.chrome?.binary_path"
-          class="mt-3 truncate rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 font-mono text-xs font-semibold text-[var(--ds-text-muted)]"
+    <section class="ds-panel overflow-hidden">
+      <dl class="grid border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
+        <div class="border-b border-[var(--ds-border)] px-5 py-3 sm:border-b-0 sm:border-r">
+          <dt class="ds-kicker">{{ $t('gestlab.general.labels.vap_labels.show.pdf_card') }}</dt>
+          <dd class="mt-1 text-sm font-bold text-[var(--ds-text)]">{{ rendererTitle }}</dd>
+        </div>
+        <div class="border-b border-[var(--ds-border)] px-5 py-3 sm:border-b-0 sm:border-r">
+          <dt class="ds-kicker">{{ $t('gestlab.general.labels.vap_labels.dimensions') }}</dt>
+          <dd class="mt-1 text-sm font-bold text-[var(--ds-text)]">{{ label.width }} × {{ label.height }} mm</dd>
+        </div>
+        <div class="px-5 py-3">
+          <dt class="ds-kicker">{{ $t('gestlab.general.labels.vap_labels.show.traceability_card') }}</dt>
+          <dd class="mt-1 text-sm font-bold text-[var(--ds-text)]">{{ traceabilitySummary }}</dd>
+        </div>
+      </dl>
+      <nav class="flex overflow-x-auto px-3 sm:px-5" aria-label="Áreas da etiqueta">
+        <button
+          v-for="tab in detailTabs"
+          :key="tab.value"
+          type="button"
+          class="-mb-px min-h-12 shrink-0 border-b-2 px-4 text-sm font-bold transition"
+          :class="activeDetailTab === tab.value ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
+          @click="activeDetailTab = tab.value"
         >
-          {{ pdfRenderer.chrome.binary_path }}
-        </p>
-      </article>
-
-      <article class="ds-card bg-[var(--ds-panel-raised)] p-5">
-        <p class="ds-kicker">
-          {{ $t('gestlab.general.labels.vap_labels.dimensions') }}
-        </p>
-        <p class="mt-2 text-2xl font-black text-[var(--ds-text)]">
-          {{ label.width }} × {{ label.height }} mm
-        </p>
-        <p class="ds-copy mt-2 text-sm">
-          {{ $t('gestlab.general.labels.vap_labels.show.dimensions_hint') }}
-        </p>
-      </article>
-
-      <article class="ds-card bg-[var(--ds-panel-raised)] p-5">
-        <p class="ds-kicker">
-          {{ $t('gestlab.general.labels.vap_labels.show.traceability_card') }}
-        </p>
-        <p class="mt-2 text-2xl font-black text-[var(--ds-text)]">
-          {{ traceabilitySummary }}
-        </p>
-        <p class="ds-copy mt-2 text-sm">
-          {{ $t('gestlab.general.labels.vap_labels.show.traceability_hint') }}
-        </p>
-      </article>
-    </div>
+          {{ tab.label }}
+        </button>
+      </nav>
+    </section>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
       <div class="space-y-6">
-        <section class="ds-panel p-5 sm:p-6">
+        <section v-show="activeDetailTab === 'preview'" class="ds-panel p-5 sm:p-6">
           <div class="flex items-start gap-3">
             <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
               <EyeIcon class="h-5 w-5" />
@@ -165,7 +150,7 @@
           </div>
         </section>
 
-        <section class="ds-panel p-5 sm:p-6">
+        <section v-show="activeDetailTab === 'print'" class="ds-panel p-5 sm:p-6">
           <div class="flex items-start gap-3">
             <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
               <PrinterIcon class="h-5 w-5" />
@@ -487,6 +472,12 @@ const props = defineProps({
 const toast = useToast()
 const confirmationAction = ref(null)
 const pendingTemplate = ref(null)
+const activeDetailTab = ref('preview')
+
+const detailTabs = [
+  { value: 'preview', label: 'Pré-visualização e especificação' },
+  { value: 'print', label: 'Produção e impressão' },
+]
 
 const singleLabel = ref({
   content: props.previewData?.sample_text || props.label.content,
