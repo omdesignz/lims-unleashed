@@ -6,6 +6,7 @@ use App\Http\Controllers\AnalysisController;
 use App\Http\Controllers\Api\UserThemeController;
 use App\Http\Controllers\APITokenController;
 use App\Http\Controllers\ApplicationEventController;
+use App\Http\Controllers\ArchivedDocumentController;
 use App\Http\Controllers\BackupStatusesController;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BrowserSessionController;
@@ -376,6 +377,7 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     // User Profile
     Route::controller(UserProfileController::class)->group(function () {
         Route::get('/security', 'show')->name('security');
+        Route::delete('/user', 'destroy')->name('current-user.destroy');
     });
 
     // Browser Sessions
@@ -968,6 +970,17 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('messages/getMessage', 'getMessage')->name('messages.getMessage');
     });
 
+    // Archived Documents
+    Route::controller(ArchivedDocumentController::class)->group(function () {
+        Route::get('archived-documents', 'index')->name('archived_documents.index');
+        Route::get('archived-documents/create', 'create')->name('archived_documents.create');
+        Route::post('archived-documents', 'store')->name('archived_documents.store');
+        Route::get('archived-documents/{document}/edit', 'edit')->name('archived_documents.edit');
+        Route::put('archived-documents/{document}', 'update')->name('archived_documents.update');
+        Route::get('archived-documents/destroy', 'destroy')->name('archived_documents.destroy');
+        Route::get('archived-documents/restore', 'restore')->name('archived_documents.restore');
+    });
+
     // Notifications
 
     Route::controller(NotificationController::class)->group(function () {
@@ -980,9 +993,9 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 
         // Delete notifications
-        Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.delete');
         Route::delete('/notifications/clear-all', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
         Route::delete('/notifications/clear-read', [NotificationController::class, 'clearRead'])->name('notifications.clear-read');
+        Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.delete');
     });
 
     // Admin Notification Center
@@ -1492,12 +1505,10 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     Route::controller(SystemActivityController::class)->group(function () {
         Route::get('system-activity', 'index')->name('systemactivity.index');
         Route::get('system-activity/export', 'export')->name('systemactivity.export');
-
-        Route::get('system-activity/{activity}', 'show')->name('systemactivity.show'); // ADDED
-
         Route::get('system-activity/stats', 'stats')->name('systemactivity.stats');
         Route::get('system-activity/cleanup-recommendations', 'cleanupRecommendations')->name('systemactivity.cleanup.recommendations');
         Route::get('system-activity/stream', 'stream')->name('systemactivity.stream');
+        Route::get('system-activity/{activity}', 'show')->name('systemactivity.show');
         Route::delete('system-activity/{activity}', 'destroy')->name('systemactivity.destroy');
         Route::delete('system-activity/', 'destroyAll')->name('systemactivity.destroyAll');
         Route::post('system-activity/archive', 'archive')->name('systemactivity.archive');

@@ -19,7 +19,7 @@ class WarehouseResource extends JsonResource
             'email' => $this->email,
             'invoicing_email' => $this->invoicing_email,
             'primary_phone' => $this->primary_phone,
-            'alternative_phone' => $this->alternative_phone, 
+            'alternative_phone' => $this->alternative_phone,
             'nif' => $this->nif,
             'address' => $this->address,
             'municipality' => $this->municipality,
@@ -35,7 +35,7 @@ class WarehouseResource extends JsonResource
             'customer_category' => CustomerResource::make($this->customer)?->category?->name ?? null,
             'has_password' => ! empty($this->password),
             'status' => $this->deleted_at ? 'inactive' : 'active',
-            'is_primary' => (bool) ($this->customer && $this->customer->main_warehouse_id === $this->id),
+            'is_primary' => (bool) ($this->customer && $this->customer->warehouse_id === $this->id),
             'created_at' => optional($this->created_at)?->toIso8601String(),
             'updated_at' => optional($this->updated_at)?->toIso8601String(),
             'deleted' => $this->deleted_at ? true : false,
@@ -43,12 +43,12 @@ class WarehouseResource extends JsonResource
                 'edit_path' => route('warehouses.edit', $this->id),
                 'show_path' => route('warehouses.show', $this->id),
                 'delete_path' => route('warehouses.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('warehouses.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

@@ -1,1818 +1,1002 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <ModuleHero
-      eyebrow="Sample lifecycle"
-      :title="$page.props.title || 'Gestão de Amostras VAP'"
-      :description="activeTab === 'entry' ? 'Receba amostras, valide condicionamento, associe proposta/produto e prepare o fluxo normal de análise.' : 'Registe descarte rastreável, método de eliminação e certificados com evidência para auditoria.'"
-    >
-      <template #actions>
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <span class="inline-flex items-center rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-800 ring-1 ring-inset ring-primary-700/10 dark:bg-primary-500/10 dark:text-primary-200 dark:ring-primary-400/20">
-            {{ stats.total_samples }} Amostras
-          </span>
-          <div class="flex overflow-hidden rounded-2xl border border-slate-300 bg-white/80 shadow-sm dark:border-slate-700 dark:bg-slate-950/50">
-            <button
-              @click="activeTab = 'entry'"
-              :class="[
-                'px-4 py-2 text-sm font-semibold transition-colors duration-200',
-                activeTab === 'entry'
-                  ? 'bg-primary-600 text-white dark:bg-primary-500'
-                  : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800'
-              ]"
-            >
-              Entrada
-            </button>
-            <button
-              @click="activeTab = 'discard'"
-              :class="[
-                'px-4 py-2 text-sm font-semibold transition-colors duration-200',
-                activeTab === 'discard'
-                  ? 'bg-primary-600 text-white dark:bg-primary-500'
-                  : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800'
-              ]"
-            >
-              Descarte
-            </button>
-          </div>
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
+        <div class="max-w-3xl">
+          <p class="ds-kicker">Ciclo de amostras</p>
+          <h1 class="ds-heading mt-2 text-2xl">
+            {{ $page.props.title || 'Gestão de Amostras VAP' }}
+          </h1>
+          <p class="ds-copy mt-2 text-sm">
+            {{ activeTab === 'entry'
+              ? 'Receção, validação de condicionamento, escopo analítico e encaminhamento para o laboratório.'
+              : 'Destruição controlada, método de eliminação e evidência rastreável para auditoria.' }}
+          </p>
         </div>
-      </template>
 
-      <div class="mt-6 grid gap-4 md:grid-cols-4">
-        <article class="rounded-2xl border border-slate-200 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-950/45">
-          <p class="text-sm text-slate-500 dark:text-slate-400">Por iniciar</p>
-          <p class="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{{ stats.pending_analysis }}</p>
-        </article>
-        <article class="rounded-2xl border border-primary-200 bg-primary-50/80 p-4 dark:border-primary-500/30 dark:bg-primary-500/10">
-          <p class="text-sm text-primary-800 dark:text-primary-200">Em progresso</p>
-          <p class="mt-2 text-2xl font-semibold text-primary-900 dark:text-primary-100">{{ stats.in_progress || 0 }}</p>
-        </article>
-        <article class="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
-          <p class="text-sm text-emerald-800 dark:text-emerald-200">Completadas</p>
-          <p class="mt-2 text-2xl font-semibold text-emerald-900 dark:text-emerald-100">{{ stats.completed_analysis }}</p>
-        </article>
-        <article class="rounded-2xl border border-rose-200 bg-rose-50/80 p-4 dark:border-rose-500/30 dark:bg-rose-500/10">
-          <p class="text-sm text-rose-800 dark:text-rose-200">Descartadas</p>
-          <p class="mt-2 text-2xl font-semibold text-rose-900 dark:text-rose-100">{{ stats.total_discarded }}</p>
-        </article>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="ds-chip">
+            <span class="lims-status-dot lims-status-dot-instrument" />
+            {{ stats.total_samples || 0 }} amostras
+          </span>
+          <button type="button" class="ds-button ds-button-secondary" @click="refreshData">
+            <ArrowPathIcon class="h-4 w-4" />
+            Atualizar
+          </button>
+        </div>
       </div>
-    </ModuleHero>
 
-    <!-- SEÇÃO DE ENTRADA DE AMOSTRAS -->
-    <div v-if="activeTab === 'entry'" class="space-y-8">
-      <section class="overflow-hidden rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_24px_70px_rgba(20,61,55,0.10)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
-        <div class="grid gap-0 lg:grid-cols-[minmax(0,1fr)_24rem]">
-          <div class="relative isolate p-6 sm:p-8">
-            <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_10%_0%,rgb(var(--primary-200-rgb)/0.45),transparent_36%),linear-gradient(135deg,#fffdf7,#f4efe4)] dark:bg-[radial-gradient(circle_at_10%_0%,rgb(var(--primary-500-rgb)/0.18),transparent_38%),linear-gradient(135deg,#07110f,#10231f)]" />
-            <div class="inline-flex rounded-full border border-[#ded3bf] bg-white/80 px-3 py-1 text-xs font-black uppercase tracking-[0.26em] text-[#143d37] dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f1d78b]">
-              Ponto de entrada oficial
-            </div>
-            <h2 class="mt-5 max-w-3xl text-2xl font-black tracking-tight text-[#15231f] dark:text-[#f7f1e7] sm:text-3xl">
-              Uma receção ampla para transformar pedidos, colheitas e CQ interno em análise rastreável.
-            </h2>
-            <p class="mt-3 max-w-4xl text-sm font-medium leading-6 text-[#475a53] dark:text-[#cbd8cf]">
-              A Sample Entry concentra produto, matriz, armazém, lote, perfis, condicionamento e cadeia de custódia. Depois de validada, alimenta o fluxo normal de colheita, lab code, análises, resultados, contra-análise e certificado.
-            </p>
-            <div class="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <button
-                type="button"
-                @click="newSample"
-                class="group rounded-3xl border border-[#ded3bf] bg-white/86 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#d9b05f] hover:shadow-xl dark:border-[#25443c] dark:bg-[#081512] dark:hover:border-[#d9b05f]/60"
-              >
-                <PlusCircleIcon class="h-6 w-6 text-[#143d37] dark:text-[#f1d78b]" />
-                <span class="mt-4 block text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">Entrada individual</span>
-                <span class="mt-1 block text-xs leading-5 text-[#475a53] dark:text-[#cbd8cf]">Registe uma amostra completa com escopo e condicionamento.</span>
-              </button>
-              <button
-                type="button"
-                @click="startManualBatch"
-                class="group rounded-3xl border border-[#ded3bf] bg-white/86 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#d9b05f] hover:shadow-xl dark:border-[#25443c] dark:bg-[#081512] dark:hover:border-[#d9b05f]/60"
-              >
-                <QueueListIcon class="h-6 w-6 text-[#143d37] dark:text-[#f1d78b]" />
-                <span class="mt-4 block text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">Fila manual</span>
-                <span class="mt-1 block text-xs leading-5 text-[#475a53] dark:text-[#cbd8cf]">Capture várias amostras manualmente e registe tudo de uma vez.</span>
-              </button>
-              <button
-                type="button"
-                @click="chooseImportFile"
-                class="group rounded-3xl border border-[#ded3bf] bg-white/86 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#d9b05f] hover:shadow-xl dark:border-[#25443c] dark:bg-[#081512] dark:hover:border-[#d9b05f]/60"
-              >
-                <CloudArrowUpIcon class="h-6 w-6 text-[#143d37] dark:text-[#f1d78b]" />
-                <span class="mt-4 block text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">Importação em lote</span>
-                <span class="mt-1 block text-xs leading-5 text-[#475a53] dark:text-[#cbd8cf]">Use nomes e códigos no Excel, sem memorizar IDs internos.</span>
-              </button>
-              <button
-                type="button"
-                @click="newInternalQcSample('microbiology_and_chemistry')"
-                class="group rounded-3xl border border-[#ded3bf] bg-white/86 p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#d9b05f] hover:shadow-xl dark:border-[#25443c] dark:bg-[#081512] dark:hover:border-[#d9b05f]/60"
-              >
-                <ScaleIcon class="h-6 w-6 text-[#143d37] dark:text-[#f1d78b]" />
-                <span class="mt-4 block text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">CQ de matéria-prima</span>
-                <span class="mt-1 block text-xs leading-5 text-[#475a53] dark:text-[#cbd8cf]">Microbiologia e química seguem o fluxo normal sem proposta.</span>
-              </button>
-            </div>
-          </div>
-          <aside class="border-t border-[#ded3bf] bg-[#f7f1e7] p-6 dark:border-[#25443c] dark:bg-[#081512] lg:border-l lg:border-t-0">
-            <div class="space-y-4">
-              <div
-                v-for="card in sampleEntryCommandCards"
-                :key="card.label"
-                class="rounded-3xl border border-white/70 bg-white/78 p-4 shadow-sm dark:border-[#25443c] dark:bg-[#07110f]"
-              >
-                <div class="text-xs font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#83978d]">{{ card.label }}</div>
-                <div class="mt-2 text-2xl font-black text-[#143d37] dark:text-[#f1d78b]">{{ card.value }}</div>
-                <div class="mt-1 text-xs leading-5 text-[#475a53] dark:text-[#cbd8cf]">{{ card.hint }}</div>
+      <div class="flex items-center gap-1 overflow-x-auto border-b border-[color:var(--ds-border)] px-4 sm:px-6" role="tablist" aria-label="Área de gestão de amostras">
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="activeTab === 'entry'"
+          :class="[
+            '-mb-px inline-flex min-h-12 items-center gap-2 border-b-2 px-3 text-sm font-bold transition-colors',
+            activeTab === 'entry'
+              ? 'border-primary-600 text-primary-800 dark:border-primary-300 dark:text-primary-200'
+              : 'border-transparent text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]'
+          ]"
+          @click="activeTab = 'entry'"
+        >
+          <BeakerIcon class="h-5 w-5" />
+          Entrada e triagem
+        </button>
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="activeTab === 'discard'"
+          :class="[
+            '-mb-px inline-flex min-h-12 items-center gap-2 border-b-2 px-3 text-sm font-bold transition-colors',
+            activeTab === 'discard'
+              ? 'border-rose-600 text-rose-700 dark:border-rose-400 dark:text-rose-200'
+              : 'border-transparent text-[color:var(--ds-text-muted)] hover:border-[color:var(--ds-border-strong)] hover:text-[color:var(--ds-text)]'
+          ]"
+          @click="activeTab = 'discard'"
+        >
+          <ArchiveBoxXMarkIcon class="h-5 w-5" />
+          Descarte
+        </button>
+      </div>
+
+      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] sm:grid-cols-4 sm:divide-y-0">
+        <div class="px-5 py-4">
+          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
+            <span class="lims-status-dot lims-status-dot-hold" />
+            Por iniciar
+          </dt>
+          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ stats.pending_analysis || 0 }}</dd>
+        </div>
+        <div class="px-5 py-4">
+          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
+            <span class="lims-status-dot lims-status-dot-instrument" />
+            Em progresso
+          </dt>
+          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ stats.in_progress || 0 }}</dd>
+        </div>
+        <div class="px-5 py-4">
+          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
+            <span class="lims-status-dot lims-status-dot-release" />
+            Completadas
+          </dt>
+          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ stats.completed_analysis || 0 }}</dd>
+        </div>
+        <div class="px-5 py-4">
+          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
+            <span class="lims-status-dot lims-status-dot-critical" />
+            Descartadas
+          </dt>
+          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ stats.total_discarded || 0 }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <template v-if="activeTab === 'entry'">
+      <section class="ds-command-surface overflow-hidden">
+        <div class="grid lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <div class="p-5 lg:p-6">
+            <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+              <div class="max-w-2xl">
+                <p class="ds-kicker">Bancada de receção</p>
+                <h2 class="ds-heading mt-2 text-lg">Iniciar um fluxo de entrada</h2>
+                <p class="ds-copy mt-1 text-sm">
+                  Escolha o modo de receção. Cada caminho mantém identificação, cadeia de custódia e escopo analítico no mesmo registo.
+                </p>
               </div>
+              <button type="button" class="ds-button ds-button-secondary" @click="downloadImportTemplate">
+                <ArrowDownTrayIcon class="h-4 w-4" />
+                Modelo Excel
+              </button>
             </div>
-            <button
-              type="button"
-              @click="downloadImportTemplate"
-              class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#d8cfbe] bg-[#fffdf7] px-4 py-3 text-sm font-black text-[#143d37] shadow-sm transition hover:border-[#d9b05f] hover:bg-white dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f1d78b]"
-            >
-              <ArrowDownTrayIcon class="h-4 w-4" />
-              Descarregar modelo Excel
-            </button>
+
+            <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <button type="button" class="ds-card group p-4 text-left transition hover:border-primary-300" @click="newSample">
+                <PlusCircleIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+                <span class="mt-3 block text-sm font-bold text-[color:var(--ds-text)]">Entrada individual</span>
+                <span class="mt-1 block text-xs leading-5 text-[color:var(--ds-text-muted)]">Registar uma amostra com escopo completo.</span>
+              </button>
+              <button type="button" class="ds-card group p-4 text-left transition hover:border-primary-300" @click="startManualBatch">
+                <QueueListIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+                <span class="mt-3 block text-sm font-bold text-[color:var(--ds-text)]">Fila manual</span>
+                <span class="mt-1 block text-xs leading-5 text-[color:var(--ds-text-muted)]">Preparar várias entradas antes de submeter.</span>
+              </button>
+              <button type="button" class="ds-card group p-4 text-left transition hover:border-primary-300" @click="chooseImportFile">
+                <CloudArrowUpIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+                <span class="mt-3 block text-sm font-bold text-[color:var(--ds-text)]">Importação em lote</span>
+                <span class="mt-1 block text-xs leading-5 text-[color:var(--ds-text-muted)]">Carregar um ficheiro validado de amostras.</span>
+              </button>
+              <button type="button" class="ds-card group p-4 text-left transition hover:border-emerald-300" @click="newInternalQcSample('microbiology_and_chemistry')">
+                <ScaleIcon class="h-5 w-5 text-emerald-700 dark:text-emerald-300" />
+                <span class="mt-3 block text-sm font-bold text-[color:var(--ds-text)]">CQ de matéria-prima</span>
+                <span class="mt-1 block text-xs leading-5 text-[color:var(--ds-text-muted)]">Abrir microbiologia e química sem proposta.</span>
+              </button>
+            </div>
+
+            <input
+              ref="importFileInput"
+              type="file"
+              accept=".xlsx,.xls,.csv,.txt"
+              class="hidden"
+              @change="onImportFileChange"
+            />
+            <p v-if="importForm.errors.file" class="ds-field-error mt-3">{{ importForm.errors.file }}</p>
+          </div>
+
+          <aside class="border-t border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] p-5 lg:border-l lg:border-t-0">
+            <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Estado da receção</p>
+            <dl class="mt-3 divide-y divide-[color:var(--ds-border)]">
+              <div v-for="card in sampleEntryCommandCards" :key="card.label" class="py-3 first:pt-0 last:pb-0">
+                <div class="flex items-baseline justify-between gap-3">
+                  <dt class="text-sm font-bold text-[color:var(--ds-text-muted)]">{{ card.label }}</dt>
+                  <dd class="text-xl font-bold text-[color:var(--ds-text)]">{{ card.value }}</dd>
+                </div>
+                <p class="mt-1 text-xs leading-5 text-[color:var(--ds-text-soft)]">{{ card.hint }}</p>
+              </div>
+            </dl>
           </aside>
         </div>
       </section>
 
-      <section class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <ModuleCard>
-          <div class="flex flex-wrap items-start justify-between gap-4">
+      <section class="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
+        <article class="ds-card p-5">
+          <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Ritmo de receção</h2>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Volume de amostras recebidas nos últimos 7 dias para antecipar carga operacional.
-              </p>
+              <p class="ds-kicker">Carga de trabalho</p>
+              <h2 class="ds-heading mt-2 text-base">Ritmo de receção</h2>
+              <p class="ds-copy mt-1 text-xs">Volume dos últimos sete dias.</p>
             </div>
-            <div class="rounded-2xl bg-slate-50 px-4 py-3 text-right dark:bg-slate-950/50">
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Janela monitorizada</p>
-              <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ intakeTrendTotal }}</p>
+            <div class="text-right">
+              <p class="text-2xl font-bold text-[color:var(--ds-text)]">{{ intakeTrendTotal }}</p>
+              <p class="text-xs font-semibold text-[color:var(--ds-text-soft)]">na janela</p>
             </div>
           </div>
+          <apexchart class="mt-3" type="area" height="250" :options="intakeTrendChartOptions" :series="intakeTrendChartSeries" />
+        </article>
 
-          <div class="mt-6">
-            <apexchart
-              type="area"
-              height="300"
-              :options="intakeTrendChartOptions"
-              :series="intakeTrendChartSeries"
-            />
-          </div>
-        </ModuleCard>
-
-        <div class="grid gap-6">
-          <ModuleCard>
-            <div class="flex items-start justify-between gap-4">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+          <article class="ds-card p-5">
+            <div class="flex items-start justify-between gap-3">
               <div>
-                <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Estado do fluxo</h2>
-                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Distribuição atual da carteira de amostras.</p>
+                <p class="ds-kicker">Carteira</p>
+                <h2 class="ds-heading mt-2 text-base">Estado do fluxo</h2>
               </div>
-              <div class="rounded-2xl bg-slate-50 px-4 py-3 text-right dark:bg-slate-950/50">
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Amostras</p>
-                <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ lifecycleStatusTotal }}</p>
-              </div>
+              <span class="ds-chip">{{ lifecycleStatusTotal }} amostras</span>
             </div>
+            <apexchart class="mt-2" type="donut" height="210" :options="lifecycleStatusChartOptions" :series="lifecycleStatusChartSeries" />
+          </article>
 
-            <div class="mt-6">
-              <apexchart
-                type="donut"
-                height="300"
-                :options="lifecycleStatusChartOptions"
-                :series="lifecycleStatusChartSeries"
-              />
-            </div>
-          </ModuleCard>
-
-          <ModuleCard>
-            <div class="flex items-start justify-between gap-4">
+          <article class="ds-card p-5">
+            <div class="flex items-start justify-between gap-3">
               <div>
-                <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Pressão de retenção</h2>
-                <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Acompanhe descarte próximo, retenção vencida e histórico descartado.</p>
+                <p class="ds-kicker">Retenção</p>
+                <h2 class="ds-heading mt-2 text-base">Pressão operacional</h2>
               </div>
-              <span class="inline-flex items-center rounded-full bg-rose-50 px-3 py-1 text-sm font-medium text-rose-700 dark:bg-rose-500/10 dark:text-rose-200">
-                {{ retentionPressureAlertCount }} sob atenção
+              <span class="ds-chip border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200">
+                {{ retentionPressureAlertCount }} em atenção
               </span>
             </div>
-
-            <div class="mt-6">
-              <apexchart
-                type="bar"
-                height="250"
-                :options="retentionPressureChartOptions"
-                :series="retentionPressureChartSeries"
-              />
-            </div>
-          </ModuleCard>
+            <apexchart class="mt-2" type="bar" height="190" :options="retentionPressureChartOptions" :series="retentionPressureChartSeries" />
+          </article>
         </div>
       </section>
 
-      <div class="grid grid-cols-1 gap-8">
-      <!-- PALCO PRINCIPAL -->
-      <div class="min-w-0 space-y-6">
-        <!-- LISTAGEM DE AMOSTRAS -->
-        <div class="overflow-hidden rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_24px_80px_rgba(20,61,55,0.10)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
-          <div class="border-b border-[#ded3bf] bg-[#f7f1e7] px-6 py-5 dark:border-[#25443c] dark:bg-[#10231f]">
-            <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div>
-                <p class="text-xs font-black uppercase tracking-[0.22em] text-[#6b7b74] dark:text-[#83978d]">Carteira de entrada</p>
-                <h2 class="mt-2 flex items-center gap-2 text-xl font-black text-[#15231f] dark:text-[#f7f1e7]">
-                  <ArchiveBoxIcon class="h-5 w-5 text-[#143d37] dark:text-[#f1d78b]" />
-                  Amostras registadas
-                </h2>
-                <p class="mt-1 text-sm font-medium text-[#5f6f68] dark:text-[#a9bbb4]">
-                  Pesquise por código, cliente, produto, lote ou origem sem sair do fluxo de receção.
-                </p>
-              </div>
-              <div class="flex flex-col gap-3 xl:items-end">
-                <span class="inline-flex w-fit rounded-full border border-[#ded3bf] bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.14em] text-[#143d37] dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#f1d78b]">
-                  {{ samples.length }} itens
-                </span>
-                <div class="grid gap-3 sm:grid-cols-[minmax(0,18rem)_12rem] xl:grid-cols-[minmax(0,18rem)_12rem_auto_auto]">
-                  <BaseInput v-model="searchQuery" type="search" placeholder="Buscar amostra..." />
-                  <BaseSelect v-model="statusFilter">
-                    <option value="">Todos os status</option>
-                    <option value="POR_INICIAR">Por Iniciar</option>
-                    <option value="EN_PROGRESO">Em Progresso</option>
-                    <option value="COMPLETADO">Completado</option>
-                    <option value="CANCELADO">Cancelado</option>
-                    <option value="EN_PAUSA">Em Pausa</option>
-                  </BaseSelect>
-                  <button
-                    type="button"
-                    @click="downloadImportTemplate"
-                    class="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#ded3bf] bg-white px-4 py-2.5 text-sm font-black text-[#143d37] shadow-sm transition hover:border-[#d9b05f] hover:bg-[#fffdf7] dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#f1d78b] dark:hover:bg-[#16342e]"
-                  >
-                    <ArrowDownTrayIcon class="h-4 w-4" />
-                    Modelo Excel
-                  </button>
-                  <button
-                    type="button"
-                    @click="chooseImportFile"
-                    :disabled="importForm.processing"
-                    class="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#143d37] px-4 py-2.5 text-sm font-black text-white shadow-[0_16px_40px_rgba(20,61,55,0.18)] transition hover:bg-[#0f2f2a] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#f1d78b] dark:text-[#07110f] dark:hover:bg-[#f6e7bf]"
-                  >
-                    <CloudArrowUpIcon class="h-4 w-4" />
-                    {{ importForm.processing ? 'A importar...' : 'Importar lote' }}
-                  </button>
-                  <input
-                    ref="importFileInput"
-                    type="file"
-                    accept=".xlsx,.xls,.csv,.txt"
-                    class="hidden"
-                    @change="onImportFileChange"
-                  />
-                  <p v-if="importForm.errors.file" class="text-xs font-semibold text-rose-600 dark:text-rose-300 xl:col-span-4">
-                    {{ importForm.errors.file }}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ESTADO VAZIO -->
-          <div v-if="filteredSamples.length === 0" class="p-12 text-center">
-            <BeakerIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
-            <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
-              Nenhuma amostra encontrada
-            </h3>
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              {{ searchQuery || statusFilter ? 'Tente ajustar os filtros de busca' : 'Comece registrando sua primeira amostra' }}
+      <section class="ds-table-shell">
+        <div class="ds-table-summary flex-col items-stretch px-5 py-4 lg:flex-row lg:items-center">
+          <div>
+            <h2 class="ds-heading text-base">Registo de amostras</h2>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
+              {{ filteredSampleResults.length }} de {{ samples.length }} registos correspondem aos filtros.
             </p>
           </div>
-
-          <!-- TABELA DE AMOSTRAS -->
-          <div v-else class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-[#ded3bf] dark:divide-[#25443c]">
-              <thead class="bg-[#f7f1e7]/90 dark:bg-[#10231f]/90">
-                <tr>
-                  <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
-                    Código
-                  </th>
-                  <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
-                    Nome
-                  </th>
-                  <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
-                    Tipo
-                  </th>
-                  <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
-                    Cliente
-                  </th>
-                  <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
-                    Produto / matriz
-                  </th>
-                  <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
-                    Lote / origem
-                  </th>
-                  <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
-                    Status
-                  </th>
-                  <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
-                    Recebido em
-                  </th>
-                  <th scope="col" class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#a9bbb4]">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-[#ded3bf] bg-[#fffdf7] dark:divide-[#25443c] dark:bg-[#07110f]">
-                <tr 
-                  v-for="sample in filteredSamples"
-                  :key="sample.id"
-                  class="transition-colors duration-150 hover:bg-[#f7f1e7]/70 dark:hover:bg-[#10231f]/70"
-                >
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-black text-[#143d37] dark:text-[#f1d78b]">
-                      {{ sample.code }}
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-bold text-[#15231f] dark:text-[#f7f1e7]">
-                      {{ sample.name }}
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-[#31413b] dark:text-[#d7e2dd]">
-                      {{ getSampleTypeLabel(sample.sample_type) }}
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-[#31413b] dark:text-[#d7e2dd]">
-                      {{ sample.customer?.name || 'N/A' }}
-                    </div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <div class="max-w-64 text-sm font-bold text-[#15231f] dark:text-[#f7f1e7]">
-                      {{ sample.client_submitted_info?.product_name || selectedSampleProductName(sample) }}
-                    </div>
-                    <p class="mt-1 text-xs font-medium text-[#5f6f68] dark:text-[#a9bbb4]">
-                      {{ sample.client_submitted_info?.matrix_description || sample.client_submitted_info?.matrix || 'Matriz por confirmar' }}
-                    </p>
-                  </td>
-                  <td class="px-6 py-4">
-                    <div class="text-sm font-medium text-[#31413b] dark:text-[#d7e2dd]">
-                      {{ sample.client_submitted_info?.lot || 'Sem lote' }}
-                    </div>
-                    <p class="mt-1 text-xs font-medium text-[#5f6f68] dark:text-[#a9bbb4]">
-                      {{ sample.client_submitted_info?.origin || sample.client_submitted_info?.sampling_plan_ref || 'Origem/plano por confirmar' }}
-                    </p>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <span :class="sampleStatusBadgeClass(sample.status)">
-                      {{ getStatusLabel(sample.status) }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#5f6f68] dark:text-[#a9bbb4]">
-                    {{ formatDate(sample.received_at) }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div class="flex items-center gap-2">
-                      <button
-                        @click="viewSample(sample.id)"
-                        class="rounded-full p-2 text-primary-700 transition hover:bg-primary-50 hover:text-primary-900 dark:text-primary-300 dark:hover:bg-primary-500/10"
-                        title="Visualizar"
-                      >
-                        <EyeIcon class="h-4 w-4" />
-                      </button>
-                      <button
-                        @click="editSample(sample)"
-                        class="rounded-full p-2 text-amber-700 transition hover:bg-amber-50 hover:text-amber-900 dark:text-amber-300 dark:hover:bg-amber-500/10"
-                        title="Editar"
-                      >
-                        <PencilSquareIcon class="h-4 w-4" />
-                      </button>
-                      <button
-                        @click="generateEntryPdf(sample.id)"
-                        class="rounded-full p-2 text-emerald-700 transition hover:bg-emerald-50 hover:text-emerald-900 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
-                        title="Gerar PDF"
-                      >
-                        <DocumentArrowDownIcon class="h-4 w-4" />
-                      </button>
-                      <button
-                        v-if="sample.status === 'COMPLETADO' || sample.status === 'CANCELADO'"
-                        @click="prepareForDiscard(sample)"
-                        class="rounded-full p-2 text-rose-700 transition hover:bg-rose-50 hover:text-rose-900 dark:text-rose-300 dark:hover:bg-rose-500/10"
-                        title="Descartar"
-                      >
-                        <TrashIcon class="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- PAGINAÇÃO -->
-          <div v-if="samples.length > 0" class="border-t border-[#ded3bf] bg-[#f7f1e7]/60 px-6 py-5 dark:border-[#25443c] dark:bg-[#10231f]/60">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div class="text-sm font-medium text-[#5f6f68] dark:text-[#a9bbb4]">
-                Mostrando {{ filteredSamples.length }} de {{ filteredSampleResults.length }} resultados
-              </div>
-              <div class="flex items-center gap-2">
-                <button
-                  @click="currentPage--"
-                  :disabled="currentPage === 1"
-                  :class="[
-                    'rounded-full border px-3 py-1.5 text-sm font-semibold transition',
-                    currentPage === 1 ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-600' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:bg-slate-800'
-                  ]"
-                >
-                  Anterior
-                </button>
-                <span class="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Página {{ currentPage }} de {{ totalPages }}
-                </span>
-                <button
-                  @click="currentPage++"
-                  :disabled="currentPage === totalPages"
-                  :class="[
-                    'rounded-full border px-3 py-1.5 text-sm font-semibold transition',
-                    currentPage === totalPages ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-600' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:bg-slate-800'
-                  ]"
-                >
-                  Próxima
-                </button>
-              </div>
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <div class="min-w-0 sm:w-72">
+              <label class="sr-only" for="sample-search">Pesquisar amostras</label>
+              <input
+                id="sample-search"
+                v-model="searchQuery"
+                type="search"
+                class="ds-field"
+                placeholder="Código, amostra, cliente, lote..."
+              />
             </div>
+            <div class="sm:w-48">
+              <label class="sr-only" for="sample-status">Filtrar por estado</label>
+              <select id="sample-status" v-model="statusFilter" class="ds-field">
+                <option value="">Todos os estados</option>
+                <option value="POR_INICIAR">Por iniciar</option>
+                <option value="EN_PROGRESO">Em progresso</option>
+                <option value="COMPLETADO">Completado</option>
+                <option value="CANCELADO">Cancelado</option>
+                <option value="EN_PAUSA">Em pausa</option>
+              </select>
+            </div>
+            <button type="button" class="ds-button ds-button-secondary" @click="exportData">
+              <ArrowDownTrayIcon class="h-4 w-4" />
+              Exportar
+            </button>
           </div>
         </div>
 
-        <div v-if="portalAnalysisRequests.length" class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-            <div class="flex items-center justify-between">
-              <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-                <ClipboardDocumentListIcon class="h-5 w-5 text-primary-800 dark:text-primary-300" />
-                Pedidos do Portal para Validar
-              </h2>
-              <span class="inline-flex items-center rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-800 dark:bg-primary-500/10 dark:text-primary-200">
-                {{ portalAnalysisRequests.length }} pendentes
-              </span>
-            </div>
-          </div>
-
-          <div class="divide-y divide-slate-100 dark:divide-slate-800">
-            <div
-              v-for="request in portalAnalysisRequests.slice(0, 5)"
-              :key="request.id"
-              class="flex items-start justify-between gap-4 px-6 py-4 transition hover:bg-slate-50 dark:hover:bg-slate-950/50"
-            >
-              <div>
-                <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ request.title }}</p>
-                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ request.reference || 'Sem referência' }} · {{ request.customer || 'Sem cliente' }}</p>
-                <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">{{ (request.requested_profile_names || []).join(', ') || 'Sem perfis declarados' }}</p>
-              </div>
-              <button
-                type="button"
-                @click="prefillFromPortalRequest(request)"
-                class="inline-flex items-center rounded-2xl bg-primary-700 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-600 dark:bg-primary-500 dark:hover:bg-primary-400"
-              >
-                Pré-preencher
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- CARTÃO DE DETALHES DA AMOSTRA -->
-        <div v-if="editingSample" class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <div class="bg-gradient-to-r from-primary-900 to-primary-700 px-6 py-4 dark:from-slate-950 dark:to-primary-950">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 class="flex items-center gap-2 text-lg font-semibold text-white">
-                <PencilSquareIcon class="h-5 w-5" />
-                {{ editingSample.id ? 'Editar Amostra' : (manualBatchMode ? 'Nova Amostra da Fila Manual' : 'Nova Amostra') }}
-              </h2>
-              <span
-                v-if="manualBatchMode"
-                class="inline-flex items-center justify-center rounded-full bg-white/12 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-white ring-1 ring-white/25"
-              >
-                {{ manualSampleQueue.length }} na fila
-              </span>
-            </div>
-          </div>
-          
-          <div class="vap-sample-entry-form p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <!-- FORMULÁRIO (mesmo do anterior) -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <TagIcon class="h-4 w-4" />
-                  Nome da Amostra
-                  <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  v-model="form.name"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    form.errors.name 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' 
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                  placeholder="Digite o nome da amostra"
-                />
-                <p v-if="form.errors.name" class="text-xs text-red-600">
-                  {{ form.errors.name }}
-                </p>
-              </div>
-
-              <!-- CÓDIGO -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <QrCodeIcon class="h-4 w-4" />
-                  Código
-                </label>
-                <input
-                  type="text"
-                  v-model="form.code"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    form.errors.code 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' 
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                  placeholder="Será gerado automaticamente"
-                />
-              </div>
-
-              <!-- TIPO DE AMOSTRA -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <CubeIcon class="h-4 w-4" />
-                  Tipo de Amostra
-                  <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="form.sample_type"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    form.errors.sample_type 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' 
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                >
-                  <option value="">Selecione o tipo</option>
-                  <option value="ROTINA">Rotina</option>
-                  <option value="MATERIA_PRIMA">Matéria-prima</option>
-                  <option value="PRODUTO_ACABADO">Produto acabado</option>
-                  <option value="ESTABILIDADE">Estabilidade</option>
-                  <option value="CONTRAPROVA">Contraprova</option>
-                  <option value="INTERLABORATORIAL">Interlaboratorial</option>
-                  <option value="RETENCAO">Retenção</option>
-                </select>
-                <p v-if="form.errors.sample_type" class="text-xs text-red-600">
-                  {{ form.errors.sample_type }}
-                </p>
-              </div>
-
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <DocumentTextIcon class="h-4 w-4" />
-                  Origem do trabalho
-                </label>
-                <select
-                  v-model="form.client_submitted_info.request_origin"
-                  class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:ring-offset-2"
-                >
-                  <option value="client">Cliente</option>
-                  <option value="internal">Interno</option>
-                </select>
-                <p class="text-xs text-gray-500">
-                  Trabalhos internos podem seguir para análise sem proposta aceite, desde que o modo operacional permita.
-                </p>
-              </div>
-
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1 dark:text-slate-200">
-                  <ClipboardDocumentListIcon class="h-4 w-4" />
-                  Fluxo de colheita
-                </label>
-                <select
-                  v-model="form.client_submitted_info.collection_type"
-                  class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900/20 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-                >
-                  <option value="direct">Direta / receção imediata</option>
-                  <option value="programmed">Programada / recolha planeada</option>
-                </select>
-                <p class="text-xs text-gray-500 dark:text-slate-400">
-                  A Sample Entry é o ponto de entrada. A colheita criada fica ligada a este código de amostra.
-                </p>
-              </div>
-
-              <div
-                v-if="form.client_submitted_info.collection_type === 'programmed'"
-                class="space-y-4 rounded-2xl border border-primary-200 bg-primary-50/70 px-5 py-4 dark:border-primary-500/30 dark:bg-primary-500/10 md:col-span-2 lg:col-span-3"
-              >
-                <div>
-                  <p class="text-sm font-semibold text-primary-950 dark:text-primary-100">Planeamento da colheita programada</p>
-                  <p class="mt-1 text-xs leading-5 text-primary-800 dark:text-primary-200">
-                    Use estes campos quando a amostra ainda depende de recolha planeada. Depois de validada, a colheita programada mantém link para esta Sample Entry.
-                  </p>
-                </div>
-                <div class="grid gap-4 md:grid-cols-2">
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Local de colheita</span>
-                    <input
-                      v-model="form.client_submitted_info.collection_location"
-                      type="text"
-                      class="mt-2 w-full rounded-xl border border-primary-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-primary-500/30 dark:bg-slate-950 dark:text-slate-100"
-                      placeholder="Ex.: armazém, linha de produção, sala fria..."
-                    />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Referência de viatura/equipa</span>
-                    <input
-                      v-model="form.client_submitted_info.vehicle_reference"
-                      type="text"
-                      class="mt-2 w-full rounded-xl border border-primary-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-primary-500/30 dark:bg-slate-950 dark:text-slate-100"
-                      placeholder="Ex.: equipa externa, viatura 02, rota norte..."
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div v-if="isInternalRawMaterialQc" class="space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 px-5 py-4 md:col-span-2 lg:col-span-3 dark:border-emerald-500/30 dark:bg-emerald-500/10">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p class="text-sm font-semibold text-emerald-950 dark:text-emerald-100">Procedimento interno de CQ de matéria-prima</p>
-                    <p class="mt-1 text-xs leading-5 text-emerald-800 dark:text-emerald-200">
-                      Este caminho gera a receção interna e, quando produto/perfis forem definidos, cria automaticamente colheita, lab code, amostras internas e análises.
-                    </p>
-                  </div>
-                  <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-bold text-emerald-800 ring-1 ring-emerald-200 dark:bg-slate-950/50 dark:text-emerald-200 dark:ring-emerald-500/30">
-                    Sem proposta
-                  </span>
-                </div>
-
-                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Disciplina</span>
-                    <select
-                      v-model="form.client_submitted_info.analysis_discipline"
-                      class="mt-2 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-emerald-500/30 dark:bg-slate-950 dark:text-slate-100"
-                    >
-                      <option value="microbiology">Microbiologia</option>
-                      <option value="chemistry">Química / físico-química</option>
-                      <option value="microbiology_and_chemistry">Microbiologia + química</option>
-                    </select>
-                  </label>
-
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Objetivo</span>
-                    <select
-                      v-model="form.client_submitted_info.quality_control_purpose"
-                      class="mt-2 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-emerald-500/30 dark:bg-slate-950 dark:text-slate-100"
-                    >
-                      <option value="raw_material_release">Liberação de matéria-prima</option>
-                      <option value="supplier_qualification">Qualificação de fornecedor</option>
-                      <option value="process_validation">Validação de processo</option>
-                      <option value="stability_follow_up">Acompanhamento de estabilidade</option>
-                      <option value="investigation">Investigação interna</option>
-                      <option value="other">Outro</option>
-                    </select>
-                  </label>
-
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Decisão esperada</span>
-                    <select
-                      v-model="form.client_submitted_info.qc_decision"
-                      class="mt-2 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-emerald-500/30 dark:bg-slate-950 dark:text-slate-100"
-                    >
-                      <option value="hold_until_release">Reter até liberação</option>
-                      <option value="release_if_compliant">Liberar se conforme</option>
-                      <option value="investigate_before_release">Investigar antes de liberar</option>
-                      <option value="trend_only">Apenas tendência</option>
-                    </select>
-                  </label>
-
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Categoria</span>
-                    <select
-                      v-model="form.client_submitted_info.material_category"
-                      class="mt-2 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-emerald-500/30 dark:bg-slate-950 dark:text-slate-100"
-                    >
-                      <option value="raw_material">Matéria-prima</option>
-                      <option value="ingredient">Ingrediente</option>
-                      <option value="packaging_material">Material de embalagem</option>
-                      <option value="intermediate">Produto intermédio</option>
-                      <option value="finished_product">Produto acabado</option>
-                      <option value="environmental_control">Controlo ambiental</option>
-                      <option value="other">Outro</option>
-                    </select>
-                  </label>
-                </div>
-
-                <div class="grid gap-4 md:grid-cols-3">
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Lote</span>
-                    <input
-                      v-model="form.client_submitted_info.lot"
-                      type="text"
-                      class="mt-2 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-emerald-500/30 dark:bg-slate-950 dark:text-slate-100"
-                      placeholder="Lote da matéria-prima"
-                    />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Batch / OP</span>
-                    <input
-                      v-model="form.client_submitted_info.batch"
-                      type="text"
-                      class="mt-2 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-emerald-500/30 dark:bg-slate-950 dark:text-slate-100"
-                      placeholder="Batch interno, OP ou receção"
-                    />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Fornecedor</span>
-                    <input
-                      v-model="form.client_submitted_info.supplier_name"
-                      type="text"
-                      class="mt-2 w-full rounded-xl border border-emerald-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-600/20 dark:border-emerald-500/30 dark:bg-slate-950 dark:text-slate-100"
-                      placeholder="Fornecedor / origem interna"
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <!-- CLIENTE -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <UserGroupIcon class="h-4 w-4" />
-                  Cliente
-                  <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="form.customer_id"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    form.errors.customer_id 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' 
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                >
-                  <option value="">Selecione o cliente</option>
-                  <option v-for="customer in customers" :key="customer.id" :value="customer.id">
-                    {{ customer.name }} ({{ customer.code }})
-                  </option>
-                </select>
-                <p v-if="form.errors.customer_id" class="text-xs text-red-600">
-                  {{ form.errors.customer_id }}
-                </p>
-              </div>
-
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <CubeIcon class="h-4 w-4" />
-                  Produto
-                </label>
-                <select
-                  v-model="form.client_submitted_info.product_id"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    form.errors['client_submitted_info.product_id']
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                >
-                  <option :value="null">Selecionar depois</option>
-                  <option v-for="product in products" :key="product.id" :value="product.id">
-                    {{ product.name }}{{ product.matrix ? ` · ${product.matrix}` : '' }}
-                  </option>
-                </select>
-                <p class="text-xs text-gray-500">Quando definido, a amostra pode ser integrada no fluxo normal de colheita/análise.</p>
-                <p v-if="form.errors['client_submitted_info.product_id']" class="text-xs text-red-600">
-                  {{ form.errors['client_submitted_info.product_id'] }}
-                </p>
-              </div>
-
-              <div v-if="selectedProduct" class="rounded-2xl border border-primary-200 bg-primary-50/70 px-4 py-3 text-sm text-primary-950 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-100">
-                <p class="font-semibold">Escopo analítico base</p>
-                <p class="mt-1 text-xs text-primary-800 dark:text-primary-200">
-                  Matriz: {{ selectedProduct.matrix || 'Sem matriz definida' }} ·
-                  {{ selectedProduct.profiles?.length || 0 }} perfis disponíveis para o produto
-                </p>
-              </div>
-
-              <div class="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/80 px-5 py-4 dark:border-slate-700 dark:bg-slate-950/50 md:col-span-2 lg:col-span-3">
-                <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p class="text-sm font-semibold text-slate-900 dark:text-white">Identificação técnica da amostra</p>
-                    <p class="text-xs leading-5 text-slate-600 dark:text-slate-400">
-                      Estes campos acompanham a entrada, alimentam o `collection_product` e ficam disponíveis no relatório analítico.
-                    </p>
-                  </div>
-                  <span class="inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700">
-                    Rastreável no PDF
-                  </span>
-                </div>
-
-                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Lote</span>
-                    <input v-model="form.client_submitted_info.lot" type="text" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="Lote / batch do cliente" />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Origem</span>
-                    <input v-model="form.client_submitted_info.origin" type="text" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="Fornecedor, país, linha, unidade..." />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Local de colheita</span>
-                    <input v-model="form.client_submitted_info.location" type="text" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="Local físico / ponto de amostragem" />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Plano de amostragem</span>
-                    <input v-model="form.client_submitted_info.sampling_plan_ref" type="text" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="Plano, norma ou referência" />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Quantidade recebida</span>
-                    <input v-model="form.client_submitted_info.quantity" type="text" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="Ex.: 2 kg, 500 ml" />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Quantidade colhida</span>
-                    <input v-model="form.client_submitted_info.collected_qty" type="text" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="Ex.: 3 frascos" />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Temperatura</span>
-                    <input v-model="form.client_submitted_info.temperature_value" type="text" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="Ex.: 4 °C, ambiente" />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Contentor</span>
-                    <input v-model="form.client_submitted_info.container_no" type="text" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="N.º do contentor" />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">DU</span>
-                    <input v-model="form.client_submitted_info.du_no" type="text" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="Documento único" />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Termo</span>
-                    <input v-model="form.client_submitted_info.term_no" type="text" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="N.º do termo" />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">BL</span>
-                    <input v-model="form.client_submitted_info.bl" type="text" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="Bill of lading" />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Produção</span>
-                    <input v-model="form.client_submitted_info.production_date" type="date" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
-                  </label>
-                  <label class="block">
-                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Validade</span>
-                    <input v-model="form.client_submitted_info.expiry_date" type="date" class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:border-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-700/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
-                  </label>
-                </div>
-              </div>
-
-              <div v-if="!isInternalRequest" class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <DocumentTextIcon class="h-4 w-4" />
-                  Proposta aceite
-                </label>
-                <select
-                  v-model="form.proposal_id"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    form.errors.proposal_id
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20'
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                >
-                  <option value="">Selecionar depois</option>
-                  <option v-for="proposal in acceptedProposals" :key="proposal.id" :value="proposal.id">
-                    {{ getProposalLabel(proposal) }}
-                  </option>
-                </select>
-                <p class="text-xs text-gray-500">
-                  A amostra só pode entrar em análise quando estiver associada a uma proposta aceite.
-                </p>
-                <p v-if="form.errors.proposal_id" class="text-xs text-red-600">
-                  {{ form.errors.proposal_id }}
-                </p>
-              </div>
-
-              <div v-else class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
-                Este registo está marcado como trabalho interno. A validação laboratorial seguirá o fluxo normal sem depender de proposta aceite.
-              </div>
-
-              <!-- LABORATÓRIO -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <BuildingOfficeIcon class="h-4 w-4" />
-                  Laboratório
-                  <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="form.lab_id"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    form.errors.lab_id 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' 
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                >
-                  <option value="">Selecione o laboratório</option>
-                  <option v-for="lab in labs" :key="lab.id" :value="lab.id">
-                    {{ lab.name }} ({{ lab.code }})
-                  </option>
-                </select>
-                <p v-if="form.errors.lab_id" class="text-xs text-red-600">
-                  {{ form.errors.lab_id }}
-                </p>
-              </div>
-
-              <!-- DEPARTAMENTO -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <BuildingLibraryIcon class="h-4 w-4" />
-                  Departamento
-                  <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="form.department_id"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    form.errors.department_id 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' 
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                >
-                  <option value="">Selecione o departamento</option>
-                  <option v-for="department in departments" :key="department.id" :value="department.id">
-                    {{ department.name }} ({{ department.code }})
-                  </option>
-                </select>
-                <p v-if="form.errors.department_id" class="text-xs text-red-600">
-                  {{ form.errors.department_id }}
-                </p>
-              </div>
-
-              <!-- DATA DE RECEBIMENTO -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <CalendarIcon class="h-4 w-4" />
-                  Data de Recebimento
-                </label>
-                <input
-                  type="datetime-local"
-                  v-model="form.received_at"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                />
-              </div>
-
-              <!-- EMBALAGEM -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <QueueListIcon class="h-4 w-4" />
-                  Embalagem
-                </label>
-                <select
-                  v-model="form.packaging_id"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                >
-                  <option value="">Selecione a embalagem</option>
-                  <option v-for="packaging in packagingCategories" :key="packaging.id" :value="packaging.id">
-                    {{ packaging.name }} ({{ packaging.code }})
-                  </option>
-                </select>
-              </div>
-
-              <!-- ARMAZÉM -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <ArchiveBoxIcon class="h-4 w-4" />
-                  Armazém
-                  <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="form.warehouse_id"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    form.errors.warehouse_id 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' 
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                >
-                  <option value="">Selecione o armazém</option>
-                  <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
-                    {{ warehouse.name }} ({{ warehouse.code }})
-                  </option>
-                </select>
-                <p v-if="form.errors.warehouse_id" class="text-xs text-red-600">
-                  {{ form.errors.warehouse_id }}
-                </p>
-              </div>
-
-              <div class="space-y-2 md:col-span-2 lg:col-span-3">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <ClipboardDocumentListIcon class="h-4 w-4" />
-                  Perfis analíticos para o fluxo normal
-                </label>
-                <select
-                  v-model="form.client_submitted_info.requested_profile_ids"
-                  multiple
-                  class="min-h-32 w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900/20"
-                >
-                  <option v-for="profile in availableProfiles" :key="profile.id" :value="profile.id">
-                    {{ profile.name }}{{ profile.analysis_type ? ` · ${profile.analysis_type}` : '' }}{{ profile.parameter_count ? ` · ${profile.parameter_count} parâmetros` : '' }}
-                  </option>
-                </select>
-                <p class="text-xs text-gray-500">Estes perfis serão usados para gerar a colheita/lab code/amostras/análises do fluxo principal.</p>
-                <p v-if="form.errors['client_submitted_info.requested_profile_ids']" class="text-xs text-red-600">
-                  {{ form.errors['client_submitted_info.requested_profile_ids'] }}
-                </p>
-              </div>
-
-              <div class="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 dark:border-slate-700 dark:bg-slate-950/50 md:col-span-2 lg:col-span-3">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p class="text-sm font-semibold text-slate-900 dark:text-white">Checklist analítico previsto</p>
-                    <p class="text-xs text-slate-600 dark:text-slate-400">
-                      A receção já define o escopo esperado para os técnicos.
-                    </p>
-                  </div>
-                  <div class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-200 dark:ring-slate-700">
-                    {{ selectedProfileIds.length || availableProfiles.length || 0 }} perfis · {{ requiredParameterPreview.length }} parâmetros
-                  </div>
-                </div>
-
-                <div v-if="selectedProfileSummaries.length" class="flex flex-wrap gap-2">
-                  <span
-                    v-for="profile in selectedProfileSummaries"
-                    :key="profile.id"
-                    class="inline-flex items-center rounded-full bg-primary-100 px-3 py-1 text-xs font-medium text-primary-900 dark:bg-primary-500/15 dark:text-primary-200"
-                  >
-                    {{ profile.name }}
-                  </span>
-                </div>
-
-                <div v-if="requiredParameterPreview.length" class="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                  <div
-                    v-for="parameter in requiredParameterPreview"
-                    :key="parameter.id"
-                    class="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900"
-                  >
-                    <p class="text-sm font-medium text-slate-900 dark:text-white">
-                      {{ parameter.name }}
-                    </p>
-                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                      {{ parameter.code || 'Sem código' }}
-                    </p>
-                    <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                      {{ parameter.profiles.join(', ') }}
-                    </p>
-                  </div>
-                </div>
-
-                <p v-else class="text-xs text-slate-500 dark:text-slate-400">
-                  Selecione um produto com matriz analítica ou escolha perfis para ver os parâmetros obrigatórios.
-                </p>
-              </div>
-
-              <div class="space-y-4 rounded-2xl border border-amber-200 bg-amber-50/70 px-5 py-4 dark:border-amber-500/30 dark:bg-amber-500/10 md:col-span-2 lg:col-span-3">
-                <div>
-                  <p class="text-sm font-semibold text-amber-950 dark:text-amber-100">Avaliação de condicionamento na receção</p>
-                  <p class="text-xs text-amber-800 dark:text-amber-200">
-                    Registe o estado em que a amostra chegou para suportar rastreabilidade e decisões ISO 17025.
-                  </p>
-                </div>
-
-                <div class="grid gap-4 md:grid-cols-2">
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Decisão de aceitação</label>
-                    <select
-                      v-model="form.client_submitted_info.conditioning_status"
-                      class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900/20"
-                    >
-                      <option :value="null">Não avaliado</option>
-                      <option value="accepted">Aceite</option>
-                      <option value="restricted">Aceite com restrições</option>
-                      <option value="rejected">Rejeitado / quarentena</option>
-                    </select>
-                  </div>
-
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Estado da embalagem</label>
-                    <input
-                      v-model="form.client_submitted_info.packaging_condition"
-                      type="text"
-                      class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900/20"
-                      placeholder="Íntegra, húmida, violada, refrigerada..."
-                    />
-                  </div>
-
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Condição térmica na receção</label>
-                    <input
-                      v-model="form.client_submitted_info.temperature_condition"
-                      type="text"
-                      class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900/20"
-                      placeholder="2-8 °C, ambiente, congelada..."
-                    />
-                  </div>
-                </div>
-
-                <div class="grid gap-4 md:grid-cols-2">
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Observações de integridade</label>
-                    <textarea
-                      v-model="form.client_submitted_info.integrity_observations"
-                      rows="3"
-                      class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900/20"
-                      placeholder="Volume, lacre, identificação, desvios visuais..."
-                    ></textarea>
-                  </div>
-
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Notas de cadeia de custódia / condicionamento</label>
-                    <textarea
-                      v-model="form.client_submitted_info.chain_of_custody_notes"
-                      rows="3"
-                      class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900/20"
-                      placeholder="Tempo de transporte, recipientes secundários, ações corretivas..."
-                    ></textarea>
-                  </div>
-                </div>
-              </div>
-
-              <!-- SERVIÇOS SOLICITADOS -->
-              <div class="space-y-2 md:col-span-2 lg:col-span-3">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <ClipboardDocumentListIcon class="h-4 w-4" />
-                  Serviços Solicitados
-                </label>
-                <textarea
-                  v-model="form.requested_services"
-                  rows="3"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                  placeholder="Liste todas as análises e serviços solicitados..."
-                ></textarea>
-              </div>
-
-              <!-- OBSERVAÇÕES -->
-              <div class="space-y-2 md:col-span-2 lg:col-span-3">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <ChatBubbleLeftRightIcon class="h-4 w-4" />
-                  Observações
-                </label>
-                <textarea
-                  v-model="form.obs"
-                  rows="2"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                  placeholder="Quaisquer observações ou notas adicionais..."
-                ></textarea>
-              </div>
-            </div>
-
-            <!-- BOTÕES DO FORMULÁRIO -->
-            <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <button
-                v-if="!editingSample.id"
-                type="button"
-                @click="addCurrentSampleToManualQueue"
-                :disabled="!isFormValid"
-                :class="[
-                  'inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200',
-                  !isFormValid
-                    ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-600'
-                    : 'border-[#d9b05f] bg-[#fff8e6] text-[#143d37] hover:bg-[#f6e7bf] dark:border-[#d9b05f]/60 dark:bg-[#d9b05f]/10 dark:text-[#f1d78b] dark:hover:bg-[#d9b05f]/20'
-                ]"
-              >
-                <QueueListIcon class="h-5 w-5" />
-                Adicionar à fila manual
-              </button>
-              <div class="flex items-center justify-end gap-3">
-              <button 
-                @click="cancelEdit"
-                type="button"
-                class="rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors duration-200 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:bg-slate-800"
-              >
-                Cancelar
-              </button>
-              <button 
-                @click="editingSample.id ? updateSample() : submitSample()"
-                :disabled="form.processing || !isFormValid"
-                :class="[
-                  'inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200',
-                  form.processing || !isFormValid
-                    ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500'
-                    : 'bg-primary-700 text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:bg-primary-500 dark:hover:bg-primary-400'
-                ]"
-              >
-                <CheckCircleIcon class="h-5 w-5" />
-                {{ form.processing ? 'Processando...' : (editingSample.id ? 'Atualizar Amostra' : 'Salvar Amostra') }}
-              </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- COLUNA DIREITA (1/3 largura) -->
-      <div class="grid gap-6 xl:grid-cols-2">
-        <ModuleCard v-if="manualBatchMode || manualSampleQueue.length" title="Fila manual de amostras">
-          <div class="space-y-4">
-            <div class="rounded-3xl border border-[#ded3bf] bg-[#fffdf7] p-4 dark:border-[#25443c] dark:bg-[#07110f]">
-              <p class="text-xs font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#83978d]">Registo em lote manual</p>
-              <p class="mt-2 text-3xl font-black text-[#143d37] dark:text-[#f1d78b]">{{ manualSampleQueue.length }}</p>
-              <p class="mt-1 text-xs leading-5 text-[#475a53] dark:text-[#cbd8cf]">
-                Adicione amostras com o formulário principal, reveja a fila e submeta-as juntas para o fluxo normal.
-              </p>
-            </div>
-
-            <div v-if="manualSampleQueue.length" class="max-h-[28rem] space-y-3 overflow-y-auto pr-1">
-              <article
-                v-for="(queueItem, index) in manualSampleQueue"
-                :key="queueItem.temp_id"
-                class="rounded-3xl border border-[#ded3bf] bg-white/80 p-4 shadow-sm dark:border-[#25443c] dark:bg-[#081512]"
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="text-xs font-black uppercase tracking-[0.18em] text-[#6b7b74] dark:text-[#83978d]">Amostra {{ index + 1 }}</p>
-                    <h3 class="mt-1 text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">{{ queueItem.name }}</h3>
-                    <p class="mt-1 text-xs text-[#475a53] dark:text-[#cbd8cf]">
-                      {{ queueItem.customer }} · {{ queueItem.product }} · {{ queueItem.lot }}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    @click="removeManualQueueItem(queueItem.temp_id)"
-                    class="rounded-full p-2 text-rose-600 transition hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10"
-                    title="Remover da fila"
-                  >
-                    <TrashIcon class="h-4 w-4" />
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  @click="useQueuedSampleAsBase(queueItem)"
-                  class="mt-3 inline-flex items-center rounded-full border border-[#ded3bf] px-3 py-1.5 text-xs font-bold text-[#143d37] transition hover:bg-[#f7f1e7] dark:border-[#25443c] dark:text-[#f1d78b] dark:hover:bg-[#10231f]"
-                >
-                  Usar como base
-                </button>
-              </article>
-            </div>
-            <div v-else class="rounded-3xl border border-dashed border-[#ded3bf] bg-[#fffdf7] px-4 py-8 text-center text-sm font-medium text-[#6b7b74] dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#a9bbb4]">
-              A fila ainda está vazia. Preencha a amostra no formulário e clique em “Adicionar à fila manual”.
-            </div>
-
-            <div class="grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                @click="clearManualQueue"
-                :disabled="!manualSampleQueue.length || bulkForm.processing"
-                class="inline-flex items-center justify-center rounded-2xl border border-[#ded3bf] px-4 py-3 text-sm font-bold text-[#475a53] transition hover:bg-[#f7f1e7] disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#25443c] dark:text-[#cbd8cf] dark:hover:bg-[#10231f]"
-              >
-                Limpar fila
-              </button>
-              <button
-                type="button"
-                @click="submitManualBatch"
-                :disabled="!manualSampleQueue.length || bulkForm.processing"
-                class="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#143d37] px-4 py-3 text-sm font-black text-white shadow-[0_16px_40px_rgba(20,61,55,0.18)] transition hover:bg-[#0f2f2a] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#f1d78b] dark:text-[#07110f] dark:hover:bg-[#f6e7bf]"
-              >
-                <CheckCircleIcon class="h-5 w-5" />
-                {{ bulkForm.processing ? 'A registar...' : 'Registar fila' }}
-              </button>
-            </div>
-            <p v-if="bulkForm.errors.samples" class="text-xs font-semibold text-rose-600 dark:text-rose-300">{{ bulkForm.errors.samples }}</p>
-          </div>
-        </ModuleCard>
-
-        <!-- CARTÃO DE AÇÕES -->
-        <ModuleCard title="Ações rápidas">
-          <div class="space-y-4">
-            <button
-              @click="newSample"
-              type="button"
-              class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:bg-primary-500 dark:hover:bg-primary-400"
-            >
-              <PlusCircleIcon class="h-5 w-5" />
-              Nova Amostra
-            </button>
-            <button
-              @click="startManualBatch"
-              type="button"
-              class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#ded3bf] bg-[#fffdf7] px-4 py-3 text-sm font-semibold text-[#143d37] shadow-sm transition hover:border-[#d9b05f] hover:bg-[#f7f1e7] dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#f1d78b] dark:hover:bg-[#10231f]"
-            >
-              <QueueListIcon class="h-5 w-5" />
-              Fila manual
-            </button>
-
-            <div class="rounded-3xl border border-emerald-200 bg-emerald-50/80 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                CQ interno
-              </p>
-              <h3 class="mt-2 text-sm font-semibold text-emerald-950 dark:text-emerald-100">
-                Matéria-prima
-              </h3>
-              <p class="mt-1 text-xs leading-5 text-emerald-800 dark:text-emerald-200">
-                Abre o caminho para microbiologia/química sem proposta, mantendo lab code, análise, resultados e certificado no fluxo normal.
-              </p>
-              <div class="mt-4 grid gap-2">
-                <button
-                  type="button"
-                  class="inline-flex items-center justify-center rounded-2xl bg-emerald-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-600 dark:bg-emerald-400 dark:text-emerald-950"
-                  @click="newInternalQcSample('microbiology')"
-                >
-                  Microbiologia
-                </button>
-                <button
-                  type="button"
-                  class="inline-flex items-center justify-center rounded-2xl border border-emerald-300 bg-white px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-50 dark:border-emerald-500/40 dark:bg-slate-950/40 dark:text-emerald-200 dark:hover:bg-emerald-500/10"
-                  @click="newInternalQcSample('chemistry')"
-                >
-                  Química / físico-química
-                </button>
-              </div>
-            </div>
-
-            <button
-              @click="exportData"
-              type="button"
-              class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-slate-700 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-800"
-            >
-              <ArrowDownTrayIcon class="h-5 w-5" />
-              Exportar Dados
-            </button>
-
-            <div class="border-t border-slate-200 pt-4 dark:border-slate-800">
-              <h4 class="mb-2 text-sm font-medium text-slate-900 dark:text-white">
-                Estatísticas
-              </h4>
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-slate-600 dark:text-slate-400">Total de Amostras</span>
-                  <span class="font-semibold text-primary-900 dark:text-primary-300">{{ stats.total_samples }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-slate-600 dark:text-slate-400">Por Iniciar</span>
-                  <span class="font-semibold text-amber-600 dark:text-amber-300">{{ stats.pending_analysis }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-slate-600 dark:text-slate-400">Em Progresso</span>
-                  <span class="font-semibold text-primary-700 dark:text-primary-300">{{ stats.in_progress || 0 }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-slate-600 dark:text-slate-400">Completadas</span>
-                  <span class="font-semibold text-emerald-600 dark:text-emerald-300">{{ stats.completed_analysis }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-slate-600 dark:text-slate-400">Descartadas</span>
-                  <span class="font-semibold text-rose-600 dark:text-rose-300">{{ stats.total_discarded }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ModuleCard>
-
-        <!-- CARTÃO DE STATUS -->
-        <ModuleCard>
-          <h3 class="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-            <Cog6ToothIcon class="h-5 w-5 text-primary-800 dark:text-primary-300" />
-            Status do Sistema
-          </h3>
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-slate-600 dark:text-slate-400">Última atualização</span>
-              <span class="text-sm font-medium text-slate-900 dark:text-white">{{ formatDate(new Date()) }}</span>
-            </div>
-
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-slate-600 dark:text-slate-400">Amostras hoje</span>
-              <span class="text-sm font-medium text-emerald-600 dark:text-emerald-300">{{ stats.today_samples || 0 }}</span>
-            </div>
-
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-slate-600 dark:text-slate-400">Amostras esta semana</span>
-              <span class="text-sm font-medium text-primary-700 dark:text-primary-300">{{ stats.week_samples || 0 }}</span>
-            </div>
-          </div>
-        </ModuleCard>
-
-      </div>
-      </div>
-    </div>
-
-    <!-- SEÇÃO DE DESCARTE DE AMOSTRAS -->
-    <div v-if="activeTab === 'discard'" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- COLUNA ESQUERDA (2/3 largura) -->
-      <div class="lg:col-span-2 space-y-6">
-        <!-- LISTAGEM DE DESCARTES -->
-        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-                <ArchiveBoxXMarkIcon class="h-5 w-5 text-rose-600 dark:text-rose-300" />
-                Descartados Recentemente
-                <span class="ml-2 text-sm font-normal text-slate-500 dark:text-slate-400">
-                  ({{ recentDiscards.length }} itens)
-                </span>
-              </h2>
-              <div class="w-full sm:w-60">
-                <BaseSelect v-model="discardMethodFilter">
-                  <option value="">Todos os métodos</option>
-                  <option value="incineration">Incineração</option>
-                  <option value="chemical_treatment">Tratamento Químico</option>
-                  <option value="autoclave">Autoclave</option>
-                  <option value="landfill">Aterro</option>
-                  <option value="recycling">Reciclagem</option>
-                  <option value="return_to_client">Retorno ao Cliente</option>
-                </BaseSelect>
-              </div>
-            </div>
-          </div>
-
-          <!-- ESTADO VAZIO -->
-          <div v-if="filteredDiscards.length === 0" class="p-12 text-center">
-            <ArchiveBoxXMarkIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
-            <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
-              Nenhum descarte encontrado
-            </h3>
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              {{ discardMethodFilter ? 'Tente ajustar os filtros de busca' : 'Nenhum descarte registrado ainda' }}
+        <div v-if="filteredSamples.length === 0" class="p-5">
+          <div class="ds-empty-state px-5 py-10 text-center">
+            <BeakerIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
+            <h3 class="ds-heading mt-3 text-sm">Nenhuma amostra encontrada</h3>
+            <p class="ds-copy mt-1 text-xs">
+              {{ searchQuery || statusFilter ? 'Ajuste os filtros ou limpe a pesquisa.' : 'Inicie uma entrada para criar o primeiro registo.' }}
             </p>
           </div>
-
-          <!-- LISTA DE DESCARTES -->
-          <div v-else class="divide-y divide-slate-200 dark:divide-slate-800">
-            <div 
-              v-for="discard in filteredDiscards"
-              :key="discard.id"
-              class="px-6 py-4 transition-colors duration-200 hover:bg-slate-50 dark:hover:bg-slate-950/50"
-            >
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 font-semibold text-rose-800 dark:bg-rose-500/15 dark:text-rose-200">
-                    <TrashIcon class="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white">
-                      {{ discard.sample?.name || 'Amostra Desconhecida' }}
-                    </h3>
-                    <div class="flex items-center gap-3 mt-1">
-                      <span class="text-xs text-slate-500 dark:text-slate-400">
-                        {{ discard.sample?.code || 'Sem Código' }}
-                      </span>
-                      <span class="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-800 dark:bg-slate-800 dark:text-slate-200">
-                        {{ getDiscardMethodLabel(discard.discard_method) }}
-                      </span>
-                      <span class="text-xs text-slate-500 dark:text-slate-400">
-                        {{ formatDate(discard.discarded_at) }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <div class="text-right mr-4">
-                    <span class="text-sm font-semibold text-rose-600 dark:text-rose-300">
-                      {{ discard.qty }}
-                    </span>
-                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                      por {{ discard.discarded_by?.name || 'Desconhecido' }}
-                    </p>
-                  </div>
-                  <button
-                    @click="generateDiscardPdf(discard.id)"
-                    class="rounded-full p-2 text-emerald-700 transition hover:bg-emerald-50 hover:text-emerald-900 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
-                    title="Gerar Certificado"
-                  >
-                    <DocumentArrowDownIcon class="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
-        <!-- FORMULÁRIO DE DESCARTE -->
-        <div v-if="showDiscardForm" class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <div class="bg-gradient-to-r from-rose-700 to-rose-500 px-6 py-4 dark:from-rose-950 dark:to-rose-700">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <TrashIcon class="h-5 w-5" />
-              {{ selectedSample ? `Descartar: ${selectedSample.name}` : 'Registrar Descarte' }}
+        <div v-else class="overflow-x-auto">
+          <table class="min-w-full align-middle">
+            <thead class="ds-table-head">
+              <tr>
+                <th class="ds-table-heading px-5 py-3 text-left">Amostra</th>
+                <th class="ds-table-heading px-5 py-3 text-left">Cliente / produto</th>
+                <th class="ds-table-heading px-5 py-3 text-left">Lote / origem</th>
+                <th class="ds-table-heading px-5 py-3 text-left">Estado</th>
+                <th class="ds-table-heading px-5 py-3 text-left">Receção</th>
+                <th class="ds-table-heading px-5 py-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody class="ds-table-body divide-y divide-[color:var(--ds-border)]">
+              <tr v-for="sample in filteredSamples" :key="sample.id" class="ds-table-row">
+                <td class="px-5 py-3">
+                  <button type="button" class="text-left" @click="viewSample(sample.id)">
+                    <span class="block text-sm font-bold text-[color:var(--ds-text)]">{{ sample.name }}</span>
+                    <span class="mt-0.5 block font-mono text-xs text-[color:var(--ds-text-soft)]">{{ sample.code }}</span>
+                  </button>
+                </td>
+                <td class="ds-table-cell px-5 py-3">
+                  <span class="block text-[color:var(--ds-text)]">{{ sample.customer?.name || 'Cliente por confirmar' }}</span>
+                  <span class="mt-0.5 block text-xs text-[color:var(--ds-text-soft)]">{{ selectedSampleProductName(sample) }}</span>
+                </td>
+                <td class="ds-table-cell px-5 py-3">
+                  <span class="block">{{ sample.client_submitted_info?.lot || 'Sem lote' }}</span>
+                  <span class="mt-0.5 block text-xs text-[color:var(--ds-text-soft)]">
+                    {{ sample.client_submitted_info?.origin || sample.client_submitted_info?.sampling_plan_ref || 'Origem por confirmar' }}
+                  </span>
+                </td>
+                <td class="px-5 py-3">
+                  <span :class="sampleStatusBadgeClass(sample.status)">{{ getStatusLabel(sample.status) }}</span>
+                </td>
+                <td class="ds-table-cell whitespace-nowrap px-5 py-3">{{ formatDate(sample.received_at) }}</td>
+                <td class="px-5 py-3">
+                  <div class="flex items-center justify-end gap-1">
+                    <button type="button" class="ds-table-action" title="Visualizar" @click="viewSample(sample.id)">
+                      <EyeIcon class="h-4 w-4" />
+                      <span class="sr-only">Visualizar</span>
+                    </button>
+                    <button type="button" class="ds-table-action" title="Editar" @click="editSample(sample)">
+                      <PencilSquareIcon class="h-4 w-4" />
+                      <span class="sr-only">Editar</span>
+                    </button>
+                    <button type="button" class="ds-table-action" title="Gerar PDF de entrada" @click="generateEntryPdf(sample.id)">
+                      <DocumentArrowDownIcon class="h-4 w-4" />
+                      <span class="sr-only">Gerar PDF</span>
+                    </button>
+                    <button
+                      v-if="sample.status === 'COMPLETADO' || sample.status === 'CANCELADO'"
+                      type="button"
+                      class="ds-table-action ds-table-action-danger"
+                      title="Preparar descarte"
+                      @click="prepareForDiscard(sample)"
+                    >
+                      <TrashIcon class="h-4 w-4" />
+                      <span class="sr-only">Descartar</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-if="samples.length > 0" class="flex flex-col gap-3 border-t border-[color:var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-xs font-semibold text-[color:var(--ds-text-soft)]">
+            Página {{ currentPage }} de {{ totalPages }} · {{ filteredSampleResults.length }} resultados
+          </p>
+          <div class="flex items-center gap-2">
+            <button type="button" class="ds-button ds-button-secondary" :disabled="currentPage === 1" @click="currentPage--">Anterior</button>
+            <button type="button" class="ds-button ds-button-secondary" :disabled="currentPage === totalPages" @click="currentPage++">Próxima</button>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="portalAnalysisRequests.length" class="ds-command-surface p-5">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p class="ds-kicker">Portal do cliente</p>
+            <h2 class="ds-heading mt-2 text-base">Pedidos por validar</h2>
+            <p class="ds-copy mt-1 text-xs">Use um pedido para pré-preencher a entrada e manter a referência comercial.</p>
+          </div>
+          <span class="ds-chip">{{ portalAnalysisRequests.length }} pendentes</span>
+        </div>
+        <div class="mt-4 grid gap-3 lg:grid-cols-2">
+          <article v-for="request in portalAnalysisRequests.slice(0, 6)" :key="request.id" class="ds-card flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between">
+            <div class="min-w-0">
+              <h3 class="truncate text-sm font-bold text-[color:var(--ds-text)]">{{ request.title }}</h3>
+              <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ request.reference || 'Sem referência' }} · {{ request.customer || 'Sem cliente' }}</p>
+              <p class="mt-2 text-xs leading-5 text-[color:var(--ds-text-muted)]">{{ (request.requested_profile_names || []).join(', ') || 'Sem perfis declarados' }}</p>
+            </div>
+            <button type="button" class="ds-button ds-button-secondary shrink-0" @click="prefillFromPortalRequest(request)">Pré-preencher</button>
+          </article>
+        </div>
+      </section>
+
+      <section v-if="editingSample" class="ds-panel overflow-hidden">
+        <div class="flex flex-col gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="ds-kicker">{{ editingSample.id ? 'Alteração controlada' : 'Nova receção' }}</p>
+            <h2 class="ds-heading mt-1 text-lg">
+              {{ editingSample.id ? 'Editar amostra' : (manualBatchMode ? 'Adicionar amostra à fila manual' : 'Registar amostra') }}
             </h2>
           </div>
-          
-          <div class="vap-sample-discard-form p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- SELECIONAR AMOSTRA -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <BeakerIcon class="h-4 w-4" />
-                  Selecionar Amostra
-                  <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="discardForm.sample_id"
-                  @change="onSampleSelect"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    discardForm.errors.sample_id 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' 
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                >
-                  <option value="">Selecione uma amostra para descartar</option>
-                  <option v-for="sample in discardableSamples" :key="sample.id" :value="sample.id">
-                    {{ sample.code }} - {{ sample.name }} ({{ getStatusLabel(sample.status) }})
-                  </option>
-                </select>
-                <p v-if="discardForm.errors.sample_id" class="text-xs text-red-600">
-                  {{ discardForm.errors.sample_id }}
-                </p>
+          <span v-if="manualBatchMode" class="ds-chip">
+            <QueueListIcon class="h-4 w-4" />
+            {{ manualSampleQueue.length }} na fila
+          </span>
+        </div>
+
+        <form class="p-5 lg:p-6" @submit.prevent="editingSample.id ? updateSample() : submitSample()">
+          <div class="space-y-8">
+            <div class="grid gap-5 lg:grid-cols-[15rem_minmax(0,1fr)]">
+              <div>
+                <div class="flex items-center gap-2">
+                  <TagIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+                  <h3 class="ds-heading text-sm">Identificação e origem</h3>
+                </div>
+                <p class="ds-copy mt-2 text-xs">Identificação primária, natureza do pedido e ligação ao cliente.</p>
               </div>
 
-              <!-- MÉTODO DE DESCARTE -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <CogIcon class="h-4 w-4" />
-                  Método de Descarte
-                  <span class="text-red-500">*</span>
-                </label>
-                <select
-                  v-model="discardForm.discard_method"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    discardForm.errors.discard_method 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' 
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                >
-                  <option value="">Selecione o método</option>
+              <div class="ds-card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
+                <div class="ds-field-group">
+                  <label class="ds-field-label" for="sample-name">Nome da amostra <span class="ds-field-required">*</span></label>
+                  <input id="sample-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" placeholder="Nome descritivo da amostra" />
+                  <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
+                </div>
+                <div class="ds-field-group">
+                  <label class="ds-field-label" for="sample-code">Código</label>
+                  <input id="sample-code" v-model="form.code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.code)" placeholder="Gerado automaticamente" />
+                  <p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p>
+                </div>
+                <div class="ds-field-group">
+                  <label class="ds-field-label" for="sample-type">Tipo <span class="ds-field-required">*</span></label>
+                  <select id="sample-type" v-model="form.sample_type" class="ds-field" :aria-invalid="Boolean(form.errors.sample_type)">
+                    <option value="">Selecione o tipo</option>
+                    <option value="ROTINA">Rotina</option>
+                    <option value="MATERIA_PRIMA">Matéria-prima</option>
+                    <option value="PRODUTO_ACABADO">Produto acabado</option>
+                    <option value="ESTABILIDADE">Estabilidade</option>
+                    <option value="CONTRAPROVA">Contraprova</option>
+                    <option value="INTERLABORATORIAL">Interlaboratorial</option>
+                    <option value="RETENCAO">Retenção</option>
+                  </select>
+                  <p v-if="form.errors.sample_type" class="ds-field-error">{{ form.errors.sample_type }}</p>
+                </div>
+                <div class="ds-field-group">
+                  <label class="ds-field-label" for="request-origin">Origem do trabalho</label>
+                  <select id="request-origin" v-model="form.client_submitted_info.request_origin" class="ds-field">
+                    <option value="client">Cliente</option>
+                    <option value="internal">Interno</option>
+                  </select>
+                  <p class="ds-field-hint">Trabalhos internos podem seguir sem proposta aceite.</p>
+                </div>
+                <div class="ds-field-group">
+                  <label class="ds-field-label" for="collection-type">Fluxo de colheita</label>
+                  <select id="collection-type" v-model="form.client_submitted_info.collection_type" class="ds-field">
+                    <option value="direct">Direta / receção imediata</option>
+                    <option value="programmed">Programada / recolha planeada</option>
+                  </select>
+                </div>
+                <div class="ds-field-group">
+                  <label class="ds-field-label" for="sample-customer">Cliente <span class="ds-field-required">*</span></label>
+                  <select id="sample-customer" v-model="form.customer_id" class="ds-field" :aria-invalid="Boolean(form.errors.customer_id)">
+                    <option value="">Selecione o cliente</option>
+                    <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.name }} ({{ customer.code }})</option>
+                  </select>
+                  <p v-if="form.errors.customer_id" class="ds-field-error">{{ form.errors.customer_id }}</p>
+                </div>
+
+                <div v-if="form.client_submitted_info.collection_type === 'programmed'" class="md:col-span-2 xl:col-span-3">
+                  <div class="border-l-4 border-primary-500 bg-primary-50/70 p-4 dark:bg-primary-500/10">
+                    <h4 class="text-sm font-bold text-primary-950 dark:text-primary-100">Colheita programada</h4>
+                    <p class="mt-1 text-xs text-primary-800 dark:text-primary-200">Indique onde e por quem a recolha será executada.</p>
+                    <div class="mt-4 grid gap-4 md:grid-cols-2">
+                      <div class="ds-field-group">
+                        <label class="ds-field-label" for="collection-location">Local de colheita</label>
+                        <input id="collection-location" v-model="form.client_submitted_info.collection_location" type="text" class="ds-field" placeholder="Armazém, linha, sala fria..." />
+                      </div>
+                      <div class="ds-field-group">
+                        <label class="ds-field-label" for="vehicle-reference">Viatura ou equipa</label>
+                        <input id="vehicle-reference" v-model="form.client_submitted_info.vehicle_reference" type="text" class="ds-field" placeholder="Equipa externa, viatura 02..." />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="isInternalRawMaterialQc" class="md:col-span-2 xl:col-span-3">
+                  <div class="border-l-4 border-emerald-500 bg-emerald-50/70 p-4 dark:bg-emerald-500/10">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h4 class="text-sm font-bold text-emerald-950 dark:text-emerald-100">Controlo interno de matéria-prima</h4>
+                        <p class="mt-1 text-xs text-emerald-800 dark:text-emerald-200">O registo gera colheita, lab code e análises no fluxo normal.</p>
+                      </div>
+                      <span class="ds-chip border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200">Sem proposta</span>
+                    </div>
+                    <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                      <div class="ds-field-group">
+                        <label class="ds-field-label" for="qc-discipline">Disciplina</label>
+                        <select id="qc-discipline" v-model="form.client_submitted_info.analysis_discipline" class="ds-field">
+                          <option value="microbiology">Microbiologia</option>
+                          <option value="chemistry">Química / físico-química</option>
+                          <option value="microbiology_and_chemistry">Microbiologia + química</option>
+                        </select>
+                      </div>
+                      <div class="ds-field-group">
+                        <label class="ds-field-label" for="qc-purpose">Objetivo</label>
+                        <select id="qc-purpose" v-model="form.client_submitted_info.quality_control_purpose" class="ds-field">
+                          <option value="raw_material_release">Liberação de matéria-prima</option>
+                          <option value="supplier_qualification">Qualificação de fornecedor</option>
+                          <option value="process_validation">Validação de processo</option>
+                          <option value="stability_follow_up">Acompanhamento de estabilidade</option>
+                          <option value="investigation">Investigação interna</option>
+                          <option value="other">Outro</option>
+                        </select>
+                      </div>
+                      <div class="ds-field-group">
+                        <label class="ds-field-label" for="qc-decision">Decisão esperada</label>
+                        <select id="qc-decision" v-model="form.client_submitted_info.qc_decision" class="ds-field">
+                          <option value="hold_until_release">Reter até liberação</option>
+                          <option value="release_if_compliant">Liberar se conforme</option>
+                          <option value="investigate_before_release">Investigar antes de liberar</option>
+                          <option value="trend_only">Apenas tendência</option>
+                        </select>
+                      </div>
+                      <div class="ds-field-group">
+                        <label class="ds-field-label" for="material-category">Categoria</label>
+                        <select id="material-category" v-model="form.client_submitted_info.material_category" class="ds-field">
+                          <option value="raw_material">Matéria-prima</option>
+                          <option value="ingredient">Ingrediente</option>
+                          <option value="packaging_material">Material de embalagem</option>
+                          <option value="intermediate">Produto intermédio</option>
+                          <option value="finished_product">Produto acabado</option>
+                          <option value="environmental_control">Controlo ambiental</option>
+                          <option value="other">Outro</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="mt-4 grid gap-4 md:grid-cols-3">
+                      <div class="ds-field-group">
+                        <label class="ds-field-label" for="qc-lot">Lote</label>
+                        <input id="qc-lot" v-model="form.client_submitted_info.lot" type="text" class="ds-field" placeholder="Lote da matéria-prima" />
+                      </div>
+                      <div class="ds-field-group">
+                        <label class="ds-field-label" for="qc-batch">Batch / OP</label>
+                        <input id="qc-batch" v-model="form.client_submitted_info.batch" type="text" class="ds-field" placeholder="Batch interno ou OP" />
+                      </div>
+                      <div class="ds-field-group">
+                        <label class="ds-field-label" for="qc-supplier">Fornecedor</label>
+                        <input id="qc-supplier" v-model="form.client_submitted_info.supplier_name" type="text" class="ds-field" placeholder="Fornecedor ou origem interna" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid gap-5 border-t border-[color:var(--ds-border)] pt-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
+              <div>
+                <div class="flex items-center gap-2">
+                  <BuildingOfficeIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+                  <h3 class="ds-heading text-sm">Atribuição e escopo</h3>
+                </div>
+                <p class="ds-copy mt-2 text-xs">Produto, proposta, unidade responsável, armazenamento e perfis analíticos.</p>
+              </div>
+
+              <div class="space-y-4">
+                <div class="ds-card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
+                  <div class="ds-field-group">
+                    <label class="ds-field-label" for="sample-product">Produto</label>
+                    <select id="sample-product" v-model="form.client_submitted_info.product_id" class="ds-field" :aria-invalid="Boolean(form.errors['client_submitted_info.product_id'])">
+                      <option :value="null">Selecionar depois</option>
+                      <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}{{ product.matrix ? ' · ' + product.matrix : '' }}</option>
+                    </select>
+                    <p v-if="form.errors['client_submitted_info.product_id']" class="ds-field-error">{{ form.errors['client_submitted_info.product_id'] }}</p>
+                  </div>
+                  <div v-if="!isInternalRequest" class="ds-field-group">
+                    <label class="ds-field-label" for="sample-proposal">Proposta aceite</label>
+                    <select id="sample-proposal" v-model="form.proposal_id" class="ds-field" :aria-invalid="Boolean(form.errors.proposal_id)">
+                      <option value="">Selecionar depois</option>
+                      <option v-for="proposal in acceptedProposals" :key="proposal.id" :value="proposal.id">{{ getProposalLabel(proposal) }}</option>
+                    </select>
+                    <p class="ds-field-hint">Obrigatória antes da entrada em análise.</p>
+                    <p v-if="form.errors.proposal_id" class="ds-field-error">{{ form.errors.proposal_id }}</p>
+                  </div>
+                  <div v-else class="flex items-center border-l-4 border-emerald-500 bg-emerald-50/70 p-4 text-xs font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
+                    Trabalho interno: o fluxo não depende de proposta aceite.
+                  </div>
+                  <div class="ds-field-group">
+                    <label class="ds-field-label" for="sample-lab">Laboratório <span class="ds-field-required">*</span></label>
+                    <select id="sample-lab" v-model="form.lab_id" class="ds-field" :aria-invalid="Boolean(form.errors.lab_id)">
+                      <option value="">Selecione o laboratório</option>
+                      <option v-for="lab in labs" :key="lab.id" :value="lab.id">{{ lab.name }} ({{ lab.code }})</option>
+                    </select>
+                    <p v-if="form.errors.lab_id" class="ds-field-error">{{ form.errors.lab_id }}</p>
+                  </div>
+                  <div class="ds-field-group">
+                    <label class="ds-field-label" for="sample-department">Departamento <span class="ds-field-required">*</span></label>
+                    <select id="sample-department" v-model="form.department_id" class="ds-field" :aria-invalid="Boolean(form.errors.department_id)">
+                      <option value="">Selecione o departamento</option>
+                      <option v-for="department in departments" :key="department.id" :value="department.id">{{ department.name }} ({{ department.code }})</option>
+                    </select>
+                    <p v-if="form.errors.department_id" class="ds-field-error">{{ form.errors.department_id }}</p>
+                  </div>
+                  <div class="ds-field-group">
+                    <label class="ds-field-label" for="received-at">Data de receção</label>
+                    <input id="received-at" v-model="form.received_at" type="datetime-local" class="ds-field" />
+                  </div>
+                  <div class="ds-field-group">
+                    <label class="ds-field-label" for="sample-packaging">Embalagem</label>
+                    <select id="sample-packaging" v-model="form.packaging_id" class="ds-field">
+                      <option value="">Selecione a embalagem</option>
+                      <option v-for="packaging in packagingCategories" :key="packaging.id" :value="packaging.id">{{ packaging.name }} ({{ packaging.code }})</option>
+                    </select>
+                  </div>
+                  <div class="ds-field-group">
+                    <label class="ds-field-label" for="sample-warehouse">Armazém <span class="ds-field-required">*</span></label>
+                    <select id="sample-warehouse" v-model="form.warehouse_id" class="ds-field" :aria-invalid="Boolean(form.errors.warehouse_id)">
+                      <option value="">Selecione o armazém</option>
+                      <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">{{ warehouse.name }} ({{ warehouse.code }})</option>
+                    </select>
+                    <p v-if="form.errors.warehouse_id" class="ds-field-error">{{ form.errors.warehouse_id }}</p>
+                  </div>
+                  <div class="ds-field-group md:col-span-2 xl:col-span-3">
+                    <label class="ds-field-label" for="sample-profiles">Perfis analíticos</label>
+                    <select id="sample-profiles" v-model="form.client_submitted_info.requested_profile_ids" multiple class="ds-field sample-profile-select min-h-40 py-2">
+                      <option v-for="profile in availableProfiles" :key="profile.id" :value="profile.id">
+                        {{ profile.name }}{{ profile.analysis_type ? ' · ' + profile.analysis_type : '' }}{{ profile.parameter_count ? ' · ' + profile.parameter_count + ' parâmetros' : '' }}
+                      </option>
+                    </select>
+                    <p class="ds-field-hint">Use Ctrl/Cmd para selecionar mais de um perfil.</p>
+                    <p v-if="form.errors['client_submitted_info.requested_profile_ids']" class="ds-field-error">{{ form.errors['client_submitted_info.requested_profile_ids'] }}</p>
+                  </div>
+                </div>
+
+                <div v-if="selectedProduct || selectedProfileSummaries.length" class="ds-command-toolbar p-4">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h4 class="ds-heading text-sm">Checklist analítico previsto</h4>
+                      <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">
+                        {{ selectedProduct?.matrix || 'Matriz por confirmar' }} · {{ selectedProfileSummaries.length }} perfis · {{ requiredParameterPreview.length }} parâmetros
+                      </p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <span v-for="profile in selectedProfileSummaries" :key="profile.id" class="ds-chip">{{ profile.name }}</span>
+                    </div>
+                  </div>
+                  <div v-if="requiredParameterPreview.length" class="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                    <article v-for="parameter in requiredParameterPreview" :key="parameter.id" class="border-l-2 border-primary-400 bg-[color:var(--ds-panel-raised)] px-3 py-2">
+                      <p class="text-sm font-bold text-[color:var(--ds-text)]">{{ parameter.name }}</p>
+                      <p class="mt-0.5 text-xs text-[color:var(--ds-text-soft)]">{{ parameter.code || 'Sem código' }} · {{ parameter.profiles.join(', ') }}</p>
+                    </article>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid gap-5 border-t border-[color:var(--ds-border)] pt-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
+              <div>
+                <div class="flex items-center gap-2">
+                  <QrCodeIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+                  <h3 class="ds-heading text-sm">Identificação técnica</h3>
+                </div>
+                <p class="ds-copy mt-2 text-xs">Lote, origem, quantidades e documentos que acompanham a amostra.</p>
+              </div>
+
+              <div class="ds-card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-4">
+                <div v-for="field in technicalIdentityFields" :key="field.key" class="ds-field-group">
+                  <label class="ds-field-label" :for="'technical-' + field.key">{{ field.label }}</label>
+                  <input
+                    :id="'technical-' + field.key"
+                    v-model="form.client_submitted_info[field.key]"
+                    :type="field.type || 'text'"
+                    class="ds-field"
+                    :placeholder="field.placeholder"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="grid gap-5 border-t border-[color:var(--ds-border)] pt-8 lg:grid-cols-[15rem_minmax(0,1fr)]">
+              <div>
+                <div class="flex items-center gap-2">
+                  <ClipboardDocumentListIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+                  <h3 class="ds-heading text-sm">Condicionamento e custódia</h3>
+                </div>
+                <p class="ds-copy mt-2 text-xs">Decisão na receção, integridade física, temperatura e observações de custódia.</p>
+              </div>
+
+              <div class="ds-card grid gap-4 p-5 md:grid-cols-2">
+                <div class="ds-field-group">
+                  <label class="ds-field-label" for="conditioning-status">Decisão de aceitação</label>
+                  <select id="conditioning-status" v-model="form.client_submitted_info.conditioning_status" class="ds-field">
+                    <option :value="null">Não avaliado</option>
+                    <option value="accepted">Aceite</option>
+                    <option value="restricted">Aceite com restrições</option>
+                    <option value="rejected">Rejeitado / quarentena</option>
+                  </select>
+                </div>
+                <div class="ds-field-group">
+                  <label class="ds-field-label" for="packaging-condition">Estado da embalagem</label>
+                  <input id="packaging-condition" v-model="form.client_submitted_info.packaging_condition" type="text" class="ds-field" placeholder="Íntegra, húmida, violada..." />
+                </div>
+                <div class="ds-field-group">
+                  <label class="ds-field-label" for="temperature-condition">Condição térmica</label>
+                  <input id="temperature-condition" v-model="form.client_submitted_info.temperature_condition" type="text" class="ds-field" placeholder="2-8 °C, ambiente, congelada..." />
+                </div>
+                <div class="ds-field-group md:col-span-2">
+                  <label class="ds-field-label" for="integrity-observations">Observações de integridade</label>
+                  <textarea id="integrity-observations" v-model="form.client_submitted_info.integrity_observations" rows="3" class="ds-field" placeholder="Volume, lacre, identificação e desvios visuais..."></textarea>
+                </div>
+                <div class="ds-field-group md:col-span-2">
+                  <label class="ds-field-label" for="custody-notes">Cadeia de custódia e condicionamento</label>
+                  <textarea id="custody-notes" v-model="form.client_submitted_info.chain_of_custody_notes" rows="3" class="ds-field" placeholder="Transporte, recipiente secundário e ações corretivas..."></textarea>
+                </div>
+                <div class="ds-field-group md:col-span-2">
+                  <label class="ds-field-label" for="requested-services">Serviços solicitados</label>
+                  <textarea id="requested-services" v-model="form.requested_services" rows="3" class="ds-field" placeholder="Análises e serviços solicitados..."></textarea>
+                </div>
+                <div class="ds-field-group md:col-span-2">
+                  <label class="ds-field-label" for="sample-observations">Observações gerais</label>
+                  <textarea id="sample-observations" v-model="form.obs" rows="3" class="ds-field" placeholder="Notas adicionais..."></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-8 flex flex-col gap-3 border-t border-[color:var(--ds-border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              v-if="!editingSample.id"
+              type="button"
+              class="ds-button ds-button-secondary"
+              :disabled="!isFormValid"
+              @click="addCurrentSampleToManualQueue"
+            >
+              <QueueListIcon class="h-4 w-4" />
+              Adicionar à fila manual
+            </button>
+            <span v-else />
+
+            <div class="flex items-center justify-end gap-2">
+              <button type="button" class="ds-button ds-button-secondary" @click="cancelEdit">Cancelar</button>
+              <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !isFormValid">
+                <CheckCircleIcon class="h-4 w-4" />
+                {{ form.processing ? 'A processar...' : (editingSample.id ? 'Atualizar amostra' : 'Registar amostra') }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <section class="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.7fr)]">
+        <article v-if="manualBatchMode || manualSampleQueue.length" class="ds-panel overflow-hidden">
+          <div class="flex items-start justify-between gap-4 border-b border-[color:var(--ds-border)] px-5 py-4">
+            <div>
+              <p class="ds-kicker">Fila manual</p>
+              <h2 class="ds-heading mt-1 text-base">{{ manualSampleQueue.length }} amostras preparadas</h2>
+            </div>
+            <button type="button" class="ds-button ds-button-secondary" :disabled="!manualSampleQueue.length || bulkForm.processing" @click="clearManualQueue">Limpar</button>
+          </div>
+          <div v-if="manualSampleQueue.length" class="divide-y divide-[color:var(--ds-border)]">
+            <article v-for="(queueItem, index) in manualSampleQueue" :key="queueItem.temp_id" class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div class="min-w-0">
+                <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Amostra {{ index + 1 }}</p>
+                <h3 class="mt-1 truncate text-sm font-bold text-[color:var(--ds-text)]">{{ queueItem.name }}</h3>
+                <p class="mt-1 text-xs text-[color:var(--ds-text-muted)]">{{ queueItem.customer }} · {{ queueItem.product }} · {{ queueItem.lot }}</p>
+              </div>
+              <div class="flex items-center gap-1">
+                <button type="button" class="ds-table-action" @click="useQueuedSampleAsBase(queueItem)">Usar como base</button>
+                <button type="button" class="ds-table-action ds-table-action-danger" title="Remover" @click="removeManualQueueItem(queueItem.temp_id)">
+                  <TrashIcon class="h-4 w-4" />
+                  <span class="sr-only">Remover</span>
+                </button>
+              </div>
+            </article>
+          </div>
+          <div v-else class="p-5">
+            <div class="ds-empty-state px-5 py-8 text-center text-sm text-[color:var(--ds-text-muted)]">Preencha o formulário e adicione a primeira amostra à fila.</div>
+          </div>
+          <div class="flex flex-col gap-3 border-t border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p v-if="bulkForm.errors.samples" class="ds-field-error">{{ bulkForm.errors.samples }}</p>
+            <span v-else class="text-xs font-semibold text-[color:var(--ds-text-soft)]">A fila é submetida numa única operação controlada.</span>
+            <button type="button" class="ds-button ds-button-primary" :disabled="!manualSampleQueue.length || bulkForm.processing" @click="submitManualBatch">
+              <CheckCircleIcon class="h-4 w-4" />
+              {{ bulkForm.processing ? 'A registar...' : 'Registar fila' }}
+            </button>
+          </div>
+        </article>
+
+        <aside class="ds-command-surface p-5">
+          <p class="ds-kicker">Atalhos operacionais</p>
+          <h2 class="ds-heading mt-2 text-base">Ações rápidas</h2>
+          <div class="mt-4 grid gap-2">
+            <button type="button" class="ds-button ds-button-primary w-full" @click="newSample">
+              <PlusCircleIcon class="h-4 w-4" />
+              Nova amostra
+            </button>
+            <button type="button" class="ds-button ds-button-secondary w-full" @click="startManualBatch">
+              <QueueListIcon class="h-4 w-4" />
+              Abrir fila manual
+            </button>
+            <button type="button" class="ds-button ds-button-secondary w-full" @click="newInternalQcSample('microbiology')">CQ microbiologia</button>
+            <button type="button" class="ds-button ds-button-secondary w-full" @click="newInternalQcSample('chemistry')">CQ química</button>
+          </div>
+          <dl class="mt-5 divide-y divide-[color:var(--ds-border)] border-t border-[color:var(--ds-border)]">
+            <div class="flex items-center justify-between gap-3 py-3">
+              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Hoje</dt>
+              <dd class="text-sm font-bold text-[color:var(--ds-text)]">{{ stats.today_samples || 0 }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-3 py-3">
+              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Esta semana</dt>
+              <dd class="text-sm font-bold text-[color:var(--ds-text)]">{{ stats.week_samples || 0 }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-3 py-3">
+              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">CQ interno</dt>
+              <dd class="text-sm font-bold text-[color:var(--ds-text)]">{{ stats.internal_qc_samples || 0 }}</dd>
+            </div>
+          </dl>
+        </aside>
+      </section>
+    </template>
+
+    <template v-else>
+      <section class="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(19rem,0.65fr)]">
+        <div class="space-y-4">
+          <section class="ds-table-shell">
+            <div class="ds-table-summary flex-col items-stretch px-5 py-4 sm:flex-row sm:items-center">
+              <div>
+                <h2 class="ds-heading text-base">Descartes recentes</h2>
+                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ filteredDiscards.length }} registos visíveis.</p>
+              </div>
+              <div class="sm:w-56">
+                <label class="sr-only" for="discard-method-filter">Método de descarte</label>
+                <select id="discard-method-filter" v-model="discardMethodFilter" class="ds-field">
+                  <option value="">Todos os métodos</option>
                   <option value="incineration">Incineração</option>
-                  <option value="chemical_treatment">Tratamento Químico</option>
+                  <option value="chemical_treatment">Tratamento químico</option>
                   <option value="autoclave">Autoclave</option>
                   <option value="landfill">Aterro</option>
                   <option value="recycling">Reciclagem</option>
-                  <option value="return_to_client">Retorno ao Cliente</option>
+                  <option value="return_to_client">Retorno ao cliente</option>
                 </select>
-                <p v-if="discardForm.errors.discard_method" class="text-xs text-red-600">
-                  {{ discardForm.errors.discard_method }}
-                </p>
               </div>
+            </div>
 
-              <!-- QUANTIDADE -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <ScaleIcon class="h-4 w-4" />
-                  Quantidade
-                  <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  v-model="discardForm.qty"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    discardForm.errors.qty 
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' 
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                  placeholder="ex: 250g, 500ml, 1 unidade"
-                />
-                <p v-if="discardForm.errors.qty" class="text-xs text-red-600">
-                  {{ discardForm.errors.qty }}
-                </p>
+            <div v-if="filteredDiscards.length === 0" class="p-5">
+              <div class="ds-empty-state px-5 py-10 text-center">
+                <ArchiveBoxXMarkIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
+                <h3 class="ds-heading mt-3 text-sm">Nenhum descarte encontrado</h3>
+                <p class="ds-copy mt-1 text-xs">{{ discardMethodFilter ? 'Altere o método selecionado.' : 'Ainda não existem registos de descarte.' }}</p>
               </div>
+            </div>
 
-              <!-- DATA DO DESCARTE -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <CalendarIcon class="h-4 w-4" />
-                  Data do Descarte
-                </label>
-                <input
-                  type="datetime-local"
-                  v-model="discardForm.discarded_at"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    'border-gray-300 focus:border-blue-900 focus:ring-blue-900/20'
-                  ]"
-                />
+            <div v-else class="overflow-x-auto">
+              <table class="min-w-full align-middle">
+                <thead class="ds-table-head">
+                  <tr>
+                    <th class="ds-table-heading px-5 py-3 text-left">Amostra</th>
+                    <th class="ds-table-heading px-5 py-3 text-left">Método</th>
+                    <th class="ds-table-heading px-5 py-3 text-left">Quantidade</th>
+                    <th class="ds-table-heading px-5 py-3 text-left">Data / responsável</th>
+                    <th class="ds-table-heading px-5 py-3 text-right">Evidência</th>
+                  </tr>
+                </thead>
+                <tbody class="ds-table-body divide-y divide-[color:var(--ds-border)]">
+                  <tr v-for="discard in filteredDiscards" :key="discard.id" class="ds-table-row">
+                    <td class="px-5 py-3">
+                      <span class="block text-sm font-bold text-[color:var(--ds-text)]">{{ discard.sample?.name || 'Amostra desconhecida' }}</span>
+                      <span class="mt-0.5 block font-mono text-xs text-[color:var(--ds-text-soft)]">{{ discard.sample?.code || 'Sem código' }}</span>
+                    </td>
+                    <td class="ds-table-cell px-5 py-3">{{ getDiscardMethodLabel(discard.discard_method) }}</td>
+                    <td class="ds-table-cell px-5 py-3">{{ discard.qty }}</td>
+                    <td class="ds-table-cell px-5 py-3">
+                      <span class="block">{{ formatDate(discard.discarded_at) }}</span>
+                      <span class="mt-0.5 block text-xs text-[color:var(--ds-text-soft)]">{{ discard.discarded_by?.name || 'Responsável desconhecido' }}</span>
+                    </td>
+                    <td class="px-5 py-3 text-right">
+                      <button type="button" class="ds-table-action" title="Gerar certificado" @click="generateDiscardPdf(discard.id)">
+                        <DocumentArrowDownIcon class="h-4 w-4" />
+                        <span class="sr-only">Gerar certificado</span>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section v-if="showDiscardForm" class="ds-panel overflow-hidden">
+            <div class="border-b border-[color:var(--ds-border)] bg-rose-50/70 px-5 py-4 dark:bg-rose-500/10">
+              <p class="text-xs font-bold uppercase text-rose-700 dark:text-rose-300">Operação irreversível</p>
+              <h2 class="mt-1 text-lg font-bold text-rose-950 dark:text-rose-100">
+                {{ selectedSample ? 'Descartar: ' + selectedSample.name : 'Registar descarte' }}
+              </h2>
+            </div>
+            <form class="grid gap-4 p-5 md:grid-cols-2" @submit.prevent="submitDiscard">
+              <div class="ds-field-group">
+                <label class="ds-field-label" for="discard-sample">Amostra <span class="ds-field-required">*</span></label>
+                <select id="discard-sample" v-model="discardForm.sample_id" class="ds-field" :aria-invalid="Boolean(discardForm.errors.sample_id)" @change="onSampleSelect">
+                  <option value="">Selecione uma amostra</option>
+                  <option v-for="sample in discardableSamples" :key="sample.id" :value="sample.id">{{ sample.code }} - {{ sample.name }} ({{ getStatusLabel(sample.status) }})</option>
+                </select>
+                <p v-if="discardForm.errors.sample_id" class="ds-field-error">{{ discardForm.errors.sample_id }}</p>
               </div>
-
-              <!-- BOTÕES DO FORMULÁRIO DE DESCARTE -->
-              <div class="md:col-span-2 flex items-center justify-end gap-3 pt-4">
-                <button 
-                  @click="cancelDiscard"
-                  type="button"
-                  class="rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors duration-200 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:bg-slate-800"
-                >
-                  Cancelar
+              <div class="ds-field-group">
+                <label class="ds-field-label" for="discard-method">Método <span class="ds-field-required">*</span></label>
+                <select id="discard-method" v-model="discardForm.discard_method" class="ds-field" :aria-invalid="Boolean(discardForm.errors.discard_method)">
+                  <option value="">Selecione o método</option>
+                  <option value="incineration">Incineração</option>
+                  <option value="chemical_treatment">Tratamento químico</option>
+                  <option value="autoclave">Autoclave</option>
+                  <option value="landfill">Aterro</option>
+                  <option value="recycling">Reciclagem</option>
+                  <option value="return_to_client">Retorno ao cliente</option>
+                </select>
+                <p v-if="discardForm.errors.discard_method" class="ds-field-error">{{ discardForm.errors.discard_method }}</p>
+              </div>
+              <div class="ds-field-group">
+                <label class="ds-field-label" for="discard-quantity">Quantidade <span class="ds-field-required">*</span></label>
+                <input id="discard-quantity" v-model="discardForm.qty" type="text" class="ds-field" :aria-invalid="Boolean(discardForm.errors.qty)" placeholder="250 g, 500 ml, 1 unidade" />
+                <p v-if="discardForm.errors.qty" class="ds-field-error">{{ discardForm.errors.qty }}</p>
+              </div>
+              <div class="ds-field-group">
+                <label class="ds-field-label" for="discarded-at">Data do descarte</label>
+                <input id="discarded-at" v-model="discardForm.discarded_at" type="datetime-local" class="ds-field" />
+              </div>
+              <div class="flex items-center justify-end gap-2 border-t border-[color:var(--ds-border)] pt-4 md:col-span-2">
+                <button type="button" class="ds-button ds-button-secondary" @click="cancelDiscard">Cancelar</button>
+                <button type="submit" class="ds-button ds-button-danger" :disabled="discardForm.processing || !isDiscardFormValid">
+                  <TrashIcon class="h-4 w-4" />
+                  {{ discardForm.processing ? 'A processar...' : 'Confirmar descarte' }}
                 </button>
-                <button 
-                  @click="submitDiscard"
-                  :disabled="discardForm.processing || !isDiscardFormValid"
-                  :class="[
-                    'inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200',
-                    discardForm.processing || !isDiscardFormValid
-                      ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500'
-                      : 'bg-rose-600 text-white hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/30 dark:bg-rose-500 dark:hover:bg-rose-400'
-                  ]"
-                >
-                  <TrashIcon class="h-5 w-5" />
-                  {{ discardForm.processing ? 'Processando...' : 'Confirmar Descarte' }}
-                </button>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- COLUNA DIREITA (1/3 largura) -->
-      <div class="space-y-6">
-        <!-- INFORMAÇÕES DA AMOSTRA SELECIONADA -->
-        <div v-if="selectedSample && showDiscardForm" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <h3 class="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-            <InformationCircleIcon class="h-5 w-5 text-primary-800 dark:text-primary-300" />
-            Informações da Amostra
-          </h3>
-          <div class="space-y-4">
-            <div>
-              <h4 class="text-sm font-medium text-slate-900 dark:text-white">{{ selectedSample.name }}</h4>
-              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ selectedSample.code }}</p>
-            </div>
-            
-            <div class="space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-400">Status</span>
-                <span :class="sampleStatusBadgeClass(selectedSample.status)">
-                  {{ getStatusLabel(selectedSample.status) }}
-                </span>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-400">Tipo de Amostra</span>
-                <span class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ getSampleTypeLabel(selectedSample.sample_type) }}</span>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-400">Recebido em</span>
-                <span class="text-sm text-slate-900 dark:text-slate-100">{{ formatDate(selectedSample.received_at) }}</span>
-              </div>
-              
-              <div v-if="selectedSample.analysis_start_date" class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-400">Início da Análise</span>
-                <span class="text-sm text-slate-900 dark:text-slate-100">{{ formatDate(selectedSample.analysis_start_date) }}</span>
-              </div>
-              
-              <div v-if="selectedSample.analysis_end_date" class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-400">Fim da Análise</span>
-                <span class="text-sm text-slate-900 dark:text-slate-100">{{ formatDate(selectedSample.analysis_end_date) }}</span>
-              </div>
-            </div>
-          </div>
+            </form>
+          </section>
         </div>
 
-        <!-- CARTÃO DE AÇÕES DE DESCARTE -->
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-            Ações de Descarte
-          </h3>
-          <div class="space-y-4">
-            <button 
-              @click="showDiscardForm = !showDiscardForm"
-              :class="[
-                'inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
-                showDiscardForm
-                  ? 'bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'
-                  : 'bg-rose-600 text-white hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-500/30 dark:bg-rose-500 dark:hover:bg-rose-400'
-              ]"
-            >
-              <PlusCircleIcon class="h-5 w-5" />
-              {{ showDiscardForm ? 'Cancelar Novo Descarte' : 'Novo Descarte' }}
-            </button>
-            
-            <button 
-              @click="exportDiscards"
-              type="button"
-              class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-colors duration-200 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:bg-slate-800"
-            >
-              <ArrowDownTrayIcon class="h-5 w-5" />
-              Exportar Descartados
-            </button>
+        <aside class="space-y-4">
+          <section class="ds-command-surface p-5">
+            <p class="ds-kicker">Operações de descarte</p>
+            <h2 class="ds-heading mt-2 text-base">Controlo e evidência</h2>
+            <div class="mt-4 grid gap-2">
+              <button type="button" :class="['ds-button w-full', showDiscardForm ? 'ds-button-secondary' : 'ds-button-danger']" @click="showDiscardForm = !showDiscardForm">
+                <PlusCircleIcon class="h-4 w-4" />
+                {{ showDiscardForm ? 'Fechar formulário' : 'Novo descarte' }}
+              </button>
+              <button type="button" class="ds-button ds-button-secondary w-full" @click="exportDiscards">
+                <ArrowDownTrayIcon class="h-4 w-4" />
+                Exportar registos
+              </button>
+            </div>
+            <dl class="mt-5 divide-y divide-[color:var(--ds-border)] border-t border-[color:var(--ds-border)]">
+              <div class="flex items-center justify-between py-3">
+                <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Total descartado</dt>
+                <dd class="text-sm font-bold text-rose-700 dark:text-rose-300">{{ stats.total_discarded || 0 }}</dd>
+              </div>
+              <div class="flex items-center justify-between py-3">
+                <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Este mês</dt>
+                <dd class="text-sm font-bold text-[color:var(--ds-text)]">{{ stats.discarded_this_month || 0 }}</dd>
+              </div>
+              <div class="flex items-center justify-between py-3">
+                <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Incineração</dt>
+                <dd class="text-sm font-bold text-[color:var(--ds-text)]">{{ getDiscardCountByMethod('incineration') }}</dd>
+              </div>
+              <div class="flex items-center justify-between py-3">
+                <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Autoclave</dt>
+                <dd class="text-sm font-bold text-[color:var(--ds-text)]">{{ getDiscardCountByMethod('autoclave') }}</dd>
+              </div>
+            </dl>
+          </section>
 
-            <!-- ESTATÍSTICAS DE DESCARTE -->
-            <div class="border-t border-slate-200 pt-4 dark:border-slate-800">
-              <h4 class="mb-2 text-sm font-medium text-slate-900 dark:text-white">
-                Estatísticas de Descarte
-              </h4>
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-slate-600 dark:text-slate-400">Total Descartado</span>
-                  <span class="font-semibold text-rose-600 dark:text-rose-300">{{ stats.total_discarded }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-slate-600 dark:text-slate-400">Este Mês</span>
-                  <span class="font-semibold text-rose-600 dark:text-rose-300">{{ stats.discarded_this_month }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-slate-600 dark:text-slate-400">Por Incineração</span>
-                  <span class="text-sm text-slate-700 dark:text-slate-300">{{ getDiscardCountByMethod('incineration') }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-slate-600 dark:text-slate-400">Por Autoclave</span>
-                  <span class="text-sm text-slate-700 dark:text-slate-300">{{ getDiscardCountByMethod('autoclave') }}</span>
-                </div>
+          <section v-if="selectedSample && showDiscardForm" class="ds-card p-5">
+            <div class="flex items-center gap-2">
+              <InformationCircleIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+              <h2 class="ds-heading text-base">Amostra selecionada</h2>
+            </div>
+            <div class="mt-4 border-l-4 border-primary-500 pl-4">
+              <h3 class="text-sm font-bold text-[color:var(--ds-text)]">{{ selectedSample.name }}</h3>
+              <p class="mt-1 font-mono text-xs text-[color:var(--ds-text-soft)]">{{ selectedSample.code }}</p>
+            </div>
+            <dl class="mt-4 divide-y divide-[color:var(--ds-border)]">
+              <div class="flex items-center justify-between gap-3 py-3">
+                <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Estado</dt>
+                <dd><span :class="sampleStatusBadgeClass(selectedSample.status)">{{ getStatusLabel(selectedSample.status) }}</span></dd>
+              </div>
+              <div class="flex items-center justify-between gap-3 py-3">
+                <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Tipo</dt>
+                <dd class="text-right text-xs font-bold text-[color:var(--ds-text)]">{{ getSampleTypeLabel(selectedSample.sample_type) }}</dd>
+              </div>
+              <div class="flex items-center justify-between gap-3 py-3">
+                <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Receção</dt>
+                <dd class="text-right text-xs font-bold text-[color:var(--ds-text)]">{{ formatDate(selectedSample.received_at) }}</dd>
+              </div>
+              <div v-if="selectedSample.analysis_start_date" class="flex items-center justify-between gap-3 py-3">
+                <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Início da análise</dt>
+                <dd class="text-right text-xs font-bold text-[color:var(--ds-text)]">{{ formatDate(selectedSample.analysis_start_date) }}</dd>
+              </div>
+              <div v-if="selectedSample.analysis_end_date" class="flex items-center justify-between gap-3 py-3">
+                <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Fim da análise</dt>
+                <dd class="text-right text-xs font-bold text-[color:var(--ds-text)]">{{ formatDate(selectedSample.analysis_end_date) }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="border-l-4 border-rose-500 bg-rose-50 p-4 dark:bg-rose-500/10">
+            <div class="flex items-start gap-3">
+              <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 shrink-0 text-rose-700 dark:text-rose-300" />
+              <div>
+                <h2 class="text-sm font-bold text-rose-950 dark:text-rose-100">Verificação obrigatória</h2>
+                <p class="mt-1 text-xs leading-5 text-rose-800 dark:text-rose-200">Confirme o código, método e quantidade. O descarte é irreversível.</p>
               </div>
             </div>
-          </div>
-        </div>
+          </section>
+        </aside>
+      </section>
+    </template>
 
-        <!-- CARTÃO DE AVISO -->
-        <div class="rounded-3xl border border-rose-200 bg-rose-50 p-6 dark:border-rose-500/30 dark:bg-rose-500/10">
-          <div class="flex items-start gap-3">
-            <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 text-rose-600 dark:text-rose-300" />
-            <div>
-              <h4 class="mb-2 text-sm font-semibold text-rose-900 dark:text-rose-100">
-                Aviso importante
-              </h4>
-              <p class="text-xs leading-5 text-rose-700 dark:text-rose-200">
-                O descarte de amostras é irreversível. Confirme o código, o método e a quantidade antes de registar a evidência.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <footer class="flex flex-col gap-3 border-t border-[color:var(--ds-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-xs font-semibold text-[color:var(--ds-text-soft)]">Última atualização: {{ formatDate(new Date()) }}</p>
+      <p class="text-xs font-semibold text-[color:var(--ds-text-soft)]">Registos rastreáveis por código, lote e cadeia de custódia.</p>
+    </footer>
 
-    <!-- RODAPÉ -->
-    <div class="flex flex-col gap-3 border-t border-slate-200 pt-6 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
-      <div class="text-sm text-slate-500 dark:text-slate-400">
-        Última atualização: {{ formatDate(new Date()) }}
-      </div>
-      <div class="flex items-center gap-4">
-        <button 
-          @click="refreshData"
-          type="button"
-          class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-colors duration-200 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-slate-700 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:bg-slate-800"
-        >
-          <ArrowPathIcon class="h-5 w-5" />
-          Atualizar
-        </button>
-      </div>
-    </div>
-
-    <!-- MENSAGENS DE SUCESSO/ERRO -->
     <Transition
-      enter-active-class="transition ease-out duration-300"
-      enter-from-class="transform opacity-0 translate-y-2"
-      enter-to-class="transform opacity-100 translate-y-0"
-      leave-active-class="transition ease-in duration-200"
-      leave-from-class="transform opacity-100 translate-y-0"
-      leave-to-class="transform opacity-0 translate-y-2"
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="translate-y-2 opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="translate-y-0 opacity-100"
+      leave-to-class="translate-y-2 opacity-0"
     >
-      <div 
-        v-if="$page.props.flash.message"
+      <div
+        v-if="flash.message"
         :class="[
-          'fixed bottom-4 right-4 z-50 max-w-md rounded-3xl border p-4 shadow-2xl backdrop-blur',
-          $page.props.flash.type === 'error' ? 'border-rose-200 bg-rose-50/95 dark:border-rose-500/30 dark:bg-rose-950/95' :
-          $page.props.flash.type === 'warning' ? 'border-amber-200 bg-amber-50/95 dark:border-amber-500/30 dark:bg-amber-950/95' :
-          'border-emerald-200 bg-emerald-50/95 dark:border-emerald-500/30 dark:bg-emerald-950/95'
+          'fixed bottom-4 right-4 z-50 max-w-md border p-4 shadow-xl',
+          flash.type === 'error'
+            ? 'border-rose-300 bg-rose-50 text-rose-950 dark:border-rose-500/40 dark:bg-rose-950 dark:text-rose-100'
+            : flash.type === 'warning'
+              ? 'border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-500/40 dark:bg-amber-950 dark:text-amber-100'
+              : 'border-emerald-300 bg-emerald-50 text-emerald-950 dark:border-emerald-500/40 dark:bg-emerald-950 dark:text-emerald-100'
         ]"
       >
-        <div class="flex items-start">
-          <div class="flex-shrink-0">
-            <CheckCircleIcon 
-              v-if="$page.props.flash.type === 'success'" 
-              class="h-5 w-5 text-emerald-500 dark:text-emerald-300"
-            />
-            <ExclamationTriangleIcon 
-              v-else 
-              class="h-5 w-5 text-rose-500 dark:text-rose-300"
-            />
-          </div>
-          <div class="ml-3">
-            <p :class="[
-              'text-sm font-medium',
-              $page.props.flash.type === 'error' ? 'text-rose-800 dark:text-rose-100' :
-              $page.props.flash.type === 'warning' ? 'text-amber-800 dark:text-amber-100' :
-              'text-emerald-800 dark:text-emerald-100'
-            ]">
-              {{ $page.props.flash.message }}
-            </p>
-            <div v-if="$page.props.flash.sample_id" class="mt-2">
-              <button
-                @click="generateEntryPdf($page.props.flash.sample_id)"
-                class="text-sm font-semibold text-primary-700 hover:text-primary-600 dark:text-primary-300 dark:hover:text-primary-200"
-              >
-                Gerar PDF da Entrada
-              </button>
-            </div>
-            <div v-if="$page.props.flash.discard_id" class="mt-2">
-              <button
-                @click="generateDiscardPdf($page.props.flash.discard_id)"
-                class="text-sm font-semibold text-primary-700 hover:text-primary-600 dark:text-primary-300 dark:hover:text-primary-200"
-              >
-                Gerar Certificado de Descarte
-              </button>
+        <div class="flex items-start gap-3">
+          <CheckCircleIcon v-if="flash.type === 'success'" class="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" />
+          <ExclamationTriangleIcon v-else class="h-5 w-5 shrink-0 text-rose-600 dark:text-rose-300" />
+          <div>
+            <p class="text-sm font-bold">{{ flash.message }}</p>
+            <div v-if="flash.sample_id || flash.discard_id" class="mt-2 flex flex-wrap gap-2">
+              <button v-if="flash.sample_id" type="button" class="text-xs font-bold underline" @click="generateEntryPdf(flash.sample_id)">PDF da entrada</button>
+              <button v-if="flash.discard_id" type="button" class="text-xs font-bold underline" @click="generateDiscardPdf(flash.discard_id)">Certificado de descarte</button>
             </div>
           </div>
         </div>
@@ -1820,42 +1004,24 @@
     </Transition>
   </div>
 </template>
-
 <script setup>
-import BaseInput from '@/Components/base/BaseInput.vue'
-import BaseSelect from '@/Components/base/BaseSelect.vue'
-import ModuleCard from '@/Components/base/ModuleCard.vue'
-import ModuleHero from '@/Components/base/ModuleHero.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { router, useForm, usePage } from '@inertiajs/vue3'
 import { 
   BeakerIcon,
-  DocumentTextIcon,
   TagIcon,
   QrCodeIcon,
-  CubeIcon,
-  UserGroupIcon,
   BuildingOfficeIcon,
-  BuildingLibraryIcon,
-  CalendarIcon,
   QueueListIcon,
-  ArchiveBoxIcon,
   ClipboardDocumentListIcon,
-  ChatBubbleLeftRightIcon,
-  ClockIcon,
-  PlayIcon,
-  StopIcon,
   CheckCircleIcon,
   ArrowPathIcon,
-  Cog6ToothIcon,
   TrashIcon,
   ArchiveBoxXMarkIcon,
   InformationCircleIcon,
   ExclamationTriangleIcon,
   ArrowDownTrayIcon,
   CloudArrowUpIcon,
-  CogIcon,
   ScaleIcon,
   PlusCircleIcon,
   EyeIcon,
@@ -1865,6 +1031,7 @@ import {
 
 // Obter props da página
 const page = usePage()
+const flash = computed(() => page.props.flash || {})
 
 // Estado reativo
 const activeTab = ref('entry')
@@ -1936,6 +1103,22 @@ const sampleEntryCommandCards = computed(() => [
     hint: 'Matérias-primas e controlos internos processados pelo fluxo normal.',
   },
 ])
+
+const technicalIdentityFields = [
+  { key: 'lot', label: 'Lote', placeholder: 'Lote / batch do cliente' },
+  { key: 'origin', label: 'Origem', placeholder: 'Fornecedor, país, linha ou unidade' },
+  { key: 'location', label: 'Local de colheita', placeholder: 'Local físico ou ponto de amostragem' },
+  { key: 'sampling_plan_ref', label: 'Plano de amostragem', placeholder: 'Plano, norma ou referência' },
+  { key: 'quantity', label: 'Quantidade recebida', placeholder: '2 kg, 500 ml' },
+  { key: 'collected_qty', label: 'Quantidade colhida', placeholder: '3 frascos' },
+  { key: 'temperature_value', label: 'Temperatura', placeholder: '4 °C, ambiente' },
+  { key: 'container_no', label: 'Contentor', placeholder: 'Número do contentor' },
+  { key: 'du_no', label: 'DU', placeholder: 'Documento único' },
+  { key: 'term_no', label: 'Termo', placeholder: 'Número do termo' },
+  { key: 'bl', label: 'BL', placeholder: 'Bill of lading' },
+  { key: 'production_date', label: 'Produção', type: 'date' },
+  { key: 'expiry_date', label: 'Validade', type: 'date' },
+]
 
 const isDarkMode = ref(false)
 let themeObserver = null
@@ -2312,17 +1495,14 @@ const getStatusLabel = (status) => {
 
 const sampleStatusBadgeClass = (status) => {
   const classes = {
-    COMPLETADO: 'bg-emerald-100 text-emerald-800 ring-emerald-600/20 dark:bg-emerald-500/15 dark:text-emerald-200 dark:ring-emerald-400/20',
-    EN_PROGRESO: 'bg-primary-100 text-primary-800 ring-primary-600/20 dark:bg-primary-500/15 dark:text-primary-200 dark:ring-primary-400/20',
-    POR_INICIAR: 'bg-amber-100 text-amber-800 ring-amber-600/20 dark:bg-amber-500/15 dark:text-amber-200 dark:ring-amber-400/20',
-    CANCELADO: 'bg-rose-100 text-rose-800 ring-rose-600/20 dark:bg-rose-500/15 dark:text-rose-200 dark:ring-rose-400/20',
-    EN_PAUSA: 'bg-slate-100 text-slate-800 ring-slate-600/20 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-600',
+    COMPLETADO: 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200',
+    EN_PROGRESO: 'border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-400/30 dark:bg-blue-500/10 dark:text-blue-200',
+    POR_INICIAR: 'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200',
+    CANCELADO: 'border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-200',
+    EN_PAUSA: 'border-zinc-300 bg-zinc-50 text-zinc-800 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200',
   }
 
-  return [
-    'inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset',
-    classes[status] || classes.EN_PAUSA,
-  ]
+  return ['ds-chip', classes[status] || classes.EN_PAUSA]
 }
 
 const getSampleTypeLabel = (type) => {
@@ -2789,88 +1969,16 @@ watch(() => discardForm, () => {
 </script>
 
 <style scoped>
-.vap-sample-entry-form :is(label, .form-label),
-.vap-sample-discard-form :is(label, .form-label) {
-  color: #334155;
-  font-weight: 700;
-}
-
-.vap-sample-entry-form :is(input, select, textarea),
-.vap-sample-discard-form :is(input, select, textarea) {
-  width: 100%;
-  border: 1px solid #d8cfbe;
-  border-radius: 1rem;
-  background: #fffdf7;
-  color: #17231f;
-  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
-  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
-}
-
-.vap-sample-entry-form :is(input, select, textarea):focus,
-.vap-sample-discard-form :is(input, select, textarea):focus {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 4px rgb(15 118 110 / 0.14);
-  outline: none;
-}
-
-.vap-sample-entry-form :is(input, textarea)::placeholder,
-.vap-sample-discard-form :is(input, textarea)::placeholder {
-  color: #94a3b8;
-}
-
-.vap-sample-entry-form select[multiple] {
-  min-height: 10rem;
-  background-image: linear-gradient(180deg, rgb(255 253 247 / 0.96), rgb(248 244 235 / 0.9));
-}
-
-.vap-sample-entry-form select[multiple] option,
-.vap-sample-discard-form select option {
-  padding: 0.55rem 0.75rem;
-}
-
-.vap-sample-entry-form p.text-xs,
-.vap-sample-discard-form p.text-xs {
-  line-height: 1.55;
-}
-
-:global(.dark) .vap-sample-entry-form :is(label, .form-label),
-:global(.dark) .vap-sample-discard-form :is(label, .form-label) {
-  color: #e2e8f0;
-}
-
-:global(.dark) .vap-sample-entry-form :is(input, select, textarea),
-:global(.dark) .vap-sample-discard-form :is(input, select, textarea) {
-  border-color: #25443c;
-  background: #081512;
-  color: #f7f1e7;
-  color-scheme: dark;
-}
-
-:global(.dark) .vap-sample-entry-form :is(input, select, textarea):focus,
-:global(.dark) .vap-sample-discard-form :is(input, select, textarea):focus {
-  border-color: #5eead4;
-  box-shadow: 0 0 0 4px rgb(20 184 166 / 0.18);
-}
-
-:global(.dark) .vap-sample-entry-form :is(input, textarea)::placeholder,
-:global(.dark) .vap-sample-discard-form :is(input, textarea)::placeholder {
-  color: #64748b;
-}
-
-:global(.dark) .vap-sample-entry-form select[multiple] {
-  background-image: linear-gradient(180deg, rgb(8 21 18 / 0.98), rgb(15 23 42 / 0.92));
-}
-
-:global(.dark) .vap-sample-entry-form :is(.text-gray-500, .text-gray-600),
-:global(.dark) .vap-sample-discard-form :is(.text-gray-500, .text-gray-600) {
-  color: #94a3b8;
+.sample-profile-select {
+  background-image: none;
+  padding-right: 0.85rem;
 }
 
 :deep(.apexcharts-tooltip),
 :deep(.apexcharts-menu) {
-  border-radius: 1rem !important;
+  border-radius: 0.5rem !important;
   border-color: rgb(203 213 225 / 0.9) !important;
-  box-shadow: 0 18px 45px rgb(15 23 42 / 0.16) !important;
+  box-shadow: 0 12px 28px rgb(15 23 42 / 0.14) !important;
 }
 
 :global(.dark) :deep(.apexcharts-tooltip),

@@ -1,648 +1,582 @@
-<template>
- 
-    <div class="iso-revision-show space-y-8" :class="commercialDocumentThemeClasses">
-      <!-- HEADER CARD -->
-      <div class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
-        <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-950 text-white shadow-lg shadow-blue-950/20 dark:bg-blue-500 dark:text-slate-950">
-              <EyeIcon class="h-6 w-6" />
-            </div>
-            <h1 class="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
-              {{ $t('gestlab.general.labels.iso_revisions.show.title') }}
-              <span class="ml-2 text-lg font-normal text-blue-900 dark:text-blue-300">
-                v{{ revision.version }}
-              </span>
-            </h1>
-            <p class="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
-              {{ $t('gestlab.general.labels.iso_revisions.show.description') }}
-              <span class="font-semibold text-blue-900 dark:text-blue-300">
-                {{ certificate.code }}
-              </span>
-              • {{ formatDate(revision.effective_date) }}
-            </p>
-          </div>
-          <div class="flex flex-wrap items-center gap-3">
-            <span :class="[
-              'inline-flex items-center rounded-full px-3 py-1 text-sm font-medium',
-              revision.is_current
-                ? 'bg-green-100 text-green-800 ring-1 ring-inset ring-green-600/20 dark:bg-green-500/10 dark:text-green-200 dark:ring-green-400/20'
-                : 'bg-gray-100 text-gray-800 ring-1 ring-inset ring-gray-600/20 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-600/20'
-            ]">
-              {{ revision.is_current ? $t('gestlab.general.labels.iso_revisions.current') : $t('gestlab.general.labels.iso_revisions.historical') }}
-            </span>
-            <span :class="getRevisionBadgeClass(revision.change_type)">
-              {{ $t(`gestlab.general.labels.iso_revisions.change_types.${revision.change_type}`) }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- MAIN CONTENT SECTION -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- LEFT COLUMN - REVISION DETAILS -->
-        <div class="lg:col-span-2 space-y-6">
-          
-          <!-- SNAPSHOT DATA CARD -->
-          <div class="overflow-hidden rounded-[26px] border border-slate-200 bg-white/95 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
-            <!-- GRADIENT HEADER -->
-            <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-              <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                <DocumentTextIcon class="h-5 w-5" />
-                {{ $t('gestlab.general.labels.iso_revisions.show.snapshot_data') }}
-              </h2>
-            </div>
-            
-            <!-- SNAPSHOT CONTENT -->
-            <div class="p-6">
-              <!-- CERTIFICATE DATA -->
-              <div class="space-y-6">
-                <div>
-                  <h3 class="mb-4 border-b border-slate-200 pb-2 text-base font-semibold text-slate-900 dark:border-slate-800 dark:text-white">
-                    {{ $t('gestlab.general.labels.iso_revisions.show.certificate_data') }}
-                  </h3>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div v-for="(value, key) in certificateData" :key="key" class="space-y-1">
-                      <label class="block text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        {{ formatFieldLabel(key) }}
-                      </label>
-                      <p class="text-sm text-slate-900 dark:text-white">
-                        {{ formatValue(value) }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- OBSERVATIONS -->
-                <div v-if="certificateData.obs" class="space-y-2">
-                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {{ $t('gestlab.general.labels.iso_revisions.show.observations') }}
-                  </label>
-                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">
-                    <p class="whitespace-pre-line text-sm text-slate-700 dark:text-slate-200">
-                      {{ certificateData.obs }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- DIFFERENCES WITH CURRENT -->
-              <div v-if="differences.length > 0" class="mt-8 border-t border-slate-200 pt-8 dark:border-slate-800">
-                <h3 class="mb-4 text-base font-semibold text-slate-900 dark:text-white">
-                  {{ $t('gestlab.general.labels.iso_revisions.show.differences_with_current') }}
-                  <span class="text-sm font-normal text-slate-500 dark:text-slate-400">
-                    ({{ differences.length }} {{ $t('gestlab.general.labels.iso_revisions.show.changes') }})
-                  </span>
-                </h3>
-                <div class="space-y-3">
-                  <div v-for="diff in differences" :key="diff.field" 
-                       class="rounded-2xl border border-yellow-200 bg-yellow-50 p-4 dark:border-amber-400/20 dark:bg-amber-500/10">
-                    <div class="flex items-center justify-between">
-                      <span class="text-sm font-medium text-slate-900 dark:text-white">
-                        {{ diff.label }}
-                      </span>
-                      <span class="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-amber-500/15 dark:text-amber-200">
-                        {{ $t('gestlab.general.labels.iso_revisions.show.changed') }}
-                      </span>
-                    </div>
-                    <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <label class="block text-xs text-slate-500 dark:text-slate-400">
-                          {{ $t('gestlab.general.labels.iso_revisions.show.in_this_revision') }}
-                        </label>
-                        <p class="font-medium text-slate-900 dark:text-white">
-                          {{ formatValue(diff.revision_value) }}
-                        </p>
-                      </div>
-                      <div>
-                        <label class="block text-xs text-slate-500 dark:text-slate-400">
-                          {{ $t('gestlab.general.labels.iso_revisions.show.current_value') }}
-                        </label>
-                        <p class="font-medium text-slate-900 dark:text-white">
-                          {{ formatValue(diff.current_value) }}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- RELATED DATA CARD -->
-          <div class="overflow-hidden rounded-[26px] border border-slate-200 bg-white/95 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
-            <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-              <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-                <LinkIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
-                {{ $t('gestlab.general.labels.iso_revisions.show.related_data') }}
-              </h2>
-            </div>
-            
-            <div class="p-6">
-              <!-- TABS FOR DIFFERENT RELATED DATA -->
-              <div class="border-b border-slate-200 dark:border-slate-800">
-                <nav class="-mb-px flex space-x-8">
-                  <button 
-                    v-for="tab in relatedDataTabs" 
-                    :key="tab.id"
-                    @click="activeTab = tab.id"
-                    :class="[
-                      'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium',
-                      activeTab === tab.id
-                        ? 'border-blue-900 text-blue-900 dark:border-blue-400 dark:text-blue-300'
-                        : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400 dark:hover:border-slate-700 dark:hover:text-slate-200'
-                    ]"
-                  >
-                    {{ tab.label }}
-                    <span v-if="tab.count" class="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-900 dark:bg-slate-800 dark:text-slate-200">
-                      {{ tab.count }}
-                    </span>
-                  </button>
-                </nav>
-              </div>
-
-              <!-- TAB CONTENT -->
-              <div class="mt-6">
-                <!-- COLLECTION PRODUCT -->
-                <div v-if="activeTab === 'collection' && snapshot.relations?.collection" class="space-y-4">
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div v-for="(value, key) in snapshot.relations.collection" :key="key" 
-                         class="space-y-1">
-                      <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">
-                        {{ formatFieldLabel(key) }}
-                      </label>
-                      <p class="text-sm text-slate-900 dark:text-white">
-                        {{ formatValue(value) }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- RESULTS -->
-                <div v-if="activeTab === 'results' && snapshot.relations?.results?.length > 0" class="space-y-4">
-                  <div v-for="result in snapshot.relations.results" :key="result.id" 
-                       class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700 dark:bg-slate-900/60">
-                    <div class="flex items-center justify-between mb-3">
-                      <h4 class="text-sm font-semibold text-slate-900 dark:text-white">
-                        {{ result.parameter_label || result.parameter_id }}
-                      </h4>
-                      <span class="text-xs font-medium text-slate-500 dark:text-slate-400">
-                        {{ result.type_label }}
-                      </span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <label class="block text-xs text-slate-500 dark:text-slate-400">Result</label>
-                        <p class="font-medium text-slate-900 dark:text-white">{{ result.approved_value || result.verified_value || result.inserted_value }}</p>
-                      </div>
-                      <div>
-                        <label class="block text-xs text-slate-500 dark:text-slate-400">Unit</label>
-                        <p class="text-slate-900 dark:text-white">{{ result.unit_label }}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- EMPTY STATE -->
-                <div v-if="!hasRelatedDataForTab(activeTab)" class="py-12 text-center">
-                  <DocumentDuplicateIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
-                  <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
-                    {{ $t('gestlab.general.labels.iso_revisions.show.no_related_data') }}
-                  </h3>
-                  <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                    {{ $t('gestlab.general.labels.iso_revisions.show.no_data_for_tab') }}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- RIGHT COLUMN - METADATA & ACTIONS -->
-        <div class="space-y-6">
-          <!-- REVISION METADATA CARD -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-              {{ $t('gestlab.general.labels.iso_revisions.show.revision_metadata') }}
-            </h3>
-            <div class="space-y-4">
-              <!-- BASIC INFO -->
-              <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.revision') }}</span>
-                  <span class="text-sm font-semibold text-blue-900">#{{ revision.revision_number }}</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.change_type') }}</span>
-                  <span :class="getRevisionBadgeClass(revision.change_type)" class="text-xs">
-                    {{ $t(`gestlab.general.labels.iso_revisions.change_types.${revision.change_type}`) }}
-                  </span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.effective_date') }}</span>
-                  <span class="text-sm text-gray-900">{{ formatDateTime(revision.effective_date) }}</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.created_by') }}</span>
-                  <span class="text-sm font-medium text-gray-900">{{ revision.created_by?.name }}</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.approved_by') }}</span>
-                  <span class="text-sm font-medium text-gray-900">{{ revision.approved_by?.name || $t('gestlab.general.labels.iso_revisions.not_approved') }}</span>
-                </div>
-              </div>
-
-              <!-- ISO COMPLIANCE -->
-              <div class="border-t border-gray-200 pt-4">
-                <h4 class="text-sm font-medium text-gray-900 mb-2">
-                  {{ $t('gestlab.general.labels.iso_revisions.show.iso_compliance') }}
-                </h4>
-                <div class="space-y-2">
-                  <div class="flex items-center justify-between">
-                    <span class="text-xs text-gray-600">ISO Section</span>
-                    <span class="text-xs font-medium text-blue-900">{{ revision.compliance_metadata?.iso_section || 'N/A' }}</span>
-                  </div>
-                  <div class="flex items-center justify-between">
-                    <span class="text-xs text-gray-600">Change Category</span>
-                    <span class="text-xs font-medium" :class="getCategoryClass(revision.compliance_metadata?.change_category)">
-                      {{ revision.compliance_metadata?.change_category || 'N/A' }}
-                    </span>
-                  </div>
-                  <div class="flex items-center justify-between">
-                    <span class="text-xs text-gray-600">Risk Assessment</span>
-                    <span class="text-xs font-medium" :class="getRiskClass(revision.compliance_metadata?.risk_assessment)">
-                      {{ revision.compliance_metadata?.risk_assessment || 'N/A' }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ACTIONS CARD -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-              {{ $t('gestlab.general.labels.iso_revisions.actions.title') }}
-            </h3>
-            <div class="space-y-3">
-              <!-- COMPARE WITH CURRENT -->
-              <button 
-                @click="compareWithCurrent"
-                type="button"
-                class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-              >
-                <ArrowsRightLeftIcon class="h-5 w-5" />
-                {{ $t('gestlab.general.labels.iso_revisions.compare_with_current') }}
-              </button>
-
-              <!-- RESTORE REVISION -->
-              <button 
-                v-if="canRestore && !revision.is_current"
-                @click="openRestoreModal"
-                type="button"
-                class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-green-300 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700 shadow-sm hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-900 focus:ring-offset-2"
-              >
-                <ArrowPathIcon class="h-5 w-5" />
-                {{ $t('gestlab.general.labels.iso_revisions.restore_this_version') }}
-              </button>
-
-              <!-- EXPORT THIS REVISION -->
-              <button 
-                @click="exportRevision"
-                type="button"
-                class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-              >
-                <ArrowDownTrayIcon class="h-5 w-5" />
-                {{ $t('gestlab.general.labels.iso_revisions.export_revision') }}
-              </button>
-            </div>
-
-            <!-- QUICK LINKS -->
-            <div class="border-t border-gray-200 pt-4 mt-4">
-              <h4 class="text-sm font-medium text-gray-900 mb-2">
-                {{ $t('gestlab.general.labels.iso_revisions.show.quick_links') }}
-              </h4>
-              <div class="space-y-2">
-                <a :href="route('qualitycertificates.iso-revisions.index', certificate.id)" 
-                   class="block text-sm text-blue-900 hover:text-blue-800 hover:underline">
-                  ← {{ $t('gestlab.general.labels.iso_revisions.back_to_revisions') }}
-                </a>
-                <a :href="route('qualitycertificates.show', certificate.id)" 
-                   class="block text-sm text-blue-900 hover:text-blue-800 hover:underline">
-                  ← {{ $t('gestlab.general.labels.iso_revisions.back_to_certificate') }}
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- RELATED ACTIVITY CARD -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <ClipboardDocumentListIcon class="h-5 w-5 text-blue-900" />
-              {{ $t('gestlab.general.labels.iso_revisions.show.related_activity') }}
-            </h3>
-            <div class="space-y-3 max-h-64 overflow-y-auto">
-              <div v-for="activity in relatedActivityLogs" :key="activity.id" class="text-sm">
-                <div class="flex items-start gap-2">
-                  <UserIcon class="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                  <div class="flex-1 min-w-0">
-                    <p class="text-gray-900">
-                      <span class="font-medium">{{ activity.causer?.name || 'System' }}</span>
-                      {{ activity.description }}
-                    </p>
-                    <p class="text-xs text-gray-500 mt-1">
-                      {{ formatDateTime(activity.created_at) }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div v-if="relatedActivityLogs.length === 0" class="text-center py-4">
-                <p class="text-sm text-gray-500">{{ $t('gestlab.general.labels.iso_revisions.show.no_activity') }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODALS -->
-    <RestoreRevisionModal 
-      :show="restoreModalOpen"
-      :revision="revision"
-      :certificate="certificate"
-      @close="restoreModalOpen = false"
-      @restored="handleRevisionRestored"
-    />
- 
-</template>
-
 <script setup>
-import { ref, computed } from 'vue'
-import { router } from '@inertiajs/vue3'
 import Layout from "@/Shared/Layouts/Layout.vue";
-import RestoreRevisionModal from './Partials/RestoreRevisionModal.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-
-// Icons
+import RestoreRevisionModal from "./Partials/RestoreRevisionModal.vue";
+import { computed, ref } from "vue";
+import { Link, router } from "@inertiajs/vue3";
 import {
-  EyeIcon,
-  DocumentTextIcon,
-  LinkIcon,
-  DocumentDuplicateIcon,
-  ArrowsRightLeftIcon,
-  ArrowPathIcon,
   ArrowDownTrayIcon,
+  ArrowLeftIcon,
+  ArrowPathIcon,
+  ArrowsRightLeftIcon,
+  BeakerIcon,
   ClipboardDocumentListIcon,
-  UserIcon
-} from '@heroicons/vue/24/outline'
+  DocumentDuplicateIcon,
+  DocumentTextIcon,
+  FolderOpenIcon,
+  UserIcon,
+  UsersIcon,
+} from "@heroicons/vue/24/outline";
 
 defineOptions({
-  layout: Layout
+  layout: Layout,
 });
 
 const props = defineProps({
-  certificate: Object,
-  revision: Object,
-  snapshot: Object,
-  differences: Array,
-  relatedActivityLogs: Array,
-})
+  certificate: {
+    type: Object,
+    default: () => ({}),
+  },
+  revision: {
+    type: Object,
+    default: () => ({}),
+  },
+  snapshot: {
+    type: Object,
+    default: () => ({}),
+  },
+  differences: {
+    type: Array,
+    default: () => [],
+  },
+  relatedActivityLogs: {
+    type: Array,
+    default: () => [],
+  },
+  approvers: {
+    type: Array,
+    default: () => [],
+  },
+});
 
-const activeTab = ref('collection')
-const restoreModalOpen = ref(false)
+const activeTab = ref("certificate");
+const restoreModalOpen = ref(false);
 
-// Computed properties
-const certificateData = computed(() => {
-  return props.snapshot?.certificate || {}
-})
+const certificateData = computed(() => props.snapshot?.certificate ?? {});
+const relations = computed(() => props.snapshot?.relations ?? {});
 
-const relatedDataTabs = computed(() => [
-  { id: 'collection', label: 'Collection', count: props.snapshot?.relations?.collection_product ? 1 : 0 },
-  { id: 'results', label: 'Test Results', count: props.snapshot?.relations?.results?.length || 0 },
-  { id: 'customer', label: 'Customer', count: props.snapshot?.relations?.customer ? 1 : 0 },
-  { id: 'product', label: 'Product', count: props.snapshot?.relations?.product ? 1 : 0 },
-])
+const currentRevisionId = computed(() => {
+  return (
+    props.certificate?.current_revision?.id ||
+    props.certificate?.current_revision_id ||
+    (props.revision?.is_current ? props.revision.id : null)
+  );
+});
 
-const canRestore = computed(() => {
-//   return props.$page.props.auth.user?.can?.restore_revisions || false
-return true;
-})
+const revisionMetrics = computed(() => [
+  {
+    label: "Versao",
+    value: `v${props.revision?.version || "-"}`,
+    note: `revisao ${props.revision?.revision_number ?? "-"}`,
+  },
+  {
+    label: "Data efetiva",
+    value: formatDate(props.revision?.effective_date),
+    note: props.revision?.is_current ? "versao corrente" : "versao historica",
+  },
+  {
+    label: "Criado por",
+    value: props.revision?.created_by?.name || "Sistema",
+    note: formatDateTime(props.revision?.created_at),
+  },
+  {
+    label: "Aprovado por",
+    value: props.revision?.approved_by?.name || "Pendente",
+    note: props.revision?.approved_at
+      ? formatDateTime(props.revision.approved_at)
+      : "sem aprovacao registada",
+  },
+]);
 
-// Methods
-const getRevisionBadgeClass = (changeType) => {
-  const classes = {
-    CREATED: 'inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800',
-    UPDATED: 'inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800',
-    CORRECTED: 'inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800',
-    REISSUED: 'inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800',
-    WITHDRAWN: 'inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800',
+const snapshotTabs = computed(() => [
+  {
+    id: "certificate",
+    label: "Certificado",
+    count: Object.keys(certificateData.value).length,
+    icon: DocumentTextIcon,
+  },
+  {
+    id: "collection",
+    label: "Colheita",
+    count: relationObject("collection") ? 1 : 0,
+    icon: FolderOpenIcon,
+  },
+  {
+    id: "results",
+    label: "Resultados",
+    count: relationResults.value.length,
+    icon: BeakerIcon,
+  },
+  {
+    id: "customer",
+    label: "Cliente",
+    count: relationObject("customer") ? 1 : 0,
+    icon: UsersIcon,
+  },
+  {
+    id: "product",
+    label: "Produto",
+    count: relationObject("product") ? 1 : 0,
+    icon: DocumentDuplicateIcon,
+  },
+]);
+
+const relationResults = computed(() => {
+  return Array.isArray(relations.value.results) ? relations.value.results : [];
+});
+
+const activeObjectEntries = computed(() => {
+  if (activeTab.value === "certificate") {
+    return Object.entries(certificateData.value).filter(([key]) => key !== "obs");
   }
-  return classes[changeType] || 'inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800'
-}
 
-const getCategoryClass = (category) => {
-  const classes = {
-    CRITICAL: 'text-red-700',
-    HIGH: 'text-orange-700',
-    MEDIUM: 'text-yellow-700',
-    LOW: 'text-green-700',
-    ROUTINE: 'text-blue-700',
+  if (activeTab.value === "results") {
+    return [];
   }
-  return classes[category] || 'text-gray-700'
-}
 
-const getRiskClass = (risk) => {
-  const classes = {
-    CRITICAL: 'text-red-700',
-    HIGH: 'text-orange-700',
-    MEDIUM: 'text-yellow-700',
-    LOW: 'text-green-700',
+  const relation = relationObject(activeTab.value);
+  return relation && typeof relation === "object" ? Object.entries(relation) : [];
+});
+
+const revisionMetadata = computed(() => [
+  {
+    label: "Tipo de alteracao",
+    value: changeTypeLabel(props.revision?.change_type),
+  },
+  {
+    label: "Secao ISO",
+    value: props.revision?.compliance_metadata?.iso_section || "Nao indicada",
+  },
+  {
+    label: "Categoria",
+    value: props.revision?.compliance_metadata?.change_category || "Nao indicada",
+  },
+  {
+    label: "Risco",
+    value: props.revision?.compliance_metadata?.risk_assessment || "Nao avaliado",
+  },
+]);
+
+function relationObject(type) {
+  if (type === "collection") {
+    return relations.value.collection ?? relations.value.collection_product ?? null;
   }
-  return classes[risk] || 'text-gray-700'
+
+  return relations.value[type] ?? null;
 }
 
-const formatDate = (date) => {
-  if (!date) return 'N/A'
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+function hasDataForTab(tabId) {
+  if (tabId === "certificate") {
+    return Object.keys(certificateData.value).length > 0;
+  }
+
+  if (tabId === "results") {
+    return relationResults.value.length > 0;
+  }
+
+  return Boolean(relationObject(tabId));
 }
 
-const formatDateTime = (date) => {
-  if (!date) return 'N/A'
-  return new Date(date).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-const formatFieldLabel = (field) => {
+function changeTypeLabel(changeType) {
   const labels = {
-    code: 'Certificate Code',
-    status: 'Status',
-    validated_by: 'Validated By',
-    validated_at: 'Validation Date',
-    obs: 'Observations',
-    created_at: 'Created Date',
-    updated_at: 'Updated Date',
-    // Add more field labels as needed
+    CREATED: "Criacao",
+    UPDATED: "Atualizacao",
+    CORRECTED: "Correcao",
+    REISSUED: "Reemissao",
+    WITHDRAWN: "Retirada",
+  };
+
+  return labels[changeType] || changeType || "Alteracao";
+}
+
+function changeTypeDot(changeType) {
+  const tones = {
+    CREATED: "lims-status-dot-release",
+    UPDATED: "lims-status-dot-instrument",
+    CORRECTED: "lims-status-dot-hold",
+    REISSUED: "lims-status-dot-instrument",
+    WITHDRAWN: "lims-status-dot-critical",
+  };
+
+  return tones[changeType] || "lims-status-dot-instrument";
+}
+
+function formatDate(date) {
+  if (!date) {
+    return "Nao registada";
   }
-  return labels[field] || field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+
+  return new Date(date).toLocaleDateString("pt-PT", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
-const formatValue = (value) => {
-  if (value === null || value === undefined) return 'N/A'
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
-  if (Array.isArray(value)) return value.length > 0 ? value.join(', ') : 'None'
-  if (typeof value === 'object') return JSON.stringify(value)
-  return String(value)
-}
-
-const hasRelatedDataForTab = (tabId) => {
-  switch (tabId) {
-    case 'collection':
-      return !!props.snapshot?.relations?.collection
-    case 'results':
-      return props.snapshot?.relations?.results?.length > 0
-    case 'customer':
-      return !!props.snapshot?.relations?.customer
-    case 'product':
-      return !!props.snapshot?.relations?.product
-    default:
-      return false
+function formatDateTime(date) {
+  if (!date) {
+    return "Nao registada";
   }
+
+  return new Date(date).toLocaleString("pt-PT", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
-// const compareWithCurrent = () => {
-//   router.visit(route('qualitycertificates.iso-revisions.compare', {
-//     certificate: props.certificate.id,
-//     revision_a: props.revision.id,
-//     revision_b: props.certificate.current_revision?.id
-//   }))
-// }
+function formatFieldLabel(field) {
+  const labels = {
+    code: "Codigo do certificado",
+    status: "Estado",
+    validated_by: "Validado por",
+    validated_at: "Data de validacao",
+    obs: "Observacoes",
+    created_at: "Criado em",
+    updated_at: "Atualizado em",
+  };
 
-const compareWithCurrent = () => {
-
-  // Use the compare-two route
-  router.visit(route('qualitycertificates.iso-revisions.compare-two', {
-    certificate: props.certificate.id,
-    revision_a: props.revision.id,
-    revision_b: props.certificate.current_revision?.id
-  }))
+  return (
+    labels[field] ||
+    String(field)
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase())
+  );
 }
 
-const openRestoreModal = () => {
-  restoreModalOpen.value = true
+function formatValue(value) {
+  if (value === null || value === undefined || value === "") {
+    return "Nao registado";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Sim" : "Nao";
+  }
+
+  if (Array.isArray(value)) {
+    return value.length ? value.join(", ") : "Sem valores";
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+
+  return String(value);
 }
 
-const exportRevision = async () => {
-  try {
-    // Export revision as PDF
-    const response = await fetch(route('qualitycertificates.iso-revisions.snapshot', {
+function compareWithCurrent() {
+  if (!currentRevisionId.value || currentRevisionId.value === props.revision.id) {
+    return;
+  }
+
+  router.visit(
+    route("qualitycertificates.iso-revisions.compare-two", {
       certificate: props.certificate.id,
-      revision: props.revision.id
-    }), {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/pdf',
-      },
-    })
-    
-    if (response.ok) {
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `revision-${props.certificate.code}-v${props.revision.version}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-    }
-  } catch (error) {
-    console.error('Export failed:', error)
-  }
+      revision_a: props.revision.id,
+      revision_b: currentRevisionId.value,
+    }),
+  );
 }
 
-const handleRevisionRestored = () => {
-  router.reload()
+function handleRevisionRestored() {
+  restoreModalOpen.value = false;
+  router.reload();
 }
 </script>
 
-<style scoped>
-.iso-revision-show :deep(.bg-blue-900),
-.iso-revision-show :deep(.bg-blue-950) {
-  background-color: rgb(var(--primary-900-rgb)) !important;
-}
+<template>
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0 max-w-3xl">
+          <Link
+            :href="route('qualitycertificates.iso-revisions.index', certificate.id)"
+            class="ds-table-action -ml-2 mb-3"
+          >
+            <ArrowLeftIcon class="h-4 w-4" />
+            Voltar ao historico
+          </Link>
+          <div class="flex flex-wrap items-center gap-2">
+            <p class="ds-kicker">Snapshot imutavel</p>
+            <span class="ds-chip">
+              <span
+                :class="['lims-status-dot', revision.is_current ? 'lims-status-dot-release' : 'lims-status-dot-instrument']"
+              />
+              {{ revision.is_current ? "Versao atual" : "Versao historica" }}
+            </span>
+            <span class="ds-chip">
+              <span :class="['lims-status-dot', changeTypeDot(revision.change_type)]" />
+              {{ changeTypeLabel(revision.change_type) }}
+            </span>
+          </div>
+          <h1 class="ds-heading mt-2 break-words text-2xl">
+            Revisao v{{ revision.version }} - {{ certificate.code || "Certificado" }}
+          </h1>
+          <p class="ds-copy mt-2 max-w-2xl text-sm">
+            Conteudo, relacoes e metadados preservados no momento desta revisao.
+          </p>
+        </div>
 
-.iso-revision-show :deep(.from-blue-900),
-.iso-revision-show :deep(.from-blue-950) {
-  --tw-gradient-from: rgb(var(--primary-900-rgb)) var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: rgb(var(--primary-900-rgb) / 0) var(--tw-gradient-to-position) !important;
-}
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <a
+            :href="route('qualitycertificates.iso-revisions.snapshot', { certificate: certificate.id, revision: revision.id })"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="ds-button ds-button-secondary"
+          >
+            <ArrowDownTrayIcon class="h-4 w-4" />
+            Abrir snapshot JSON
+          </a>
+          <button
+            v-if="currentRevisionId && currentRevisionId !== revision.id"
+            type="button"
+            class="ds-button ds-button-primary"
+            @click="compareWithCurrent"
+          >
+            <ArrowsRightLeftIcon class="h-4 w-4" />
+            Comparar com atual
+          </button>
+        </div>
+      </div>
 
-.iso-revision-show :deep(.to-blue-800) {
-  --tw-gradient-to: rgb(var(--primary-700-rgb)) var(--tw-gradient-to-position) !important;
-}
+      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[var(--ds-border)]">
+        <div
+          v-for="metric in revisionMetrics"
+          :key="metric.label"
+          class="border-b border-[var(--ds-border)] px-5 py-4 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0"
+        >
+          <dt class="ds-table-heading">{{ metric.label }}</dt>
+          <dd class="ds-heading mt-2 truncate text-sm" :title="metric.value">
+            {{ metric.value }}
+          </dd>
+          <p class="mt-1 truncate text-xs font-semibold text-[var(--ds-text-soft)]" :title="metric.note">
+            {{ metric.note }}
+          </p>
+        </div>
+      </dl>
+    </section>
 
-.iso-revision-show :deep(.text-blue-900),
-.iso-revision-show :deep(.text-blue-800),
-.iso-revision-show :deep(.text-blue-700) {
-  color: rgb(var(--primary-800-rgb)) !important;
-}
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
+      <div class="space-y-6">
+        <section class="ds-panel overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
+            <p class="ds-kicker">Conteudo preservado</p>
+            <h2 class="ds-heading mt-2 text-lg">Dados do snapshot</h2>
+            <p class="ds-copy mt-1 text-sm">
+              Consulte cada grupo sem perder o contexto da versao.
+            </p>
+          </div>
 
-.iso-revision-show :deep(.bg-blue-50),
-.iso-revision-show :deep(.bg-blue-100) {
-  background-color: rgb(var(--primary-50-rgb) / 0.82) !important;
-}
+          <nav class="overflow-x-auto border-b border-[var(--ds-border)]" aria-label="Secoes do snapshot">
+            <div class="flex min-w-max px-3 sm:px-5">
+              <button
+                v-for="tab in snapshotTabs"
+                :key="tab.id"
+                type="button"
+                :class="[
+                  '-mb-px flex items-center gap-2 border-b-2 px-3 py-3 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--ds-focus)]',
+                  activeTab === tab.id
+                    ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--primary-300-rgb))] dark:text-[rgb(var(--primary-200-rgb))]'
+                    : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]',
+                ]"
+                @click="activeTab = tab.id"
+              >
+                <component :is="tab.icon" class="h-4 w-4" />
+                {{ tab.label }}
+                <span class="ds-chip min-w-6 justify-center px-1.5 py-0.5">{{ tab.count }}</span>
+              </button>
+            </div>
+          </nav>
 
-.iso-revision-show :deep(.border-blue-200) {
-  border-color: rgb(var(--primary-200-rgb) / 0.78) !important;
-}
+          <div v-if="hasDataForTab(activeTab)" class="px-5 py-5 sm:px-6">
+            <div v-if="activeTab !== 'results'" class="grid sm:grid-cols-2">
+              <dl class="contents">
+                <div
+                  v-for="([key, value]) in activeObjectEntries"
+                  :key="key"
+                  class="border-b border-[var(--ds-border)] px-1 py-4 sm:px-4"
+                >
+                  <dt class="ds-table-heading">{{ formatFieldLabel(key) }}</dt>
+                  <dd class="mt-2 break-words text-sm font-semibold text-[var(--ds-text)]">
+                    {{ formatValue(value) }}
+                  </dd>
+                </div>
+              </dl>
+            </div>
 
-.iso-revision-show :deep(input),
-.iso-revision-show :deep(select),
-.iso-revision-show :deep(textarea) {
-  border-color: #d8cbb8;
-  background: #fffdf7;
-  color: #15231f;
-  border-radius: 0.875rem;
-}
+            <div v-if="activeTab === 'certificate' && certificateData.obs" class="ds-command-toolbar mt-5 p-4">
+              <p class="ds-table-heading">Observacoes</p>
+              <p class="ds-copy mt-2 whitespace-pre-line text-sm">{{ certificateData.obs }}</p>
+            </div>
 
-.iso-revision-show :deep(input:focus),
-.iso-revision-show :deep(select:focus),
-.iso-revision-show :deep(textarea:focus) {
-  border-color: rgb(var(--primary-500-rgb));
-  box-shadow: 0 0 0 3px rgb(var(--primary-500-rgb) / 0.18);
-  outline: none;
-}
+            <div v-if="activeTab === 'results'" class="ds-table-shell overflow-x-auto">
+              <table class="min-w-full">
+                <thead class="ds-table-head">
+                  <tr>
+                    <th class="ds-table-heading px-4 py-3 text-left">Parametro</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">Resultado</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">Unidade</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">Tipo</th>
+                  </tr>
+                </thead>
+                <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
+                  <tr v-for="result in relationResults" :key="result.id" class="ds-table-row">
+                    <td class="px-4 py-3 text-sm font-bold text-[var(--ds-text)]">
+                      {{ result.parameter_label || result.parameter_id || "-" }}
+                    </td>
+                    <td class="ds-table-cell px-4 py-3">
+                      {{ result.approved_value || result.verified_value || result.inserted_value || "-" }}
+                    </td>
+                    <td class="ds-table-cell px-4 py-3">{{ result.unit_label || "-" }}</td>
+                    <td class="ds-table-cell px-4 py-3">{{ result.type_label || "-" }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-:global(.dark) .iso-revision-show :deep(.bg-white),
-:global(.dark) .iso-revision-show :deep(.bg-gray-50),
-:global(.dark) .iso-revision-show :deep(.bg-slate-50) {
-  background-color: rgb(15 23 42 / 0.86) !important;
-}
+          <div v-else class="ds-empty-state m-5 p-8 text-center">
+            <DocumentDuplicateIcon class="mx-auto h-6 w-6 text-[var(--ds-text-soft)]" />
+            <p class="mt-2 text-sm font-semibold text-[var(--ds-text-muted)]">
+              Sem dados preservados nesta secao.
+            </p>
+          </div>
+        </section>
 
-:global(.dark) .iso-revision-show :deep(.text-gray-900),
-:global(.dark) .iso-revision-show :deep(.text-slate-900) {
-  color: #f8fafc !important;
-}
+        <section v-if="differences.length" class="ds-command-surface overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
+            <p class="ds-kicker">Desvio da versao atual</p>
+            <h2 class="ds-heading mt-2 text-lg">{{ differences.length }} alteracao(oes)</h2>
+          </div>
+          <div class="divide-y divide-[var(--ds-border)]">
+            <article
+              v-for="difference in differences"
+              :key="difference.field || difference.category"
+              class="px-5 py-4 sm:px-6"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <h3 class="ds-heading text-sm">
+                  {{ difference.label || formatFieldLabel(difference.field) }}
+                </h3>
+                <span class="ds-chip">
+                  <span class="lims-status-dot lims-status-dot-hold" />
+                  Alterado
+                </span>
+              </div>
+              <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                <div class="ds-command-toolbar p-3">
+                  <p class="ds-table-heading">Nesta revisao</p>
+                  <p class="mt-2 break-words text-sm font-semibold text-[var(--ds-text)]">
+                    {{ formatValue(difference.revision_value ?? difference.old_value) }}
+                  </p>
+                </div>
+                <div class="ds-command-toolbar p-3">
+                  <p class="ds-table-heading">Valor atual</p>
+                  <p class="mt-2 break-words text-sm font-semibold text-[var(--ds-text)]">
+                    {{ formatValue(difference.current_value ?? difference.new_value) }}
+                  </p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
 
-:global(.dark) .iso-revision-show :deep(.text-gray-700),
-:global(.dark) .iso-revision-show :deep(.text-slate-700),
-:global(.dark) .iso-revision-show :deep(.text-gray-600) {
-  color: #cbd5e1 !important;
-}
+      <aside class="space-y-6">
+        <section class="ds-command-surface overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <p class="ds-kicker">Metadados ISO</p>
+            <h2 class="ds-heading mt-2 text-base">Classificacao da revisao</h2>
+          </div>
+          <dl class="divide-y divide-[var(--ds-border)]">
+            <div
+              v-for="item in revisionMetadata"
+              :key="item.label"
+              class="flex items-start justify-between gap-4 px-5 py-3"
+            >
+              <dt class="text-xs font-bold text-[var(--ds-text-muted)]">{{ item.label }}</dt>
+              <dd class="max-w-[12rem] break-words text-right text-xs font-bold text-[var(--ds-text)]">
+                {{ item.value }}
+              </dd>
+            </div>
+          </dl>
+          <div class="border-t border-[var(--ds-border)] px-5 py-4">
+            <p class="ds-table-heading">Motivo da mudanca</p>
+            <p class="ds-copy mt-2 text-xs">{{ revision.change_reason || "Nao registado." }}</p>
+          </div>
+        </section>
 
-:global(.dark) .iso-revision-show :deep(input),
-:global(.dark) .iso-revision-show :deep(select),
-:global(.dark) .iso-revision-show :deep(textarea) {
-  border-color: #315149;
-  background: #10231f;
-  color: #f7f1e7;
-}
-</style>
+        <section class="ds-card p-5">
+          <p class="ds-kicker">Comandos</p>
+          <h2 class="ds-heading mt-2 text-base">Acoes da revisao</h2>
+          <div class="mt-4 grid gap-2">
+            <button
+              v-if="currentRevisionId && currentRevisionId !== revision.id"
+              type="button"
+              class="ds-button ds-button-secondary justify-start"
+              @click="compareWithCurrent"
+            >
+              <ArrowsRightLeftIcon class="h-4 w-4" />
+              Comparar com atual
+            </button>
+            <button
+              v-if="!revision.is_current"
+              type="button"
+              class="ds-button ds-button-secondary justify-start"
+              @click="restoreModalOpen = true"
+            >
+              <ArrowPathIcon class="h-4 w-4" />
+              Repor esta versao
+            </button>
+            <Link
+              :href="route('qualitycertificates.iso-revisions.index', certificate.id)"
+              class="ds-button ds-button-secondary justify-start"
+            >
+              <ClipboardDocumentListIcon class="h-4 w-4" />
+              Historico de revisoes
+            </Link>
+          </div>
+        </section>
+
+        <section class="ds-card overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <p class="ds-kicker">Rastreabilidade</p>
+            <h2 class="ds-heading mt-2 text-base">Atividade relacionada</h2>
+          </div>
+          <ol v-if="relatedActivityLogs.length" class="divide-y divide-[var(--ds-border)]">
+            <li
+              v-for="activity in relatedActivityLogs"
+              :key="activity.id"
+              class="flex gap-3 px-5 py-4"
+            >
+              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text-muted)]">
+                <UserIcon class="h-4 w-4" />
+              </span>
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-[var(--ds-text)]">
+                  {{ activity.description || activity.action || "Evento registado" }}
+                </p>
+                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
+                  {{ activity.causer?.name || "Sistema" }} - {{ formatDateTime(activity.created_at) }}
+                </p>
+              </div>
+            </li>
+          </ol>
+          <div v-else class="ds-empty-state m-5 p-5 text-center">
+            <p class="text-xs font-semibold text-[var(--ds-text-muted)]">Sem atividade associada.</p>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <RestoreRevisionModal
+      :show="restoreModalOpen"
+      :revision="revision"
+      :certificate="certificate"
+      :approvers="approvers"
+      @close="restoreModalOpen = false"
+      @restored="handleRevisionRestored"
+    />
+  </div>
+</template>

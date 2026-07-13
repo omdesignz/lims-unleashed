@@ -1,29 +1,29 @@
 <template>
   <Modal :show="show" @close="close" max-width="lg">
-    <div class="p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-          <WrenchScrewdriverIcon class="h-5 w-5 text-purple-900" />
+    <div class="space-y-6 p-6">
+      <div class="flex items-center justify-between gap-4 border-b border-[var(--ds-border)] pb-5">
+        <h3 class="ds-heading flex items-center gap-2 text-lg">
+          <WrenchScrewdriverIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
           Registrar Calibração de Equipamento
         </h3>
-        <button @click="close" class="text-gray-400 hover:text-gray-500">
+        <button type="button" @click="close" class="ds-icon-button">
           <XMarkIcon class="h-5 w-5" />
         </button>
       </div>
 
       <div class="space-y-6">
         <!-- EQUIPMENT INFO -->
-        <div class="bg-gradient-to-r from-purple-50 to-white rounded-lg border border-purple-100 p-4">
+        <div class="ds-card p-4">
           <div class="flex items-center gap-3">
             <div class="flex-shrink-0">
-              <div class="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                <WrenchScrewdriverIcon class="h-6 w-6 text-purple-900" />
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)]">
+                <WrenchScrewdriverIcon class="h-6 w-6 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
               </div>
             </div>
             <div>
-              <div class="text-sm font-semibold text-gray-900">{{ item.name }}</div>
-              <div class="text-sm text-gray-500">{{ item.internal_code || 'Sem Código Interno' }}</div>
-              <div class="text-xs text-gray-400">{{ item.category?.name || 'Sem Categoria' }}</div>
+              <div class="text-sm font-bold text-[var(--ds-text)]">{{ item.name }}</div>
+              <div class="text-sm font-semibold text-[var(--ds-text-muted)]">{{ item.internal_code || 'Sem Código Interno' }}</div>
+              <div class="text-xs font-semibold text-[var(--ds-text-soft)]">{{ item.category?.name || 'Sem Categoria' }}</div>
                 <span v-if="item.next_calibration_date" 
                   :class="getCalibrationStatusClass(item)">
                   • Próxima Data de Calibração: {{ formatDate(item.next_calibration_date) }}
@@ -50,8 +50,8 @@
               :max="new Date().toISOString().split('T')[0]"
               required
               :class="[
-                'w-full rounded-lg border px-3 py-2.5 text-sm',
-                form.errors.calibration_date ? 'border-red-300' : 'border-gray-300'
+                'ds-field',
+                form.errors.calibration_date ? 'border-[var(--color-danger-500)]' : 'border-[var(--ds-border)]'
               ]"
             />
             <p v-if="form.errors.calibration_date" class="text-xs text-red-600">
@@ -70,8 +70,8 @@
               :min="form.calibration_date || new Date().toISOString().split('T')[0]"
               required
               :class="[
-                'w-full rounded-lg border px-3 py-2.5 text-sm',
-                form.errors.next_calibration_date ? 'border-red-300' : 'border-gray-300'
+                'ds-field',
+                form.errors.next_calibration_date ? 'border-[var(--color-danger-500)]' : 'border-[var(--ds-border)]'
               ]"
             />
             <p v-if="form.errors.next_calibration_date" class="text-xs text-red-600">
@@ -99,7 +99,7 @@
                 'rounded-lg border p-2 text-xs font-medium transition-all',
                 form.calibration_type === type.value
                   ? 'border-purple-900 bg-purple-50 text-purple-900'
-                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                  : 'border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-panel-subtle)]'
               ]"
             >
               {{ type.label }}
@@ -122,8 +122,8 @@
               type="text"
               required
               :class="[
-                'w-full rounded-lg border px-3 py-2.5 text-sm',
-                form.errors.performed_by ? 'border-red-300' : 'border-gray-300'
+                'ds-field',
+                form.errors.performed_by ? 'border-[var(--color-danger-500)]' : 'border-[var(--ds-border)]'
               ]"
               placeholder="Digite o nome do técnico"
             />
@@ -139,7 +139,7 @@
             <input
               v-model="form.service_provider"
               type="text"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+              class="ds-field"
               placeholder="Digite o nome da empresa"
             />
           </div>
@@ -161,7 +161,7 @@
                 'rounded-lg border p-3 text-sm font-medium transition-all',
                 form.result === result.value
                   ? result.borderClass + ' ' + result.bgClass + ' ' + result.textClass
-                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                  : 'border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-panel-subtle)]'
               ]"
             >
               <div class="flex items-center justify-center gap-2">
@@ -186,7 +186,7 @@
               <input
                 v-model="form.measurement_before"
                 type="text"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                class="ds-field"
                 placeholder="Ex.: -0,5%"
               />
             </div>
@@ -197,7 +197,7 @@
               <input
                 v-model="form.measurement_after"
                 type="text"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                class="ds-field"
                 placeholder="Ex.: +0,1%"
               />
             </div>
@@ -208,7 +208,7 @@
               <input
                 v-model="form.tolerance"
                 type="text"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                class="ds-field"
                 placeholder="Ex.: ±0,5%"
               />
             </div>
@@ -223,7 +223,7 @@
           <input
             v-model="form.standards_used"
             type="text"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+            class="ds-field"
             placeholder="Indique as normas ou padrões de calibração utilizados"
           />
         </div>
@@ -237,7 +237,7 @@
             <input
               v-model="form.certificate_number"
               type="text"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+              class="ds-field"
               placeholder="Indique o número do certificado"
             />
           </div>
@@ -248,7 +248,7 @@
             <input
               v-model="form.certificate_date"
               type="date"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+              class="ds-field"
             />
           </div>
         </div>
@@ -258,7 +258,7 @@
           <label class="block text-sm font-medium text-gray-700">
             Anexos
           </label>
-          <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+          <div class="rounded-lg border-2 border-dashed border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 text-center">
             <DocumentArrowUpIcon class="mx-auto h-8 w-8 text-gray-400" />
             <p class="mt-2 text-sm text-gray-500">
               Arraste e solte certificados de calibração ou fotos aqui, ou
@@ -280,7 +280,7 @@
           <textarea
             v-model="form.notes"
             rows="3"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+            class="ds-field"
             placeholder="Adicione observações relevantes sobre a calibração..."
           ></textarea>
           <p v-if="form.errors.notes" class="text-xs text-red-600">
@@ -289,10 +289,9 @@
         </div>
 
         <!-- CALIBRATION SUMMARY -->
-        <div v-if="form.calibration_date && form.next_calibration_date" 
-          class="bg-gradient-to-r from-green-50 to-white rounded-lg border border-green-100 p-4">
-          <h4 class="text-sm font-semibold text-gray-900 mb-2">Resumo da Calibração</h4>
-          <div class="space-y-1 text-sm text-gray-600">
+        <div v-if="form.calibration_date && form.next_calibration_date" class="ds-card p-4">
+          <h4 class="mb-2 text-sm font-bold text-[var(--ds-text)]">Resumo da Calibração</h4>
+          <div class="space-y-1 text-sm text-[var(--ds-text-muted)]">
             <div class="flex items-center justify-between">
               <span>Equipamento:</span>
               <span class="font-medium">{{ item.name }}</span>
@@ -319,11 +318,11 @@
         </div>
 
         <!-- ACTIONS -->
-        <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+        <div class="flex items-center justify-end gap-3 border-t border-[var(--ds-border)] pt-6">
           <button
             type="button"
             @click="close"
-            class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            class="ds-button ds-button-secondary"
           >
             Cancelar
           </button>
@@ -332,10 +331,10 @@
             @click="submit"
             :disabled="form.processing || !isFormValid"
             :class="[
-              'rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all',
+              'ds-button',
               form.processing || !isFormValid
-                ? 'bg-gray-300 cursor-not-allowed'
-                : 'bg-purple-900 hover:bg-purple-800'
+                ? 'ds-button-secondary'
+                : 'ds-button-primary'
             ]"
           >
             <span v-if="form.processing">Processando...</span>

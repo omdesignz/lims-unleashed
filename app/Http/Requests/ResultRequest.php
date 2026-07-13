@@ -10,6 +10,12 @@ use Illuminate\Validation\Validator;
 
 class ResultRequest extends FormRequest
 {
+    private const RESULT_DISPLAY_FORMAT_STANDARD = 'standard';
+
+    private const RESULT_DISPLAY_FORMAT_SCIENTIFIC = 'scientific';
+
+    private const QUALITATIVE_RESULT_OPTIONS = ['Presença', 'Ausência'];
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -88,6 +94,9 @@ class ResultRequest extends FormRequest
                 'results.*.cfu2' => 'nullable',
                 'results.*.is_calculated' => 'boolean',
                 'results.*.is_override' => 'boolean',
+                'results.*.result_is_qualitative' => 'nullable|boolean',
+                'results.*.result_options' => 'nullable|array',
+                'results.*.result_options.*' => 'string',
                 'results.*.calculation_metadata' => 'nullable|array',
                 'results.*.extra_data' => 'nullable|array',
                 'results.*.display_format' => 'nullable|in:standard,scientific',
@@ -156,6 +165,9 @@ class ResultRequest extends FormRequest
                 'results.*.cfu2' => 'nullable',
                 'results.*.is_calculated' => 'boolean',
                 'results.*.is_override' => 'boolean',
+                'results.*.result_is_qualitative' => 'nullable|boolean',
+                'results.*.result_options' => 'nullable|array',
+                'results.*.result_options.*' => 'string',
                 'results.*.calculation_metadata' => 'nullable|array',
                 'results.*.extra_data' => 'nullable|array',
                 'results.*.display_format' => 'nullable|in:standard,scientific',
@@ -282,6 +294,8 @@ class ResultRequest extends FormRequest
                         'status' => $item['status'],
                         'type_id' => $item['type_id']['value'],
                         'category_label' => $item['type_id']['label'],
+                        'result_is_qualitative' => $this->resultIsQualitativePayload($item),
+                        'result_options' => $this->resultOptionsFromPayload($item),
                         'uncertainty_value' => $item['uncertainty_value'] ?? null,
                         'sumC' => $item['sumC'],
                         'volume' => $item['volume'],
@@ -351,6 +365,8 @@ class ResultRequest extends FormRequest
                         'status' => $item['status'],
                         'type_id' => $item['type_id']['value'],
                         'category_label' => $item['type_id']['label'],
+                        'result_is_qualitative' => $this->resultIsQualitativePayload($item),
+                        'result_options' => $this->resultOptionsFromPayload($item),
                         'uncertainty_value' => $item['uncertainty_value'] ?? null,
                         'sumC' => $item['sumC'],
                         'volume' => $item['volume'],
@@ -416,6 +432,8 @@ class ResultRequest extends FormRequest
                         'status' => $item['status'],
                         'type_id' => $item['type_id']['value'],
                         'category_label' => $item['type_id']['label'],
+                        'result_is_qualitative' => $this->resultIsQualitativePayload($item),
+                        'result_options' => $this->resultOptionsFromPayload($item),
                         'uncertainty_value' => $item['uncertainty_value'] ?? null,
                         'sumC' => $item['sumC'],
                         'volume' => $item['volume'],
@@ -450,11 +468,12 @@ class ResultRequest extends FormRequest
             $sample = $sampleId
                 ? Sample::query()
                     ->with([
-                        "{$workflowRelation}.profile.parameters:id",
+                        "{$workflowRelation}.profile.parameters:id,result_is_qualitative",
                         'results:id,sample_id,parameter_id',
                     ])
                     ->find($sampleId)
                 : null;
+            $qualitativeParameterIds = collect();
 
             if ($sample) {
                 if (! $sample->{$workflowRelation}) {
@@ -468,11 +487,18 @@ class ResultRequest extends FormRequest
                     return;
                 }
 
-                $expectedParameterIds = collect($sample->{$workflowRelation}?->profile?->parameters ?? [])
+                $expectedParameters = collect($sample->{$workflowRelation}?->profile?->parameters ?? []);
+                $expectedParameterIds = $expectedParameters
                     ->pluck('id')
                     ->filter()
                     ->map(fn ($id) => (int) $id)
                     ->values();
+                $qualitativeParameterIds = $expectedParameters
+                    ->filter(fn ($parameter): bool => $this->parameterIsQualitative($parameter))
+                    ->pluck('id')
+                    ->filter()
+                    ->map(fn ($id) => (int) $id)
+                    ->flip();
                 $submittedParameterIds = $results
                     ->map(fn (array $result) => (int) data_get($result, 'parameter_id'))
                     ->filter()
@@ -524,12 +550,30 @@ class ResultRequest extends FormRequest
                 default => 'inserted_value',
             };
 
-            $results->each(function (array $result, int $index) use ($validator, $action, $valueKey): void {
+            $results->each(function (array $result, int $index) use ($validator, $action, $valueKey, $qualitativeParameterIds): void {
                 $value = data_get($result, $valueKey);
                 $min = data_get($result, 'min_ref_value');
                 $max = data_get($result, 'max_ref_value');
+                $parameterId = data_get($result, 'parameter_id.value', data_get($result, 'parameter_id'));
+                $parameterId = is_numeric($parameterId) ? (int) $parameterId : 0;
+                $isQualitative = $qualitativeParameterIds->has($parameterId);
 
                 if (blank($value)) {
+                    return;
+                }
+
+                if ($isQualitative) {
+                    if (! in_array((string) $value, self::QUALITATIVE_RESULT_OPTIONS, true)) {
+                        $validator->errors()->add(
+                            "results.$index.$valueKey",
+                            'Os resultados qualitativos devem ser Presença ou Ausência.'
+                        );
+                    }
+
+                    if (blank(data_get($result, 'unit_id'))) {
+                        $validator->errors()->add("results.$index.unit_id", 'A unidade de medição é obrigatória.');
+                    }
+
                     return;
                 }
 
@@ -574,8 +618,44 @@ class ResultRequest extends FormRequest
      */
     private function displayFormatFromResult(array $result): string
     {
+        if ($this->resultIsQualitativePayload($result)) {
+            return self::RESULT_DISPLAY_FORMAT_STANDARD;
+        }
+
         $displayFormat = data_get($result, 'display_format', data_get($result, 'extra_data.display_format'));
 
-        return $displayFormat === 'scientific' ? 'scientific' : 'standard';
+        return $displayFormat === self::RESULT_DISPLAY_FORMAT_SCIENTIFIC
+            ? self::RESULT_DISPLAY_FORMAT_SCIENTIFIC
+            : self::RESULT_DISPLAY_FORMAT_STANDARD;
+    }
+
+    private function resultIsQualitativePayload(array $result): bool
+    {
+        return $this->truthy(data_get($result, 'result_is_qualitative'))
+            || $this->truthy(data_get($result, 'parameter_id.result_is_qualitative'))
+            || data_get($result, 'result_type') === 'qualitative'
+            || data_get($result, 'parameter_id.result_type') === 'qualitative';
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     * @return array<int, string>
+     */
+    private function resultOptionsFromPayload(array $result): array
+    {
+        return $this->resultIsQualitativePayload($result)
+            ? self::QUALITATIVE_RESULT_OPTIONS
+            : [];
+    }
+
+    private function parameterIsQualitative(mixed $parameter): bool
+    {
+        return (bool) data_get($parameter, 'result_is_qualitative')
+            || data_get($parameter, 'result_type') === 'qualitative';
+    }
+
+    private function truthy(mixed $value): bool
+    {
+        return filter_var($value, FILTER_VALIDATE_BOOL);
     }
 }

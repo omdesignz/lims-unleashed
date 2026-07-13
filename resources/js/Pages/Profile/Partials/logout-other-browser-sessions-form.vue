@@ -1,145 +1,120 @@
-<template>
-    <ActionSection :class="commercialDocumentThemeClasses">
-        <template #title>
-            Sessões do Navegador
-        </template>
-
-        <template #description>
-            Gerencie e saia de suas sessões ativas em outros navegadores e dispositivos. 
-        </template>
-
-        <template #content>
-            <div class="max-w-xl text-sm text-gray-600">
-                Se necessário, você pode sair de todas as outras sessões do navegador em todos os seus dispositivos. Algumas de suas sessões recentes estão listadas abaixo; no entanto, esta lista pode não ser exaustiva. Se você acha que sua conta foi comprometida, você também deve atualizar sua senha.
-            </div>
-
-            <!-- Other Browser Sessions -->
-            <div v-if="sessions?.length > 0" class="mt-5 space-y-6">
-                <div v-for="(session, i) in sessions" :key="i" class="flex items-center">
-                    <div>
-                        <svg v-if="session.agent.is_desktop" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" />
-                        </svg>
-
-                        <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
-                        </svg>
-
-                    </div>
-
-                    <div class="ml-3">
-                        <div class="text-sm text-gray-600">
-                            {{ session.agent.platform ? session.agent.platform : 'Desconhecido' }} - {{ session.agent.browser ? session.agent.browser : 'Desconhecido' }}
-                        </div>
-
-                        <div>
-                            <div class="text-xs text-gray-500">
-                                {{ session.ip_address }},
-
-                                <span v-if="session.is_current_device" class="text-green-500 font-semibold">Este dispositivo</span>
-                                <span v-else>Ativo pela última vez {{ session.last_active }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex items-center mt-5">
-                <PrimaryButton @click="confirmLogout">
-                    Sair de Outras Sessões do Navegador
-                </PrimaryButton>
-
-                <ActionMessage :on="form.recentlySuccessful" class="ml-3">
-                    Actualizado
-                </ActionMessage>
-            </div>
-
-            <!-- Log Out Other Devices Confirmation Modal -->
-            <DialogModal :show="confirmingLogout" @close="closeModal">
-                <template #title>
-                    Sair de outras sessões do navegador
-                </template>
-
-                <template #content>
-                    Digite sua senha para confirmar que deseja sair das outras sessões do navegador em todos os seus dispositivos.
-
-                    <div class="mt-4">
-                        <TextInput
-                            ref="passwordInput"
-                            v-model="form.password"
-                            type="password"
-                            class="mt-1 block w-3/4"
-                            placeholder="Senha"
-                            @keyup.enter="logoutOtherBrowserSessions"
-                        />
-
-                        <InputError :message="form.errors.password" class="mt-2" />
-                    </div>
-                </template>
-
-                <template #footer>
-                    <SecondaryButton @click="closeModal">
-                        Cancel
-                    </SecondaryButton>
-
-                    <PrimaryButton
-                        class="ml-3"
-                        :class="{ 'opacity-25': form.processing }"
-                        :disabled="form.processing"
-                        @click="logoutOtherBrowserSessions"
-                    >
-                    Sair de outras sessões do navegador
-                    </PrimaryButton>
-                </template>
-            </DialogModal>
-        </template>
-    </ActionSection>
-</template>
-
 <script setup>
-import { ref } from 'vue';
-import { useForm } from '@inertiajs/vue3';
-import ActionSection from "../../../Components/action-section.vue";
-import ActionMessage from "../../../Components/action-message.vue";
-import InputError from "../../../Components/input-error.vue";
-import PrimaryButton from "../../../Components/primary-button.vue";
-import SecondaryButton from "../../../Components/secondary-button.vue";
-import TextInput from "../../../Components/text-input.vue";
-import DialogModal from "../../../Components/dialog-modal.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { nextTick, ref } from 'vue'
+import { useForm } from '@inertiajs/vue3'
+import {
+  ArrowPathIcon,
+  CheckCircleIcon,
+  ComputerDesktopIcon,
+  DevicePhoneMobileIcon,
+  XMarkIcon,
+} from '@heroicons/vue/24/outline'
+import DialogModal from '@/Components/dialog-modal.vue'
 
 defineProps({
-    sessions: Array,
-});
+  sessions: { type: Array, default: () => [] },
+})
 
-const confirmingLogout = ref(false);
-const passwordInput = ref(null);
+const confirmingLogout = ref(false)
+const passwordInput = ref(null)
+const form = useForm({ password: '' })
 
-const form = useForm({
-    password: '',
-});
+async function confirmLogout() {
+  confirmingLogout.value = true
+  await nextTick()
+  passwordInput.value?.focus()
+}
 
-const confirmLogout = () => {
-    confirmingLogout.value = true;
-    setTimeout(() => passwordInput.value.focus(), 250);
-};
+function logoutOtherBrowserSessions() {
+  form.delete(route('other-browser-sessions.destroy'), {
+    preserveScroll: true,
+    onSuccess: closeModal,
+    onError: () => passwordInput.value?.focus(),
+    onFinish: () => form.reset(),
+  })
+}
 
-const logoutOtherBrowserSessions = () => {
-    form.delete(route('other-browser-sessions.destroy'), {
-        preserveScroll: true,
-        onSuccess: () => closeModal(),
-        onError: () => passwordInput.value.focus(),
-        onFinish: () => form.reset(),
-    }); 
-};
-
-const closeModal = () => {
-    confirmingLogout.value = false;
-    form.reset();
-};
-
+function closeModal() {
+  confirmingLogout.value = false
+  form.reset()
+  form.clearErrors()
+}
 </script>
 
-<style scoped>
+<template>
+  <div class="space-y-5">
+    <div v-if="sessions.length" class="divide-y divide-[var(--ds-border)] rounded-lg border border-[var(--ds-border)]">
+      <div v-for="(session, index) in sessions" :key="session.id ?? index" class="flex items-start gap-3 px-4 py-4">
+        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-[var(--ds-text-muted)] ring-1 ring-inset ring-[var(--ds-border)]">
+          <ComputerDesktopIcon v-if="session.agent.is_desktop" class="h-4 w-4" />
+          <DevicePhoneMobileIcon v-else class="h-4 w-4" />
+        </span>
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <p class="text-sm font-bold text-[var(--ds-text)]">
+              {{ session.agent.platform || 'Plataforma desconhecida' }} · {{ session.agent.browser || 'Navegador desconhecido' }}
+            </p>
+            <span v-if="session.is_current_device" class="ds-chip ds-chip-success">Este dispositivo</span>
+          </div>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
+            {{ session.ip_address }} · {{ session.is_current_device ? 'Sessão actual' : `Última actividade ${session.last_active}` }}
+          </p>
+        </div>
+      </div>
+    </div>
 
-</style>
+    <div v-else class="ds-empty-state py-8 text-center">
+      <ComputerDesktopIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
+      <p class="mt-3 text-sm font-bold text-[var(--ds-text)]">Nenhuma sessão adicional detectada</p>
+      <p class="ds-copy mt-1 text-sm">A sessão actual continuará activa.</p>
+    </div>
+
+    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <p v-if="form.recentlySuccessful" class="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+        <CheckCircleIcon class="h-4 w-4" />
+        As restantes sessões foram terminadas.
+      </p>
+      <span v-else />
+      <button type="button" class="ds-button ds-button-secondary sm:ml-auto" :disabled="sessions.length <= 1" @click="confirmLogout">
+        <ArrowPathIcon class="h-4 w-4" />
+        Terminar outras sessões
+      </button>
+    </div>
+
+    <DialogModal :show="confirmingLogout" max-width="lg" @close="closeModal">
+      <template #title>
+        <div class="flex items-center justify-between gap-4">
+          <span>Confirmar encerramento de sessões</span>
+          <button type="button" class="ds-icon-button" title="Fechar" @click="closeModal">
+            <XMarkIcon class="h-5 w-5" />
+            <span class="sr-only">Fechar</span>
+          </button>
+        </div>
+      </template>
+
+      <template #content>
+        <p>Introduza a sua palavra-passe para terminar todas as outras sessões do navegador.</p>
+        <label class="ds-field-group mt-5">
+          <span class="ds-field-label">Palavra-passe</span>
+          <input
+            ref="passwordInput"
+            v-model="form.password"
+            type="password"
+            autocomplete="current-password"
+            class="ds-field"
+            :aria-invalid="Boolean(form.errors.password)"
+            @keyup.enter="logoutOtherBrowserSessions"
+          >
+          <span v-if="form.errors.password" class="ds-field-error">{{ form.errors.password }}</span>
+        </label>
+      </template>
+
+      <template #footer>
+        <button type="button" class="ds-button ds-button-secondary" @click="closeModal">Cancelar</button>
+        <button type="button" class="ds-button ds-button-primary" :disabled="form.processing || !form.password" @click="logoutOtherBrowserSessions">
+          <ArrowPathIcon v-if="form.processing" class="h-4 w-4 animate-spin" />
+          {{ form.processing ? 'A terminar...' : 'Terminar sessões' }}
+        </button>
+      </template>
+    </DialogModal>
+  </div>
+</template>

@@ -1,29 +1,29 @@
 <template>
   <Modal :show="show" @close="close" max-width="lg">
-    <div class="p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-          <BeakerIcon class="h-5 w-5 text-red-900" />
+    <div class="space-y-6 p-6">
+      <div class="flex items-center justify-between gap-4 border-b border-[var(--ds-border)] pb-5">
+        <h3 class="ds-heading flex items-center gap-2 text-lg">
+          <BeakerIcon class="h-5 w-5 text-rose-700 dark:text-rose-300" />
           Registrar Consumo de Reagentes
         </h3>
-        <button @click="close" class="text-gray-400 hover:text-gray-500">
+        <button type="button" @click="close" class="ds-icon-button">
           <XMarkIcon class="h-5 w-5" />
         </button>
       </div>
 
       <div class="space-y-6">
         <!-- REAGENT INFO -->
-        <div class="bg-gradient-to-r from-red-50 to-white rounded-lg border border-red-100 p-4">
+        <div class="ds-card p-4">
           <div class="flex items-center gap-3">
             <div class="flex-shrink-0">
-              <div class="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center">
-                <BeakerIcon class="h-6 w-6 text-red-900" />
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)]">
+                <BeakerIcon class="h-6 w-6 text-rose-700 dark:text-rose-300" />
               </div>
             </div>
             <div>
-              <div class="text-sm font-semibold text-gray-900">{{ item.name }}</div>
-              <div class="text-sm text-gray-500">{{ item.internal_code || 'Sem Código Interno' }}</div>
-              <div class="text-xs text-gray-400">{{ item.category?.name || 'Sem Categoria' }}</div>
+              <div class="text-sm font-bold text-[var(--ds-text)]">{{ item.name }}</div>
+              <div class="text-sm font-semibold text-[var(--ds-text-muted)]">{{ item.internal_code || 'Sem Código Interno' }}</div>
+              <div class="text-xs font-semibold text-[var(--ds-text-soft)]">{{ item.category?.name || 'Sem Categoria' }}</div>
                 <span v-if="item.reagent_expiry_date" 
                   :class="getExpiryStatusClass(item)">
                   • Validade: {{ formatDate(item.reagent_expiry_date) }}
@@ -47,8 +47,8 @@
             v-model="form.warehouse_id"
             @change="updateWarehouseInfo"
             :class="[
-              'w-full rounded-lg border px-3 py-2.5 text-sm',
-              form.errors.warehouse_id ? 'border-red-300' : 'border-gray-300'
+              'ds-field',
+              form.errors.warehouse_id ? 'border-[var(--color-danger-500)]' : 'border-[var(--ds-border)]'
             ]"
             required
           >
@@ -83,8 +83,8 @@
               :max="new Date().toISOString().split('T')[0]"
               required
               :class="[
-                'w-full rounded-lg border px-3 py-2.5 text-sm',
-                form.errors.date ? 'border-red-300' : 'border-gray-300'
+                'ds-field',
+                form.errors.date ? 'border-[var(--color-danger-500)]' : 'border-[var(--ds-border)]'
               ]"
             />
             <p v-if="form.errors.date" class="text-xs text-red-600">
@@ -106,8 +106,8 @@
                 step="0.01"
                 required
                 :class="[
-                  'w-full rounded-lg border px-3 py-2.5 text-sm pr-12',
-                  form.errors.quantity_used ? 'border-red-300' : 'border-gray-300'
+                  'ds-field pr-12',
+                  form.errors.quantity_used ? 'border-[var(--color-danger-500)]' : 'border-[var(--ds-border)]'
                 ]"
                 placeholder="0.00"
               />
@@ -141,8 +141,8 @@
               type="text"
               required
               :class="[
-                'w-full rounded-lg border px-3 py-2.5 text-sm',
-                form.errors.used_by ? 'border-red-300' : 'border-gray-300'
+                'ds-field',
+                form.errors.used_by ? 'border-[var(--color-danger-500)]' : 'border-[var(--ds-border)]'
               ]"
               placeholder="Digite o nome do utilizador"
             />
@@ -158,7 +158,7 @@
             <input
               v-model="form.used_at"
               type="time"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+              class="ds-field"
             />
           </div>
         </div>
@@ -171,7 +171,7 @@
           <input
             v-model="form.project"
             type="text"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+            class="ds-field"
             placeholder="Digite o nome do projeto ou experimento"
           />
         </div>
@@ -191,7 +191,7 @@
                 'rounded-lg border p-2 text-xs font-medium transition-all',
                 form.usage_type === type.value
                   ? 'border-blue-900 bg-blue-50 text-blue-900'
-                  : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                  : 'border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-panel-subtle)]'
               ]"
             >
               {{ type.label }}
@@ -207,7 +207,7 @@
           <textarea
             v-model="form.remarks"
             rows="3"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+            class="ds-field"
             placeholder="Adicione qualquer observação sobre este consumo..."
           ></textarea>
           <p v-if="form.errors.remarks" class="text-xs text-red-600">
@@ -216,12 +216,12 @@
         </div>
 
         <!-- QUALITY CHECK -->
-        <div v-if="item.is_expired" class="bg-gradient-to-r from-red-50 to-white rounded-lg border border-red-100 p-4">
+        <div v-if="item.is_expired" class="ds-card border-l-4 border-rose-500 p-4">
           <div class="flex items-center gap-3">
-            <ExclamationTriangleIcon class="h-5 w-5 text-red-900 flex-shrink-0" />
+            <ExclamationTriangleIcon class="h-5 w-5 flex-shrink-0 text-rose-700 dark:text-rose-300" />
             <div>
-              <div class="text-sm font-semibold text-red-900">Aviso: Reagento Expirado</div>
-              <div class="text-sm text-red-700 mt-1">
+              <div class="text-sm font-bold text-[var(--ds-text)]">Aviso: Reagento Expirado</div>
+              <div class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">
                 Este reagento expirou em {{ formatDate(item.reagent_expiry_date) }}. 
                 Por favor, confirme que o uso está autorizado.
               </div>
@@ -232,19 +232,18 @@
               v-model="form.authorized_usage"
               type="checkbox"
               id="authorized"
-              class="h-4 w-4 rounded border-gray-300 text-red-900 focus:ring-red-900"
+              class="ds-checkbox"
             />
-            <label for="authorized" class="ml-2 text-sm text-red-700">
+            <label for="authorized" class="ml-2 text-sm font-semibold text-[var(--ds-text-muted)]">
               Eu confirmo que o uso deste reagente expirado está autorizado
             </label>
           </div>
         </div>
 
         <!-- CONSUMPTION SUMMARY -->
-        <div v-if="form.warehouse_id && form.quantity_used" 
-          class="bg-gradient-to-r from-green-50 to-white rounded-lg border border-green-100 p-4">
-          <h4 class="text-sm font-semibold text-gray-900 mb-2">Resumo de Consumo</h4>
-          <div class="space-y-1 text-sm text-gray-600">
+        <div v-if="form.warehouse_id && form.quantity_used" class="ds-card p-4">
+          <h4 class="mb-2 text-sm font-bold text-[var(--ds-text)]">Resumo de Consumo</h4>
+          <div class="space-y-1 text-sm text-[var(--ds-text-muted)]">
             <div class="flex items-center justify-between">
               <span>Reagente:</span>
               <span class="font-medium">{{ item.name }}</span>
@@ -275,11 +274,11 @@
         </div>
 
         <!-- ACTIONS -->
-        <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+        <div class="flex items-center justify-end gap-3 border-t border-[var(--ds-border)] pt-6">
           <button
             type="button"
             @click="close"
-            class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            class="ds-button ds-button-secondary"
           >
             Cancelar
           </button>
@@ -288,12 +287,12 @@
             @click="submit"
             :disabled="form.processing || !isFormValid"
             :class="[
-              'rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all',
+              'ds-button',
               form.processing || !isFormValid
-                ? 'bg-gray-300 cursor-not-allowed'
+                ? 'ds-button-secondary'
                 : item.is_expired && !form.authorized_usage
-                  ? 'bg-gray-300 cursor-not-allowed'
-                  : 'bg-red-900 hover:bg-red-800'
+                  ? 'ds-button-secondary'
+                  : 'ds-button-danger'
             ]"
           >
             <span v-if="form.processing">Processando...</span>

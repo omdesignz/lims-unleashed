@@ -1,110 +1,127 @@
 <script setup>
+import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import RecordsTable from "@/Components/records-table.vue";
+import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import RecordsTable from '@/Components/records-table.vue';
-import confirmDialog from "@/Components/confirm-dialog.vue";
-import { ref, computed } from "vue";
-import { router } from "@inertiajs/vue3";
-import { trans } from 'laravel-vue-i18n';
+import {
+  ArchiveBoxIcon,
+  ClipboardDocumentCheckIcon,
+  DocumentArrowDownIcon,
+  PlusIcon,
+  TruckIcon,
+} from "@heroicons/vue/24/outline";
+import { Link, router } from "@inertiajs/vue3";
+import { trans } from "laravel-vue-i18n";
+import { computed, ref } from "vue";
 
+defineOptions({ layout: Layout });
 
 const props = defineProps({
-    record: Object,
-    fields: Array,
-    model: String,
-    abilities: Array,
-    query: Object,
-    slideOverEdit: {
-      type: Boolean,
-      default: false
-    }
+  record: { type: Object, default: () => ({ data: [], meta: {} }) },
+  fields: { type: Array, default: () => [] },
+  model: String,
+  abilities: { type: Array, default: () => [] },
+  query: { type: Object, default: () => ({}) },
 });
 
-defineOptions({
-  layout: Layout
-});
-
-const actionId = ref(null);
-
-
-const confirmationDialogTitle = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_title.' + actionId.value);
-})
-
-
-const confirmationDialogDescription = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_description.' + actionId.value);
-})
-
-
-let actions = [
-  {
-    id: null,
-    label: 'gestlab.actions.bulk_actions_text'
-  },
-  {
-    id: 'delete',
-    label: 'gestlab.actions.delete'
-  },
-  {
-    id: 'restore',
-    label: 'gestlab.actions.restore'
-  },
+const { hasPermission } = usePermission();
+const selectedAction = ref(null);
+const showActionConfirmation = ref(false);
+const rows = computed(() => props.record?.data ?? []);
+const totalRecords = computed(() => props.record?.meta?.total ?? rows.value.length);
+const metrics = computed(() => [
+  { label: "Guias", value: totalRecords.value, detail: "registos controlados", icon: TruckIcon },
+  { label: "Com cliente", value: rows.value.filter((guide) => guide.customer).length, detail: "destino identificado", icon: ClipboardDocumentCheckIcon },
+  { label: "Arquivadas", value: rows.value.filter((guide) => guide.deleted).length, detail: "fora do circuito ativo", icon: ArchiveBoxIcon },
+]);
+const actions = [
+  { id: null, label: "gestlab.actions.bulk_actions_text" },
+  { id: "delete", label: "gestlab.actions.delete" },
+  { id: "restore", label: "gestlab.actions.restore" },
 ];
+const confirmationDialogTitle = computed(() => trans("gestlab.actions.confirmation_dialog_title." + selectedAction.value));
+const confirmationDialogDescription = computed(() => trans("gestlab.actions.confirmation_dialog_description." + selectedAction.value));
 
-const handleEdit = () => {
-  router.get(route('contractguides.create'));
+function requestBulkAction(action) {
+  selectedAction.value = action;
+  showActionConfirmation.value = true;
 }
 
-const showDeleteConfirmation = ref(false);
+function closeActionConfirmation() {
+  selectedAction.value = null;
+  showActionConfirmation.value = false;
+}
 
+function executeBulkAction() {
+  const recordIds = rows.value.filter((guide) => guide.selected).map((guide) => guide.id);
 
-  const confirmAction = () => {
-    executeAction(actionId.value);
+  if (!recordIds.length || !["delete", "restore"].includes(selectedAction.value)) {
+    closeActionConfirmation();
+    return;
   }
 
-  const executeAction = (actionId) => {
-  const recordIds = props.record.data.filter(record => record.selected).map(record => record.id);
-
-  if(!recordIds.length) return;
-
-  switch (actionId) {
-    case 'delete':
-      router.get(`/contractguides/destroy`, {
-          recordIds: recordIds
-      }, {
-        preserveState: false,
-        preserveScroll: true,
-        onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            actionId = null;
-        }
-      });
-      showDeleteConfirmation.value = false;
-    break;  
-
-    case 'restore':
-        router.get(`/contractguides/restore`, {
-          recordIds: recordIds
-        }, {
-            preserveState:false,
-            preserveScroll: true,
-            onSuccess: () => {
-                showDeleteConfirmation.value = false;
-                actionId = null;
-            }
-        });
-        showDeleteConfirmation.value = false;
-  }
-}  
+  router.get(route("contractguides." + selectedAction.value), { recordIds }, {
+    preserveScroll: true,
+    onFinish: closeActionConfirmation,
+  });
+}
 </script>
+
 <template>
-<div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
-    <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.contract_guides.page_title') }}</h3>
-    <p class="mt-2 max-w-4xl text-sm text-gray-500"></p>
-</div>
+  <div class="space-y-6">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div class="flex items-start gap-3">
+          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+            <DocumentArrowDownIcon class="h-5 w-5" />
+          </span>
+          <div>
+            <p class="ds-kicker">Controlo de circulação</p>
+            <h1 class="ds-heading mt-1 text-2xl">Guias de contrato</h1>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Rastreabilidade de produtos, destino e referências documentais de transporte.</p>
+          </div>
+        </div>
+        <Link v-if="hasPermission('add_contract_guides')" :href="route('contractguides.create')" class="ds-button ds-button-primary">
+          <PlusIcon class="h-4 w-4" />
+          Nova guia
+        </Link>
+      </div>
 
-<records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="handleEdit"/> <br>
+      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
+        <div v-for="metric in metrics" :key="metric.label" class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r sm:last:border-r-0">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
+              <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd>
+              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
+            </div>
+            <component :is="metric.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
+          </div>
+        </div>
+      </dl>
+    </section>
 
-<confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
+    <RecordsTable
+      :record="record"
+      :model="model"
+      :abilities="abilities"
+      :fields="fields"
+      :slide-over-edit="false"
+      :query="query"
+      :actions="actions"
+      :create-action="false"
+      @execute-action="requestBulkAction"
+    />
+
+    <ConfirmDialog
+      v-if="showActionConfirmation"
+      :title="confirmationDialogTitle"
+      :description="confirmationDialogDescription"
+      :variant="selectedAction === 'restore' ? 'question' : 'danger'"
+      confirm="Sim"
+      cancel="Não"
+      @canceled="closeActionConfirmation"
+      @confirmed="executeBulkAction"
+    />
+  </div>
 </template>

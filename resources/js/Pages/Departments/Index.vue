@@ -1,343 +1,338 @@
 <script setup>
+import Combobox from "@/Components/combobox.vue";
+import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import RecordsTable from "@/Components/records-table.vue";
+import SlideOver from "@/Components/slide-over.vue";
+import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import RecordsTable from '@/Components/records-table.vue';
-import confirmDialog from "@/Components/confirm-dialog.vue";
-import { TransitionRoot } from '@headlessui/vue'
-import slideOver from '@/Components/slide-over.vue';
-import { ref, computed } from "vue";
-import { useForm, router } from "@inertiajs/vue3";
-import { trans } from 'laravel-vue-i18n';
-import combobox from "@/Components/combobox.vue";
+import { router, useForm } from "@inertiajs/vue3";
+import {
+  BuildingOffice2Icon,
+  EnvelopeIcon,
+  IdentificationIcon,
+  PhoneIcon,
+  PlusIcon,
+  UserCircleIcon,
+} from "@heroicons/vue/24/outline";
+import { trans } from "laravel-vue-i18n";
+import { computed, ref } from "vue";
 
+defineOptions({ layout: Layout });
 
 const props = defineProps({
-    record: Object,
-    fields: Array,
-    model: String,
-    abilities: Array,
-    query: Object,
-    slideOverEdit: {
-      type: Boolean,
-      default: false
-    }
+  record: { type: Object, default: () => ({ data: [], meta: {} }) },
+  fields: { type: Array, default: () => [] },
+  model: String,
+  abilities: { type: Array, default: () => [] },
+  query: { type: Object, default: () => ({}) },
+  slideOverEdit: { type: Boolean, default: true },
 });
 
-defineOptions({
-  layout: Layout
+const { hasPermission } = usePermission();
+const editorOpen = ref(false);
+const selectedAction = ref(null);
+const showActionConfirmation = ref(false);
+
+const form = useForm("DepartmentEditor", {
+  id: null,
+  name: "",
+  code: "",
+  description: "",
+  contact: "",
+  extension: "",
+  supervisor_id: null,
+  email: "",
 });
 
-let form = useForm({
-    name: '',
-    code: '',
-    description: '',
-    contact: '',
-    extension: '',
-    supervisor_id: '',
-    email: '',
-    id: null,
-});
-
-const actionId = ref(null);
-
-const slideOverDescription = computed(() => {
-  return !form.id ? trans('gestlab.slideover.creating.description') + form.name : trans('gestlab.slideover.updating.description') + form.name;
-});
-
-const slideOverTitle = computed(() => {
-  return !form.id ? trans('gestlab.slideover.creating.title') : trans('gestlab.slideover.updating.description');
-});
-
-const confirmationDialogTitle = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_title.' + actionId.value);
-})
-
-
-const confirmationDialogDescription = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_description.' + actionId.value);
-})
-
-
-const openslideover = ref(false);
-
-let actions = [
+const pageRecords = computed(() => props.record?.data || []);
+const totalRecords = computed(() => props.record?.meta?.total ?? pageRecords.value.length);
+const metrics = computed(() => [
   {
-    id: null,
-    label: 'gestlab.actions.bulk_actions_text'
+    label: "Unidades",
+    value: totalRecords.value,
+    detail: "estrutura registada",
+    icon: BuildingOffice2Icon,
   },
   {
-    id: 'delete',
-    label: 'gestlab.actions.delete'
+    label: "Com supervisão",
+    value: pageRecords.value.filter((department) => department.supervisor).length,
+    detail: "responsável identificado",
+    icon: UserCircleIcon,
   },
   {
-    id: 'restore',
-    label: 'gestlab.actions.restore'
+    label: "Email configurado",
+    value: pageRecords.value.filter((department) => department.email).length,
+    detail: "contacto institucional",
+    icon: EnvelopeIcon,
   },
+  {
+    label: "Extensão interna",
+    value: pageRecords.value.filter((department) => department.extension).length,
+    detail: "contacto direto",
+    icon: PhoneIcon,
+  },
+]);
+
+const actions = [
+  { id: null, label: "gestlab.actions.bulk_actions_text" },
+  { id: "delete", label: "gestlab.actions.delete" },
+  { id: "restore", label: "gestlab.actions.restore" },
 ];
 
-const close = () => {
-    openslideover.value = false;
-    form.clearErrors();
-    // form.reset();
-}
+const editorTitle = computed(() => form.id ? "Editar unidade" : "Nova unidade");
+const editorDescription = computed(() => form.id
+  ? `Atualize a estrutura, supervisão e contactos de ${form.name}.`
+  : "Registe uma unidade organizacional e associe a respetiva supervisão técnica.",
+);
+const confirmationDialogTitle = computed(() =>
+  trans(`gestlab.actions.confirmation_dialog_title.${selectedAction.value}`),
+);
+const confirmationDialogDescription = computed(() =>
+  trans(`gestlab.actions.confirmation_dialog_description.${selectedAction.value}`),
+);
 
-const showDeleteConfirmation = ref(false);
-const showDeleteConfirmationSlideover = ref(false);
-
-const openSlideoverWithData = (data) => {
-    openslideover.value = true;
-    form.id = data.id;
-    form.name = data.name;
-    form.code = data.code;
-    form.supervisor_id = {
-      value: data.supervisor_id.id,
-      label: data.supervisor
-    };
-    form.description = data.description;
-    form.contact = data.contact;
-    form.extension = data.extension;
-    form.email = data.email;
-    
-}
-
-let submit = () => {
-
-    if(!form.id) {
-      form.post(route('departments.store'), {
-          preserveScroll: true,
-          preserveState: false,
-          onError: () => {
-            showDeleteConfirmationSlideover.value = false
-            openslideover.value = true
-          },
-          onSuccess: () => {
-            openslideover.value = false;
-            form.reset()
-          },
-      });
-    } else {
-      form.put(route('departments.update',{department: form.id}), {
-          preserveScroll: true,
-          preserveState: false,
-          onError: () => {
-            showDeleteConfirmationSlideover.value = false
-            openslideover.value = true
-          },
-          onSuccess: () => {
-            openslideover.value = false;
-            form.reset()
-          },
-      });
-    }
-    
-  }
-
-
-  const confirmAction = () => {
-    executeAction(actionId.value);
-  }
-
-  const executeAction = (actionId) => {
-  const recordIds = props.record.data.filter(record => record.selected).map(record => record.id);
-
-  if(!recordIds.length) return;
-
-  switch (actionId) {
-    case 'delete':
-      router.get(route('departments.destroy'), {
-          recordIds: recordIds
-      }, {
-        preserveState: false,
-        preserveScroll: true,
-        onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            actionId = null;
-        }
-      });
-      showDeleteConfirmation.value = false;
-    break;  
-
-    case 'restore':
-        router.get(route('departments.restore'), {
-          recordIds: recordIds
-        }, {
-            preserveState:false,
-            preserveScroll: true,
-            onSuccess: () => {
-                showDeleteConfirmation.value = false;
-                actionId = null;
-            }
-        });
-        showDeleteConfirmation.value = false;
-  }
-}
-
-function loadUsers(query, setOptions) {
-    fetch('/users/getUser?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.name,
-            };
-        })
-        );
+function loadUsers(search, setOptions) {
+  return fetch(`/users/getUser?q=${encodeURIComponent(search)}`)
+    .then((response) => response.json())
+    .then((results) => {
+      const options = results.map((user) => ({ value: user.id, label: user.name }));
+      setOptions(options);
+      return options;
     });
 }
+
+function resetEditor() {
+  form.reset();
+  form.clearErrors();
+}
+
+function openCreatePanel() {
+  resetEditor();
+  editorOpen.value = true;
+}
+
+function openEditPanel(department) {
+  resetEditor();
+  const supervisor = department.supervisor_id?.data ?? department.supervisor_id;
+
+  form.id = department.id;
+  form.name = department.name ?? "";
+  form.code = department.code ?? "";
+  form.description = department.description ?? "";
+  form.contact = department.contact ?? "";
+  form.extension = department.extension ?? "";
+  form.email = department.email ?? "";
+  form.supervisor_id = supervisor?.id
+    ? { value: supervisor.id, label: department.supervisor ?? supervisor.name }
+    : null;
+  editorOpen.value = true;
+}
+
+function closeEditor() {
+  editorOpen.value = false;
+  resetEditor();
+}
+
+function submit() {
+  const options = {
+    preserveScroll: true,
+    onSuccess: closeEditor,
+  };
+
+  if (form.id) {
+    form.put(route("departments.update", { department: form.id }), options);
+    return;
+  }
+
+  form.post(route("departments.store"), options);
+}
+
+function requestBulkAction(action) {
+  selectedAction.value = action;
+  showActionConfirmation.value = true;
+}
+
+function closeActionConfirmation() {
+  showActionConfirmation.value = false;
+  selectedAction.value = null;
+}
+
+function executeBulkAction() {
+  const recordIds = pageRecords.value
+    .filter((department) => department.selected)
+    .map((department) => department.id);
+
+  if (!recordIds.length || !["delete", "restore"].includes(selectedAction.value)) {
+    closeActionConfirmation();
+    return;
+  }
+
+  router.get(route(`departments.${selectedAction.value}`), { recordIds }, {
+    preserveScroll: true,
+    onFinish: closeActionConfirmation,
+  });
+}
 </script>
+
 <template>
-<div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
-    <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.departments.page_title') }}</h3>
-    <p class="mt-2 max-w-4xl text-sm text-gray-500"></p>
-</div>
-
-<records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="openslideover=true" @slideover-on="openSlideoverWithData"/> <br>
-
-<slide-over v-if="openslideover" :class="commercialDocumentThemeClasses" @close="close" :title="slideOverTitle" :description="slideOverDescription">
-    <template #content>
-        <div class="space-y-6 py-6 sm:space-y-0 sm:divide-y sm:divide-gray-200 sm:py-0">
-              <!-- Name -->
-              <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="name" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.departments.name') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <input v-model="form.name" type="text" name="name" id="name" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.name ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
-                  <p v-if="form.errors.name" class="mt-2 text-sm text-red-600" id="name-error">{{ form.errors.name }}</p>
-                </div>
-              </div>
-
-              <!-- Supervisor -->
-              <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="supervisor_id" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.departments.supervisor_id') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <combobox :hasError="form.errors.supervisor_id" v-model="form.supervisor_id" :load-options="loadUsers"/>
-                  <p v-if="form.errors.supervisor_id" class="mt-2 text-sm text-red-600" id="name-error">{{ form.errors.supervisor_id }}</p>
-                </div>
-              </div>
-
-              <!-- Code -->
-               <!--<div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="code" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.departments.code') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <input v-model="form.code" type="text" name="code" id="code" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.code ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
-                  <p v-if="form.errors.code" class="mt-2 text-sm text-red-600" id="code-error">{{ form.errors.code }}</p>
-                </div>
-              </div>-->
-
-               <!-- Contact -->
-               <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="contact" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.departments.contact') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <input v-model="form.contact" type="number" name="contact" id="contact" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.contact ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
-                  <p v-if="form.errors.contact" class="mt-2 text-sm text-red-600" id="contact-error">{{ form.errors.contact }}</p>
-                </div>
-              </div>
-
-               <!-- Extension -->
-               <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="extension" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.departments.extension') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <input v-model="form.extension" type="number" name="extension" id="extension" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.extension ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
-                  <p v-if="form.errors.extension" class="mt-2 text-sm text-red-600" id="extension-error">{{ form.errors.extension }}</p>
-                </div>
-              </div>
-
-               <!-- Email -->
-               <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="email" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.departments.email') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <input v-model="form.email" type="email" name="email" id="email" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.email ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
-                  <p v-if="form.errors.email" class="mt-2 text-sm text-red-600" id="email-error">{{ form.errors.email }}</p>
-                </div>
-              </div>
-
-              <!-- Description -->
-              <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="description" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.departments.description') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <textarea v-model="form.description" name="description" id="description" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.description ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
-                  <p v-if="form.errors.description" class="mt-2 text-sm text-red-600" id="description-error">{{ form.errors.description }}</p>
-                </div>
-              </div>
+  <div class="space-y-6">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0">
+          <p class="ds-kicker">Estrutura organizacional</p>
+          <div class="mt-3 flex items-start gap-3">
+            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+              <BuildingOffice2Icon class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+              <h1 class="ds-heading text-2xl">{{ $t("gestlab.general.labels.departments.page_title") }}</h1>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">
+                Unidades, supervisão e contactos usados na atribuição de trabalho, competência e responsabilidade técnica.
+              </p>
+            </div>
+          </div>
         </div>
-    </template>
 
-    <template #action_buttons>
-        <div class="flex justify-end space-x-3">
-        <button type="button" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" @click="openslideover = false; form.reset()">{{ $t('gestlab.general.buttons.cancel') }}</button>
-        <!-- <TransitionRoot
-            :show="!form.isDirty"
-            enter="transition-opacity duration-75"
-            enter-from="opacity-0"
-            enter-to="opacity-100"
-            leave="transition-opacity duration-150"
-            leave-from="opacity-100"
-            leave-to="opacity-0"
+        <button
+          v-if="hasPermission('add_departments')"
+          type="button"
+          class="ds-button ds-button-primary whitespace-nowrap"
+          @click="openCreatePanel"
         >
-            I will appear and disappear.
-        </TransitionRoot> -->
-        <button v-if="form.isDirty" @click="showDeleteConfirmationSlideover = true" :disabled="form.processing" type="button" class="inline-flex justify-center rounded-md bg-blue-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-900">{{ !form.id ? $t('gestlab.general.buttons.submit') : $t('gestlab.general.buttons.update') }}</button>
-        </div>
-    </template>
-</slide-over>
-
-<confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
-
-<confirm-dialog size="sm:max-w-2xl" alignment="sm:items-start" @canceled="showDeleteConfirmationSlideover=false" @close="showDeleteConfirmationSlideover=false" @confirmed="submit" v-if="showDeleteConfirmationSlideover" :title="$t('gestlab.actions.confirmation_dialog_title.default')" :description="$t('gestlab.actions.confirmation_dialog_description.default')" confirm="Sim" cancel="Não">
-    <div class="mt-4">
-      <div class="font-semibold inline-flex px-2 py-1 leading-4 text-xs rounded-full text-white bg-blue-900 sm:text-xs mb-2"><p class="text-xs">{{ $t('gestlab.general.labels.summary') }}</p></div>
-      <div>
-        <div class="px-4 sm:px-0 rounded-full text-white bg-blue-900">
-          <!-- <h3 class="text-base font-semibold leading-7 text-gray-900">Resumo</h3>
-          <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-500">Personal details and application.</p> -->
-        </div>
-        <div class="mt-6 border-t border-gray-100">
-          <dl class="divide-y divide-gray-100">
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.departments.name') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.name }}</dd>
-            </div>
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.departments.supervisor_id') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.supervisor_id?.label }}</dd>
-            </div>
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.departments.contact') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.contact }}</dd>
-            </div>
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.departments.extension') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.extension }}</dd>
-            </div>
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.departments.email') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.email }}</dd>
-            </div>
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.departments.description') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.description }}</dd>
-            </div>
-            
-          </dl>
-        </div>
+          <PlusIcon class="h-4 w-4" />
+          Nova unidade
+        </button>
       </div>
 
-    </div>
-  </confirm-dialog>
+      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
+        <div
+          v-for="metric in metrics"
+          :key="metric.label"
+          class="border-b border-[var(--ds-border)] px-4 py-3 sm:[&:nth-child(odd)]:border-r sm:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
+              <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd>
+              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
+            </div>
+            <component :is="metric.icon" class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" />
+          </div>
+        </div>
+      </dl>
+    </section>
 
+    <RecordsTable
+      :record="record"
+      :model="model"
+      :abilities="abilities"
+      :fields="fields"
+      :slide-over-edit="slideOverEdit"
+      :query="query"
+      :actions="actions"
+      :create-action="false"
+      @execute-action="requestBulkAction"
+      @create-record="openCreatePanel"
+      @slideover-on="openEditPanel"
+    />
+
+    <SlideOver
+      v-if="editorOpen"
+      :title="editorTitle"
+      :description="editorDescription"
+      @close="closeEditor"
+    >
+      <template #content>
+        <form id="department-editor" class="divide-y divide-[var(--ds-border)]" @submit.prevent="submit">
+          <section class="space-y-5 px-6 py-6">
+            <div>
+              <p class="ds-kicker">Identificação</p>
+              <h2 class="ds-heading mt-2 text-base">Unidade e responsabilidade</h2>
+            </div>
+
+            <div class="grid gap-5 sm:grid-cols-2">
+              <div class="sm:col-span-2">
+                <label for="department-name" class="ds-field-label">Nome da unidade</label>
+                <input id="department-name" v-model="form.name" type="text" class="ds-field mt-2" required />
+                <p v-if="form.errors.name" class="ds-field-error mt-2">{{ form.errors.name }}</p>
+              </div>
+
+              <div>
+                <label for="department-code" class="ds-field-label">Código</label>
+                <input id="department-code" v-model="form.code" type="text" class="ds-field mt-2" />
+                <p v-if="form.errors.code" class="ds-field-error mt-2">{{ form.errors.code }}</p>
+              </div>
+
+              <div>
+                <label class="ds-field-label">Supervisor</label>
+                <div class="mt-2">
+                  <Combobox
+                    v-model="form.supervisor_id"
+                    :has-error="Boolean(form.errors.supervisor_id)"
+                    :load-options="loadUsers"
+                    placeholder="Pesquisar utilizadores"
+                  />
+                </div>
+                <p v-if="form.errors.supervisor_id" class="ds-field-error mt-2">{{ form.errors.supervisor_id }}</p>
+              </div>
+
+              <div class="sm:col-span-2">
+                <label for="department-description" class="ds-field-label">Descrição operacional</label>
+                <textarea id="department-description" v-model="form.description" rows="4" class="ds-field mt-2 min-h-28 resize-y" />
+                <p v-if="form.errors.description" class="ds-field-error mt-2">{{ form.errors.description }}</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="space-y-5 px-6 py-6">
+            <div>
+              <p class="ds-kicker">Comunicação</p>
+              <h2 class="ds-heading mt-2 text-base">Contactos institucionais</h2>
+            </div>
+
+            <div class="grid gap-5 sm:grid-cols-2">
+              <div class="sm:col-span-2">
+                <label for="department-email" class="ds-field-label">Email</label>
+                <input id="department-email" v-model="form.email" type="email" class="ds-field mt-2" required />
+                <p v-if="form.errors.email" class="ds-field-error mt-2">{{ form.errors.email }}</p>
+              </div>
+
+              <div>
+                <label for="department-contact" class="ds-field-label">Telefone</label>
+                <input id="department-contact" v-model="form.contact" type="tel" class="ds-field mt-2" />
+                <p v-if="form.errors.contact" class="ds-field-error mt-2">{{ form.errors.contact }}</p>
+              </div>
+
+              <div>
+                <label for="department-extension" class="ds-field-label">Extensão</label>
+                <input id="department-extension" v-model="form.extension" type="text" inputmode="numeric" class="ds-field mt-2" />
+                <p v-if="form.errors.extension" class="ds-field-error mt-2">{{ form.errors.extension }}</p>
+              </div>
+            </div>
+          </section>
+        </form>
+      </template>
+
+      <template #action_buttons>
+        <div class="flex items-center justify-end gap-3">
+          <button type="button" class="ds-button ds-button-secondary" @click="closeEditor">Cancelar</button>
+          <button type="submit" form="department-editor" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
+            <IdentificationIcon class="h-4 w-4" />
+            {{ form.processing ? "A guardar..." : form.id ? "Guardar alterações" : "Registar unidade" }}
+          </button>
+        </div>
+      </template>
+    </SlideOver>
+
+    <ConfirmDialog
+      v-if="showActionConfirmation"
+      :title="confirmationDialogTitle"
+      :description="confirmationDialogDescription"
+      :variant="selectedAction === 'restore' ? 'question' : 'danger'"
+      confirm="Sim"
+      cancel="Não"
+      @canceled="closeActionConfirmation"
+      @confirmed="executeBulkAction"
+    />
+  </div>
 </template>

@@ -20,6 +20,7 @@ class AnalysisCategoryController extends Controller
         return Inertia::render('AnalysisCategories/Index', [
             'record' => AnalysisCategoryResource::collection(
                 AnalysisCategory::query()
+                    ->with('department')
                     ->when(request()->input('search'), function ($query, $search) {
                         $query->where('name', 'like', "%{$search}%");
                     })

@@ -1,570 +1,422 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <WrenchScrewdriverIcon class="h-7 w-7 text-blue-900" />
-            Detalhes da Tarefa de Manutenção
-          </h1>
-          <div class="mt-2 flex items-center gap-4">
-            <span :class="getStatusClasses(task)">
-              {{ getStatusText(task) }}
-            </span>
-            <span class="text-sm text-gray-600">
-              <CalendarIcon class="h-4 w-4 inline mr-1" />
-              Criada em {{ formatDateTime(task.created_at) }}
-            </span>
+  <div class="space-y-6" :class="commercialDocumentThemeClasses">
+    <section class="ds-panel overflow-hidden">
+      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:flex sm:items-start sm:justify-between sm:gap-6 lg:px-6">
+        <div class="min-w-0">
+          <p class="ds-kicker">Metrologia e manutenção</p>
+          <div class="mt-2 flex flex-wrap items-center gap-3">
+            <h1 class="ds-heading text-2xl">Detalhes da tarefa</h1>
+            <span :class="getStatusClasses(task)">{{ getStatusText(task) }}</span>
           </div>
+          <p class="ds-copy mt-2 flex flex-wrap items-center gap-2 text-sm">
+            <CalendarIcon class="h-4 w-4" />
+            Criada em {{ formatDateTime(task.created_at) }}
+          </p>
         </div>
-        <div class="flex items-center gap-3">
-          <Link
-            :href="route('vap-maintenance.tasks')"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            <ArrowLeftIcon class="h-5 w-5" />
-            Voltar à Lista
+
+        <div class="mt-4 flex flex-wrap items-center gap-2 sm:mt-0 sm:justify-end">
+          <Link :href="route('vap-maintenance.tasks')" class="ds-button ds-button-secondary">
+            <ArrowLeftIcon class="h-4 w-4" />
+            Voltar
           </Link>
-          <Link
-            :href="route('vap-maintenance.tasks.create')"
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
-          >
-            <DocumentDuplicateIcon class="h-5 w-5" />
+          <Link :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-primary">
+            <DocumentDuplicateIcon class="h-4 w-4" />
             Duplicar
           </Link>
         </div>
       </div>
-    </div>
 
-    <!-- TASK DETAILS -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- MAIN CONTENT (2/3 width) -->
-      <div class="lg:col-span-2 space-y-6">
-        <!-- TASK INFORMATION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <!-- GRADIENT HEADER -->
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold text-white">
-                {{ task.name }}
-              </h2>
-              <div class="text-white text-sm font-medium">
-                {{ task.maintenance_task_no }}
+      <div class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
+        <article class="bg-[var(--ds-panel)] p-5">
+          <p class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Vencimento</p>
+          <p :class="['mt-3 text-2xl font-bold', getDueDateColor(task)]">{{ formatDate(task.due_date) || 'Sem data' }}</p>
+          <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">{{ task.periodicity ? `A cada ${task.periodicity} ${getPeriodicityUnitText(task.periodicity_unit)}` : 'Sem recorrência' }}</p>
+        </article>
+        <article class="bg-[var(--ds-panel)] p-5">
+          <p class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Equipamento</p>
+          <p class="mt-3 truncate text-2xl font-bold text-[var(--ds-text)]">{{ task.equipment?.name || 'N/A' }}</p>
+          <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">{{ task.equipment?.internal_code || 'Sem código' }}</p>
+        </article>
+        <article class="bg-[var(--ds-panel)] p-5">
+          <p class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Fornecedor</p>
+          <p class="mt-3 truncate text-2xl font-bold text-[var(--ds-text)]">{{ task.supplier?.name || 'Interno' }}</p>
+          <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">{{ task.executed_by_supplier ? 'Execução externa' : 'Execução interna' }}</p>
+        </article>
+        <article class="bg-[var(--ds-panel)] p-5">
+          <p class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Custo</p>
+          <p class="mt-3 text-2xl font-bold text-[var(--ds-text)]">{{ formatCurrency(task.cost) }}</p>
+          <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">{{ task.calibration_certificate_no || 'Sem certificado' }}</p>
+        </article>
+      </div>
+    </section>
+
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <main class="space-y-6">
+        <section class="ds-card overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:flex sm:items-center sm:justify-between sm:gap-4">
+            <div>
+              <h2 class="text-base font-bold text-[var(--ds-text)]">{{ task.name }}</h2>
+              <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ task.maintenance_task_no || 'Sem número' }}</p>
+            </div>
+            <span class="ds-chip mt-3 sm:mt-0">{{ task.category?.name || 'Sem categoria' }}</span>
+          </div>
+
+          <div class="grid gap-5 p-5 md:grid-cols-2">
+            <div class="space-y-5">
+              <div>
+                <p class="ds-field-label">Categoria</p>
+                <p class="mt-2 flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]">
+                  <TagIcon class="h-4 w-4 text-[var(--ds-text-soft)]" />
+                  {{ task.category?.name || 'Não definida' }}
+                </p>
+              </div>
+
+              <div>
+                <p class="ds-field-label">Equipamento</p>
+                <div class="mt-2 flex items-start gap-2">
+                  <CogIcon class="mt-0.5 h-4 w-4 text-[var(--ds-text-soft)]" />
+                  <div>
+                    <p class="text-sm font-bold text-[var(--ds-text)]">{{ task.equipment?.name || 'Equipamento não encontrado' }}</p>
+                    <p v-if="task.equipment" class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
+                      {{ task.equipment.internal_code || 'Sem código' }}
+                      <span v-if="task.equipment.model" class="ml-2">{{ task.equipment.model }}</span>
+                      <span v-if="task.equipment.serial_number" class="ml-2">S/N: {{ task.equipment.serial_number }}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p class="ds-field-label">Descrição</p>
+                <p class="mt-2 rounded-lg bg-[var(--ds-panel-subtle)] p-4 text-sm font-medium text-[var(--ds-text-muted)]">
+                  {{ task.description || 'Sem descrição' }}
+                </p>
               </div>
             </div>
-          </div>
-          
-          <!-- TASK CONTENT -->
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- BASIC INFO -->
-              <div class="space-y-4">
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">
-                    Categoria
-                  </label>
-                  <div class="flex items-center gap-2">
-                    <TagIcon class="h-4 w-4 text-gray-400" />
-                    <span class="text-sm font-medium text-gray-900">
-                      {{ task.category?.name || 'Não definida' }}
-                    </span>
-                  </div>
-                </div>
 
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">
-                    Equipamento
-                  </label>
-                  <div class="flex items-center gap-2">
-                    <CogIcon class="h-4 w-4 text-gray-400" />
-                    <span class="text-sm font-medium text-gray-900">
-                      {{ task.equipment?.name || 'Equipamento não encontrado' }}
-                    </span>
+            <div class="space-y-5">
+              <div>
+                <p class="ds-field-label">Datas</p>
+                <dl class="mt-2 grid gap-2 text-sm">
+                  <div class="flex items-center justify-between gap-4">
+                    <dt class="font-semibold text-[var(--ds-text-soft)]">Vencimento</dt>
+                    <dd :class="['font-bold', getDueDateColor(task)]">{{ formatDate(task.due_date) }}</dd>
                   </div>
-                  <div v-if="task.equipment" class="ml-6 text-xs text-gray-500 mt-1">
-                    {{ task.equipment.internal_code || 'Sem código' }}
-                    <span v-if="task.equipment.model">• {{ task.equipment.model }}</span>
-                    <span v-if="task.equipment.serial_number">• S/N: {{ task.equipment.serial_number }}</span>
+                  <div v-if="task.previous_date" class="flex items-center justify-between gap-4">
+                    <dt class="font-semibold text-[var(--ds-text-soft)]">Anterior</dt>
+                    <dd class="font-bold text-[var(--ds-text-muted)]">{{ formatDate(task.previous_date) }}</dd>
                   </div>
-                </div>
-
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">
-                    Descrição
-                  </label>
-                  <div class="text-sm text-gray-700 bg-gray-50 rounded-lg p-4">
-                    {{ task.description || 'Sem descrição' }}
+                  <div v-if="task.next_date" class="flex items-center justify-between gap-4">
+                    <dt class="font-semibold text-[var(--ds-text-soft)]">Próximo</dt>
+                    <dd class="font-bold text-[var(--ds-text-muted)]">{{ formatDate(task.next_date) }}</dd>
                   </div>
+                </dl>
+                <div v-if="task.periodicity" class="ds-command-toolbar mt-3 p-3">
+                  <p class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
+                    <ArrowPathRoundedSquareIcon class="h-4 w-4" />
+                    Recorrência: {{ task.periodicity }} {{ getPeriodicityUnitText(task.periodicity_unit) }}
+                  </p>
                 </div>
               </div>
 
-              <!-- SCHEDULING INFO -->
-              <div class="space-y-4">
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">
-                    Datas
-                  </label>
-                  <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                      <span class="text-sm text-gray-600">Vencimento:</span>
-                      <span :class="getDueDateColor(task)" class="font-semibold">
-                        {{ formatDate(task.due_date) }}
-                      </span>
-                    </div>
-                    <div v-if="task.previous_date" class="flex items-center justify-between">
-                      <span class="text-sm text-gray-600">Anterior:</span>
-                      <span class="text-sm font-medium text-gray-900">
-                        {{ formatDate(task.previous_date) }}
-                      </span>
-                    </div>
-                    <div v-if="task.next_date" class="flex items-center justify-between">
-                      <span class="text-sm text-gray-600">Próximo:</span>
-                      <span class="text-sm font-medium text-gray-900">
-                        {{ formatDate(task.next_date) }}
-                      </span>
-                    </div>
-                    <div v-if="task.periodicity" class="mt-3 p-3 bg-blue-50 rounded-lg">
-                      <div class="flex items-center gap-2 text-sm text-blue-900">
-                        <ArrowPathRoundedSquareIcon class="h-4 w-4" />
-                        <span>Recorrência: A cada {{ task.periodicity }} {{ getPeriodicityUnitText(task.periodicity_unit) }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label class="block text-xs font-medium text-gray-500 mb-1">
-                    Estado
-                  </label>
-                  <div class="space-y-2">
-                    <div class="flex items-center gap-2">
-                      <span :class="[
-                        'h-3 w-3 rounded-full',
-                        task.is_planned ? 'bg-blue-900' : 'bg-gray-300'
-                      ]"></span>
-                      <span class="text-sm text-gray-700">
-                        {{ task.is_planned ? 'Tarefa Planeada' : 'Tarefa Não Planeada' }}
-                      </span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span :class="[
-                        'h-3 w-3 rounded-full',
-                        task.is_executed ? 'bg-green-900' : 'bg-gray-300'
-                      ]"></span>
-                      <span class="text-sm text-gray-700">
-                        {{ task.is_executed ? 'Tarefa Executada' : 'Tarefa Pendente' }}
-                      </span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span :class="[
-                        'h-3 w-3 rounded-full',
-                        task.executed_by_supplier ? 'bg-purple-900' : 'bg-gray-300'
-                      ]"></span>
-                      <span class="text-sm text-gray-700">
-                        {{ task.executed_by_supplier ? 'Executada por Fornecedor' : 'Executada Internamente' }}
-                      </span>
-                    </div>
-                  </div>
+              <div>
+                <p class="ds-field-label">Estado operacional</p>
+                <div class="mt-2 grid gap-2">
+                  <p class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
+                    <span :class="['lims-status-dot', task.is_planned ? 'lims-status-dot-instrument' : 'lims-status-dot-hold']" />
+                    {{ task.is_planned ? 'Tarefa planeada' : 'Tarefa não planeada' }}
+                  </p>
+                  <p class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
+                    <span :class="['lims-status-dot', task.is_executed ? 'lims-status-dot-release' : 'lims-status-dot-hold']" />
+                    {{ task.is_executed ? 'Tarefa executada' : 'Tarefa pendente' }}
+                  </p>
+                  <p class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
+                    <span :class="['lims-status-dot', task.executed_by_supplier ? 'lims-status-dot-critical' : 'lims-status-dot-instrument']" />
+                    {{ task.executed_by_supplier ? 'Executada por fornecedor' : 'Executada internamente' }}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- TECHNICAL DETAILS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white">
-              Detalhes Técnicos
+        <section class="ds-card overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
+              <DocumentTextIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)]" />
+              Detalhes técnicos
             </h2>
           </div>
-          
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- CALIBRATION DETAILS -->
-              <div class="space-y-4">
-                <div v-if="task.acceptance_criteria">
-                  <label class="block text-xs font-medium text-gray-500 mb-1">
-                    Critério de Aceitação
-                  </label>
-                  <div class="text-sm font-medium text-gray-900 bg-green-50 rounded-lg p-3">
-                    {{ task.acceptance_criteria }}
-                  </div>
-                </div>
 
-                <div v-if="task.range">
-                  <label class="block text-xs font-medium text-gray-500 mb-1">
-                    Gama
-                  </label>
-                  <div class="text-sm font-medium text-gray-900">
-                    {{ task.range }}
-                  </div>
-                </div>
-
-                <div v-if="task.calibration_points">
-                  <label class="block text-xs font-medium text-gray-500 mb-1">
-                    Pontos de Calibração
-                  </label>
-                  <div class="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 whitespace-pre-line">
-                    {{ task.calibration_points }}
-                  </div>
-                </div>
+          <div class="grid gap-5 p-5 md:grid-cols-2">
+            <div class="space-y-4">
+              <div v-if="task.acceptance_criteria">
+                <p class="ds-field-label">Critério de aceitação</p>
+                <p class="mt-2 rounded-lg bg-emerald-50 p-3 text-sm font-bold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20">
+                  {{ task.acceptance_criteria }}
+                </p>
               </div>
 
-              <!-- RESULTS & CERTIFICATES -->
-              <div class="space-y-4">
-                <div v-if="task.calibration_certificate_no">
-                  <label class="block text-xs font-medium text-gray-500 mb-1">
-                    Certificado de Calibração
-                  </label>
-                  <div class="flex items-center gap-2">
-                    <DocumentTextIcon class="h-4 w-4 text-blue-900" />
-                    <span class="text-sm font-medium text-blue-900">
-                      {{ task.calibration_certificate_no }}
-                    </span>
-                  </div>
-                  <div v-if="task.calibration_status" class="ml-6 mt-1">
-                    <span :class="[
-                      'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-                      task.calibration_status === 'approved' ? 'bg-green-100 text-green-800' :
-                      task.calibration_status === 'rejected' ? 'bg-red-100 text-red-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    ]">
-                      {{ getCalibrationStatusText(task.calibration_status) }}
-                    </span>
-                  </div>
-                </div>
+              <div v-if="task.range">
+                <p class="ds-field-label">Gama</p>
+                <p class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ task.range }}</p>
+              </div>
 
-                <div v-if="task.result">
-                  <label class="block text-xs font-medium text-gray-500 mb-1">
-                    Resultado da Manutenção
-                  </label>
-                  <div class="text-sm text-gray-700 bg-gray-50 rounded-lg p-3 whitespace-pre-line">
-                    {{ task.result }}
-                  </div>
-                </div>
+              <div v-if="task.calibration_points">
+                <p class="ds-field-label">Pontos de calibração</p>
+                <p class="mt-2 whitespace-pre-line rounded-lg bg-[var(--ds-panel-subtle)] p-3 text-sm font-medium text-[var(--ds-text-muted)]">
+                  {{ task.calibration_points }}
+                </p>
+              </div>
+            </div>
 
-                <div v-if="task.obs">
-                  <label class="block text-xs font-medium text-gray-500 mb-1">
-                    Observações
-                  </label>
-                  <div class="text-sm text-gray-700 bg-yellow-50 rounded-lg p-3 whitespace-pre-line">
-                    {{ task.obs }}
-                  </div>
-                </div>
+            <div class="space-y-4">
+              <div v-if="task.calibration_certificate_no">
+                <p class="ds-field-label">Certificado de calibração</p>
+                <p class="mt-2 flex items-center gap-2 text-sm font-bold text-[rgb(var(--primary-700-rgb)/1)]">
+                  <DocumentTextIcon class="h-4 w-4" />
+                  {{ task.calibration_certificate_no }}
+                </p>
+                <span v-if="task.calibration_status" :class="getCalibrationStatusClasses(task.calibration_status)">
+                  {{ getCalibrationStatusText(task.calibration_status) }}
+                </span>
+              </div>
+
+              <div v-if="task.result">
+                <p class="ds-field-label">Resultado da manutenção</p>
+                <p class="mt-2 whitespace-pre-line rounded-lg bg-[var(--ds-panel-subtle)] p-3 text-sm font-medium text-[var(--ds-text-muted)]">
+                  {{ task.result }}
+                </p>
+              </div>
+
+              <div v-if="task.obs">
+                <p class="ds-field-label">Observações</p>
+                <p class="mt-2 whitespace-pre-line rounded-lg bg-amber-50 p-3 text-sm font-medium text-amber-800 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20">
+                  {{ task.obs }}
+                </p>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
 
-      <!-- SIDEBAR (1/3 width) -->
-      <div class="space-y-6">
-        <!-- COST & SUPPLIER -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <CurrencyEuroIcon class="h-5 w-5 text-blue-900" />
-            Custo e Fornecedor
+      <aside class="space-y-6">
+        <section class="ds-card p-5">
+          <h3 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
+            <CurrencyEuroIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)]" />
+            Custo e fornecedor
           </h3>
-          <div class="space-y-4">
-            <div class="text-center">
-              <div class="text-3xl font-bold text-blue-900">
-                {{ formatCurrency(task.cost) }}
-              </div>
-              <div class="text-sm text-gray-500 mt-1">Custo da Tarefa</div>
-            </div>
+          <p class="mt-5 text-3xl font-bold text-[var(--ds-text)]">{{ formatCurrency(task.cost) }}</p>
+          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Custo da tarefa</p>
 
-            <div v-if="task.supplier" class="pt-4 border-t border-gray-200">
-              <label class="block text-xs font-medium text-gray-500 mb-2">
-                Fornecedor
-              </label>
-              <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <TruckIcon class="h-5 w-5 text-gray-400" />
-                <div>
-                  <div class="text-sm font-medium text-gray-900">
-                    {{ task.supplier.name }}
-                  </div>
-                  <div v-if="task.supplier.email" class="text-xs text-gray-500">
-                    {{ task.supplier.email }}
-                  </div>
-                  <div v-if="task.supplier.phone" class="text-xs text-gray-500">
-                    {{ task.supplier.phone }}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="task.executed_by_supplier && !task.supplier" class="pt-4 border-t border-gray-200">
-              <div class="text-center text-sm text-gray-500">
-                <ExclamationTriangleIcon class="h-5 w-5 text-orange-500 mx-auto mb-2" />
-                Tarefa marcada como executada por fornecedor,<br>
-                mas nenhum fornecedor foi especificado.
+          <div v-if="task.supplier" class="mt-5 border-t border-[var(--ds-border)] pt-5">
+            <p class="ds-field-label">Fornecedor</p>
+            <div class="mt-2 flex items-start gap-3 rounded-lg bg-[var(--ds-panel-subtle)] p-3">
+              <TruckIcon class="mt-0.5 h-5 w-5 text-[var(--ds-text-soft)]" />
+              <div>
+                <p class="text-sm font-bold text-[var(--ds-text)]">{{ task.supplier.name }}</p>
+                <p v-if="task.supplier.email" class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ task.supplier.email }}</p>
+                <p v-if="task.supplier.phone" class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ task.supplier.phone }}</p>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- ACTIONS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            Acções
-          </h3>
-          <div class="space-y-3">
-            <button
-              v-if="!task.is_executed"
-              @click="markAsExecuted"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg bg-green-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-green-700"
-            >
-              <CheckCircleIcon class="h-5 w-5" />
-              Marcar como Executada
+          <div v-if="task.executed_by_supplier && !task.supplier" class="mt-5 border-t border-[var(--ds-border)] pt-5">
+            <p class="rounded-lg bg-amber-50 p-3 text-center text-sm font-semibold text-amber-800 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20">
+              <ExclamationTriangleIcon class="mx-auto mb-2 h-5 w-5" />
+              Fornecedor não especificado.
+            </p>
+          </div>
+        </section>
+
+        <section class="ds-command-surface p-5">
+          <h3 class="text-base font-bold text-[var(--ds-text)]">Ações</h3>
+          <div class="mt-4 space-y-3">
+            <button v-if="!task.is_executed" type="button" class="ds-button ds-button-primary w-full" @click="markAsExecuted">
+              <CheckCircleIcon class="h-4 w-4" />
+              Marcar como executada
             </button>
 
-            <button
-              v-if="task.is_executed"
-              @click="recordResult"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg bg-blue-900 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
-            >
-              <PencilIcon class="h-5 w-5" />
-              Registar Resultado
+            <button v-if="task.is_executed" type="button" class="ds-button ds-button-primary w-full" @click="recordResult">
+              <PencilIcon class="h-4 w-4" />
+              Registar resultado
             </button>
 
-            <Link
-              :href="route('vap-maintenance.tasks.create')"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              <DocumentDuplicateIcon class="h-5 w-5" />
-              Duplicar Tarefa
+            <Link :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-secondary w-full">
+              <DocumentDuplicateIcon class="h-4 w-4" />
+              Duplicar tarefa
             </Link>
 
-            <button
-              @click="printTask"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              <PrinterIcon class="h-5 w-5" />
+            <button type="button" class="ds-button ds-button-secondary w-full" @click="printTask">
+              <PrinterIcon class="h-4 w-4" />
               Imprimir
             </button>
 
-            <button
-              @click="notifyCompletion"
-              v-if="task.is_executed"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-purple-600 bg-purple-50 px-4 py-3 text-sm font-medium text-purple-900 hover:bg-purple-100"
-            >
-              <BellAlertIcon class="h-5 w-5" />
-              Notificar Conclusão
+            <button v-if="task.is_executed" type="button" class="ds-button ds-button-secondary w-full" @click="notifyCompletion">
+              <BellAlertIcon class="h-4 w-4" />
+              Notificar conclusão
             </button>
 
-            <button
-              @click="deleteTask"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-red-600 bg-red-50 px-4 py-3 text-sm font-medium text-red-900 hover:bg-red-100"
-            >
-              <TrashIcon class="h-5 w-5" />
-              Eliminar Tarefa
+            <button type="button" class="ds-button ds-button-danger w-full" @click="deleteTask">
+              <TrashIcon class="h-4 w-4" />
+              Eliminar tarefa
             </button>
           </div>
-        </div>
+        </section>
 
-        <!-- TASK HISTORY -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <ClockIcon class="h-5 w-5 text-blue-900" />
+        <section class="ds-card p-5">
+          <h3 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
+            <ClockIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)]" />
             Histórico
           </h3>
-          <div class="space-y-3">
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-gray-600">Criada em:</span>
-              <span class="font-medium text-gray-900">{{ formatDateTime(task.created_at) }}</span>
+          <dl class="mt-4 grid gap-3 text-sm">
+            <div class="flex items-center justify-between gap-4">
+              <dt class="font-semibold text-[var(--ds-text-soft)]">Criada em</dt>
+              <dd class="font-bold text-[var(--ds-text)]">{{ formatDateTime(task.created_at) }}</dd>
             </div>
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-gray-600">Última atualização:</span>
-              <span class="font-medium text-gray-900">{{ formatDateTime(task.updated_at) }}</span>
+            <div class="flex items-center justify-between gap-4">
+              <dt class="font-semibold text-[var(--ds-text-soft)]">Atualizada em</dt>
+              <dd class="font-bold text-[var(--ds-text)]">{{ formatDateTime(task.updated_at) }}</dd>
             </div>
-            <div v-if="task.deleted_at" class="flex items-center justify-between text-sm">
-              <span class="text-gray-600">Eliminada em:</span>
-              <span class="font-medium text-red-900">{{ formatDateTime(task.deleted_at) }}</span>
+            <div v-if="task.deleted_at" class="flex items-center justify-between gap-4">
+              <dt class="font-semibold text-[var(--ds-text-soft)]">Eliminada em</dt>
+              <dd class="font-bold text-rose-700 dark:text-rose-200">{{ formatDateTime(task.deleted_at) }}</dd>
             </div>
-          </div>
-        </div>
-      </div>
+          </dl>
+        </section>
+      </aside>
     </div>
 
-    <!-- EQUIPMENT SUMMARY -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-          <CogIcon class="h-5 w-5 text-blue-900" />
-          Histórico do Equipamento
-        </h2>
+    <section class="ds-table-shell">
+      <div class="ds-table-summary px-5 py-4">
+        <div>
+          <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
+            <CogIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)]" />
+            Histórico do equipamento
+          </h2>
+          <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">
+            Últimas tarefas e custos associados ao equipamento selecionado.
+          </p>
+        </div>
         <Link
-          :href="route('vap-inventory.items.show', task.equipment?.id)"
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          v-if="task.equipment?.id"
+          :href="route('vap-inventory.items.show', task.equipment.id)"
+          class="ds-button ds-button-secondary"
         >
           <ArrowRightIcon class="h-4 w-4" />
-          Ver Detalhes do Equipamento
+          Ver equipamento
         </Link>
       </div>
 
-      <div v-if="equipmentHistory" class="space-y-4">
-        <!-- EQUIPMENT STATS -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div class="bg-blue-50 rounded-lg p-4">
-            <div class="text-sm text-gray-600">Total de Tarefas</div>
-            <div class="text-2xl font-bold text-blue-900 mt-1">
-              {{ equipmentHistory.stats.total_tasks }}
-            </div>
-          </div>
-          <div class="bg-green-50 rounded-lg p-4">
-            <div class="text-sm text-gray-600">Tarefas Executadas</div>
-            <div class="text-2xl font-bold text-green-900 mt-1">
-              {{ equipmentHistory.stats.executed_tasks }}
-            </div>
-          </div>
-          <div class="bg-purple-50 rounded-lg p-4">
-            <div class="text-sm text-gray-600">Custo Total</div>
-            <div class="text-2xl font-bold text-purple-900 mt-1">
-              {{ formatCurrency(equipmentHistory.stats.total_cost) }}
-            </div>
-          </div>
-          <div class="bg-orange-50 rounded-lg p-4">
-            <div class="text-sm text-gray-600">Custo Médio</div>
-            <div class="text-2xl font-bold text-orange-900 mt-1">
-              {{ formatCurrency(equipmentHistory.stats.avg_cost) }}
-            </div>
-          </div>
+      <div v-if="equipmentHistory" class="space-y-0">
+        <div class="grid gap-px bg-[var(--ds-border)] md:grid-cols-4">
+          <article v-for="card in equipmentHistoryCards" :key="card.label" class="bg-[var(--ds-panel)] p-5">
+            <p class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
+            <p class="mt-3 text-2xl font-bold text-[var(--ds-text)]">{{ card.value }}</p>
+          </article>
         </div>
 
-        <!-- RECENT TASKS -->
-        <div>
-          <h3 class="text-sm font-medium text-gray-900 mb-3">Tarefas Recentes</h3>
-          <div class="space-y-2">
-            <div
-              v-for="historyTask in equipmentHistory.tasks.slice(0, 5)"
+        <div class="border-t border-[var(--ds-border)] p-5">
+          <h3 class="text-sm font-bold text-[var(--ds-text)]">Tarefas recentes</h3>
+          <div v-if="recentEquipmentTasks.length" class="mt-3 grid gap-2">
+            <Link
+              v-for="historyTask in recentEquipmentTasks"
               :key="historyTask.id"
-              class="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-gray-50"
+              :href="route('vap-maintenance.tasks.show', historyTask.id)"
+              class="ds-card flex items-center justify-between gap-4 p-3 transition hover:border-[var(--ds-border-strong)]"
             >
-              <div class="flex items-center gap-3">
-                <div :class="[
-                  'h-8 w-8 rounded-lg flex items-center justify-center',
-                  historyTask.is_executed ? 'bg-green-100' : 'bg-red-100'
+              <div class="flex min-w-0 items-center gap-3">
+                <span :class="[
+                  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ring-1',
+                  historyTask.is_executed
+                    ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20'
+                    : 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20',
                 ]">
-                  <WrenchScrewdriverIcon :class="[
-                    'h-4 w-4',
-                    historyTask.is_executed ? 'text-green-900' : 'text-red-900'
-                  ]" />
-                </div>
-                <div>
-                  <div class="text-sm font-medium text-gray-900">
-                    {{ historyTask.name }}
-                  </div>
-                  <div class="text-xs text-gray-500">
-                    {{ historyTask.category?.name }} • {{ formatDate(historyTask.due_date) }}
-                  </div>
-                </div>
+                  <WrenchScrewdriverIcon class="h-4 w-4" />
+                </span>
+                <span class="min-w-0">
+                  <span class="block truncate text-sm font-bold text-[var(--ds-text)]">{{ historyTask.name }}</span>
+                  <span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">
+                    {{ historyTask.category?.name || 'Sem categoria' }} · {{ formatDate(historyTask.due_date) }}
+                  </span>
+                </span>
               </div>
-              <div class="text-right">
-                <div class="text-sm font-medium text-gray-900">
-                  {{ formatCurrency(historyTask.cost) }}
-                </div>
-                <div class="text-xs text-gray-500">
-                  {{ historyTask.is_executed ? 'Executada' : 'Pendente' }}
-                </div>
-              </div>
-            </div>
+              <span class="text-right">
+                <span class="block text-sm font-bold text-[var(--ds-text)]">{{ formatCurrency(historyTask.cost) }}</span>
+                <span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">{{ historyTask.is_executed ? 'Executada' : 'Pendente' }}</span>
+              </span>
+            </Link>
+          </div>
+
+          <div v-else class="ds-empty-state mt-3 px-6 py-8 text-center">
+            <CogIcon class="mx-auto h-10 w-10 text-[var(--ds-text-soft)]" />
+            <p class="mt-3 text-sm font-bold text-[var(--ds-text)]">Nenhuma tarefa recente</p>
           </div>
         </div>
       </div>
 
-      <div v-else class="text-center py-8 text-gray-500">
-        <CogIcon class="h-12 w-12 mx-auto text-gray-300 mb-3" />
-        <p>Nenhum histórico disponível para este equipamento</p>
+      <div v-else class="p-6">
+        <div class="ds-empty-state px-6 py-10 text-center">
+          <CogIcon class="mx-auto h-10 w-10 text-[var(--ds-text-soft)]" />
+          <p class="mt-3 text-sm font-bold text-[var(--ds-text)]">Nenhum histórico disponível para este equipamento</p>
+        </div>
       </div>
-    </div>
-  </div>
+    </section>
+    <Modal :show="showRecordResultModal" @close="showRecordResultModal = false">
+      <div class="p-5 sm:p-6">
+        <div>
+          <p class="ds-kicker">Execução</p>
+          <h2 class="ds-heading mt-2 text-lg">Registar resultado da manutenção</h2>
+          <p class="ds-copy mt-1 text-sm">Guarde o resultado técnico e a próxima data associada a esta tarefa.</p>
+        </div>
 
-  <!-- RECORD RESULT MODAL -->
-  <Modal :show="showRecordResultModal" @close="showRecordResultModal = false">
-    <div class="p-6">
-      <h2 class="text-lg font-semibold text-gray-900 mb-6">
-        Registar Resultado da Manutenção
-      </h2>
-      
-      <form @submit.prevent="submitResult">
-        <div class="space-y-6">
-          <!-- RESULT -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Resultado da Manutenção *
-            </label>
+        <form class="mt-6 space-y-6" @submit.prevent="submitResult">
+          <label class="ds-field-group">
+            <span class="ds-field-label">Resultado da manutenção <span class="ds-field-required">*</span></span>
             <textarea
               v-model="resultForm.result"
               rows="6"
               required
-              class="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-900 focus:ring-blue-900"
-              placeholder="Descreva os resultados da manutenção, observações, peças substituídas, etc..."
-            ></textarea>
-            <p v-if="resultForm.errors.result" class="mt-1 text-xs text-red-600">
-              {{ resultForm.errors.result }}
-            </p>
-          </div>
+              class="ds-field min-h-36"
+              placeholder="Resultados, observações e peças substituídas"
+            />
+            <span v-if="resultForm.errors.result" class="ds-field-error">{{ resultForm.errors.result }}</span>
+          </label>
 
-          <!-- CALIBRATION STATUS -->
-          <div v-if="isCalibrationTask">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Estado da Calibração
-            </label>
-            <select
-              v-model="resultForm.calibration_status"
-              class="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-900 focus:ring-blue-900"
-            >
+          <label v-if="isCalibrationTask" class="ds-field-group">
+            <span class="ds-field-label">Estado da calibração</span>
+            <select v-model="resultForm.calibration_status" class="ds-field">
               <option value="">Selecione um estado</option>
               <option value="approved">Aprovado</option>
               <option value="rejected">Rejeitado</option>
               <option value="pending">Pendente</option>
             </select>
-          </div>
+          </label>
 
-          <!-- NEXT DATE -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Próxima Manutenção
-            </label>
-            <input
-              v-model="resultForm.next_date"
-              type="date"
-              class="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-blue-900 focus:ring-blue-900"
-            />
-            <p class="mt-1 text-xs text-gray-500">
-              Deixe em branco para calcular automaticamente com base na periodicidade
-            </p>
-          </div>
+          <label class="ds-field-group">
+            <span class="ds-field-label">Próxima manutenção</span>
+            <input v-model="resultForm.next_date" type="date" class="ds-field" />
+            <span class="ds-field-hint">Deixe em branco para calcular automaticamente com base na periodicidade.</span>
+          </label>
 
-          <!-- FORM ACTIONS -->
-          <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
-            <button
-              type="button"
-              @click="showRecordResultModal = false"
-              class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
+          <div class="flex items-center justify-end gap-2 border-t border-[var(--ds-border)] pt-5">
+            <button type="button" class="ds-button ds-button-secondary" @click="showRecordResultModal = false">
               Cancelar
             </button>
-            <button
-              type="submit"
-              :disabled="resultForm.processing"
-              class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <CheckCircleIcon class="h-5 w-5" />
-              {{ resultForm.processing ? 'A processar...' : 'Registar Resultado' }}
+            <button type="submit" class="ds-button ds-button-primary" :disabled="resultForm.processing">
+              <CheckCircleIcon class="h-4 w-4" />
+              {{ resultForm.processing ? 'A processar...' : 'Registar resultado' }}
             </button>
           </div>
-        </div>
-      </form>
-    </div>
-  </Modal>
+        </form>
+      </div>
+    </Modal>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import {
   WrenchScrewdriverIcon,
@@ -590,11 +442,12 @@ import Modal from '@/Components/Modal.vue'
 
 const props = defineProps({
   task: Object,
+  equipmentHistory: Object,
 })
 
 // State
 const showRecordResultModal = ref(false)
-const equipmentHistory = ref(null)
+const equipmentHistory = ref(props.equipmentHistory ?? null)
 
 // Forms
 const resultForm = useForm({
@@ -607,6 +460,21 @@ const resultForm = useForm({
 const isCalibrationTask = computed(() => {
   return props.task.category?.code?.includes('CAL') || 
          ['Calibration', 'Calibração'].includes(props.task.category?.name || '')
+})
+
+const equipmentHistoryCards = computed(() => {
+  const stats = equipmentHistory.value?.stats ?? {}
+
+  return [
+    { label: 'Total de tarefas', value: stats.total_tasks ?? 0 },
+    { label: 'Executadas', value: stats.executed_tasks ?? 0 },
+    { label: 'Custo total', value: formatCurrency(stats.total_cost ?? 0) },
+    { label: 'Custo médio', value: formatCurrency(stats.avg_cost ?? 0) },
+  ]
+})
+
+const recentEquipmentTasks = computed(() => {
+  return (equipmentHistory.value?.tasks ?? []).slice(0, 5)
 })
 
 // Methods
@@ -650,7 +518,7 @@ const getPeriodicityUnitText = (unit) => {
 
 const getStatusClasses = (task) => {
   if (task.is_executed) {
-    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
+    return 'inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20'
   }
   
   const dueDate = new Date(task.due_date)
@@ -658,13 +526,13 @@ const getStatusClasses = (task) => {
   const daysDiff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24))
   
   if (daysDiff < 0) {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800'
+    return 'inline-flex items-center rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 ring-1 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20'
   } else if (daysDiff <= 7) {
-    return 'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800'
+    return 'inline-flex items-center rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700 ring-1 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-200 dark:ring-orange-400/20'
   } else if (daysDiff <= 30) {
-    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'
+    return 'inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20'
   } else {
-    return 'inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800'
+    return 'inline-flex items-center rounded-full bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-700 ring-1 ring-cyan-200 dark:bg-cyan-500/10 dark:text-cyan-200 dark:ring-cyan-400/20'
   }
 }
 
@@ -682,16 +550,16 @@ const getStatusText = (task) => {
 }
 
 const getDueDateColor = (task) => {
-  if (task.is_executed) return 'text-green-900'
+  if (task.is_executed) return 'text-emerald-700 dark:text-emerald-200'
   
   const dueDate = new Date(task.due_date)
   const today = new Date()
   const daysDiff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24))
   
-  if (daysDiff < 0) return 'text-red-900'
-  if (daysDiff <= 7) return 'text-orange-900'
-  if (daysDiff <= 30) return 'text-yellow-900'
-  return 'text-blue-900'
+  if (daysDiff < 0) return 'text-rose-700 dark:text-rose-200'
+  if (daysDiff <= 7) return 'text-orange-700 dark:text-orange-200'
+  if (daysDiff <= 30) return 'text-amber-700 dark:text-amber-200'
+  return 'text-cyan-700 dark:text-cyan-200'
 }
 
 const getCalibrationStatusText = (status) => {
@@ -701,6 +569,20 @@ const getCalibrationStatusText = (status) => {
     pending: 'Pendente'
   }
   return statusMap[status] || status
+}
+
+const getCalibrationStatusClasses = (status) => {
+  const base = 'mt-2 inline-flex items-center rounded-full px-2 py-1 text-xs font-bold ring-1'
+
+  if (status === 'approved') {
+    return `${base} bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20`
+  }
+
+  if (status === 'rejected') {
+    return `${base} bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20`
+  }
+
+  return `${base} bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20`
 }
 
 const markAsExecuted = () => {
@@ -757,7 +639,7 @@ const loadEquipmentHistory = async () => {
 }
 
 onMounted(() => {
-  if (props.task.equipment_id) {
+  if (props.task.equipment_id && !equipmentHistory.value) {
     loadEquipmentHistory()
   }
 })

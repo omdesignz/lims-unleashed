@@ -1,546 +1,410 @@
 <template>
   <div class="space-y-6">
-    <!-- FILTER CONTROLS -->
-    <div :class="panelClass">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <!-- DATE RANGE -->
-        <div class="space-y-2">
-          <label :class="labelClass">
-            <CalendarIcon class="h-4 w-4 inline mr-1" />
-            Intervalo de Datas
-          </label>
-          <SimpleSelect
-            v-model="selectedDateRange"
-            :options="dateRangeOptions"
-            label=""
-            placeholder="Seleccione um intervalo"
-          />
-        </div>
+    <section class="ds-command-surface p-5 sm:p-6">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <BaseSelect v-model="filters.dateRange" label="Período analítico">
+          <option value="7d">Últimos 7 dias</option>
+          <option value="30d">Últimos 30 dias</option>
+          <option value="90d">Últimos 90 dias</option>
+          <option value="1y">Último ano</option>
+          <option value="custom">Período personalizado</option>
+        </BaseSelect>
 
-        <!-- CATEGORY FILTER -->
-        <div class="space-y-2">
-          <label :class="labelClass">
-            <TagIcon class="h-4 w-4 inline mr-1" />
-            Categoria
-          </label>
-          <SimpleSelect
-            v-model="selectedCategory"
-            :options="categoryOptions"
-            label=""
-            placeholder="Todas"
-          />
-        </div>
+        <BaseSelect v-model="filters.categoryId" label="Categoria">
+          <option value="">Todas as categorias</option>
+          <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+        </BaseSelect>
 
-        <!-- WAREHOUSE FILTER -->
-        <div class="space-y-2">
-          <label :class="labelClass">
-            <BuildingLibraryIcon class="h-4 w-4 inline mr-1" />
-            Armazém
-          </label>
-          <SimpleSelect
-            v-model="selectedWarehouse"
-            :options="warehouseOptions"
-            label=""
-            placeholder="Todos os Armazéns"
-          />
-        </div>
+        <BaseSelect v-model="filters.warehouseId" label="Armazém">
+          <option value="">Todos os armazéns</option>
+          <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">{{ warehouse.name }}</option>
+        </BaseSelect>
 
-        <!-- CUSTOM DATE RANGE -->
-        <div v-if="filters.dateRange === 'custom'" class="space-y-2">
-          <label :class="labelClass">
-            Período Personalizado
-          </label>
-          <DatePickerEnhanced
-            :model-value="{ start: filters.startDate, end: filters.endDate }"
-            range
-            @update:model-value="updateCustomDateRange"
-          />
+        <div v-if="filters.dateRange === 'custom'" class="grid grid-cols-2 gap-3">
+          <BaseInput v-model="filters.startDate" type="date" label="Início" />
+          <BaseInput v-model="filters.endDate" type="date" label="Fim" />
         </div>
-      </div>
-    </div>
-
-    <!-- CHARTS GRID -->
-    <div :class="['grid grid-cols-1 lg:grid-cols-2 gap-6 transition-opacity duration-300', isLoading ? 'opacity-50 pointer-events-none' : 'opacity-100']">
-      <!-- REAGENT CONSUMPTION TREND -->
-      <div :class="panelClass">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h3 :class="titleClass">
-              <ArrowTrendingUpIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
-              Tendência de Consumo de Reagentes
-            </h3>
-            <p :class="mutedClass">Tendência de consumo de reagentes por dia</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <button
-              @click="downloadChart('consumption')"
-              :class="smallButtonClass"
-            >
-              <ArrowDownTrayIcon class="h-3 w-3" />
-              Exportar
-            </button>
-          </div>
-        </div>
-        <apexchart
-          v-if="consumptionSeries?.length > 0"
-          type="line"
-          height="300"
-          :options="consumptionChartOptions"
-          :series="consumptionSeries"
-        />
-        <div v-else class="ds-empty-state min-h-[300px]">
-          Nenhuma informação de consumo disponível
+        <div v-else class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Âmbito ativo</p>
+          <p class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ periodLabel }}</p>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">Atualização automática dos indicadores.</p>
         </div>
       </div>
 
-      <!-- STOCK LEVELS BY CATEGORY -->
-      <div :class="panelClass">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h3 :class="titleClass">
-              <ChartPieIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
-              Distribuição de Estoque por Categoria
-            </h3>
-            <p :class="mutedClass">Níveis de estoque atuais em todas as categorias</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <button
-              @click="toggleStockChartType"
-              :class="smallButtonClass"
-            >
-              <ArrowsRightLeftIcon class="h-3 w-3" />
-              {{ stockChartType === 'pie' ? 'Visão de Barras' : 'Visão de Pizza' }}
-            </button>
-          </div>
-        </div>
-        <apexchart
-          v-if="stockSeries?.length > 0"
-          :key="stockChartType"
-          :type="stockChartType"
-          height="300"
-          :options="stockChartOptions"
-          :series="stockSeries"
-        />
-        <div v-else class="ds-empty-state min-h-[300px]">
-          Sem Dados Disponíveis
-        </div>
-      </div>
-
-      <div :class="panelClass">
-
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h3 :class="titleClass">
-              <ArchiveBoxIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
-              Desempenho do Fornecedor
-            </h3>
-            <p :class="mutedClass">
-                Desempenho de Entrega do Fornecedor ao longo do tempo
-            </p>
-          </div>
-        </div>
-        
-            <div v-if="supplierSeries[0]?.data.length > 0">
-                <apexchart
-                    type="bar"
-                    height="350"
-                    :options="supplierChartOptions"
-                    :series="supplierSeries"
-                />
-            </div>
-            <div v-else class="ds-empty-state min-h-[350px]">
-                <ChartBarIcon class="h-12 w-12 mb-2 opacity-20" />
-                <p class="text-sm">Nenhuma entrega encontrada para os filtros selecionados.</p>
-            </div>
-        </div>
-
-      <!-- MONTHLY CONSUMPTION COMPARISON -->
-      <div :class="panelClass">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h3 :class="titleClass">
-              <ChartBarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
-              Comparação Mensal de Consumo
-            </h3>
-            <p :class="mutedClass">Padrões de uso mensais</p>
-          </div>
-        </div>
-        <apexchart
-          v-if="monthlySeries?.length > 0"
-          type="bar"
-          height="300"
-          :options="monthlyChartOptions"
-          :series="monthlySeries"
-        />
-        <div v-else class="ds-empty-state min-h-[300px]">
-          Sem Dados Disponíveis
-        </div>
-      </div>
-
-      <!-- TOP CONSUMED REAGENTS -->
-      <div :class="panelClass">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h3 :class="titleClass">
-              <TrophyIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
-              Reagentos Mais Consumidos
-            </h3>
-            <p :class="mutedClass">Reagentos mais frequentemente consumidos</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <button
-              @click="toggleTopReagentsLimit"
-              :class="smallButtonClass"
-            >
-              {{ topReagentsLimit === 5 ? 'Mostrar 10' : 'Mostrar 5' }}
-            </button>
-          </div>
-        </div>
-        <apexchart
-          v-if="topReagentsSeries?.length > 0"
-          type="bar"
-          height="300"
-          :options="topReagentsChartOptions"
-          :series="topReagentsSeries"
-        />
-        <div v-else class="ds-empty-state min-h-[300px]">
-          Sem Dados Disponíveis
-        </div>
-      </div>
-    </div>
-
-    <!-- ADDITIONAL METRICS -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-      <!-- TOTAL CONSUMPTION -->
-      <div class="ds-card relative overflow-hidden border-t-4 border-t-[rgb(var(--primary-600-rgb))] p-5">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="ds-kicker">Consumo Total</p>
-            <p class="mt-2 text-2xl font-black text-[var(--ds-text)]">{{ formatNumber(totalConsumption) }} unidades</p>
-          </div>
-          <div class="rounded-2xl bg-[rgb(var(--primary-50-rgb))] p-3 text-[rgb(var(--primary-700-rgb))] dark:bg-[rgb(var(--primary-500-rgb)/0.14)] dark:text-[rgb(var(--accent-200-rgb))]">
-            <BeakerIcon class="h-6 w-6" />
-          </div>
-        </div>
-        <div class="mt-5 space-y-2 text-sm text-[var(--ds-text-muted)]">
-          <div class="flex justify-between">
-            <span>Este mês:</span>
-            <span class="font-semibold">{{ formatNumber(monthlyConsumption) }} unidades</span>
-          </div>
-          <div class="flex justify-between mt-1">
-            <span>Média Diária:</span>
-            <span class="font-semibold">{{ formatNumber(dailyAverage) }} unidades</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="ds-card relative overflow-hidden border-t-4 border-t-emerald-500 p-5">
-        <div class="flex items-center justify-between">
-            <div>
-            <p class="ds-kicker">Uso Médio Diário</p>
-            <p class="mt-2 text-2xl font-black text-[var(--ds-text)]">{{ formatNumber(dailyAverage) }}</p>
-            </div>
-            <div class="rounded-2xl bg-emerald-50 p-3 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-              <ArrowTrendingUpIcon class="h-6 w-6" />
-            </div>
-        </div>
-        <div class="mt-5 text-sm text-[var(--ds-text-muted)]">
-            <span :class="['rounded-full px-2 py-1 font-bold', usageChange >= 0 ? 'bg-red-500/10 text-red-700 dark:text-red-300' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300']">
-            {{ usageChange >= 0 ? '↑' : '↓' }} {{ Math.abs(usageChange) }}%
+      <div class="ds-command-toolbar mt-5 grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <p class="text-sm font-bold text-[var(--ds-text)]">{{ consumptionHistory.length }} eventos de consumo na amostra</p>
+            <span v-if="isLoading" class="ds-chip">
+              <ArrowPathIcon class="h-3.5 w-3.5 animate-spin" />
+              A atualizar
             </span>
-            <span class="ml-2">vs Período Anterior</span>
+          </div>
+          <div v-if="activeFilterPills.length" class="mt-2 flex flex-wrap gap-2">
+            <span v-for="pill in activeFilterPills" :key="pill" class="ds-chip">{{ pill }}</span>
+          </div>
         </div>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <button type="button" class="ds-button ds-button-secondary" :disabled="!hasScopedFilters" @click="clearScopedFilters">
+            <FunnelIcon class="h-4 w-4" />
+            Limpar âmbito
+          </button>
+          <button type="button" class="ds-button ds-button-primary" @click="$emit('request-report', 'consumption')">
+            <ArrowDownTrayIcon class="h-4 w-4" />
+            Exportar análise
+          </button>
         </div>
+      </div>
 
-      <div :class="[
-        'ds-card relative group overflow-visible border-t-4 p-5 transition-all duration-300',
-        criticalAlerts > 0 ? 'border-t-red-500' : 'border-t-amber-500'
-        ]">
-        <div class="flex items-center justify-between">
+      <div v-if="requestError" class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300" role="alert">
+        {{ requestError }}
+      </div>
+    </section>
+
+    <section class="ds-command-surface overflow-hidden">
+      <div class="ds-table-summary px-5 py-4">
+        <div>
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Operational metrics</p>
+          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Consumo, valor e carga de alerta</h2>
+        </div>
+        <span :class="['ds-chip', usageChangeTone]">{{ usageChangeLabel }}</span>
+      </div>
+
+      <div class="grid divide-y divide-[var(--ds-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
+        <article v-for="card in metricCards" :key="card.label" class="min-w-0 p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
+              <p class="mt-3 truncate text-2xl font-black tabular-nums text-[var(--ds-text)]">{{ card.value }}</p>
+            </div>
+            <component :is="card.icon" :class="['h-5 w-5 shrink-0', card.tone]" />
+          </div>
+          <p class="mt-1 truncate text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.detail }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="ds-command-surface overflow-hidden" :class="isLoading ? 'opacity-70' : ''">
+      <div class="ds-table-summary px-5 py-4">
+        <div>
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Analytical workspace</p>
+          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Fluxo, distribuição e concentração</h2>
+        </div>
+        <span class="ds-chip">{{ periodLabel }}</span>
+      </div>
+
+      <div class="grid divide-y divide-[var(--ds-border)] xl:grid-cols-2 xl:divide-x">
+        <article class="min-w-0 p-5">
+          <div class="flex items-start justify-between gap-4">
             <div>
-            <p class="ds-kicker">Alertas de Inventário</p>
-            <p class="mt-2 text-2xl font-black text-[var(--ds-text)]">{{ reorderAlerts + expiringAlerts + criticalAlerts }}</p>
+              <h3 class="text-sm font-black text-[var(--ds-text)]">Tendência de consumo</h3>
+              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Volume diário de reagentes consumidos.</p>
             </div>
-            <div class="rounded-2xl bg-amber-50 p-3 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
-              <BellAlertIcon class="h-6 w-6" />
+            <ChartBarSquareIcon class="h-5 w-5 text-rose-700 dark:text-rose-300" />
+          </div>
+          <div v-if="consumptionTrend.length" class="mt-4 min-h-72">
+            <apexchart type="line" height="288" :options="consumptionChartOptions" :series="consumptionChartSeries" />
+          </div>
+          <div v-else class="ds-empty-state mt-4 grid min-h-72 place-items-center p-6 text-center">
+            <div>
+              <BeakerIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
+              <p class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem consumo no período</p>
             </div>
-        </div>
+          </div>
+        </article>
 
-        <div class="mt-5 space-y-2 text-sm text-[var(--ds-text-muted)]">
-            <div class="flex justify-between">
-            <span>Crítico / Expirado:</span>
-            <span class="font-semibold">{{ criticalAlerts }}</span>
+        <article class="min-w-0 p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-sm font-black text-[var(--ds-text)]">Stock por categoria</h3>
+              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Distribuição das unidades disponíveis.</p>
             </div>
-            <div class="flex justify-between mt-1">
-            <span>Baixo Estoque:</span>
-            <span class="font-semibold">{{ reorderAlerts }}</span>
+            <span class="ds-chip">{{ stockDistribution.length }} categorias</span>
+          </div>
+          <div v-if="stockDistribution.length" class="mt-4 min-h-72">
+            <apexchart type="donut" height="288" :options="stockChartOptions" :series="stockChartSeries" />
+          </div>
+          <div v-else class="ds-empty-state mt-4 grid min-h-72 place-items-center p-6 text-center">
+            <div>
+              <CircleStackIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
+              <p class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem stock distribuído</p>
             </div>
-            <div class="flex justify-between mt-1">
-            <span>Expirando < 30d:</span>
-            <span class="font-semibold">{{ expiringAlerts }}</span>
+          </div>
+        </article>
+
+        <article class="min-w-0 border-t border-[var(--ds-border)] p-5 xl:border-t">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-sm font-black text-[var(--ds-text)]">Comparação mensal</h3>
+              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Ano atual comparado com o período homólogo.</p>
             </div>
-        </div>
+            <ArrowsRightLeftIcon class="h-5 w-5 text-violet-700 dark:text-violet-300" />
+          </div>
+          <div v-if="monthlyComparison.length" class="mt-4 min-h-72">
+            <apexchart type="bar" height="288" :options="monthlyChartOptions" :series="monthlyChartSeries" />
+          </div>
+          <div v-else class="ds-empty-state mt-4 grid min-h-72 place-items-center p-6 text-center">
+            <p class="text-sm font-black text-[var(--ds-text)]">Sem comparação mensal disponível</p>
+          </div>
+        </article>
 
-        <div class="ds-floating-panel invisible absolute left-0 top-full z-50 mt-3 w-full p-4 opacity-0 transition-all group-hover:visible group-hover:opacity-100 sm:left-auto sm:right-0 sm:w-80">
-            <h4 class="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--ds-text-soft)]">Atenção de Prioridade</h4>
-            
-            <div v-if="alertDetails.critical.length" class="mb-3">
-            <p class="text-[10px] font-bold text-red-600 uppercase mb-1">Crítico / Sem Estoque</p>
-            <ul class="text-xs space-y-1">
-                <li v-for="item in alertDetails.critical" :key="item" class="truncate">• {{ item }}</li>
-            </ul>
+        <article class="min-w-0 border-t border-[var(--ds-border)] p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-sm font-black text-[var(--ds-text)]">Reagentes mais consumidos</h3>
+              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Concentração do consumo nos principais itens.</p>
             </div>
+            <TrophyIcon class="h-5 w-5 text-amber-700 dark:text-amber-300" />
+          </div>
+          <div v-if="topReagents.length" class="mt-4 min-h-72">
+            <apexchart type="bar" height="288" :options="topReagentsChartOptions" :series="topReagentsChartSeries" />
+          </div>
+          <div v-else class="ds-empty-state mt-4 grid min-h-72 place-items-center p-6 text-center">
+            <p class="text-sm font-black text-[var(--ds-text)]">Sem consumo por reagente</p>
+          </div>
+        </article>
+      </div>
+    </section>
 
-            <div v-if="alertDetails.reorder.length" class="mb-3">
-            <p class="text-[10px] font-bold text-orange-600 uppercase mb-1">Baixo Nível de Estoque</p>
-            <ul class="text-xs space-y-1">
-                <li v-for="item in alertDetails.reorder" :key="item" class="truncate">• {{ item }}</li>
-            </ul>
-            </div>
-
-            <div v-if="alertDetails.expiring.length">
-            <p class="mb-1 text-[10px] font-bold uppercase text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]">Expirando em Breve</p>
-            <ul class="text-xs space-y-1">
-                <li v-for="item in alertDetails.expiring" :key="item" class="truncate">• {{ item }}</li>
-            </ul>
-            </div>
-            
-            <p v-if="reorderAlerts + expiringAlerts + criticalAlerts === 0" class="text-xs italic text-[var(--ds-text-muted)]">
-            Todos os níveis de estoque estão saudáveis.
-            </p>
-
-            <button 
-                @click="generateDrafts"
-                class="ds-button ds-button-primary mt-3 w-full text-xs"
-                >
-                <ShoppingCartIcon class="h-4 w-4" />
-                Gerar Rascunhos de Reabastecimento
-            </button>
-        </div>
-
-        </div>
-
-      <!-- INVENTORY VALUE -->
-      <div class="ds-card relative overflow-hidden border-t-4 border-t-[rgb(var(--accent-400-rgb))] p-5">
-        <div class="flex items-center justify-between">
+    <section class="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]">
+      <div class="ds-command-surface overflow-hidden">
+        <div class="ds-table-summary px-5 py-4">
           <div>
-            <p class="ds-kicker">Valor de Inventário</p>
-            <p class="mt-2 text-2xl font-black text-[var(--ds-text)]">${{ formatNumber(inventoryValue) }}</p>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Supply assurance</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Desempenho de fornecedores</h2>
           </div>
-          <div class="rounded-2xl bg-[rgb(var(--accent-100-rgb)/0.72)] p-3 text-[rgb(var(--accent-700-rgb))] dark:bg-[rgb(var(--accent-400-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
-            <CurrencyDollarIcon class="h-6 w-6" />
-          </div>
+          <span class="ds-chip">Meta: 90% no prazo</span>
         </div>
-        <div class="mt-5 space-y-2 text-sm text-[var(--ds-text-muted)]">
-          <div class="flex justify-between">
-            <span>Reagentes:</span>
-            <span class="font-semibold">${{ formatNumber(reagentsValue) }}</span>
-          </div>
-          <div class="flex justify-between mt-1">
-            <span>Equipmentos:</span>
-            <span class="font-semibold">${{ formatNumber(equipmentValue) }}</span>
+        <div v-if="supplierPerformance.length" class="min-h-80 p-5">
+          <apexchart type="bar" height="320" :options="supplierChartOptions" :series="supplierChartSeries" />
+        </div>
+        <div v-else class="ds-empty-state m-5 grid min-h-72 place-items-center p-6 text-center">
+          <div>
+            <TruckIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
+            <p class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem entregas avaliáveis</p>
+            <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">O indicador aparece quando existirem ordens com datas de entrega.</p>
           </div>
         </div>
       </div>
+
+      <div class="grid gap-6">
+        <section v-for="alert in alertGroups" :key="alert.label" class="ds-panel overflow-hidden">
+          <div class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ alert.kicker }}</p>
+              <h3 class="mt-1 text-sm font-black text-[var(--ds-text)]">{{ alert.label }}</h3>
+            </div>
+            <span :class="['ds-chip', alert.tone]">{{ alert.count }}</span>
+          </div>
+          <ul v-if="alert.items.length" class="divide-y divide-[var(--ds-border)]">
+            <li v-for="item in alert.items" :key="item" class="flex items-start gap-3 px-5 py-3">
+              <span :class="['mt-1.5 h-2 w-2 shrink-0 rounded-full', alert.dot]"></span>
+              <span class="min-w-0 text-sm font-bold leading-5 text-[var(--ds-text)]">{{ item }}</span>
+            </li>
+          </ul>
+          <div v-else class="px-5 py-4 text-sm font-semibold text-[var(--ds-text-muted)]">Sem ocorrências nesta categoria.</div>
+        </section>
+
+        <button v-if="Number(metrics.criticalAlerts || 0) > 0" type="button" class="ds-button ds-button-primary w-full" @click="restockDialogOpen = true">
+          <ShoppingCartIcon class="h-4 w-4" />
+          Criar rascunho de reposição
+        </button>
+      </div>
+    </section>
+
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <section class="ds-table-shell">
+        <div class="ds-table-summary px-5 py-4">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Reagent stewardship</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Histórico de consumo</h2>
+          </div>
+          <span class="ds-chip">{{ consumptionHistory.length }} eventos</span>
+        </div>
+
+        <div v-if="consumptionHistory.length" class="divide-y divide-[var(--ds-border)] lg:hidden">
+          <article v-for="event in consumptionHistory" :key="`mobile-${event.id}`" class="space-y-4 p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <p class="font-mono text-xs font-bold text-[var(--ds-text-soft)]">{{ formatDate(event.date) }}</p>
+                <h3 class="mt-1 text-base font-black text-[var(--ds-text)]">{{ event.reagent_name || 'Reagente não identificado' }}</h3>
+                <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ event.warehouse?.name || 'Sem armazém' }}</p>
+              </div>
+              <span class="ds-chip shrink-0">{{ formatNumber(event.quantity_used) }} un.</span>
+            </div>
+            <dl class="grid grid-cols-2 gap-3">
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Operador</dt>
+                <dd class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ event.used_by || 'N/D' }}</dd>
+              </div>
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Stock atual</dt>
+                <dd :class="['mt-2 text-sm font-black', stockTone(event)]">{{ formatNumber(event.current_stock) }} un.</dd>
+              </div>
+            </dl>
+            <p class="text-sm font-semibold leading-5 text-[var(--ds-text-muted)]">{{ event.remarks || 'Sem observações.' }}</p>
+          </article>
+        </div>
+
+        <div v-if="consumptionHistory.length" class="hidden overflow-x-auto lg:block">
+          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+            <thead class="bg-[var(--ds-panel-subtle)]">
+              <tr>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Data</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Reagente</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Consumo</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Operador</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Saúde do stock</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Cobertura</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
+              <tr v-for="event in consumptionHistory" :key="event.id" class="transition-colors hover:bg-[var(--ds-panel-subtle)]">
+                <td class="whitespace-nowrap px-5 py-4 align-top font-mono text-xs font-black text-[var(--ds-text)]">{{ formatDate(event.date) }}</td>
+                <td class="px-5 py-4 align-top">
+                  <p class="font-black text-[var(--ds-text)]">{{ event.reagent_name || 'Reagente não identificado' }}</p>
+                  <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-soft)]">{{ event.item?.code || 'Sem código' }}</p>
+                  <p class="mt-1 max-w-xs text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ event.remarks || 'Sem observações.' }}</p>
+                </td>
+                <td class="px-5 py-4 align-top font-bold text-[var(--ds-text)]">{{ event.warehouse?.name || 'N/D' }}</td>
+                <td class="px-5 py-4 text-right align-top font-mono font-black tabular-nums text-rose-700 dark:text-rose-300">{{ formatNumber(event.quantity_used) }}</td>
+                <td class="px-5 py-4 align-top font-bold text-[var(--ds-text)]">{{ event.used_by || 'N/D' }}</td>
+                <td class="min-w-44 px-5 py-4 align-top">
+                  <div class="flex items-center justify-between gap-3">
+                    <span :class="['text-xs font-black', stockTone(event)]">{{ stockLabel(event) }}</span>
+                    <span class="font-mono text-xs font-bold text-[var(--ds-text-soft)]">{{ formatNumber(event.current_stock) }} / {{ formatNumber(Number(event.min_level || 0) * 2) }}</span>
+                  </div>
+                  <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ds-panel-muted)]">
+                    <div :class="['h-full rounded-full', stockBarTone(event)]" :style="{ width: `${stockPercentage(event)}%` }"></div>
+                  </div>
+                </td>
+                <td class="whitespace-nowrap px-5 py-4 text-right align-top">
+                  <p :class="['font-black tabular-nums', coverageTone(event)]">{{ coverageLabel(event) }}</p>
+                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ event.predicted_out_date ? `até ${formatDate(event.predicted_out_date)}` : 'sem previsão' }}</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-else class="ds-empty-state m-5 p-8 text-center">
+          <BeakerIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
+          <h3 class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem histórico de consumo</h3>
+          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Ajuste o período ou confirme a existência de registos.</p>
+        </div>
+      </section>
+
+      <aside class="space-y-6">
+        <section class="ds-panel overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Predição de rutura</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Cobertura mais curta</h2>
+          </div>
+          <ol v-if="depletionRisks.length" class="divide-y divide-[var(--ds-border)]">
+            <li v-for="(risk, index) in depletionRisks" :key="`${risk.id}-${index}`" class="px-5 py-3">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-black text-[var(--ds-text)]">{{ risk.reagent_name || 'Reagente' }}</p>
+                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ risk.warehouse?.name || 'Sem armazém' }}</p>
+                </div>
+                <span :class="['shrink-0 font-mono text-xs font-black tabular-nums', coverageTone(risk)]">{{ coverageLabel(risk) }}</span>
+              </div>
+            </li>
+          </ol>
+          <div v-else class="px-5 py-4 text-sm font-semibold text-[var(--ds-text-muted)]">Sem risco calculável no período.</div>
+        </section>
+
+        <section class="ds-panel overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Concentração</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Top reagentes</h2>
+          </div>
+          <ol v-if="topReagents.length" class="divide-y divide-[var(--ds-border)]">
+            <li v-for="(reagent, index) in topReagents.slice(0, 7)" :key="reagent.id || index" class="flex items-center gap-3 px-5 py-3">
+              <span class="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-xs font-black text-[var(--ds-text-soft)]">{{ index + 1 }}</span>
+              <span class="min-w-0 flex-1 truncate text-sm font-black text-[var(--ds-text)]">{{ reagent.name || 'Sem nome' }}</span>
+              <span class="shrink-0 font-mono text-xs font-black tabular-nums text-rose-700 dark:text-rose-300">{{ formatNumber(reagent.consumption) }}</span>
+            </li>
+          </ol>
+          <div v-else class="px-5 py-4 text-sm font-semibold text-[var(--ds-text-muted)]">Sem dados por reagente.</div>
+        </section>
+      </aside>
     </div>
 
-    <!-- DETAILED CONSUMPTION TABLE -->
-    <div class="ds-table-shell">
-      <div class="ds-table-summary">
-        <h3 class="flex items-center gap-2 text-lg font-extrabold text-[var(--ds-text)]">
-          <TableCellsIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
-          Histórico de Consumo Detalhado
-        </h3>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="min-w-full">
-          <thead class="ds-table-head">
-            <tr>
-              <th :class="tableHeadClass">
-                Data
-              </th>
-              <th :class="tableHeadClass">
-                Reagente
-              </th>
-              <th :class="tableHeadClass">
-                Quantidade Usada
-              </th>
-              <th :class="tableHeadClass">
-                Usado Por
-              </th>
-              <th :class="tableHeadClass">
-                Armazém
-              </th>
-              <th :class="tableHeadClass">
-                Observações
-              </th>
-
-              <th :class="tableHeadClass">
-                Saúde do Estoque
-                </th>
-
-                <th :class="tableHeadClass">7-Dias Tendência</th>
-                <th :class="tableHeadClass">
-                Est. de Desgaste
-                </th>
-            </tr>
-          </thead>
-          <tbody class="ds-table-body">
-            <tr
-              v-for="consumption in consumptionHistory"
-              :key="consumption.id"
-              class="ds-table-row"
-              :class="{'bg-red-50/50 dark:bg-red-950/20': isUrgent(consumption)}"
-            >
-              <td :class="tableCellClass">
-                {{ formatDate(consumption.date) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-bold text-[var(--ds-text)]">{{ consumption.reagent_name }}</div>
-                <div class="text-sm text-[var(--ds-text-muted)]">{{ consumption.item?.code || 'N/A' }}</div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="ds-chip">
-                  {{ consumption.quantity_used }} unidades
-                </span>
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-[var(--ds-text-muted)]">
-                {{ consumption.used_by || 'N/A' }}
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-[var(--ds-text-muted)]">
-                {{ consumption.warehouse?.name || 'N/A' }}
-              </td>
-              <td class="px-6 py-4 text-sm text-[var(--ds-text-muted)]">
-                {{ consumption.remarks || '-' }}
-              </td>
-
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="w-full max-w-[120px]">
-                    <div class="flex items-center justify-between mb-1">
-                    <span class="text-[10px] font-medium text-[var(--ds-text-muted)]">
-                        {{ consumption.current_stock }} / {{ consumption.min_level * 2 }} 
-                    </span>
-                    <span :class="[
-                        'text-[10px] font-bold px-1 rounded',
-                        getStockStatusColor(consumption)
-                    ]">
-                        {{ getStockStatusLabel(consumption) }}
-                    </span>
-                    </div>
-                    <div class="h-1.5 w-full rounded-full bg-[var(--ds-panel-muted)]">
-                    <div 
-                        :class="['h-1.5 rounded-full transition-all duration-500', getProgressBarColor(consumption)]"
-                        :style="{ width: getStockPercentage(consumption) + '%' }"
-                    ></div>
-                    </div>
+    <TransitionRoot as="template" :show="restockDialogOpen">
+      <Dialog as="div" class="relative z-50" @close="restockDialogOpen = false">
+        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-150" leave-from="opacity-100" leave-to="opacity-0">
+          <div class="ds-modal-backdrop fixed inset-0 transition-opacity" />
+        </TransitionChild>
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+          <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center">
+            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:scale-95">
+              <DialogPanel class="ds-modal-panel w-full max-w-lg overflow-hidden text-left transition-all">
+                <div class="px-5 py-5 sm:px-6">
+                  <span class="grid h-11 w-11 place-items-center rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+                    <ShoppingCartIcon class="h-5 w-5" />
+                  </span>
+                  <DialogTitle class="mt-4 text-lg font-black text-[var(--ds-text)]">Criar rascunho de reposição?</DialogTitle>
+                  <p class="mt-2 text-sm font-semibold leading-6 text-[var(--ds-text-muted)]">Será criado um rascunho para os itens atualmente sem stock. A ordem continuará sujeita a revisão e aprovação.</p>
                 </div>
-                </td>
-
-                <td class="px-6 py-4 whitespace-nowrap">
-                <div class="h-10 w-24">
-                    <apexchart
-                    type="area"
-                    height="40"
-                    width="100"
-                    :options="sparklineOptions"
-                    :series="[{ data: consumption.sparkline }]"
-                    />
+                <div class="flex flex-col-reverse gap-3 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+                  <button type="button" class="ds-button ds-button-secondary" :disabled="creatingDrafts" @click="restockDialogOpen = false">Cancelar</button>
+                  <button type="button" class="ds-button ds-button-primary" :disabled="creatingDrafts" @click="createRestockDraft">
+                    <ArrowPathIcon v-if="creatingDrafts" class="h-4 w-4 animate-spin" />
+                    <ShoppingCartIcon v-else class="h-4 w-4" />
+                    {{ creatingDrafts ? 'A criar...' : 'Criar rascunho' }}
+                  </button>
                 </div>
-                </td>
-
-                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                <div v-if="consumption.days_remaining !== null" class="flex flex-col">
-                    <span :class="[
-                    'font-bold',
-                    consumption.days_remaining < 7 ? 'text-red-600 dark:text-red-300' : 'text-[var(--ds-text)]'
-                    ]">
-                    {{ consumption.days_remaining }} dias restantes
-                    </span>
-                    <span class="text-[10px] text-[var(--ds-text-muted)]">
-                    Est: {{ formatDate(consumption.predicted_out_date) }}
-                    </span>
-                </div>
-                <div v-else class="text-xs italic text-[var(--ds-text-soft)]">
-                    Nenhuma utilização recente
-                </div>
-                </td>
-
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div v-if="consumptionHistory?.length === 0" class="ds-empty-state m-5 min-h-52">
-        <BeakerIcon class="mx-auto h-12 w-12 text-[var(--ds-text-soft)]" />
-        <h3 class="mt-4 text-sm font-bold text-[var(--ds-text)]">Nenhum registro de consumo encontrado</h3>
-        <p class="mt-2 text-sm text-[var(--ds-text-muted)]">Comece a usar reagentes para ver o histórico de consumo</p>
-      </div>
-    </div>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
-import DatePickerEnhanced from '@/Components/date-picker-enhanced.vue'
-import SimpleSelect from '@/Components/simple-select.vue'
+import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
+import { debounce } from 'lodash'
+import BaseInput from '@/Components/base/BaseInput.vue'
+import BaseSelect from '@/Components/base/BaseSelect.vue'
 import {
-  CalendarIcon,
-  TagIcon,
-  BuildingLibraryIcon,
   ArrowDownTrayIcon,
-  ArrowTrendingUpIcon,
-  ChartPieIcon,
-  ChartBarIcon,
+  ArrowPathIcon,
   ArrowsRightLeftIcon,
-  TrophyIcon,
+  BanknotesIcon,
   BeakerIcon,
   BellAlertIcon,
-  CurrencyDollarIcon,
-  TableCellsIcon,
+  ChartBarSquareIcon,
+  CircleStackIcon,
+  FunnelIcon,
   ShoppingCartIcon,
-  ArchiveBoxIcon
+  TrophyIcon,
+  TruckIcon,
 } from '@heroicons/vue/24/outline'
-import axios from 'axios'
 
 const props = defineProps({
-  initialData: Object,
-  categories: Array,
-  warehouses: Array,
+  initialData: { type: Object, default: () => ({}) },
+  categories: { type: Array, default: () => [] },
+  warehouses: { type: Array, default: () => [] },
 })
 
-const panelClass = 'ds-panel p-5 sm:p-6'
-const labelClass = 'ds-field-label flex items-center gap-1.5'
-const titleClass = 'flex items-center gap-2 text-base font-extrabold text-[var(--ds-text)]'
-const mutedClass = 'mt-1 text-sm text-[var(--ds-text-muted)]'
-const smallButtonClass = 'ds-button ds-button-secondary min-h-0 px-3 py-2 text-xs'
-const tableHeadClass = 'ds-table-heading px-6 py-3 text-left'
-const tableCellClass = 'ds-table-cell whitespace-nowrap px-6 py-4'
+defineEmits(['request-report'])
 
+const analyticsData = ref(normalizeData(props.initialData))
+const isLoading = ref(false)
+const requestError = ref('')
 const isDarkMode = ref(false)
-let themeObserver = null
+const restockDialogOpen = ref(false)
+const creatingDrafts = ref(false)
+let themeObserver
+let requestController
 
-const syncDarkMode = () => {
-  isDarkMode.value = document.documentElement.classList.contains('dark')
-}
-
-const chartTheme = computed(() => ({
-  theme: {
-    mode: isDarkMode.value ? 'dark' : 'light',
-  },
-  chart: {
-    background: 'transparent',
-    foreColor: isDarkMode.value ? '#d7e2dd' : '#31413b',
-  },
-  grid: {
-    borderColor: isDarkMode.value ? '#25443c' : '#ded3bf',
-    strokeDashArray: 5,
-  },
-  tooltip: {
-    theme: isDarkMode.value ? 'dark' : 'light',
-  },
-}))
-
-const filters = ref({
+const filters = reactive({
   dateRange: '30d',
   categoryId: '',
   warehouseId: '',
@@ -548,700 +412,348 @@ const filters = ref({
   endDate: '',
 })
 
-const dateRangeOptions = [
-  { value: '7d', label: 'Últimos 7 Dias' },
-  { value: '30d', label: 'Últimos 30 Dias' },
-  { value: '90d', label: 'Últimos 90 Dias' },
-  { value: '1y', label: 'Último Ano' },
-  { value: 'custom', label: 'Intervalo Personalizado' },
-]
+const metrics = computed(() => analyticsData.value.metrics ?? {})
+const consumptionTrend = computed(() => analyticsData.value.consumptionTrend)
+const stockDistribution = computed(() => analyticsData.value.stockDistribution)
+const monthlyComparison = computed(() => analyticsData.value.monthlyComparison)
+const topReagents = computed(() => analyticsData.value.topReagents)
+const consumptionHistory = computed(() => analyticsData.value.consumptionHistory)
+const supplierPerformance = computed(() => Array.isArray(metrics.value.supplierPerformance)
+  ? [...metrics.value.supplierPerformance].sort((a, b) => Number(b.on_time_rate || 0) - Number(a.on_time_rate || 0))
+  : [])
 
-const categoryOptions = computed(() => [
-  { value: '', label: 'Todas' },
-  ...(props.categories ?? []).map(category => ({
-    value: category.id,
-    label: category.name,
-  })),
+const periodLabel = computed(() => {
+  if (filters.dateRange === 'custom') {
+    if (filters.startDate && filters.endDate) return `${formatDate(filters.startDate)} - ${formatDate(filters.endDate)}`
+    return 'Defina as duas datas'
+  }
+  return ({ '7d': 'Últimos 7 dias', '30d': 'Últimos 30 dias', '90d': 'Últimos 90 dias', '1y': 'Último ano' })[filters.dateRange] || 'Últimos 30 dias'
+})
+
+const activeFilterPills = computed(() => {
+  const pills = [periodLabel.value]
+  if (filters.categoryId) pills.push(`Categoria: ${categoryName(filters.categoryId)}`)
+  if (filters.warehouseId) pills.push(`Armazém: ${warehouseName(filters.warehouseId)}`)
+  return pills
+})
+
+const hasScopedFilters = computed(() => filters.dateRange !== '30d' || Boolean(filters.categoryId || filters.warehouseId))
+const totalAlerts = computed(() => Number(metrics.value.reorderAlerts || 0) + Number(metrics.value.criticalAlerts || 0) + Number(metrics.value.expiringAlerts || 0))
+const usageChangeLabel = computed(() => {
+  const change = Number(metrics.value.usageChange || 0)
+  if (change === 0) return 'Sem variação vs. período anterior'
+  return `${change > 0 ? '+' : ''}${formatNumber(change)}% vs. período anterior`
+})
+const usageChangeTone = computed(() => Number(metrics.value.usageChange || 0) > 0
+  ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300'
+  : 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300')
+
+const metricCards = computed(() => [
+  {
+    label: 'Consumo total',
+    value: formatNumber(metrics.value.totalConsumption),
+    detail: `${formatNumber(metrics.value.monthlyConsumption)} unidades no mês`,
+    icon: BeakerIcon,
+    tone: 'text-rose-700 dark:text-rose-300',
+  },
+  {
+    label: 'Média diária',
+    value: formatNumber(metrics.value.dailyAverage),
+    detail: usageChangeLabel.value,
+    icon: ChartBarSquareIcon,
+    tone: 'text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200',
+  },
+  {
+    label: 'Carga de alerta',
+    value: totalAlerts.value,
+    detail: `${metrics.value.criticalAlerts || 0} ocorrências críticas`,
+    icon: BellAlertIcon,
+    tone: totalAlerts.value ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300',
+  },
+  {
+    label: 'Valor em stock',
+    value: formatCurrency(metrics.value.inventoryValue),
+    detail: 'Âmbito selecionado',
+    icon: BanknotesIcon,
+    tone: 'text-emerald-700 dark:text-emerald-300',
+  },
 ])
 
-const warehouseOptions = computed(() => [
-  { value: '', label: 'Todos os Armazéns' },
-  ...(props.warehouses ?? []).map(warehouse => ({
-    value: warehouse.id,
-    label: warehouse.name,
-  })),
+const alertGroups = computed(() => [
+  {
+    kicker: 'Critical control',
+    label: 'Sem stock ou expirado',
+    count: Number(metrics.value.criticalAlerts || 0),
+    items: arrayValue(metrics.value.alertDetails?.critical),
+    tone: 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300',
+    dot: 'bg-rose-500',
+  },
+  {
+    kicker: 'Replenishment',
+    label: 'Abaixo do nível mínimo',
+    count: Number(metrics.value.reorderAlerts || 0),
+    items: arrayValue(metrics.value.alertDetails?.reorder),
+    tone: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300',
+    dot: 'bg-amber-500',
+  },
+  {
+    kicker: 'Expiry control',
+    label: 'Validade próxima',
+    count: Number(metrics.value.expiringAlerts || 0),
+    items: arrayValue(metrics.value.alertDetails?.expiring),
+    tone: 'border-violet-200 bg-violet-50 text-violet-800 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300',
+    dot: 'bg-violet-500',
+  },
 ])
 
-const selectedDateRange = computed({
-  get: () => dateRangeOptions.find(option => option.value === filters.value.dateRange) ?? dateRangeOptions[1],
-  set: option => {
-    filters.value.dateRange = option?.value ?? '30d'
-    updateCharts()
-  },
-})
+const depletionRisks = computed(() => consumptionHistory.value
+  .filter((event) => event.days_remaining !== null && event.days_remaining !== undefined)
+  .sort((a, b) => Number(a.days_remaining) - Number(b.days_remaining))
+  .slice(0, 7))
 
-const selectedCategory = computed({
-  get: () => categoryOptions.value.find(option => String(option.value) === String(filters.value.categoryId)) ?? categoryOptions.value[0],
-  set: option => {
-    filters.value.categoryId = option?.value ?? ''
-    updateCharts()
-  },
-})
-
-const selectedWarehouse = computed({
-  get: () => warehouseOptions.value.find(option => String(option.value) === String(filters.value.warehouseId)) ?? warehouseOptions.value[0],
-  set: option => {
-    filters.value.warehouseId = option?.value ?? ''
-    updateCharts()
-  },
-})
-
-const updateCustomDateRange = value => {
-  filters.value.startDate = value?.start ?? ''
-  filters.value.endDate = value?.end ?? ''
-
-  if (filters.value.startDate && filters.value.endDate) {
-    updateCharts()
-  }
-}
-
-const alertDetails = ref({
-  reorder: [],
-  expiring: [],
-  critical: []
-})
-
-const isUrgent = (item) => {
-  return item.days_remaining !== null && item.days_remaining <= 5;
-};
-
-// Chart data
-const consumptionSeries = ref([])
-const stockSeries = ref([])
-const stockLabels = ref([])
-const monthlyLabels = ref([])
-const monthlySeries = ref([])
-const topReagentsSeries = ref([])
-const consumptionHistory = ref([])
-const isLoading = ref(false)
-const supplierLabels = ref([]);
-const supplierSeries = ref([]);
-
-// Chart options
-const stockChartType = ref('pie')
-const topReagentsLimit = ref(5)
-
-// Metrics
-const totalConsumption = ref(0)
-const monthlyConsumption = ref(0)
-const dailyAverage = ref(0)
-const usageChange = ref(0)
-const reorderAlerts = ref(0)
-const criticalAlerts = ref(0)
-const expiringAlerts = ref(0)
-const inventoryValue = ref(0)
-const reagentsValue = ref(0)
-const equipmentValue = ref(0)
-
-// Chart Options
-const consumptionChartOptions = computed(() => ({
-  ...chartTheme.value,
-  chart: {
-    ...chartTheme.value.chart,
-    type: 'line',
-    height: 300,
-    toolbar: {
-      show: true,
-      tools: {
-        download: true,
-        selection: true,
-        zoom: true,
-        zoomin: true,
-        zoomout: true,
-        pan: true,
-        reset: true
-      }
-    },
-    animations: {
-      enabled: true,
-      easing: 'easeinout',
-      speed: 800
-    }
-  },
-  colors: ['#143d37', '#1f7a68', '#d6a43a', '#b54747'],
-  stroke: {
-    curve: 'smooth',
-    width: 3
-  },
-  markers: {
-    size: 5,
-    hover: {
-      size: 7
-    }
-  },
-  xaxis: {
-    type: 'datetime',
-    labels: {
-      datetimeFormatter: {
-        year: 'yyyy',
-        month: "MMM 'yy",
-        day: 'dd MMM',
-        hour: 'HH:mm'
-      }
-    }
-  },
-  yaxis: {
-    title: {
-      text: 'Quantity (units)'
-    },
-    min: 0
-  },
-  tooltip: {
-    x: {
-      format: 'dd MMM yyyy'
-    }
-  },
-  grid: {
-    ...chartTheme.value.grid,
-    strokeDashArray: 5
-  },
-  fill: {
-    type: 'gradient',
-    gradient: {
-      shadeIntensity: 1,
-      opacityFrom: 0.7,
-      opacityTo: 0.3,
-      stops: [0, 90, 100]
-    }
-  }
-}))
-
-
-const stockChartOptions = computed(() => ({
-  ...chartTheme.value,
-  chart: {
-    ...chartTheme.value.chart,
-    type: stockChartType.value,
-    height: 300,
-    toolbar: { show: true }
-  },
-  colors: ['#143d37', '#1f7a68', '#4f9688', '#7ab8aa', '#d6a43a', '#ecd89e'],
-  
-  // This is used by the PIE chart
-  labels: stockLabels.value, 
-  
-  dataLabels: {
-    enabled: stockChartType.value === 'pie',
-    formatter: (val) => val.toFixed(1) + "%"
-  },
-  
-  xaxis: {
-    // This is used by the BAR chart
-    categories: stockLabels.value, 
-    labels: {
-      show: stockChartType.value === 'bar', // only show x-axis labels if it's a bar
-      rotate: -45
-    }
-  },
-  
-  yaxis: {
-    title: {
-      text: stockChartType.value === 'bar' ? 'Quantidade' : ''
-    }
-  },
-  
-  tooltip: {
-    y: {
-      formatter: (val) => val + " unidades"
-    }
-  },
-  plotOptions: {
-    pie: { donut: { size: '65%' } },
-    bar: {
-      borderRadius: 4,
-      horizontal: false,
-      columnWidth: '55%',
-    }
-  }
-}))
-
-
-const monthlyChartOptions = computed(() => ({
-  ...chartTheme.value,
-  chart: {
-    ...chartTheme.value.chart,
-    type: 'bar',
-    height: 300,
-    toolbar: { show: true }
-  },
-  colors: ['#143d37', '#d6a43a'],
-  plotOptions: {
-    bar: {
-      horizontal: false,
-      columnWidth: '55%',
-      borderRadius: 4
-    }
-  },
+const chartTextColor = computed(() => isDarkMode.value ? '#cbd5e1' : '#475569')
+const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#e2e8f0')
+const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
+const baseChartOptions = computed(() => ({
+  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
+  theme: { mode: isDarkMode.value ? 'dark' : 'light' },
+  foreColor: chartTextColor.value,
   dataLabels: { enabled: false },
-  xaxis: {
-    // FIX: Use the month names for categories
-    categories: monthlyLabels.value, 
-    labels: { rotate: -45 }
-  },
-  yaxis: {
-    title: { text: 'Quantidade (unidades)' }
-  },
-  tooltip: {
-    y: { formatter: (val) => val + " unidades" }
-  }
+  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
+  tooltip: { theme: chartTooltipTheme.value },
 }))
 
+const consumptionChartSeries = computed(() => [{
+  name: 'Consumo diário',
+  data: consumptionTrend.value.map((item) => Number(item.quantity || 0)),
+}])
+const consumptionChartOptions = computed(() => ({
+  ...baseChartOptions.value,
+  colors: ['#be123c'],
+  stroke: { curve: 'straight', width: 3 },
+  markers: { size: 3 },
+  xaxis: {
+    categories: consumptionTrend.value.map((item) => item.date),
+    labels: { rotate: -20, trim: true, style: { colors: chartTextColor.value } },
+    axisBorder: { color: chartGridColor.value },
+    axisTicks: { color: chartGridColor.value },
+  },
+  yaxis: { labels: { style: { colors: chartTextColor.value } } },
+  legend: { show: false },
+}))
+
+const stockChartSeries = computed(() => stockDistribution.value.map((item) => Number(item.quantity || 0)))
+const stockChartOptions = computed(() => ({
+  ...baseChartOptions.value,
+  labels: stockDistribution.value.map((item) => item.category || 'Sem categoria'),
+  colors: ['#0e7490', '#059669', '#7c3aed', '#d97706', '#e11d48', '#475569'],
+  legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
+  dataLabels: { formatter: (value) => `${value.toFixed(0)}%` },
+  stroke: { width: 0 },
+}))
+
+const monthlyChartSeries = computed(() => [
+  { name: 'Ano atual', data: monthlyComparison.value.map((month) => Number(month.current || 0)) },
+  { name: 'Ano anterior', data: monthlyComparison.value.map((month) => Number(month.previous || 0)) },
+])
+const monthlyChartOptions = computed(() => ({
+  ...baseChartOptions.value,
+  colors: ['#0e7490', '#7c3aed'],
+  plotOptions: { bar: { borderRadius: 4, columnWidth: '52%' } },
+  xaxis: {
+    categories: monthlyComparison.value.map((month) => month.month),
+    labels: { style: { colors: chartTextColor.value } },
+    axisBorder: { color: chartGridColor.value },
+    axisTicks: { color: chartGridColor.value },
+  },
+  yaxis: { labels: { style: { colors: chartTextColor.value } } },
+  legend: { position: 'top', horizontalAlign: 'right', labels: { colors: chartTextColor.value } },
+}))
+
+const topReagentsChartSeries = computed(() => [{
+  name: 'Consumo',
+  data: topReagents.value.slice(0, 8).map((item) => Number(item.consumption || 0)),
+}])
 const topReagentsChartOptions = computed(() => ({
-  ...chartTheme.value,
-  chart: {
-    ...chartTheme.value.chart,
-    type: 'bar',
-    height: 300,
-    toolbar: {
-      show: true
-    }
-  },
-  colors: ['#1f7a68'],
-  plotOptions: {
-    bar: {
-      borderRadius: 4,
-      horizontal: true,
-    }
-  },
-  dataLabels: {
-    enabled: true,
-    formatter: function (val) {
-      return val.toFixed(1) + " unidades"
-    },
-    offsetX: 20,
-    style: {
-      fontSize: '12px',
-      colors: ['#fff']
-    }
-  },
+  ...baseChartOptions.value,
+  colors: ['#d97706'],
+  plotOptions: { bar: { borderRadius: 4, horizontal: true } },
   xaxis: {
-    categories: topReagentsSeries.value?.length > 0 ? topReagentsSeries.value[0].data?.map(item => item.x) : [],
-    title: {
-      text: 'Quantidade Consumida'
-    }
+    categories: topReagents.value.slice(0, 8).map((item) => item.name || 'Sem nome'),
+    labels: { style: { colors: chartTextColor.value } },
+    axisBorder: { color: chartGridColor.value },
+    axisTicks: { color: chartGridColor.value },
   },
-//   yaxis: {
-//     reversed: true,
-//     labels: {
-//       maxWidth: 200
-//     }
-//   },
-  yaxis: {
-    reversed: false,
-    labels: {
-        show: true,
-        maxWidth: 160, // Prevents names from taking up half the screen
-        style: {
-        fontSize: '12px',
-        },
-        // This helps if names are extremely long
-        formatter: (value) => {
-        if (typeof value === 'string' && value.length > 20) {
-            return value.substring(0, 17) + '...';
-        }
-        return value;
-        }
-    }
-    },
-  tooltip: {
-    y: {
-      formatter: function (val) {
-        return val + " unidades consumidas"
-      }
-    }
-  }
+  yaxis: { labels: { maxWidth: 180, style: { colors: chartTextColor.value } } },
+  legend: { show: false },
 }))
 
-// const supplierChartOptions = computed(() => ({
-//   chart: { 
-//     type: 'bar', 
-//     height: 350,
-//     animations: { enabled: true } 
-//   },
-//   plotOptions: {
-//     bar: {
-//       horizontal: true,
-//       barHeight: '70%', // Ensure this isn't 0%
-//       distributed: true,
-//     }
-//   },
-//   xaxis: {
-//     categories: supplierLabels.value,
-//     min: 0,
-//     max: 100,
-//     labels: { show: true }
-//   },
-//   // Ensure colors are defined, otherwise bars might be white on white
-//   colors: ['#143d37', '#1f7a68', '#10b981', '#d6a43a', '#ef4444'],
-// }));
-
+const supplierChartSeries = computed(() => [{
+  name: 'Entregas no prazo',
+  data: supplierPerformance.value.map((supplier) => Number(supplier.on_time_rate || 0)),
+}])
 const supplierChartOptions = computed(() => ({
-  ...chartTheme.value,
-  chart: { 
-    ...chartTheme.value.chart,
-    type: 'bar', 
-    height: 350 
-  },
+  ...baseChartOptions.value,
+  colors: ['#059669'],
   annotations: {
     xaxis: [{
       x: 90,
-      borderColor: '#ef4444', // Red for the target line
-      label: {
-        borderColor: '#ef4444',
-        style: {
-          color: '#fff',
-          background: '#ef4444',
-        },
-        text: '90% Meta'
-      }
-    }]
+      borderColor: '#e11d48',
+      label: { text: 'Meta 90%', style: { color: '#fff', background: '#e11d48' } },
+    }],
   },
-  plotOptions: {
-    bar: {
-      horizontal: true,
-      distributed: true,
-      dataLabels: { position: 'top' }
-    }
-  },
-  dataLabels: {
-    enabled: true,
-    formatter: (val) => val + "%",
-    offsetX: -6,
-    style: { fontSize: '12px', colors: ['#fff'] }
-  },
+  plotOptions: { bar: { borderRadius: 4, horizontal: true } },
   xaxis: {
-    categories: supplierLabels.value,
+    categories: supplierPerformance.value.map((supplier) => supplier.supplier || 'Sem fornecedor'),
+    min: 0,
     max: 100,
+    labels: { formatter: (value) => `${value}%`, style: { colors: chartTextColor.value } },
+    axisBorder: { color: chartGridColor.value },
+    axisTicks: { color: chartGridColor.value },
   },
-  colors: ['#143d37', '#1f7a68', '#10b981', '#d6a43a', '#ef4444'],
+  yaxis: { labels: { maxWidth: 220, style: { colors: chartTextColor.value } } },
   legend: { show: false },
-  grid: chartTheme.value.grid,
-  tooltip: chartTheme.value.tooltip,
-}));
+}))
 
-const sparklineOptions = computed(() => ({
-  ...chartTheme.value,
-  chart: {
-    ...chartTheme.value.chart,
-    type: 'area',
-    sparkline: { enabled: true },
-    animations: { enabled: false } // Disable for smoother table scrolling
-  },
-  stroke: { curve: 'smooth', width: 2 },
-  fill: {
-    type: 'gradient',
-    gradient: {
-      shadeIntensity: 1,
-      opacityFrom: 0.45,
-      opacityTo: 0.05,
-    }
-  },
-  colors: ['#1f7a68'],
-  tooltip: { ...chartTheme.value.tooltip, fixed: { enabled: false }, x: { show: false }, marker: { show: false } }
-}));
-
-// Helper functions
-const formatNumber = (num) => {
-  return new Intl.NumberFormat('en-US').format(num)
+function normalizeData(data = {}) {
+  return {
+    consumptionTrend: arrayValue(data.consumptionTrend),
+    stockDistribution: arrayValue(data.stockDistribution),
+    monthlyComparison: arrayValue(data.monthlyComparison),
+    topReagents: arrayValue(data.topReagents),
+    consumptionHistory: arrayValue(data.consumptionHistory),
+    metrics: data.metrics ?? {},
+  }
 }
 
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
+function arrayValue(value) {
+  return Array.isArray(value) ? value : []
+}
+
+function syncDarkMode() {
+  if (typeof document === 'undefined') return
+  isDarkMode.value = document.documentElement.classList.contains('dark')
+}
+
+function formatNumber(value) {
+  return new Intl.NumberFormat('pt-AO', { maximumFractionDigits: 2 }).format(Number(value || 0))
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA', maximumFractionDigits: 0 }).format(Number(value || 0))
+}
+
+function formatDate(value) {
+  if (!value) return 'N/D'
+  return new Intl.DateTimeFormat('pt-AO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(value))
+}
+
+function categoryName(id) {
+  return props.categories.find((category) => String(category.id) === String(id))?.name || 'N/D'
+}
+
+function warehouseName(id) {
+  return props.warehouses.find((warehouse) => String(warehouse.id) === String(id))?.name || 'N/D'
+}
+
+function clearScopedFilters() {
+  Object.assign(filters, {
+    dateRange: '30d',
+    categoryId: '',
+    warehouseId: '',
+    startDate: '',
+    endDate: '',
   })
 }
 
-// const toggleStockChartType = () => {
-//   stockChartType.value = stockChartType.value === 'pie' ? 'bar' : 'pie'
-// }
-
-const toggleStockChartType = () => {
-  stockChartType.value = stockChartType.value === 'pie' ? 'bar' : 'pie'
-  updateCharts() // This triggers the re-formatting of stockSeries
+function queryParameters() {
+  const parameters = new URLSearchParams()
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== '' && value !== null && value !== undefined) parameters.set(key, value)
+  })
+  return parameters
 }
 
-const toggleTopReagentsLimit = () => {
-  topReagentsLimit.value = topReagentsLimit.value === 5 ? 10 : 5
-  updateCharts()
-}
+async function loadAnalytics() {
+  if (filters.dateRange === 'custom' && (!filters.startDate || !filters.endDate)) return
 
-const downloadChart = async (chartType) => {
+  requestController?.abort()
+  requestController = new AbortController()
+  isLoading.value = true
+  requestError.value = ''
+
   try {
-    const chartData = {
-      chartType,
-      filters: filters.value,
-      format: 'pdf'
-    }
-    
-    const response = await axios.post(route('vap-inventory.analytics.export'), chartData, {
-      responseType: 'blob'
+    const response = await fetch(`${route('vap-inventory.analytics.data')}?${queryParameters().toString()}`, {
+      headers: { Accept: 'application/json' },
+      signal: requestController.signal,
     })
-    
-    const url = window.URL.createObjectURL(new Blob([response.data]))
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `${chartType}_chart_${new Date().toISOString().split('T')[0]}.pdf`)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
+    if (!response.ok) throw new Error('Não foi possível atualizar os indicadores de inventário.')
+    analyticsData.value = normalizeData(await response.json())
   } catch (error) {
-    console.error('Error downloading chart:', error)
-  }
-}
-
-const updateCharts = async () => {
-
-  isLoading.value = true // Start loading  
-  try {
-    const response = await axios.get(route('vap-inventory.analytics.data'), {
-      params: filters.value
-    })
-
-    
-    const data = response.data ?? {}
-    const metrics = data.metrics ?? {}
-    const months = Array.isArray(data.monthlyComparison) ? data.monthlyComparison : []
-    const stockData = Array.isArray(data.stockDistribution) ? data.stockDistribution : []
-
-    // const performance = data.metrics.supplierPerformance || [];
-
-    const supplierPerformance = Array.isArray(metrics.supplierPerformance)
-      ? metrics.supplierPerformance
-      : []
-    const sortedPerformance = [...supplierPerformance].sort((a, b) => b.on_time_rate - a.on_time_rate);
-
-    supplierLabels.value = sortedPerformance.map(s => s.supplier);
-    supplierSeries.value = [{
-        name: 'Taxa de Entrega à Tempo %',
-        data: sortedPerformance.map(s => Number(s.on_time_rate))
-    }];
-
-    // if (performance.length > 0) {
-    //     supplierLabels.value = performance.map(s => s.supplier);
-        
-    //     // Ensure every value is explicitly cast to a Number
-    //     const numericSeriesData = performance.map(s => {
-    //         const val = parseFloat(s.on_time_rate);
-    //         return isNaN(val) ? 0 : val; // Fallback to 0 if data is corrupt
-    //     });
-
-    //     supplierSeries.value = [{
-    //         name: 'On-Time Delivery %',
-    //         data: numericSeriesData
-    //     }];
-    // }
-
-
-    // Update the new alert details
-    alertDetails.value = {
-      reorder: Array.isArray(metrics.alertDetails?.reorder) ? metrics.alertDetails.reorder : [],
-      expiring: Array.isArray(metrics.alertDetails?.expiring) ? metrics.alertDetails.expiring : [],
-      critical: Array.isArray(metrics.alertDetails?.critical) ? metrics.alertDetails.critical : [],
-    }
-    
-    // Update basic metric counts
-    reorderAlerts.value = Number(metrics.reorderAlerts ?? 0)
-    criticalAlerts.value = Number(metrics.criticalAlerts ?? 0)
-    expiringAlerts.value = Number(metrics.expiringAlerts ?? 0)
-
-
-    // 1. Save the labels (Category Names) for both chart types
-    // stockLabels.value = data.stockDistribution?.map(item => item.category) || []
-    stockLabels.value = stockData.map(item => item.category);
-
-    if (stockChartType.value === 'pie') {
-        // Pie wants: [number, number, number]
-        stockSeries.value = stockData.map(item => Number(item.quantity));
-    } else {
-        // Bar wants: [{ name: '...', data: [number, number, number] }]
-        stockSeries.value = [{
-            name: 'Quantidade de Estoque',
-            data: stockData.map(item => Number(item.quantity))
-        }];
-    }
-
-    const stockValues = stockData.map(item => item.quantity);
-    
-    // Update consumption trend chart
-    consumptionSeries.value = [{
-      name: 'Tendência de Consumo de Reagentes',
-      data: data.consumptionTrend?.map(item => ({
-        x: new Date(item.date).getTime(),
-        y: item.quantity
-      }))
-    }]
-    
-    // Update stock distribution chart
-    // if (stockChartType.value === 'pie') {
-    //   stockSeries.value = data.stockDistribution?.map(item => item.quantity)
-    // } else {
-    //   stockSeries.value = [{
-    //     name: 'Stock Quantity',
-    //     data: data.stockDistribution?.map(item => ({
-    //       x: item.category,
-    //       y: item.quantity
-    //     }))
-    //   }]
-    // }
-
-    // 2. Update stock distribution series based on type
-    // if (stockChartType.value === 'pie') {
-    //   // Pie expects a flat array of numbers: [10, 20, 30]
-    //   stockSeries.value = data.stockDistribution?.map(item => item.quantity) || []
-    // } else {
-    //   // Bar expects an array of objects: [{ name: 'Stock', data: [{x: 'Cat', y: 10}] }]
-    //   stockSeries.value = [{
-    //     name: 'Stock Quantity',
-    //     data: data.stockDistribution?.map(item => ({
-    //       x: item.category,
-    //       y: item.quantity
-    //     })) || []
-    //   }]
-    // }
-
-    if (stockChartType.value === 'pie') {
-        // Pie: [10, 20, 30]
-        stockSeries.value = stockValues;
-    } else {
-        // Bar: [{ name: 'Stock', data: [10, 20, 30] }]
-        stockSeries.value = [{
-            name: 'Quantidade de Estoque',
-            data: stockValues
-        }];
-    }
-
-    // 1. Set the X-Axis labels (Jan, Feb, Mar...)
-    monthlyLabels.value = months.map(m => m.month)
-    
-    // Update monthly comparison chart
-    // monthlySeries.value = data.monthlyComparison?.map(month => ({
-    //   name: month.month,
-    //   data: [month.current, month.previous]
-    // }))
-
-    monthlySeries.value = [
-    {
-        name: 'Ano Actual',
-        data: months.map(m => m.current)
-    },
-    {
-        name: 'Ano Anterior',
-        data: months.map(m => m.previous)
-    }
-    ]
-    
-    // Update top reagents chart
-    const topReagents = Array.isArray(data.topReagents)
-      ? data.topReagents.slice(0, topReagentsLimit.value)
-      : []
-    // topReagentsSeries.value = [{
-    //   name: 'Consumption',
-    //   data: topReagents?.map(item => ({
-    //     x: item.name,
-    //     y: item.consumption
-    //   }))
-    // }]
-
-    topReagentsSeries.value = [{
-    name: 'Consumo',
-    data: topReagents.map(item => ({
-        x: item.name,
-        y: item.consumption
-    }))
-    }]
-    
-    // Update consumption history
-    consumptionHistory.value = Array.isArray(data.consumptionHistory) ? data.consumptionHistory : []
-    
-    // Update metrics
-    totalConsumption.value = Number(metrics.totalConsumption ?? 0)
-    monthlyConsumption.value = Number(metrics.monthlyConsumption ?? 0)
-    dailyAverage.value = Number(metrics.dailyAverage ?? 0)
-    usageChange.value = Number(metrics.usageChange ?? 0)
-    reorderAlerts.value = Number(metrics.reorderAlerts ?? 0)
-    criticalAlerts.value = Number(metrics.criticalAlerts ?? 0)
-    expiringAlerts.value = Number(metrics.expiringAlerts ?? 0)
-    inventoryValue.value = Number(metrics.inventoryValue ?? 0)
-    reagentsValue.value = Number(metrics.reagentsValue ?? 0)
-    equipmentValue.value = Number(metrics.equipmentValue ?? 0)
-    
-  } catch (error) {
-    console.error('Error updating charts:', error)
+    if (error instanceof DOMException && error.name === 'AbortError') return
+    requestError.value = error instanceof Error ? error.message : 'Não foi possível atualizar os indicadores.'
   } finally {
-    isLoading.value = false // Stop loading
+    isLoading.value = false
   }
-  
 }
 
-const getStockPercentage = (item) => {
-  // We use 2x min_level as the "Full" benchmark for the bar
-  const max = item.min_level * 2;
-  const percent = (item.current_stock / max) * 100;
-  return Math.min(percent, 100); // Cap at 100%
-};
+function stockPercentage(event) {
+  const benchmark = Math.max(Number(event.min_level || 0) * 2, 1)
+  return Math.min(Math.max((Number(event.current_stock || 0) / benchmark) * 100, 0), 100)
+}
 
-const getProgressBarColor = (item) => {
-  if (item.current_stock <= 0) return 'bg-red-600';
-  if (item.current_stock <= item.min_level) return 'bg-orange-500';
-  return 'bg-green-500';
-};
+function stockLabel(event) {
+  if (Number(event.current_stock || 0) <= 0) return 'Sem stock'
+  if (Number(event.current_stock || 0) <= Number(event.min_level || 0)) return 'Stock baixo'
+  return 'Saudável'
+}
 
-const getStockStatusColor = (item) => {
-  if (item.current_stock <= 0) return 'text-red-700 bg-red-100';
-  if (item.current_stock <= item.min_level) return 'text-orange-700 bg-orange-100';
-  return 'text-green-700 bg-green-100';
-};
+function stockTone(event) {
+  if (Number(event.current_stock || 0) <= 0) return 'text-rose-700 dark:text-rose-300'
+  if (Number(event.current_stock || 0) <= Number(event.min_level || 0)) return 'text-amber-700 dark:text-amber-300'
+  return 'text-emerald-700 dark:text-emerald-300'
+}
 
-const getStockStatusLabel = (item) => {
-  if (item.current_stock <= 0) return 'SEM ESTOQUE';
-  if (item.current_stock <= item.min_level) return 'BAIXO';
-  return 'SAUDÁVEL';
-};
+function stockBarTone(event) {
+  if (Number(event.current_stock || 0) <= 0) return 'bg-rose-500'
+  if (Number(event.current_stock || 0) <= Number(event.min_level || 0)) return 'bg-amber-500'
+  return 'bg-emerald-500'
+}
+
+function coverageLabel(event) {
+  if (event.days_remaining === null || event.days_remaining === undefined) return 'Sem previsão'
+  return `${formatNumber(event.days_remaining)} dias`
+}
+
+function coverageTone(event) {
+  const days = Number(event.days_remaining)
+  if (event.days_remaining === null || event.days_remaining === undefined) return 'text-[var(--ds-text-soft)]'
+  if (days <= 7) return 'text-rose-700 dark:text-rose-300'
+  if (days <= 30) return 'text-amber-700 dark:text-amber-300'
+  return 'text-emerald-700 dark:text-emerald-300'
+}
+
+function createRestockDraft() {
+  creatingDrafts.value = true
+  router.post(route('vap-inventory.analytics.restock'), {}, {
+    preserveScroll: true,
+    onSuccess: () => { restockDialogOpen.value = false },
+    onFinish: () => { creatingDrafts.value = false },
+  })
+}
+
+watch(filters, debounce(loadAnalytics, 350), { deep: true })
 
 onMounted(() => {
   syncDarkMode()
-  themeObserver = new MutationObserver(syncDarkMode)
-  themeObserver.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ['class'],
-  })
-
-  // Set default date range
-  const endDate = new Date()
-  const startDate = new Date()
-  startDate.setDate(startDate.getDate() - 30)
-  
-  filters.value.startDate = startDate.toISOString().split('T')[0]
-  filters.value.endDate = endDate.toISOString().split('T')[0]
-  
-  updateCharts()
+  if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+    themeObserver = new MutationObserver(syncDarkMode)
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+  }
 })
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
+  requestController?.abort()
   themeObserver?.disconnect()
 })
-
-const generateDrafts = () => {
-  if (confirm('Criar rascunhos de reabastecimento para todos os itens sem estoque?')) {
-    router.post(route('vap-inventory.analytics.restock'), {}, {
-      onSuccess: () => {
-        // Optionally redirect to the orders index
-        router.visit(route('iorders.index'));
-      }
-    });
-  }
-};
-
 </script>

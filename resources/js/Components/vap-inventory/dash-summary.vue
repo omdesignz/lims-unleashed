@@ -1,82 +1,102 @@
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 mt-4">
-    <div @click="goTo('critical')" class="cursor-pointer bg-white border-l-4 border-red-600 p-4 shadow-sm hover:shadow-md transition-shadow">
+  <div class="mb-8 mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+    <button
+      v-for="card in cards"
+      :key="card.type"
+      type="button"
+      class="ds-card border-l-4 p-4 text-left transition hover:border-[rgb(var(--primary-500-rgb))]"
+      :class="card.borderClass"
+      @click="goTo(card.type)"
+    >
       <div class="flex items-center">
-        <div class="p-2 bg-red-100 rounded-lg">
-          <ExclamationTriangleIcon class="h-6 w-6 text-red-600" />
-        </div>
-        <div class="ml-4">
-          <p class="text-sm font-medium text-gray-500 uppercase">Problemas Críticos</p>
-          <p class="text-2xl font-bold text-gray-900">{{ summary.critical }} <span class="text-sm font-normal text-gray-400">Itens</span></p>
-        </div>
+        <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--ds-panel-subtle)]">
+          <component :is="card.icon" class="h-6 w-6" :class="card.iconClass" />
+        </span>
+        <span class="ml-4 min-w-0">
+          <span class="block text-sm font-bold uppercase text-[var(--ds-text-soft)]">{{ card.label }}</span>
+          <span class="mt-1 block text-2xl font-bold text-[var(--ds-text)]">
+            {{ card.value }}
+            <span class="text-sm font-semibold text-[var(--ds-text-soft)]">{{ card.unit }}</span>
+          </span>
+        </span>
       </div>
-      <p class="mt-2 text-xs text-red-600 font-semibold">Lotes de Estoque ou Reagentes Expirados →</p>
-    </div>
-
-    <div @click="goTo('reorder')" class="cursor-pointer bg-white border-l-4 border-orange-500 p-4 shadow-sm hover:shadow-md transition-shadow">
-      <div class="flex items-center">
-        <div class="p-2 bg-orange-100 rounded-lg">
-          <ShoppingCartIcon class="h-6 w-6 text-orange-500" />
-        </div>
-        <div class="ml-4">
-          <p class="text-sm font-medium text-gray-500 uppercase">Pedidos Pendentes</p>
-          <p class="text-2xl font-bold text-gray-900">{{ summary.toOrder }} <span class="text-sm font-normal text-gray-400">Baixo de Estoque</span></p>
-        </div>
-      </div>
-      <p class="mt-2 text-xs text-orange-600 font-semibold">Gerar rascunhos agora →</p>
-    </div>
-
-    <div @click="goTo('orders')" class="cursor-pointer bg-white border-l-4 border-blue-600 p-4 shadow-sm hover:shadow-md transition-shadow">
-      <div class="flex items-center">
-        <div class="p-2 bg-blue-100 rounded-lg">
-          <TruckIcon class="h-6 w-6 text-blue-600" />
-        </div>
-        <div class="ml-4">
-          <p class="text-sm font-medium text-gray-500 uppercase">Envios Atrasados</p>
-          <p class="text-2xl font-bold text-gray-900">{{ summary.delayed }} <span class="text-sm font-normal text-gray-400">Pedidos</span></p>
-        </div>
-      </div>
-      <p class="mt-2 text-xs text-blue-600 font-semibold">Seguir atrasado com os fornecedores →</p>
-    </div>
+      <span class="mt-2 block text-xs font-bold" :class="card.iconClass">{{ card.caption }} -></span>
+    </button>
   </div>
 </template>
 
 <script setup>
-import { ExclamationTriangleIcon, ShoppingCartIcon, TruckIcon } from '@heroicons/vue/24/outline';
-import { router } from '@inertiajs/vue3';
-import { ref, onMounted } from 'vue';
-// Import your icons...
+import { router } from '@inertiajs/vue3'
+import { ExclamationTriangleIcon, ShoppingCartIcon, TruckIcon } from '@heroicons/vue/24/outline'
+import { computed, onMounted, ref } from 'vue'
 
 const props = defineProps({
-    summary: {
-        type: Object,
-        default: () => ({})
-    }
-});
+  summary: {
+    type: Object,
+    default: () => ({}),
+  },
+})
 
-const summary = ref(props.summary);
+const summary = ref(props.summary)
 
-const goTo = (type) => {
+const cards = computed(() => [
+  {
+    type: 'critical',
+    label: 'Problemas críticos',
+    value: summary.value.critical ?? 0,
+    unit: 'Itens',
+    caption: 'Lotes ou reagentes vencidos',
+    icon: ExclamationTriangleIcon,
+    borderClass: 'border-rose-500',
+    iconClass: 'text-rose-700 dark:text-rose-300',
+  },
+  {
+    type: 'reorder',
+    label: 'Pedidos pendentes',
+    value: summary.value.toOrder ?? 0,
+    unit: 'Stock baixo',
+    caption: 'Gerar rascunhos agora',
+    icon: ShoppingCartIcon,
+    borderClass: 'border-amber-500',
+    iconClass: 'text-amber-700 dark:text-amber-300',
+  },
+  {
+    type: 'orders',
+    label: 'Envios atrasados',
+    value: summary.value.delayed ?? 0,
+    unit: 'Pedidos',
+    caption: 'Seguir com fornecedores',
+    icon: TruckIcon,
+    borderClass: 'border-[rgb(var(--primary-500-rgb))]',
+    iconClass: 'text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200',
+  },
+])
+
+function goTo(type) {
   const routes = {
     critical: route('vap-inventory.items.index', { filter: 'critical' }),
     reorder: route('vap-inventory.items.index', { filter: 'low_stock' }),
-    orders: route('vap-inventory.orders.index', { status: 'delayed' })
-  };
-  router.visit(routes[type]);
-};
+    orders: route('vap-inventory.orders.index', { status: 'delayed' }),
+  }
 
-const fetchSummary = () => {
-  fetch(route('vap-inventory.analytics.summary'))
-    .then(response => response.json())
-    .then(results => {
-      summary.value = results;
+  router.visit(routes[type])
+}
+
+async function fetchSummary() {
+  try {
+    const response = await fetch(route('vap-inventory.analytics.summary'), {
+      headers: { Accept: 'application/json' },
     })
-    .catch(error => {
-      console.error('Error fetching summary:', error);
-    });
-};
+
+    if (response.ok) {
+      summary.value = await response.json()
+    }
+  } catch {
+    // Keep server-provided summary when the live refresh is unavailable.
+  }
+}
 
 onMounted(() => {
-  fetchSummary();
-});
+  fetchSummary()
+})
 </script>

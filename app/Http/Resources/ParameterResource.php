@@ -22,6 +22,7 @@ class ParameterResource extends JsonResource
             'price' => $this->price,
             'tax_percentage' => $this->tax_percentage,
             'charge_tax' => $this->charge_tax,
+            'withhold_tax' => $this->withhold_tax,
             'active' => $this->active,
             'exemption_id' => TaxExemptionResource::make($this->exemption),
             'exemption' => TaxExemptionResource::make($this->exemption)?->code ?? null,
@@ -41,12 +42,12 @@ class ParameterResource extends JsonResource
             'links' => [
                 'edit_path' => route('parameters.edit', $this->id),
                 'delete_path' => route('parameters.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('parameters.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

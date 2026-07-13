@@ -1,182 +1,182 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-      <div class="relative isolate px-6 py-8 text-slate-950 dark:text-white sm:px-8">
-        <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(var(--color-primary-500),0.18),transparent_34%),linear-gradient(135deg,rgba(248,250,252,1),rgba(240,253,250,0.86))] dark:bg-[radial-gradient(circle_at_top_right,rgba(var(--color-primary-400),0.16),transparent_36%),linear-gradient(135deg,rgba(15,23,42,1),rgba(20,83,45,0.58))]"></div>
-        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div class="max-w-4xl">
-            <Link :href="route('proficiency_tests.index')" class="inline-flex items-center gap-2 text-sm font-semibold text-primary-700 transition hover:text-primary-900 dark:text-primary-200 dark:hover:text-primary-100">
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div class="min-w-0 max-w-4xl">
+            <Link :href="route('proficiency_tests.index')" class="ds-button ds-button-ghost px-0">
               <ArrowLeftIcon class="h-4 w-4" />
               Voltar aos ensaios de proficiência
             </Link>
-            <div class="mt-5 flex flex-wrap gap-2">
-              <span class="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 dark:bg-slate-950/60 dark:text-slate-200 dark:ring-slate-700">{{ schemeLabel(test.scheme_type) }}</span>
-              <span class="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700 ring-1 ring-primary-200 dark:bg-primary-500/10 dark:text-primary-200 dark:ring-primary-500/20">{{ roleLabel(test.role) }}</span>
-              <span class="rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset" :class="statusBadgeClass(test.status)">{{ statusLabel(test.status) }}</span>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <span class="ds-badge ds-badge-neutral">{{ schemeLabel(test.scheme_type) }}</span>
+              <span class="ds-badge ds-badge-info">{{ roleLabel(test.role) }}</span>
+              <span class="ds-badge" :class="statusBadgeClass(test.status)">{{ statusLabel(test.status) }}</span>
             </div>
-            <h1 class="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">{{ test.name }}</h1>
-            <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-300">
+            <p class="ds-kicker mt-5">Garantia da validade dos resultados</p>
+            <h1 class="ds-heading mt-1 text-2xl">{{ test.name }}</h1>
+            <p class="ds-copy mt-2 max-w-3xl text-sm">
               {{ test.scope || 'Registe participantes, parâmetros, resultados, z-scores e evidências para manter a rastreabilidade da ronda.' }}
             </p>
           </div>
 
-          <div class="rounded-3xl border border-white/70 bg-white/80 p-5 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-950/55">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Resultado global</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{{ outcomeLabel(form.outcome) }}</p>
-            <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">z-score {{ form.z_score || '—' }}</p>
+          <div class="ds-command-surface w-full p-4 lg:max-w-xs">
+            <p class="ds-kicker">Resultado global</p>
+            <p class="ds-heading mt-2 text-xl">{{ outcomeLabel(form.outcome) }}</p>
+            <p class="ds-copy mt-1 text-sm">z-score {{ form.z_score || '—' }}</p>
           </div>
-        </div>
       </div>
 
-      <div class="grid gap-4 border-t border-slate-200 bg-slate-50/80 px-6 py-5 dark:border-slate-800 dark:bg-slate-950/40 sm:grid-cols-2 xl:grid-cols-4 sm:px-8">
-        <article v-for="card in summaryCards" :key="card.label" class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
+        <div v-for="card in summaryCards" :key="card.label" class="border-b border-[var(--ds-border)] px-4 py-3 sm:[&:nth-child(odd)]:border-r sm:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0">
           <div class="flex items-center justify-between gap-3">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{{ card.label }}</p>
-            <component :is="card.icon" class="h-5 w-5 text-primary-600 dark:text-primary-300" />
+            <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ card.label }}</dt>
+            <component :is="card.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
           </div>
-          <p class="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">{{ card.value }}</p>
-          <p class="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-300">{{ card.caption }}</p>
-        </article>
-      </div>
+          <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ card.value }}</dd>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.caption }}</p>
+        </div>
+      </dl>
     </section>
 
     <section class="grid gap-5 xl:grid-cols-3">
-      <article class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+      <article class="ds-panel overflow-hidden p-5">
         <div class="flex items-center justify-between gap-3">
           <div>
-            <h2 class="text-lg font-semibold text-slate-950 dark:text-white">Distribuição dos z-scores</h2>
-            <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">Comparação por participante e parâmetro.</p>
+            <h2 class="ds-heading text-base">Distribuição dos z-scores</h2>
+            <p class="ds-copy mt-1 text-sm">Comparação por participante e parâmetro.</p>
           </div>
-          <ChartBarIcon class="h-6 w-6 text-primary-600 dark:text-primary-300" />
+          <ChartBarIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
         </div>
         <ChartWrapper class="mt-5" type="bar" height="340" :series="zScoreChartSeries" :options="zScoreChartOptions" />
       </article>
 
-      <article class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+      <article class="ds-panel overflow-hidden p-5">
         <div class="flex items-center justify-between gap-3">
           <div>
-            <h2 class="text-lg font-semibold text-slate-950 dark:text-white">Performance</h2>
-            <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">Classificação automática por z-score.</p>
+            <h2 class="ds-heading text-base">Performance</h2>
+            <p class="ds-copy mt-1 text-sm">Classificação automática por z-score.</p>
           </div>
-          <CheckBadgeIcon class="h-6 w-6 text-primary-600 dark:text-primary-300" />
+          <CheckBadgeIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
         </div>
         <ChartWrapper class="mt-5" type="donut" height="320" :series="performanceChartSeries" :options="performanceChartOptions" />
       </article>
 
-      <article class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+      <article class="ds-panel overflow-hidden p-5">
         <div class="flex items-center justify-between gap-3">
           <div>
-            <h2 class="text-lg font-semibold text-slate-950 dark:text-white">Estado dos participantes</h2>
-            <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">Acompanhamento operacional da submissão e revisão.</p>
+            <h2 class="ds-heading text-base">Estado dos participantes</h2>
+            <p class="ds-copy mt-1 text-sm">Acompanhamento operacional da submissão e revisão.</p>
           </div>
-          <UserGroupIcon class="h-6 w-6 text-primary-600 dark:text-primary-300" />
+          <UserGroupIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
         </div>
         <ChartWrapper class="mt-5" type="donut" height="320" :series="participantStatusChartSeries" :options="participantStatusChartOptions" />
       </article>
     </section>
 
     <form class="space-y-6" @submit.prevent="submit">
-      <section class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+      <section class="ds-panel overflow-hidden p-5">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 class="text-lg font-semibold text-slate-950 dark:text-white">Participantes e parâmetros</h2>
-            <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">Use este quadro para organizar rondas internas ou externas antes de lançar resultados.</p>
+            <p class="ds-kicker">Configuração da ronda</p>
+            <h2 class="ds-heading mt-1 text-base">Participantes e parâmetros</h2>
+            <p class="ds-copy mt-1 text-sm">Organize a ronda interna ou externa antes de lançar resultados.</p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <a :href="route('proficiency_tests.results.template', test.id)" class="action-button">
+            <a :href="route('proficiency_tests.results.template', test.id)" class="ds-button ds-button-secondary">
               <DocumentArrowDownIcon class="h-4 w-4" />
               Template Excel
             </a>
-            <button type="button" class="action-button" @click="triggerImport">
+            <button type="button" class="ds-button ds-button-secondary" @click="triggerImport">
               <ArrowUpTrayIcon class="h-4 w-4" />
               Importar resultados
             </button>
             <input ref="importInput" type="file" accept=".xlsx,.xls,.csv,.txt" class="hidden" @change="importResults" />
-            <button type="button" class="action-button" @click="addParticipant">Adicionar participante</button>
-            <button type="button" class="action-button" @click="addParameter">Adicionar parâmetro</button>
-            <button type="button" class="action-button-primary" @click="ensureResultRows">Sincronizar matriz</button>
+            <button type="button" class="ds-button ds-button-secondary" @click="addParticipant">Adicionar participante</button>
+            <button type="button" class="ds-button ds-button-secondary" @click="addParameter">Adicionar parâmetro</button>
+            <button type="button" class="ds-button ds-button-primary" @click="ensureResultRows">Sincronizar matriz</button>
           </div>
         </div>
 
         <div class="mt-5 grid gap-5 xl:grid-cols-2">
           <div class="space-y-3">
-            <p class="section-label">Participantes</p>
-            <div v-for="(participant, index) in form.participants" :key="`participant-${index}`" class="grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/50 sm:grid-cols-[0.8fr,1.2fr,0.9fr,1fr,auto]">
-              <input v-model="participant.code" class="form-field" placeholder="Código" @blur="ensureResultRows" />
-              <input v-model="participant.name" class="form-field" placeholder="Laboratório / participante" @blur="ensureResultRows" />
-              <select v-model="participant.status" class="form-field">
+            <p class="ds-kicker">Participantes</p>
+            <div v-for="(participant, index) in form.participants" :key="`participant-${index}`" class="ds-card grid gap-2 p-3 sm:grid-cols-[0.8fr,1.2fr,0.9fr,1fr,auto]">
+              <input v-model="participant.code" class="ds-field" placeholder="Código" @blur="ensureResultRows" />
+              <input v-model="participant.name" class="ds-field" placeholder="Laboratório / participante" @blur="ensureResultRows" />
+              <select v-model="participant.status" class="ds-field">
                 <option v-for="option in participantStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
               </select>
-              <input v-model="participant.contact" class="form-field" placeholder="Contacto" />
-              <button type="button" class="danger-button" @click="removeParticipant(index)">Remover</button>
+              <input v-model="participant.contact" class="ds-field" placeholder="Contacto" />
+              <button type="button" class="ds-table-action ds-table-action-danger" @click="removeParticipant(index)">Remover</button>
             </div>
           </div>
 
           <div class="space-y-3">
-            <p class="section-label">Parâmetros</p>
-            <div v-for="(parameter, index) in form.parameters" :key="`parameter-${index}`" class="grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/50 sm:grid-cols-[0.8fr,1.2fr,0.7fr,0.9fr,auto]">
-              <input v-model="parameter.code" class="form-field" placeholder="Código" @blur="ensureResultRows" />
-              <input v-model="parameter.name" class="form-field" placeholder="Parâmetro" @blur="ensureResultRows" />
-              <input v-model="parameter.unit" class="form-field" placeholder="Unidade" />
-              <input v-model="parameter.assigned_value" type="number" step="0.0001" class="form-field" placeholder="Valor alvo" />
-              <button type="button" class="danger-button" @click="removeParameter(index)">Remover</button>
+            <p class="ds-kicker">Parâmetros</p>
+            <div v-for="(parameter, index) in form.parameters" :key="`parameter-${index}`" class="ds-card grid gap-2 p-3 sm:grid-cols-[0.8fr,1.2fr,0.7fr,0.9fr,auto]">
+              <input v-model="parameter.code" class="ds-field" placeholder="Código" @blur="ensureResultRows" />
+              <input v-model="parameter.name" class="ds-field" placeholder="Parâmetro" @blur="ensureResultRows" />
+              <input v-model="parameter.unit" class="ds-field" placeholder="Unidade" />
+              <input v-model="parameter.assigned_value" type="number" step="0.0001" class="ds-field" placeholder="Valor alvo" />
+              <button type="button" class="ds-table-action ds-table-action-danger" @click="removeParameter(index)">Remover</button>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-        <div class="flex flex-col gap-3 border-b border-slate-200 px-5 py-5 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+      <section class="ds-panel overflow-hidden">
+        <div class="flex flex-col gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 class="text-lg font-semibold text-slate-950 dark:text-white">Registo de resultados</h2>
-            <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">Registe valor obtido, z-score, observações e classificação por resultado.</p>
+            <p class="ds-kicker">Matriz analítica</p>
+            <h2 class="ds-heading mt-1 text-base">Registo de resultados</h2>
+            <p class="ds-copy mt-1 text-sm">Registe valor obtido, z-score, observações e classificação por resultado.</p>
           </div>
-          <span class="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+          <span class="ds-badge ds-badge-neutral">
             {{ resultCount }} resultados
           </span>
         </div>
 
-        <div v-if="form.participant_results.length" class="divide-y divide-slate-200 dark:divide-slate-800">
+        <div v-if="form.participant_results.length" class="divide-y divide-[var(--ds-border)]">
           <article v-for="(participant, participantIndex) in form.participant_results" :key="`result-${participantIndex}`" class="p-5">
             <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p class="text-sm font-semibold text-slate-950 dark:text-white">{{ participant.name || participant.code || 'Participante sem nome' }}</p>
-                <p class="text-xs text-slate-500 dark:text-slate-400">{{ participant.code || 'Sem código' }}</p>
+                <p class="text-sm font-bold text-[var(--ds-text)]">{{ participant.name || participant.code || 'Participante sem nome' }}</p>
+                <p class="text-xs font-semibold text-[var(--ds-text-soft)]">{{ participant.code || 'Sem código' }}</p>
               </div>
             </div>
 
-            <div class="mt-4 overflow-x-auto">
-              <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-                <thead class="bg-slate-50 dark:bg-slate-950/60">
+            <div class="ds-table-shell mt-4 overflow-x-auto">
+              <table class="min-w-full divide-y divide-[var(--ds-border)]">
+                <thead class="ds-table-head">
                   <tr>
-                    <th class="result-th">Parâmetro</th>
-                    <th class="result-th">Valor</th>
-                    <th class="result-th">Unidade</th>
-                    <th class="result-th">Valor alvo</th>
-                    <th class="result-th">z-score</th>
-                    <th class="result-th">Estado</th>
-                    <th class="result-th">Observações</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">Parâmetro</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">Valor</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">Unidade</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">Valor alvo</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">z-score</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">Estado</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">Observações</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
-                  <tr v-for="(result, resultIndex) in participant.results" :key="`result-${participantIndex}-${resultIndex}`">
-                    <td class="result-td min-w-56">
-                      <p class="font-semibold text-slate-900 dark:text-white">{{ result.parameter || result.parameter_code || 'Parâmetro' }}</p>
-                      <p class="text-xs text-slate-500 dark:text-slate-400">{{ result.parameter_code || 'Sem código' }}</p>
+                <tbody class="divide-y divide-[var(--ds-border)]">
+                  <tr v-for="(result, resultIndex) in participant.results" :key="`result-${participantIndex}-${resultIndex}`" class="ds-table-row">
+                    <td class="ds-table-cell min-w-56 px-4 py-3">
+                      <p class="font-bold text-[var(--ds-text)]">{{ result.parameter || result.parameter_code || 'Parâmetro' }}</p>
+                      <p class="text-xs text-[var(--ds-text-soft)]">{{ result.parameter_code || 'Sem código' }}</p>
                     </td>
-                    <td class="result-td min-w-36"><input v-model="result.value" class="form-field" placeholder="0.00" /></td>
-                    <td class="result-td min-w-28"><input v-model="result.unit" class="form-field" placeholder="Un." /></td>
-                    <td class="result-td min-w-36"><input v-model="result.assigned_value" type="number" step="0.0001" class="form-field" placeholder="0.00" /></td>
-                    <td class="result-td min-w-32"><input v-model="result.z_score" type="number" step="0.01" class="form-field" placeholder="0.00" /></td>
-                    <td class="result-td min-w-44">
-                      <select v-model="result.outcome" class="form-field">
+                    <td class="ds-table-cell min-w-36 px-4 py-3"><input v-model="result.value" class="ds-field" placeholder="0.00" /></td>
+                    <td class="ds-table-cell min-w-28 px-4 py-3"><input v-model="result.unit" class="ds-field" placeholder="Un." /></td>
+                    <td class="ds-table-cell min-w-36 px-4 py-3"><input v-model="result.assigned_value" type="number" step="0.0001" class="ds-field" placeholder="0.00" /></td>
+                    <td class="ds-table-cell min-w-32 px-4 py-3"><input v-model="result.z_score" type="number" step="0.01" class="ds-field" placeholder="0.00" /></td>
+                    <td class="ds-table-cell min-w-44 px-4 py-3">
+                      <select v-model="result.outcome" class="ds-field">
                         <option value="pending">Pendente</option>
                         <option value="satisfactory">Satisfatório</option>
                         <option value="questionable">Questionável</option>
                         <option value="unsatisfactory">Insatisfatório</option>
                       </select>
                     </td>
-                    <td class="result-td min-w-64"><input v-model="result.notes" class="form-field" placeholder="Observações / evidência" /></td>
+                    <td class="ds-table-cell min-w-64 px-4 py-3"><input v-model="result.notes" class="ds-field" placeholder="Observações / evidência" /></td>
                   </tr>
                 </tbody>
               </table>
@@ -184,13 +184,13 @@
           </article>
         </div>
 
-        <div v-else class="px-6 py-14 text-center">
-          <p class="text-sm font-semibold text-slate-950 dark:text-white">Sem matriz de resultados</p>
-          <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Adicione participantes e parâmetros, depois sincronize a matriz.</p>
+        <div v-else class="ds-empty-state m-5 px-6 py-12 text-center">
+          <p class="text-sm font-bold text-[var(--ds-text)]">Sem matriz de resultados</p>
+          <p class="ds-copy mt-2 text-sm">Adicione participantes e parâmetros, depois sincronize a matriz.</p>
         </div>
       </section>
 
-      <section class="grid gap-5 lg:grid-cols-2">
+      <section class="ds-panel grid gap-5 p-5 lg:grid-cols-2">
         <ComboboxEnhanced
           v-model="selectedOutcome"
           :options="outcomeOptions"
@@ -199,16 +199,16 @@
           :has-error="Boolean(form.errors.outcome)"
         />
         <div class="space-y-2">
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">z-score global</label>
-          <input v-model="form.z_score" type="number" step="0.01" class="form-field" />
-          <p v-if="form.errors.z_score" class="text-xs font-medium text-red-600 dark:text-red-400">{{ form.errors.z_score }}</p>
+          <label class="ds-field-label">z-score global</label>
+          <input v-model="form.z_score" type="number" step="0.01" class="ds-field" />
+          <p v-if="form.errors.z_score" class="ds-field-error">{{ form.errors.z_score }}</p>
         </div>
         <BaseTextarea v-model="form.corrective_actions" label="Ações corretivas" :rows="4" :error="form.errors.corrective_actions" />
         <BaseTextarea v-model="form.notes" label="Notas e evidências" :rows="4" :error="form.errors.notes" />
       </section>
 
-      <div class="sticky bottom-4 z-10 flex justify-end">
-        <button type="submit" class="rounded-2xl bg-primary-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-primary-500 dark:hover:bg-primary-400" :disabled="form.processing">
+      <div class="ds-command-surface sticky bottom-4 z-10 flex justify-end p-3">
+        <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing">
           {{ form.processing ? 'A guardar resultados...' : 'Guardar resultados e evidência' }}
         </button>
       </div>
@@ -221,7 +221,6 @@ import BaseTextarea from '@/Components/base/BaseTextarea.vue'
 import ChartWrapper from '@/Components/apex-chart/ChartWrapper.vue'
 import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import {
   ArrowLeftIcon,
   ArrowUpTrayIcon,
@@ -389,12 +388,12 @@ function participantStatusLabel(value) {
 
 function statusBadgeClass(status) {
   return {
-    planned: 'bg-slate-100 text-slate-700 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700',
-    in_progress: 'bg-sky-100 text-sky-700 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-200 dark:ring-sky-500/20',
-    completed: 'bg-blue-100 text-blue-700 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-200 dark:ring-blue-500/20',
-    reviewed: 'bg-amber-100 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-500/20',
-    closed: 'bg-emerald-100 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/20',
-  }[status] || 'bg-slate-100 text-slate-700 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700'
+    planned: 'ds-badge-neutral',
+    in_progress: 'ds-badge-info',
+    completed: 'ds-badge-success',
+    reviewed: 'ds-badge-warning',
+    closed: 'ds-badge-success',
+  }[status] || 'ds-badge-neutral'
 }
 
 function addParticipant() {
@@ -498,116 +497,3 @@ onMounted(() => {
   }
 })
 </script>
-
-<style scoped>
-.form-field {
-  display: block;
-  width: 100%;
-  border-radius: 1rem;
-  border: 1px solid rgb(203 213 225);
-  background-color: rgb(255 255 255);
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  color: rgb(15 23 42);
-  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
-  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
-}
-
-.form-field:focus {
-  border-color: rgb(var(--color-primary-500));
-  box-shadow: 0 0 0 3px rgb(var(--color-primary-500) / 0.18);
-  outline: none;
-}
-
-:global(.dark) .form-field {
-  border-color: rgb(51 65 85);
-  background-color: rgb(15 23 42 / 0.72);
-  color: rgb(241 245 249);
-}
-
-.action-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: 1rem;
-  border: 1px solid rgb(203 213 225);
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: rgb(51 65 85);
-  transition: background-color 150ms ease, border-color 150ms ease;
-}
-
-.action-button:hover {
-  background-color: rgb(248 250 252);
-}
-
-:global(.dark) .action-button {
-  border-color: rgb(51 65 85);
-  color: rgb(226 232 240);
-}
-
-:global(.dark) .action-button:hover {
-  background-color: rgb(30 41 59);
-}
-
-.action-button-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: 1rem;
-  background-color: rgb(var(--color-primary-600));
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: white;
-  transition: background-color 150ms ease;
-}
-
-.action-button-primary:hover {
-  background-color: rgb(var(--color-primary-700));
-}
-
-.danger-button {
-  border-radius: 0.875rem;
-  padding: 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: rgb(225 29 72);
-}
-
-:global(.dark) .danger-button {
-  color: rgb(253 164 175);
-}
-
-.section-label,
-.result-th {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgb(100 116 139);
-}
-
-:global(.dark) .section-label,
-:global(.dark) .result-th {
-  color: rgb(148 163 184);
-}
-
-.result-th {
-  padding: 1rem;
-  text-align: left;
-}
-
-.result-td {
-  padding: 1rem;
-  font-size: 0.875rem;
-  color: rgb(51 65 85);
-}
-
-:global(.dark) .result-td {
-  color: rgb(203 213 225);
-}
-</style>

@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class AnalysisCategoryRequest extends FormRequest
 {
-     /**
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
@@ -17,36 +20,27 @@ class AnalysisCategoryRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
-        if ($this->isMethod('post')) {
-            $rules = [
-                'name' => 'required|min:1|unique:analysis_categories,name',
-                'description' => 'nullable',
-                'code' => 'required|min:1',
-                'department_id' => 'required|exists:departments,id',
-            ];
-        } else {
-            $rules = [
-                'name' => 'required|min:1|unique:analysis_categories,name,' . request()->category,
-                'description' => 'nullable',
-                'code' => 'required|min:1',
-                'department_id' => 'required|exists:departments,id',
-
-            ];
-        }
-
-        return $rules;
+        return [
+            'name' => [
+                'required',
+                'string',
+                'min:1',
+                Rule::unique('analysis_categories', 'name')->ignore($this->route('category')),
+            ],
+            'description' => ['nullable', 'string'],
+            'code' => ['required', 'string', 'min:1'],
+            'department_id' => ['required', Rule::exists('departments', 'id')->whereNull('deleted_at')],
+        ];
     }
 
     /**
      * Get custom attributes for validator errors.
-     *
-     * @return array
      */
-    public function attributes()
+    public function attributes(): array
     {
         return [
             'name' => trans('gestlab.general.labels.analysis_categories.name'),
@@ -59,13 +53,16 @@ class AnalysisCategoryRequest extends FormRequest
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
+     * @param  Validator  $validator
      */
-    public function prepareForValidation()
+    public function prepareForValidation(): void
     {
+        $department = $this->input('department_id');
+
         $this->merge([
-            'department_id' => !is_null(request()->department_id) ? request()->department_id['value'] : null,
+            'department_id' => is_array($department) || is_object($department)
+                ? data_get($department, 'value')
+                : ($department === '' ? null : $department),
         ]);
     }
 }

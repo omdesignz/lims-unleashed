@@ -3,87 +3,59 @@
 namespace App\Http\Requests;
 
 use App\Models\Profile;
+use App\Models\TaxExemption;
+use App\Models\TaxType;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class MatrixRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
-        if ($this->isMethod('post')) {
-            $rules = [
-                'code' => 'required|min:1|unique:matrixes,code',
-                'description' => 'nullable',
-                'price' => 'nullable',
-                'fixed_price' => 'required',
-                'tax_percentage' => 'required',
-                'charge_tax' => 'required|boolean',
-                'withhold_tax' => 'required|boolean',
-                'exemption_id' => [
-                    Rule::requiredIf(function () { 
-                        return $this->input('charge_tax') == false; 
-                    })
-                ], 'exists:tax_exemptions,id',
-                'exemption_code' => 'nullable',
-                'tax_id' => [
-                    Rule::requiredIf(function () { 
-                        return $this->input('charge_tax') == true; 
-                    })
-                ], 'exists:tax_types,id',
-                'profiles' => 'required|array|min:1',
-                'profiles.*.profile_id' => 'required|exists:profiles,id',
-                'profiles.*.profile' => 'nullable',
-            ];
-        } else {
-            $rules = [
-                'code' => 'required|min:1|unique:matrixes,code,' . request()->matrix,
-                'description' => 'nullable',
-                'price' => 'nullable',
-                'fixed_price' => 'required',
-                'tax_percentage' => 'required',
-                'charge_tax' => 'required|boolean',
-                'withhold_tax' => 'required|boolean',
-                'exemption_id' => [
-                    Rule::requiredIf(function () { 
-                        return $this->input('charge_tax') == false; 
-                    })
-                ], 'exists:tax_exemptions,id',
-                'exemption_code' => 'nullable',
-                'tax_id' => [
-                    Rule::requiredIf(function () { 
-                        return $this->input('charge_tax') == true; 
-                    })
-                ], 'exists:tax_types,id',
-                'profiles' => 'required|array|min:1',
-                'profiles.*.profile_id' => 'required|exists:profiles,id',
-                'profiles.*.profile' => 'nullable',
-
-            ];
-        }
-
-        return $rules;
+        return [
+            'code' => [
+                'required',
+                'string',
+                'min:1',
+                Rule::unique('matrixes', 'code')->ignore($this->route('matrix')),
+            ],
+            'description' => ['nullable', 'string'],
+            'price' => ['nullable', 'numeric', 'min:0'],
+            'fixed_price' => ['required', 'numeric', 'min:0'],
+            'tax_percentage' => ['required', 'numeric', 'min:0'],
+            'charge_tax' => ['required', 'boolean'],
+            'withhold_tax' => ['required', 'boolean'],
+            'exemption_id' => [
+                Rule::requiredIf(fn (): bool => ! $this->boolean('charge_tax')),
+                'nullable',
+                Rule::exists('tax_exemptions', 'id')->whereNull('deleted_at'),
+            ],
+            'exemption_code' => ['nullable', 'string'],
+            'tax_id' => [
+                Rule::requiredIf(fn (): bool => $this->boolean('charge_tax')),
+                'nullable',
+                Rule::exists('tax_types', 'id')->whereNull('deleted_at'),
+            ],
+            'profiles' => ['required', 'array', 'min:1'],
+            'profiles.*.profile_id' => [
+                'required',
+                Rule::exists('profiles', 'id')->whereNull('deleted_at'),
+            ],
+            'profiles.*.profile' => ['nullable', 'string'],
+        ];
     }
 
-    /**
-     * Get custom attributes for validator errors.
-     *
-     * @return array
-     */
-    public function attributes()
+    public function attributes(): array
     {
         return [
             'code' => trans('gestlab.general.labels.matrixes.code'),
@@ -100,61 +72,76 @@ class MatrixRequest extends FormRequest
     }
 
     /**
- * Get the error messages for the defined validation rules.
- *
- * @return array<string, string>
- */
-public function messages(): array
-{
-    return [
-        'profiles.*.profile_id.required' => 'É obrigatória a indicação de um valor para o campo perfil',
-    ];
-}
-
-    /**
-     * Configure the validator instance.
-     *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
+     * @return array<string, string>
      */
-    public function prepareForValidation()
+    public function messages(): array
     {
-        if(request()->boolean('charge_tax')) {
+        return [
+            'profiles.*.profile_id.required' => 'É obrigatória a indicação de um valor para o campo perfil',
+        ];
+    }
 
-            $this->merge([
-                'charge_tax' => request()->boolean('charge_tax') ? 1 : 0,
-                'withhold_tax' => request()->boolean('withhold_tax') ? 1 : 0,
-                'exemption_id' => null,
-                'exemption_code' => null,
-                'tax_id' => !is_null(request()->tax_id) ? request()->tax_id['value'] : null,
-                'tax_percentage' => !is_null(request()->tax_id) ? request()->tax_id['percent'] : 0, 
-                'profiles' => is_null(request()->profiles) ? [] : collect(request()->profiles)->map(function($item) {
-                    return [
-                        'profile_id' => $item['profile_id']['value'],
-                        'profile' => $item['profile_id']['label']
-                    ];
-                })->toArray()
-            ]);
+    public function prepareForValidation(): void
+    {
+        $chargeTax = $this->boolean('charge_tax');
+        $taxType = $this->input('tax_id');
+        $exemption = $this->input('exemption_id');
+        $profiles = $this->input('profiles');
+        $taxId = $chargeTax ? $this->optionValue($taxType) : null;
+        $exemptionId = $chargeTax ? null : $this->optionValue($exemption);
+        $profileRows = is_array($profiles)
+            ? collect($profiles)->map(function (mixed $item): mixed {
+                if (! is_array($item)) {
+                    return $item;
+                }
 
-        } else {
+                return ['profile_id' => $this->optionValue(data_get($item, 'profile_id'))];
+            })
+            : collect();
+        $profileIds = $profileRows
+            ->pluck('profile_id')
+            ->filter(fn (mixed $profileId): bool => is_numeric($profileId))
+            ->map(fn (mixed $profileId): int => (int) $profileId)
+            ->unique()
+            ->values();
+        $catalogProfiles = Profile::query()
+            ->with('parameters')
+            ->whereIn('id', $profileIds)
+            ->get()
+            ->keyBy('id');
+        $catalogTaxType = $taxId ? TaxType::query()->find($taxId) : null;
+        $catalogExemption = $exemptionId ? TaxExemption::query()->find($exemptionId) : null;
 
-            $this->merge([
-                'charge_tax' => request()->boolean('charge_tax') ? 1 : 0,
-                'withhold_tax' => request()->boolean('withhold_tax') ? 1 : 0,
-                'exemption_id' => !is_null(request()->exemption_id) ? request()->exemption_id['value'] : null,
-                'exemption_code' => !is_null(request()->exemption_id) ? request()->exemption_id['label'] : null,
-                'tax_id' => null,
-                'tax_percentage' => 0,
-                'profiles' => is_null(request()->profiles) ? [] : collect(request()->profiles)->map(function($item) {
-                    return [
-                        'profile_id' => $item['profile_id']['value'],
-                        'profile' => $item['profile_id']['label']
-                    ];
-                })->toArray()
-            ]);
+        $this->merge([
+            'charge_tax' => $chargeTax,
+            'withhold_tax' => $this->boolean('withhold_tax'),
+            'price' => (float) $catalogProfiles->sum->price_based_on_parameters,
+            'exemption_id' => $exemptionId,
+            'exemption_code' => $catalogExemption?->code,
+            'tax_id' => $taxId,
+            'tax_percentage' => (float) ($catalogTaxType?->percent ?? 0),
+            'profiles' => is_array($profiles) ? $profileRows->map(function (mixed $item) use ($catalogProfiles): mixed {
+                if (! is_array($item)) {
+                    return $item;
+                }
 
+                $profileId = data_get($item, 'profile_id');
+
+                return [
+                    'profile_id' => $profileId,
+                    'profile' => $catalogProfiles->get((int) $profileId)?->name,
+                ];
+            })->all() : $profiles,
+        ]);
+    }
+
+    private function optionValue(mixed $option): mixed
+    {
+        if (is_array($option) || is_object($option)) {
+            return data_get($option, 'value');
         }
-        
+
+        return $option === '' ? null : $option;
     }
 
     public function after(): array
@@ -176,18 +163,18 @@ public function messages(): array
                 }
 
                 $profiles = Profile::query()
-                    ->with(['type:id,department_id,name', 'parameters:id'])
+                    ->with(['type:id,department_id,name', 'parameters:id,active'])
                     ->whereIn('id', $profileIds)
                     ->get();
 
-                $profilesWithoutParameters = $profiles
-                    ->filter(fn (Profile $profile) => $profile->parameters->isEmpty())
+                $profilesWithoutActiveParameters = $profiles
+                    ->filter(fn (Profile $profile) => $profile->parameters->where('active', true)->isEmpty())
                     ->pluck('name');
 
-                if ($profilesWithoutParameters->isNotEmpty()) {
+                if ($profilesWithoutActiveParameters->isNotEmpty()) {
                     $validator->errors()->add(
                         'profiles',
-                        'Todos os perfis da matriz devem possuir parâmetros ativos configurados. Inválidos: ' . $profilesWithoutParameters->implode(', ')
+                        'Todos os perfis da matriz devem possuir parâmetros ativos configurados. Inválidos: '.$profilesWithoutActiveParameters->implode(', ')
                     );
                 }
 

@@ -1,390 +1,324 @@
 <script setup>
+import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import RecordsTable from "@/Components/records-table.vue";
+import SlideOver from "@/Components/slide-over.vue";
+import Combobox from "@/Components/combobox.vue";
+import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import RecordsTable from '@/Components/records-table.vue';
-import confirmDialog from "@/Components/confirm-dialog.vue";
-import { TransitionRoot } from '@headlessui/vue'
-import slideOver from '@/Components/slide-over.vue';
-import { ref, computed } from "vue";
-import { useForm, router } from "@inertiajs/vue3";
-import { trans } from 'laravel-vue-i18n';
-import combobox from "@/Components/combobox.vue";
-import { EyeIcon, MinusIcon, PlusIcon } from "@heroicons/vue/24/outline";
+import {
+  ArrowTopRightOnSquareIcon,
+  BuildingStorefrontIcon,
+  CubeIcon,
+  ExclamationTriangleIcon,
+  EyeIcon,
+  MapPinIcon,
+} from "@heroicons/vue/24/outline";
+import { Link, router, useForm } from "@inertiajs/vue3";
+import { trans } from "laravel-vue-i18n";
+import { computed, ref } from "vue";
 
+defineOptions({ layout: Layout });
 
 const props = defineProps({
-    record: Object,
-    fields: Array,
-    model: String,
-    abilities: Array,
-    query: Object,
-    slideOverEdit: {
-      type: Boolean,
-      default: false
-    }
+  record: { type: Object, default: () => ({ data: [], meta: {} }) },
+  fields: { type: Array, default: () => [] },
+  model: String,
+  abilities: { type: Array, default: () => [] },
+  query: { type: Object, default: () => ({}) },
+  slideOverEdit: { type: Boolean, default: true },
 });
 
-defineOptions({
-  layout: Layout
-});
-
-let form = useForm({
-    qty_available: '',
-    min_stock_level: '',
-    reorder_point: '',
-    description: '',
-    warehouse_id: '',
-    item_id: '',
-    name: '',
-    category_id: '',
-    id: null,
-});
-
-let stockForm = useForm({
-    qty: 0,
-    id: null,
-});
-
-const actionId = ref(null);
-
-const slideOverDescription = computed(() => {
-  return !form.id ? trans('gestlab.slideover.creating.description') + form?.name : trans('gestlab.slideover.updating.description') + form?.name;
-});
-
-const slideOverTitle = computed(() => {
-  return !form.id ? trans('gestlab.slideover.creating.title') : trans('gestlab.slideover.updating.description');
-});
-
-const confirmationDialogTitle = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_title.' + actionId.value);
-})
-
-
-const confirmationDialogDescription = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_description.' + actionId.value);
-})
-
-
-const openslideover = ref(false);
-
-let actions = [
-  {
-    id: null,
-    label: 'gestlab.actions.bulk_actions_text'
-  },
-  {
-    id: 'delete',
-    label: 'gestlab.actions.delete'
-  },
-  {
-    id: 'restore',
-    label: 'gestlab.actions.restore'
-  },
+const { hasPermission } = usePermission();
+const editorOpen = ref(false);
+const selectedAction = ref(null);
+const showActionConfirmation = ref(false);
+const rows = computed(() => props.record?.data ?? []);
+const totalRecords = computed(() => props.record?.meta?.total ?? rows.value.length);
+const lowStockCount = computed(() => rows.value.filter((row) => Number(row.qty_available) <= Number(row.reorder_point)).length);
+const outOfStockCount = computed(() => rows.value.filter((row) => Number(row.qty_available) <= 0).length);
+const tracksThresholds = computed(() => Number(form.category_id) !== 1);
+const editorTitle = computed(() => form.id ? "Editar posição de stock" : "Nova posição de stock");
+const editorDescription = computed(() => form.id
+  ? "Atualize os limites de reposição desta combinação de item e armazém."
+  : "Associe um item a um local de armazenamento e defina os limites operacionais.");
+const confirmationDialogTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${selectedAction.value}`));
+const confirmationDialogDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${selectedAction.value}`));
+const metrics = computed(() => [
+  { label: "Posições", value: totalRecords.value, detail: "item por localização", icon: CubeIcon },
+  { label: "Em reposição", value: lowStockCount.value, detail: "nesta página", icon: ExclamationTriangleIcon },
+  { label: "Sem stock", value: outOfStockCount.value, detail: "ação imediata", icon: BuildingStorefrontIcon },
+]);
+const actions = [
+  { id: null, label: "gestlab.actions.bulk_actions_text" },
+  { id: "delete", label: "gestlab.actions.delete" },
+  { id: "restore", label: "gestlab.actions.restore" },
 ];
 
-const close = () => {
-    openslideover.value = false;
-    form.clearErrors();
-    form.reset();
+const form = useForm({
+  qty_available: 0,
+  min_stock_level: 0,
+  reorder_point: 0,
+  warehouse_id: null,
+  item_id: null,
+  name: "",
+  category_id: null,
+  id: null,
+});
+
+function openCreate() {
+  form.reset();
+  form.clearErrors();
+  form.defaults({
+    qty_available: 0,
+    min_stock_level: 0,
+    reorder_point: 0,
+    warehouse_id: null,
+    item_id: null,
+    name: "",
+    category_id: null,
+    id: null,
+  });
+  editorOpen.value = true;
 }
 
-const showDeleteConfirmation = ref(false);
-const showDeleteConfirmationSlideover = ref(false);
-
-const openSlideoverWithData = (data) => {
-    // form.reset();
-
-    openslideover.value = true;
-    form.id = data.id;
-    form.qty_available = data.qty_available;
-    form.min_stock_level = data.min_stock_level;
-    form.reorder_point = data.reorder_point;
-    form.warehouse_id = {
-      value: data.warehouse_id,
-      label: data.warehouse
-    };
-    form.category_id = data.category_id;
-    form.item_id = {
-      value: data.item_id,
-      label: data.item,
-      category_id: data.category_id
-    };
-    form.name = data.name;
-    
+function openEdit(data) {
+  form.clearErrors();
+  form.defaults({
+    qty_available: Number(data.qty_available ?? 0),
+    min_stock_level: Number(data.min_stock_level ?? 0),
+    reorder_point: Number(data.reorder_point ?? 0),
+    warehouse_id: { value: data.warehouse_id, label: data.warehouse },
+    item_id: { value: data.item_id, label: data.item, category_id: data.category_id },
+    name: data.item ?? "",
+    category_id: data.category_id ?? null,
+    id: data.id,
+  });
+  form.reset();
+  editorOpen.value = true;
 }
 
-let submit = () => {
-
-    if(!form.id) {
-      form.post(route('inventory.store'), {
-          preserveScroll: true,
-          preserveState: false,
-          onError: () => {
-            showDeleteConfirmationSlideover.value = false
-            openslideover.value = true
-          },
-          onSuccess: () => {
-            openslideover.value = false;
-            form.reset()
-          },
-      });
-    } else {
-      form.put(route('inventory.update',{inventory: form.id}), {
-          preserveScroll: true,
-          preserveState: false,
-          onError: () => {
-            showDeleteConfirmationSlideover.value = false
-            openslideover.value = true
-          },
-          onSuccess: () => {
-            openslideover.value = false;
-            form.reset()
-          },
-      });
-    }
-    
-  }
-
-let decrementStock = () => {
-    stockForm.qty = form.qty_available;
-    stockForm.id = form.id;
-    
-    stockForm.post(route('inventory.decrement'), {
-        preserveScroll: true,
-        preserveState: false,
-        onSuccess: () => {
-            stockForm.reset()
-        },
-    });
+function closeEditor() {
+  editorOpen.value = false;
+  form.clearErrors();
 }
 
+function selectItem(option) {
+  form.item_id = option;
+  form.category_id = option?.category_id ?? null;
+  form.name = option?.label ?? "";
 
-  const confirmAction = () => {
-    executeAction(actionId.value);
-  }
-
-  const executeAction = (actionId) => {
-  const recordIds = props.record.data.filter(record => record.selected).map(record => record.id);
-
-  if(!recordIds.length) return;
-
-  switch (actionId) {
-    case 'delete':
-      router.get(route('inventory.destroy'), {
-          recordIds: recordIds
-      }, {
-        preserveState: false,
-        preserveScroll: true,
-        onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            actionId = null;
-        }
-      });
-      showDeleteConfirmation.value = false;
-    break;  
-
-    case 'restore':
-        router.get(route('inventory.restore'), {
-          recordIds: recordIds
-        }, {
-            preserveState:false,
-            preserveScroll: true,
-            onSuccess: () => {
-                showDeleteConfirmation.value = false;
-                actionId = null;
-            }
-        });
-        showDeleteConfirmation.value = false;
+  if (Number(form.category_id) === 1) {
+    form.min_stock_level = 0;
+    form.reorder_point = 0;
   }
 }
 
 function loadItems(query, setOptions) {
-    fetch('/iitems/getInventoryItem?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => { 
-            return {
-            value: result.id,
-            label: result.name,
-            category_id: result.category_id,
-            };
-        })
-        );
-    });
+  return fetch(`${route("iitems.getInventoryItem")}?q=${encodeURIComponent(query)}`)
+    .then((response) => response.ok ? response.json() : [])
+    .then((results) => setOptions(results.map((item) => ({
+      value: item.id,
+      label: item.name,
+      category_id: item.category_id,
+    }))));
 }
 
 function loadWarehouses(query, setOptions) {
-    fetch('/iwarehouses/getInventoryItemWarehouse?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-        setOptions(
-        results.map(result => {
-            return {
-            value: result.id,
-            label: result.name,
-            };
-        })
-        );
-    });
+  return fetch(`${route("iwarehouses.getInventoryItemWarehouse")}?q=${encodeURIComponent(query)}`)
+    .then((response) => response.ok ? response.json() : [])
+    .then((results) => setOptions(results.map((warehouse) => ({
+      value: warehouse.id,
+      label: warehouse.name,
+    }))));
+}
+
+function submit() {
+  const options = {
+    preserveScroll: true,
+    onSuccess: closeEditor,
+  };
+
+  if (form.id) {
+    form.put(route("inventory.update", { inventory: form.id }), options);
+    return;
+  }
+
+  form.post(route("inventory.store"), options);
+}
+
+function requestBulkAction(action) {
+  selectedAction.value = action;
+  showActionConfirmation.value = true;
+}
+
+function closeActionConfirmation() {
+  selectedAction.value = null;
+  showActionConfirmation.value = false;
+}
+
+function executeBulkAction() {
+  const recordIds = rows.value.filter((row) => row.selected).map((row) => row.id);
+
+  if (!recordIds.length || !["delete", "restore"].includes(selectedAction.value)) {
+    closeActionConfirmation();
+    return;
+  }
+
+  router.get(route(`inventory.${selectedAction.value}`), { recordIds }, {
+    preserveScroll: true,
+    onFinish: closeActionConfirmation,
+  });
 }
 </script>
+
 <template>
-<div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
-    <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.inventory.page_title') }}</h3>
-    <p class="mt-2 max-w-4xl text-sm text-gray-500"></p>
-</div>
-
-<records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="openslideover=true" @slideover-on="openSlideoverWithData">
-  <template #actions="{ id, data }">
-      <Link
-        :href="route('inventory.show', {inventory: id})"
-        class="text-ft-gray hover:text-blue-900 transform transition-all duration-200 hover:scale-150"
-      >
-      <EyeIcon class="h-4 w-4" />
-      </Link>
-
-      <Link
-        v-if="data.qty_available > 0"
-        method="POST"
-        :href="route('inventory.decrement', {id: id, qty: 1})"
-        :data="{ id: id, qty: 1 }"
-        class="text-ft-gray hover:text-blue-900 transform transition-all duration-200 hover:scale-150"
-      >
-      <MinusIcon class="h-4 w-4" />
-      </Link>
-
-      <Link
-        v-if="data.qty_available > 0"
-        method="POST"
-        :href="route('inventory.increment', {id: id, qty: 1})"
-        :data="{ id: id, qty: 1 }"
-        class="text-ft-gray hover:text-blue-900 transform transition-all duration-200 hover:scale-150"
-      >
-      <PlusIcon class="h-4 w-4" />
-      </Link>
-    </template>
-</records-table> <br>
-
-<slide-over v-if="openslideover" :class="commercialDocumentThemeClasses" @close="close" :title="slideOverTitle" :description="slideOverDescription">
-    <template #content>
-        <div class="space-y-6 py-6 sm:space-y-0 sm:divide-y sm:divide-gray-200 sm:py-0">
-
-            <!-- Item -->
-            <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="item_id" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.inventory.item_id') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <combobox :hasError="form.errors.item_id" v-model="form.item_id" :load-options="loadItems" @update:modelValue="form.category_id = $event.category_id, form.name = $event.label"/>
-                  <p v-if="form.errors.item_id" class="mt-2 text-sm text-red-600" id="name-error">{{ form.errors.item_id }}</p>
-                </div>
-              </div>
-
-              <!-- Warehouse -->
-            <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="warehouse_id" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.inventory.warehouse_id') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <combobox :hasError="form.errors.warehouse_id" v-model="form.warehouse_id" :load-options="loadWarehouses"/>
-                  <p v-if="form.errors.warehouse_id" class="mt-2 text-sm text-red-600" id="name-error">{{ form.errors.warehouse_id }}</p>
-                </div>
-              </div>
-
-              <!-- Quantity Available -->
-              <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="qty_available" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.inventory.qty_available') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <input v-model="form.qty_available" type="number" name="qty_available" id="qty_available" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.qty_available ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
-                  <p v-if="form.errors.qty_available" class="mt-2 text-sm text-red-600" id="qty_available-error">{{ form.errors.qty_available }}</p>
-                </div>
-              </div>
-
-              <!-- Minimum Stock Level -->
-              <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5" v-if="form.item_id?.category_id !== 1">
-                <div>
-                  <label for="min_stock_level" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.inventory.min_stock_level') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <input v-model="form.min_stock_level" type="number" name="min_stock_level" id="min_stock_level" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.min_stock_level ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
-                  <p v-if="form.errors.min_stock_level" class="mt-2 text-sm text-red-600" id="min_stock_level-error">{{ form.errors.min_stock_level }}</p>
-                </div>
-              </div>
-
-              <!-- Reorder Poiont -->
-              <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5" v-if="form.item_id?.category_id !== 1">
-                <div>
-                  <label for="reorder_point" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.inventory.reorder_point') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <input v-model="form.reorder_point" type="number" name="reorder_point" id="reorder_point" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.reorder_point ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
-                  <p v-if="form.errors.reorder_point" class="mt-2 text-sm text-red-600" id="reorder_point-error">{{ form.errors.reorder_point }}</p>
-                </div>
-              </div>
-
+  <div class="space-y-6">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div class="flex items-start gap-3">
+          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+            <BuildingStorefrontIcon class="h-5 w-5" />
+          </span>
+          <div>
+            <p class="ds-kicker">Materiais e consumíveis</p>
+            <h1 class="ds-heading mt-1 text-2xl">Stock por armazém</h1>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Saldo disponível, níveis mínimos e pontos de reposição por item e localização controlada.</p>
+          </div>
         </div>
-    </template>
-
-    <template #action_buttons>
-        <div class="flex justify-end space-x-3">
-        <button type="button" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" @click="openslideover = false; form.reset()">{{ $t('gestlab.general.buttons.cancel') }}</button>
-        <!-- <TransitionRoot
-            :show="!form.isDirty"
-            enter="transition-opacity duration-75"
-            enter-from="opacity-0"
-            enter-to="opacity-100"
-            leave="transition-opacity duration-150"
-            leave-from="opacity-100"
-            leave-to="opacity-0"
-        >
-            I will appear and disappear.
-        </TransitionRoot> -->
-        <button v-if="form.isDirty" @click="showDeleteConfirmationSlideover = true" :disabled="form.processing" type="button" class="inline-flex justify-center rounded-md bg-blue-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-900">{{ !form.id ? $t('gestlab.general.buttons.submit') : $t('gestlab.general.buttons.update') }}</button>
-        </div>
-    </template>
-</slide-over>
-
-<confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
-
-<confirm-dialog size="sm:max-w-2xl" alignment="sm:items-start" @canceled="showDeleteConfirmationSlideover=false" @close="showDeleteConfirmationSlideover=false" @confirmed="submit" v-if="showDeleteConfirmationSlideover" :title="$t('gestlab.actions.confirmation_dialog_title.default')" :description="$t('gestlab.actions.confirmation_dialog_description.default')" confirm="Sim" cancel="Não">
-    <div class="mt-4">
-      <div class="font-semibold inline-flex px-2 py-1 leading-4 text-xs rounded-full text-white bg-blue-900 sm:text-xs mb-2"><p class="text-xs">{{ $t('gestlab.general.labels.summary') }}</p></div>
-      <div>
-        <div class="px-4 sm:px-0 rounded-full text-white bg-blue-900">
-          <!-- <h3 class="text-base font-semibold leading-7 text-gray-900">Resumo</h3>
-          <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-500">Personal details and application.</p> -->
-        </div>
-        <div class="mt-6 border-t border-gray-100">
-          <dl class="divide-y divide-gray-100">
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.inventory.item_id') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.item_id?.label }}</dd>
-            </div>
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.inventory.warehouse_id') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.warehouse_id?.label }}</dd>
-            </div>
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.inventory.qty_available') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.qty_available }}</dd>
-            </div>
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0" v-if="form.item_id?.category_id !== 1">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.inventory.min_stock_level') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.min_stock_level }}</dd>
-            </div>
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0" v-if="form.item_id?.category_id !== 1">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.inventory.reorder_point') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.reorder_point }}</dd>
-            </div>
-            
-          </dl>
-        </div>
+        <Link :href="route('itransactions.index')" class="ds-button ds-button-secondary">
+          <ArrowUpIcon class="h-4 w-4" />
+          Ver movimentos
+        </Link>
       </div>
 
-    </div>
-  </confirm-dialog>
+      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
+        <div v-for="metric in metrics" :key="metric.label" class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r sm:last:border-r-0">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
+              <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd>
+              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
+            </div>
+            <component :is="metric.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
+          </div>
+        </div>
+      </dl>
+    </section>
 
+    <RecordsTable
+      :record="record"
+      :model="model"
+      :abilities="abilities"
+      :fields="fields"
+      :slide-over-edit="slideOverEdit"
+      :query="query"
+      :actions="actions"
+      @execute-action="requestBulkAction"
+      @create-record="openCreate"
+      @slideover-on="openEdit"
+    >
+      <template #actions="{ id, data }">
+        <Link
+          v-if="hasPermission('view_inventory')"
+          :href="route('inventory.show', { inventory: id })"
+          class="ds-icon-button"
+          title="Consultar posição"
+          aria-label="Consultar posição"
+        >
+          <EyeIcon class="h-4 w-4" />
+        </Link>
+        <Link
+          v-if="hasPermission('view_iitems')"
+          :href="route('vap-inventory.items.show', { item: data.item_id })"
+          class="ds-icon-button"
+          title="Abrir fluxo controlado do item"
+          aria-label="Abrir fluxo controlado do item"
+        >
+          <ArrowTopRightOnSquareIcon class="h-4 w-4" />
+        </Link>
+      </template>
+    </RecordsTable>
+
+    <SlideOver v-if="editorOpen" :title="editorTitle" :description="editorDescription" @close="closeEditor">
+      <template #content>
+        <form id="inventory-position-form" class="divide-y divide-[var(--ds-border)]" @submit.prevent="submit">
+          <section class="space-y-5 px-6 py-6">
+            <div>
+              <p class="ds-kicker">Identificação</p>
+              <h2 class="ds-heading mt-1 text-base">Item e localização</h2>
+            </div>
+            <div>
+              <Combobox
+                :model-value="form.item_id"
+                title-label="Item de inventário"
+                placeholder="Pesquisar item"
+                :has-error="Boolean(form.errors.item_id)"
+                :load-options="loadItems"
+                @update:model-value="selectItem"
+              />
+              <p v-if="form.errors.item_id" class="ds-field-error mt-2">{{ form.errors.item_id }}</p>
+            </div>
+            <div>
+              <Combobox
+                v-model="form.warehouse_id"
+                title-label="Armazém"
+                placeholder="Pesquisar localização"
+                :has-error="Boolean(form.errors.warehouse_id)"
+                :load-options="loadWarehouses"
+              />
+              <p v-if="form.errors.warehouse_id" class="ds-field-error mt-2">{{ form.errors.warehouse_id }}</p>
+            </div>
+          </section>
+
+          <section class="space-y-5 px-6 py-6">
+            <div>
+              <p class="ds-kicker">Controlo de stock</p>
+              <h2 class="ds-heading mt-1 text-base">Saldo e reposição</h2>
+            </div>
+            <div>
+              <label for="qty_available" class="ds-field-label mb-2 block">Quantidade disponível</label>
+              <input id="qty_available" v-model.number="form.qty_available" type="number" min="0" class="ds-field">
+              <p v-if="form.errors.qty_available" class="ds-field-error mt-2">{{ form.errors.qty_available }}</p>
+            </div>
+            <div v-if="tracksThresholds" class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label for="min_stock_level" class="ds-field-label mb-2 block">Nível mínimo</label>
+                <input id="min_stock_level" v-model.number="form.min_stock_level" type="number" min="0" class="ds-field">
+                <p v-if="form.errors.min_stock_level" class="ds-field-error mt-2">{{ form.errors.min_stock_level }}</p>
+              </div>
+              <div>
+                <label for="reorder_point" class="ds-field-label mb-2 block">Ponto de reposição</label>
+                <input id="reorder_point" v-model.number="form.reorder_point" type="number" min="0" class="ds-field">
+                <p v-if="form.errors.reorder_point" class="ds-field-error mt-2">{{ form.errors.reorder_point }}</p>
+              </div>
+            </div>
+            <div class="flex gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
+              <MapPinIcon class="mt-0.5 h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" />
+              <p class="text-sm font-medium leading-6 text-[var(--ds-text-muted)]">Cada posição representa um único item num único armazém. Os limites alimentam alertas e decisões de reposição.</p>
+            </div>
+          </section>
+        </form>
+      </template>
+
+      <template #action_buttons>
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button type="button" class="ds-button ds-button-secondary" @click="closeEditor">Cancelar</button>
+          <button type="submit" form="inventory-position-form" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
+            {{ form.processing ? "A guardar..." : (form.id ? "Atualizar posição" : "Criar posição") }}
+          </button>
+        </div>
+      </template>
+    </SlideOver>
+
+    <ConfirmDialog
+      v-if="showActionConfirmation"
+      :title="confirmationDialogTitle"
+      :description="confirmationDialogDescription"
+      :variant="selectedAction === 'restore' ? 'question' : 'danger'"
+      confirm="Sim"
+      cancel="Não"
+      @canceled="closeActionConfirmation"
+      @confirmed="executeBulkAction"
+    />
+  </div>
 </template>

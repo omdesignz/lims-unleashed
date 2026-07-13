@@ -542,65 +542,266 @@ class VAPInventoryItemController extends Controller
 
     public function calibrationSchedule(Request $request)
     {
-        $query = InventoryItem::with(['category', 'type'])
+        $today = now()->startOfDay();
+        $todayDate = $today->toDateString();
+        $in30Days = now()->addDays(30)->toDateString();
+        $in31Days = now()->addDays(31)->toDateString();
+        $in90Days = now()->addDays(90)->toDateString();
+        $status = in_array($request->input('status'), ['overdue', 'due_soon', 'upcoming'], true)
+            ? $request->input('status')
+            : '';
+        $sortBy = in_array($request->input('sort_by'), ['next_calibration_date', 'last_calibration_date', 'name'], true)
+            ? $request->input('sort_by')
+            : 'next_calibration_date';
+        $sortDirection = $request->input('sort_direction') === 'desc' ? 'desc' : 'asc';
+        $search = trim((string) $request->input('search', ''));
+
+        $query = InventoryItem::with([
+            'category:id,name',
+            'type:id,name',
+        ])
             ->whereNotNull('next_calibration_date')
-            ->when($request->status, function ($query, $status) {
+            ->when($status, function ($query, $status) use ($todayDate, $in30Days) {
                 if ($status === 'overdue') {
-                    $query->where('next_calibration_date', '<', now());
+                    $query->whereDate('next_calibration_date', '<', $todayDate);
                 } elseif ($status === 'due_soon') {
-                    $query->whereBetween('next_calibration_date', [now(), now()->addDays(30)]);
+                    $query->whereBetween('next_calibration_date', [$todayDate, $in30Days]);
                 } elseif ($status === 'upcoming') {
-                    $query->where('next_calibration_date', '>', now()->addDays(30));
+                    $query->whereDate('next_calibration_date', '>', $in30Days);
                 }
             })
-            ->orderBy('next_calibration_date');
+            ->when($request->input('category_id'), fn ($query, $categoryId) => $query->where('category_id', $categoryId))
+            ->when($request->input('type_id'), fn ($query, $typeId) => $query->where('type_id', $typeId))
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($searchQuery) use ($search) {
+                    $searchQuery->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhere('internal_code', 'like', "%{$search}%")
+                        ->orWhere('serial_number', 'like', "%{$search}%")
+                        ->orWhere('model', 'like', "%{$search}%")
+                        ->orWhere('brand', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy($sortBy, $sortDirection)
+            ->orderBy('name');
+
+        $items = $query
+            ->paginate($request->per_page ?? 20)
+            ->withQueryString()
+            ->through(fn (InventoryItem $item) => $this->formatCalibrationScheduleRow($item, $today));
+
+        $stats = InventoryItem::query()
+            ->whereNotNull('next_calibration_date')
+            ->selectRaw('count(*) as total_scheduled')
+            ->selectRaw('count(case when next_calibration_date < ? then 1 end) as total_due', [$todayDate])
+            ->selectRaw('count(case when next_calibration_date between ? and ? then 1 end) as due_soon', [$todayDate, $in30Days])
+            ->selectRaw('count(case when next_calibration_date between ? and ? then 1 end) as due_31_90', [$in31Days, $in90Days])
+            ->first();
 
         return Inertia::render('VAPInventory/Calibration/Schedule', [
-            'items' => $query->paginate($request->per_page ?? 20)->withQueryString(),
-            'filters' => $request->only(['status', 'sort_by', 'sort_direction']),
+            'items' => $items,
+            'filters' => [
+                'status' => $status,
+                'type_id' => $request->input('type_id', ''),
+                'category_id' => $request->input('category_id', ''),
+                'search' => $search,
+                'sort_by' => $sortBy,
+                'sort_direction' => $sortDirection,
+            ],
+            'categories' => ItemCategory::active()
+                ->orderBy('name')
+                ->get(['id', 'name']),
+            'types' => InventoryItemType::active()
+                ->orderBy('name')
+                ->get(['id', 'name']),
             'stats' => [
-                'total_due' => InventoryItem::whereNotNull('next_calibration_date')
-                    ->where('next_calibration_date', '<', now())
-                    ->count(),
-                'due_soon' => InventoryItem::whereNotNull('next_calibration_date')
-                    ->whereBetween('next_calibration_date', [now(), now()->addDays(30)])
-                    ->count(),
-                'total_scheduled' => InventoryItem::whereNotNull('next_calibration_date')->count(),
+                'total_due' => (int) ($stats->total_due ?? 0),
+                'due_soon' => (int) ($stats->due_soon ?? 0),
+                'due_31_90' => (int) ($stats->due_31_90 ?? 0),
+                'total_scheduled' => (int) ($stats->total_scheduled ?? 0),
             ],
         ]);
     }
 
+    private function formatCalibrationScheduleRow(InventoryItem $item, Carbon $today): array
+    {
+        $nextCalibrationDate = $item->next_calibration_date?->copy()->startOfDay();
+        $daysToCalibration = $nextCalibrationDate
+            ? (int) $today->diffInDays($nextCalibrationDate, false)
+            : null;
+
+        return [
+            'id' => $item->id,
+            'name' => $item->name,
+            'code' => $item->code,
+            'internal_code' => $item->internal_code,
+            'serial_number' => $item->serial_number,
+            'brand' => $item->brand,
+            'model' => $item->model,
+            'location' => $item->location,
+            'software' => $item->software,
+            'firmware' => $item->firmware,
+            'last_calibration_date' => $item->last_calibration_date?->toDateString(),
+            'next_calibration_date' => $item->next_calibration_date?->toDateString(),
+            'metrology_review_due_at' => $item->metrology_review_due_at?->toDateString(),
+            'metrological_uncertainty_value' => $item->metrological_uncertainty_value,
+            'metrological_uncertainty_unit' => $item->metrological_uncertainty_unit,
+            'metrological_traceability_reference' => $item->metrological_traceability_reference,
+            'metrology_notes' => $item->metrology_notes,
+            'has_safety_documentation' => (bool) $item->has_safety_documentation,
+            'days_to_calibration' => $daysToCalibration,
+            'needs_calibration' => $item->needs_calibration,
+            'calibration_status' => $item->calibration_status,
+            'metrology_status' => $item->metrology_status,
+            'is_metrologically_ready' => $item->is_metrologically_ready,
+            'category' => $item->category ? [
+                'id' => $item->category->id,
+                'name' => $item->category->name,
+            ] : null,
+            'type' => $item->type ? [
+                'id' => $item->type->id,
+                'name' => $item->type->name,
+            ] : null,
+        ];
+    }
+
     public function reagentExpiryReport(Request $request)
     {
-        $query = InventoryItem::with(['category', 'supplier'])
+        $today = now()->toDateString();
+        $in30Days = now()->addDays(30)->toDateString();
+        $in31Days = now()->addDays(31)->toDateString();
+        $in60Days = now()->addDays(60)->toDateString();
+        $in61Days = now()->addDays(61)->toDateString();
+        $in90Days = now()->addDays(90)->toDateString();
+        $status = in_array($request->input('status'), ['expired', 'expiring_soon', 'good'], true)
+            ? $request->input('status')
+            : '';
+        $sortBy = in_array($request->input('sort_by'), ['expiry_date', 'name', 'current_stock'], true)
+            ? $request->input('sort_by')
+            : 'expiry_date';
+        $sortDirection = $request->input('sort_direction') === 'desc' ? 'desc' : 'asc';
+        $search = trim((string) $request->input('search', ''));
+
+        $query = InventoryItem::with([
+            'category:id,name',
+            'supplier:id,name',
+            'inventory' => fn ($query) => $query->select('id', 'item_id', 'warehouse_id', 'qty_available'),
+            'inventory.warehouse:id,name',
+        ])
+            ->withSum('inventory', 'qty_available')
+            ->withCount('inventory')
             ->reagents()
             ->whereNotNull('reagent_expiry_date')
-            ->when($request->status, function ($query, $status) {
+            ->when($status, function ($query, $status) use ($today, $in60Days) {
                 if ($status === 'expired') {
-                    $query->where('reagent_expiry_date', '<', now());
+                    $query->whereDate('reagent_expiry_date', '<', $today);
                 } elseif ($status === 'expiring_soon') {
-                    $query->whereBetween('reagent_expiry_date', [now(), now()->addDays(60)]);
+                    $query->whereBetween('reagent_expiry_date', [$today, $in60Days]);
                 } elseif ($status === 'good') {
-                    $query->where('reagent_expiry_date', '>', now()->addDays(60));
+                    $query->whereDate('reagent_expiry_date', '>', $in60Days);
                 }
             })
-            ->orderBy('reagent_expiry_date');
+            ->when($request->input('category_id'), fn ($query, $categoryId) => $query->where('category_id', $categoryId))
+            ->when($request->input('warehouse_id'), fn ($query, $warehouseId) => $query->whereHas(
+                'inventory',
+                fn ($inventoryQuery) => $inventoryQuery->where('warehouse_id', $warehouseId)
+            ))
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($searchQuery) use ($search) {
+                    $searchQuery->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhere('internal_code', 'like', "%{$search}%")
+                        ->orWhere('lot', 'like', "%{$search}%");
+                });
+            });
+
+        if ($sortBy === 'current_stock') {
+            $query->orderBy('inventory_sum_qty_available', $sortDirection);
+        } elseif ($sortBy === 'name') {
+            $query->orderBy('name', $sortDirection);
+        } else {
+            $query->orderBy('reagent_expiry_date', $sortDirection);
+        }
+
+        $query->orderBy('name');
+
+        $reagents = $query
+            ->paginate($request->per_page ?? 20)
+            ->withQueryString()
+            ->through(fn (InventoryItem $reagent) => $this->formatReagentExpiryReportRow($reagent));
+
+        $stats = InventoryItem::query()
+            ->reagents()
+            ->whereNotNull('reagent_expiry_date')
+            ->selectRaw('count(*) as total_reagents')
+            ->selectRaw('count(case when reagent_expiry_date < ? then 1 end) as expired', [$today])
+            ->selectRaw('count(case when reagent_expiry_date between ? and ? then 1 end) as expiring_30', [$today, $in30Days])
+            ->selectRaw('count(case when reagent_expiry_date between ? and ? then 1 end) as expiring_31_60', [$in31Days, $in60Days])
+            ->selectRaw('count(case when reagent_expiry_date between ? and ? then 1 end) as expiring_61_90', [$in61Days, $in90Days])
+            ->first();
 
         return Inertia::render('VAPInventory/Reagents/ExpiryReport', [
-            'reagents' => $query->paginate($request->per_page ?? 20)->withQueryString(),
-            'filters' => $request->only(['status', 'sort_by', 'sort_direction']),
+            'reagents' => $reagents,
+            'filters' => [
+                'status' => $status,
+                'category_id' => $request->input('category_id', ''),
+                'warehouse_id' => $request->input('warehouse_id', ''),
+                'search' => $search,
+                'sort_by' => $sortBy,
+                'sort_direction' => $sortDirection,
+            ],
+            'categories' => ItemCategory::active()
+                ->orderBy('name')
+                ->get(['id', 'name']),
+            'warehouses' => InventoryItemWarehouse::active()
+                ->orderBy('name')
+                ->get(['id', 'name']),
             'stats' => [
-                'expired' => InventoryItem::reagents()
-                    ->whereNotNull('reagent_expiry_date')
-                    ->where('reagent_expiry_date', '<', now())
-                    ->count(),
-                'expiring_soon' => InventoryItem::reagents()
-                    ->whereNotNull('reagent_expiry_date')
-                    ->whereBetween('reagent_expiry_date', [now(), now()->addDays(60)])
-                    ->count(),
-                'total_reagents' => InventoryItem::reagents()->count(),
+                'expired' => (int) ($stats->expired ?? 0),
+                'expiring_soon' => (int) ($stats->expiring_30 ?? 0) + (int) ($stats->expiring_31_60 ?? 0),
+                'expiring_30' => (int) ($stats->expiring_30 ?? 0),
+                'expiring_31_60' => (int) ($stats->expiring_31_60 ?? 0),
+                'expiring_61_90' => (int) ($stats->expiring_61_90 ?? 0),
+                'total_reagents' => (int) ($stats->total_reagents ?? 0),
             ],
         ]);
+    }
+
+    private function formatReagentExpiryReportRow(InventoryItem $reagent): array
+    {
+        return [
+            'id' => $reagent->id,
+            'name' => $reagent->name,
+            'code' => $reagent->code,
+            'internal_code' => $reagent->internal_code,
+            'lot' => $reagent->lot,
+            'refrigerated' => (bool) $reagent->refrigerated,
+            'reagent_open_date' => $reagent->reagent_open_date?->toDateString(),
+            'reagent_expiry_date' => $reagent->reagent_expiry_date?->toDateString(),
+            'total_stock' => (float) ($reagent->inventory_sum_qty_available ?? 0),
+            'warehouse_count' => (int) ($reagent->inventory_count ?? 0),
+            'is_expired' => $reagent->is_expired,
+            'days_to_expiry' => $reagent->days_to_expiry,
+            'category' => $reagent->category ? [
+                'id' => $reagent->category->id,
+                'name' => $reagent->category->name,
+            ] : null,
+            'supplier' => $reagent->supplier ? [
+                'id' => $reagent->supplier->id,
+                'name' => $reagent->supplier->name,
+            ] : null,
+            'inventory' => $reagent->inventory
+                ->map(fn (Inventory $inventory) => [
+                    'id' => $inventory->id,
+                    'warehouse_id' => $inventory->warehouse_id,
+                    'qty_available' => $inventory->qty_available,
+                    'warehouse' => $inventory->warehouse ? [
+                        'id' => $inventory->warehouse->id,
+                        'name' => $inventory->warehouse->name,
+                    ] : null,
+                ])
+                ->values(),
+        ];
     }
 
     public function lowStockReport(Request $request)

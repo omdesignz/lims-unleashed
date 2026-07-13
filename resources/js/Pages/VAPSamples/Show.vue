@@ -1,272 +1,269 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <ModuleHero
-      eyebrow="Sample Entry Code"
-      :title="sample.name"
-      description="Esta vista liga a receção da amostra ao fluxo normal de colheita, análises, contra-análises e certificado, para que o código da amostra seja a referência transversal do processo."
-    >
-      <template #actions>
-        <div class="flex flex-wrap gap-3">
-          <Link
-            :href="route('vap_samples.index')"
-            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
+  <div class="space-y-6" :class="commercialDocumentThemeClasses">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+        <div class="min-w-0">
+          <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--ds-text-soft)]">
+            Sample Entry Code
+          </p>
+          <div class="mt-3 flex flex-wrap items-start gap-3">
+            <span class="grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+              <ClipboardDocumentListIcon class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">
+                {{ sample.name }}
+              </h1>
+              <p class="mt-1 max-w-4xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
+                Vista transversal da rececao, cadeia de custodia, analises, contra-analises, decisao CQ e certificado.
+              </p>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <span class="ds-chip">Codigo {{ sample.code }}</span>
+                <span class="ds-chip">{{ statusLabel(sample.status) }}</span>
+                <span class="ds-chip">{{ sampleTypeLabel(sample.sample_type) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap xl:max-w-xl xl:justify-end">
+          <Link :href="route('vap_samples.index')" class="ds-button ds-button-secondary">
             <ArrowLeftIcon class="h-4 w-4" />
             Voltar
           </Link>
-          <a
-            :href="route('vap_samples.samples.pdf', sample.id)"
-            target="_blank"
-            class="inline-flex items-center gap-2 rounded-2xl bg-primary-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-800 dark:bg-primary-500 dark:text-slate-950 dark:hover:bg-primary-400"
-          >
+          <a :href="route('vap_samples.samples.pdf', sample.id)" target="_blank" class="ds-button ds-button-primary">
             <DocumentArrowDownIcon class="h-4 w-4" />
             PDF da entrada
           </a>
-          <a
-            v-if="sample.collection_product?.workflow_url"
-            :href="sample.collection_product.workflow_url"
-            class="inline-flex items-center gap-2 rounded-2xl border border-primary-200 bg-primary-50 px-4 py-3 text-sm font-semibold text-primary-900 transition hover:bg-primary-100 dark:border-primary-500/20 dark:bg-primary-500/10 dark:text-primary-300 dark:hover:bg-primary-500/15"
-          >
+          <a v-if="sample.collection_product?.workflow_url" :href="sample.collection_product.workflow_url" class="ds-button ds-button-secondary">
             <ArrowTopRightOnSquareIcon class="h-4 w-4" />
             Fluxo normal
           </a>
-          <Link
-            v-if="sample.workflow_links?.analysis_queue_url"
-            :href="sample.workflow_links.analysis_queue_url"
-            class="inline-flex items-center gap-2 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900 transition hover:bg-sky-100 dark:border-sky-500/25 dark:bg-sky-500/10 dark:text-sky-200 dark:hover:bg-sky-500/15"
-          >
+          <Link v-if="sample.workflow_links?.analysis_queue_url" :href="sample.workflow_links.analysis_queue_url" class="ds-button ds-button-secondary">
             <ClipboardDocumentListIcon class="h-4 w-4" />
-            Fila de resultados
+            Resultados
           </Link>
-          <Link
-            v-if="workflowSummary.counter_analysis_count && sample.workflow_links?.counter_analysis_url"
-            :href="sample.workflow_links.counter_analysis_url"
-            class="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 transition hover:bg-amber-100 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/15"
-          >
+          <Link v-if="workflowSummary.counter_analysis_count && sample.workflow_links?.counter_analysis_url" :href="sample.workflow_links.counter_analysis_url" class="ds-button ds-button-secondary">
             <ClipboardDocumentListIcon class="h-4 w-4" />
-            Contra-análises
+            Contra-analises
           </Link>
-          <a
-            v-if="sample.quality_certificate?.pdf_url"
-            :href="sample.quality_certificate.pdf_url"
-            target="_blank"
-            class="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-100 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-200 dark:hover:bg-emerald-500/15"
-          >
+          <a v-if="sample.quality_certificate?.pdf_url" :href="sample.quality_certificate.pdf_url" target="_blank" class="ds-button ds-button-secondary">
             <ShieldCheckIcon class="h-4 w-4" />
             PDF certificado
           </a>
         </div>
-      </template>
-
-      <div class="mt-6 inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary-800 ring-1 ring-primary-200 dark:bg-primary-500/10 dark:text-primary-300 dark:ring-primary-500/20">
-        Código
-        <span class="rounded-full bg-white px-2 py-0.5 text-[11px] text-slate-700 dark:bg-slate-900 dark:text-slate-200">
-          {{ sample.code }}
-        </span>
       </div>
 
-      <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <article class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/70">
-          <p class="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Estado</p>
-          <p class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{{ statusLabel(sample.status) }}</p>
-        </article>
-        <article class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/70">
-          <p class="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Lab code</p>
-          <p class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{{ workflowSummary.linked_lab_code || sample.collection_product?.code || 'Pendente' }}</p>
-        </article>
-        <article class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/70">
-          <p class="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Amostras ligadas</p>
-          <p class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{{ workflowSummary.linked_sample_count }}</p>
-        </article>
-        <article class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/70">
-          <p class="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Análises</p>
-          <p class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{{ workflowSummary.analysis_count }}</p>
-        </article>
-        <article class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/70">
-          <p class="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Certificado</p>
-          <p class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">{{ workflowSummary.quality_certificate_ready ? 'Emitido' : 'Ainda não' }}</p>
+      <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <article
+          v-for="card in summaryCards"
+          :key="card.label"
+          class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4"
+        >
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">
+            {{ card.label }}
+          </p>
+          <p class="mt-3 text-lg font-black text-[var(--ds-text)]">
+            {{ card.value }}
+          </p>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
+            {{ card.detail }}
+          </p>
         </article>
       </div>
-    </ModuleHero>
+    </section>
 
-    <section class="grid gap-8 xl:grid-cols-[0.95fr_1.05fr]">
+    <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
       <div class="space-y-6">
-        <ModuleCard title="Receção e enquadramento">
-          <dl class="mt-5 grid gap-4 sm:grid-cols-2">
-            <div>
-              <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Tipo</dt>
-              <dd class="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{{ sampleTypeLabel(sample.sample_type) }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Recebida em</dt>
-              <dd class="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{{ formatDateTime(sample.received_at) }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Cliente</dt>
-              <dd class="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{{ sample.customer?.name || 'Sem cliente' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Recebida por</dt>
-              <dd class="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{{ sample.received_by?.name || 'Sem registo' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Laboratório</dt>
-              <dd class="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{{ sample.lab?.name || 'Sem laboratório' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Departamento</dt>
-              <dd class="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{{ sample.department?.name || 'Sem departamento' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Armazém</dt>
-              <dd class="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{{ sample.warehouse?.name || 'Sem armazém' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Embalagem</dt>
-              <dd class="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{{ sample.packaging?.name || 'Sem embalagem' }}</dd>
+        <section class="ds-card p-5">
+          <h2 class="text-base font-black text-[var(--ds-text)]">
+            Rececao e enquadramento
+          </h2>
+          <dl class="mt-5 grid gap-3 sm:grid-cols-2">
+            <div v-for="field in receptionFields" :key="field.label" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+              <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">
+                {{ field.label }}
+              </dt>
+              <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">
+                {{ field.value }}
+              </dd>
             </div>
           </dl>
-          <div v-if="sample.obs" class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300">
+          <div v-if="sample.obs" class="mt-5 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
             {{ sample.obs }}
           </div>
-        </ModuleCard>
+        </section>
 
-        <ModuleCard title="Rastreabilidade e retenção">
-          <dl class="mt-5 grid gap-4 sm:grid-cols-2">
-            <div>
-              <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Período de retenção</dt>
-              <dd class="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{{ sample.retention_period_days || 0 }} dias</dd>
-            </div>
-            <div>
-              <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Estado de retenção</dt>
-              <dd class="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{{ retentionLabel(sample.retention_status) }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Prazo de retenção</dt>
-              <dd class="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{{ sample.retention_due_at || 'N/D' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Descarte previsto</dt>
-              <dd class="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{{ sample.discard_scheduled_at || 'N/D' }}</dd>
+        <section class="ds-card p-5">
+          <h2 class="text-base font-black text-[var(--ds-text)]">
+            Rastreabilidade e retencao
+          </h2>
+          <dl class="mt-5 grid gap-3 sm:grid-cols-2">
+            <div v-for="field in retentionFields" :key="field.label" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+              <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">
+                {{ field.label }}
+              </dt>
+              <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">
+                {{ field.value }}
+              </dd>
             </div>
           </dl>
 
-          <div v-if="sample.discards?.length" class="mt-5">
-            <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Histórico de descarte</h3>
-            <div class="mt-3 space-y-3">
-              <div
-                v-for="discard in sample.discards"
-                :key="discard.id"
-                class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900/70"
-              >
-                <div class="flex items-center justify-between gap-3">
-                  <span class="font-medium text-slate-900 dark:text-slate-100">{{ discard.discard_method }}</span>
-                  <span class="text-slate-500 dark:text-slate-400">{{ formatDateTime(discard.discarded_at) }}</span>
-                </div>
-                <p class="mt-1 text-slate-600 dark:text-slate-300">{{ discard.qty }} · {{ discard.discarded_by || 'Sem operador' }}</p>
+          <div v-if="sample.discards?.length" class="mt-5 space-y-3">
+            <h3 class="text-sm font-black text-[var(--ds-text)]">
+              Historico de descarte
+            </h3>
+            <article
+              v-for="discard in sample.discards"
+              :key="discard.id"
+              class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3 text-sm"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <span class="font-bold text-[var(--ds-text)]">{{ discard.discard_method }}</span>
+                <span class="font-semibold text-[var(--ds-text-muted)]">{{ formatDateTime(discard.discarded_at) }}</span>
               </div>
+              <p class="mt-1 font-semibold text-[var(--ds-text-muted)]">
+                {{ discard.qty }} · {{ discard.discarded_by || 'Sem operador' }}
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="ds-card p-5">
+          <h2 class="text-base font-black text-[var(--ds-text)]">
+            Origem e contexto submetido
+          </h2>
+          <div class="mt-5 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+              <p class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">
+                Origem
+              </p>
+              <p class="mt-2 text-sm font-bold text-[var(--ds-text)]">
+                {{ sample.client_submitted_info?.request_origin || 'client' }}
+              </p>
+            </div>
+            <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+              <p class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">
+                Pedido portal
+              </p>
+              <p class="mt-2 text-sm font-bold text-[var(--ds-text)]">
+                {{ sample.portal_request?.reference || 'Sem pedido portal' }}
+              </p>
             </div>
           </div>
-        </ModuleCard>
+          <pre class="mt-5 max-h-80 overflow-auto rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ formattedClientInfo }}</pre>
+        </section>
       </div>
 
       <div class="space-y-6">
-        <ModuleCard>
-          <div class="flex items-center justify-between gap-4">
+        <section class="ds-card p-5">
+          <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Fluxo ligado</h2>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Receção → colheita → análises → contra-análise → certificado</p>
+              <h2 class="text-base font-black text-[var(--ds-text)]">
+                Fluxo ligado
+              </h2>
+              <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">
+                Rececao -> colheita -> analises -> contra-analise -> certificado
+              </p>
             </div>
-            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-              {{ linkedSampleIds.length }} sample IDs internos
-            </span>
+            <span class="ds-chip">{{ linkedSampleIds.length }} sample IDs internos</span>
           </div>
 
-          <div class="mt-5 grid gap-4 md:grid-cols-2">
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/70">
-              <p class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Collection product</p>
-              <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ sample.collection_product?.id || 'Pendente' }}</p>
-              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ sample.collection_product?.product || 'Ainda não integrado no fluxo normal.' }}</p>
+          <div class="mt-5 grid gap-3 md:grid-cols-2">
+            <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+              <p class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">
+                Collection product
+              </p>
+              <p class="mt-2 text-sm font-bold text-[var(--ds-text)]">
+                {{ sample.collection_product?.id || 'Pendente' }}
+              </p>
+              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
+                {{ sample.collection_product?.product || 'Ainda nao integrado no fluxo normal.' }}
+              </p>
             </div>
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/70">
-              <p class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Certificado</p>
-              <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ sample.quality_certificate?.code || 'Ainda não emitido' }}</p>
-              <div class="mt-2 flex flex-wrap gap-3">
-                <a
-                  v-if="sample.quality_certificate?.show_url"
-                  :href="sample.quality_certificate.show_url"
-                  class="inline-flex items-center gap-1 text-xs font-semibold text-primary-800 hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200"
-                >
-                  Abrir certificado
+            <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+              <p class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">
+                Certificado
+              </p>
+              <p class="mt-2 text-sm font-bold text-[var(--ds-text)]">
+                {{ sample.quality_certificate?.code || 'Ainda nao emitido' }}
+              </p>
+              <div class="mt-2 flex flex-wrap gap-2">
+                <a v-if="sample.quality_certificate?.show_url" :href="sample.quality_certificate.show_url" class="ds-table-action">
+                  Abrir
                   <ArrowTopRightOnSquareIcon class="h-3.5 w-3.5" />
                 </a>
-                <a
-                  v-if="sample.quality_certificate?.pdf_url"
-                  :href="sample.quality_certificate.pdf_url"
-                  target="_blank"
-                  class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-600 dark:text-emerald-300 dark:hover:text-emerald-200"
-                >
-                  Baixar PDF
+                <a v-if="sample.quality_certificate?.pdf_url" :href="sample.quality_certificate.pdf_url" target="_blank" class="ds-table-action">
+                  PDF
                   <DocumentArrowDownIcon class="h-3.5 w-3.5" />
                 </a>
               </div>
             </div>
           </div>
 
-          <div class="mt-5 rounded-3xl border border-primary-200 bg-primary-50/70 p-5 dark:border-primary-500/25 dark:bg-primary-500/10">
+          <div class="ds-command-surface mt-5 p-4">
             <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-800 dark:text-primary-300">Próxima ação operacional</p>
-                <h3 class="mt-2 text-base font-semibold text-primary-950 dark:text-primary-100">
+                <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">
+                  Proxima acao operacional
+                </p>
+                <h3 class="mt-2 text-base font-black text-[var(--ds-text)]">
                   {{ workflowSummary.next_action?.label || 'Abrir fila operacional' }}
                 </h3>
-                <p class="mt-1 text-sm leading-6 text-primary-800 dark:text-primary-200">
+                <p class="mt-1 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
                   {{ workflowSummary.next_action?.description || 'Continue o processo a partir da fila de resultados.' }}
                 </p>
               </div>
-              <Link
-                v-if="workflowSummary.next_action?.url"
-                :href="workflowSummary.next_action.url"
-                class="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary-900 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-800 dark:bg-primary-300 dark:text-primary-950 dark:hover:bg-primary-200"
-              >
+              <Link v-if="workflowSummary.next_action?.url" :href="workflowSummary.next_action.url" class="ds-button ds-button-primary">
                 Abrir
                 <ArrowTopRightOnSquareIcon class="h-4 w-4" />
               </Link>
             </div>
           </div>
+        </section>
 
-          <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
-            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-              <thead class="bg-slate-50 dark:bg-slate-900/80">
+        <section class="ds-table-shell">
+          <div class="ds-table-summary px-5 py-4">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">
+                Analises
+              </p>
+              <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">
+                Fluxo tecnico
+              </h2>
+            </div>
+            <span class="ds-chip">{{ analyses.length }} registos</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-[var(--ds-border)]">
+              <thead class="ds-table-head">
                 <tr>
-                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Análise</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Perfil</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Departamento</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Resultado</th>
-                  <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Contra-análise</th>
+                  <th class="px-4 py-3 text-left ds-table-heading">Analise</th>
+                  <th class="px-4 py-3 text-left ds-table-heading">Perfil</th>
+                  <th class="px-4 py-3 text-left ds-table-heading">Departamento</th>
+                  <th class="px-4 py-3 text-left ds-table-heading">Resultado</th>
+                  <th class="px-4 py-3 text-left ds-table-heading">Contra-analise</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950/70">
-                <tr v-if="!analyses.length">
-                  <td colspan="5" class="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                    Ainda não há análises ligadas a esta entrada de amostra.
+              <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
+                <tr v-if="!analyses.length" class="ds-table-row">
+                  <td colspan="5" class="px-4 py-8 text-center text-sm font-semibold text-[var(--ds-text-muted)]">
+                    Ainda nao ha analises ligadas a esta entrada de amostra.
                   </td>
                 </tr>
-                <tr v-for="analysis in analyses" :key="analysis.id" class="hover:bg-slate-50 dark:hover:bg-slate-900/70">
+                <tr v-for="analysis in analyses" :key="analysis.id" class="ds-table-row">
                   <td class="px-4 py-4 text-sm">
-                    <a :href="analysis.analysis_url" class="font-semibold text-primary-900 hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200">
+                    <a :href="analysis.analysis_url" class="font-black text-[rgb(var(--primary-800-rgb))] hover:text-[rgb(var(--primary-600-rgb))] dark:text-cyan-100">
                       #{{ analysis.id }}
                     </a>
                   </td>
-                  <td class="px-4 py-4 text-sm text-slate-700 dark:text-slate-200">{{ analysis.profile || 'Sem perfil' }}</td>
-                  <td class="px-4 py-4 text-sm text-slate-700 dark:text-slate-200">{{ analysis.department || 'Sem departamento' }}</td>
-                  <td class="px-4 py-4 text-sm text-slate-700 dark:text-slate-200">
+                  <td class="ds-table-cell px-4 py-4">{{ analysis.profile || 'Sem perfil' }}</td>
+                  <td class="ds-table-cell px-4 py-4">{{ analysis.department || 'Sem departamento' }}</td>
+                  <td class="px-4 py-4 text-sm font-semibold text-[var(--ds-text-muted)]">
                     <div class="space-y-1">
                       <p>{{ analysis.result_id ? `#${analysis.result_id}` : 'Pendente' }}</p>
-                      <p class="text-xs text-slate-500 dark:text-slate-400">
-                        {{ resultStageLabel(analysis.workflow_stage) }}
-                      </p>
-                      <p v-if="analysis.results_summary?.total" class="text-xs text-slate-500 dark:text-slate-400">
+                      <p class="text-xs">{{ resultStageLabel(analysis.workflow_stage) }}</p>
+                      <p v-if="analysis.results_summary?.total" class="text-xs">
                         {{ analysis.results_summary.approved }}/{{ analysis.results_summary.total }} aprovados · {{ analysis.results_summary.with_uncertainty }} c/ incerteza
                       </p>
                     </div>
@@ -277,178 +274,124 @@
                         v-for="counterAnalysis in analysis.counter_analysis_items"
                         :key="`${analysis.id}-${counterAnalysis.result_id}`"
                       >
-                        <a
-                          v-if="counterAnalysis.counter_analysis_url"
-                          :href="counterAnalysis.counter_analysis_url"
-                          class="font-semibold text-amber-700 hover:text-amber-600 dark:text-amber-300 dark:hover:text-amber-200"
-                        >
+                        <a v-if="counterAnalysis.counter_analysis_url" :href="counterAnalysis.counter_analysis_url" class="font-black text-amber-700 hover:text-amber-600 dark:text-amber-200">
                           #{{ counterAnalysis.counter_analysis_id }}
                         </a>
-                        <span
-                          v-else
-                          class="inline-flex rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-500/25"
-                        >
+                        <span v-else class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-black text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100">
                           Solicitada
                         </span>
-                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
                           {{ counterAnalysis.parameter || `Resultado #${counterAnalysis.result_id}` }}
                         </p>
                       </div>
                     </div>
-                    <span v-else class="text-slate-500 dark:text-slate-400">Não aberta</span>
+                    <span v-else class="font-semibold text-[var(--ds-text-muted)]">Nao aberta</span>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </ModuleCard>
+        </section>
 
-        <ModuleCard title="Origem e contexto submetido">
-          <div v-if="isInternalQcSample" class="mt-5 rounded-3xl border border-emerald-200 bg-emerald-50/80 p-5 dark:border-emerald-500/30 dark:bg-emerald-500/10">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <section v-if="isInternalQcSample" class="ds-card p-5">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-200">
+                CQ interno
+              </p>
+              <h2 class="mt-2 text-base font-black text-[var(--ds-text)]">
+                {{ qualityControlPath.name || 'Controlo interno de materia-prima' }}
+              </h2>
+              <p class="mt-1 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
+                Fluxo sem proposta comercial, com rastreabilidade para resultados, verificacao, aprovacao e decisao operacional.
+              </p>
+            </div>
+            <span class="ds-chip">{{ disciplineLabel(sample.client_submitted_info?.analysis_discipline) }}</span>
+          </div>
+
+          <div :class="['mt-5 rounded-lg border p-4', releaseGatePanelClass(releaseGate.status)]">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
-                  CQ interno
-                </p>
-                <h3 class="mt-2 text-base font-semibold text-emerald-950 dark:text-emerald-100">
-                  {{ qualityControlPath.name || 'Controlo interno de matéria-prima' }}
-                </h3>
-                <p class="mt-1 text-sm leading-6 text-emerald-800 dark:text-emerald-200">
-                  Esta amostra segue o fluxo normal de análise sem proposta comercial, mantendo rastreabilidade para lab code, resultados, verificação, aprovação e relatório.
-                </p>
+                <p class="text-xs font-black uppercase tracking-[0.14em] opacity-80">Gate de liberacao</p>
+                <h3 class="mt-1 text-base font-black">{{ releaseGate.label || 'Aguardar decisao' }}</h3>
+                <p class="mt-1 text-sm font-medium leading-6">{{ releaseGate.message || 'A decisao operacional sera apresentada quando houver dados suficientes.' }}</p>
               </div>
-              <span class="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-bold text-emerald-800 ring-1 ring-emerald-200 dark:bg-slate-950/50 dark:text-emerald-200 dark:ring-emerald-500/30">
-                {{ disciplineLabel(sample.client_submitted_info?.analysis_discipline) }}
+              <span :class="['inline-flex w-fit rounded-full px-3 py-1 text-xs font-black', releaseGateBadgeClass(releaseGate.status)]">
+                {{ releaseGateStatusLabel(releaseGate.status) }}
               </span>
             </div>
 
-            <div
-              class="mt-5 rounded-2xl border p-4"
-              :class="releaseGatePanelClass(releaseGate.status)"
-            >
-              <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] opacity-80">Gate de liberação</p>
-                  <h4 class="mt-1 text-base font-bold">{{ releaseGate.label || 'Aguardar decisão' }}</h4>
-                  <p class="mt-1 text-sm leading-6">{{ releaseGate.message || 'A decisão operacional será apresentada quando houver dados suficientes.' }}</p>
-                </div>
-                <span
-                  class="inline-flex w-fit rounded-full px-3 py-1 text-xs font-bold"
-                  :class="releaseGateBadgeClass(releaseGate.status)"
-                >
-                  {{ releaseGateStatusLabel(releaseGate.status) }}
-                </span>
-              </div>
-
-              <dl class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div class="rounded-xl bg-white/55 px-3 py-2 dark:bg-slate-950/30">
-                  <dt class="text-[11px] uppercase tracking-[0.16em] opacity-75">Resultados</dt>
-                  <dd class="mt-1 text-sm font-bold">{{ releaseGate.totals?.approved || 0 }}/{{ releaseGate.totals?.results || 0 }} aprovados</dd>
-                </div>
-                <div class="rounded-xl bg-white/55 px-3 py-2 dark:bg-slate-950/30">
-                  <dt class="text-[11px] uppercase tracking-[0.16em] opacity-75">Incerteza</dt>
-                  <dd class="mt-1 text-sm font-bold">{{ releaseGate.totals?.with_uncertainty || 0 }} resultados</dd>
-                </div>
-                <div class="rounded-xl bg-white/55 px-3 py-2 dark:bg-slate-950/30">
-                  <dt class="text-[11px] uppercase tracking-[0.16em] opacity-75">Contra-análise</dt>
-                  <dd class="mt-1 text-sm font-bold">{{ releaseGate.totals?.counter_analysis_requested || 0 }}</dd>
-                </div>
-                <div class="rounded-xl bg-white/55 px-3 py-2 dark:bg-slate-950/30">
-                  <dt class="text-[11px] uppercase tracking-[0.16em] opacity-75">Decisão configurada</dt>
-                  <dd class="mt-1 text-sm font-bold">{{ qcDecisionLabel(releaseGate.decision) }}</dd>
-                </div>
-              </dl>
-
-              <div v-if="latestReleaseDecision" class="mt-4 rounded-2xl border border-white/50 bg-white/70 p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/40">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.16em] opacity-75">Última decisão registada</p>
-                    <p class="mt-1 text-sm font-bold">{{ finalQcDecisionLabel(latestReleaseDecision.decision) }}</p>
-                    <p v-if="latestReleaseDecision.notes" class="mt-2 text-sm leading-6 opacity-80">{{ latestReleaseDecision.notes }}</p>
-                  </div>
-                  <p class="text-xs font-semibold opacity-75">
-                    {{ latestReleaseDecision.decided_by_name || 'Utilizador' }} · {{ formatDateTime(latestReleaseDecision.decided_at) }}
-                  </p>
-                </div>
-              </div>
-
-              <form class="mt-4 rounded-2xl border border-white/50 bg-white/75 p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/45" @submit.prevent="submitQcDecision">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p class="text-sm font-bold">Registar decisão operacional</p>
-                    <p class="mt-1 text-xs leading-5 opacity-75">Use este ponto apenas depois de a equipa técnica validar resultados, incerteza e eventual contra-análise.</p>
-                  </div>
-                  <button
-                    type="submit"
-                    :disabled="qcDecisionForm.processing || releaseDecisionBlocked"
-                    class="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200"
-                  >
-                    {{ qcDecisionForm.processing ? 'A registar...' : 'Guardar decisão' }}
-                  </button>
-                </div>
-
-                <div class="mt-4 grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-                  <label class="block">
-                    <span class="text-xs font-semibold uppercase tracking-[0.16em] opacity-75">Decisão final</span>
-                    <select
-                      v-model="qcDecisionForm.decision"
-                      class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-500/15 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-                    >
-                      <option v-for="option in releaseDecisionOptions" :key="option.value" :value="option.value">
-                        {{ option.label }}
-                      </option>
-                    </select>
-                    <p v-if="qcDecisionForm.errors.decision" class="mt-2 text-xs font-semibold text-rose-600 dark:text-rose-300">{{ qcDecisionForm.errors.decision }}</p>
-                    <p v-else-if="releaseDecisionBlocked" class="mt-2 text-xs font-semibold text-amber-700 dark:text-amber-300">
-                      A liberação fica bloqueada até os resultados estarem aprovados e sem revisão pendente.
-                    </p>
-                  </label>
-                  <label class="block">
-                    <span class="text-xs font-semibold uppercase tracking-[0.16em] opacity-75">Notas de decisão</span>
-                    <textarea
-                      v-model="qcDecisionForm.notes"
-                      rows="3"
-                      placeholder="Ex.: lote retido para investigação, liberado para produção, ou registado apenas para tendência..."
-                      class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/15 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500"
-                    />
-                    <p v-if="qcDecisionForm.errors.notes" class="mt-2 text-xs font-semibold text-rose-600 dark:text-rose-300">{{ qcDecisionForm.errors.notes }}</p>
-                  </label>
-                </div>
-              </form>
-            </div>
-
-            <dl class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <div>
-                <dt class="text-xs uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">Objetivo</dt>
-                <dd class="mt-1 text-sm font-semibold text-emerald-950 dark:text-emerald-100">{{ qcPurposeLabel(sample.client_submitted_info?.quality_control_purpose) }}</dd>
-              </div>
-              <div>
-                <dt class="text-xs uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">Decisão</dt>
-                <dd class="mt-1 text-sm font-semibold text-emerald-950 dark:text-emerald-100">{{ qcDecisionLabel(sample.client_submitted_info?.qc_decision) }}</dd>
-              </div>
-              <div>
-                <dt class="text-xs uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">Lote</dt>
-                <dd class="mt-1 text-sm font-semibold text-emerald-950 dark:text-emerald-100">{{ sample.client_submitted_info?.lot || 'N/D' }}</dd>
-              </div>
-              <div>
-                <dt class="text-xs uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">Fornecedor</dt>
-                <dd class="mt-1 text-sm font-semibold text-emerald-950 dark:text-emerald-100">{{ sample.client_submitted_info?.supplier_name || 'N/D' }}</dd>
+            <dl class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div v-for="metric in releaseGateMetrics" :key="metric.label" class="rounded-lg border border-white/50 bg-white/55 px-3 py-2 dark:border-white/10 dark:bg-white/5">
+                <dt class="text-[11px] font-black uppercase tracking-[0.16em] opacity-75">{{ metric.label }}</dt>
+                <dd class="mt-1 text-sm font-black">{{ metric.value }}</dd>
               </div>
             </dl>
+
+            <div v-if="latestReleaseDecision" class="mt-4 rounded-lg border border-white/50 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p class="text-xs font-black uppercase tracking-[0.14em] opacity-75">Ultima decisao registada</p>
+                  <p class="mt-1 text-sm font-black">{{ finalQcDecisionLabel(latestReleaseDecision.decision) }}</p>
+                  <p v-if="latestReleaseDecision.notes" class="mt-2 text-sm font-medium leading-6 opacity-80">{{ latestReleaseDecision.notes }}</p>
+                </div>
+                <p class="text-xs font-black opacity-75">
+                  {{ latestReleaseDecision.decided_by_name || 'Utilizador' }} · {{ formatDateTime(latestReleaseDecision.decided_at) }}
+                </p>
+              </div>
+            </div>
+
+            <form class="mt-4 rounded-lg border border-white/50 bg-white/75 p-4 dark:border-white/10 dark:bg-white/5" @submit.prevent="submitQcDecision">
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p class="text-sm font-black">Registar decisao operacional</p>
+                  <p class="mt-1 text-xs font-semibold leading-5 opacity-75">
+                    Use depois de validar resultados, incerteza e eventual contra-analise.
+                  </p>
+                </div>
+                <button type="submit" :disabled="qcDecisionForm.processing || releaseDecisionBlocked" class="ds-button ds-button-primary">
+                  {{ qcDecisionForm.processing ? 'A registar...' : 'Guardar decisao' }}
+                </button>
+              </div>
+
+              <div class="mt-4 grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+                <label class="ds-field-group">
+                  <span class="ds-field-label">Decisao final</span>
+                  <select v-model="qcDecisionForm.decision" class="ds-field">
+                    <option v-for="option in releaseDecisionOptions" :key="option.value" :value="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+                  <span v-if="qcDecisionForm.errors.decision" class="ds-field-error">{{ qcDecisionForm.errors.decision }}</span>
+                  <span v-else-if="releaseDecisionBlocked" class="ds-field-error">
+                    A liberacao fica bloqueada ate os resultados estarem aprovados e sem revisao pendente.
+                  </span>
+                </label>
+                <label class="ds-field-group">
+                  <span class="ds-field-label">Notas de decisao</span>
+                  <textarea
+                    v-model="qcDecisionForm.notes"
+                    rows="3"
+                    placeholder="Ex.: lote retido para investigacao, liberado para producao, ou registado apenas para tendencia..."
+                    class="ds-field min-h-28"
+                  />
+                  <span v-if="qcDecisionForm.errors.notes" class="ds-field-error">{{ qcDecisionForm.errors.notes }}</span>
+                </label>
+              </div>
+            </form>
           </div>
 
-          <div class="mt-5 grid gap-4 sm:grid-cols-2">
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/70">
-              <p class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Origem</p>
-              <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ sample.client_submitted_info?.request_origin || 'client' }}</p>
+          <dl class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div v-for="field in qcFields" :key="field.label" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+              <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">
+                {{ field.label }}
+              </dt>
+              <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">
+                {{ field.value }}
+              </dd>
             </div>
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-800 dark:bg-slate-900/70">
-              <p class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Pedido portal</p>
-              <p class="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-100">{{ sample.portal_request?.reference || 'Sem pedido portal' }}</p>
-            </div>
-          </div>
-          <pre class="mt-5 overflow-x-auto rounded-2xl border border-slate-200 bg-slate-950 px-4 py-4 text-xs text-slate-100 dark:border-slate-800">{{ formattedClientInfo }}</pre>
-        </ModuleCard>
+          </dl>
+        </section>
       </div>
     </section>
   </div>
@@ -456,12 +399,16 @@
 
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import ModuleCard from '@/Components/base/ModuleCard.vue'
-import ModuleHero from '@/Components/base/ModuleHero.vue'
 import { computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
-import { ArrowLeftIcon, ArrowTopRightOnSquareIcon, ClipboardDocumentListIcon, DocumentArrowDownIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline'
+import {
+  ArrowLeftIcon,
+  ArrowTopRightOnSquareIcon,
+  ClipboardDocumentListIcon,
+  DocumentArrowDownIcon,
+  ShieldCheckIcon,
+} from '@heroicons/vue/24/outline'
+import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 
 defineOptions({ layout: Layout })
 
@@ -480,17 +427,92 @@ const isInternalQcSample = computed(() => (
   props.sample.client_submitted_info?.request_origin === 'internal'
   && ['MATERIA_PRIMA', 'RAW_MATERIAL'].includes(props.sample.sample_type)
 ))
+
+const summaryCards = computed(() => [
+  {
+    label: 'Estado',
+    value: statusLabel(props.sample.status),
+    detail: 'Estado da entrada',
+  },
+  {
+    label: 'Lab code',
+    value: props.workflowSummary.linked_lab_code || props.sample.collection_product?.code || 'Pendente',
+    detail: 'Codigo operacional',
+  },
+  {
+    label: 'Amostras ligadas',
+    value: props.workflowSummary.linked_sample_count || 0,
+    detail: 'IDs internos',
+  },
+  {
+    label: 'Analises',
+    value: props.workflowSummary.analysis_count || props.analyses.length,
+    detail: 'Ensaios associados',
+  },
+  {
+    label: 'Certificado',
+    value: props.workflowSummary.quality_certificate_ready ? 'Emitido' : 'Ainda nao',
+    detail: 'Saida documental',
+  },
+])
+
+const receptionFields = computed(() => [
+  { label: 'Tipo', value: sampleTypeLabel(props.sample.sample_type) },
+  { label: 'Recebida em', value: formatDateTime(props.sample.received_at) },
+  { label: 'Cliente', value: props.sample.customer?.name || 'Sem cliente' },
+  { label: 'Recebida por', value: props.sample.received_by?.name || 'Sem registo' },
+  { label: 'Laboratorio', value: props.sample.lab?.name || 'Sem laboratorio' },
+  { label: 'Departamento', value: props.sample.department?.name || 'Sem departamento' },
+  { label: 'Armazem', value: props.sample.warehouse?.name || 'Sem armazem' },
+  { label: 'Embalagem', value: props.sample.packaging?.name || 'Sem embalagem' },
+])
+
+const retentionFields = computed(() => [
+  { label: 'Periodo de retencao', value: `${props.sample.retention_period_days || 0} dias` },
+  { label: 'Estado de retencao', value: retentionLabel(props.sample.retention_status) },
+  { label: 'Prazo de retencao', value: props.sample.retention_due_at || 'N/D' },
+  { label: 'Descarte previsto', value: props.sample.discard_scheduled_at || 'N/D' },
+])
+
+const releaseGateMetrics = computed(() => [
+  {
+    label: 'Resultados',
+    value: `${releaseGate.value.totals?.approved || 0}/${releaseGate.value.totals?.results || 0} aprovados`,
+  },
+  {
+    label: 'Incerteza',
+    value: `${releaseGate.value.totals?.with_uncertainty || 0} resultados`,
+  },
+  {
+    label: 'Contra-analise',
+    value: releaseGate.value.totals?.counter_analysis_requested || 0,
+  },
+  {
+    label: 'Decisao configurada',
+    value: qcDecisionLabel(releaseGate.value.decision),
+  },
+])
+
+const qcFields = computed(() => [
+  { label: 'Objetivo', value: qcPurposeLabel(props.sample.client_submitted_info?.quality_control_purpose) },
+  { label: 'Decisao', value: qcDecisionLabel(props.sample.client_submitted_info?.qc_decision) },
+  { label: 'Lote', value: props.sample.client_submitted_info?.lot || 'N/D' },
+  { label: 'Fornecedor', value: props.sample.client_submitted_info?.supplier_name || 'N/D' },
+])
+
 const releaseDecisionOptions = [
   { value: 'released', label: 'Liberada para uso' },
   { value: 'quarantined', label: 'Manter em quarentena' },
-  { value: 'investigation_required', label: 'Abrir investigação' },
+  { value: 'investigation_required', label: 'Abrir investigacao' },
   { value: 'rejected', label: 'Rejeitada' },
-  { value: 'trend_recorded', label: 'Registar para tendência' },
+  { value: 'trend_recorded', label: 'Registar para tendencia' },
 ]
+
 const qcDecisionForm = useForm({
   decision: latestReleaseDecision.value?.decision || 'released',
   notes: '',
 })
+
 const releaseDecisionBlocked = computed(() => qcDecisionForm.decision === 'released' && !releaseGate.value?.can_release)
 
 const submitQcDecision = () => {
@@ -508,7 +530,10 @@ const submitQcDecision = () => {
 }
 
 const formatDateTime = (value) => {
-  if (!value) return 'N/D'
+  if (!value) {
+    return 'N/D'
+  }
+
   return new Date(value).toLocaleString('pt-PT', {
     day: '2-digit',
     month: '2-digit',
@@ -528,78 +553,78 @@ const statusLabel = (status) => ({
 
 const sampleTypeLabel = (type) => ({
   ROTINA: 'Rotina',
-  MATERIA_PRIMA: 'Matéria-prima',
+  MATERIA_PRIMA: 'Materia-prima',
   PRODUTO_ACABADO: 'Produto acabado',
   ESTABILIDADE: 'Estabilidade',
   CONTRAPROVA: 'Contraprova',
-  COUNTER_ANALYSIS: 'Contra-análise',
+  COUNTER_ANALYSIS: 'Contra-analise',
   INTERLABORATORIAL: 'Interlaboratorial',
-  RETENCAO: 'Retenção',
+  RETENCAO: 'Retencao',
 }[type] || type || 'N/D')
 
 const disciplineLabel = (discipline) => ({
   microbiology: 'Microbiologia',
-  chemistry: 'Química / físico-química',
-  microbiology_and_chemistry: 'Microbiologia + química',
-}[discipline] || 'Disciplina não definida')
+  chemistry: 'Quimica / fisico-quimica',
+  microbiology_and_chemistry: 'Microbiologia + quimica',
+}[discipline] || 'Disciplina nao definida')
 
 const qcPurposeLabel = (purpose) => ({
-  raw_material_release: 'Liberação de matéria-prima',
-  supplier_qualification: 'Qualificação de fornecedor',
-  process_validation: 'Validação de processo',
+  raw_material_release: 'Liberacao de materia-prima',
+  supplier_qualification: 'Qualificacao de fornecedor',
+  process_validation: 'Validacao de processo',
   stability_follow_up: 'Acompanhamento de estabilidade',
-  investigation: 'Investigação interna',
+  investigation: 'Investigacao interna',
   other: 'Outro',
 }[purpose] || 'N/D')
 
 const qcDecisionLabel = (decision) => ({
-  hold_until_release: 'Reter até liberação',
+  hold_until_release: 'Reter ate liberacao',
   release_if_compliant: 'Liberar se conforme',
   investigate_before_release: 'Investigar antes de liberar',
-  trend_only: 'Apenas tendência',
+  trend_only: 'Apenas tendencia',
 }[decision] || 'N/D')
 
 const finalQcDecisionLabel = (decision) => ({
   released: 'Liberada para uso',
   rejected: 'Rejeitada',
   quarantined: 'Em quarentena',
-  investigation_required: 'Investigação requerida',
-  trend_recorded: 'Registada para tendência',
-}[decision] || 'Decisão registada')
+  investigation_required: 'Investigacao requerida',
+  trend_recorded: 'Registada para tendencia',
+}[decision] || 'Decisao registada')
 
 const resultStageLabel = (stage) => ({
   pending_results: 'Sem resultados inseridos',
-  insertion: 'Inserção pendente',
-  verification: 'Verificação pendente',
-  approval: 'Aprovação pendente',
+  insertion: 'Insercao pendente',
+  verification: 'Verificacao pendente',
+  approval: 'Aprovacao pendente',
   approved: 'Resultados aprovados',
-}[stage] || 'Estado não definido')
+}[stage] || 'Estado nao definido')
 
 const releaseGateStatusLabel = (status) => ({
   pending_results: 'Retida',
-  awaiting_approval: 'Em validação',
-  requires_review: 'Revisão técnica',
-  ready_for_release: 'Liberável',
+  awaiting_approval: 'Em validacao',
+  requires_review: 'Revisao tecnica',
+  ready_for_release: 'Liberavel',
   not_applicable: 'N/A',
-}[status] || 'Em avaliação')
+}[status] || 'Em avaliacao')
 
 const releaseGatePanelClass = (status) => ({
-  pending_results: 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100',
-  awaiting_approval: 'border-blue-200 bg-blue-50 text-blue-950 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-100',
-  requires_review: 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100',
-  ready_for_release: 'border-emerald-200 bg-emerald-100/80 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-100',
-}[status] || 'border-slate-200 bg-slate-50 text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100')
+  pending_results: 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100',
+  awaiting_approval: 'border-cyan-200 bg-cyan-50 text-cyan-950 dark:border-cyan-400/30 dark:bg-cyan-400/10 dark:text-cyan-100',
+  requires_review: 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-400/30 dark:bg-rose-400/10 dark:text-rose-100',
+  ready_for_release: 'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-100',
+}[status] || 'border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[var(--ds-text)]')
 
 const releaseGateBadgeClass = (status) => ({
-  pending_results: 'bg-amber-600 text-white dark:bg-amber-400 dark:text-amber-950',
-  awaiting_approval: 'bg-blue-600 text-white dark:bg-blue-400 dark:text-blue-950',
-  requires_review: 'bg-rose-600 text-white dark:bg-rose-400 dark:text-rose-950',
-  ready_for_release: 'bg-emerald-700 text-white dark:bg-emerald-400 dark:text-emerald-950',
-}[status] || 'bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-950')
+  pending_results: 'bg-amber-600 text-white dark:bg-amber-300 dark:text-amber-950',
+  awaiting_approval: 'bg-cyan-700 text-white dark:bg-cyan-300 dark:text-cyan-950',
+  requires_review: 'bg-rose-700 text-white dark:bg-rose-300 dark:text-rose-950',
+  ready_for_release: 'bg-emerald-700 text-white dark:bg-emerald-300 dark:text-emerald-950',
+}[status] || 'bg-[var(--ds-panel-muted)] text-[var(--ds-text)]')
 
 const retentionLabel = (status) => ({
   active: 'Ativa',
-  due_soon: 'Próxima do descarte',
+  due_soon: 'Proxima do descarte',
   overdue: 'Vencida',
 }[status] || status || 'N/D')
 </script>

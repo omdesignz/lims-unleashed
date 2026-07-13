@@ -1,467 +1,407 @@
-<!-- resources/js/Components/results/IndividualResultEntry.vue -->
-<template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-    <div class="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_30px_120px_rgba(7,17,15,0.45)] dark:border-[#25443c] dark:bg-[#07110f]">
-      <div class="p-6">
-        <div class="mb-6 flex items-center justify-between gap-4 border-b border-[#ded3bf] pb-4 dark:border-[#25443c]">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-700 dark:text-primary-300">Resultado individual</p>
-            <h3 class="mt-1 text-xl font-bold text-[#17231f] dark:text-[#f7f1e7]">
-              {{ actionText }} Individual
-            </h3>
-          </div>
-          <button @click="$emit('close')" 
-                  class="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
-
-        <div class="space-y-6">
-          <!-- Parameter Selection -->
-          <div>
-            <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
-              Selecionar Parâmetro
-            </label>
-            <select v-model="selectedParameterId" 
-                    class="block w-full rounded-2xl border border-slate-300/90 bg-white/95 py-3 pl-4 pr-10 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-white/50 transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-800/60">
-              <option value="">Selecione um parâmetro</option>
-              <option v-for="param in filteredParameters" 
-                      :key="getParameterUniqueId(param)"
-                      :value="getParameterUniqueId(param)"
-                      :disabled="param.inserted_value && props.action === 'analyze'">
-                {{ param.parameter_id?.code || 'N/A' }} - {{ param.parameter_id?.name || 'Sem nome' }}
-                <span v-if="hasExistingValue(param)" class="text-slate-500 dark:text-slate-400">
-                  ({{ getExistingValueText(param) }})
-                </span>
-              </option>
-            </select>
-            <p v-if="selectedParameter?.requires_calculation" class="mt-2 flex items-center gap-1 text-sm font-medium text-amber-700 dark:text-amber-300">
-              <CalculatorIcon class="h-4 w-4" />
-              Este parâmetro requer cálculo automático
-            </p>
-          </div>
-
-          <!-- Result Input -->
-          <div v-if="selectedParameter" class="space-y-4">
-            <!-- Parameter Info Card -->
-            <div class="rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <h4 class="font-semibold text-[#17231f] dark:text-[#f7f1e7]">{{ selectedParameter.parameter_id?.name }}</h4>
-                  <p class="text-sm text-slate-600 dark:text-slate-400">{{ selectedParameter.parameter_id?.code }}</p>
-                  
-                  <!-- Reference Range -->
-                  <div v-if="selectedParameter.min_ref_value || selectedParameter.max_ref_value"
-                       class="mt-2 flex items-center gap-1 text-xs font-medium text-primary-700 dark:text-primary-300">
-                    <ScaleIcon class="h-3 w-3" />
-                    <span>
-                      Referência: 
-                      <template v-if="selectedParameter.min_ref_value && selectedParameter.max_ref_value">
-                        {{ selectedParameter.min_ref_value }} - {{ selectedParameter.max_ref_value }}
-                      </template>
-                      <template v-else-if="selectedParameter.min_ref_value">
-                        ≥ {{ selectedParameter.min_ref_value }}
-                      </template>
-                      <template v-else-if="selectedParameter.max_ref_value">
-                        ≤ {{ selectedParameter.max_ref_value }}
-                      </template>
-                      <span v-if="selectedParameter.unit_label">{{ selectedParameter.unit_label }}</span>
-                    </span>
-                  </div>
-                </div>
-                
-                <span v-if="selectedParameter.requires_calculation" 
-                      class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900 dark:bg-amber-500/15 dark:text-amber-100">
-                  <CalculatorIcon class="h-3 w-3" />
-                  Calculado
-                </span>
-              </div>
-              
-              <!-- Unit Info -->
-              <div v-if="selectedParameter.unit_label" class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                Unidade: {{ selectedParameter.unit_label }}
-              </div>
-            </div>
-
-            <!-- Value Input Section -->
-            <div class="space-y-4">
-              <!-- Value Input -->
-              <div>
-                <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
-                  {{ valueLabel }}
-                  <span v-if="selectedParameter.unit_label" class="ml-1 text-slate-500 dark:text-slate-400">
-                    ({{ selectedParameter.unit_label }})
-                  </span>
-                </label>
-                <div class="relative">
-                  <div v-if="selectedParameterIsQualitative" class="mb-3 flex flex-wrap items-center gap-2">
-                    <button
-                      v-for="option in selectedParameterQualitativeOptions"
-                      :key="option"
-                      type="button"
-                      @click="applyQualitativeOption(option)"
-                      :class="[
-                        'rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-inset transition',
-                        resultValue === option
-                          ? 'bg-primary-900 text-white ring-primary-900 dark:bg-primary-400 dark:text-slate-950 dark:ring-primary-300'
-                          : 'bg-white text-[#31413b] ring-[#ded3bf] hover:bg-primary-50 hover:text-primary-900 dark:bg-slate-900 dark:text-[#d7e2dd] dark:ring-[#25443c] dark:hover:bg-primary-500/10 dark:hover:text-primary-200'
-                      ]"
-                    >
-                      {{ option }}
-                    </button>
-                  </div>
-
-                  <input v-model="resultValue"
-                         type="text"
-                         :disabled="selectedParameter.requires_calculation"
-                         class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 disabled:bg-slate-100 disabled:text-slate-500 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500 dark:disabled:bg-slate-800"
-                         :placeholder="selectedParameter.requires_calculation ? 'Valor calculado automaticamente' : `Insira valor para ${selectedParameter.parameter_id?.code}`">
-                  <div v-if="selectedParameter.requires_calculation" 
-                       class="absolute inset-y-0 right-0 flex items-center pr-3">
-                    <CalculatorIcon class="h-5 w-5 text-amber-600 dark:text-amber-300" />
-                  </div>
-                </div>
-                <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
-                  <p v-if="resultValue && formattedResultValue !== resultValue"
-                     class="text-xs font-semibold text-[#51645d] dark:text-[#b7c6c0]">
-                    Visualização: {{ formattedResultValue }}
-                  </p>
-                  <button
-                    v-if="!selectedParameterIsQualitative"
-                    type="button"
-                    @click="toggleDisplayFormat"
-                    class="ml-auto rounded-full border border-[#ded3bf] bg-white px-3 py-1.5 text-xs font-semibold text-[#31413b] transition hover:border-primary-500 hover:text-primary-900 dark:border-[#25443c] dark:bg-slate-900 dark:text-[#d7e2dd] dark:hover:border-primary-400 dark:hover:text-primary-200"
-                  >
-                    {{ displayFormatLabel }}
-                  </button>
-                </div>
-                <p v-if="selectedParameter.requires_calculation" class="mt-1 text-xs font-medium text-amber-700 dark:text-amber-300">
-                  Use a calculadora para determinar este valor
-                </p>
-              </div>
-
-              <!-- Uncertainty Input -->
-              <div>
-                <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
-                  Incerteza (±)
-                  <span v-if="selectedParameter.unit_label" class="ml-1 text-slate-500 dark:text-slate-400">
-                    ({{ selectedParameter.unit_label }})
-                  </span>
-                </label>
-                <input v-model="uncertaintyValue"
-                       type="text"
-                       class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
-                       placeholder="Ex: 0.1">
-              </div>
-
-              <!-- Notes -->
-              <div>
-                <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
-                  Observações
-                </label>
-                <textarea v-model="notes"
-                          rows="3"
-                          class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
-                          :placeholder="`Observações sobre ${selectedParameter.parameter_id?.code}...`"></textarea>
-              </div>
-
-              <!-- Calculation Button -->
-              <div v-if="selectedParameter.requires_calculation" class="pt-2">
-                <button @click="openCalculationForParameter"
-                        type="button"
-                        class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-amber-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2 dark:focus:ring-offset-[#07110f]">
-                  <CalculatorIcon class="h-5 w-5" />
-                  Calcular Parâmetro
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="flex justify-end gap-3 border-t border-[#ded3bf] pt-6 dark:border-[#25443c]">
-            <button @click="$emit('close')"
-                    class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:ring-offset-[#07110f]">
-              Cancelar
-            </button>
-            
-            <button @click="saveIndividualResult"
-                    :disabled="!canSave"
-                    :class="[
-                      'inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
-                      !canSave
-                        ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500'
-                        : actionButtonClass
-                    ]">
-              <CheckIcon class="h-5 w-5" />
-              {{ saveButtonText }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { 
-  CheckIcon,
+import Modal from "@/Components/Modal.vue";
+import { ResultsDataService } from "@/Services/ResultsDataService.js";
+import { computed, ref, watch } from "vue";
+import {
   CalculatorIcon,
-  ScaleIcon
+  CheckIcon,
+  ScaleIcon,
+  XMarkIcon,
 } from "@heroicons/vue/24/outline";
-import { ResultsDataService } from '@/Services/ResultsDataService.js';
 
 const props = defineProps({
-  sampleId: Number,
-  parameters: Array,
-  action: String,
-  existingResults: Object
-})
+  sampleId: {
+    type: Number,
+    default: null,
+  },
+  parameters: {
+    type: Array,
+    default: () => [],
+  },
+  action: {
+    type: String,
+    default: "analyze",
+  },
+  existingResults: {
+    type: Object,
+    default: null,
+  },
+});
 
-const emit = defineEmits(['close', 'saved', 'open-calculation'])
+const emit = defineEmits(["close", "saved", "open-calculation"]);
 
-// State
-const selectedParameterId = ref('')
-const resultValue = ref('')
-const uncertaintyValue = ref('')
-const notes = ref('')
+const selectedParameterId = ref("");
+const resultValue = ref("");
+const uncertaintyValue = ref("");
+const notes = ref("");
 
-// Computed properties
 const actionText = computed(() => {
-  switch (props.action) {
-    case 'analyze': return 'Inserção'
-    case 'verify': return 'Verificação'
-    case 'approve': return 'Aprovação'
-    default: return 'Edição'
-  }
-})
+  const labels = {
+    analyze: "Inserção",
+    verify: "Verificação",
+    approve: "Aprovação",
+  };
+
+  return labels[props.action] || "Edição";
+});
 
 const valueLabel = computed(() => {
-  switch (props.action) {
-    case 'analyze': return 'Resultado'
-    case 'verify': return 'Valor Verificado'
-    case 'approve': return 'Valor Aprovado'
-    default: return 'Valor'
-  }
-})
+  const labels = {
+    analyze: "Resultado",
+    verify: "Valor verificado",
+    approve: "Valor aprovado",
+  };
+
+  return labels[props.action] || "Valor";
+});
 
 const saveButtonText = computed(() => {
-  switch (props.action) {
-    case 'analyze': return 'Inserir Resultado'
-    case 'verify': return 'Verificar Resultado'
-    case 'approve': return 'Aprovar Resultado'
-    default: return 'Salvar'
-  }
-})
+  const labels = {
+    analyze: "Inserir resultado",
+    verify: "Verificar resultado",
+    approve: "Aprovar resultado",
+  };
 
-const actionButtonClass = computed(() => {
-  switch (props.action) {
-    case 'analyze': return 'rounded-full bg-primary-900 text-white hover:bg-primary-800 focus:ring-primary-600'
-    case 'verify': return 'rounded-full bg-amber-600 text-white hover:bg-amber-700 focus:ring-amber-600'
-    case 'approve': return 'rounded-full bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-600'
-    default: return 'rounded-full bg-primary-900 text-white hover:bg-primary-800 focus:ring-primary-600'
-  }
-})
+  return labels[props.action] || "Guardar";
+});
 
 const filteredParameters = computed(() => {
-  if (!props.parameters) return []
-  
-  return props.parameters.filter(param => {
-    // For analyze: show parameters without inserted value
-    if (props.action === 'analyze') {
-      return !ResultsDataService.hasResultValue(param.inserted_value) || param.requires_calculation
+  return props.parameters.filter((parameter) => {
+    if (props.action === "analyze") {
+      return (
+        !ResultsDataService.hasResultValue(parameter.inserted_value) ||
+        parameter.requires_calculation ||
+        getParameterUniqueId(parameter) === selectedParameterId.value
+      );
     }
-    // For verify: show parameters with inserted value but without verification
-    if (props.action === 'verify') {
-      return ResultsDataService.hasResultValue(param.inserted_value)
-        && !ResultsDataService.hasResultValue(param.verified_value)
+
+    if (props.action === "verify") {
+      return (
+        ResultsDataService.hasResultValue(parameter.inserted_value) &&
+        !ResultsDataService.hasResultValue(parameter.verified_value)
+      );
     }
-    // For approve: show parameters with verification but without approval
-    if (props.action === 'approve') {
-      return ResultsDataService.hasResultValue(param.verified_value)
-        && !ResultsDataService.hasResultValue(param.approved_value)
+
+    if (props.action === "approve") {
+      return (
+        ResultsDataService.hasResultValue(parameter.verified_value) &&
+        !ResultsDataService.hasResultValue(parameter.approved_value)
+      );
     }
-    return true
-  })
-})
+
+    return true;
+  });
+});
 
 const selectedParameter = computed(() => {
-  if (!selectedParameterId.value) return null
-  return props.parameters.find(param => getParameterUniqueId(param) === selectedParameterId.value)
-})
+  return props.parameters.find(
+    (parameter) => getParameterUniqueId(parameter) === selectedParameterId.value,
+  ) || null;
+});
 
-const selectedParameterIsQualitative = computed(() => ResultsDataService.isQualitativeResult(selectedParameter.value))
+const selectedParameterIsQualitative = computed(() => {
+  return ResultsDataService.isQualitativeResult(selectedParameter.value);
+});
 
-const selectedParameterQualitativeOptions = computed(() => ResultsDataService.getQualitativeOptions(selectedParameter.value))
+const selectedParameterQualitativeOptions = computed(() => {
+  return ResultsDataService.getQualitativeOptions(selectedParameter.value);
+});
 
-const formattedResultValue = computed(() => ResultsDataService.formatResultValue(resultValue.value, selectedParameter.value))
+const formattedResultValue = computed(() => {
+  return ResultsDataService.formatResultValue(resultValue.value, selectedParameter.value);
+});
 
-const displayFormatLabel = computed(() => (
-  ResultsDataService.getDisplayFormat(selectedParameter.value) === 'scientific'
-    ? 'Notação normal'
-    : 'Notação científica'
-))
-
-const hasExistingValue = (param) => {
-  switch (props.action) {
-    case 'analyze': return param.inserted_value
-    case 'verify': return param.verified_value
-    case 'approve': return param.approved_value
-    default: return false
-  }
-}
-
-const getExistingValueText = (param) => {
-  const value = hasExistingValue(param)
-  if (!ResultsDataService.hasResultValue(value)) return ''
-  return `${ResultsDataService.formatResultValue(value, param)} ${param.unit_label || ''}`.trim()
-}
+const displayFormatLabel = computed(() => {
+  return ResultsDataService.getDisplayFormat(selectedParameter.value) === "scientific"
+    ? "Notação normal"
+    : "Notação científica";
+});
 
 const canSave = computed(() => {
-  if (!selectedParameterId.value) return false
-  
-  // For calculated parameters, value can be empty initially
-  if (selectedParameter.value?.requires_calculation) {
-    return true
+  if (!selectedParameterId.value) {
+    return false;
   }
-  
-  return resultValue.value.trim() !== ''
-})
 
-// Methods
-const getParameterUniqueId = (param) => {
-  return param.result_id || param.id || param.parameter_id?.value || param.parameter_id?.code
+  if (selectedParameter.value?.requires_calculation) {
+    return true;
+  }
+
+  return String(resultValue.value).trim() !== "";
+});
+
+watch(
+  () => props.existingResults,
+  (result) => {
+    if (result) {
+      selectedParameterId.value = getParameterUniqueId(result);
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  selectedParameter,
+  (parameter) => {
+    if (!parameter) {
+      resultValue.value = "";
+      uncertaintyValue.value = "";
+      notes.value = "";
+      return;
+    }
+
+    if (props.action === "analyze") {
+      resultValue.value = parameter.inserted_value ?? "";
+      notes.value = parameter.insertion_notes || "";
+    } else if (props.action === "verify") {
+      resultValue.value = parameter.verified_value ?? parameter.inserted_value ?? "";
+      notes.value = parameter.verification_notes || "";
+    } else {
+      resultValue.value = parameter.approved_value ?? parameter.verified_value ?? "";
+      notes.value = parameter.approval_notes || "";
+    }
+
+    uncertaintyValue.value = parameter.uncertainty_value || "";
+  },
+  { immediate: true },
+);
+
+function getParameterUniqueId(parameter) {
+  return String(
+    parameter?.result_id ||
+      parameter?.id ||
+      parameter?.parameter_id?.value ||
+      parameter?.parameter_id?.code ||
+      "",
+  );
 }
 
-const openCalculationForParameter = () => {
-  if (!selectedParameter.value) return
-  
-  // Emit to parent to open calculation for this specific parameter
-  emit('open-calculation', selectedParameter.value)
+function applyQualitativeOption(value) {
+  resultValue.value = value;
 }
 
-const applyQualitativeOption = (value) => {
-  resultValue.value = value
-}
-
-const toggleDisplayFormat = () => {
+function toggleDisplayFormat() {
   if (!selectedParameter.value) {
-    return
+    return;
   }
 
   ResultsDataService.setDisplayFormat(
     selectedParameter.value,
-    ResultsDataService.getDisplayFormat(selectedParameter.value) === 'scientific' ? 'standard' : 'scientific'
-  )
+    ResultsDataService.getDisplayFormat(selectedParameter.value) === "scientific"
+      ? "standard"
+      : "scientific",
+  );
 }
 
-const saveIndividualResult = () => {
-  if (!selectedParameter.value || (!canSave.value && !selectedParameter.value.requires_calculation)) return
+function openCalculationForParameter() {
+  if (selectedParameter.value) {
+    emit("open-calculation", selectedParameter.value);
+  }
+}
 
-  // Format parameter_id correctly
-  const parameterId = selectedParameter.value.parameter_id?.value || 
-                     selectedParameter.value.parameter_id?.id ||
-                     selectedParameter.value.parameter_id
+function saveIndividualResult() {
+  if (!selectedParameter.value || !canSave.value) {
+    return;
+  }
 
+  const parameter = selectedParameter.value;
   const resultData = {
-    result_id: selectedParameter.value.result_id,
+    ...parameter,
+    result_id: parameter.result_id,
     sample_id: props.sampleId,
-    parameter_id: parameterId,
-    parameter_label: selectedParameter.value.parameter_label || selectedParameter.value.parameter_id?.name,
-    code_id: selectedParameter.value.code_id?.value || selectedParameter.value.code_id,
-    code_label: selectedParameter.value.code_label,
-    product_id: selectedParameter.value.product_id?.value || selectedParameter.value.product_id,
-    product_label: selectedParameter.value.product_label,
-    profile_id: selectedParameter.value.profile_id,
-    unit_id: selectedParameter.value.unit_id?.value || selectedParameter.value.unit_id,
-    unit_label: selectedParameter.value.unit_label,
-    type_id: selectedParameter.value.type_id?.value || selectedParameter.value.type_id,
-    category_label: selectedParameter.value.category_label,
-    result_is_qualitative: ResultsDataService.isQualitativeResult(selectedParameter.value),
-    result_options: ResultsDataService.getQualitativeOptions(selectedParameter.value),
-    display_format: ResultsDataService.getDisplayFormat(selectedParameter.value),
+    parameter_id:
+      parameter.parameter_id?.value ||
+      parameter.parameter_id?.id ||
+      parameter.parameter_id,
+    parameter_label: parameter.parameter_label || parameter.parameter_id?.name,
+    code_id: parameter.code_id?.value || parameter.code_id,
+    product_id: parameter.product_id?.value || parameter.product_id,
+    unit_id: parameter.unit_id?.value || parameter.unit_id,
+    type_id: parameter.type_id?.value || parameter.type_id,
+    result_is_qualitative: ResultsDataService.isQualitativeResult(parameter),
+    result_options: ResultsDataService.getQualitativeOptions(parameter),
+    display_format: ResultsDataService.getDisplayFormat(parameter),
     extra_data: {
-      ...(selectedParameter.value.extra_data || {}),
-      display_format: ResultsDataService.getDisplayFormat(selectedParameter.value),
+      ...(parameter.extra_data || {}),
+      display_format: ResultsDataService.getDisplayFormat(parameter),
     },
-    
-    // Set value based on action
-    ...(props.action === 'analyze' && { 
+    uncertainty_value: uncertaintyValue.value || null,
+    insertion_method: "individual",
+  };
+
+  if (props.action === "analyze") {
+    Object.assign(resultData, {
       inserted_value: resultValue.value,
       inserted_date: new Date().toISOString(),
-      inserted_by: 'current_user',
-      inserted_by_id: 1,
-      insertion_notes: notes.value || null
-    }),
-    
-    ...(props.action === 'verify' && { 
+      insertion_notes: notes.value || null,
+    });
+  } else if (props.action === "verify") {
+    Object.assign(resultData, {
       verified_value: resultValue.value,
       verified_date: new Date().toISOString(),
-      verified_by: 'current_user',
-      verified_by_id: 1,
-      verification_notes: notes.value || null
-    }),
-    
-    ...(props.action === 'approve' && { 
+      verification_notes: notes.value || null,
+    });
+  } else {
+    Object.assign(resultData, {
       approved_value: resultValue.value,
       approved_date: new Date().toISOString(),
-      approved_by: 'current_user',
-      approved_by_id: 1,
-      approval_notes: notes.value || null
-    }),
-    
-    // Common fields
-    uncertainty_value: uncertaintyValue.value || null,
-    min_ref_value: selectedParameter.value.min_ref_value,
-    max_ref_value: selectedParameter.value.max_ref_value,
-    ref_val_origin: selectedParameter.value.ref_val_origin,
-    requires_calculation: selectedParameter.value.requires_calculation || false,
-    calculation_metadata: selectedParameter.value.calculation_metadata || null,
-    is_calculated: selectedParameter.value.requires_calculation || false,
-    insertion_method: 'individual',
-    
-    // Microbiology fields
-    sumC: selectedParameter.value.sumC || 0,
-    volume: selectedParameter.value.volume || 1,
-    n1: selectedParameter.value.n1 || 0,
-    n2: selectedParameter.value.n2 || 0,
-    dilution: selectedParameter.value.dilution || 0,
-    d1: selectedParameter.value.d1 || 0,
-    d2: selectedParameter.value.d2 || 0,
-    cfu1: selectedParameter.value.cfu1 || 0,
-    cfu2: selectedParameter.value.cfu2 || 0,
+      approval_notes: notes.value || null,
+    });
   }
 
-  emit('saved', resultData)
-  emit('close')
+  emit("saved", resultData);
+  emit("close");
 }
-
-// Initialize with existing value if available
-watch(selectedParameter, (newParam) => {
-  if (newParam) {
-    switch (props.action) {
-      case 'analyze':
-        resultValue.value = newParam.inserted_value ?? ''
-        uncertaintyValue.value = newParam.uncertainty_value || ''
-        notes.value = newParam.insertion_notes || ''
-        break
-      case 'verify':
-        resultValue.value = newParam.verified_value ?? newParam.inserted_value ?? ''
-        uncertaintyValue.value = newParam.uncertainty_value || ''
-        notes.value = newParam.verification_notes || ''
-        break
-      case 'approve':
-        resultValue.value = newParam.approved_value ?? newParam.verified_value ?? ''
-        uncertaintyValue.value = newParam.uncertainty_value || ''
-        notes.value = newParam.approval_notes || ''
-        break
-    }
-  } else {
-    resultValue.value = ''
-    uncertaintyValue.value = ''
-    notes.value = ''
-  }
-}, { immediate: true })
 </script>
+
+<template>
+  <Modal :show="true" max-width="2xl" @close="emit('close')">
+    <div class="min-w-0">
+      <header class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
+        <div>
+          <p class="ds-kicker">Resultado individual</p>
+          <h2 class="ds-heading mt-2 text-lg">{{ actionText }} individual</h2>
+          <p class="ds-copy mt-1 text-xs">Trabalhe num único parâmetro sem perder o contexto da amostra.</p>
+        </div>
+        <button type="button" class="ds-icon-button" title="Fechar" @click="emit('close')">
+          <XMarkIcon class="h-5 w-5" />
+          <span class="sr-only">Fechar</span>
+        </button>
+      </header>
+
+      <div class="max-h-[75vh] space-y-6 overflow-y-auto p-5 sm:p-6">
+        <div class="ds-field-group">
+          <label class="ds-field-label" for="individual-parameter">Parâmetro</label>
+          <select id="individual-parameter" v-model="selectedParameterId" class="ds-field mt-2">
+            <option value="">Selecione um parâmetro</option>
+            <option
+              v-for="parameter in filteredParameters"
+              :key="getParameterUniqueId(parameter)"
+              :value="getParameterUniqueId(parameter)"
+            >
+              {{ parameter.parameter_id?.code || "N/A" }} - {{ parameter.parameter_id?.name || "Sem nome" }}
+            </option>
+          </select>
+        </div>
+
+        <template v-if="selectedParameter">
+          <section class="ds-command-surface overflow-hidden">
+            <div class="flex items-start justify-between gap-4 p-4">
+              <div class="min-w-0">
+                <p class="font-mono text-sm font-bold text-[var(--ds-text)]">
+                  {{ selectedParameter.parameter_id?.code || "N/D" }}
+                </p>
+                <h3 class="ds-heading mt-1 text-sm">{{ selectedParameter.parameter_id?.name }}</h3>
+                <p v-if="selectedParameter.unit_label" class="ds-copy mt-1 text-xs">
+                  Unidade: {{ selectedParameter.unit_label }}
+                </p>
+              </div>
+              <span v-if="selectedParameter.requires_calculation" class="ds-chip">
+                <CalculatorIcon class="h-3.5 w-3.5" />
+                Calculado
+              </span>
+            </div>
+            <div
+              v-if="selectedParameter.min_ref_value || selectedParameter.max_ref_value"
+              class="flex items-center gap-2 border-t border-[var(--ds-border)] px-4 py-3 text-xs font-semibold text-[var(--ds-text-muted)]"
+            >
+              <ScaleIcon class="h-4 w-4" />
+              Referência:
+              <template v-if="selectedParameter.min_ref_value && selectedParameter.max_ref_value">
+                {{ selectedParameter.min_ref_value }} - {{ selectedParameter.max_ref_value }}
+              </template>
+              <template v-else-if="selectedParameter.min_ref_value">≥ {{ selectedParameter.min_ref_value }}</template>
+              <template v-else>≤ {{ selectedParameter.max_ref_value }}</template>
+              {{ selectedParameter.unit_label }}
+            </div>
+          </section>
+
+          <div class="ds-field-group">
+            <label class="ds-field-label">{{ valueLabel }}</label>
+            <div v-if="selectedParameterIsQualitative" class="mt-2 flex flex-wrap gap-2">
+              <button
+                v-for="option in selectedParameterQualitativeOptions"
+                :key="option"
+                type="button"
+                :class="[
+                  'ds-button',
+                  resultValue === option ? 'ds-button-primary' : 'ds-button-secondary',
+                ]"
+                @click="applyQualitativeOption(option)"
+              >
+                {{ option }}
+              </button>
+            </div>
+            <div v-else class="mt-2 flex gap-2">
+              <input
+                v-model="resultValue"
+                class="ds-field"
+                :disabled="selectedParameter.requires_calculation"
+                :placeholder="selectedParameter.requires_calculation ? 'Valor calculado automaticamente' : 'Introduza o resultado'"
+              />
+              <button
+                type="button"
+                class="ds-button ds-button-secondary shrink-0"
+                @click="toggleDisplayFormat"
+              >
+                {{ displayFormatLabel }}
+              </button>
+            </div>
+            <p
+              v-if="resultValue && formattedResultValue !== resultValue"
+              class="ds-field-hint"
+            >
+              Visualização: {{ formattedResultValue }}
+            </p>
+          </div>
+
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="ds-field-group">
+              <label class="ds-field-label" for="individual-uncertainty">Incerteza</label>
+              <input
+                id="individual-uncertainty"
+                v-model="uncertaintyValue"
+                class="ds-field mt-2"
+                inputmode="decimal"
+                placeholder="Ex.: 0.1"
+              />
+            </div>
+            <div class="ds-field-group">
+              <label class="ds-field-label" for="individual-notes">Observações</label>
+              <textarea
+                id="individual-notes"
+                v-model="notes"
+                class="ds-field mt-2 min-h-20"
+                placeholder="Registe o contexto da medição."
+              />
+            </div>
+          </div>
+
+          <button
+            v-if="selectedParameter.requires_calculation"
+            type="button"
+            class="ds-button ds-button-secondary w-full"
+            @click="openCalculationForParameter"
+          >
+            <CalculatorIcon class="h-4 w-4" />
+            Calcular parâmetro
+          </button>
+        </template>
+      </div>
+
+      <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+        <button type="button" class="ds-button ds-button-secondary" @click="emit('close')">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="ds-button ds-button-primary"
+          :disabled="!canSave"
+          @click="saveIndividualResult"
+        >
+          <CheckIcon class="h-4 w-4" />
+          {{ saveButtonText }}
+        </button>
+      </footer>
+    </div>
+  </Modal>
+</template>

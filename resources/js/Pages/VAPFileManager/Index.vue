@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import FileList from "@/Components/vap-filemanager/file-list.vue";
 import ArchivedItems from "@/Components/vap-filemanager/archived-items.vue";
 import WorkflowPanel from "@/Components/vap-filemanager/workflow-panel.vue";
@@ -187,18 +186,18 @@ const attentionCards = computed(() => {
 
 function signalClass(tone: string): string {
   if (tone === "emerald") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200";
+    return "ds-badge-success";
   }
 
   if (tone === "amber") {
-    return "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200";
+    return "ds-badge-warning";
   }
 
   if (tone === "rose") {
-    return "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200";
+    return "ds-badge-danger";
   }
 
-  return "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200";
+  return "ds-badge-neutral";
 }
 
 function formatDate(value?: string | null): string {
@@ -221,73 +220,71 @@ function closeSidePanel(): void {
 </script>
 
 <template>
-  <div class="space-y-6" :class="commercialDocumentThemeClasses">
-    <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.32),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.18),_transparent_28%),linear-gradient(135deg,_#020617,_#0f172a_48%,_#0b1120)] p-6 text-white shadow-sm">
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <div class="grid gap-6 xl:grid-cols-[1.2fr,0.8fr] xl:items-start">
         <div class="space-y-6">
           <div class="flex flex-wrap items-center gap-3">
-            <span class="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-100">
-              ISO 17025 document control
-            </span>
-            <span class="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium text-slate-200">
+            <span class="ds-badge ds-badge-info">ISO 17025 · controlo documental</span>
+            <span class="ds-badge ds-badge-neutral">
               Aprovação, retenção, obsolescência e arquivo no mesmo fluxo
             </span>
           </div>
 
           <div class="max-w-4xl">
-            <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h1 class="ds-heading text-2xl">
               {{ $t("gestlab.general.labels.vap_filemanager.page_title") }}
             </h1>
-            <p class="mt-3 max-w-3xl text-sm leading-7 text-slate-200 sm:text-base">
+            <p class="ds-copy mt-2 max-w-3xl text-sm">
               Um centro de controlo documental pensado para operação real: localizar rapidamente, decidir o estado do documento,
               acompanhar revisões e manter evidência auditável sem espalhar a tarefa por ecrãs paralelos.
             </p>
           </div>
 
-          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <article
+          <dl class="grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] md:grid-cols-2 xl:grid-cols-4">
+            <div
               v-for="card in dashboardCards"
               :key="card.label"
-              class="rounded-[1.5rem] border border-white/10 bg-white/8 p-4 backdrop-blur-sm"
+              class="border-b border-[var(--ds-border)] px-4 py-3 md:[&:nth-child(odd)]:border-r md:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0"
             >
               <div class="flex items-start justify-between gap-3">
                 <div>
-                  <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-300">{{ card.label }}</p>
-                  <p class="mt-3 text-3xl font-semibold text-white">{{ card.value }}</p>
+                  <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ card.label }}</dt>
+                  <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ card.value }}</dd>
                 </div>
-                <div class="rounded-2xl border border-white/10 bg-white/10 p-2.5">
-                  <component :is="card.icon" class="h-5 w-5 text-cyan-200" />
+                <div class="grid h-9 w-9 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
+                  <component :is="card.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
                 </div>
               </div>
-              <p class="mt-3 text-sm leading-6 text-slate-300">{{ card.caption }}</p>
-            </article>
-          </div>
+              <p class="mt-2 text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.caption }}</p>
+            </div>
+          </dl>
         </div>
 
         <div class="space-y-4">
-          <section class="rounded-[1.75rem] border border-white/10 bg-white/8 p-5 backdrop-blur-sm">
+          <section class="border-l-4 border-amber-400/70 pl-5">
             <div class="flex items-center justify-between gap-3">
               <div>
-                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-100">Fila de atenção</p>
-                <h2 class="mt-2 text-xl font-semibold text-white">O que exige acção agora</h2>
+                <p class="ds-kicker">Fila de atenção</p>
+                <h2 class="ds-heading mt-1 text-base">O que exige acção agora</h2>
               </div>
-              <ExclamationTriangleIcon class="h-6 w-6 text-amber-300" />
+              <ExclamationTriangleIcon class="h-5 w-5 text-amber-600 dark:text-amber-300" />
             </div>
 
-            <div class="mt-5 space-y-3">
+            <div class="mt-4 divide-y divide-[var(--ds-border)]">
               <article
                 v-for="card in attentionCards"
                 :key="card.label"
-                class="rounded-2xl border border-white/10 bg-slate-950/35 p-4"
+                class="py-3"
               >
                 <div class="flex items-start justify-between gap-3">
                   <div>
-                    <p class="text-sm font-semibold text-white">{{ card.label }}</p>
-                    <p class="mt-1 text-sm leading-6 text-slate-300">{{ card.description }}</p>
+                    <p class="text-sm font-bold text-[var(--ds-text)]">{{ card.label }}</p>
+                    <p class="ds-copy mt-1 text-sm">{{ card.description }}</p>
                   </div>
-                  <div class="min-w-[4.25rem] rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-right">
-                    <component :is="card.icon" class="ml-auto h-4 w-4 text-cyan-200" />
-                    <p class="mt-2 text-2xl font-semibold text-white">{{ card.value }}</p>
+                  <div class="min-w-[4.25rem] text-right">
+                    <component :is="card.icon" class="ml-auto h-4 w-4 text-[var(--ds-text-soft)]" />
+                    <p class="mt-1 text-xl font-bold text-[var(--ds-text)]">{{ card.value }}</p>
                   </div>
                 </div>
               </article>
@@ -295,7 +292,7 @@ function closeSidePanel(): void {
 
             <button
               type="button"
-              class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+              class="ds-button ds-button-secondary mt-4 w-full"
               @click="showArchivedItems = true"
             >
               <ArchiveBoxIcon class="h-5 w-5" />
@@ -303,12 +300,12 @@ function closeSidePanel(): void {
             </button>
           </section>
 
-          <section class="rounded-[1.75rem] border border-white/10 bg-slate-950/45 p-5">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">Documento seleccionado</p>
+          <section class="border-t border-[var(--ds-border)] pt-4">
+            <p class="ds-kicker">Documento seleccionado</p>
             <div v-if="selectedFile" class="mt-4 space-y-4">
               <div>
-                <h3 class="text-lg font-semibold text-white">{{ selectedFile.name }}</h3>
-                <p class="mt-1 text-sm text-slate-300">
+                <h3 class="ds-heading text-base">{{ selectedFile.name }}</h3>
+                <p class="ds-copy mt-1 text-sm">
                   {{ selectedFile.document_number || $t("gestlab.general.labels.vap_filemanager.missing_document_number") }} •
                   {{ selectedFile.revision_code || $t("gestlab.general.labels.vap_filemanager.missing_revision") }}
                 </p>
@@ -318,7 +315,7 @@ function closeSidePanel(): void {
                 <span
                   v-for="signal in selectedFileSignals"
                   :key="signal.label"
-                  class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold"
+                  class="ds-badge"
                   :class="signalClass(signal.tone)"
                 >
                   {{ signal.label }}
@@ -326,18 +323,18 @@ function closeSidePanel(): void {
               </div>
 
               <dl class="grid gap-3 sm:grid-cols-2">
-                <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Próxima revisão</dt>
-                  <dd class="mt-2 text-sm font-medium text-white">{{ formatDate(selectedFile.review_due_at) }}</dd>
+                <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3">
+                  <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Próxima revisão</dt>
+                  <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ formatDate(selectedFile.review_due_at) }}</dd>
                 </div>
-                <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  <dt class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Confidencialidade</dt>
-                  <dd class="mt-2 text-sm font-medium text-white">{{ selectedFile.confidentiality_level || "internal" }}</dd>
+                <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3">
+                  <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Confidencialidade</dt>
+                  <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ selectedFile.confidentiality_level || "internal" }}</dd>
                 </div>
               </dl>
             </div>
 
-            <div v-else class="mt-4 rounded-2xl border border-dashed border-white/15 bg-white/5 px-4 py-5 text-sm leading-6 text-slate-300">
+            <div v-else class="ds-empty-state mt-4 px-4 py-5 text-sm">
               {{ $t("gestlab.general.labels.vap_filemanager.select_single_document_hint") }}
             </div>
           </section>
@@ -346,10 +343,11 @@ function closeSidePanel(): void {
     </section>
 
     <main class="space-y-4">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div class="ds-command-surface flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Workspace documental</h2>
-          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p class="ds-kicker">Biblioteca operacional</p>
+          <h2 class="ds-heading mt-1 text-base">Workspace documental</h2>
+          <p class="ds-copy mt-1 text-sm">
             A lista ocupa toda a largura. Abra os painéis laterais apenas quando precisar de controlo ou workflow.
           </p>
         </div>
@@ -357,18 +355,18 @@ function closeSidePanel(): void {
         <div class="flex flex-wrap gap-3">
           <button
             type="button"
-            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            class="ds-button ds-button-secondary"
             @click="openSidePanel('compliance')"
           >
-            <ShieldCheckIcon class="h-5 w-5 text-sky-700" />
+            <ShieldCheckIcon class="h-4 w-4" />
             Controlo documental
           </button>
           <button
             type="button"
-            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+            class="ds-button ds-button-secondary"
             @click="openSidePanel('workflow')"
           >
-            <CheckBadgeIcon class="h-5 w-5 text-emerald-700" />
+            <CheckBadgeIcon class="h-4 w-4" />
             Workflow e tarefas
           </button>
         </div>
@@ -395,7 +393,7 @@ function closeSidePanel(): void {
           leave-from="opacity-100"
           leave-to="opacity-0"
         >
-          <div class="fixed inset-0 bg-slate-950/45 backdrop-blur-sm" />
+          <div class="ds-modal-backdrop fixed inset-0" />
         </TransitionChild>
 
         <div class="fixed inset-0 overflow-hidden">
@@ -411,15 +409,15 @@ function closeSidePanel(): void {
                 leave-to="translate-x-full"
               >
                 <DialogPanel class="pointer-events-auto w-screen max-w-2xl">
-                  <div class="flex h-full flex-col overflow-y-auto border-l border-slate-200 bg-slate-50 shadow-2xl dark:border-slate-800 dark:bg-slate-950">
-                    <div class="border-b border-slate-200 bg-white px-5 py-4 sm:px-6 dark:border-slate-800 dark:bg-slate-900">
+                  <div class="ds-slideover-panel flex h-full flex-col overflow-y-auto border-l">
+                    <div class="ds-slideover-header border-b px-5 py-4 sm:px-6">
                       <div class="flex items-start justify-between gap-4">
                         <div>
-                          <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-700 dark:text-sky-300">Painel lateral</p>
-                          <DialogTitle class="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">
+                          <p class="ds-kicker">Painel lateral</p>
+                          <DialogTitle class="ds-heading mt-1 text-xl">
                             {{ activeSidePanel === 'compliance' ? 'Controlo documental' : 'Workflow documental' }}
                           </DialogTitle>
-                          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                          <p class="ds-copy mt-1 text-sm">
                             {{ activeSidePanel === 'compliance'
                               ? 'Metadados ISO, revisão, retenção e efetividade do documento seleccionado.'
                               : 'Estado operacional, tarefas e seguimento do fluxo documental.' }}
@@ -427,26 +425,27 @@ function closeSidePanel(): void {
                         </div>
                         <button
                           type="button"
-                          class="inline-flex rounded-2xl border border-slate-200 bg-white p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+                          class="ds-icon-button"
                           @click="closeSidePanel"
+                          title="Fechar painel"
                         >
                           <XMarkIcon class="h-5 w-5" />
                         </button>
                       </div>
 
-                      <div class="mt-4 flex flex-wrap gap-2">
+                      <div class="mt-4 inline-flex rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-1">
                         <button
                           type="button"
-                          class="rounded-full px-3 py-1.5 text-xs font-semibold transition"
-                          :class="activeSidePanel === 'compliance' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'"
+                          class="rounded-md px-3 py-1.5 text-xs font-bold transition"
+                          :class="activeSidePanel === 'compliance' ? 'bg-[var(--ds-panel-raised)] text-[var(--ds-text)] shadow-sm' : 'text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'"
                           @click="openSidePanel('compliance')"
                         >
                           Controlo documental
                         </button>
                         <button
                           type="button"
-                          class="rounded-full px-3 py-1.5 text-xs font-semibold transition"
-                          :class="activeSidePanel === 'workflow' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'"
+                          class="rounded-md px-3 py-1.5 text-xs font-bold transition"
+                          :class="activeSidePanel === 'workflow' ? 'bg-[var(--ds-panel-raised)] text-[var(--ds-text)] shadow-sm' : 'text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'"
                           @click="openSidePanel('workflow')"
                         >
                           Workflow e tarefas

@@ -1,29 +1,29 @@
 <template>
   <Modal :show="show" @close="close">
-    <div class="p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-          <ArrowsRightLeftIcon class="h-5 w-5 text-blue-900" />
+    <div class="space-y-6 p-6">
+      <div class="flex items-center justify-between gap-4 border-b border-[var(--ds-border)] pb-5">
+        <h3 class="ds-heading flex items-center gap-2 text-lg">
+          <ArrowsRightLeftIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
           Movimento de Estoque
         </h3>
-        <button @click="close" class="text-gray-400 hover:text-gray-500">
+        <button type="button" @click="close" class="ds-icon-button">
           <XMarkIcon class="h-5 w-5" />
         </button>
       </div>
 
       <div class="space-y-6">
         <!-- ITEM INFO -->
-        <div class="bg-gradient-to-r from-blue-50 to-white rounded-lg border border-blue-100 p-4">
+        <div class="ds-card p-4">
           <div class="flex items-center gap-3">
             <div class="flex-shrink-0">
-              <div class="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <CubeIcon class="h-6 w-6 text-blue-900" />
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)]">
+                <CubeIcon class="h-6 w-6 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
               </div>
             </div>
             <div>
-              <div class="text-sm font-semibold text-gray-900">{{ item.name }}</div>
-              <div class="text-sm text-gray-500">{{ item.internal_code || 'Sem Código Interno' }}</div>
-              <div class="text-xs text-gray-400">{{ item.category?.name || 'Sem Categoria' }}</div>
+              <div class="text-sm font-bold text-[var(--ds-text)]">{{ item.name }}</div>
+              <div class="text-sm font-semibold text-[var(--ds-text-muted)]">{{ item.internal_code || 'Sem Código Interno' }}</div>
+              <div class="text-xs font-semibold text-[var(--ds-text-soft)]">{{ item.category?.name || 'Sem Categoria' }}</div>
             </div>
           </div>
         </div>
@@ -38,9 +38,9 @@
             <select
               v-model="form.source_id"
               @change="updateSourceStock"
-              :class="[
-                'w-full rounded-lg border px-3 py-2.5 text-sm',
-                form.errors.source_id ? 'border-red-300' : 'border-gray-300'
+            :class="[
+                'ds-field',
+                form.errors.source_id ? 'border-[var(--color-danger-500)]' : 'border-[var(--ds-border)]'
               ]"
               required
             >
@@ -66,9 +66,9 @@
             </label>
             <select
               v-model="form.destination_id"
-              :class="[
-                'w-full rounded-lg border px-3 py-2.5 text-sm',
-                form.errors.destination_id ? 'border-red-300' : 'border-gray-300'
+            :class="[
+                'ds-field',
+                form.errors.destination_id ? 'border-[var(--color-danger-500)]' : 'border-[var(--ds-border)]'
               ]"
               required
             >
@@ -104,8 +104,8 @@
               :max="sourceStock?.qty_available || 0"
               required
               :class="[
-                'w-full rounded-lg border px-3 py-2.5 text-sm pr-12',
-                form.errors.qty ? 'border-red-300' : 'border-gray-300'
+                'ds-field pr-12',
+                form.errors.qty ? 'border-[var(--color-danger-500)]' : 'border-[var(--ds-border)]'
               ]"
               placeholder="Digite a quantidade"
             />
@@ -132,12 +132,6 @@
             <label class="block text-sm font-medium text-gray-700">
               Data de Entrega Esperada
             </label>
-            <!-- <input
-              v-model="form.expected_date"
-              type="date"
-              :min="new Date().toISOString().split('T')[0]"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
-            /> -->
             <date-picker-enhanced
               v-model="form.expected_date"
               :has-error="form.errors.expected_date"
@@ -149,12 +143,6 @@
             <label class="block text-sm font-medium text-gray-700">
               Data de Transferência
             </label>
-            <!-- <input
-              v-model="form.sent_date"
-              type="date"
-              :max="new Date().toISOString().split('T')[0]"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
-            /> -->
             <date-picker-enhanced
               v-model="form.sent_date"
               :has-error="form.errors.sent_date"
@@ -172,7 +160,7 @@
           <textarea
             v-model="form.obs"
             rows="3"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+            class="ds-field"
             placeholder="Qualquer observação sobre este transferência..."
           ></textarea>
           <p v-if="form.errors.obs" class="text-xs text-red-600">
@@ -181,10 +169,9 @@
         </div>
 
         <!-- TRANSFER SUMMARY -->
-        <div v-if="form.source_id && form.destination_id && form.qty" 
-          class="bg-gradient-to-r from-green-50 to-white rounded-lg border border-green-100 p-4">
-          <h4 class="text-sm font-semibold text-gray-900 mb-2">Resumo de Transferência</h4>
-          <div class="space-y-1 text-sm text-gray-600">
+        <div v-if="form.source_id && form.destination_id && form.qty" class="ds-card p-4">
+          <h4 class="mb-2 text-sm font-bold text-[var(--ds-text)]">Resumo de Transferência</h4>
+          <div class="space-y-1 text-sm text-[var(--ds-text-muted)]">
             <div class="flex items-center justify-between">
               <span>Armazém de Origem:</span>
               <span class="font-medium">{{ sourceWarehouse?.name }}</span>
@@ -205,11 +192,11 @@
         </div>
 
         <!-- ACTIONS -->
-        <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+        <div class="flex items-center justify-end gap-3 border-t border-[var(--ds-border)] pt-6">
           <button
             type="button"
             @click="close"
-            class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            class="ds-button ds-button-secondary"
           >
             Cancelar
           </button>
@@ -218,10 +205,10 @@
             @click="submit"
             :disabled="form.processing || !isFormValid"
             :class="[
-              'rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all',
+              'ds-button',
               form.processing || !isFormValid
-                ? 'bg-gray-300 cursor-not-allowed'
-                : 'bg-green-900 hover:bg-green-800'
+                ? 'ds-button-secondary'
+                : 'ds-button-primary'
             ]"
           >
             <span v-if="form.processing">Processando...</span>

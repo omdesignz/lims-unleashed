@@ -1,768 +1,575 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <ModuleHero
-      eyebrow="Inventory valuation"
-      title="Relatório de Valor de Inventário"
-      :description="`Acompanhe valor por categoria, armazém e item com visão financeira consolidada · ${totalValueFormatted}`"
-    >
-      <template #actions>
-        <span class="inline-flex items-center rounded-full bg-white/80 px-3 py-1 text-sm font-semibold text-blue-900 ring-1 ring-blue-700/10 dark:bg-white/10 dark:text-blue-100 dark:ring-white/10">
-          {{ stats.total_items }} itens totais
-        </span>
-        <button
-          @click="exportReport"
-          class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
-        >
-          <ArrowDownTrayIcon class="h-5 w-5" />
-          Exportar
-        </button>
-      </template>
-    </ModuleHero>
-
-    <!-- FILTERS SECTION -->
-    <ModuleCard title="Filtros de valorização" description="Filtre o valor de inventário por categoria, armazém e pesquisa operacional.">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- Category Filter -->
-        <div class="space-y-2">
-          <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
-            <RectangleStackIcon class="h-4 w-4" />
-            Categoria
-          </label>
-          <BaseSelect
-            v-model="filters.category_id"
-          >
-            <option value="">Todas as Categorias</option>
-            <option v-for="category in categories" :key="category.id" :value="category.id">
-              {{ category.name }}
-            </option>
-          </BaseSelect>
-        </div>
-
-        <!-- Warehouse Filter -->
-        <div class="space-y-2">
-          <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
-            <BuildingStorefrontIcon class="h-4 w-4" />
-            Armazéns
-          </label>
-          <BaseSelect
-            v-model="filters.warehouse_id"
-          >
-            <option value="">Todos os Armazéns</option>
-            <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
-              {{ warehouse.name }}
-            </option>
-          </BaseSelect>
-        </div>
-
-        <!-- Search -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-            Pesquisar Itens
-          </label>
-          <BaseInput
-            type="text"
-            v-model="filters.search"
-            placeholder="Pesquisar por nome ou código do item..."
-            @keyup.enter="applyFilters"
-          />
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
-        <button
-          @click="resetFilters"
-          class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
-        >
-          Redefinir
-        </button>
-        <button
-          @click="applyFilters"
-          class="rounded-2xl bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500"
-        >
-          Aplicar Filtros
-        </button>
-      </div>
-    </ModuleCard>
-
-    <!-- SUMMARY STATS -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Valor de Inventário Totais</p>
-            <p class="mt-2 text-3xl font-bold text-blue-900">{{ totalValueFormatted }}</p>
-          </div>
-          <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-            <CurrencyDollarIcon class="h-6 w-6 text-blue-900" />
-          </div>
-        </div>
-      </div>
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Itens Únicos</p>
-            <p class="mt-2 text-3xl font-bold text-green-600">{{ stats.unique_items }}</p>
-          </div>
-          <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-            <CubeIcon class="h-6 w-6 text-green-600" />
-          </div>
-        </div>
-      </div>
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Valor Médio de Itens</p>
-            <p class="mt-2 text-3xl font-bold text-purple-600">{{ avgItemValueFormatted }}</p>
-          </div>
-          <div class="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-            <CalculatorIcon class="h-6 w-6 text-purple-600" />
-          </div>
-        </div>
-      </div>
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Categoria com Valor Mais Alto</p>
-            <p v-if="stats.highest_value_category" class="mt-2 text-lg font-bold text-yellow-600 truncate">
-              {{ stats.highest_value_category.category_name }}
-            </p>
-            <p v-else class="mt-2 text-lg font-bold text-gray-400">Sem dados</p>
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-              {{ stats.highest_value_category?.total_value_formatted || 'AOA 0.00' }}
-            </p>
-          </div>
-          <div class="h-12 w-12 rounded-full bg-yellow-100 flex items-center justify-center">
-            <TrophyIcon class="h-6 w-6 text-yellow-600" />
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <section class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-      <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <div class="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Valor por categoria</h2>
-            <p class="mt-1 text-sm text-slate-500">
-              Onde o capital do inventário está mais concentrado entre famílias de itens.
-            </p>
-          </div>
-          <div class="rounded-2xl bg-slate-50 px-4 py-3 text-right dark:bg-white/5">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Categorias monitorizadas</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ categoryValueTotal }}</p>
-          </div>
-        </div>
-
-        <div class="mt-6">
-          <apexchart type="bar" height="300" :options="categoryValueChartOptions" :series="categoryValueChartSeries" />
-        </div>
-      </article>
-
-      <div class="grid gap-6">
-        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Valor por armazém</h2>
-              <p class="mt-1 text-sm text-slate-500">Distribuição do valor imobilizado pelos armazéns ativos.</p>
-            </div>
-            <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-800">
-              {{ warehouseValueTotal }} armazéns
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="ds-kicker">Inventory control</span>
+            <span class="ds-chip">
+              <span class="lims-status-dot lims-status-dot-instrument"></span>
+              Valorização estimada
             </span>
           </div>
-
-          <div class="mt-6">
-            <apexchart type="donut" height="300" :options="warehouseValueChartOptions" :series="warehouseValueChartSeries" />
-          </div>
-        </article>
-
-        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Itens de maior valor</h2>
-              <p class="mt-1 text-sm text-slate-500">Top itens que mais pesam no valor total disponível.</p>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <span class="grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+              <BanknotesIcon class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Valor do inventário</h1>
+              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
+                Acompanhe a concentração financeira por item, categoria e armazém para apoiar controlo e reconciliação.
+              </p>
             </div>
           </div>
+        </div>
 
-          <div class="mt-6">
-            <apexchart type="bar" height="250" :options="topItemValueChartOptions" :series="topItemValueChartSeries" />
+        <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
+          <button type="button" class="ds-button ds-button-secondary" @click="exportReport">
+            <ArrowDownTrayIcon class="h-4 w-4" />
+            Exportar PDF
+          </button>
+          <Link :href="route('vap-inventory.items.index')" class="ds-button ds-button-primary">
+            <ArrowLeftIcon class="h-4 w-4" />
+            Voltar ao inventário
+          </Link>
+        </div>
+      </div>
+
+      <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <article v-for="card in summaryCards" :key="card.label" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
+              <p class="mt-3 truncate text-2xl font-black text-[var(--ds-text)]">{{ card.value }}</p>
+            </div>
+            <component :is="card.icon" :class="['h-5 w-5 shrink-0', card.tone]" />
           </div>
+          <p class="mt-1 truncate text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.detail }}</p>
         </article>
       </div>
     </section>
 
-    <!-- INVENTORY TABLE -->
-    <ModuleCard class="overflow-hidden" title="Itens de Inventário">
-      <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-        <div class="flex items-center justify-between">
-          <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-            <TableCellsIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
-            Itens de Inventário
-            <span class="ml-2 text-sm font-normal text-slate-500 dark:text-slate-400">
-              ({{ inventory.total }} items)
-            </span>
-          </h2>
-          <div class="flex items-center gap-4">
-            <div class="text-sm text-slate-600 dark:text-slate-300">
-              Ordenar por:
-              <BaseSelect v-model="filters.sort_by" @change="applyFilters" class="ml-2 inline-block w-auto min-w-32 text-sm">
-                <option value="qty_available">Quantidade</option>
-                <option value="total_value">Valor</option>
-              </BaseSelect>
-              <BaseSelect v-model="filters.sort_direction" @change="applyFilters" class="ml-2 inline-block w-auto min-w-24 text-sm">
-                <option value="desc">Desc</option>
-                <option value="asc">Asc</option>
-              </BaseSelect>
+    <section class="ds-command-surface p-5 sm:p-6">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <BaseSelect v-model="filters.category_id" label="Categoria">
+          <option value="">Todas as categorias</option>
+          <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+        </BaseSelect>
+
+        <BaseSelect v-model="filters.warehouse_id" label="Armazém">
+          <option value="">Todos os armazéns</option>
+          <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">{{ warehouse.name }}</option>
+        </BaseSelect>
+
+        <BaseInput v-model="filters.search" label="Pesquisar item" placeholder="Nome ou código">
+          <template #leading><MagnifyingGlassIcon class="h-4 w-4" /></template>
+        </BaseInput>
+
+        <BaseSelect v-model="filters.sort_direction" label="Ordenação por quantidade">
+          <option value="desc">Maior primeiro</option>
+          <option value="asc">Menor primeiro</option>
+        </BaseSelect>
+      </div>
+
+      <div class="ds-command-toolbar mt-5 grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div>
+          <p class="text-sm font-bold text-[var(--ds-text)]">{{ inventory.total || inventoryRows.length }} posições de stock valorizadas</p>
+          <div v-if="activeFilterPills.length" class="mt-2 flex flex-wrap gap-2">
+            <span v-for="pill in activeFilterPills" :key="pill" class="ds-chip">{{ pill }}</span>
+          </div>
+          <p v-else class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">A mostrar todo o inventário com quantidade disponível.</p>
+        </div>
+        <button type="button" class="ds-button ds-button-secondary" :disabled="!hasActiveFilters" @click="clearFilters">
+          <FunnelIcon class="h-4 w-4" />
+          Limpar filtros
+        </button>
+      </div>
+    </section>
+
+    <section class="ds-command-surface overflow-hidden">
+      <div class="ds-table-summary px-5 py-4">
+        <div>
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Concentração financeira</p>
+          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Distribuição do valor estimado</h2>
+        </div>
+        <span class="ds-chip">Base: {{ formatCurrency(valuationUnitPrice) }} / unidade</span>
+      </div>
+
+      <div class="grid divide-y divide-[var(--ds-border)] xl:grid-cols-[1.15fr_0.85fr] xl:divide-x xl:divide-y-0">
+        <article class="min-w-0 p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-sm font-black text-[var(--ds-text)]">Valor por categoria</h3>
+              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Famílias com maior capital estimado em stock.</p>
+            </div>
+            <span class="text-xl font-black text-[var(--ds-text)]">{{ categoryValueTotal }}</span>
+          </div>
+          <div class="mt-4 min-h-72">
+            <apexchart type="bar" height="288" :options="categoryValueChartOptions" :series="categoryValueChartSeries" />
+          </div>
+        </article>
+
+        <div class="grid divide-y divide-[var(--ds-border)]">
+          <article class="min-w-0 p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="text-sm font-black text-[var(--ds-text)]">Exposição por armazém</h3>
+                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Distribuição do valor entre locais ativos.</p>
+              </div>
+              <span class="ds-chip">{{ warehouseValueTotal }} locais</span>
+            </div>
+            <div class="mt-4 min-h-64">
+              <apexchart type="donut" height="256" :options="warehouseValueChartOptions" :series="warehouseValueChartSeries" />
+            </div>
+          </article>
+
+          <article class="min-w-0 p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="text-sm font-black text-[var(--ds-text)]">Itens de maior valor</h3>
+                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Posições que mais pesam no saldo estimado.</p>
+              </div>
+              <ArrowTrendingUpIcon class="h-5 w-5 text-emerald-700 dark:text-emerald-300" />
+            </div>
+            <div class="mt-4 min-h-56">
+              <apexchart type="bar" height="224" :options="topItemValueChartOptions" :series="topItemValueChartSeries" />
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <section class="ds-table-shell">
+        <div class="ds-table-summary px-5 py-4">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Livro de valorização</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Posições de inventário</h2>
+          </div>
+          <span class="ds-chip">{{ inventory.total || inventoryRows.length }} registos</span>
+        </div>
+
+        <div v-if="loading" class="ds-empty-state m-5 p-8 text-center">
+          <span class="mx-auto block h-7 w-7 animate-spin rounded-full border-2 border-[var(--ds-border)] border-t-[rgb(var(--primary-700-rgb))]"></span>
+          <p class="mt-3 text-sm font-semibold text-[var(--ds-text-muted)]">A atualizar o relatório...</p>
+        </div>
+
+        <div v-else-if="inventoryRows.length" class="divide-y divide-[var(--ds-border)] lg:hidden">
+          <article v-for="position in inventoryRows" :key="`mobile-${position.id}`" class="space-y-4 p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <p class="font-mono text-xs font-bold text-[var(--ds-text-soft)]">{{ position.item?.code || 'Sem código' }}</p>
+                <h3 class="mt-1 text-base font-black text-[var(--ds-text)]">{{ position.item?.name || 'Item sem identificação' }}</h3>
+                <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ position.warehouse?.name || 'Sem armazém' }}</p>
+              </div>
+              <span class="ds-chip shrink-0">{{ position.qty_available }} un.</span>
+            </div>
+            <dl class="grid grid-cols-2 gap-3">
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Valor unitário</dt>
+                <dd class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ formatCurrency(valuationUnitPrice) }}</dd>
+              </div>
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Valor da posição</dt>
+                <dd class="mt-2 text-sm font-black text-emerald-700 dark:text-emerald-300">{{ positionValue(position) }}</dd>
+              </div>
+            </dl>
+            <Link :href="route('vap-inventory.items.show', position.item_id)" class="ds-table-action">
+              <EyeIcon class="h-4 w-4" />
+              Abrir item
+            </Link>
+          </article>
+        </div>
+
+        <div v-else-if="!loading" class="ds-empty-state m-5 p-8 text-center">
+          <BanknotesIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
+          <h3 class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem posições valorizadas</h3>
+          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Ajuste os filtros ou confirme a existência de stock disponível.</p>
+        </div>
+
+        <div v-if="!loading && inventoryRows.length" class="hidden overflow-x-auto lg:block">
+          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+            <thead class="bg-[var(--ds-panel-subtle)]">
+              <tr>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Item</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Categoria</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Quantidade</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Valor estimado</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Ação</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
+              <tr v-for="position in inventoryRows" :key="position.id" class="transition-colors hover:bg-[var(--ds-panel-subtle)]">
+                <td class="px-5 py-4 align-top">
+                  <p class="font-black text-[var(--ds-text)]">{{ position.item?.name || 'Item sem identificação' }}</p>
+                  <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-soft)]">{{ position.item?.code || 'Sem código' }}</p>
+                </td>
+                <td class="px-5 py-4 align-top font-semibold text-[var(--ds-text-muted)]">{{ position.item?.category?.name || 'Sem categoria' }}</td>
+                <td class="px-5 py-4 align-top">
+                  <p class="font-bold text-[var(--ds-text)]">{{ position.warehouse?.name || 'N/D' }}</p>
+                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ position.warehouse?.location?.name || 'Sem localização' }}</p>
+                </td>
+                <td class="px-5 py-4 text-right align-top font-mono font-black tabular-nums text-[var(--ds-text)]">{{ position.qty_available }}</td>
+                <td class="px-5 py-4 text-right align-top">
+                  <p class="font-black tabular-nums text-emerald-700 dark:text-emerald-300">{{ positionValue(position) }}</p>
+                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ formatCurrency(valuationUnitPrice) }} / un.</p>
+                </td>
+                <td class="px-5 py-4 text-right align-top">
+                  <Link :href="route('vap-inventory.items.show', position.item_id)" class="ds-icon-button ml-auto" title="Abrir item">
+                    <EyeIcon class="h-4 w-4" />
+                    <span class="sr-only">Abrir item</span>
+                  </Link>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <Pagination
+          v-if="inventoryRows.length"
+          :links="inventory.links"
+          :total="inventory.total"
+          :from="inventory.from"
+          :to="inventory.to"
+          :last_page="inventory.last_page"
+          :current_page="inventory.current_page"
+        />
+      </section>
+
+      <aside class="space-y-6">
+        <section class="ds-panel p-5">
+          <div class="flex items-start gap-3">
+            <InformationCircleIcon class="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300" />
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Base de cálculo</p>
+              <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Estimativa técnica</h2>
+              <p class="mt-2 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">
+                O valor atual usa uma referência fixa de {{ formatCurrency(valuationUnitPrice) }} por unidade. Use-o para exposição operacional, não para fecho contabilístico.
+              </p>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <!-- LOADING STATE -->
-      <div v-if="loading" class="p-12 text-center">
-        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
-        <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">Carregando...</p>
-      </div>
+        <section class="ds-panel overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Maior exposição</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Categorias</h2>
+          </div>
+          <ol v-if="summaryByCategory.length" class="divide-y divide-[var(--ds-border)]">
+            <li v-for="(category, index) in summaryByCategory.slice(0, 6)" :key="category.category_name || index" class="flex items-center gap-3 px-5 py-3">
+              <span class="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-xs font-black text-[var(--ds-text-soft)]">{{ index + 1 }}</span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-black text-[var(--ds-text)]">{{ category.category_name || 'Sem categoria' }}</p>
+                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ category.unique_items }} itens · {{ category.total_quantity }} un.</p>
+              </div>
+              <span class="shrink-0 text-xs font-black tabular-nums text-[var(--ds-text)]">{{ formatCurrency(category.total_value) }}</span>
+            </li>
+          </ol>
+          <div v-else class="ds-empty-state m-4 p-4 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem dados por categoria.</div>
+        </section>
 
-      <!-- INVENTORY TABLE -->
-      <div v-else-if="inventory.data && inventory.data.length > 0" class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-          <thead class="bg-slate-50 dark:bg-slate-900/80">
-            <tr>
-              <th :class="tableHeadClass">Item</th>
-              <th :class="tableHeadClass">Categoria</th>
-              <th :class="tableHeadClass">Armazém</th>
-              <th :class="tableHeadClass">Quantidade</th>
-              <th :class="tableHeadClass">Valor Unitário</th>
-              <th :class="tableHeadClass">Valor Total</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
-            <tr 
-              v-for="item in inventory.data" 
-              :key="item.id"
-              class="hover:bg-blue-50/60 dark:hover:bg-blue-950/20"
-            >
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0 h-8 w-8">
-                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/10">
-                      <CubeIcon class="h-4 w-4 text-blue-900 dark:text-blue-300" />
-                    </div>
-                  </div>
-                  <div class="ml-3">
-                    <div class="text-sm font-medium text-slate-900 dark:text-white">{{ item.item?.name }}</div>
-                    <div class="text-xs text-slate-500 dark:text-slate-400">{{ item.item?.code }}</div>
-                  </div>
+        <section class="ds-panel overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Top posições</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Itens de maior valor</h2>
+          </div>
+          <ol v-if="topValuableItems.length" class="divide-y divide-[var(--ds-border)]">
+            <li v-for="item in topValuableItems.slice(0, 6)" :key="item.item_id" class="px-5 py-3">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-black text-[var(--ds-text)]">{{ item.item?.name || `Item #${item.item_id}` }}</p>
+                  <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-soft)]">{{ item.item?.code || 'Sem código' }}</p>
                 </div>
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
-                {{ item.item?.category?.name || 'N/A' }}
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                {{ item.warehouse?.name }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-900">
-                  {{ item.qty_available }}
-                </span>
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                AOA XX.XX
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300">
-                {{ formatCurrency(item.qty_available * 100) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="[
-                  'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                  getStatusClass(item.status)
-                ]">
-                  {{ item.status }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                <span class="shrink-0 text-xs font-black tabular-nums text-emerald-700 dark:text-emerald-300">{{ formatCurrency(item.total_value) }}</span>
+              </div>
+            </li>
+          </ol>
+          <div v-else class="ds-empty-state m-4 p-4 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem posições valorizadas.</div>
+        </section>
+      </aside>
+    </div>
 
-      <!-- EMPTY STATE -->
-      <div v-else class="p-12 text-center">
-        <CurrencyDollarIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
-        <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
-          Nenhum item de inventário encontrado
-        </h3>
-        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Tente ajustar seus filtros ou critérios de pesquisa
-        </p>
-      </div>
-
-      <!-- PAGINATION -->
-      <div v-if="inventory.data && inventory.data.length > 0" class="border-t border-slate-200 px-6 py-4 dark:border-slate-800">
-        <div class="flex items-center justify-between">
-          <div class="text-sm text-slate-500 dark:text-slate-400">
-            Mostrando {{ inventory.from }} a {{ inventory.to }} de {{ inventory.total }} itens
+    <section class="grid gap-6 xl:grid-cols-2">
+      <div class="ds-table-shell">
+        <div class="ds-table-summary px-5 py-4">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Reconciliação</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Resumo por categoria</h2>
           </div>
-          <div class="flex gap-2">
-            <button
-              @click="previousPage"
-              :disabled="!inventory.prev_page_url"
-              :class="[
-                'rounded-lg px-3 py-2 text-sm font-medium',
-                inventory.prev_page_url
-                  ? 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
-                  : 'text-slate-400 cursor-not-allowed dark:text-slate-600'
-              ]"
-            >
-              Anterior
-            </button>
-            <button
-              @click="nextPage"
-              :disabled="!inventory.next_page_url"
-              :class="[
-                'rounded-lg px-3 py-2 text-sm font-medium',
-                inventory.next_page_url
-                  ? 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
-                  : 'text-slate-400 cursor-not-allowed dark:text-slate-600'
-              ]"
-            >
-              Próxima
-            </button>
-          </div>
-        </div>
-      </div>
-    </ModuleCard>
-
-    <!-- SUMMARY BY CATEGORY -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-          <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-            <ChartBarIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
-            Valor por Categoria
-          </h2>
+          <RectangleStackIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
         </div>
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead class="bg-slate-50 dark:bg-slate-900/80">
+          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+            <thead class="bg-[var(--ds-panel-subtle)]">
               <tr>
-                <th :class="tableHeadClass">Categoria</th>
-                <th :class="tableHeadClass">Quantidade</th>
-                <th :class="tableHeadClass">Itens Únicos</th>
-                <th :class="tableHeadClass">Valor Total</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Categoria</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Itens</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Valor</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
-              <tr v-for="category in summaryByCategory" :key="category.category_name" class="hover:bg-blue-50/60 dark:hover:bg-blue-950/20">
-                <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">
-                  {{ category.category_name || 'Sem Categoria' }}
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                  {{ category.total_quantity }}
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                  {{ category.unique_items }}
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300">
-                  {{ formatCurrency(category.total_value) }}
-                </td>
+            <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
+              <tr v-for="category in summaryByCategory" :key="category.category_name" class="hover:bg-[var(--ds-panel-subtle)]">
+                <td class="px-5 py-3 font-black text-[var(--ds-text)]">{{ category.category_name || 'Sem categoria' }}</td>
+                <td class="px-5 py-3 text-right font-semibold tabular-nums text-[var(--ds-text-muted)]">{{ category.unique_items }}</td>
+                <td class="px-5 py-3 text-right font-black tabular-nums text-[var(--ds-text)]">{{ formatCurrency(category.total_value) }}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-          <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-            <BuildingStorefrontIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
-            Valor por Armazém
-          </h2>
+      <div class="ds-table-shell">
+        <div class="ds-table-summary px-5 py-4">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Reconciliação</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Resumo por armazém</h2>
+          </div>
+          <BuildingStorefrontIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
         </div>
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead class="bg-slate-50 dark:bg-slate-900/80">
+          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+            <thead class="bg-[var(--ds-panel-subtle)]">
               <tr>
-                <th :class="tableHeadClass">Armazém</th>
-                <th :class="tableHeadClass">Quantidade</th>
-                <th :class="tableHeadClass">Itens Únicos</th>
-                <th :class="tableHeadClass">Valor Total</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Itens</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Valor</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
-              <tr v-for="warehouse in summaryByWarehouse" :key="warehouse.warehouse_name" class="hover:bg-blue-50/60 dark:hover:bg-blue-950/20">
-                <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">
-                  {{ warehouse.warehouse_name }}
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                  {{ warehouse.total_quantity }}
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                  {{ warehouse.unique_items }}
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300">
-                  {{ formatCurrency(warehouse.total_value) }}
-                </td>
+            <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
+              <tr v-for="warehouse in summaryByWarehouse" :key="warehouse.warehouse_name" class="hover:bg-[var(--ds-panel-subtle)]">
+                <td class="px-5 py-3 font-black text-[var(--ds-text)]">{{ warehouse.warehouse_name || 'Sem armazém' }}</td>
+                <td class="px-5 py-3 text-right font-semibold tabular-nums text-[var(--ds-text-muted)]">{{ warehouse.unique_items }}</td>
+                <td class="px-5 py-3 text-right font-black tabular-nums text-[var(--ds-text)]">{{ formatCurrency(warehouse.total_value) }}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
-    </div>
-
-    <!-- TOP VALUABLE ITEMS -->
-    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-        <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-          <StarIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
-          Top 10 Dos Mais Valiosos
-        </h2>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-          <thead class="bg-slate-50 dark:bg-slate-900/80">
-            <tr>
-              <th :class="tableHeadClass">Item</th>
-              <th :class="tableHeadClass">Categoria</th>
-              <th :class="tableHeadClass">Quantidade</th>
-              <th :class="tableHeadClass">Valor Total</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
-            <tr v-for="item in topValuableItems" :key="item.item_id" class="hover:bg-blue-50/60 dark:hover:bg-blue-950/20">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0 h-8 w-8">
-                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/10">
-                      <CubeIcon class="h-4 w-4 text-blue-900 dark:text-blue-300" />
-                    </div>
-                  </div>
-                  <div class="ml-3">
-                    <div class="text-sm font-medium text-slate-900 dark:text-white">{{ item.item?.name }}</div>
-                    <div class="text-xs text-slate-500 dark:text-slate-400">{{ item.item?.code }}</div>
-                  </div>
-                </div>
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
-                {{ item.item?.category?.name || 'N/A' }}
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                {{ item.total_quantity }}
-              </td>
-              <td class="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300">
-                {{ formatCurrency(item.total_value) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
-import { router, useForm } from '@inertiajs/vue3'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import { debounce } from 'lodash'
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
-import ModuleCard from '@/Components/base/ModuleCard.vue'
-import ModuleHero from '@/Components/base/ModuleHero.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import Pagination from '@/Components/Pagination.vue'
 import {
-  CurrencyDollarIcon,
   ArrowDownTrayIcon,
-  RectangleStackIcon,
+  ArrowLeftIcon,
+  ArrowTrendingUpIcon,
+  BanknotesIcon,
   BuildingStorefrontIcon,
-  TableCellsIcon,
-  CubeIcon,
   CalculatorIcon,
+  CubeIcon,
+  EyeIcon,
+  FunnelIcon,
+  InformationCircleIcon,
+  MagnifyingGlassIcon,
+  RectangleStackIcon,
   TrophyIcon,
-  ChartBarIcon,
-  StarIcon
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
-  inventory: {
-    type: Object,
-    default: () => ({ data: [], links: {} })
-  },
-  summaryByCategory: {
-    type: Array,
-    default: () => []
-  },
-  summaryByWarehouse: {
-    type: Array,
-    default: () => []
-  },
-  topValuableItems: {
-    type: Array,
-    default: () => []
-  },
-  categories: {
-    type: Array,
-    default: () => []
-  },
-  warehouses: {
-    type: Array,
-    default: () => []
-  },
-  filters: {
-    type: Object,
-    default: () => ({})
-  },
-  charts: {
-    type: Object,
-    default: () => ({})
-  },
-  stats: {
-    type: Object,
-    default: () => ({})
-  }
+  inventory: { type: Object, default: () => ({ data: [] }) },
+  summaryByCategory: { type: Array, default: () => [] },
+  summaryByWarehouse: { type: Array, default: () => [] },
+  topValuableItems: { type: Array, default: () => [] },
+  categories: { type: Array, default: () => [] },
+  warehouses: { type: Array, default: () => [] },
+  filters: { type: Object, default: () => ({}) },
+  charts: { type: Object, default: () => ({}) },
+  stats: { type: Object, default: () => ({}) },
 })
 
-const tableHeadClass = 'px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300'
+const valuationUnitPrice = 100
+const loading = ref(false)
 const isDarkMode = ref(false)
 let themeObserver
 
+const filters = reactive({
+  category_id: props.filters?.category_id ?? '',
+  warehouse_id: props.filters?.warehouse_id ?? '',
+  search: props.filters?.search ?? '',
+  sort_by: 'qty_available',
+  sort_direction: props.filters?.sort_direction ?? 'desc',
+})
+
+const inventoryRows = computed(() => props.inventory?.data || [])
 const chartTextColor = computed(() => isDarkMode.value ? '#cbd5e1' : '#475569')
 const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#e2e8f0')
 const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 
-const syncDarkMode = () => {
-  if (typeof document === 'undefined') {
-    return
-  }
+const summaryCards = computed(() => [
+  {
+    label: 'Valor estimado',
+    value: formatCurrency(props.stats?.total_value),
+    detail: 'Saldo financeiro de referência',
+    icon: BanknotesIcon,
+    tone: 'text-emerald-700 dark:text-emerald-300',
+  },
+  {
+    label: 'Itens únicos',
+    value: props.stats?.unique_items || 0,
+    detail: 'Referências com stock',
+    icon: CubeIcon,
+    tone: 'text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200',
+  },
+  {
+    label: 'Valor médio',
+    value: formatCurrency(props.stats?.avg_item_value),
+    detail: 'Por referência única',
+    icon: CalculatorIcon,
+    tone: 'text-violet-700 dark:text-violet-300',
+  },
+  {
+    label: 'Maior categoria',
+    value: props.stats?.highest_value_category?.category_name || 'Sem dados',
+    detail: formatCurrency(props.stats?.highest_value_category?.total_value),
+    icon: TrophyIcon,
+    tone: 'text-amber-700 dark:text-amber-300',
+  },
+])
 
-  isDarkMode.value = document.documentElement.classList.contains('dark')
-}
-
-const loading = ref(false)
-const filters = useForm({
-  category_id: '',
-  warehouse_id: '',
-  search: '',
-  sort_by: 'total_value',
-  sort_direction: 'desc'
+const activeFilterPills = computed(() => {
+  const pills = []
+  if (filters.category_id) pills.push(`Categoria: ${categoryName(filters.category_id)}`)
+  if (filters.warehouse_id) pills.push(`Armazém: ${warehouseName(filters.warehouse_id)}`)
+  if (filters.search) pills.push(`Pesquisa: ${filters.search}`)
+  return pills
 })
 
-const totalValueFormatted = computed(() => {
-  return formatCurrency(props.stats.total_value || 0)
-})
-
-const avgItemValueFormatted = computed(() => {
-  return formatCurrency(props.stats.avg_item_value || 0)
-})
-
+const hasActiveFilters = computed(() => activeFilterPills.value.length > 0)
 const categoryValueChartSeries = computed(() => props.charts?.category_value_breakdown?.series || [])
 const categoryValueTotal = computed(() => props.charts?.category_value_breakdown?.labels?.length || 0)
-
-const warehouseValueChartSeries = computed(() => {
-  const series = props.charts?.warehouse_value_breakdown?.series?.[0]?.data || []
-  return series.map((value) => Number(value || 0))
-})
+const warehouseValueChartSeries = computed(() => (props.charts?.warehouse_value_breakdown?.series?.[0]?.data || []).map((value) => Number(value || 0)))
 const warehouseValueTotal = computed(() => props.charts?.warehouse_value_breakdown?.labels?.length || 0)
-
 const topItemValueChartSeries = computed(() => props.charts?.top_item_value?.series || [])
 
 const categoryValueChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
+  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
   colors: ['#0f766e'],
   dataLabels: { enabled: false },
-  grid: {
-    borderColor: chartGridColor.value,
-    strokeDashArray: 4,
-  },
-  plotOptions: {
-    bar: {
-      borderRadius: 6,
-      horizontal: true,
-    },
-  },
+  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
+  plotOptions: { bar: { borderRadius: 4, horizontal: true } },
   xaxis: {
     categories: props.charts?.category_value_breakdown?.labels || [],
     axisBorder: { color: chartGridColor.value },
     axisTicks: { color: chartGridColor.value },
-    labels: {
-      formatter: (value) => formatCurrency(value),
-      style: { colors: chartTextColor.value },
-    },
+    labels: { formatter: (value) => compactCurrency(value), style: { colors: chartTextColor.value } },
   },
-  yaxis: {
-    labels: {
-      maxWidth: 220,
-      style: { colors: chartTextColor.value },
-    },
-  },
-  tooltip: {
-    theme: chartTooltipTheme.value,
-    y: {
-      formatter: (value) => formatCurrency(value),
-    },
-  },
+  yaxis: { labels: { maxWidth: 220, style: { colors: chartTextColor.value } } },
+  tooltip: { theme: chartTooltipTheme.value, y: { formatter: formatCurrency } },
   legend: { show: false },
 }))
 
 const warehouseValueChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
+  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
   labels: props.charts?.warehouse_value_breakdown?.labels || [],
-  colors: ['#1d4ed8', '#0f766e', '#7c3aed', '#ea580c', '#be123c', '#0891b2'],
-  legend: {
-    position: 'bottom',
-    labels: {
-      colors: chartTextColor.value,
-    },
-  },
-  dataLabels: {
-    formatter: (value) => `${value.toFixed(0)}%`,
-  },
-  tooltip: {
-    theme: chartTooltipTheme.value,
-    y: {
-      formatter: (value) => formatCurrency(value),
-    },
-  },
-  stroke: {
-    width: 0,
-  },
+  colors: ['#0e7490', '#0f766e', '#7c3aed', '#d97706', '#be123c', '#475569'],
+  legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
+  dataLabels: { formatter: (value) => `${value.toFixed(0)}%` },
+  stroke: { width: 0 },
+  tooltip: { theme: chartTooltipTheme.value, y: { formatter: formatCurrency } },
 }))
 
 const topItemValueChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
+  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
-  colors: ['#1e3a8a'],
+  colors: ['#1d4ed8'],
   dataLabels: { enabled: false },
-  grid: {
-    borderColor: chartGridColor.value,
-    strokeDashArray: 4,
-  },
-  plotOptions: {
-    bar: {
-      borderRadius: 6,
-      columnWidth: '48%',
-    },
-  },
+  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
+  plotOptions: { bar: { borderRadius: 4, columnWidth: '48%' } },
   xaxis: {
     categories: props.charts?.top_item_value?.labels || [],
-    labels: {
-      rotate: -25,
-      trim: true,
-      style: { colors: chartTextColor.value },
-    },
+    labels: { rotate: -25, trim: true, style: { colors: chartTextColor.value } },
     axisBorder: { color: chartGridColor.value },
     axisTicks: { color: chartGridColor.value },
   },
-  yaxis: {
-    labels: {
-      formatter: (value) => formatCurrency(value),
-      style: { colors: chartTextColor.value },
-    },
-  },
-  tooltip: {
-    theme: chartTooltipTheme.value,
-    y: {
-      formatter: (value) => formatCurrency(value),
-    },
-  },
+  yaxis: { labels: { formatter: compactCurrency, style: { colors: chartTextColor.value } } },
+  tooltip: { theme: chartTooltipTheme.value, y: { formatter: formatCurrency } },
   legend: { show: false },
 }))
 
+function syncDarkMode() {
+  if (typeof document === 'undefined') return
+  isDarkMode.value = document.documentElement.classList.contains('dark')
+}
+
 function formatCurrency(value) {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('pt-AO', {
     style: 'currency',
     currency: 'AOA',
-    minimumFractionDigits: 2
-  }).format(value)
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0))
 }
 
-function getStatusClass(status) {
-  const statusMap = {
-    'AVAILABLE': 'bg-green-100 text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200',
-    'IN_USE': 'bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-200',
-    'MAINTENANCE': 'bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-200',
-    'CALIBRATION_DUE': 'bg-orange-100 text-orange-800 dark:bg-orange-500/10 dark:text-orange-200',
-    'EXPIRED': 'bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-200'
-  }
-  return statusMap[status] || 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200'
+function compactCurrency(value) {
+  return new Intl.NumberFormat('pt-AO', {
+    style: 'currency',
+    currency: 'AOA',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(Number(value || 0))
 }
 
-function applyFilters() {
-  filters.get(route('vap-inventory.reports.inventory-value'), {
-    preserveScroll: true,
-    preserveState: true,
-    onStart: () => loading.value = true,
-    onFinish: () => loading.value = false
+function positionValue(position) {
+  return formatCurrency(Number(position.qty_available || 0) * valuationUnitPrice)
+}
+
+function categoryName(id) {
+  return props.categories.find((category) => String(category.id) === String(id))?.name || 'N/D'
+}
+
+function warehouseName(id) {
+  return props.warehouses.find((warehouse) => String(warehouse.id) === String(id))?.name || 'N/D'
+}
+
+function clearFilters() {
+  Object.assign(filters, {
+    category_id: '',
+    warehouse_id: '',
+    search: '',
+    sort_by: 'qty_available',
+    sort_direction: 'desc',
   })
 }
 
-function resetFilters() {
-  filters.reset()
-  applyFilters()
-}
-
 function exportReport() {
-  const exportFilters = {
+  router.post(route('vap-inventory.reports.export'), {
     report_type: 'inventory_value',
     format: 'pdf',
-    filters: filters.data()
-  }
-  
-  router.post(route('vap-inventory.reports.export'), exportFilters)
+    filters: { ...filters },
+  })
 }
 
-function previousPage() {
-  if (props.inventory.prev_page_url) {
-    router.visit(props.inventory.prev_page_url, {
-      preserveScroll: true,
+watch(
+  filters,
+  debounce((value) => {
+    router.get(route('vap-inventory.reports.inventory-value'), value, {
       preserveState: true,
-      onStart: () => loading.value = true,
-      onFinish: () => loading.value = false
-    })
-  }
-}
-
-function nextPage() {
-  if (props.inventory.next_page_url) {
-    router.visit(props.inventory.next_page_url, {
       preserveScroll: true,
-      preserveState: true,
-      onStart: () => loading.value = true,
-      onFinish: () => loading.value = false
+      replace: true,
+      onStart: () => { loading.value = true },
+      onFinish: () => { loading.value = false },
     })
-  }
-}
+  }, 350),
+  { deep: true },
+)
 
 onMounted(() => {
   syncDarkMode()
-
-  if (typeof MutationObserver !== 'undefined') {
+  if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
     themeObserver = new MutationObserver(syncDarkMode)
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-  }
-
-  // Initialize filters from props
-  if (props.filters) {
-    Object.keys(props.filters).forEach(key => {
-      if (filters.hasOwnProperty(key)) {
-        filters[key] = props.filters[key]
-      }
-    })
   }
 })
 

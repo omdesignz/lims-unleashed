@@ -1,407 +1,163 @@
-<template>
-  <div class="analysis-workflow-page space-y-8" :class="commercialDocumentThemeClasses">
-    <ModuleHero
-      eyebrow="Fluxo laboratorial"
-      title="Análises"
-      description="Insira, verifique, aprove e arquive resultados laboratoriais com uma fila clara por departamento e estado de decisão."
-    >
-      <template #actions>
-        <!-- DEPARTMENT SELECTOR -->
-        <div class="w-full md:w-72">
-          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            Departamento
-          </label>
-          <select-input
-            :options="props.departments"
-            v-model="department"
-            :selected="department"
-            @update:modelValue="v => changeAnalysisDepartment(v)"
-            class="w-full"
-          />
-        </div>
-
-        <button
-          type="button"
-          class="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
-          @click="handleCreateAnalysis"
-        >
-          <DocumentPlusIcon class="size-5" aria-hidden="true" />
-          Criar via Sample Entry
-        </button>
-      </template>
-
-      <!-- ANALYSIS CATEGORY SELECTOR -->
-      <div class="mt-6">
-        <h2 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-          Selecione uma ação
-        </h2>
-        <RadioGroup :modelValue="selectedResultAction" 
-                    class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-                    @update:modelValue="value => changeAnalysisCategory(value.value)" 
-                    name="analysis-category">
-          <RadioGroupOption as="template" 
-                           v-for="action in resultActions" 
-                           :key="action.value" 
-                           :value="action" 
-                           v-slot="{ active, checked }">
-            <div :class="[
-              'relative flex cursor-pointer rounded-xl border p-4 focus:outline-none transition-all duration-200',
-              active ? 'ring-2 ring-primary-500 border-primary-500 dark:ring-primary-400 dark:border-primary-400' : 'border-slate-200 dark:border-slate-700',
-              checked ? 'bg-primary-50 dark:bg-primary-500/10 border-primary-200 dark:border-primary-500/30' : 'bg-white/80 dark:bg-slate-950/45 hover:bg-slate-50 dark:hover:bg-slate-800/70'
-            ]">
-              <span class="flex flex-1">
-                <span class="flex flex-col">
-                  <!-- ACTION ICON -->
-                  <span class="mb-3">
-                    <DocumentPlusIcon v-if="action.value === 'insert'" 
-                                     class="h-8 w-8 text-amber-600 dark:text-amber-300" />
-                    <DocumentMagnifyingGlassIcon v-else-if="action.value === 'verify'" 
-                                                 class="h-8 w-8 text-primary-600 dark:text-primary-400" />
-                    <DocumentCheckIcon v-else-if="action.value === 'approve'" 
-                                       class="h-8 w-8 text-emerald-600 dark:text-emerald-300" />
-                    <DocumentIcon v-else-if="action.value === 'archived'" 
-                                 class="h-8 w-8 text-slate-600 dark:text-slate-300" />
-                  </span>
-                  
-                  <!-- ACTION TITLE -->
-                  <span class="block text-sm font-semibold text-slate-900 dark:text-white">
-                    {{ $t(action.title) }}
-                  </span>
-                  
-                  <!-- ACTION DESCRIPTION -->
-                  <span class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    {{ $t(action.description) }}
-                  </span>
-                </span>
-              </span>
-              
-              <!-- SELECTED INDICATOR -->
-              <CheckCircleIcon :class="[
-                'absolute top-3 right-3 h-5 w-5 transition-opacity duration-200',
-                checked ? 'opacity-100 text-primary-600 dark:text-primary-400' : 'opacity-0'
-              ]" aria-hidden="true" />
-              
-              <span :class="[
-                'absolute -inset-px rounded-xl pointer-events-none',
-                active ? 'ring-2 ring-primary-500 dark:ring-primary-400' : '',
-                checked ? 'border border-primary-500/50 dark:border-primary-400/50' : ''
-              ]" aria-hidden="true" />
-            </div>
-          </RadioGroupOption>
-        </RadioGroup>
-      </div>
-    </ModuleHero>
-
-    <!-- ANALYSIS TABLE SECTION -->
-    <ModuleCard class="overflow-hidden" title="Fila de análises" description="Tabela operacional para executar a ação selecionada sem perder o contexto do fluxo.">
-      <vap-table
-        :model="props.model" 
-        :abilities="props.abilities" 
-        :data="props.record.data" 
-        :columns="tableColumns"
-        :query="props.query" 
-        :filters="filters" 
-        :initialFilters="props.initialFilters"
-        :initialSortField="props.initialSortField"
-        :initialSortDirection="props.initialSortDirection"
-        :initialIncludes="props.initialIncludes"
-        :trashedFilter="props.trashedFilter"
-        :trashedOptions="props.trashedOptions"
-        @create-record="handleCreateAnalysis"
-        @slideover-on="openSlideoverWithData" 
-        :slideOverEdit="props.slideOverEdit" 
-        :pagination="props.record.meta" 
-        @update-selected-ids="selectedIDs = $event"
-        :actions="actions" 
-        @execute-bulk-action="($event) => {
-          showDeleteConfirmation = true; 
-          action = $event.action; 
-          actionType = $event.actionType
-        }"
-      >
-        <!-- SAMPLE ENTRY LINEAGE COLUMN -->
-        <template #column-sample_entry="{ row }">
-          <div class="min-w-0">
-            <Link
-              v-if="row.sample_entry?.show_url"
-              :href="row.sample_entry.show_url"
-              class="group inline-flex max-w-full items-center gap-2 rounded-2xl border border-primary-200/80 bg-primary-50/80 px-3 py-2 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-100 dark:border-primary-500/25 dark:bg-primary-500/10 dark:hover:border-primary-400/60 dark:hover:bg-primary-500/15"
-            >
-              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-primary-700 shadow-sm ring-1 ring-primary-100 transition group-hover:scale-105 dark:bg-slate-950/60 dark:text-primary-300 dark:ring-primary-500/20">
-                <DocumentIcon class="h-4 w-4" aria-hidden="true" />
-              </span>
-              <span class="min-w-0">
-                <span class="block truncate text-sm font-semibold text-slate-900 dark:text-white">
-                  {{ row.sample_entry.code || row.sample_entry.name || $t('gestlab.general.labels.analysis.sample_entry') }}
-                </span>
-                <span class="block truncate text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                  {{ row.sample?.code ? `${$t('gestlab.general.labels.analysis.sample_id')}: ${row.sample.code}` : row.entry_origin?.label }}
-                </span>
-              </span>
-            </Link>
-            <span
-              v-else
-              class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400"
-            >
-              {{ row.entry_origin?.label || $t('gestlab.general.labels.analysis.legacy_record') }}
-            </span>
-          </div>
-        </template>
-
-        <!-- STATUS COLUMN TEMPLATE -->
-        <template #column-status="{ row }">
-          <button 
-            type="button" 
-            :class="[
-              'relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 transition-colors duration-200 ease-in-out',
-              'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-              row.status ? 'bg-primary-600 border-primary-600' : 'bg-gray-200 border-gray-200 dark:bg-gray-700 dark:border-gray-700'
-            ]" 
-            :aria-checked="row.status" 
-            role="switch"
-          >
-            <span class="sr-only">Toggle status</span>
-            <span :class="[
-              'pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-              row.status ? 'translate-x-5' : 'translate-x-0'
-            ]">
-              <!-- DISABLED ICON -->
-              <span :class="[
-                'absolute inset-0 flex h-full w-full items-center justify-center transition-opacity',
-                row.status ? 'opacity-0 duration-100 ease-out' : 'opacity-100 duration-200 ease-in'
-              ]" aria-hidden="true">
-                <svg class="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 12 12">
-                  <path d="M4 8l2-2m0 0l2-2M6 6L4 4m2 2l2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </span>
-              
-              <!-- ENABLED ICON -->
-              <span :class="[
-                'absolute inset-0 flex h-full w-full items-center justify-center transition-opacity',
-                row.status ? 'opacity-100 duration-200 ease-in' : 'opacity-0 duration-100 ease-out'
-              ]" aria-hidden="true">
-                <svg class="h-3 w-3 text-primary-600" fill="currentColor" viewBox="0 0 12 12">
-                  <path d="M3.707 5.293a1 1 0 00-1.414 1.414l1.414-1.414zM5 8l-.707.707a1 1 0 001.414 0L5 8zm4.707-3.293a1 1 0 00-1.414-1.414l1.414 1.414zm-7.414 2l2 2 1.414-1.414-2-2-1.414 1.414zm3.414 2l4-4-1.414-1.414-4 4 1.414 1.414z" />
-                </svg>
-              </span>
-            </span>
-          </button>
-        </template>
-
-        <!-- ACTIONS COLUMN TEMPLATE -->
-        <template #column-actions="{ row }">
-          <div class="flex items-center gap-2">
-            <!-- RESTORE ACTION -->
-            <button
-              type="button"
-              @click="
-                () => {
-                  record = row;
-                  actionType = 'single';
-                  action = 'restore';
-                  recordUrl = row.links.restore_path;
-                  showDeleteConfirmation = true;
-                }
-              "
-              v-if="row.deleted && hasPermission('restore_' + props.model)"
-              class="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20 transition-colors duration-200"
-              :title="$t('actions.restore')"
-            >
-              <ArrowPathRoundedSquareIcon class="h-4 w-4" />
-            </button>
-            
-            <!-- EDIT ACTIONS (NON-SLIDEOVER) -->
-            <button
-              type="button"
-              @click="
-                () => {
-                  record = row;
-                  actionType = 'single';
-                  action = 'edit';
-                  recordUrl = row.links.edit_path;
-                  showDeleteConfirmation = true;
-                }
-              "
-              v-if="!row.deleted && !props.slideOverEdit && hasPermission('edit_' + props.model)"
-              :class="[
-                'p-1.5 rounded-lg transition-colors duration-200 text-gray-400',
-                props.query.category === 'insert' ? 'hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20' : '',
-                props.query.category === 'verify' ? 'hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20' : '',
-                props.query.category === 'approve' ? 'hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' : ''
-              ]"
-              :title="$t('actions.edit')"
-            >
-              <DocumentPlusIcon v-if="props.query.category === 'insert'" class="h-4 w-4" />
-              <DocumentMagnifyingGlassIcon v-else-if="props.query.category === 'verify'" class="h-4 w-4" />
-              <DocumentCheckIcon v-else-if="props.query.category === 'approve'" class="h-4 w-4" />
-            </button>
-            
-            <!-- EDIT ACTIONS (SLIDEOVER) -->
-            <button
-              @click="
-                () => {
-                  record = row;
-                  actionType = 'single';
-                  action = 'edit_slide';
-                  showDeleteConfirmation = true;
-                }
-              "
-              v-if="!row.deleted && hasPermission('edit_' + props.model) && props.slideOverEdit"
-              :class="[
-                'p-1.5 rounded-lg transition-colors duration-200 text-gray-400',
-                props.query.category === 'insert' ? 'hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20' : '',
-                props.query.category === 'verify' ? 'hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20' : '',
-                props.query.category === 'approve' ? 'hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' : ''
-              ]"
-              :title="$t('actions.edit')"
-            >
-              <DocumentPlusIcon v-if="props.query.category === 'insert'" class="h-4 w-4" />
-              <DocumentMagnifyingGlassIcon v-else-if="props.query.category === 'verify'" class="h-4 w-4" />
-              <DocumentCheckIcon v-else-if="props.query.category === 'approve'" class="h-4 w-4" />
-            </button>
-            
-            <!-- DELETE ACTION -->
-            <button
-              type="button"
-              @click="
-                () => {
-                  record = row;
-                  actionType = 'single';
-                  action = 'delete';
-                  recordUrl = row.links.delete_path;
-                  showDeleteConfirmation = true;
-                }
-              "
-              class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200"
-              v-if="!row.deleted && hasPermission('delete_' + props.model)"
-              :title="$t('actions.delete')"
-            >
-              <TrashIcon class="h-4 w-4" />
-            </button>
-          </div>
-        </template>
-      </vap-table>
-    </ModuleCard>
-
-    <!-- CONFIRMATION DIALOG -->
-    <confirm-dialog 
-      @canceled="showDeleteConfirmation = false" 
-      @close="showDeleteConfirmation = false" 
-      @confirmed="confirmAction" 
-      v-if="showDeleteConfirmation" 
-      :title="confirmationDialogTitle" 
-      :description="confirmationDialogDescription" 
-      confirm="Sim" 
-      cancel="Não" 
-    />
-  </div>
-</template>
-
 <script setup>
-import { RadioGroup, RadioGroupOption } from '@headlessui/vue'
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import ModuleCard from '@/Components/base/ModuleCard.vue'
-import ModuleHero from '@/Components/base/ModuleHero.vue'
-import { ref, computed } from "vue";
+import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import SelectInput from "@/Components/select-input.vue";
+import VapTable from "@/Components/vap-table/table.vue";
+import { usePermission } from "@/Composables/usePermissions";
+import { computed, ref } from "vue";
 import { Link, router, usePage } from "@inertiajs/vue3";
-import selectInput from '@/Components/select-input.vue'
-import confirmDialog from "@/Components/confirm-dialog.vue";
-import { usePermission } from '@/Composables/usePermissions'
-import { 
-  TrashIcon, 
-  ArrowPathRoundedSquareIcon, 
-  CheckCircleIcon, 
-  DocumentPlusIcon, 
-  DocumentMagnifyingGlassIcon, 
+import {
+  ArchiveBoxIcon,
+  ArrowPathRoundedSquareIcon,
+  BeakerIcon,
+  CheckBadgeIcon,
+  ClipboardDocumentCheckIcon,
   DocumentCheckIcon,
-  DocumentIcon
-} from '@heroicons/vue/24/outline';
-import VapTable from '@/Components/vap-table/table.vue';
+  DocumentMagnifyingGlassIcon,
+  DocumentPlusIcon,
+  PencilSquareIcon,
+  TrashIcon,
+} from "@heroicons/vue/24/outline";
+
+defineOptions({
+  layout: Layout,
+});
+
+const props = defineProps({
+  record: {
+    type: Object,
+    default: () => ({ data: [], meta: {} }),
+  },
+  departments: {
+    type: Array,
+    default: () => [],
+  },
+  fields: {
+    type: Array,
+    default: () => [],
+  },
+  model: String,
+  abilities: {
+    type: Array,
+    default: () => [],
+  },
+  query: {
+    type: Object,
+    default: () => ({}),
+  },
+  trashedFilter: {
+    type: Boolean,
+    default: false,
+  },
+  trashedOptions: {
+    type: Object,
+    default: () => ({}),
+  },
+  initialFilters: {
+    type: Object,
+    default: () => ({}),
+  },
+  initialSortField: {
+    type: String,
+    default: "",
+  },
+  initialSortDirection: {
+    type: String,
+    default: "asc",
+  },
+  initialIncludes: {
+    type: Array,
+    default: () => [],
+  },
+  initialGlobalFilter: {
+    type: String,
+    default: "",
+  },
+  entrypoint: {
+    type: Object,
+    default: () => ({}),
+  },
+  slideOverEdit: {
+    type: Boolean,
+    default: false,
+  },
+});
 
 const { hasPermission } = usePermission();
 const page = usePage();
 
-const props = defineProps({
-    record: Object,
-    departments: Array,
-    fields: Array,
-    model: String,
-    abilities: Array,
-    query: Object,
-    trashedFilter: { type: Boolean, default: false },
-    trashedOptions: { type: Object, default: {} },
-    initialFilters: { type: Object, default: {} },
-    initialSortField: { type: String, default: '' },
-    initialSortDirection: { type: String, default: 'asc' },
-    initialIncludes: { type: Array, default: [] },
-    initialGlobalFilter: { type: String, default: '' },
-    entrypoint: { type: Object, default: () => ({}) },
-    slideOverEdit: {
-      type: Boolean,
-      default: false
-    }
-});
+const department = ref(props.query?.department ?? null);
+const showConfirmation = ref(false);
+const pendingAction = ref(null);
+const pendingActionType = ref(null);
+const pendingRecord = ref(null);
+const pendingUrl = ref(null);
+const selectedIDs = ref([]);
 
-defineOptions({
-  layout: Layout
-});
-
-const department = ref(null);
-
-const resultActions = ref([
-  { 
-    value: 'insert', 
-    title: 'gestlab.general.labels.analysis.insert_result_title', 
-    description: 'gestlab.general.labels.analysis.insert_result_description'
+const resultActions = [
+  {
+    value: "insert",
+    title: "gestlab.general.labels.analysis.insert_result_title",
+    description: "Resultados por lançar",
+    icon: DocumentPlusIcon,
+    dot: "lims-status-dot-hold",
   },
-  { 
-    value: 'verify', 
-    title: 'gestlab.general.labels.analysis.verify_result_title', 
-    description: 'gestlab.general.labels.analysis.verify_result_description'
+  {
+    value: "verify",
+    title: "gestlab.general.labels.analysis.verify_result_title",
+    description: "Revisão técnica",
+    icon: DocumentMagnifyingGlassIcon,
+    dot: "lims-status-dot-instrument",
   },
-  { 
-    value: 'approve', 
-    title: 'gestlab.general.labels.analysis.approve_result_title', 
-    description: 'gestlab.general.labels.analysis.approve_result_description'
+  {
+    value: "approve",
+    title: "gestlab.general.labels.analysis.approve_result_title",
+    description: "Decisão final",
+    icon: DocumentCheckIcon,
+    dot: "lims-status-dot-release",
   },
-  { 
-    value: 'archived', 
-    title: 'gestlab.general.labels.analysis.completed_result_title', 
-    description: 'gestlab.general.labels.analysis.completed_result_description'
-  }
-]);
+  {
+    value: "archived",
+    title: "gestlab.general.labels.analysis.completed_result_title",
+    description: "Dossiês concluídos",
+    icon: ArchiveBoxIcon,
+    dot: "lims-status-dot-neutral",
+  },
+];
 
 const selectedResultAction = computed(() => {
-  return resultActions.value.find(action => action.value === props.query.category) || resultActions.value[0];
+  return resultActions.find((item) => item.value === props.query?.category) ?? resultActions[0];
 });
 
-const changeAnalysisCategory = (category = 'insert') => {
-  router.get(page.url, {
-    category: category
-  }, {
-    preserveState: true,
-    preserveScroll: true,
-    replace: true
-  });
-}
+const selectedDepartmentLabel = computed(() => {
+  const selectedValue = department.value?.value ?? department.value;
+  return props.departments.find((item) => String(item.value) === String(selectedValue))?.label ?? "Todos";
+});
 
-const changeAnalysisDepartment = (v) => {
-  department.value = v;
-  router.get(page.url, {
-    department: v
-  }, {
-    preserveState: true,
-    preserveScroll: true,
-    replace: true
-  });
-}
+const queueMetrics = computed(() => [
+  {
+    label: "Na fila",
+    value: props.record?.meta?.total ?? props.record?.data?.length ?? 0,
+    note: selectedResultAction.value.description,
+  },
+  {
+    label: "Etapa ativa",
+    value: selectedResultAction.value.value.toUpperCase(),
+    note: "estado do fluxo",
+  },
+  {
+    label: "Departamento",
+    value: selectedDepartmentLabel.value,
+    note: "escopo operacional",
+  },
+  {
+    label: "Nesta página",
+    value: props.record?.data?.length ?? 0,
+    note: "registos carregados",
+  },
+]);
 
-const handleCreateAnalysis = () => {
-  router.get(props.entrypoint?.create_sample_url || route('vap_samples.index'));
-}
-
-const columns = props.fields.map(field => ({
+const columns = props.fields.map((field) => ({
   field: field.value,
   filter_field: field.filter_field,
   label: field.name,
@@ -410,181 +166,349 @@ const columns = props.fields.map(field => ({
   type: field.type,
   format: field.format,
   filter: field.filter,
-  options: field.options ? field.options : [],
-  config: field.config ? field.config : {}
+  options: field.options ?? [],
+  config: field.config ?? {},
 }));
 
 const entryLineageColumn = {
-  field: 'sample_entry',
-  filter_field: 'sample_entry',
-  label: 'gestlab.general.labels.analysis.sample_entry',
+  field: "sample_entry",
+  filter_field: "sample_entry",
+  label: "gestlab.general.labels.analysis.sample_entry",
   visible: true,
   filterable: false,
-  type: 'custom',
-  format: 'text',
-  filter: '',
+  type: "custom",
+  format: "text",
+  filter: "",
   options: [],
   config: {},
 };
 
-const extraColumns = ref([
+const tableColumns = computed(() => [
+  ...columns.filter((column) => column.field !== "actions"),
+  entryLineageColumn,
+  ...columns.filter((column) => column.field === "actions"),
   {
-    field: 'category',
-    filter_field: 'category',
-    label: 'Categoria',
+    field: "category",
+    filter_field: "category",
+    label: "Categoria",
     visible: false,
     filterable: true,
-    type: 'select',
-    format: 'text',
-    filter: 'text',
+    type: "select",
+    format: "text",
+    filter: "text",
     options: [
-      { value: 'insert', label: 'Inserir' },
-      { value: 'verify', label: 'Verificar' },
-      { value: 'approve', label: 'Validar' },
+      { value: "insert", label: "Inserir" },
+      { value: "verify", label: "Verificar" },
+      { value: "approve", label: "Validar" },
     ],
   },
 ]);
 
-const tableColumns = computed(() => [
-  ...columns.filter(column => column.field !== 'actions'),
-  entryLineageColumn,
-  ...columns.filter(column => column.field === 'actions'),
-  ...extraColumns.value,
-]);
-
-const showDeleteConfirmation = ref(false);
-const actionType = ref(null);
-const action = ref(null);
-const record = ref(null);
-const recordUrl = ref(null);
-const selectedIDs = ref([]);
+const actions = [
+  { id: null, label: "gestlab.actions.bulk_actions_text" },
+  { id: "delete", label: "gestlab.actions.delete" },
+  { id: "restore", label: "gestlab.actions.restore" },
+];
 
 const confirmationDialogTitle = computed(() => {
-  return 'Confirmar Ação';
+  return pendingAction.value === "restore" ? "Repor análise" : "Eliminar análise";
 });
 
 const confirmationDialogDescription = computed(() => {
-  switch (action.value) {
-    case 'delete':
-      return 'Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.';
-    case 'restore':
-      return 'Tem certeza que deseja restaurar este registro?';
-    case 'edit':
-    case 'edit_slide':
-      return 'Tem certeza que deseja editar este registro?';
-    default:
-      return 'Deseja confirmar esta ação?';
+  if (pendingAction.value === "restore") {
+    return "A análise regressará à fila operacional e ficará novamente disponível para trabalho.";
   }
+
+  return "A análise será removida da fila ativa. O registo permanece recuperável no arquivo.";
 });
 
-const actions = [
-  {
-    id: null,
-    label: 'gestlab.actions.bulk_actions_text'
-  },
-  {
-    id: 'delete',
-    label: 'gestlab.actions.delete'
-  },
-  {
-    id: 'restore',
-    label: 'gestlab.actions.restore'
-  },
-];
-
-const confirmAction = () => {
-  if (actionType.value === 'bulk') {
-    executeBulkAction(action.value);
-  } else {
-    executeSingleAction(action.value, record.value);
-  }
+function changeAnalysisCategory(category = "insert") {
+  router.get(
+    page.url,
+    {
+      ...props.query,
+      category,
+    },
+    {
+      preserveState: true,
+      preserveScroll: true,
+      replace: true,
+    },
+  );
 }
 
-const executeBulkAction = (selectedAction) => {
-  if (!selectedIDs.value.length) return;
+function changeAnalysisDepartment(value) {
+  department.value = value;
+  router.get(
+    page.url,
+    {
+      ...props.query,
+      department: value,
+    },
+    {
+      preserveState: true,
+      preserveScroll: true,
+      replace: true,
+    },
+  );
+}
 
-  switch (selectedAction) {
-    case 'delete':
-      router.get(route('analysis.destroy'), {
-        recordIds: selectedIDs.value
-      }, {
-        preserveState: false,
-        preserveScroll: true,
-        onSuccess: () => {
-          showDeleteConfirmation.value = false;
-          action.value = null;
-        }
-      });
-      break;
-    case 'restore':
-      router.get(route('analysis.restore'), {
-        recordIds: selectedIDs.value
-      }, {
-        preserveState: false,
-        preserveScroll: true,
-        onSuccess: () => {
-          showDeleteConfirmation.value = false;
-          action.value = null;
-        }
-      });
-      break;
-  }
-  showDeleteConfirmation.value = false;
-};
+function handleCreateAnalysis() {
+  router.get(props.entrypoint?.create_sample_url || route("vap_samples.index"));
+}
 
-const executeSingleAction = (selectedAction, selectedRecord) => {
-  switch (selectedAction) {
-    case "delete":
-      router.get(
-        recordUrl.value,
-        { recordIds: [selectedRecord.id] },
-        {
-          preserveState: false,
-          preserveScroll: true,
-          onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            action.value = null;
-            record.value = null;
-            recordUrl.value = null;
-          },
-        },
-      );
-      break;
-    case "edit":
-      router.get(
-        recordUrl.value,
-        { recordIds: [selectedRecord.id] },
-        {
-          preserveState: false,
-          preserveScroll: true,
-          onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            record.value = null;
-            recordUrl.value = null;
-          },
-        },
-      );
-      break;
-    case "edit_slide":
-      // Handle slideover edit
-      showDeleteConfirmation.value = false;
-      break;
-    case "restore":
-      router.get(
-        recordUrl.value,
-        { recordIds: [selectedRecord.id] },
-        {
-          preserveState: false,
-          preserveScroll: true,
-          onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            action.value = null;
-            record.value = null;
-            recordUrl.value = null;
-          },
-        },
-      );
-      break;
+function openAnalysis(row) {
+  if (!row?.links?.edit_path) {
+    return;
   }
-};
+
+  router.get(row.links.edit_path);
+}
+
+function requestConfirmation(actionName, actionType, row = null, url = null) {
+  pendingAction.value = actionName;
+  pendingActionType.value = actionType;
+  pendingRecord.value = row;
+  pendingUrl.value = url;
+  showConfirmation.value = true;
+}
+
+function resetConfirmation() {
+  showConfirmation.value = false;
+  pendingAction.value = null;
+  pendingActionType.value = null;
+  pendingRecord.value = null;
+  pendingUrl.value = null;
+}
+
+function confirmAction() {
+  const isBulk = pendingActionType.value === "bulk";
+  const recordIds = isBulk ? selectedIDs.value : [pendingRecord.value?.id].filter(Boolean);
+
+  if (!recordIds.length) {
+    resetConfirmation();
+    return;
+  }
+
+  const destination = isBulk
+    ? route(pendingAction.value === "restore" ? "analysis.restore" : "analysis.destroy")
+    : pendingUrl.value;
+
+  router.get(
+    destination,
+    { recordIds },
+    {
+      preserveState: false,
+      preserveScroll: true,
+      onFinish: resetConfirmation,
+    },
+  );
+}
+
+function handleBulkAction(event) {
+  requestConfirmation(event.action, event.actionType);
+}
 </script>
+
+<template>
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0 max-w-3xl">
+          <div class="flex flex-wrap items-center gap-2">
+            <p class="ds-kicker">Bancada analítica</p>
+            <span class="ds-chip">
+              <span class="lims-status-dot" :class="selectedResultAction.dot" />
+              {{ selectedResultAction.description }}
+            </span>
+          </div>
+          <h1 class="ds-heading mt-2 text-2xl">Fila de análises</h1>
+          <p class="ds-copy mt-2 max-w-2xl text-sm">
+            Registe, verifique e aprove resultados com o departamento, a origem da amostra e a decisão atual sempre visíveis.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div class="w-full min-w-0 sm:w-64">
+            <label class="ds-field-label" for="analysis-department">Departamento</label>
+            <SelectInput
+              id="analysis-department"
+              v-model="department"
+              :options="departments"
+              :selected="department"
+              class="mt-1 w-full"
+              @update:model-value="changeAnalysisDepartment"
+            />
+          </div>
+          <button type="button" class="ds-button ds-button-primary" @click="handleCreateAnalysis">
+            <DocumentPlusIcon class="h-4 w-4" aria-hidden="true" />
+            Receber amostra
+          </button>
+        </div>
+      </div>
+
+      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[var(--ds-border)]">
+        <div
+          v-for="metric in queueMetrics"
+          :key="metric.label"
+          class="min-w-0 border-b border-[var(--ds-border)] px-5 py-4 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0"
+        >
+          <dt class="ds-table-heading">{{ metric.label }}</dt>
+          <dd class="ds-heading mt-2 truncate text-lg">{{ metric.value }}</dd>
+          <p class="mt-1 truncate text-xs font-semibold text-[var(--ds-text-soft)]">{{ metric.note }}</p>
+        </div>
+      </dl>
+    </section>
+
+    <section class="ds-panel overflow-hidden">
+      <div class="border-b border-[var(--ds-border)] px-4 sm:px-5">
+        <nav class="-mb-px flex gap-6 overflow-x-auto" aria-label="Etapas de análise">
+          <button
+            v-for="item in resultActions"
+            :key="item.value"
+            type="button"
+            :class="[
+              'group flex shrink-0 items-center gap-2 border-b-2 px-1 py-4 text-sm font-bold transition',
+              selectedResultAction.value === item.value
+                ? 'border-[rgb(var(--primary-600-rgb))] text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--primary-300-rgb))]'
+                : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]',
+            ]"
+            @click="changeAnalysisCategory(item.value)"
+          >
+            <component :is="item.icon" class="h-4 w-4" aria-hidden="true" />
+            {{ $t(item.title) }}
+          </button>
+        </nav>
+      </div>
+
+      <div class="flex flex-col gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="ds-table-heading">Lista de trabalho</p>
+          <p class="ds-copy mt-1 text-xs">
+            {{ selectedResultAction.description }} no departamento {{ selectedDepartmentLabel }}.
+          </p>
+        </div>
+        <span class="ds-chip">
+          <BeakerIcon class="h-4 w-4" />
+          {{ props.record?.meta?.total ?? props.record?.data?.length ?? 0 }} registos
+        </span>
+      </div>
+
+      <div class="min-w-0">
+        <VapTable
+          :model="model"
+          :abilities="abilities"
+          :data="record.data"
+          :columns="tableColumns"
+          :query="query"
+          :initial-filters="initialFilters"
+          :initial-sort-field="initialSortField"
+          :initial-sort-direction="initialSortDirection"
+          :initial-includes="initialIncludes"
+          :trashed-filter="trashedFilter"
+          :trashed-options="trashedOptions"
+          :slide-over-edit="slideOverEdit"
+          :pagination="record.meta"
+          :actions="actions"
+          @create-record="handleCreateAnalysis"
+          @update-selected-ids="selectedIDs = $event"
+          @execute-bulk-action="handleBulkAction"
+        >
+          <template #column-sample_entry="{ row }">
+            <div class="min-w-0">
+              <Link
+                v-if="row.sample_entry?.show_url"
+                :href="row.sample_entry.show_url"
+                class="ds-table-action max-w-full"
+              >
+                <ClipboardDocumentCheckIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span class="min-w-0">
+                  <span class="block truncate">
+                    {{ row.sample_entry.code || row.sample_entry.name || $t("gestlab.general.labels.analysis.sample_entry") }}
+                  </span>
+                  <span class="block truncate text-[11px] font-semibold text-[var(--ds-text-soft)]">
+                    {{ row.sample?.code || row.entry_origin?.label || "Sem código de amostra" }}
+                  </span>
+                </span>
+              </Link>
+              <span v-else class="ds-chip">
+                <span class="lims-status-dot lims-status-dot-hold" />
+                {{ row.entry_origin?.label || $t("gestlab.general.labels.analysis.legacy_record") }}
+              </span>
+            </div>
+          </template>
+
+          <template #column-status="{ row }">
+            <span class="ds-chip">
+              <span
+                class="lims-status-dot"
+                :class="row.status ? 'lims-status-dot-release' : 'lims-status-dot-hold'"
+              />
+              {{ row.status ? "Ativa" : "Pendente" }}
+            </span>
+          </template>
+
+          <template #column-actions="{ row }">
+            <div class="flex items-center justify-end gap-1">
+              <button
+                v-if="row.deleted && hasPermission('restore_' + model)"
+                type="button"
+                class="ds-icon-button"
+                :title="$t('actions.restore')"
+                @click="requestConfirmation('restore', 'single', row, row.links.restore_path)"
+              >
+                <ArrowPathRoundedSquareIcon class="h-4 w-4" />
+                <span class="sr-only">{{ $t("actions.restore") }}</span>
+              </button>
+
+              <button
+                v-if="!row.deleted && hasPermission('edit_' + model)"
+                type="button"
+                class="ds-icon-button"
+                :title="$t('actions.edit')"
+                @click="openAnalysis(row)"
+              >
+                <PencilSquareIcon class="h-4 w-4" />
+                <span class="sr-only">{{ $t("actions.edit") }}</span>
+              </button>
+
+              <button
+                v-if="!row.deleted && hasPermission('delete_' + model)"
+                type="button"
+                class="ds-icon-button text-red-700 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10"
+                :title="$t('actions.delete')"
+                @click="requestConfirmation('delete', 'single', row, row.links.delete_path)"
+              >
+                <TrashIcon class="h-4 w-4" />
+                <span class="sr-only">{{ $t("actions.delete") }}</span>
+              </button>
+            </div>
+          </template>
+        </VapTable>
+      </div>
+    </section>
+
+    <section class="lims-status-strip p-4">
+      <div class="flex items-start gap-3">
+        <CheckBadgeIcon class="h-5 w-5 shrink-0 text-[var(--lims-release)]" />
+        <div>
+          <h2 class="ds-heading text-sm">Separação de funções preservada</h2>
+          <p class="ds-copy mt-1 text-xs">
+            A fila mantém inserção, verificação e aprovação como etapas distintas para suportar a rastreabilidade ISO 17025.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <ConfirmDialog
+      v-if="showConfirmation"
+      :title="confirmationDialogTitle"
+      :description="confirmationDialogDescription"
+      confirm="Sim"
+      cancel="Não"
+      @canceled="resetConfirmation"
+      @close="resetConfirmation"
+      @confirmed="confirmAction"
+    />
+  </div>
+</template>

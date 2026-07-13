@@ -139,14 +139,14 @@ const closeMenu = () => {
 <style>
 .dp__calendar_wrap,
 .dp__month_year_select {
-    font-family: "Manrope", sans-serif;
+    font-family: var(--font-sans);
 }
 
 /* Base theme modifications for @vuepic/vue-datepicker */
 .dp__theme_light {
-   --dp-font-family: "Manrope", sans-serif;
-   --dp-border-radius: 1rem;
-   --dp-cell-border-radius: 0.75rem;
+   --dp-font-family: var(--font-sans);
+   --dp-border-radius: var(--ds-radius-control);
+   --dp-cell-border-radius: 0.5rem;
    --dp-primary-color: var(--color-primary-600, #1f7a68);
    --dp-primary-text-color: #ffffff;
    --dp-hover-color: var(--color-primary-50, #eef7f3);

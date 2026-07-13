@@ -1,85 +1,77 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <ModuleHero
-      eyebrow="Relatórios operacionais"
-      :title="title || 'Relatórios de Amostras'"
-      description="Consolidação executiva das amostras recebidas, descartes, tempos de análise, CQ interno e distribuição por estado para apoiar gestão laboratorial e auditorias."
-    >
-      <template #actions>
-        <div class="flex flex-wrap items-center gap-3">
-          <a
-            :href="sampleExportUrl"
-            class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white/85 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
+        <div class="max-w-3xl">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="ds-kicker">Relatórios operacionais</span>
+            <span class="ds-chip">
+              <span class="lims-status-dot lims-status-dot-instrument" />
+              Gerado em {{ formatDateTime(generatedAt) }}
+            </span>
+          </div>
+          <h1 class="ds-heading mt-3 text-2xl">{{ title || 'Relatórios de Amostras' }}</h1>
+          <p class="ds-copy mt-2 text-sm">
+            Consolidação de receção, ciclo analítico, descartes, tempos de resposta e controlo interno para gestão e auditoria laboratorial.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <a :href="sampleExportUrl" class="ds-button ds-button-secondary">
             <ArrowDownTrayIcon class="h-4 w-4" />
             Exportar amostras
           </a>
-          <a
-            :href="discardExportUrl"
-            class="inline-flex items-center gap-2 rounded-full bg-primary-800 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
-          >
+          <a :href="discardExportUrl" class="ds-button ds-button-primary">
             <DocumentArrowDownIcon class="h-4 w-4" />
             Exportar descartes
           </a>
         </div>
-      </template>
+      </div>
 
-      <div class="mt-6 flex flex-wrap items-center gap-3">
-        <span class="inline-flex items-center rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 dark:bg-slate-950/60 dark:text-slate-200 dark:ring-slate-700">
-          Gerado em {{ formatDateTime(generatedAt) }}
-        </span>
-        <span class="inline-flex items-center rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-800 ring-1 ring-primary-200 dark:bg-primary-500/10 dark:text-primary-200 dark:ring-primary-500/30">
-          {{ samples.total || 0 }} amostras no recorte
-        </span>
-      </div>
-    </ModuleHero>
-
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-7">
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/90">
-        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total de amostras</p>
-        <p class="mt-3 text-3xl font-bold text-slate-900 dark:text-slate-100">{{ summary.total_samples }}</p>
-      </div>
-      <div class="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5 shadow-sm dark:border-emerald-500/20 dark:bg-emerald-500/10">
-        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Completadas</p>
-        <p class="mt-3 text-3xl font-bold text-emerald-700 dark:text-emerald-200">{{ summary.completed_samples }}</p>
-      </div>
-      <div class="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 shadow-sm dark:border-amber-500/20 dark:bg-amber-500/10">
-        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Por iniciar</p>
-        <p class="mt-3 text-3xl font-bold text-amber-700 dark:text-amber-200">{{ summary.pending_samples }}</p>
-      </div>
-      <div class="rounded-2xl border border-primary-200 bg-primary-50/70 p-5 shadow-sm dark:border-primary-500/20 dark:bg-primary-500/10">
-        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Em progresso</p>
-        <p class="mt-3 text-3xl font-bold text-primary-800 dark:text-primary-200">{{ summary.in_progress_samples }}</p>
-      </div>
-      <div class="rounded-2xl border border-rose-200 bg-rose-50/70 p-5 shadow-sm dark:border-rose-500/20 dark:bg-rose-500/10">
-        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total de descartes</p>
-        <p class="mt-3 text-3xl font-bold text-rose-700 dark:text-rose-200">{{ summary.total_discards }}</p>
-      </div>
-      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/90">
-        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Tempo médio</p>
-        <p class="mt-3 text-3xl font-bold text-primary-800 dark:text-primary-200">{{ summary.avg_turnaround_hours }}h</p>
-        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Taxa de descarte: {{ summary.discard_rate }}%</p>
-      </div>
-      <div class="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-5 shadow-sm dark:border-emerald-500/20 dark:bg-emerald-500/10">
-        <p class="text-sm font-medium text-emerald-800 dark:text-emerald-200">CQ interno</p>
-        <p class="mt-3 text-3xl font-bold text-emerald-700 dark:text-emerald-200">{{ summary.internal_qc_samples || 0 }}</p>
-        <p class="mt-1 text-xs text-emerald-700/80 dark:text-emerald-300/80">Matéria-prima no fluxo normal</p>
-      </div>
-    </div>
-
-    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div class="mb-6 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Filtros operacionais</h2>
-          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Refine o período, o escopo laboratorial e o tipo de descarte sem depender de listas longas.
-          </p>
+      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] sm:grid-cols-4 sm:divide-y-0">
+        <div class="px-5 py-4">
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Amostras no recorte</dt>
+          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ samples.total || 0 }}</dd>
         </div>
-        <span class="inline-flex items-center rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/20 dark:text-primary-300">
-          {{ samples.total || 0 }} amostras no recorte actual
-        </span>
+        <div class="px-5 py-4">
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Descartes</dt>
+          <dd class="mt-2 text-2xl font-bold text-rose-700 dark:text-rose-300">{{ summary.total_discards || 0 }}</dd>
+        </div>
+        <div class="px-5 py-4">
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Tempo médio</dt>
+          <dd class="mt-2 text-2xl font-bold text-primary-800 dark:text-primary-200">{{ summary.avg_turnaround_hours || 0 }}h</dd>
+        </div>
+        <div class="px-5 py-4">
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">CQ interno</dt>
+          <dd class="mt-2 text-2xl font-bold text-emerald-700 dark:text-emerald-300">{{ summary.internal_qc_samples || 0 }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+      <article v-for="metric in summaryCards" :key="metric.label" class="ds-card border-l-4 p-4" :class="metric.borderClass">
+        <div class="flex items-start justify-between gap-3">
+          <p class="text-xs font-bold uppercase leading-5 text-[color:var(--ds-text-soft)]">{{ metric.label }}</p>
+          <span class="lims-status-dot mt-1" :class="metric.dotClass" />
+        </div>
+        <p class="mt-3 text-2xl font-bold" :class="metric.valueClass">{{ metric.value }}</p>
+        <p v-if="metric.note" class="mt-1 text-xs leading-5 text-[color:var(--ds-text-soft)]">{{ metric.note }}</p>
+      </article>
+    </section>
+
+    <section class="ds-command-surface overflow-hidden">
+      <div class="flex flex-col gap-3 border-b border-[color:var(--ds-border)] px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
+        <div class="flex items-start gap-3">
+          <FunnelIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
+          <div>
+            <h2 class="ds-heading text-base">Filtros operacionais</h2>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Refine período, origem, decisão CQ, estado e escopo laboratorial.</p>
+          </div>
+        </div>
+        <span class="ds-chip">{{ samples.total || 0 }} amostras no recorte</span>
       </div>
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+
+      <div class="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-5">
         <combobox-enhanced v-model="sampleScopeSelection" title-label="Escopo" placeholder="Todas as origens" :options="sampleScopeFilterOptions" :load-options="loadSampleScopes" />
         <combobox-enhanced v-model="qcReleaseSelection" title-label="Decisão CQ" placeholder="Todas as decisões" :options="qcReleaseFilterOptions" :load-options="loadQcReleaseStatuses" />
         <date-picker-enhanced v-model="form.date_from" label="Data inicial" :is-dark="isDark" />
@@ -92,485 +84,332 @@
         <combobox-enhanced v-model="discardMethodSelection" title-label="Método de descarte" placeholder="Todos os métodos" :options="discardMethodOptions" :load-options="loadDiscardMethods" />
       </div>
 
-      <div class="mt-6 flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-6 dark:border-slate-800">
-        <button
-          type="button"
-          class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-          @click="resetFilters"
-        >
-          Redefinir
-        </button>
-        <button
-          type="button"
-          class="rounded-2xl bg-primary-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-500"
-          @click="applyFilters"
-        >
+      <div class="flex flex-wrap justify-end gap-2 border-t border-[color:var(--ds-border)] px-5 py-4">
+        <button type="button" class="ds-button ds-button-secondary" @click="resetFilters">Redefinir</button>
+        <button type="button" class="ds-button ds-button-primary" @click="applyFilters">
+          <FunnelIcon class="h-4 w-4" />
           Aplicar filtros
         </button>
       </div>
-    </div>
+    </section>
 
-    <section class="grid grid-cols-1 gap-6 xl:grid-cols-[0.9fr_1.25fr_0.85fr]">
-      <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/90">
-        <div class="flex items-start justify-between gap-4">
+    <section class="grid gap-4 xl:grid-cols-3">
+      <article class="ds-panel overflow-hidden">
+        <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
           <div>
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Estados do ciclo</h2>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Leitura rápida da pressão no fluxo de análise.</p>
+            <h2 class="ds-heading text-base">Estados do ciclo</h2>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Pressão no fluxo analítico.</p>
           </div>
-          <span class="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-800 dark:bg-primary-500/10 dark:text-primary-200">
-            {{ statusChartTotal }} total
-          </span>
+          <span class="ds-chip">{{ statusChartTotal }} total</span>
         </div>
-        <div class="mt-6">
-          <apexchart type="donut" height="310" :options="statusChartOptions" :series="statusChartSeries" />
+        <div class="p-4">
+          <apexchart type="donut" height="300" :options="statusChartOptions" :series="statusChartSeries" />
         </div>
       </article>
 
-      <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/90">
-        <div class="flex items-start justify-between gap-4">
+      <article class="ds-panel overflow-hidden">
+        <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
           <div>
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Receção no período</h2>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Evolução das entradas para antecipar capacidade técnica.</p>
+            <h2 class="ds-heading text-base">Receção no período</h2>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Evolução de entradas e capacidade.</p>
           </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-            {{ sampleTimeline.length }} pontos
-          </span>
+          <span class="ds-chip">{{ sampleTimeline.length }} pontos</span>
         </div>
-        <div class="mt-6">
-          <apexchart type="area" height="310" :options="timelineChartOptions" :series="timelineChartSeries" />
+        <div class="p-4">
+          <apexchart type="area" height="300" :options="timelineChartOptions" :series="timelineChartSeries" />
         </div>
       </article>
 
-      <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/90">
-        <div class="flex items-start justify-between gap-4">
+      <article class="ds-panel overflow-hidden">
+        <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
           <div>
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Descarte</h2>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Métodos mais usados no recorte atual.</p>
+            <h2 class="ds-heading text-base">Descarte</h2>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Métodos mais usados no recorte.</p>
           </div>
-          <span class="rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700 dark:bg-rose-500/10 dark:text-rose-200">
-            {{ discardChartTotal }} registos
-          </span>
+          <span class="ds-chip">{{ discardChartTotal }} registos</span>
         </div>
-        <div class="mt-6">
-          <apexchart type="bar" height="310" :options="discardChartOptions" :series="discardChartSeries" />
+        <div class="p-4">
+          <apexchart type="bar" height="300" :options="discardChartOptions" :series="discardChartSeries" />
         </div>
       </article>
     </section>
 
-    <section class="overflow-hidden rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-primary-50/70 shadow-sm dark:border-emerald-500/20 dark:from-emerald-950/40 dark:via-slate-900 dark:to-primary-950/30">
-      <div class="grid grid-cols-1 gap-6 p-6 xl:grid-cols-[1.05fr_1.4fr]">
-        <div class="space-y-5">
-          <div class="inline-flex rounded-full bg-white/80 p-1 text-xs font-semibold text-emerald-800 shadow-sm ring-1 ring-emerald-200 dark:bg-slate-950/70 dark:text-emerald-200 dark:ring-emerald-500/20">
-            <span class="rounded-full bg-emerald-600 px-3 py-1 text-white">ISO 17025</span>
-            <span class="px-3 py-1">CQ interno</span>
-          </div>
-          <div>
-            <h2 class="flex items-center gap-3 text-2xl font-bold text-slate-950 dark:text-white">
-              <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-lg shadow-emerald-600/20">
-                <BeakerIcon class="h-6 w-6" />
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-4 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between">
+        <div class="flex items-start gap-3">
+          <BeakerIcon class="mt-0.5 h-5 w-5 text-emerald-700 dark:text-emerald-300" />
+          <div class="max-w-3xl">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="ds-kicker">ISO 17025</span>
+              <span class="ds-chip">
+                <span class="lims-status-dot lims-status-dot-release" />
+                CQ interno
               </span>
-              Matéria-prima em controlo interno
-            </h2>
-            <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-              Este recorte mostra as amostras internas de matéria-prima que seguem o mesmo ciclo de receção, lab code,
-              análises, resultados, verificação e aprovação. A proposta não é exigida, mas a rastreabilidade continua ligada ao fluxo normal.
+            </div>
+            <h2 class="ds-heading mt-2 text-lg">Matéria-prima em controlo interno</h2>
+            <p class="ds-copy mt-2 text-xs">
+              Amostras internas seguem o mesmo ciclo de receção, código, análise, verificação e aprovação, preservando rastreabilidade sem exigir proposta comercial.
             </p>
           </div>
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-2xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600 dark:bg-emerald-500 dark:hover:bg-emerald-400"
-            @click="showInternalQcOnly"
-          >
-            <CheckCircleIcon class="h-4 w-4" />
-            Ver apenas CQ interno
-          </button>
         </div>
+        <button type="button" class="ds-button ds-button-secondary shrink-0" @click="showInternalQcOnly">
+          <CheckCircleIcon class="h-4 w-4" />
+          Ver apenas CQ interno
+        </button>
+      </div>
 
-        <div class="space-y-4">
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <article
-              v-for="metric in internalQcMetrics"
-              :key="metric.label"
-              class="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/60"
-            >
-              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{{ metric.label }}</p>
-              <p class="mt-2 text-2xl font-bold" :class="metric.tone">{{ metric.value }}</p>
-            </article>
+      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] sm:grid-cols-3 xl:grid-cols-6 xl:divide-y-0">
+        <div v-for="metric in internalQcMetrics" :key="metric.label" class="px-5 py-4">
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ metric.label }}</dt>
+          <dd class="mt-2 text-xl font-bold" :class="metric.tone">{{ metric.value }}</dd>
+        </div>
+      </dl>
+
+      <div class="grid border-t border-[color:var(--ds-border)] xl:grid-cols-[0.8fr_1fr_1.5fr]">
+        <section class="border-b border-[color:var(--ds-border)] p-5 xl:border-b-0 xl:border-r">
+          <h3 class="ds-heading text-sm">Disciplinas</h3>
+          <dl class="mt-3 divide-y divide-[color:var(--ds-border)]">
+            <div v-for="item in disciplineBreakdown" :key="item.label" class="flex items-center justify-between gap-3 py-3">
+              <dt class="text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ item.label }}</dt>
+              <dd class="text-sm font-bold text-[color:var(--ds-text)]">{{ item.value }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="border-b border-[color:var(--ds-border)] p-5 xl:border-b-0 xl:border-r">
+          <h3 class="ds-heading text-sm">Decisão final</h3>
+          <dl class="mt-3 divide-y divide-[color:var(--ds-border)]">
+            <div v-for="item in releaseDecisionBreakdown" :key="item.value" class="flex items-center justify-between gap-3 py-3">
+              <dt class="flex items-center gap-2 text-xs font-semibold text-[color:var(--ds-text-soft)]">
+                <span class="lims-status-dot" :class="qcReleaseDotClass(item.value)" />
+                {{ item.label }}
+              </dt>
+              <dd class="text-sm font-bold text-[color:var(--ds-text)]">{{ item.total }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="ds-heading text-sm">Últimas entradas de CQ</h3>
+              <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">Amostras internas mais recentes.</p>
+            </div>
+            <span class="ds-chip">{{ internalQcSamples.length }} recentes</span>
           </div>
-
-          <div class="grid grid-cols-1 gap-4 xl:grid-cols-[0.8fr_0.8fr_1.4fr]">
-            <div class="rounded-3xl border border-white/80 bg-white/85 p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/60">
-              <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Disciplinas</h3>
-              <div class="mt-4 space-y-3">
-                <div
-                  v-for="item in disciplineBreakdown"
-                  :key="item.label"
-                  class="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2 dark:bg-slate-900"
-                >
-                  <span class="text-sm text-slate-600 dark:text-slate-300">{{ item.label }}</span>
-                  <span class="text-sm font-bold text-slate-950 dark:text-white">{{ item.value }}</span>
+          <div v-if="internalQcSamples.length" class="mt-3 divide-y divide-[color:var(--ds-border)] border-y border-[color:var(--ds-border)]">
+            <article v-for="sample in internalQcSamples" :key="sample.id" class="py-3">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div class="min-w-0">
+                  <p class="truncate font-mono text-xs font-bold text-primary-800 dark:text-primary-200">{{ sample.code }}</p>
+                  <p class="mt-1 truncate text-sm font-bold text-[color:var(--ds-text)]">{{ sample.name }}</p>
+                  <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">
+                    {{ disciplineLabel(sample.quality_control?.discipline) }} · {{ qcPurposeLabel(sample.quality_control?.purpose) }}
+                  </p>
                 </div>
-              </div>
-            </div>
-
-            <div class="rounded-3xl border border-white/80 bg-white/85 p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/60">
-              <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Decisão final</h3>
-              <div class="mt-4 space-y-3">
-                <div
-                  v-for="item in releaseDecisionBreakdown"
-                  :key="item.value"
-                  class="flex items-center justify-between rounded-2xl bg-slate-50 px-3 py-2 dark:bg-slate-900"
-                >
-                  <span class="text-sm text-slate-600 dark:text-slate-300">{{ item.label }}</span>
-                  <span class="text-sm font-bold text-slate-950 dark:text-white">{{ item.total }}</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="rounded-3xl border border-white/80 bg-white/85 p-4 shadow-sm dark:border-slate-700/70 dark:bg-slate-950/60">
-              <div class="flex items-center justify-between gap-3">
-                <h3 class="text-sm font-semibold text-slate-900 dark:text-slate-100">Últimas entradas de CQ</h3>
-                <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
-                  {{ internalQcSamples.length }} recentes
+                <span class="ds-chip shrink-0">
+                  <span class="lims-status-dot" :class="statusDotClass(sample.status)" />
+                  {{ getStatusLabel(sample.status) }}
                 </span>
               </div>
-              <div class="mt-4 space-y-3">
-                <article
-                  v-for="sample in internalQcSamples"
-                  :key="sample.id"
-                  class="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900"
-                >
-                  <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p class="text-sm font-semibold text-primary-900 dark:text-primary-300">{{ sample.code }}</p>
-                      <p class="mt-1 text-sm text-slate-900 dark:text-slate-100">{{ sample.name }}</p>
-                      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        {{ disciplineLabel(sample.quality_control?.discipline) }} · {{ qcPurposeLabel(sample.quality_control?.purpose) }}
-                      </p>
-                    </div>
-                    <span :class="statusBadgeClass(sample.status)" class="inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold">
-                      {{ getStatusLabel(sample.status) }}
-                    </span>
-                  </div>
-                  <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                    Lote {{ sample.quality_control?.lot || 'N/A' }} · Fornecedor {{ sample.quality_control?.supplier_name || 'N/A' }} · {{ qcDecisionLabel(sample.quality_control?.decision) }}
-                  </p>
-                  <p class="mt-2">
-                    <span :class="qcReleaseBadgeClass(sample.quality_control?.final_decision)" class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold">
-                      {{ qcReleaseLabel(sample.quality_control?.final_decision) }}
-                    </span>
-                  </p>
-                </article>
-                <p v-if="internalQcSamples.length === 0" class="text-sm text-slate-500 dark:text-slate-400">
-                  Sem amostras internas de matéria-prima neste recorte.
-                </p>
-              </div>
-            </div>
+              <p class="mt-2 text-xs text-[color:var(--ds-text-soft)]">
+                Lote {{ sample.quality_control?.lot || 'N/A' }} · {{ sample.quality_control?.supplier_name || 'Fornecedor N/A' }} · {{ qcDecisionLabel(sample.quality_control?.decision) }}
+              </p>
+              <p class="mt-2 flex items-center gap-2 text-xs font-bold text-[color:var(--ds-text)]">
+                <span class="lims-status-dot" :class="qcReleaseDotClass(sample.quality_control?.final_decision)" />
+                {{ qcReleaseLabel(sample.quality_control?.final_decision) }}
+              </p>
+            </article>
           </div>
+          <div v-else class="ds-empty-state mt-3 p-5 text-center">
+            <p class="text-xs text-[color:var(--ds-text-soft)]">Sem amostras internas neste recorte.</p>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="grid gap-4 xl:grid-cols-3">
+      <article v-for="group in breakdownGroups" :key="group.title" class="ds-panel overflow-hidden">
+        <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
+          <h2 class="ds-heading text-base">{{ group.title }}</h2>
+          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ group.description }}</p>
+        </div>
+        <dl v-if="group.items.length" class="divide-y divide-[color:var(--ds-border)] px-5">
+          <div v-for="item in group.items" :key="item.label" class="flex items-center justify-between gap-3 py-3">
+            <dt class="flex min-w-0 items-center gap-2 text-xs font-semibold text-[color:var(--ds-text-soft)]">
+              <span class="lims-status-dot shrink-0" :class="item.dotClass" />
+              <span class="truncate">{{ item.label }}</span>
+            </dt>
+            <dd class="text-sm font-bold text-[color:var(--ds-text)]">{{ item.value }}</dd>
+          </div>
+        </dl>
+        <div v-else class="p-5">
+          <div class="ds-empty-state p-5 text-center">
+            <p class="text-xs text-[color:var(--ds-text-soft)]">Sem dados para o filtro atual.</p>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="ds-panel overflow-hidden">
+      <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
+        <div>
+          <h2 class="ds-heading text-base">Linha temporal de recebimento</h2>
+          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Volume diário no período selecionado.</p>
+        </div>
+        <span class="ds-chip">{{ sampleTimeline.length }} pontos</span>
+      </div>
+      <div v-if="sampleTimeline.length" class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+        <div v-for="item in sampleTimeline" :key="item.date" class="px-4 py-4">
+          <p class="text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ formatDate(item.date) }}</p>
+          <p class="mt-2 text-xl font-bold text-primary-800 dark:text-primary-200">{{ item.total }}</p>
+        </div>
+      </div>
+      <div v-else class="p-5">
+        <div class="ds-empty-state p-6 text-center">
+          <p class="text-xs text-[color:var(--ds-text-soft)]">Sem movimentação no período selecionado.</p>
         </div>
       </div>
     </section>
 
-    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Distribuição por estado</h2>
-        <div class="mt-4 space-y-3">
-          <div
-            v-for="item in statusBreakdown"
-            :key="item.label"
-            class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-800/80"
-          >
-            <span class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ getStatusLabel(item.label) }}</span>
-            <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ item.total }}</span>
+    <section class="grid gap-4 xl:grid-cols-2">
+      <article class="ds-panel overflow-hidden">
+        <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
+          <div>
+            <h2 class="ds-heading text-base">Amostras</h2>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ samples.total || 0 }} registos filtrados.</p>
           </div>
-          <p v-if="statusBreakdown.length === 0" class="text-sm text-slate-500 dark:text-slate-400">Sem dados para o filtro atual.</p>
-        </div>
-      </div>
-
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Tipos de amostra</h2>
-        <div class="mt-4 space-y-3">
-          <div
-            v-for="item in sampleTypeBreakdown"
-            :key="item.label"
-            class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-800/80"
-          >
-            <span class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ item.label }}</span>
-            <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ item.total }}</span>
-          </div>
-          <p v-if="sampleTypeBreakdown.length === 0" class="text-sm text-slate-500 dark:text-slate-400">Sem dados para o filtro atual.</p>
-        </div>
-      </div>
-
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Métodos de descarte</h2>
-        <div class="mt-4 space-y-3">
-          <div
-            v-for="item in discardMethodBreakdown"
-            :key="item.label"
-            class="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-800/80"
-          >
-            <span class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ item.label }}</span>
-            <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ item.total }}</span>
-          </div>
-          <p v-if="discardMethodBreakdown.length === 0" class="text-sm text-slate-500 dark:text-slate-400">Sem descartes para o filtro atual.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Linha temporal de recebimento</h2>
-      <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <div
-          v-for="item in sampleTimeline"
-          :key="item.date"
-          class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/80"
-        >
-          <p class="text-sm font-medium text-slate-700 dark:text-slate-200">{{ formatDate(item.date) }}</p>
-          <p class="mt-1 text-2xl font-bold text-primary-900 dark:text-primary-400">{{ item.total }}</p>
-        </div>
-        <p v-if="sampleTimeline.length === 0" class="text-sm text-slate-500 dark:text-slate-400">Sem movimentação no período selecionado.</p>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
-      <div class="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-          <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Amostras</h2>
-          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {{ samples.total }} registros filtrados
-          </p>
+          <QueueListIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
         </div>
 
-        <div v-if="samples.data.length === 0" class="p-6 text-sm text-slate-500 dark:text-slate-400">
-          Nenhuma amostra encontrada para os filtros informados.
-        </div>
-
-        <div v-if="samples.data.length > 0" class="lg:hidden space-y-3 p-4">
-          <article v-for="sample in samples.data" :key="sample.id" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/80">
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <p class="text-sm font-semibold text-primary-900 dark:text-primary-400">{{ sample.code }}</p>
-                <p class="mt-1 text-sm text-slate-900 dark:text-slate-100">{{ sample.name }}</p>
-                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ sample.sample_type }}</p>
-                <span
-                  v-if="isInternalQcSample(sample)"
-                  class="mt-2 inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200"
-                >
-                  CQ interno · {{ disciplineLabel(sample.quality_control?.discipline) }}
-                </span>
-              </div>
-              <span :class="statusBadgeClass(sample.status)" class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold">
-                {{ getStatusLabel(sample.status) }}
-              </span>
-            </div>
-            <div
-              v-if="isInternalQcSample(sample)"
-              class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-3 text-xs text-emerald-900 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-100"
-            >
-              <p class="font-semibold">{{ qcPurposeLabel(sample.quality_control?.purpose) }}</p>
-              <p class="mt-1">
-                Lote {{ sample.quality_control?.lot || 'N/A' }} · Fornecedor {{ sample.quality_control?.supplier_name || 'N/A' }} · {{ qcDecisionLabel(sample.quality_control?.decision) }}
-              </p>
-              <p class="mt-2">
-                <span :class="qcReleaseBadgeClass(sample.quality_control?.final_decision)" class="inline-flex rounded-full px-2.5 py-1 font-semibold">
-                  {{ qcReleaseLabel(sample.quality_control?.final_decision) }}
-                </span>
-              </p>
-            </div>
-            <dl class="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-              <div>
-                <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Cliente</dt>
-                <dd class="mt-1 text-slate-700 dark:text-slate-200">{{ sample.customer?.name || 'N/A' }}</dd>
-              </div>
-              <div>
-                <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Recebida</dt>
-                <dd class="mt-1 text-slate-700 dark:text-slate-200">{{ formatDateTime(sample.received_at) }}</dd>
-              </div>
-            </dl>
-          </article>
-        </div>
-
-        <div v-if="samples.data.length > 0" class="hidden overflow-x-auto lg:block">
-          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead class="bg-slate-50 dark:bg-slate-800/70">
+        <div v-if="samples.data.length" class="ds-table-shell overflow-x-auto">
+          <table class="min-w-[48rem]">
+            <thead class="ds-table-head">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Código</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Cliente</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Estado</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Recebida</th>
+                <th class="ds-table-cell text-left">Amostra</th>
+                <th class="ds-table-cell text-left">Escopo</th>
+                <th class="ds-table-cell text-left">Cliente</th>
+                <th class="ds-table-cell text-left">Estado</th>
+                <th class="ds-table-cell text-left">Recebida</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-900">
-              <tr v-for="sample in samples.data" :key="sample.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
-                <td class="px-6 py-4">
-                  <div class="text-sm font-semibold text-primary-900 dark:text-primary-400">{{ sample.code }}</div>
-                  <div class="text-sm text-slate-600 dark:text-slate-300">{{ sample.name }}</div>
-                  <div class="text-xs text-slate-500 dark:text-slate-400">{{ sample.sample_type }}</div>
-                  <div
-                    v-if="isInternalQcSample(sample)"
-                    class="mt-2 inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200"
-                  >
-                    CQ interno · {{ disciplineLabel(sample.quality_control?.discipline) }}
-                  </div>
-                  <div v-if="isInternalQcSample(sample)" class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    Lote {{ sample.quality_control?.lot || 'N/A' }} · {{ qcDecisionLabel(sample.quality_control?.decision) }}
-                  </div>
-                  <div v-if="isInternalQcSample(sample)" class="mt-2">
-                    <span :class="qcReleaseBadgeClass(sample.quality_control?.final_decision)" class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold">
-                      {{ qcReleaseLabel(sample.quality_control?.final_decision) }}
-                    </span>
-                  </div>
+            <tbody>
+              <tr v-for="sample in samples.data" :key="sample.id" class="ds-table-row">
+                <td class="ds-table-cell align-top">
+                  <Link :href="route('vap_samples.show', sample.id)" class="font-mono text-xs font-bold text-primary-800 hover:underline dark:text-primary-200">{{ sample.code }}</Link>
+                  <p class="mt-1 max-w-48 truncate text-sm font-bold text-[color:var(--ds-text)]">{{ sample.name }}</p>
+                  <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ sample.sample_type || 'Tipo N/A' }}</p>
+                  <span v-if="isInternalQcSample(sample)" class="ds-chip mt-2">CQ interno · {{ disciplineLabel(sample.quality_control?.discipline) }}</span>
                 </td>
-                <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">
-                  {{ sample.customer?.name || 'N/A' }}
+                <td class="ds-table-cell align-top">
+                  <p class="text-xs font-semibold text-[color:var(--ds-text)]">{{ sample.lab?.name || 'Lab N/A' }}</p>
+                  <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ sample.department?.name || 'Departamento N/A' }}</p>
+                  <p v-if="isInternalQcSample(sample)" class="mt-2 text-xs text-[color:var(--ds-text-soft)]">Lote {{ sample.quality_control?.lot || 'N/A' }}</p>
                 </td>
-                <td class="px-6 py-4">
-                  <span :class="statusBadgeClass(sample.status)" class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold">
+                <td class="ds-table-cell align-top text-xs text-[color:var(--ds-text)]">{{ sample.customer?.name || 'N/A' }}</td>
+                <td class="ds-table-cell align-top">
+                  <span class="ds-chip">
+                    <span class="lims-status-dot" :class="statusDotClass(sample.status)" />
                     {{ getStatusLabel(sample.status) }}
                   </span>
+                  <p v-if="isInternalQcSample(sample)" class="mt-2 flex items-center gap-2 text-xs font-semibold text-[color:var(--ds-text-soft)]">
+                    <span class="lims-status-dot" :class="qcReleaseDotClass(sample.quality_control?.final_decision)" />
+                    {{ qcReleaseLabel(sample.quality_control?.final_decision) }}
+                  </p>
                 </td>
-                <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">
-                  {{ formatDateTime(sample.received_at) }}
-                </td>
+                <td class="ds-table-cell align-top text-xs text-[color:var(--ds-text)]">{{ formatDateTime(sample.received_at) }}</td>
               </tr>
             </tbody>
           </table>
         </div>
-
-        <div v-if="samples.data.length > 0" class="flex items-center justify-between border-t border-slate-200 px-6 py-4 dark:border-slate-800">
-          <p class="text-sm text-slate-500 dark:text-slate-400">
-            Mostrando {{ samples.from }}-{{ samples.to }} de {{ samples.total }}
-          </p>
-          <div class="flex gap-2">
-            <button
-              type="button"
-              :disabled="!samples.prev_page_url"
-              class="rounded-2xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400 dark:border-slate-700 dark:text-slate-200"
-              @click="visitPage(samples.prev_page_url)"
-            >
-              Anterior
-            </button>
-            <button
-              type="button"
-              :disabled="!samples.next_page_url"
-              class="rounded-2xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400 dark:border-slate-700 dark:text-slate-200"
-              @click="visitPage(samples.next_page_url)"
-            >
-              Próxima
-            </button>
+        <div v-else class="p-5">
+          <div class="ds-empty-state p-6 text-center">
+            <QueueListIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
+            <p class="mt-2 text-xs text-[color:var(--ds-text-soft)]">Nenhuma amostra encontrada.</p>
           </div>
         </div>
-      </div>
 
-      <div class="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-          <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Descartes</h2>
-          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            {{ discards.total }} registros filtrados
-          </p>
+        <div v-if="samples.data.length" class="ds-table-summary flex items-center justify-between gap-3 px-5 py-4">
+          <p class="text-xs text-[color:var(--ds-text-soft)]">Mostrando {{ samples.from }}-{{ samples.to }} de {{ samples.total }}</p>
+          <div class="flex gap-2">
+            <button type="button" class="ds-button ds-button-secondary" :disabled="!samples.prev_page_url" @click="visitPage(samples.prev_page_url)">Anterior</button>
+            <button type="button" class="ds-button ds-button-secondary" :disabled="!samples.next_page_url" @click="visitPage(samples.next_page_url)">Próxima</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="ds-panel overflow-hidden">
+        <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
+          <div>
+            <h2 class="ds-heading text-base">Descartes</h2>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ discards.total || 0 }} registos filtrados.</p>
+          </div>
+          <TrashIcon class="h-5 w-5 text-rose-700 dark:text-rose-300" />
         </div>
 
-        <div v-if="discards.data.length === 0" class="p-6 text-sm text-slate-500 dark:text-slate-400">
-          Nenhum descarte encontrado para os filtros informados.
-        </div>
-
-        <div v-if="discards.data.length > 0" class="lg:hidden space-y-3 p-4">
-          <article v-for="discard in discards.data" :key="discard.id" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/80">
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <p class="text-sm font-semibold text-primary-900 dark:text-primary-400">{{ discard.sample?.code || 'N/A' }}</p>
-                <p class="mt-1 text-sm text-slate-900 dark:text-slate-100">{{ discard.sample?.name || 'Amostra removida' }}</p>
-                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ discard.sample?.customer?.name || 'Sem cliente' }}</p>
-              </div>
-              <span class="text-sm font-semibold text-rose-600">{{ discard.qty }}</span>
-            </div>
-            <dl class="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-              <div>
-                <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Método</dt>
-                <dd class="mt-1 text-slate-700 dark:text-slate-200">{{ discard.discard_method }}</dd>
-              </div>
-              <div>
-                <dt class="text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Data</dt>
-                <dd class="mt-1 text-slate-700 dark:text-slate-200">{{ formatDateTime(discard.discarded_at) }}</dd>
-              </div>
-            </dl>
-          </article>
-        </div>
-
-        <div v-if="discards.data.length > 0" class="hidden overflow-x-auto lg:block">
-          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead class="bg-slate-50 dark:bg-slate-800/70">
+        <div v-if="discards.data.length" class="ds-table-shell overflow-x-auto">
+          <table class="min-w-[42rem]">
+            <thead class="ds-table-head">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Amostra</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Método</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Qtd.</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Data</th>
+                <th class="ds-table-cell text-left">Amostra</th>
+                <th class="ds-table-cell text-left">Método</th>
+                <th class="ds-table-cell text-left">Qtd.</th>
+                <th class="ds-table-cell text-left">Responsável / escopo</th>
+                <th class="ds-table-cell text-left">Data</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-900">
-              <tr v-for="discard in discards.data" :key="discard.id" class="hover:bg-slate-50 dark:hover:bg-slate-800/60">
-                <td class="px-6 py-4">
-                  <div class="text-sm font-semibold text-primary-900 dark:text-primary-400">{{ discard.sample?.code || 'N/A' }}</div>
-                  <div class="text-sm text-slate-600 dark:text-slate-300">{{ discard.sample?.name || 'Amostra removida' }}</div>
-                  <div class="text-xs text-slate-500 dark:text-slate-400">{{ discard.sample?.customer?.name || 'Sem cliente' }}</div>
+            <tbody>
+              <tr v-for="discard in discards.data" :key="discard.id" class="ds-table-row">
+                <td class="ds-table-cell align-top">
+                  <p class="font-mono text-xs font-bold text-primary-800 dark:text-primary-200">{{ discard.sample?.code || 'N/A' }}</p>
+                  <p class="mt-1 max-w-44 truncate text-sm font-bold text-[color:var(--ds-text)]">{{ discard.sample?.name || 'Amostra removida' }}</p>
+                  <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ discard.sample?.customer?.name || 'Sem cliente' }}</p>
                 </td>
-                <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">
-                  {{ discard.discard_method }}
+                <td class="ds-table-cell align-top text-xs font-semibold text-[color:var(--ds-text)]">{{ discard.discard_method || 'N/A' }}</td>
+                <td class="ds-table-cell align-top text-sm font-bold text-rose-700 dark:text-rose-300">{{ discard.qty }}</td>
+                <td class="ds-table-cell align-top">
+                  <p class="text-xs font-semibold text-[color:var(--ds-text)]">{{ discard.discarded_by?.name || 'N/A' }}</p>
+                  <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ discard.lab?.name || 'Lab N/A' }} · {{ discard.department?.name || 'Dept. N/A' }}</p>
                 </td>
-                <td class="px-6 py-4 text-sm font-semibold text-rose-600">
-                  {{ discard.qty }}
-                </td>
-                <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-200">
-                  {{ formatDateTime(discard.discarded_at) }}
-                </td>
+                <td class="ds-table-cell align-top text-xs text-[color:var(--ds-text)]">{{ formatDateTime(discard.discarded_at) }}</td>
               </tr>
             </tbody>
           </table>
         </div>
-
-        <div v-if="discards.data.length > 0" class="flex items-center justify-between border-t border-slate-200 px-6 py-4 dark:border-slate-800">
-          <p class="text-sm text-slate-500 dark:text-slate-400">
-            Mostrando {{ discards.from }}-{{ discards.to }} de {{ discards.total }}
-          </p>
-          <div class="flex gap-2">
-            <button
-              type="button"
-              :disabled="!discards.prev_page_url"
-              class="rounded-2xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400 dark:border-slate-700 dark:text-slate-200"
-              @click="visitPage(discards.prev_page_url)"
-            >
-              Anterior
-            </button>
-            <button
-              type="button"
-              :disabled="!discards.next_page_url"
-              class="rounded-2xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400 dark:border-slate-700 dark:text-slate-200"
-              @click="visitPage(discards.next_page_url)"
-            >
-              Próxima
-            </button>
+        <div v-else class="p-5">
+          <div class="ds-empty-state p-6 text-center">
+            <TrashIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
+            <p class="mt-2 text-xs text-[color:var(--ds-text-soft)]">Nenhum descarte encontrado.</p>
           </div>
         </div>
-      </div>
-    </div>
+
+        <div v-if="discards.data.length" class="ds-table-summary flex items-center justify-between gap-3 px-5 py-4">
+          <p class="text-xs text-[color:var(--ds-text-soft)]">Mostrando {{ discards.from }}-{{ discards.to }} de {{ discards.total }}</p>
+          <div class="flex gap-2">
+            <button type="button" class="ds-button ds-button-secondary" :disabled="!discards.prev_page_url" @click="visitPage(discards.prev_page_url)">Anterior</button>
+            <button type="button" class="ds-button ds-button-secondary" :disabled="!discards.next_page_url" @click="visitPage(discards.next_page_url)">Próxima</button>
+          </div>
+        </div>
+      </article>
+    </section>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import ModuleHero from '@/Components/base/ModuleHero.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import datePickerEnhanced from '@/Components/date-picker-enhanced.vue'
-import { router, useForm } from '@inertiajs/vue3'
+import { Link, router, useForm } from '@inertiajs/vue3'
 import { useTheme } from '@/Composables/useTheme'
 import {
   ArrowDownTrayIcon,
   BeakerIcon,
   CheckCircleIcon,
   DocumentArrowDownIcon,
+  FunnelIcon,
+  QueueListIcon,
+  TrashIcon,
 } from '@heroicons/vue/24/outline'
 
 defineOptions({
@@ -781,7 +620,7 @@ const discardChartOptions = computed(() => ({
   grid: chartThemeOptions.value.grid,
   plotOptions: {
     bar: {
-      borderRadius: 9,
+      borderRadius: 6,
       horizontal: true,
       barHeight: '58%',
     },
@@ -806,6 +645,64 @@ const statusOptions = [
   { value: 'CANCELADO', label: 'Cancelado' },
   { value: 'EN_PAUSA', label: 'Em pausa' },
 ]
+
+const summaryCards = computed(() => {
+  const summary = props.summary || {}
+
+  return [
+    {
+      label: 'Total de amostras',
+      value: summary.total_samples || 0,
+      dotClass: 'lims-status-dot-instrument',
+      borderClass: 'border-primary-500',
+      valueClass: 'text-[color:var(--ds-text)]',
+    },
+    {
+      label: 'Completadas',
+      value: summary.completed_samples || 0,
+      dotClass: 'lims-status-dot-release',
+      borderClass: 'border-emerald-500',
+      valueClass: 'text-emerald-700 dark:text-emerald-300',
+    },
+    {
+      label: 'Por iniciar',
+      value: summary.pending_samples || 0,
+      dotClass: 'lims-status-dot-hold',
+      borderClass: 'border-amber-500',
+      valueClass: 'text-amber-700 dark:text-amber-300',
+    },
+    {
+      label: 'Em progresso',
+      value: summary.in_progress_samples || 0,
+      dotClass: 'lims-status-dot-instrument',
+      borderClass: 'border-primary-500',
+      valueClass: 'text-primary-800 dark:text-primary-200',
+    },
+    {
+      label: 'Descartes',
+      value: summary.total_discards || 0,
+      dotClass: 'lims-status-dot-critical',
+      borderClass: 'border-rose-500',
+      valueClass: 'text-rose-700 dark:text-rose-300',
+    },
+    {
+      label: 'Tempo médio',
+      value: `${summary.avg_turnaround_hours || 0}h`,
+      note: `Taxa de descarte: ${summary.discard_rate || 0}%`,
+      dotClass: 'lims-status-dot-instrument',
+      borderClass: 'border-blue-500',
+      valueClass: 'text-primary-800 dark:text-primary-200',
+    },
+    {
+      label: 'CQ interno',
+      value: summary.internal_qc_samples || 0,
+      note: 'Matéria-prima no fluxo normal',
+      dotClass: 'lims-status-dot-release',
+      borderClass: 'border-emerald-500',
+      valueClass: 'text-emerald-700 dark:text-emerald-300',
+    },
+  ]
+})
 
 const sampleScopeFilterOptions = computed(() => [
   { value: '', label: 'Todas as origens' },
@@ -850,6 +747,36 @@ const releaseDecisionBreakdown = computed(() => [
   { value: 'investigation_required', label: 'Investigação requerida', total: internalQc.value.by_release_decision?.investigation_required || 0 },
   { value: 'rejected', label: 'Rejeitada', total: internalQc.value.by_release_decision?.rejected || 0 },
   { value: 'trend_recorded', label: 'Registada para tendência', total: internalQc.value.by_release_decision?.trend_recorded || 0 },
+])
+
+const breakdownGroups = computed(() => [
+  {
+    title: 'Distribuição por estado',
+    description: 'Amostras por etapa do ciclo.',
+    items: props.statusBreakdown.map((item) => ({
+      label: getStatusLabel(item.label),
+      value: item.total,
+      dotClass: statusDotClass(item.label),
+    })),
+  },
+  {
+    title: 'Tipos de amostra',
+    description: 'Origem e natureza das amostras.',
+    items: props.sampleTypeBreakdown.map((item) => ({
+      label: item.label,
+      value: item.total,
+      dotClass: 'lims-status-dot-instrument',
+    })),
+  },
+  {
+    title: 'Métodos de descarte',
+    description: 'Saídas por método usado.',
+    items: props.discardMethodBreakdown.map((item) => ({
+      label: item.label,
+      value: item.total,
+      dotClass: 'lims-status-dot-critical',
+    })),
+  },
 ])
 
 const form = useForm({
@@ -1002,16 +929,16 @@ function getStatusLabel(status) {
   return statusOptions.find((option) => option.value === status)?.label || status || 'N/A'
 }
 
-function statusBadgeClass(status) {
+function statusDotClass(status) {
   const map = {
-    COMPLETADO: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200',
-    EN_PROGRESO: 'bg-primary-100 text-primary-800 dark:bg-primary-500/10 dark:text-primary-200',
-    POR_INICIAR: 'bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200',
-    CANCELADO: 'bg-rose-100 text-rose-800 dark:bg-rose-500/10 dark:text-rose-200',
-    EN_PAUSA: 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200',
+    COMPLETADO: 'lims-status-dot-release',
+    EN_PROGRESO: 'lims-status-dot-instrument',
+    POR_INICIAR: 'lims-status-dot-hold',
+    CANCELADO: 'lims-status-dot-critical',
+    EN_PAUSA: 'lims-status-dot-hold',
   }
 
-  return map[status] || 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200'
+  return map[status] || 'lims-status-dot-instrument'
 }
 
 function showInternalQcOnly() {
@@ -1070,31 +997,33 @@ function qcReleaseLabel(value) {
   return map[value || 'pending'] || value || 'Sem decisão final'
 }
 
-function qcReleaseBadgeClass(value) {
+function qcReleaseDotClass(value) {
   const map = {
-    released: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200',
-    quarantined: 'bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200',
-    investigation_required: 'bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200',
-    rejected: 'bg-rose-100 text-rose-800 dark:bg-rose-500/10 dark:text-rose-200',
-    trend_recorded: 'bg-primary-100 text-primary-800 dark:bg-primary-500/10 dark:text-primary-200',
+    released: 'lims-status-dot-release',
+    quarantined: 'lims-status-dot-critical',
+    investigation_required: 'lims-status-dot-hold',
+    rejected: 'lims-status-dot-critical',
+    trend_recorded: 'lims-status-dot-instrument',
+    pending: 'lims-status-dot-hold',
   }
 
-  return map[value] || 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200'
+  return map[value] || 'lims-status-dot-hold'
 }
 </script>
 
 <style scoped>
 :deep(.apexcharts-tooltip),
 :deep(.apexcharts-menu) {
-  border-radius: 1rem !important;
-  border-color: rgb(203 213 225 / 0.9) !important;
-  box-shadow: 0 18px 45px rgb(15 23 42 / 0.16) !important;
+  border: 1px solid var(--ds-border) !important;
+  border-radius: var(--ds-radius-control) !important;
+  background: var(--ds-panel) !important;
+  color: var(--ds-text) !important;
+  box-shadow: var(--ds-shadow-panel) !important;
 }
 
-:global(.dark) :deep(.apexcharts-tooltip),
-:global(.dark) :deep(.apexcharts-menu) {
-  border-color: rgb(51 65 85 / 0.9) !important;
-  background: #0f172a !important;
-  color: #e2e8f0 !important;
+:deep(.apexcharts-tooltip-title) {
+  border-bottom: 1px solid var(--ds-border) !important;
+  background: var(--ds-panel-subtle) !important;
+  color: var(--ds-text) !important;
 }
 </style>

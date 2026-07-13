@@ -1,684 +1,484 @@
-<template>
-  
-    <div class="iso-revision-compare space-y-8" :class="commercialDocumentThemeClasses">
-      <!-- HEADER CARD -->
-      <div class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
-        <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-950 text-white shadow-lg shadow-blue-950/20 dark:bg-blue-500 dark:text-slate-950">
-              <ArrowsRightLeftIcon class="h-6 w-6" />
-            </div>
-            <h1 class="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
-              {{ $t('gestlab.general.labels.iso_revisions.compare.title') }}
-            </h1>
-            <p class="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
-              {{ $t('gestlab.general.labels.iso_revisions.compare.description') }}
-              <span class="font-semibold text-blue-900 dark:text-blue-300">
-                {{ certificate.code }}
-              </span>
-            </p>
-          </div>
-          <div class="flex items-center gap-3">
-            <Link 
-              :href="route('qualitycertificates.iso-revisions.compare-two', {
-                certificate: certificate.id,
-                revision_a: revisionB.id,
-                revision_b: revisionA.id
-              })"
-              as="button"
-              class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-950"
-            >
-              <ArrowsRightLeftIcon class="h-4 w-4" />
-              {{ $t('gestlab.general.labels.iso_revisions.swap') }}
-          </Link>
-          </div>
-        </div>
-      </div>
-
-      <!-- COMPARISON OVERVIEW -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- REVISION A -->
-        <div class="overflow-hidden rounded-[26px] border border-blue-200 bg-gradient-to-b from-blue-50 to-white shadow-[0_18px_50px_-24px_rgba(15,23,42,0.18)] dark:border-blue-500/20 dark:from-blue-500/10 dark:to-slate-950/90">
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <div class="flex h-8 w-8 items-center justify-center rounded-full bg-white text-blue-900 font-bold">
-                A
-              </div>
-              {{ $t('gestlab.general.labels.iso_revisions.compare.revision_a') }}
-            </h2>
-          </div>
-          
-          <div class="p-6">
-            <!-- REVISION INFO -->
-            <div class="space-y-4">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.iso_revisions.version') }}</span>
-                <span class="text-lg font-bold text-blue-900">v{{ revisionA?.version }}</span>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.iso_revisions.revision') }}</span>
-                <span class="text-sm font-medium text-slate-900 dark:text-white">#{{ revisionA?.revision_number }}</span>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.iso_revisions.effective_date') }}</span>
-                <span class="text-sm text-slate-900 dark:text-white">{{ formatDate(revisionA?.effective_date) }}</span>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.iso_revisions.change_type') }}</span>
-                <span :class="getRevisionBadgeClass(revisionA?.change_type)" class="text-xs">
-                  {{ $t(`gestlab.general.labels.iso_revisions.change_types.${revisionA?.change_type}`) }}
-                </span>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.iso_revisions.created_by') }}</span>
-                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ revisionA?.created_by?.name }}</span>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.iso_revisions.approved_by') }}</span>
-                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ revisionA?.approved_by?.name || $t('gestlab.general.labels.iso_revisions.not_approved') }}</span>
-              </div>
-            </div>
-            
-            <!-- CHANGE REASON -->
-            <div class="mt-6 border-t border-slate-200 pt-6 dark:border-slate-800">
-              <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                {{ $t('gestlab.general.labels.iso_revisions.change_reason') }}
-              </label>
-              <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-                <p class="text-sm text-slate-700 dark:text-slate-200">
-                  {{ revisionA?.change_reason }}
-                </p>
-              </div>
-            </div>
-            
-            <!-- ISO METADATA -->
-            <div class="mt-6 border-t border-slate-200 pt-6 dark:border-slate-800">
-              <h4 class="mb-2 text-sm font-medium text-slate-900 dark:text-white">
-                {{ $t('gestlab.general.labels.iso_revisions.compare.iso_metadata') }}
-              </h4>
-              <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-slate-600 dark:text-slate-300">ISO Section</span>
-                  <span class="font-medium text-blue-900">{{ revisionA?.compliance_metadata?.iso_section || 'N/A' }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-slate-600 dark:text-slate-300">Change Category</span>
-                  <span class="font-medium" :class="getCategoryClass(revisionA?.compliance_metadata?.change_category)">
-                    {{ revisionA?.compliance_metadata?.change_category || 'N/A' }}
-                  </span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-slate-600 dark:text-slate-300">Risk Assessment</span>
-                  <span class="font-medium" :class="getRiskClass(revisionA?.compliance_metadata?.risk_assessment)">
-                    {{ revisionA?.compliance_metadata?.risk_assessment || 'N/A' }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- REVISION B -->
-        <div class="overflow-hidden rounded-[26px] border border-green-200 bg-gradient-to-b from-green-50 to-white shadow-[0_18px_50px_-24px_rgba(15,23,42,0.18)] dark:border-green-500/20 dark:from-green-500/10 dark:to-slate-950/90">
-          <div class="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <div class="flex h-8 w-8 items-center justify-center rounded-full bg-white text-green-600 font-bold">
-                B
-              </div>
-              {{ $t('gestlab.general.labels.iso_revisions.compare.revision_b') }}
-            </h2>
-          </div>
-          
-          <div class="p-6">
-            <!-- REVISION INFO -->
-            <div class="space-y-4">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.iso_revisions.version') }}</span>
-                <span class="text-lg font-bold text-green-600">v{{ revisionB?.version }}</span>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.iso_revisions.revision') }}</span>
-                <span class="text-sm font-medium text-slate-900 dark:text-white">#{{ revisionB?.revision_number }}</span>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.iso_revisions.effective_date') }}</span>
-                <span class="text-sm text-slate-900 dark:text-white">{{ formatDate(revisionB?.effective_date) }}</span>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.iso_revisions.change_type') }}</span>
-                <span :class="getRevisionBadgeClass(revisionB?.change_type)" class="text-xs">
-                  {{ $t(`gestlab.general.labels.iso_revisions.change_types.${revisionB?.change_type}`) }}
-                </span>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.iso_revisions.created_by') }}</span>
-                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ revisionB?.created_by?.name }}</span>
-              </div>
-              
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.iso_revisions.approved_by') }}</span>
-                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ revisionB?.approved_by?.name || $t('gestlab.general.labels.iso_revisions.not_approved') }}</span>
-              </div>
-            </div>
-            
-            <!-- CHANGE REASON -->
-            <div class="mt-6 border-t border-slate-200 pt-6 dark:border-slate-800">
-              <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                {{ $t('gestlab.general.labels.iso_revisions.change_reason') }}
-              </label>
-              <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-                <p class="text-sm text-slate-700 dark:text-slate-200">
-                  {{ revisionB?.change_reason }}
-                </p>
-              </div>
-            </div>
-            
-            <!-- ISO METADATA -->
-            <div class="mt-6 border-t border-slate-200 pt-6 dark:border-slate-800">
-              <h4 class="mb-2 text-sm font-medium text-slate-900 dark:text-white">
-                {{ $t('gestlab.general.labels.iso_revisions.compare.iso_metadata') }}
-              </h4>
-              <div class="space-y-2 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-slate-600 dark:text-slate-300">ISO Section</span>
-                  <span class="font-medium text-green-600">{{ revisionB?.compliance_metadata?.iso_section || 'N/A' }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-slate-600 dark:text-slate-300">Change Category</span>
-                  <span class="font-medium" :class="getCategoryClass(revisionB?.compliance_metadata?.change_category)">
-                    {{ revisionB?.compliance_metadata?.change_category || 'N/A' }}
-                  </span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-slate-600 dark:text-slate-300">Risk Assessment</span>
-                  <span class="font-medium" :class="getRiskClass(revisionB?.compliance_metadata?.risk_assessment)">
-                    {{ revisionB?.compliance_metadata?.risk_assessment || 'N/A' }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- DIFFERENCES SECTION -->
-      <div class="overflow-hidden rounded-[26px] border border-slate-200 bg-white/95 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
-        <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
-              {{ $t('gestlab.general.labels.iso_revisions.compare.differences') }}
-              <span class="ml-2 text-sm font-normal text-slate-500 dark:text-slate-400">
-                ({{ differences.length }} {{ $t('gestlab.general.labels.iso_revisions.compare.changes') }})
-              </span>
-            </h2>
-            <div class="flex items-center gap-3">
-              <button 
-                @click="toggleAllDifferences"
-                type="button"
-                class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-950"
-              >
-                {{ showAllDifferences ? $t('gestlab.general.labels.iso_revisions.collapse_all') : $t('gestlab.general.labels.iso_revisions.expand_all') }}
-              </button>
-              <button 
-                @click="exportComparison"
-                type="button"
-                class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-950 to-blue-800 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:from-blue-900 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-950"
-              >
-                <ArrowDownTrayIcon class="h-4 w-4" />
-                {{ $t('gestlab.general.labels.iso_revisions.export_comparison') }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- DIFFERENCES CONTENT -->
-        <div class="p-6">
-          <!-- EMPTY STATE -->
-          <div v-if="differences.length === 0" class="py-12 text-center">
-            <CheckCircleIcon class="mx-auto h-12 w-12 text-green-400" />
-            <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
-              {{ $t('gestlab.general.labels.iso_revisions.compare.no_differences') }}
-            </h3>
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              {{ $t('gestlab.general.labels.iso_revisions.compare.identical_revisions') }}
-            </p>
-          </div>
-
-          <!-- DIFFERENCES LIST -->
-          <div v-else class="space-y-4">
-            <!-- GROUP BY CATEGORY -->
-            <div v-for="category in groupedDifferences" :key="category.name" class="space-y-3">
-              <h3 class="text-base font-semibold text-gray-900 flex items-center gap-2">
-                {{ category.label }}
-                <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-900">
-                  {{ category.items.length }}
-                </span>
-              </h3>
-              
-              <div class="space-y-2">
-                <div v-for="diff in category.items" :key="diff.field" 
-                     class="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
-                  <!-- DIFFERENCE HEADER -->
-                  <button 
-                    @click="toggleDifference(diff.field)"
-                    class="w-full flex items-center justify-between p-4 hover:bg-gray-100 transition-colors duration-150"
-                  >
-                    <div class="flex items-center gap-3">
-                      <ChevronRightIcon 
-                        :class="[
-                          'h-5 w-5 text-gray-400 transition-transform duration-200',
-                          expandedDifferences[diff.field] ? 'rotate-90' : ''
-                        ]" 
-                      />
-                      <div class="text-left">
-                        <h4 class="text-sm font-medium text-gray-900">
-                          {{ diff.label }}
-                        </h4>
-                        <p class="text-xs text-gray-500 mt-1">
-                          {{ diff.description || 'Field difference detected' }}
-                        </p>
-                      </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <span v-if="diff.change_type === 'ADDED'" 
-                            class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                        {{ $t('gestlab.general.labels.iso_revisions.compare.added') }}
-                      </span>
-                      <span v-else-if="diff.change_type === 'REMOVED'"
-                            class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                        {{ $t('gestlab.general.labels.iso_revisions.compare.removed') }}
-                      </span>
-                      <span v-else
-                            class="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
-                        {{ $t('gestlab.general.labels.iso_revisions.compare.modified') }}
-                      </span>
-                    </div>
-                  </button>
-                  
-                  <!-- EXPANDED DIFFERENCE DETAILS -->
-                  <div v-if="expandedDifferences[diff.field]" class="border-t border-gray-200 p-4 bg-white">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <!-- REVISION A VALUE -->
-                      <div class="space-y-2">
-                        <div class="flex items-center justify-between">
-                          <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {{ $t('gestlab.general.labels.iso_revisions.compare.revision_a_value') }}
-                            <span class="text-blue-900">(v{{ revisionA?.version }})</span>
-                          </label>
-                        </div>
-                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                          <p class="text-sm font-medium text-gray-900 break-words">
-                            {{ formatValue(diff.valueA) }}
-                          </p>
-                          <p v-if="diff.original_value_a" class="text-xs text-gray-500 mt-1">
-                            Original: {{ formatValue(diff.original_value_a) }}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <!-- REVISION B VALUE -->
-                      <div class="space-y-2">
-                        <div class="flex items-center justify-between">
-                          <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {{ $t('gestlab.general.labels.iso_revisions.compare.revision_b_value') }}
-                            <span class="text-green-600">(v{{ revisionB?.version }})</span>
-                          </label>
-                        </div>
-                        <div class="bg-green-50 rounded-lg p-4 border border-green-200">
-                          <p class="text-sm font-medium text-gray-900 break-words">
-                            {{ formatValue(diff.valueB) }}
-                          </p>
-                          <p v-if="diff.original_value_b" class="text-xs text-gray-500 mt-1">
-                            Original: {{ formatValue(diff.original_value_b) }}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <!-- CHANGE SUMMARY -->
-                    <div class="mt-4 pt-4 border-t border-gray-200">
-                      <div class="flex items-center justify-between text-sm">
-                        <span class="text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.compare.change_summary') }}</span>
-                        <span :class="[
-                          'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                          diff.impact === 'HIGH' 
-                            ? 'bg-red-100 text-red-800'
-                            : diff.impact === 'MEDIUM'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-blue-100 text-blue-800'
-                        ]">
-                          {{ $t(`gestlab.general.labels.iso_revisions.compare.impact.${diff.impact}`) }}
-                        </span>
-                      </div>
-                      <p v-if="diff.notes" class="text-sm text-gray-700 mt-2">
-                        {{ diff.notes }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SUMMARY STATISTICS -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.compare.total_differences') }}</p>
-              <p class="mt-2 text-2xl font-bold text-blue-900">{{ differences.length }}</p>
-            </div>
-            <ArrowsRightLeftIcon class="h-8 w-8 text-blue-900" />
-          </div>
-        </div>
-        
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.compare.high_impact_changes') }}</p>
-              <p class="mt-2 text-2xl font-bold text-red-600">
-                {{ highImpactChanges }}
-              </p>
-            </div>
-            <ExclamationTriangleIcon class="h-8 w-8 text-red-600" />
-          </div>
-        </div>
-        
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.compare.time_between') }}</p>
-              <p class="mt-2 text-sm font-semibold text-gray-900">{{ timeBetweenRevisions }}</p>
-            </div>
-            <ClockIcon class="h-8 w-8 text-gray-900" />
-          </div>
-        </div>
-      </div>
-
-      <!-- FOOTER ACTIONS -->
-      <div class="flex items-center justify-between pt-6">
-        <Link
-          :href="route('qualitycertificates.iso-revisions.index', certificate.id)"
-          as="button"
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-        >
-          <ArrowLeftIcon class="h-4 w-4" />
-          {{ $t('gestlab.general.labels.iso_revisions.back_to_revisions') }}
-      </Link>
-        
-        <div class="flex items-center gap-4">
-          <button 
-            @click="printComparison"
-            type="button"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-          >
-            <PrinterIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.print') }}
-          </button>
-          
-          <button 
-            @click="saveComparison"
-            type="button"
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-          >
-            <BookmarkIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.save_comparison') }}
-          </button>
-        </div>
-      </div>
-    </div>
- 
-</template>
-
 <script setup>
-import { ref, computed } from 'vue'
-import { router, Link } from '@inertiajs/vue3'
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-
-
-// Icons
+import { computed, ref } from "vue";
+import { Link, router } from "@inertiajs/vue3";
 import {
-  ArrowsRightLeftIcon,
   ArrowDownTrayIcon,
-  CheckCircleIcon,
-  ChevronRightIcon,
-  ExclamationTriangleIcon,
-  ClockIcon,
   ArrowLeftIcon,
+  ArrowsRightLeftIcon,
+  ChevronDownIcon,
+  ClockIcon,
+  ExclamationTriangleIcon,
   PrinterIcon,
-  BookmarkIcon
-} from '@heroicons/vue/24/outline'
+  UserIcon,
+} from "@heroicons/vue/24/outline";
 
 defineOptions({
-  layout: Layout
+  layout: Layout,
 });
 
 const props = defineProps({
-  certificate: Object,
-  revisionA: Object,
-  revisionB: Object,
-  differences: Array,
-})
+  certificate: {
+    type: Object,
+    default: () => ({}),
+  },
+  revisionA: {
+    type: Object,
+    default: () => ({}),
+  },
+  revisionB: {
+    type: Object,
+    default: () => ({}),
+  },
+  differences: {
+    type: Array,
+    default: () => [],
+  },
+});
 
-// Local state
-const expandedDifferences = ref({})
-const showAllDifferences = ref(false)
+const expandedGroups = ref({});
 
-// Computed properties
-const groupedDifferences = computed(() => {
-  const groups = {
-    certificate: {
-      label: 'Certificate Data',
-      items: props.differences.filter(diff => diff.category === 'certificate')
-    },
-    metadata: {
-      label: 'Metadata',
-      items: props.differences.filter(diff => diff.category === 'metadata')
-    },
-    related: {
-      label: 'Related Data',
-      items: props.differences.filter(diff => diff.category === 'related')
-    },
-    iso: {
-      label: 'ISO Compliance',
-      items: props.differences.filter(diff => diff.category === 'iso')
-    }
+const differenceGroups = computed(() => {
+  if (props.differences.every((difference) => Array.isArray(difference.items))) {
+    return props.differences.map((group) => ({
+      ...group,
+      items: group.items ?? [],
+      count: group.count ?? group.items?.length ?? 0,
+    }));
   }
-  
-  // Only return groups that have items
-  return Object.entries(groups)
-    .filter(([_, group]) => group.items.length > 0)
-    .map(([key, group]) => ({ name: key, ...group }))
-})
+
+  const labels = {
+    certificate: "Dados do certificado",
+    metadata: "Metadados da revisao",
+    related: "Dados relacionados",
+    iso: "Conformidade ISO",
+  };
+  const groups = new Map();
+
+  props.differences.forEach((difference) => {
+    const category = difference.category || "other";
+    const group = groups.get(category) ?? {
+      category,
+      label: labels[category] || "Outras alteracoes",
+      items: [],
+    };
+    group.items.push(difference);
+    groups.set(category, group);
+  });
+
+  return Array.from(groups.values()).map((group) => ({
+    ...group,
+    count: group.items.length,
+  }));
+});
+
+const flattenedDifferences = computed(() => {
+  return differenceGroups.value.flatMap((group) => group.items);
+});
 
 const highImpactChanges = computed(() => {
-  return props.differences.filter(diff => diff.impact === 'HIGH').length
-})
+  return flattenedDifferences.value.filter(
+    (difference) => difference.impact === "HIGH" || difference.impact === "CRITICAL",
+  ).length;
+});
+
+const comparisonMetrics = computed(() => [
+  {
+    label: "Alteracoes encontradas",
+    value: flattenedDifferences.value.length,
+    note: `${differenceGroups.value.length} categoria(s)`,
+  },
+  {
+    label: "Impacto elevado",
+    value: highImpactChanges.value,
+    note: "exigem revisao prioritaria",
+  },
+  {
+    label: "Intervalo temporal",
+    value: timeBetweenRevisions.value,
+    note: "entre datas efetivas",
+  },
+  {
+    label: "Direcao",
+    value: `v${props.revisionA?.version || "-"} to v${props.revisionB?.version || "-"}`,
+    note: "A para B",
+  },
+]);
 
 const timeBetweenRevisions = computed(() => {
   if (!props.revisionA?.effective_date || !props.revisionB?.effective_date) {
-    return 'N/A'
+    return "Nao calculado";
   }
-  
-  const dateA = new Date(props.revisionA.effective_date)
-  const dateB = new Date(props.revisionB.effective_date)
-  const diffTime = Math.abs(dateB - dateA)
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  
-  if (diffDays === 0) {
-    return 'Same day'
-  } else if (diffDays === 1) {
-    return '1 day'
-  } else if (diffDays < 30) {
-    return `${diffDays} days`
-  } else if (diffDays < 365) {
-    const months = Math.floor(diffDays / 30)
-    return `${months} month${months > 1 ? 's' : ''}`
-  } else {
-    const years = Math.floor(diffDays / 365)
-    return `${years} yeaAOA{years > 1 ? 's' : ''}`
+
+  const firstDate = new Date(props.revisionA.effective_date);
+  const secondDate = new Date(props.revisionB.effective_date);
+  const days = Math.ceil(Math.abs(secondDate - firstDate) / 86400000);
+
+  if (days === 0) {
+    return "Mesmo dia";
   }
-})
 
-// Methods
-const getRevisionBadgeClass = (changeType) => {
-  const classes = {
-    CREATED: 'inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800',
-    UPDATED: 'inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800',
-    CORRECTED: 'inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800',
-    REISSUED: 'inline-flex items-center rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-800',
-    WITHDRAWN: 'inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800',
+  if (days < 30) {
+    return `${days} dia(s)`;
   }
-  return classes[changeType] || 'inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800'
-}
 
-const getCategoryClass = (category) => {
-  const classes = {
-    CRITICAL: 'text-red-700',
-    HIGH: 'text-orange-700',
-    MEDIUM: 'text-yellow-700',
-    LOW: 'text-green-700',
-    ROUTINE: 'text-blue-700',
+  if (days < 365) {
+    return `${Math.floor(days / 30)} mes(es)`;
   }
-  return classes[category] || 'text-gray-700'
+
+  return `${Math.floor(days / 365)} ano(s)`;
+});
+
+function revisionDetails(revision) {
+  return [
+    {
+      label: "Revisao",
+      value: revision?.revision_number ?? "-",
+    },
+    {
+      label: "Data efetiva",
+      value: formatDate(revision?.effective_date),
+    },
+    {
+      label: "Tipo",
+      value: changeTypeLabel(revision?.change_type),
+    },
+    {
+      label: "Criado por",
+      value: revision?.created_by?.name || "Sistema",
+    },
+    {
+      label: "Aprovado por",
+      value: revision?.approved_by?.name || "Pendente",
+    },
+    {
+      label: "Risco",
+      value: revision?.compliance_metadata?.risk_assessment || "Nao avaliado",
+    },
+  ];
 }
 
-const getRiskClass = (risk) => {
-  const classes = {
-    CRITICAL: 'text-red-700',
-    HIGH: 'text-orange-700',
-    MEDIUM: 'text-yellow-700',
-    LOW: 'text-green-700',
+function formatDate(date) {
+  if (!date) {
+    return "Nao registada";
   }
-  return classes[risk] || 'text-gray-700'
+
+  return new Date(date).toLocaleString("pt-PT", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
-const formatDate = (date) => {
-  if (!date) return 'N/A'
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-const formatValue = (value) => {
-  if (value === null || value === undefined) return 'N/A'
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
-  if (Array.isArray(value)) return value.length > 0 ? value.join(', ') : 'None'
-  if (typeof value === 'object') return JSON.stringify(value, null, 2)
-  if (typeof value === 'string' && value.length > 200) {
-    return value.substring(0, 200) + '...'
+function formatValue(value) {
+  if (value === null || value === undefined || value === "") {
+    return "Nao registado";
   }
-  return String(value)
-}
 
-const toggleDifference = (field) => {
-  expandedDifferences.value[field] = !expandedDifferences.value[field]
-}
-
-const toggleAllDifferences = () => {
-  showAllDifferences.value = !showAllDifferences.value
-  
-  if (showAllDifferences.value) {
-    props.differences.forEach(diff => {
-      expandedDifferences.value[diff.field] = true
-    })
-  } else {
-    expandedDifferences.value = {}
+  if (typeof value === "boolean") {
+    return value ? "Sim" : "Nao";
   }
+
+  if (Array.isArray(value)) {
+    return value.length ? value.join(", ") : "Sem valores";
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+
+  return String(value);
 }
 
-const swapRevisions = () => {
-  router.get(route('qualitycertificates.iso-revisions.compare-two', {
-    certificate: props.certificate.id,
-    revision_a: props.revisionB.id,
-    revision_b: props.revisionA.id
-  }))
+function changeTypeLabel(changeType) {
+  const labels = {
+    CREATED: "Criacao",
+    UPDATED: "Atualizacao",
+    CORRECTED: "Correcao",
+    REISSUED: "Reemissao",
+    WITHDRAWN: "Retirada",
+    ADDED: "Adicionado",
+    REMOVED: "Removido",
+    MODIFIED: "Modificado",
+  };
+
+  return labels[changeType] || changeType || "Alteracao";
 }
 
-// const compareWithCurrent = (revision) => {
-//   // Use the compare-two route instead
-//   router.visit(route('qualitycertificates.iso-revisions.compare-two', {
-//     certificate: props.certificate.id,
-//     revision_a: revision.id,
-//     revision_b: props.currentRevision?.id
-//   }))
-// }
+function impactDot(impact) {
+  const tones = {
+    CRITICAL: "lims-status-dot-critical",
+    HIGH: "lims-status-dot-critical",
+    MEDIUM: "lims-status-dot-hold",
+    LOW: "lims-status-dot-release",
+  };
 
-const exportComparison = () => {
-  const url = route('iso-revisions.export-comparison', {
-    certificate: props.certificate.id,
-    revision_a: props.revisionA.id,
-    revision_b: props.revisionB.id
-  })
-  window.open(url, '_blank')
+  return tones[impact] || "lims-status-dot-instrument";
 }
 
-const printComparison = () => {
-  window.print()
+function toggleGroup(category) {
+  expandedGroups.value[category] = !expandedGroups.value[category];
 }
 
-const saveComparison = () => {
-  // Save comparison to user's saved comparisons
-  console.log('Save comparison')
+function swapRevisions() {
+  router.get(
+    route("qualitycertificates.iso-revisions.compare-two", {
+      certificate: props.certificate.id,
+      revision_a: props.revisionB.id,
+      revision_b: props.revisionA.id,
+    }),
+  );
+}
+
+function printComparison() {
+  window.print();
 }
 </script>
 
-<style scoped>
-.iso-revision-compare :deep(.bg-blue-900),
-.iso-revision-compare :deep(.bg-blue-950) {
-  background-color: rgb(var(--primary-900-rgb)) !important;
-}
+<template>
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden print:shadow-none">
+      <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0 max-w-3xl">
+          <Link
+            :href="route('qualitycertificates.iso-revisions.index', certificate.id)"
+            class="ds-table-action -ml-2 mb-3 print:hidden"
+          >
+            <ArrowLeftIcon class="h-4 w-4" />
+            Voltar ao historico
+          </Link>
+          <div class="flex flex-wrap items-center gap-2">
+            <p class="ds-kicker">Comparacao controlada</p>
+            <span class="ds-chip font-mono">{{ certificate.code || "Sem codigo" }}</span>
+          </div>
+          <h1 class="ds-heading mt-2 text-2xl">Comparar revisoes</h1>
+          <p class="ds-copy mt-2 max-w-2xl text-sm">
+            Leitura lado a lado das diferencas de conteudo, relacoes e metadados ISO.
+          </p>
+        </div>
 
-.iso-revision-compare :deep(.from-blue-900),
-.iso-revision-compare :deep(.from-blue-950) {
-  --tw-gradient-from: rgb(var(--primary-900-rgb)) var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: rgb(var(--primary-900-rgb) / 0) var(--tw-gradient-to-position) !important;
-}
+        <div class="flex flex-col gap-2 sm:flex-row print:hidden">
+          <button type="button" class="ds-button ds-button-secondary" @click="swapRevisions">
+            <ArrowsRightLeftIcon class="h-4 w-4" />
+            Inverter
+          </button>
+          <a
+            :href="route('iso-revisions.export-comparison', { certificate: certificate.id, revision_a: revisionA.id, revision_b: revisionB.id })"
+            class="ds-button ds-button-secondary"
+          >
+            <ArrowDownTrayIcon class="h-4 w-4" />
+            Exportar PDF
+          </a>
+          <button type="button" class="ds-button ds-button-primary" @click="printComparison">
+            <PrinterIcon class="h-4 w-4" />
+            Imprimir
+          </button>
+        </div>
+      </div>
 
-.iso-revision-compare :deep(.to-blue-800) {
-  --tw-gradient-to: rgb(var(--primary-700-rgb)) var(--tw-gradient-to-position) !important;
-}
+      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[var(--ds-border)]">
+        <div
+          v-for="metric in comparisonMetrics"
+          :key="metric.label"
+          class="border-b border-[var(--ds-border)] px-5 py-4 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0"
+        >
+          <dt class="ds-table-heading">{{ metric.label }}</dt>
+          <dd class="ds-heading mt-2 text-lg">{{ metric.value }}</dd>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ metric.note }}</p>
+        </div>
+      </dl>
+    </section>
 
-.iso-revision-compare :deep(.text-blue-900),
-.iso-revision-compare :deep(.text-blue-800),
-.iso-revision-compare :deep(.text-blue-700) {
-  color: rgb(var(--primary-800-rgb)) !important;
-}
+    <section class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-stretch">
+      <article class="ds-command-surface overflow-hidden">
+        <div class="border-b border-[var(--ds-border)] px-5 py-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="ds-kicker">Revisao A</p>
+              <h2 class="ds-heading mt-2 text-lg">v{{ revisionA.version }}</h2>
+            </div>
+            <span class="ds-chip">
+              <span class="lims-status-dot lims-status-dot-instrument" />
+              {{ changeTypeLabel(revisionA.change_type) }}
+            </span>
+          </div>
+        </div>
+        <dl class="divide-y divide-[var(--ds-border)]">
+          <div
+            v-for="detail in revisionDetails(revisionA)"
+            :key="detail.label"
+            class="flex items-start justify-between gap-4 px-5 py-3"
+          >
+            <dt class="text-xs font-bold text-[var(--ds-text-muted)]">{{ detail.label }}</dt>
+            <dd class="max-w-[14rem] break-words text-right text-xs font-bold text-[var(--ds-text)]">
+              {{ detail.value }}
+            </dd>
+          </div>
+        </dl>
+        <div class="border-t border-[var(--ds-border)] px-5 py-4">
+          <p class="ds-table-heading">Motivo</p>
+          <p class="ds-copy mt-2 text-xs">{{ revisionA.change_reason || "Nao registado." }}</p>
+        </div>
+      </article>
 
-.iso-revision-compare :deep(.bg-blue-50),
-.iso-revision-compare :deep(.bg-blue-100) {
-  background-color: rgb(var(--primary-50-rgb) / 0.82) !important;
-}
+      <div class="hidden items-center justify-center lg:flex print:hidden">
+        <button
+          type="button"
+          class="ds-icon-button bg-[var(--ds-panel-raised)]"
+          title="Inverter revisoes"
+          @click="swapRevisions"
+        >
+          <ArrowsRightLeftIcon class="h-5 w-5" />
+          <span class="sr-only">Inverter revisoes</span>
+        </button>
+      </div>
 
-:global(.dark) .iso-revision-compare :deep(.bg-white),
-:global(.dark) .iso-revision-compare :deep(.bg-gray-50),
-:global(.dark) .iso-revision-compare :deep(.bg-blue-50) {
-  background-color: rgb(15 23 42 / 0.86) !important;
-}
+      <article class="ds-command-surface overflow-hidden">
+        <div class="border-b border-[var(--ds-border)] px-5 py-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="ds-kicker">Revisao B</p>
+              <h2 class="ds-heading mt-2 text-lg">v{{ revisionB.version }}</h2>
+            </div>
+            <span class="ds-chip">
+              <span class="lims-status-dot lims-status-dot-release" />
+              {{ changeTypeLabel(revisionB.change_type) }}
+            </span>
+          </div>
+        </div>
+        <dl class="divide-y divide-[var(--ds-border)]">
+          <div
+            v-for="detail in revisionDetails(revisionB)"
+            :key="detail.label"
+            class="flex items-start justify-between gap-4 px-5 py-3"
+          >
+            <dt class="text-xs font-bold text-[var(--ds-text-muted)]">{{ detail.label }}</dt>
+            <dd class="max-w-[14rem] break-words text-right text-xs font-bold text-[var(--ds-text)]">
+              {{ detail.value }}
+            </dd>
+          </div>
+        </dl>
+        <div class="border-t border-[var(--ds-border)] px-5 py-4">
+          <p class="ds-table-heading">Motivo</p>
+          <p class="ds-copy mt-2 text-xs">{{ revisionB.change_reason || "Nao registado." }}</p>
+        </div>
+      </article>
+    </section>
 
-:global(.dark) .iso-revision-compare :deep(.text-gray-900),
-:global(.dark) .iso-revision-compare :deep(.text-slate-900) {
-  color: #f8fafc !important;
-}
+    <section class="ds-panel overflow-hidden print:shadow-none">
+      <div class="flex flex-col gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div>
+          <p class="ds-kicker">Matriz de diferencas</p>
+          <h2 class="ds-heading mt-2 text-lg">Alteracoes por categoria</h2>
+          <p class="ds-copy mt-1 text-sm">
+            Valores da revisao A comparados com a revisao B.
+          </p>
+        </div>
+        <span v-if="highImpactChanges" class="ds-chip">
+          <span class="lims-status-dot lims-status-dot-critical" />
+          {{ highImpactChanges }} impacto(s) elevado(s)
+        </span>
+      </div>
 
-:global(.dark) .iso-revision-compare :deep(.text-gray-700),
-:global(.dark) .iso-revision-compare :deep(.text-gray-600) {
-  color: #cbd5e1 !important;
-}
-</style>
+      <div v-if="differenceGroups.length" class="divide-y divide-[var(--ds-border)]">
+        <article v-for="group in differenceGroups" :key="group.category">
+          <button
+            type="button"
+            class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left hover:bg-[var(--ds-panel-subtle)] sm:px-6"
+            :aria-expanded="Boolean(expandedGroups[group.category])"
+            @click="toggleGroup(group.category)"
+          >
+            <span>
+              <span class="ds-heading block text-sm">{{ group.label }}</span>
+              <span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">
+                {{ group.count }} alteracao(oes)
+              </span>
+            </span>
+            <ChevronDownIcon
+              :class="[
+                'h-5 w-5 text-[var(--ds-text-muted)] transition-transform',
+                expandedGroups[group.category] ? 'rotate-180' : '',
+              ]"
+            />
+          </button>
+
+          <div v-if="expandedGroups[group.category]" class="border-t border-[var(--ds-border)]">
+            <div class="hidden overflow-x-auto md:block">
+              <table class="min-w-full">
+                <thead class="ds-table-head">
+                  <tr>
+                    <th class="ds-table-heading px-5 py-3 text-left">Campo</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">Revisao A</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">Revisao B</th>
+                    <th class="ds-table-heading px-5 py-3 text-right">Impacto</th>
+                  </tr>
+                </thead>
+                <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
+                  <tr v-for="item in group.items" :key="item.field" class="ds-table-row">
+                    <td class="max-w-xs px-5 py-4">
+                      <p class="text-sm font-bold text-[var(--ds-text)]">{{ item.label || item.field }}</p>
+                      <p v-if="item.description" class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
+                        {{ item.description }}
+                      </p>
+                    </td>
+                    <td class="ds-table-cell max-w-xs break-words px-4 py-4">{{ formatValue(item.valueA) }}</td>
+                    <td class="ds-table-cell max-w-xs break-words px-4 py-4">{{ formatValue(item.valueB) }}</td>
+                    <td class="px-5 py-4 text-right">
+                      <span class="inline-flex items-center gap-2 text-xs font-bold text-[var(--ds-text)]">
+                        <span :class="['lims-status-dot', impactDot(item.impact)]" />
+                        {{ item.impact || "INFO" }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="divide-y divide-[var(--ds-border)] md:hidden">
+              <article v-for="item in group.items" :key="item.field" class="space-y-3 px-5 py-4">
+                <div class="flex items-start justify-between gap-3">
+                  <h3 class="ds-heading text-sm">{{ item.label || item.field }}</h3>
+                  <span class="inline-flex items-center gap-2 text-xs font-bold text-[var(--ds-text)]">
+                    <span :class="['lims-status-dot', impactDot(item.impact)]" />
+                    {{ item.impact || "INFO" }}
+                  </span>
+                </div>
+                <div class="grid gap-2">
+                  <div class="ds-command-toolbar p-3">
+                    <p class="ds-table-heading">Revisao A</p>
+                    <p class="mt-2 break-words text-sm font-semibold text-[var(--ds-text)]">{{ formatValue(item.valueA) }}</p>
+                  </div>
+                  <div class="ds-command-toolbar p-3">
+                    <p class="ds-table-heading">Revisao B</p>
+                    <p class="mt-2 break-words text-sm font-semibold text-[var(--ds-text)]">{{ formatValue(item.valueB) }}</p>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div v-else class="ds-empty-state m-5 p-10 text-center">
+        <ClockIcon class="mx-auto h-7 w-7 text-[var(--ds-text-soft)]" />
+        <h3 class="ds-heading mt-3 text-sm">Nenhuma diferenca encontrada</h3>
+        <p class="ds-copy mt-1 text-xs">As duas revisoes preservam o mesmo conteudo comparavel.</p>
+      </div>
+    </section>
+
+    <section v-if="highImpactChanges" class="lims-status-strip p-5 print:hidden">
+      <div class="flex items-start gap-3">
+        <ExclamationTriangleIcon class="h-5 w-5 shrink-0 text-[var(--lims-critical)]" />
+        <div>
+          <h2 class="ds-heading text-sm">Revisao tecnica necessaria</h2>
+          <p class="ds-copy mt-1 text-xs">
+            Existem alteracoes de impacto elevado. Confirme a rastreabilidade e
+            a aprovacao antes de utilizar a revisao B como evidencia.
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
+</template>

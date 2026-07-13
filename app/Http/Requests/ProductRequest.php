@@ -2,12 +2,13 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class ProductRequest extends FormRequest
 {
-   /**
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
@@ -18,56 +19,42 @@ class ProductRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
-        if ($this->isMethod('post')) {
-            $rules = [
-                'name' => 'required|min:1|unique:products,name',
-                'charge_tax' => 'boolean',
-                'price' => 'nullable',
-                'fixed_price' => 'required',
-                'tax_percentage' => 'required',
-                'withhold_tax' => 'boolean',
-                'description' => 'nullable',
-                'matrix_id' => 'required|exists:matrixes,id',
-                'exemption_id' => [
-                    Rule::requiredIf(function () { 
-                        return $this->input('charge_tax') == false; 
-                    })
-                ], 'exists:tax_exemptions,id',
-                'exemption_code' => 'nullable', 
-            ];
-        } else {
-            $rules = [
-                'name' => 'required|min:1|unique:products,name,' . request()->product,
-                'charge_tax' => 'boolean',
-                'price' => 'nullable',
-                'fixed_price' => 'required',
-                'tax_percentage' => 'required',
-                'withhold_tax' => 'boolean',
-                'description' => 'nullable',
-                'matrix_id' => 'required|exists:matrixes,id',
-                'exemption_id' => [
-                    Rule::requiredIf(function () { 
-                        return $this->input('charge_tax') == false; 
-                    })
-                ], 'exists:tax_exemptions,id',
-                'exemption_code' => 'nullable',
-
-            ];
-        }
-
-        return $rules;
+        return [
+            'name' => [
+                'required',
+                'string',
+                'min:1',
+                Rule::unique('products', 'name')->ignore($this->route('product')),
+            ],
+            'description' => ['nullable', 'string'],
+            'matrix_id' => ['required', 'exists:matrixes,id'],
+            'price' => ['nullable', 'numeric', 'min:0'],
+            'fixed_price' => ['required', 'numeric', 'min:0'],
+            'charge_tax' => ['required', 'boolean'],
+            'withhold_tax' => ['required', 'boolean'],
+            'tax_id' => [
+                Rule::requiredIf($this->boolean('charge_tax')),
+                'nullable',
+                'exists:tax_types,id',
+            ],
+            'tax_percentage' => ['required', 'numeric', 'min:0'],
+            'exemption_id' => [
+                Rule::requiredIf(! $this->boolean('charge_tax')),
+                'nullable',
+                'exists:tax_exemptions,id',
+            ],
+            'exemption_code' => ['nullable', 'string'],
+        ];
     }
 
     /**
      * Get custom attributes for validator errors.
-     *
-     * @return array
      */
-    public function attributes()
+    public function attributes(): array
     {
         return [
             'name' => trans('gestlab.general.labels.products.name'),
@@ -85,49 +72,34 @@ class ProductRequest extends FormRequest
     }
 
     /**
- * Get the error messages for the defined validation rules.
- *
- * @return array<string, string>
- */
-public function messages(): array
-{
-    return [];   
-}
-
-    /**
-     * Configure the validator instance.
-     *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
+     * Normalize combobox values before validation.
      */
-    public function prepareForValidation()
+    protected function prepareForValidation(): void
     {
+        $chargesTax = $this->boolean('charge_tax');
 
-        if(request()->boolean('charge_tax')) {
+        $this->merge([
+            'matrix_id' => $this->comboboxValue('matrix_id'),
+            'charge_tax' => $chargesTax,
+            'withhold_tax' => $this->boolean('withhold_tax'),
+            'tax_id' => $chargesTax ? $this->comboboxValue('tax_id') : null,
+            'tax_percentage' => $chargesTax ? $this->input('tax_percentage', 0) : 0,
+            'exemption_id' => $chargesTax ? null : $this->comboboxValue('exemption_id'),
+            'exemption_code' => $chargesTax ? null : $this->comboboxLabel('exemption_id'),
+        ]);
+    }
 
-            $this->merge([
-                'charge_tax' => request()->boolean('charge_tax') ? 1 : 0,
-                'withhold_tax' => request()->boolean('withhold_tax') ? 1 : 0,
-                'exemption_id' => null,
-                'exemption_code' => null,
-                'tax_id' => !is_null(request()->tax_id) ? request()->tax_id['value'] : null,
-                // 'tax_percentage' => !is_null(request()->tax_id) ? request()->tax_id['percent'] : 0,
-                'tax_percentage' => request()->tax_percentage ?? 0,
-                'matrix_id' => !is_null(request()->matrix_id) ? request()->matrix_id['value'] : null, 
-            ]);
+    private function comboboxValue(string $field): mixed
+    {
+        $value = $this->input($field);
 
-        } else {
+        return is_array($value) ? ($value['value'] ?? null) : $value;
+    }
 
-            $this->merge([
-                'charge_tax' => request()->boolean('charge_tax') ? 1 : 0,
-                'withhold_tax' => request()->boolean('withhold_tax') ? 1 : 0,
-                'exemption_id' => !is_null(request()->exemption_id) ? request()->exemption_id['value'] : null,
-                'exemption_code' => !is_null(request()->exemption_id) ? request()->exemption_id['label'] : null,
-                'tax_id' => null,
-                'matrix_id' => !is_null(request()->matrix_id) ? request()->matrix_id['value'] : null,
-                'tax_percentage' => 0
-            ]);
+    private function comboboxLabel(string $field): ?string
+    {
+        $value = $this->input($field);
 
-        }
+        return is_array($value) ? ($value['label'] ?? null) : null;
     }
 }

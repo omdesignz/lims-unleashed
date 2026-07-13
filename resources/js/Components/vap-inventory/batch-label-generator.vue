@@ -1,65 +1,103 @@
 <template>
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-    <div class="p-6 border-b flex justify-between items-center">
-      <h3 class="font-bold text-gray-800">Novas Lotes de Reagentes</h3>
-      <div class="flex gap-2">
-         <button @click="printSelectedLabels" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-           <PrinterIcon class="w-4 h-4" /> Imprimir Lotes Selecionados
-         </button>
+  <section class="ds-table-shell overflow-hidden">
+    <div class="ds-table-summary px-5 py-4">
+      <div>
+        <p class="ds-kicker">Label control</p>
+        <h3 class="mt-1 text-base font-bold text-[var(--ds-text)]">Novos lotes de reagentes</h3>
       </div>
+      <button type="button" class="ds-button ds-button-primary" :disabled="selectedIds.length === 0" @click="printSelectedLabels">
+        <PrinterIcon class="h-4 w-4" />
+        Imprimir selecionados
+      </button>
     </div>
 
-    <table class="w-full text-left">
-      <thead class="bg-gray-50 text-[11px] uppercase text-gray-500 font-bold">
-        <tr>
-          <th class="px-6 py-3 w-10"><input type="checkbox" v-model="selectAll" /></th>
-          <th class="px-6 py-3">Item / Nome</th>
-          <th class="px-6 py-3">Número da Lote</th>
-          <th class="px-6 py-3">Qtd Restante</th>
-          <th class="px-6 py-3">Validade</th>
-          <th class="px-6 py-3">Estado</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100">
-        <tr v-for="batch in batches" :key="batch.id" class="hover:bg-gray-50 transition-colors">
-          <td class="px-6 py-4"><input type="checkbox" :value="batch.id" v-model="selectedIds" /></td>
-          <td class="px-6 py-4">
-            <div class="font-bold text-gray-900">{{ batch.item_name }}</div>
-            <div class="text-xs text-gray-400">{{ batch.internal_code }}</div>
-          </td>
-          <td class="px-6 py-4 font-mono text-sm">{{ batch.batch_number }}</td>
-          <td class="px-6 py-4">
-            <span class="font-bold">{{ batch.qty_remaining }}</span> {{ batch.unit_name }}
-          </td>
-          <td class="px-6 py-4 text-sm">
-            {{ formatDate(batch.expiry_date) }}
-          </td>
-          <td class="px-6 py-4">
-            <span :class="getStatusClass(batch)">{{ batch.status }}</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-[48rem] text-left">
+        <thead class="ds-table-head">
+          <tr>
+            <th class="ds-table-cell w-10">
+              <input v-model="selectAll" type="checkbox" class="ds-checkbox" />
+            </th>
+            <th class="ds-table-cell">Item / Nome</th>
+            <th class="ds-table-cell">Número do lote</th>
+            <th class="ds-table-cell">Qtd restante</th>
+            <th class="ds-table-cell">Validade</th>
+            <th class="ds-table-cell">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="batch in batches" :key="batch.id" class="ds-table-row">
+            <td class="ds-table-cell">
+              <input v-model="selectedIds" type="checkbox" :value="batch.id" class="ds-checkbox" />
+            </td>
+            <td class="ds-table-cell">
+              <div class="font-bold text-[var(--ds-text)]">{{ batch.item_name }}</div>
+              <div class="text-xs font-semibold text-[var(--ds-text-soft)]">{{ batch.internal_code }}</div>
+            </td>
+            <td class="ds-table-cell font-mono text-sm">{{ batch.batch_number }}</td>
+            <td class="ds-table-cell">
+              <span class="font-bold">{{ batch.qty_remaining }}</span> {{ batch.unit_name }}
+            </td>
+            <td class="ds-table-cell text-sm">{{ formatDate(batch.expiry_date) }}</td>
+            <td class="ds-table-cell">
+              <span :class="getStatusClass(batch)">{{ batch.status }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { PrinterIcon } from '@heroicons/vue/24/outline'
+import { computed, ref } from 'vue'
 
-const batches = ref([]); // Fetch from your controller
-const selectedIds = ref([]);
+const batches = ref([])
+const selectedIds = ref([])
 
-const printSelectedLabels = () => {
-  if (selectedIds.value.length === 0) return;
-  // Redirect to the PDF generation route we built earlier
-//   window.open(`/reports/labels/batches?ids=${selectedIds.value.join(',')}`, '_blank');
+const selectAll = computed({
+  get: () => batches.value.length > 0 && selectedIds.value.length === batches.value.length,
+  set: (value) => {
+    selectedIds.value = value ? batches.value.map((batch) => batch.id) : []
+  },
+})
 
-  window.open(route('printBatchLabels', { ids: selectedIds.value.join(',') }), '_blank');
-};
+function printSelectedLabels() {
+  if (selectedIds.value.length === 0) {
+    return
+  }
 
-const getStatusClass = (batch) => {
-  if (batch.is_expired) return 'bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold';
-  if (batch.qty_remaining <= 0) return 'bg-gray-100 text-gray-700 px-2 py-1 rounded text-[10px] font-bold'; 
-  return 'bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-bold';
-};
+  window.location.assign(route('printBatchLabels', { ids: selectedIds.value.join(',') }))
+}
+
+function formatDate(dateString) {
+  if (!dateString) {
+    return '-'
+  }
+
+  const date = new Date(dateString)
+
+  if (Number.isNaN(date.getTime())) {
+    return '-'
+  }
+
+  return new Intl.DateTimeFormat('pt-PT', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date)
+}
+
+function getStatusClass(batch) {
+  if (batch.is_expired) {
+    return 'ds-chip border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-400/30 dark:bg-rose-400/10 dark:text-rose-100'
+  }
+
+  if (batch.qty_remaining <= 0) {
+    return 'ds-chip'
+  }
+
+  return 'ds-chip border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-100'
+}
 </script>

@@ -1,450 +1,382 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <ModuleHero
-      eyebrow="Stock assurance"
-      title="Relatório de Estoque Baixo"
-      :description="`Monitore itens com estoque baixo que requerem reabastecimento. ${stats.total_low_stock} itens precisam de atenção.`"
-    >
-      <template #actions>
-        <div class="flex items-center gap-3">
-          <button
-            @click="exportReport"
-            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            Exportar Relatório
-          </button>
-          <Link
-            :href="route('vap-inventory.items.index')"
-            class="inline-flex items-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
-          >
-            <ArrowLeftIcon class="h-4 w-4" />
-            Voltar para Inventário
-          </Link>
-        </div>
-      </template>
-    </ModuleHero>
-
-    <!-- FILTERS -->
-    <ModuleCard title="Filtros de estoque baixo" description="Priorize por armazém, categoria, nível de severidade e ordenação operacional.">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- WAREHOUSE FILTER -->
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            <BuildingLibraryIcon class="h-4 w-4 inline mr-1" />
-            Armazém
-          </label>
-          <BaseSelect v-model="filters.warehouse_id">
-            <option value="">Todos os Armazéns</option>
-            <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
-              {{ warehouse.name }}
-            </option>
-          </BaseSelect>
-        </div>
-
-        <!-- CATEGORY FILTER -->
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            <TagIcon class="h-4 w-4 inline mr-1" />
-            Categoria
-          </label>
-          <BaseSelect v-model="filters.category_id">
-            <option value="">Todas as Categorias</option>
-            <option v-for="category in categories" :key="category.id" :value="category.id">
-              {{ category.name }}
-            </option>
-          </BaseSelect>
-        </div>
-
-        <!-- STOCK LEVEL FILTER -->
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            <ScaleIcon class="h-4 w-4 inline mr-1" />
-            Nível de Estoque
-          </label>
-          <BaseSelect v-model="filters.severity">
-            <option value="">Todos os Níveis</option>
-            <option value="critical">Crítico (Abaixo do Mínimo)</option>
-            <option value="low">Baixo (Abaixo do Reabastecimento)</option>
-            <option value="warning">Aviso (Próximo Reabastecimento)</option>
-          </BaseSelect>
-        </div>
-
-        <!-- SORT BY -->
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            <ArrowsUpDownIcon class="h-4 w-4 inline mr-1" />
-            Ordenar Por
-          </label>
-          <BaseSelect v-model="filters.sort_by">
-            <option value="severity">Severidade</option>
-            <option value="current_stock">Estoque Atual</option>
-            <option value="reorder_point">Ponto de Reabastecimento</option>
-            <option value="item_name">Nome do Item</option>
-          </BaseSelect>
-        </div>
-      </div>
-    </ModuleCard>
-
-    <!-- STATS CARDS -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-      <div class="bg-gradient-to-r from-red-900 to-red-800 rounded-xl shadow-sm p-6 text-white">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium opacity-90">Estoque Crítico</p>
-            <p class="text-2xl font-bold mt-1">{{ stats.critical_stock }}</p>
-          </div>
-          <ExclamationTriangleIcon class="h-8 w-8 opacity-50" />
-        </div>
-        <p class="text-xs opacity-80 mt-2">Abaixo do nível mínimo de estoque</p>
-      </div>
-
-      <div class="bg-gradient-to-r from-orange-900 to-orange-800 rounded-xl shadow-sm p-6 text-white">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium opacity-90">Estoque Baixo</p>
-            <p class="text-2xl font-bold mt-1">{{ stats.total_low_stock - stats.critical_stock }}</p>
-          </div>
-          <ExclamationCircleIcon class="h-8 w-8 opacity-50" />
-        </div>
-        <p class="text-xs opacity-80 mt-2">Abaixo do ponto de reabastecimento</p>
-      </div>
-
-      <div class="bg-gradient-to-r from-blue-900 to-blue-800 rounded-xl shadow-sm p-6 text-white">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium opacity-90">Sem Estoque</p>
-            <p class="text-2xl font-bold mt-1">{{ stats.out_of_stock }}</p>
-          </div>
-          <XCircleIcon class="h-8 w-8 opacity-50" />
-        </div>
-        <p class="text-xs opacity-80 mt-2">Sem estoque disponível</p>
-      </div>
-
-      <div class="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl shadow-sm p-6 text-white">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium opacity-90">Total de Itens</p>
-            <p class="text-2xl font-bold mt-1">{{ stats.total_items || 0 }}</p>
-          </div>
-          <CubeIcon class="h-8 w-8 opacity-50" />
-        </div>
-        <p class="text-xs opacity-80 mt-2">Em Inventário Monitorado</p>
-      </div>
-    </div>
-
-    <section class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-      <ModuleCard>
-        <div class="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Severidade da fila</h2>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Distribuição entre itens sem stock, críticos e abaixo do ponto de reabastecimento.
-            </p>
-          </div>
-          <div class="rounded-2xl bg-slate-50 px-4 py-3 text-right dark:bg-slate-950/50">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Itens em atenção</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ severityMixTotal }}</p>
-          </div>
-        </div>
-
-        <div class="mt-6">
-          <apexchart type="bar" height="300" :options="severityMixChartOptions" :series="severityMixChartSeries" />
-        </div>
-      </ModuleCard>
-
-      <div class="grid gap-6">
-        <ModuleCard>
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Exposição por armazém</h2>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Onde a pressão de reabastecimento está mais concentrada.</p>
-            </div>
-            <span class="inline-flex items-center rounded-full bg-orange-50 px-3 py-1 text-sm font-medium text-orange-800">
-              {{ warehouseExposureTotal }} armazéns
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="ds-kicker">Stock assurance</span>
+            <span class="ds-chip">
+              <span class="lims-status-dot lims-status-dot-hold"></span>
+              Fila de reabastecimento
             </span>
           </div>
-
-          <div class="mt-6">
-            <apexchart type="donut" height="300" :options="warehouseExposureChartOptions" :series="warehouseExposureChartSeries" />
-          </div>
-        </ModuleCard>
-
-        <ModuleCard>
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Gap de reabastecimento</h2>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Itens com maior distância até ao ponto mínimo desejado.</p>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <span class="grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-rose-700 dark:text-rose-300">
+              <ExclamationTriangleIcon class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Relatório de stock baixo</h1>
+              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
+                Priorize ruturas, gaps de reposição e exposição por armazém antes de abrir pedidos de compra.
+              </p>
             </div>
           </div>
+        </div>
 
-          <div class="mt-6">
-            <apexchart type="bar" height="250" :options="replenishmentGapChartOptions" :series="replenishmentGapChartSeries" />
+        <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
+          <button type="button" class="ds-button ds-button-secondary" @click="exportReport">
+            <ArrowDownTrayIcon class="h-4 w-4" />
+            Exportar PDF
+          </button>
+          <Link :href="route('vap-inventory.items.index')" class="ds-button ds-button-primary">
+            <ArrowLeftIcon class="h-4 w-4" />
+            Voltar ao inventário
+          </Link>
+        </div>
+      </div>
+
+      <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <article v-for="card in summaryCards" :key="card.label" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
+              <p class="mt-3 text-2xl font-black text-[var(--ds-text)]">{{ card.value }}</p>
+            </div>
+            <component :is="card.icon" :class="['h-5 w-5', card.tone]" />
           </div>
-        </ModuleCard>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.detail }}</p>
+        </article>
       </div>
     </section>
 
-    <!-- LOW STOCK ITEMS -->
-    <ModuleCard class="overflow-hidden" title="Itens com Estoque Baixo">
-      <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
-            Itens com Estoque Baixo
-            <span class="ml-2 text-sm font-normal text-slate-500 dark:text-slate-400">
-              ({{ inventory.data.length }} itens)
-            </span>
-          </h2>
-          <div class="flex items-center gap-2">
-            <button
-              @click="generateOrder"
-              class="inline-flex items-center gap-2 rounded-2xl bg-green-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-green-800 dark:bg-emerald-600 dark:hover:bg-emerald-500"
-            >
-              <ShoppingCartIcon class="h-4 w-4" />
-              Criar Pedido de Compra
-            </button>
+    <section class="ds-command-surface p-5 sm:p-6">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <BaseSelect v-model="filters.warehouse_id" label="Armazém">
+          <option value="">Todos os armazéns</option>
+          <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">{{ warehouse.name }}</option>
+        </BaseSelect>
+
+        <BaseSelect v-model="filters.category_id" label="Categoria">
+          <option value="">Todas as categorias</option>
+          <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+        </BaseSelect>
+
+        <BaseSelect v-model="filters.severity" label="Severidade">
+          <option value="">Todos os níveis</option>
+          <option value="critical">Crítico / sem stock</option>
+          <option value="low">Abaixo do ponto de reposição</option>
+        </BaseSelect>
+
+        <BaseSelect v-model="filters.sort_by" label="Ordenar por">
+          <option value="severity">Severidade</option>
+          <option value="current_stock">Stock atual</option>
+          <option value="reorder_point">Ponto de reposição</option>
+          <option value="item_name">Nome do item</option>
+        </BaseSelect>
+      </div>
+
+      <div class="ds-command-toolbar mt-5 grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div>
+          <p class="text-sm font-bold text-[var(--ds-text)]">{{ inventory.total || inventory.data?.length || 0 }} registos na fila</p>
+          <div v-if="activeFilterPills.length" class="mt-2 flex flex-wrap gap-2">
+            <span v-for="pill in activeFilterPills" :key="pill" class="ds-chip">{{ pill }}</span>
           </div>
+          <p v-else class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">A mostrar toda a exposição de stock baixo.</p>
+        </div>
+        <button type="button" class="ds-button ds-button-secondary" :disabled="!hasActiveFilters" @click="clearFilters">
+          <FunnelIcon class="h-4 w-4" />
+          Limpar filtros
+        </button>
+      </div>
+    </section>
+
+    <section class="ds-command-surface overflow-hidden">
+      <div class="ds-table-summary px-5 py-4">
+        <div>
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Análise de risco</p>
+          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Severidade, exposição e gap de reposição</h2>
+        </div>
+        <span class="ds-chip">{{ severityMixTotal }} itens em atenção</span>
+      </div>
+
+      <div class="grid gap-4 p-4 xl:grid-cols-[1.15fr_0.85fr]">
+        <article class="ds-card p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-sm font-black text-[var(--ds-text)]">Severidade da fila</h3>
+              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Itens sem stock, críticos e abaixo do ponto de reposição.</p>
+            </div>
+            <span class="text-xl font-black text-[var(--ds-text)]">{{ severityMixTotal }}</span>
+          </div>
+          <div class="mt-4 min-h-72">
+            <apexchart type="bar" height="288" :options="severityMixChartOptions" :series="severityMixChartSeries" />
+          </div>
+        </article>
+
+        <div class="grid gap-4">
+          <article class="ds-card p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="text-sm font-black text-[var(--ds-text)]">Exposição por armazém</h3>
+                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Concentração da pressão de reabastecimento.</p>
+              </div>
+              <span class="ds-chip">{{ warehouseExposureTotal }} locais</span>
+            </div>
+            <div class="mt-4 min-h-64">
+              <apexchart type="donut" height="256" :options="warehouseExposureChartOptions" :series="warehouseExposureChartSeries" />
+            </div>
+          </article>
+
+          <article class="ds-card p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="text-sm font-black text-[var(--ds-text)]">Gap de reabastecimento</h3>
+                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Maiores distâncias até ao nível desejado.</p>
+              </div>
+              <ChartBarSquareIcon class="h-5 w-5 text-amber-600 dark:text-amber-300" />
+            </div>
+            <div class="mt-4 min-h-56">
+              <apexchart type="bar" height="224" :options="replenishmentGapChartOptions" :series="replenishmentGapChartSeries" />
+            </div>
+          </article>
         </div>
       </div>
+    </section>
 
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-          <thead class="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-900/70">
-            <tr>
-              <th :class="tableHeadClass">
-                Detalhes do Item
-              </th>
-              <th :class="tableHeadClass">
-                Armazém
-              </th>
-              <th :class="tableHeadClass">
-                Níveis de Estoque
-              </th>
-              <th :class="tableHeadClass">
-                Estado
-              </th>
-              <th :class="tableHeadClass">
-                Acções
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
-            <tr
-              v-for="item in inventory.data"
-              :key="item.id"
-              class="transition-colors duration-150 hover:bg-blue-50/60 dark:hover:bg-blue-950/20"
-            >
-              <td class="px-6 py-4">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0 h-10 w-10">
-                    <div :class="[
-                      'h-10 w-10 rounded-lg flex items-center justify-center',
-                      getSeverityColor(item).bg
-                    ]">
-                      <CubeIcon :class="['h-6 w-6', getSeverityColor(item).text]" />
-                    </div>
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <section class="ds-table-shell">
+        <div class="ds-table-summary px-5 py-4">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Fila de reabastecimento</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Itens com stock baixo</h2>
+          </div>
+          <button type="button" class="ds-button ds-button-primary" :disabled="!recommendedOrders.length" @click="generateOrder">
+            <ShoppingCartIcon class="h-4 w-4" />
+            Criar pedido
+          </button>
+        </div>
+
+        <div v-if="inventoryRows.length" class="divide-y divide-[var(--ds-border)] lg:hidden">
+          <article v-for="item in inventoryRows" :key="`mobile-${item.id}`" class="space-y-4 p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <p class="font-mono text-xs font-bold text-[var(--ds-text-soft)]">{{ item.item?.internal_code || item.item?.code || 'Sem código' }}</p>
+                <h3 class="mt-1 text-base font-black text-[var(--ds-text)]">{{ item.item?.name || 'Item sem identificação' }}</h3>
+                <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ item.warehouse?.name || 'Sem armazém' }}</p>
+              </div>
+              <span class="inline-flex items-center gap-2 text-xs font-black" :class="statusTextClass(item)">
+                <span :class="['h-2 w-2 rounded-full', statusDotClass(item)]"></span>
+                {{ statusText(item) }}
+              </span>
+            </div>
+
+            <dl class="grid gap-3 sm:grid-cols-3">
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Atual</dt>
+                <dd class="mt-2 text-lg font-black text-[var(--ds-text)]">{{ item.qty_available }}</dd>
+              </div>
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Mínimo</dt>
+                <dd class="mt-2 text-lg font-black text-[var(--ds-text)]">{{ item.min_stock_level }}</dd>
+              </div>
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Gap</dt>
+                <dd class="mt-2 text-lg font-black text-rose-700 dark:text-rose-300">{{ reorderGap(item) }}</dd>
+              </div>
+            </dl>
+
+            <div class="h-1.5 overflow-hidden rounded-full bg-[var(--ds-border)]">
+              <div :class="['h-full rounded-full', stockBarClass(item)]" :style="{ width: `${stockPercentage(item)}%` }"></div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <Link :href="route('vap-inventory.items.show', item.item_id)" class="ds-table-action">
+                <EyeIcon class="h-4 w-4" />
+                Abrir
+              </Link>
+              <Link :href="route('vap-inventory.items.edit', item.item_id)" class="ds-table-action">
+                <PencilSquareIcon class="h-4 w-4" />
+                Ajustar
+              </Link>
+              <button type="button" class="ds-table-action" @click="createOrderForItem(item)">
+                <ShoppingCartIcon class="h-4 w-4" />
+                Comprar
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <div v-if="inventoryRows.length" class="hidden overflow-x-auto lg:block">
+          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+            <thead class="bg-[var(--ds-panel-subtle)]">
+              <tr>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Item</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Postura de stock</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Estado</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Ações</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
+              <tr v-for="item in inventoryRows" :key="item.id" class="transition-colors hover:bg-[var(--ds-panel-subtle)]">
+                <td class="px-5 py-4 align-top">
+                  <p class="font-black text-[var(--ds-text)]">{{ item.item?.name || 'Item sem identificação' }}</p>
+                  <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-soft)]">{{ item.item?.internal_code || item.item?.code || 'Sem código' }}</p>
+                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ item.item?.category?.name || 'Sem categoria' }}</p>
+                </td>
+                <td class="px-5 py-4 align-top">
+                  <p class="font-bold text-[var(--ds-text)]">{{ item.warehouse?.name || 'N/D' }}</p>
+                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ item.warehouse?.location?.name || 'Sem localização' }}</p>
+                </td>
+                <td class="min-w-64 px-5 py-4 align-top">
+                  <div class="grid grid-cols-3 gap-3">
+                    <div><p class="text-xs font-bold text-[var(--ds-text-soft)]">Atual</p><p class="mt-1 font-black text-[var(--ds-text)]">{{ item.qty_available }}</p></div>
+                    <div><p class="text-xs font-bold text-[var(--ds-text-soft)]">Reposição</p><p class="mt-1 font-black text-[var(--ds-text)]">{{ item.reorder_point }}</p></div>
+                    <div><p class="text-xs font-bold text-[var(--ds-text-soft)]">Gap</p><p class="mt-1 font-black text-rose-700 dark:text-rose-300">{{ reorderGap(item) }}</p></div>
                   </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-semibold text-slate-900 dark:text-white">
-                      {{ item.item?.name }}
-                    </div>
-                    <div class="text-sm text-slate-500 dark:text-slate-400">
-                      {{ item.item?.internal_code || 'Sem Código Interno' }}
-                    </div>
-                    <div class="text-xs text-slate-400 dark:text-slate-500">
-                      {{ item.item?.category?.name || 'Sem Categoria' }}
-                    </div>
+                  <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-[var(--ds-border)]">
+                    <div :class="['h-full rounded-full', stockBarClass(item)]" :style="{ width: `${stockPercentage(item)}%` }"></div>
                   </div>
-                </div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="text-sm text-slate-900 dark:text-white">{{ item.warehouse?.name }}</div>
-                <div class="text-sm text-slate-500 dark:text-slate-400">{{ item.warehouse?.location?.name || 'Sem Localização' }}</div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="space-y-2">
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm text-slate-600 dark:text-slate-400">Actual:</span>
-                    <span class="font-semibold text-blue-900 dark:text-blue-300">{{ item.qty_available }}</span>
-                  </div>
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm text-slate-600 dark:text-slate-400">Ponto de Reabastecimento:</span>
-                    <span class="font-semibold text-orange-900 dark:text-orange-300">{{ item.reorder_point }}</span>
-                  </div>
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm text-slate-600 dark:text-slate-400">Nível Mínimo de Estoque:</span>
-                    <span class="font-semibold text-red-900 dark:text-red-300">{{ item.min_stock_level }}</span>
-                  </div>
-                  <div class="mt-2">
-                    <div class="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                      <div
-                        :class="['h-full rounded-full transition-all duration-500', getStockBarColor(item)]"
-                        :style="{ width: getStockPercentage(item) + '%' }"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4">
-                <span :class="getStatusClasses(item)">
-                  {{ getStatusText(item) }}
-                </span>
-                <div v-if="item.qty_available === 0" class="mt-2">
-                  <span class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                    <XCircleIcon class="mr-1 h-3 w-3" />
-                    Sem Estoque
+                </td>
+                <td class="px-5 py-4 align-top">
+                  <span class="inline-flex items-center gap-2 text-xs font-black" :class="statusTextClass(item)">
+                    <span :class="['h-2 w-2 rounded-full', statusDotClass(item)]"></span>
+                    {{ statusText(item) }}
                   </span>
-                </div>
-                <div v-if="item.item?.needs_calibration" class="mt-2">
-                  <span class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">
-                    <WrenchIcon class="mr-1 h-3 w-3" />
-                    Requer Calibração
-                  </span>
-                </div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-2">
-                  <Link
-                    :href="route('vap-inventory.items.show', item.item_id)"
-                    class="inline-flex items-center rounded-xl bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-900 transition hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-200 dark:hover:bg-blue-500/20"
-                  >
-                    <EyeIcon class="h-4 w-4 mr-1" />
-                    Visualizar
-                  </Link>
-                  <Link
-                    :href="route('vap-inventory.items.edit', item.item_id)"
-                    class="inline-flex items-center rounded-xl bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                  >
-                    <PencilSquareIcon class="h-4 w-4 mr-1" />
-                    Modificar Estoque
-                  </Link>
-                  <button
-                    @click="createOrderForItem(item)"
-                    class="inline-flex items-center rounded-xl bg-green-50 px-3 py-1.5 text-sm font-semibold text-green-900 transition hover:bg-green-100 dark:bg-emerald-500/10 dark:text-emerald-200 dark:hover:bg-emerald-500/20"
-                  >
-                    <ShoppingCartIcon class="h-4 w-4 mr-1" />
-                    Pedido de Compra
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+                  <p v-if="item.item?.needs_calibration" class="mt-2 text-xs font-bold text-violet-700 dark:text-violet-300">Calibração necessária</p>
+                </td>
+                <td class="px-5 py-4 align-top">
+                  <div class="flex justify-end gap-2">
+                    <Link :href="route('vap-inventory.items.show', item.item_id)" class="ds-table-action" title="Abrir item">
+                      <EyeIcon class="h-4 w-4" />
+                      <span class="sr-only">Abrir {{ item.item?.name }}</span>
+                    </Link>
+                    <Link :href="route('vap-inventory.items.edit', item.item_id)" class="ds-table-action" title="Ajustar stock">
+                      <PencilSquareIcon class="h-4 w-4" />
+                      <span class="sr-only">Ajustar {{ item.item?.name }}</span>
+                    </Link>
+                    <button type="button" class="ds-table-action" title="Criar pedido" @click="createOrderForItem(item)">
+                      <ShoppingCartIcon class="h-4 w-4" />
+                      <span class="sr-only">Criar pedido para {{ item.item?.name }}</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-      <!-- EMPTY STATE -->
-      <div v-if="inventory.data.length === 0" class="p-12 text-center">
-        <CheckCircleIcon class="mx-auto h-12 w-12 text-green-300 dark:text-emerald-500/60" />
-        <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
-          Nenhum item com estoque baixo encontrado
-        </h3>
-        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Todos os itens estão no nível de estoque saudável. Boa sorte!
-        </p>
-        <Link
-          :href="route('vap-inventory.items.index')"
-          class="mt-6 inline-flex items-center gap-2 rounded-2xl bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500"
-        >
-          <ArrowLeftIcon class="h-5 w-5" />
-          Voltar para Inventário
-        </Link>
-      </div>
+        <div v-if="!inventoryRows.length" class="ds-empty-state p-10 text-center">
+          <CheckCircleIcon class="mx-auto h-9 w-9 text-emerald-600 dark:text-emerald-300" />
+          <h3 class="mt-4 text-base font-black text-[var(--ds-text)]">Sem itens com stock baixo</h3>
+          <p class="mx-auto mt-2 max-w-md text-sm font-medium text-[var(--ds-text-muted)]">Nenhuma rutura ou nível abaixo do ponto de reposição foi encontrado para os filtros atuais.</p>
+        </div>
 
-      <!-- PAGINATION -->
-      <div v-if="inventory.data.length > 0" class="border-t border-slate-200 px-6 py-4 dark:border-slate-800">
-        <Pagination :links="inventory.links" />
-      </div>
-    </ModuleCard>
+        <div v-if="inventoryRows.length" class="border-t border-[var(--ds-border)] px-5 py-4">
+          <Pagination :links="inventory.links" />
+        </div>
+      </section>
 
-    <!-- RECOMMENDED ORDERS -->
-    <ModuleCard title="Quantidades Recomendadas de Compra">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-          <thead class="bg-slate-50 dark:bg-slate-900/80">
-            <tr>
-              <th :class="tableHeadClass">
-                Item
-              </th>
-              <th :class="tableHeadClass">
-                Estoque Actual
-              </th>
-              <th :class="tableHeadClass">
-                Quantidade Recomendada
-              </th>
-              <th :class="tableHeadClass">
-                Fornecedor
-              </th>
-              <th :class="tableHeadClass">
-                Preço Estimado
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
-            <tr
-              v-for="item in recommendedOrders"
-              :key="item.id"
-              class="hover:bg-blue-50/60 dark:hover:bg-blue-950/20"
-            >
-              <td class="px-6 py-4">
-                <div class="text-sm font-medium text-slate-900 dark:text-white">{{ item.name }}</div>
-                <div class="text-sm text-slate-500 dark:text-slate-400">{{ item.code }}</div>
-              </td>
-              <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">{{ item.current_stock }}</td>
-              <td class="px-6 py-4">
-                <span class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800">
-                  {{ item.recommended_qty }} unidades
-                </span>
-              </td>
-              <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                {{ item.supplier?.name || 'Sem Fornecedor' }}
-              </td>
-              <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                AOA{{ (item.recommended_qty * (item.unit_price || 0)).toFixed(2) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </ModuleCard>
+      <aside class="space-y-5">
+        <section class="ds-card p-5">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Recomendação de compra</p>
+              <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Reposição sugerida</h2>
+            </div>
+            <ShoppingCartIcon class="h-5 w-5 text-emerald-700 dark:text-emerald-300" />
+          </div>
+
+          <dl class="mt-5 divide-y divide-[var(--ds-border)] border-y border-[var(--ds-border)]">
+            <div class="flex items-center justify-between gap-4 py-3">
+              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Itens sugeridos</dt>
+              <dd class="text-lg font-black text-[var(--ds-text)]">{{ recommendedOrders.length }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-4 py-3">
+              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Unidades</dt>
+              <dd class="text-lg font-black text-[var(--ds-text)]">{{ recommendedUnitTotal }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-4 py-3">
+              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Valor estimado</dt>
+              <dd class="text-right text-sm font-black text-[var(--ds-text)]">{{ formatMoney(recommendedValueTotal) }}</dd>
+            </div>
+          </dl>
+
+          <button type="button" class="ds-button ds-button-primary mt-5 w-full" :disabled="!recommendedOrders.length" @click="generateOrder">
+            <ShoppingCartIcon class="h-4 w-4" />
+            Criar pedido consolidado
+          </button>
+        </section>
+
+        <section class="ds-card overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Itens prioritários</p>
+          </div>
+          <ul v-if="topRecommendedOrders.length" class="divide-y divide-[var(--ds-border)]">
+            <li v-for="item in topRecommendedOrders" :key="item.id" class="p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-black text-[var(--ds-text)]">{{ item.name }}</p>
+                  <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-soft)]">{{ item.code || 'Sem código' }}</p>
+                </div>
+                <span class="ds-chip shrink-0">+{{ item.recommended_qty }}</span>
+              </div>
+              <p class="mt-2 text-xs font-semibold text-[var(--ds-text-muted)]">{{ item.supplier?.name || 'Fornecedor por definir' }}</p>
+              <p class="mt-1 text-xs font-black text-[var(--ds-text)]">{{ formatMoney(item.recommended_qty * item.unit_price) }}</p>
+            </li>
+          </ul>
+          <div v-else class="ds-empty-state p-5 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem recomendações.</div>
+        </section>
+      </aside>
+    </div>
   </div>
 </template>
 
 <script setup>
-import BaseSelect from '@/Components/base/BaseSelect.vue'
-import ModuleCard from '@/Components/base/ModuleCard.vue'
-import ModuleHero from '@/Components/base/ModuleHero.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import { debounce } from 'lodash'
+import BaseSelect from '@/Components/base/BaseSelect.vue'
+import Pagination from '@/Components/Pagination.vue'
 import {
-  ExclamationTriangleIcon,
   ArrowDownTrayIcon,
   ArrowLeftIcon,
-  BuildingLibraryIcon,
-  TagIcon,
-  ScaleIcon,
-  ArrowsUpDownIcon,
-  ExclamationCircleIcon,
-  XCircleIcon,
-  CubeIcon,
-  ShoppingCartIcon,
+  ChartBarSquareIcon,
   CheckCircleIcon,
+  CubeIcon,
+  ExclamationCircleIcon,
+  ExclamationTriangleIcon,
   EyeIcon,
+  FunnelIcon,
   PencilSquareIcon,
-  WrenchIcon,
+  ShoppingCartIcon,
+  XCircleIcon,
 } from '@heroicons/vue/24/outline'
-import Pagination from '@/Components/Pagination.vue'
-import { debounce } from 'lodash'
 
 const props = defineProps({
-  inventory: Object,
-  filters: Object,
-  warehouses: Array,
-  categories: Array,
-  stats: Object,
+  inventory: {
+    type: Object,
+    required: true,
+  },
+  filters: {
+    type: Object,
+    default: () => ({}),
+  },
+  warehouses: {
+    type: Array,
+    default: () => [],
+  },
+  categories: {
+    type: Array,
+    default: () => [],
+  },
+  stats: {
+    type: Object,
+    default: () => ({}),
+  },
   charts: {
     type: Object,
-    default: () => ({})
+    default: () => ({}),
   },
 })
 
@@ -455,7 +387,6 @@ const filters = reactive({
   sort_by: props.filters?.sort_by ?? 'severity',
 })
 
-const tableHeadClass = 'px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300'
 const isDarkMode = ref(false)
 let themeObserver
 
@@ -463,237 +394,238 @@ const chartTextColor = computed(() => isDarkMode.value ? '#cbd5e1' : '#475569')
 const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#e2e8f0')
 const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 
-const syncDarkMode = () => {
-  if (typeof document === 'undefined') {
-    return
-  }
+const inventoryRows = computed(() => props.inventory?.data || [])
 
-  isDarkMode.value = document.documentElement.classList.contains('dark')
-}
-
-const severityMixChartSeries = computed(() => [
+const summaryCards = computed(() => [
   {
-    name: 'Itens',
-    data: props.charts?.severity_mix?.series || [],
-  }
+    label: 'Stock crítico',
+    value: props.stats?.critical_stock || 0,
+    detail: 'No mínimo ou abaixo dele',
+    icon: ExclamationTriangleIcon,
+    tone: 'text-rose-700 dark:text-rose-300',
+  },
+  {
+    label: 'Stock baixo',
+    value: Math.max(Number(props.stats?.total_low_stock || 0) - Number(props.stats?.critical_stock || 0), 0),
+    detail: 'Abaixo do ponto de reposição',
+    icon: ExclamationCircleIcon,
+    tone: 'text-amber-600 dark:text-amber-300',
+  },
+  {
+    label: 'Sem stock',
+    value: props.stats?.out_of_stock || 0,
+    detail: 'Rutura confirmada',
+    icon: XCircleIcon,
+    tone: 'text-rose-700 dark:text-rose-300',
+  },
+  {
+    label: 'Itens monitorizados',
+    value: props.stats?.total_items || 0,
+    detail: 'Base do inventário filtrado',
+    icon: CubeIcon,
+    tone: 'text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200',
+  },
 ])
 
-const severityMixTotal = computed(() => (props.charts?.severity_mix?.series || []).reduce((total, value) => total + Number(value || 0), 0))
+const activeFilterPills = computed(() => {
+  const pills = []
+  if (filters.warehouse_id) pills.push(`Armazém: ${warehouseName(filters.warehouse_id)}`)
+  if (filters.category_id) pills.push(`Categoria: ${categoryName(filters.category_id)}`)
+  if (filters.severity) pills.push(`Severidade: ${filters.severity === 'critical' ? 'Crítico' : 'Baixo'}`)
+  if (filters.sort_by !== 'severity') pills.push(`Ordem: ${sortLabel(filters.sort_by)}`)
+  return pills
+})
 
+const hasActiveFilters = computed(() => activeFilterPills.value.length > 0)
+
+const severityMixChartSeries = computed(() => [{
+  name: 'Itens',
+  data: props.charts?.severity_mix?.series || [],
+}])
+
+const severityMixTotal = computed(() => (props.charts?.severity_mix?.series || []).reduce((total, value) => total + Number(value || 0), 0))
 const warehouseExposureChartSeries = computed(() => props.charts?.warehouse_exposure?.series || [])
 const warehouseExposureTotal = computed(() => props.charts?.warehouse_exposure?.labels?.length || 0)
-
 const replenishmentGapChartSeries = computed(() => props.charts?.replenishment_gap?.series || [])
 
+const recommendedOrders = computed(() => inventoryRows.value.map((item) => {
+  const recommendedQuantity = Math.max(
+    Number(item.reorder_point || 0) * 2 - Number(item.qty_available || 0),
+    Number(item.min_stock_level || 0) * 3 - Number(item.qty_available || 0),
+    1,
+  )
+
+  return {
+    id: item.item_id,
+    name: item.item?.name,
+    code: item.item?.code || item.item?.internal_code,
+    current_stock: Number(item.qty_available || 0),
+    recommended_qty: recommendedQuantity,
+    supplier: item.item?.supplier,
+    unit_price: Number(item.unit_price || item.item?.unit_price || item.item?.purchase_price || 0),
+  }
+}))
+
+const topRecommendedOrders = computed(() => recommendedOrders.value.slice(0, 8))
+const recommendedUnitTotal = computed(() => recommendedOrders.value.reduce((total, item) => total + item.recommended_qty, 0))
+const recommendedValueTotal = computed(() => recommendedOrders.value.reduce((total, item) => total + (item.recommended_qty * item.unit_price), 0))
+
 const severityMixChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
+  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
-  colors: ['#b91c1c'],
+  colors: ['#be123c'],
   dataLabels: { enabled: false },
-  grid: {
-    borderColor: chartGridColor.value,
-    strokeDashArray: 4,
-  },
-  plotOptions: {
-    bar: {
-      borderRadius: 6,
-      horizontal: true,
-    },
-  },
+  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
+  plotOptions: { bar: { borderRadius: 4, horizontal: true } },
   xaxis: {
     categories: props.charts?.severity_mix?.labels || [],
     axisBorder: { color: chartGridColor.value },
     axisTicks: { color: chartGridColor.value },
-    labels: {
-      style: { colors: chartTextColor.value },
-    },
+    labels: { style: { colors: chartTextColor.value } },
   },
-  yaxis: {
-    labels: {
-      style: { colors: chartTextColor.value },
-    },
-  },
-  tooltip: {
-    theme: chartTooltipTheme.value,
-  },
+  yaxis: { labels: { style: { colors: chartTextColor.value } } },
+  tooltip: { theme: chartTooltipTheme.value },
   legend: { show: false },
 }))
 
 const warehouseExposureChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
+  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
   labels: props.charts?.warehouse_exposure?.labels || [],
-  colors: ['#ea580c', '#b91c1c', '#1d4ed8', '#7c3aed', '#0f766e', '#475569'],
-  legend: {
-    position: 'bottom',
-    labels: {
-      colors: chartTextColor.value,
-    },
-  },
-  dataLabels: {
-    formatter: (value) => `${value.toFixed(0)}%`,
-  },
-  stroke: {
-    width: 0,
-  },
-  tooltip: {
-    theme: chartTooltipTheme.value,
-  },
+  colors: ['#d97706', '#be123c', '#0e7490', '#7c3aed', '#047857', '#475569'],
+  legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
+  dataLabels: { formatter: (value) => `${value.toFixed(0)}%` },
+  stroke: { width: 0 },
+  tooltip: { theme: chartTooltipTheme.value },
 }))
 
 const replenishmentGapChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
+  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
-  colors: ['#1e3a8a'],
+  colors: ['#0e7490'],
   dataLabels: { enabled: false },
-  grid: {
-    borderColor: chartGridColor.value,
-    strokeDashArray: 4,
-  },
-  plotOptions: {
-    bar: {
-      borderRadius: 6,
-      columnWidth: '48%',
-    },
-  },
+  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
+  plotOptions: { bar: { borderRadius: 4, columnWidth: '48%' } },
   xaxis: {
     categories: props.charts?.replenishment_gap?.labels || [],
-    labels: {
-      rotate: -25,
-      trim: true,
-      style: { colors: chartTextColor.value },
-    },
+    labels: { rotate: -25, trim: true, style: { colors: chartTextColor.value } },
     axisBorder: { color: chartGridColor.value },
     axisTicks: { color: chartGridColor.value },
   },
-  yaxis: {
-    labels: {
-      style: { colors: chartTextColor.value },
-    },
-  },
-  tooltip: {
-    theme: chartTooltipTheme.value,
-  },
+  yaxis: { labels: { style: { colors: chartTextColor.value } } },
+  tooltip: { theme: chartTooltipTheme.value },
   legend: { show: false },
 }))
 
-const getSeverityColor = (item) => {
-  if (item.qty_available <= item.min_stock_level || item.qty_available === 0) {
-    return { bg: 'bg-red-100', text: 'text-red-900' }
-  } else if (item.qty_available <= item.reorder_point) {
-    return { bg: 'bg-orange-100', text: 'text-orange-900' }
-  } else {
-    return { bg: 'bg-yellow-100', text: 'text-yellow-900' }
-  }
+function syncDarkMode() {
+  if (typeof document === 'undefined') return
+  isDarkMode.value = document.documentElement.classList.contains('dark')
 }
 
-const getStockBarColor = (item) => {
-  if (item.qty_available <= item.min_stock_level) return 'bg-red-900'
-  if (item.qty_available <= item.reorder_point) return 'bg-orange-900'
-  return 'bg-green-900'
+function statusText(item) {
+  if (Number(item.qty_available) <= 0) return 'Sem stock'
+  if (Number(item.qty_available) <= Number(item.min_stock_level)) return 'Crítico'
+  return 'Baixo'
 }
 
-const getStockPercentage = (item) => {
-  const max = Math.max(item.reorder_point * 2, item.min_stock_level * 3, item.qty_available)
-  return (item.qty_available / max) * 100
+function statusDotClass(item) {
+  return statusText(item) === 'Baixo' ? 'bg-amber-500' : 'bg-rose-600'
 }
 
-const getStatusClasses = (item) => {
-  if (item.qty_available === 0) {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800'
-  } else if (item.qty_available <= item.min_stock_level) {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800'
-  } else if (item.qty_available <= item.reorder_point) {
-    return 'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800'
-  } else {
-    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
-  }
+function statusTextClass(item) {
+  return statusText(item) === 'Baixo'
+    ? 'text-amber-800 dark:text-amber-200'
+    : 'text-rose-800 dark:text-rose-200'
 }
 
-const getStatusText = (item) => {
-  if (item.qty_available === 0) return 'Sem Estoque'
-  if (item.qty_available <= item.min_stock_level) return 'Crítico'
-  if (item.qty_available <= item.reorder_point) return 'Baixo'
-  return 'Normal'
+function stockBarClass(item) {
+  return statusText(item) === 'Baixo' ? 'bg-amber-500' : 'bg-rose-600'
 }
 
-const recommendedOrders = computed(() => {
-  return props.inventory.data.map(item => {
-    const recommended = Math.max(
-      item.reorder_point * 2 - item.qty_available,
-      item.min_stock_level * 3 - item.qty_available,
-      1
-    )
-    
-    return {
-      id: item.item_id,
-      name: item.item?.name,
-      code: item.item?.code,
-      current_stock: item.qty_available,
-      recommended_qty: recommended,
-      supplier: item.item?.supplier,
-      unit_price: item.unit_price || item.item?.unit_price || item.item?.purchase_price || 0,
-    }
+function stockPercentage(item) {
+  const maximum = Math.max(Number(item.reorder_point || 0) * 2, Number(item.min_stock_level || 0) * 3, Number(item.qty_available || 0), 1)
+  return Math.min(Math.max((Number(item.qty_available || 0) / maximum) * 100, 0), 100)
+}
+
+function reorderGap(item) {
+  return Math.max(Number(item.reorder_point || 0) - Number(item.qty_available || 0), 0)
+}
+
+function warehouseName(id) {
+  return props.warehouses.find((warehouse) => String(warehouse.id) === String(id))?.name || 'N/D'
+}
+
+function categoryName(id) {
+  return props.categories.find((category) => String(category.id) === String(id))?.name || 'N/D'
+}
+
+function sortLabel(sortBy) {
+  return {
+    current_stock: 'Stock atual',
+    reorder_point: 'Ponto de reposição',
+    item_name: 'Nome do item',
+  }[sortBy] || 'Severidade'
+}
+
+function formatMoney(value) {
+  return new Intl.NumberFormat('pt-AO', {
+    style: 'currency',
+    currency: 'AOA',
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0))
+}
+
+function clearFilters() {
+  Object.assign(filters, {
+    warehouse_id: '',
+    category_id: '',
+    severity: '',
+    sort_by: 'severity',
   })
-})
+}
 
-const exportReport = () => {
-  window.open(route('vap-inventory.reports.export', {
+function exportReport() {
+  router.post(route('vap-inventory.reports.export'), {
     report_type: 'low_stock',
     format: 'pdf',
-    filters: JSON.stringify({ ...filters })
-  }), '_blank')
+    filters: { ...filters },
+  })
 }
 
-const generateOrder = () => {
+function generateOrder() {
+  if (!recommendedOrders.value.length) return
   router.visit(route('vap-inventory.orders.create', {
-    items: recommendedOrders.value.map(item => ({
-      item_id: item.id,
-      qty: item.recommended_qty
-    }))
+    items: recommendedOrders.value.map((item) => ({ item_id: item.id, qty: item.recommended_qty })),
   }))
 }
 
-const createOrderForItem = (item) => {
+function createOrderForItem(item) {
   router.visit(route('vap-inventory.orders.create', {
     items: [{
       item_id: item.item_id,
-      qty: Math.max(item.reorder_point * 2 - item.qty_available, 1)
-    }]
+      qty: Math.max(Number(item.reorder_point || 0) * 2 - Number(item.qty_available || 0), 1),
+    }],
   }))
 }
 
-// Watch filters
 watch(
   filters,
   debounce((value) => {
     router.get(route('vap-inventory.reports.low-stock'), value, {
       preserveState: true,
+      preserveScroll: true,
       replace: true,
     })
-  }, 300),
-  { deep: true }
+  }, 350),
+  { deep: true },
 )
 
 onMounted(() => {
   syncDarkMode()
-
-  if (typeof MutationObserver !== 'undefined') {
+  if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
     themeObserver = new MutationObserver(syncDarkMode)
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
   }

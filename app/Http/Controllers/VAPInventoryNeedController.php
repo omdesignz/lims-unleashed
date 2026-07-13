@@ -16,10 +16,12 @@ use App\Models\InventoryOrderDetail;
 use App\Models\InventorySupplierAssessment;
 use App\Models\VAPLab;
 use App\Support\InventoryNeedWorkflowNotifier;
+use App\Support\PdfResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Inertia\Inertia;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 use PDF;
 
 class VAPInventoryNeedController extends Controller
@@ -154,6 +156,7 @@ class VAPInventoryNeedController extends Controller
 
             if ($supplierId === null) {
                 $missingSupplierCount++;
+
                 continue;
             }
 
@@ -161,11 +164,13 @@ class VAPInventoryNeedController extends Controller
 
             if ($assessment === null) {
                 $unassessedSupplierCount++;
+
                 continue;
             }
 
             if (in_array($assessment->status, ['rejected', 'suspended'], true) || ($assessment->risk_level === 'critical' && ! $assessment->approved_supplier)) {
                 $blockedSupplierCount++;
+
                 continue;
             }
 
@@ -262,7 +267,7 @@ class VAPInventoryNeedController extends Controller
             return 'Sem prazo';
         }
 
-        $diffDays = now()->startOfDay()->diffInDays(\Illuminate\Support\Carbon::parse($neededByDate)->startOfDay(), false);
+        $diffDays = now()->startOfDay()->diffInDays(Carbon::parse($neededByDate)->startOfDay(), false);
 
         if ($diffDays < 0) {
             return 'Em atraso';
@@ -293,7 +298,7 @@ class VAPInventoryNeedController extends Controller
     {
         $need = DB::transaction(function () use ($request): InventoryNeed {
             $need = InventoryNeed::query()->create([
-                'reference' => 'NEED-' . now()->format('Ymd') . '-' . Str::upper(Str::random(6)),
+                'reference' => 'NEED-'.now()->format('Ymd').'-'.Str::upper(Str::random(6)),
                 'department_id' => $request->integer('department_id'),
                 'lab_id' => $request->integer('lab_id') ?: null,
                 'requested_by_id' => auth()->id(),
@@ -390,9 +395,9 @@ class VAPInventoryNeedController extends Controller
             'items.warehouse:id,name',
         ]);
 
-        $filename = 'Necessidade_' . $need->reference . '_' . now()->format('Ymd_His') . '.pdf';
+        $filename = 'Necessidade_'.$need->reference.'_'.now()->format('Ymd_His').'.pdf';
 
-        return PDF::loadView('exports.inventory-need', [
+        $pdf = PDF::loadView('exports.inventory-need', [
             'need' => $need,
             'companyName' => config('app.name', 'LIMS System'),
             'printedDate' => now()->format('d/m/Y H:i'),
@@ -403,7 +408,9 @@ class VAPInventoryNeedController extends Controller
             'estimatedTotalAmount' => $need->items->sum(
                 fn (InventoryNeedItem $item) => ((float) ($item->estimated_unit_price ?? 0)) * ($item->quantity_approved ?: $item->quantity_requested)
             ),
-        ])->stream($filename);
+        ]);
+
+        return PdfResponse::inline($pdf, $filename);
     }
 
     public function approve(Request $request, InventoryNeed $need, InventoryNeedWorkflowNotifier $notifier)
@@ -496,7 +503,7 @@ class VAPInventoryNeedController extends Controller
                 'supplier_id' => $supplier->id,
                 'order_year' => now()->format('Y'),
                 'reference' => $validated['reference'] ?? null,
-                'obs' => trim(($validated['obs'] ?? '') . "\nOrigem: necessidade {$need->reference}"),
+                'obs' => trim(($validated['obs'] ?? '')."\nOrigem: necessidade {$need->reference}"),
                 'status' => InventoryOrderTrackingStatus::PENDING,
                 'currency' => $supplier->currency ?? 'USD',
                 'total_amount' => 0,

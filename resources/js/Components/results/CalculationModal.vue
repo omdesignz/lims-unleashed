@@ -1,67 +1,73 @@
 <script setup>
-import CalculationResultEntry from '@/Components/results/CalculationResultEntry.vue';
+import CalculationResultEntry from "@/Components/results/CalculationResultEntry.vue";
+import Modal from "@/Components/Modal.vue";
+import { CalculatorIcon, XMarkIcon } from "@heroicons/vue/24/outline";
 
 const props = defineProps({
-    sampleId: Object,
-    parameters: Array,
-    existingResults: Object,
-    action: String
+  sampleId: {
+    type: Object,
+    default: null,
+  },
+  parameters: {
+    type: Array,
+    default: () => [],
+  },
+  existingResults: {
+    type: Object,
+    default: () => ({}),
+  },
+  action: {
+    type: String,
+    default: "analyze",
+  },
 });
 
-const emit = defineEmits(['close', 'calculated']);
+const emit = defineEmits(["close", "calculated"]);
 
-// Handle the comprehensive payload from CalculationResultEntry
-// const handleCalculatedResults = (comprehensivePayload) => {
+function handleCalculatedResults(payload) {
+  emit("calculated", {
+    ...payload,
+    action: payload.action || props.action,
+  });
+}
 
-//     // console.log(comprehensivePayload);
-
-//     emit('calculated', comprehensivePayload);
-//     emit('close');
-// };
-
-const handleCalculatedResults = (comprehensivePayload) => {
-    // Add action to payload if not present
-    if (!comprehensivePayload.action) {
-        comprehensivePayload.action = props.action
-    }
-    
-    emit('calculated', comprehensivePayload);
-    
-    // Don't close immediately - let the parent decide
-    // The parent should close after processing
-};
-
-const closeModal = () => {
-    emit('close');
-};
+function closeModal() {
+  emit("close");
+}
 </script>
 
 <template>
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-    <div class="max-h-[90vh] w-full max-w-6xl overflow-auto rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_30px_120px_rgba(7,17,15,0.45)] dark:border-[#25443c] dark:bg-[#07110f]">
-        <div class="p-6">
-            <div class="mb-6 flex items-center justify-between gap-4 border-b border-[#ded3bf] pb-4 dark:border-[#25443c]">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-700 dark:text-primary-300">Cálculo técnico</p>
-                    <h3 class="mt-1 text-xl font-bold text-[#17231f] dark:text-[#f7f1e7]">Calculadora de Parâmetros</h3>
-                </div>
-                <button @click="$emit('close')" 
-                        class="rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <CalculationResultEntry
-                :sample-id="sampleId"
-                :parameters="parameters"
-                :existing-results="existingResults"
-                @calculated-results="handleCalculatedResults"
-                @close="closeModal"
-                :action="action"
-            />
+  <Modal :show="true" max-width="6xl" @close="closeModal">
+    <div class="min-w-0">
+      <header class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
+        <div class="flex min-w-0 items-start gap-3">
+          <div class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-[var(--lims-instrument)]">
+            <CalculatorIcon class="h-5 w-5" />
+          </div>
+          <div>
+            <p class="ds-kicker">Cálculo técnico</p>
+            <h2 class="ds-heading mt-2 text-lg">Calculadora de parâmetros</h2>
+            <p class="ds-copy mt-1 text-xs">
+              Resolva fórmulas controladas com as variáveis disponíveis nesta amostra.
+            </p>
+          </div>
         </div>
+        <button type="button" class="ds-icon-button" title="Fechar" @click="closeModal">
+          <XMarkIcon class="h-5 w-5" />
+          <span class="sr-only">Fechar</span>
+        </button>
+      </header>
+
+      <div class="max-h-[78vh] overflow-y-auto p-5 sm:p-6">
+        <CalculationResultEntry
+          :sample-id="sampleId"
+          :parameters="parameters"
+          :existing-results="existingResults"
+          :action="action"
+          @calculated-results="handleCalculatedResults"
+          @close="closeModal"
+        />
+      </div>
     </div>
-</div>
+  </Modal>
 </template>

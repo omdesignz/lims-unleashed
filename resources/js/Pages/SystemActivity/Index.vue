@@ -1,1495 +1,684 @@
- <script setup>
-import { ref, computed, reactive, watch, onMounted } from 'vue'
+<script setup>
+import ComboboxEnhanced from "@/Components/combobox-enhanced.vue";
+import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { useForm, router } from '@inertiajs/vue3'
-import { 
-  EyeIcon, 
-  EyeSlashIcon, 
-  FunnelIcon, 
-  MagnifyingGlassIcon, 
-  CalendarIcon,
-  XMarkIcon,
-  TrashIcon,
-  ArrowPathIcon,
-  DocumentTextIcon,
-  UserIcon,
-  ClockIcon,
-  InformationCircleIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  ChartBarIcon,
-  DocumentMagnifyingGlassIcon,
-  ServerIcon,
-  TableCellsIcon,
-  ArrowsPointingOutIcon,
+import {
   ArrowDownTrayIcon,
-} from '@heroicons/vue/24/outline'
-import DatePickerEnhanced from "@/Components/date-picker-enhanced.vue"
-import comboboxEnhanced from '@/Components/combobox-enhanced.vue';
-import confirmDialog from "@/Components/confirm-dialog.vue"
-import { trans } from 'laravel-vue-i18n';
-import { TransitionRoot, Dialog, DialogPanel, DialogTitle, TransitionChild } from '@headlessui/vue'
+  ArrowPathIcon,
+  CalendarDaysIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  CircleStackIcon,
+  DocumentMagnifyingGlassIcon,
+  ExclamationTriangleIcon,
+  EyeIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon,
+  TrashIcon,
+  UserGroupIcon,
+  XMarkIcon,
+} from "@heroicons/vue/24/outline";
+import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from "@headlessui/vue";
+import { Link, router, useForm, usePage } from "@inertiajs/vue3";
+import { computed, ref } from "vue";
 
+defineOptions({ layout: Layout });
 
 const props = defineProps({
-  record: Object,
-  logNameOptions: Array,
-  causerOptions: Array,
-  subjectOptions: Array,
-  eventOptions: Array,
-  propertiesOptions: Array,
+  record: { type: Object, default: () => ({ data: [], links: [] }) },
+  logNameOptions: { type: Array, default: () => [] },
+  causerOptions: { type: Array, default: () => [] },
+  subjectOptions: { type: Array, default: () => [] },
+  eventOptions: { type: Array, default: () => [] },
+  propertiesOptions: { type: Array, default: () => [] },
 });
 
-defineOptions({
-  layout: Layout
-});
+const { hasPermission } = usePermission();
+const pageUrl = usePage().url;
+const initialQuery = new URLSearchParams(pageUrl.includes("?") ? pageUrl.split("?")[1] : "");
+const showFilters = ref(initialQuery.size > 0);
+const selectedActivity = ref(null);
+const deleteMode = ref(null);
+const showDeleteConfirmation = ref(false);
+const isLoading = ref(false);
+const detailedActivity = ref(null);
+const detailedProperties = ref(null);
+const showDetailsModal = ref(false);
+const isLoadingDetails = ref(false);
+const detailsError = ref("");
 
-// Reactive state
-const showFilters = ref(false)
-const showDeleteConfirmation = ref(false)
-const selectedActivity = ref(null)
-const isLoading = ref(false)
-const viewMode = ref('table') // 'table' or 'card'
-const expandedActivity = ref(null)
+function selectedOption(options, key) {
+  const value = initialQuery.get(key);
 
-// Add these new reactive states
-const detailedActivity = ref(null)
-const detailedProperties = ref(null)
-const showDetailsModal = ref(false)
-const isLoadingDetails = ref(false)
+  return options.find((option) => String(option.value) === String(value)) ?? null;
+}
 
-// Date picker masks
-const masks = ref({
-  modelValue: 'YYYY-MM-DD',
-  data: 'YYYY-MM-DD',
-  input: 'YYYY-MM-DD',
-  model: 'YYYY-MM-DD',
-});
-
-// Filter form
 const filters = useForm({
-  log_name: null,
-  causer_id: null,
-  subject_id: null,
-  subject_type: null,
-  event: null,
-  property: null,
-  description: null,
-  start_date: null,
-  end_date: null,
-  batch_uuid: null,
-  per_page: 25,
-}, {
-  // Important: Don't reset on success for GET requests
-  resetOnSuccess: false,
+  log_name: selectedOption(props.logNameOptions, "log_name"),
+  causer_id: selectedOption(props.causerOptions, "causer_id"),
+  subject_type: selectedOption(props.subjectOptions, "subject_type"),
+  event: selectedOption(props.eventOptions, "event"),
+  property: selectedOption(props.propertiesOptions, "property"),
+  description: initialQuery.get("description") || "",
+  start_date: initialQuery.get("start_date") || "",
+  end_date: initialQuery.get("end_date") || "",
+  batch_uuid: initialQuery.get("batch_uuid") || "",
+  per_page: Number(initialQuery.get("per_page") || 25),
 });
 
-// Helper to get simple value
-const getSimpleValue = (value) => {
-  if (!value) return null;
-  
-  // Handle combobox object
-  if (typeof value === 'object' && value !== null) {
-    return value.value || value.id || null;
+const rows = computed(() => props.record?.data ?? []);
+const totalActivities = computed(() => props.record?.total ?? 0);
+const pageStatistics = computed(() => {
+  const today = new Date().toDateString();
+  const actors = new Set();
+  let todayCount = 0;
+  let exceptionCount = 0;
+
+  for (const activity of rows.value) {
+    if (activity.created_at && new Date(activity.created_at).toDateString() === today) {
+      todayCount += 1;
+    }
+
+    if (activity.causer_id) {
+      actors.add(String(activity.causer_id));
+    }
+
+    if (activityLevel(activity) === "danger" || activityLevel(activity) === "warning") {
+      exceptionCount += 1;
+    }
   }
-  
+
+  return {
+    today: todayCount,
+    actors: actors.size,
+    exceptions: exceptionCount,
+  };
+});
+const metrics = computed(() => [
+  { label: "Total", value: totalActivities.value, detail: "eventos no registo", icon: CircleStackIcon },
+  { label: "Nesta página", value: rows.value.length, detail: "eventos carregados", icon: DocumentMagnifyingGlassIcon },
+  { label: "Hoje", value: pageStatistics.value.today, detail: "eventos visíveis", icon: CalendarDaysIcon },
+  { label: "Atenção", value: pageStatistics.value.exceptions, detail: "avisos ou falhas", icon: ExclamationTriangleIcon },
+  { label: "Atores", value: pageStatistics.value.actors, detail: "utilizadores distintos", icon: UserGroupIcon },
+]);
+const activeFilters = computed(() => {
+  const labels = {
+    log_name: "Log",
+    causer_id: "Ator",
+    subject_type: "Entidade",
+    event: "Evento",
+    property: "Propriedade",
+    description: "Descrição",
+    start_date: "Desde",
+    end_date: "Até",
+    batch_uuid: "Lote",
+  };
+
+  return Object.entries(filters.data())
+    .filter(([key, value]) => key !== "per_page" && value !== null && value !== "")
+    .map(([key, value]) => ({
+      key,
+      label: labels[key],
+      value: typeof value === "object" ? value.label : value,
+    }));
+});
+const hasActiveFilters = computed(() => activeFilters.value.length > 0);
+const exportUrl = computed(() => {
+  const params = buildQueryParams();
+  params.delete("per_page");
+
+  return route("systemactivity.export") + "?" + params.toString();
+});
+
+function simpleValue(value) {
+  if (value && typeof value === "object") {
+    return value.value ?? value.id ?? null;
+  }
+
   return value;
 }
 
-// Computed
-// const hasActiveFilters = computed(() => {
-//   return Object.values(filters.data()).some(value => value !== null && value !== '')
-// })
+function buildQueryParams() {
+  const params = new URLSearchParams();
 
-const hasActiveFilters = computed(() => {
-  return Object.keys(filters.data()).some(key => {
-    if (key === 'per_page') return false;
-    const value = filters[key];
-    return value !== null && value !== '' && value !== undefined;
-  });
-})
+  for (const [key, value] of Object.entries(filters.data())) {
+    const normalized = simpleValue(value);
 
-const totalActivities = computed(() => {
-  return props.record?.total || 0
-})
-
-const filteredActivities = computed(() => {
-  return props.record?.data || []
-})
-
-const activityStats = computed(() => {
-  const stats = {
-    total: totalActivities.value,
-    today: 0,
-    yesterday: 0,
-    this_week: 0,
-    errors: 0,
-    info: 0,
-    warning: 0,
-  }
-
-  // Calculate stats from activities
-  filteredActivities.value.forEach(activity => {
-    // Check if activity is from today
-    const activityDate = new Date(activity.created_at)
-    const today = new Date()
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
-    
-    if (activityDate.toDateString() === today.toDateString()) {
-      stats.today++
-    }
-    
-    if (activityDate.toDateString() === yesterday.toDateString()) {
-      stats.yesterday++
-    }
-    
-    // Check for error/warning/info
-    const description = activity.description?.toLowerCase() || ''
-    if (description.includes('error') || description.includes('failed')) {
-      stats.errors++
-    } else if (description.includes('warning')) {
-      stats.warning++
-    } else {
-      stats.info++
-    }
-  })
-
-  return stats
-})
-
-const getActivityTypeColor = (activity) => {
-  const description = activity.description?.toLowerCase() || ''
-  if (description.includes('error') || description.includes('failed')) {
-    return {
-      bg: 'bg-red-100',
-      text: 'text-red-800',
-      icon: ExclamationTriangleIcon,
-      border: 'border-red-200'
-    }
-  } else if (description.includes('warning')) {
-    return {
-      bg: 'bg-yellow-100',
-      text: 'text-yellow-800',
-      icon: ExclamationTriangleIcon,
-      border: 'border-yellow-200'
-    }
-  } else if (description.includes('created')) {
-    return {
-      bg: 'bg-green-100',
-      text: 'text-green-800',
-      icon: CheckCircleIcon,
-      border: 'border-green-200'
-    }
-  } else if (description.includes('updated')) {
-    return {
-      bg: 'bg-blue-100',
-      text: 'text-blue-800',
-      icon: InformationCircleIcon,
-      border: 'border-blue-200'
-    }
-  } else if (description.includes('deleted')) {
-    return {
-      bg: 'bg-red-100',
-      text: 'text-red-800',
-      icon: TrashIcon,
-      border: 'border-red-200'
-    }
-  } else {
-    return {
-      bg: 'bg-gray-100',
-      text: 'text-gray-800',
-      icon: DocumentTextIcon,
-      border: 'border-gray-200'
+    if (normalized !== null && normalized !== "") {
+      params.set(key, normalized);
     }
   }
+
+  return params;
 }
 
-const getPropertyValue = (properties, key) => {
-  if (!properties) return null
-  
-  try {
-    const propsObj = typeof properties === 'string' ? JSON.parse(properties) : properties
-    return propsObj[key]
-  } catch (e) {
-    return null
-  }
-}
-
-const formatDateTime = (dateString) => {
-  if (!dateString) return ''
-  
-  const date = new Date(dateString)
-  return date.toLocaleString('pt-PT', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
-}
-
-const formatRelativeTime = (dateString) => {
-  if (!dateString) return ''
-  
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now - date
-  const diffMins = Math.floor(diffMs / (1000 * 60))
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-  if (diffMins < 1) return 'Agora'
-  if (diffMins < 60) return `${diffMins}m atrás`
-  if (diffHours < 24) return `${diffHours}h atrás`
-  if (diffDays === 1) return 'Ontem'
-  if (diffDays < 7) return `${diffDays}d atrás`
-  
-  return date.toLocaleDateString('pt-PT')
-}
-
-const formatProperties = (properties) => {
-  if (!properties) return 'Sem propriedades'
-  
-  try {
-    const propsObj = typeof properties === 'string' ? JSON.parse(properties) : properties
-    return JSON.stringify(propsObj, null, 2)
-  } catch (e) {
-    return String(properties)
-  }
-}
-
-// Methods
-// const applyFilters = () => {
-//   filters.get(route('systemactivity.index'), {
-//     preserveState: true,
-//     preserveScroll: true,
-//     onStart: () => isLoading.value = true,
-//     onFinish: () => isLoading.value = false,
-//   })
-// }
-
-const applyFilters = () => {
-  // Build query params object from form data
-  const queryParams = {};
-  
-  // Convert form data to simple key-value pairs
-  Object.keys(filters.data()).forEach(key => {
-    const value = getSimpleValue(filters[key]);
-    if (value !== null && value !== '' && value !== undefined) {
-      queryParams[key] = value;
-    }
-  });
-  
-  // Use router.get() with the query params
-  router.get(route('systemactivity.index'), queryParams, {
+function applyFilters() {
+  router.get(route("systemactivity.index"), Object.fromEntries(buildQueryParams()), {
     preserveState: true,
     preserveScroll: true,
     replace: true,
-    onStart: () => isLoading.value = true,
-    onFinish: () => isLoading.value = false,
+    onStart: () => {
+      isLoading.value = true;
+    },
+    onFinish: () => {
+      isLoading.value = false;
+    },
   });
 }
 
-// const resetFilters = () => {
-//   filters.reset()
-//   applyFilters()
-// }
-
-const resetFilters = () => {
-  // Reset form to initial values
-  Object.keys(filters.data()).forEach(key => {
-    if (key === 'per_page') {
-      filters[key] = 25;
-    } else {
-      filters[key] = null;
-    }
-  });
-  
+function resetFilters() {
+  filters.log_name = null;
+  filters.causer_id = null;
+  filters.subject_type = null;
+  filters.event = null;
+  filters.property = null;
+  filters.description = "";
+  filters.start_date = "";
+  filters.end_date = "";
+  filters.batch_uuid = "";
+  filters.per_page = 25;
   applyFilters();
 }
 
-// const clearFilter = (key) => {
-//   filters[key] = null
-//   applyFilters()
-// }
+function clearFilter(key) {
+  filters[key] = "";
 
-const clearFilter = (key) => {
-  if (key === 'per_page') {
-    filters[key] = 25;
-  } else {
+  if (["log_name", "causer_id", "subject_type", "event", "property"].includes(key)) {
     filters[key] = null;
   }
+
   applyFilters();
 }
 
-const loadLogNames = (query, setOptions) => {
-  const filtered = props.logNameOptions
-    ?.filter(option => option.label.toLowerCase().includes(query.toLowerCase()))
-    .slice(0, 10)
-  setOptions(filtered)
+function localOptions(options, query, setOptions) {
+  const term = String(query || "").toLocaleLowerCase();
+  setOptions(options.filter((option) => option.label.toLocaleLowerCase().includes(term)).slice(0, 25));
 }
 
-const loadCausers = (query, setOptions) => {
-  const filtered = props.causerOptions
-    ?.filter(option => option.label.toLowerCase().includes(query.toLowerCase()))
-    .slice(0, 10)
-  setOptions(filtered)
+function loadLogNames(query, setOptions) {
+  localOptions(props.logNameOptions, query, setOptions);
 }
 
-const loadSubjects = (query, setOptions) => {
-  const filtered = props.subjectOptions
-    ?.filter(option => option.label.toLowerCase().includes(query.toLowerCase()))
-    .slice(0, 10)
-  setOptions(filtered)
+function loadCausers(query, setOptions) {
+  localOptions(props.causerOptions, query, setOptions);
 }
 
-const loadEvents = (query, setOptions) => {
-  const filtered = props.eventOptions
-    ?.filter(option => option.label.toLowerCase().includes(query.toLowerCase()))
-    .slice(0, 10)
-  setOptions(filtered)
+function loadSubjects(query, setOptions) {
+  localOptions(props.subjectOptions, query, setOptions);
 }
 
-const loadProperties = (query, setOptions) => {
-  const filtered = props.propertiesOptions
-    ?.filter(option => option.label.toLowerCase().includes(query.toLowerCase()))
-    .slice(0, 10)
-  setOptions(filtered)
+function loadEvents(query, setOptions) {
+  localOptions(props.eventOptions, query, setOptions);
 }
 
-// const viewActivityDetails = (activity) => {
-//   expandedActivity.value = expandedActivity.value === activity.id ? null : activity.id
-// }
+function loadProperties(query, setOptions) {
+  localOptions(props.propertiesOptions, query, setOptions);
+}
 
-// const viewActivityDetails = async (activity) => {
-//   try {
-//     isLoading.value = true;
-//     const response = await axios.get(route('systemactivity.show', { activity: activity.id }));
-    
-//     // Create a modal or expand with full details
-//     expandedActivity.value = {
-//       ...activity,
-//       fullDetails: response.data
-//     };
-    
-//   } catch (error) {
-//     console.error('Failed to load activity details:', error);
-//   } finally {
-//     isLoading.value = false;
-//   }
-// }
+function activityLevel(activity) {
+  const text = ((activity.event || "") + " " + (activity.description || "") + " " + (activity.log_name || "")).toLowerCase();
 
-const viewActivityDetails = async (activity) => {
-  try {
-    isLoadingDetails.value = true;
-    
-    // Fetch detailed activity from API
-    const response = await axios.get(route('systemactivity.show', { activity: activity.id }));
-    console.log('API Response:', response.data); // Debug log
-    
-    detailedActivity.value = response.data.activity;
-    detailedProperties.value = response.data.properties_formatted;
-    
-    // Show modal
-    showDetailsModal.value = true;
-    
-  } catch (error) {
-    console.error('Failed to load activity details:', error);
-    
-    // Show error message based on error type
-    if (error.response) {
-      if (error.response.status === 403) {
-        alert('You do not have permission to view activity details.');
-      } else if (error.response.status === 404) {
-        alert('Activity not found.');
-      } else {
-        alert('Failed to load activity details. Please try again.');
-      }
-    } else {
-      alert('Network error. Please check your connection.');
+  if (text.includes("error") || text.includes("failed") || text.includes("failure") || text.includes("deleted")) {
+    return "danger";
+  }
+
+  if (text.includes("warning") || text.includes("blocked")) {
+    return "warning";
+  }
+
+  if (text.includes("created") || text.includes("approved") || text.includes("completed")) {
+    return "success";
+  }
+
+  if (text.includes("updated") || text.includes("viewed")) {
+    return "info";
+  }
+
+  return "neutral";
+}
+
+function activityBadgeClass(activity) {
+  return {
+    danger: "ds-badge ds-badge-danger",
+    warning: "ds-badge ds-badge-warning",
+    success: "ds-badge ds-badge-success",
+    info: "ds-badge ds-badge-info",
+    neutral: "ds-badge ds-badge-neutral",
+  }[activityLevel(activity)];
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return "—";
+  }
+
+  return new Date(value).toLocaleString("pt-PT", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
+function formatRelativeTime(value) {
+  if (!value) {
+    return "";
+  }
+
+  const difference = Date.now() - new Date(value).getTime();
+  const minutes = Math.floor(difference / 60000);
+  const hours = Math.floor(difference / 3600000);
+  const days = Math.floor(difference / 86400000);
+
+  if (minutes < 1) {
+    return "Agora";
+  }
+
+  if (minutes < 60) {
+    return minutes + " min";
+  }
+
+  if (hours < 24) {
+    return hours + " h";
+  }
+
+  if (days < 7) {
+    return days + " d";
+  }
+
+  return new Date(value).toLocaleDateString("pt-PT");
+}
+
+function subjectName(activity) {
+  if (!activity.subject_type) {
+    return "Sistema";
+  }
+
+  return String(activity.subject_type).split("\\").pop();
+}
+
+function formatProperties(properties) {
+  if (!properties) {
+    return "Sem propriedades registadas.";
+  }
+
+  if (typeof properties === "string") {
+    try {
+      return JSON.stringify(JSON.parse(properties), null, 2);
+    } catch {
+      return properties;
     }
+  }
+
+  return JSON.stringify(properties, null, 2);
+}
+
+async function viewActivityDetails(activity) {
+  showDetailsModal.value = true;
+  isLoadingDetails.value = true;
+  detailsError.value = "";
+  detailedActivity.value = null;
+  detailedProperties.value = null;
+
+  try {
+    const response = await fetch(route("systemactivity.show", { activity: activity.id }), {
+      headers: {
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(response.status === 403 ? "Sem permissão para consultar este evento." : "Não foi possível carregar os detalhes.");
+    }
+
+    const payload = await response.json();
+    detailedActivity.value = payload.activity;
+    detailedProperties.value = payload.properties_formatted;
+  } catch (error) {
+    detailsError.value = error.message || "Não foi possível carregar os detalhes.";
   } finally {
     isLoadingDetails.value = false;
   }
 }
 
-// Add helper function to format properties for display
-const formatPropertiesForDisplay = (properties) => {
-  if (!properties) return 'No properties available';
-  
-  // If properties is already a string, try to parse it
-  if (typeof properties === 'string') {
-    try {
-      const parsed = JSON.parse(properties);
-      return JSON.stringify(parsed, null, 2);
-    } catch (e) {
-      return properties; // Return as-is if not JSON
-    }
-  }
-  
-  // If properties is an object or array, stringify it
-  if (typeof properties === 'object') {
-    return JSON.stringify(properties, null, 2);
-  }
-  
-  return String(properties);
+function closeDetails() {
+  showDetailsModal.value = false;
+  detailedActivity.value = null;
+  detailedProperties.value = null;
+  detailsError.value = "";
 }
 
-const deleteActivity = (activity) => {
-  selectedActivity.value = activity
-  showDeleteConfirmation.value = true
+function requestDelete(activity = null) {
+  deleteMode.value = activity ? "single" : "all";
+  selectedActivity.value = activity;
+  showDeleteConfirmation.value = true;
 }
 
-const confirmDelete = () => {
-  if (!selectedActivity.value) return
-  
-  router.delete(route('systemactivity.destroy', { activity: selectedActivity.value.id }), {
+function closeDeleteConfirmation() {
+  deleteMode.value = null;
+  selectedActivity.value = null;
+  showDeleteConfirmation.value = false;
+}
+
+function confirmDelete() {
+  const routeName = deleteMode.value === "all" ? "systemactivity.destroyAll" : "systemactivity.destroy";
+  const routeParameters = deleteMode.value === "single" ? { activity: selectedActivity.value.id } : undefined;
+
+  router.delete(route(routeName, routeParameters), {
     preserveScroll: true,
-    onStart: () => isLoading.value = true,
-    onSuccess: () => {
-      showDeleteConfirmation.value = false
-      selectedActivity.value = null
-      isLoading.value = false
+    onStart: () => {
+      isLoading.value = true;
     },
-    onError: () => {
-      isLoading.value = false
-    }
-  })
-}
-
-const deleteAllActivities = () => {
-  if (!confirm('Tem a certeza que deseja eliminar todos os registos de atividade? Esta ação é irreversível.')) {
-    return
-  }
-  
-  router.delete(route('systemactivity.destroyAll'), {
-    preserveScroll: true,
-    onStart: () => isLoading.value = true,
-    onSuccess: () => {
-      isLoading.value = false
+    onFinish: () => {
+      isLoading.value = false;
+      closeDeleteConfirmation();
     },
-    onError: () => {
-      isLoading.value = false
-    }
-  })
+  });
 }
-
-// const exportActivities = () => {
-//   const queryParams = new URLSearchParams(filters.data())
-//   window.location.href = route('systemactivity.export') + '?' + queryParams.toString() 
-// }
-
-const exportActivities = async () => {
-  try {
-    isLoading.value = true;
-    const queryParams = new URLSearchParams();
-    
-    // Add filters to query params
-    Object.entries(filters.data()).forEach(([key, value]) => {
-      if (value) {
-        if (typeof value === 'object' && value !== null && value.value) {
-          queryParams.append(key, value.value);
-        } else {
-          queryParams.append(key, value);
-        }
-      }
-    });
-    
-    // Create download link
-    const url = route('systemactivity.export') + '?' + queryParams.toString();
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'activity-logs.xlsx';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-  } catch (error) {
-    console.error('Export failed:', error);
-    // Show error message to user
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-const toggleViewMode = () => {
-  viewMode.value = viewMode.value === 'table' ? 'card' : 'table'
-}
-
-// Watchers
-watch(() => filters.data(), () => {
-  // Debounced filter application could be implemented here
-}, { deep: true })
-
-onMounted(() => {
-  // Initialize any default filters from URL
-})
 </script>
 
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <DocumentMagnifyingGlassIcon class="h-7 w-7 text-blue-900" />
-            {{ $t('gestlab.general.labels.system_activity.page_title') }}
-          </h1>
-          <p class="mt-2 text-gray-600">
-            {{ $t('gestlab.general.labels.system_activity.page_description') }}
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900 ring-1 ring-inset ring-blue-700/10">
-            {{ totalActivities }} {{ $t('gestlab.general.labels.system_activity.records') }}
+  <div class="space-y-6">
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
+        <div class="flex items-start gap-3">
+          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+            <DocumentMagnifyingGlassIcon class="h-5 w-5" />
           </span>
-        </div>
-      </div>
-    </div>
-
-    <!-- STATS CARDS -->
-    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-      <!-- TOTAL ACTIVITIES -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">
-              {{ $t('gestlab.general.labels.system_activity.total') }}
-            </p>
-            <p class="text-2xl font-bold text-gray-900 mt-1">
-              {{ activityStats.total }}
-            </p>
-          </div>
-          <div class="rounded-lg bg-blue-100 p-2">
-            <ServerIcon class="h-6 w-6 text-blue-900" />
+            <p class="ds-kicker">Auditoria do sistema</p>
+            <h1 class="ds-heading mt-1 text-2xl">Registo de atividade</h1>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Eventos técnicos e administrativos para investigação, segurança e rastreabilidade.</p>
           </div>
         </div>
-      </div>
-
-      <!-- TODAY'S ACTIVITIES -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-500">
-              {{ $t('gestlab.general.labels.system_activity.today') }}
-            </p>
-            <p class="text-2xl font-bold text-gray-900 mt-1">
-              {{ activityStats.today }}
-            </p>
-          </div>
-          <div class="rounded-lg bg-green-100 p-2">
-            <CalendarIcon class="h-6 w-6 text-green-900" />
-          </div>
-        </div>
-      </div>
-
-      <!-- YESTERDAY'S ACTIVITIES -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-500">
-              {{ $t('gestlab.general.labels.system_activity.yesterday') }}
-            </p>
-            <p class="text-2xl font-bold text-gray-900 mt-1">
-              {{ activityStats.yesterday }}
-            </p>
-          </div>
-          <div class="rounded-lg bg-yellow-100 p-2">
-            <ClockIcon class="h-6 w-6 text-yellow-900" />
-          </div>
-        </div>
-      </div>
-
-      <!-- ERRORS -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-500">
-              {{ $t('gestlab.general.labels.system_activity.errors') }}
-            </p>
-            <p class="text-2xl font-bold text-red-600 mt-1">
-              {{ activityStats.errors }}
-            </p>
-          </div>
-          <div class="rounded-lg bg-red-100 p-2">
-            <ExclamationTriangleIcon class="h-6 w-6 text-red-900" />
-          </div>
-        </div>
-      </div>
-
-      <!-- WARNINGS -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-500">
-              {{ $t('gestlab.general.labels.system_activity.warnings') }}
-            </p>
-            <p class="text-2xl font-bold text-yellow-600 mt-1">
-              {{ activityStats.warning }}
-            </p>
-          </div>
-          <div class="rounded-lg bg-yellow-100 p-2">
-            <ExclamationTriangleIcon class="h-6 w-6 text-yellow-900" />
-          </div>
-        </div>
-      </div>
-
-      <!-- INFO -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-500">
-              {{ $t('gestlab.general.labels.system_activity.info') }}
-            </p>
-            <p class="text-2xl font-bold text-blue-600 mt-1">
-              {{ activityStats.info }}
-            </p>
-          </div>
-          <div class="rounded-lg bg-blue-100 p-2">
-            <InformationCircleIcon class="h-6 w-6 text-blue-900" />
-          </div>
-        </div>
-      </div>
-
-      <!-- VIEW TOGGLE -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-gray-500">
-              {{ $t('gestlab.general.labels.system_activity.view_mode') }}
-            </p>
-            <p class="text-sm font-semibold text-gray-900 mt-1">
-              {{ viewMode === 'table' ? 'Tabela' : 'Cartões' }}
-            </p>
-          </div>
-          <button
-            @click="toggleViewMode"
-            type="button"
-            class="rounded-lg bg-blue-100 p-2 hover:bg-blue-200 transition-colors duration-200"
-          >
-            <ArrowsPointingOutIcon class="h-6 w-6 text-blue-900" />
+        <div class="flex flex-wrap gap-3">
+          <button type="button" class="ds-button ds-button-secondary" @click="showFilters = !showFilters">
+            <FunnelIcon class="h-4 w-4" />
+            Filtros
+            <span v-if="hasActiveFilters" class="ds-badge ds-badge-info">{{ activeFilters.length }}</span>
+            <ChevronUpIcon v-if="showFilters" class="h-4 w-4" />
+            <ChevronDownIcon v-else class="h-4 w-4" />
+          </button>
+          <a v-if="hasPermission('export_activity_log')" :href="exportUrl" class="ds-button ds-button-secondary">
+            <ArrowDownTrayIcon class="h-4 w-4" />
+            Exportar
+          </a>
+          <button v-if="hasPermission('delete_activity_log')" type="button" class="ds-button ds-button-danger" @click="requestDelete()">
+            <TrashIcon class="h-4 w-4" />
+            Limpar registo
           </button>
         </div>
       </div>
-    </div>
 
-    <!-- FILTERS CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div class="border-b border-gray-200 px-6 py-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <button
-              @click="showFilters = !showFilters"
-              type="button"
-              class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-            >
-              <FunnelIcon class="h-4 w-4" />
-              {{ $t('gestlab.general.buttons.filters') }}
-              <span v-if="hasActiveFilters" class="inline-flex items-center rounded-full bg-blue-900 px-2 py-0.5 text-xs font-medium text-white">
-                {{ Object.values(filters.data()).filter(v => v).length }}
-              </span>
-            </button>
-            
-            <!-- ACTIVE FILTERS -->
-            <div v-if="hasActiveFilters" class="flex flex-wrap gap-2">
-              <template v-for="(value, key) in filters.data()" :key="key">
-                <span 
-                  v-if="value"
-                  class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800"
-                >
-                  {{ key }}: {{ value?.label || value }}
-                  <button
-                    @click="clearFilter(key)"
-                    type="button"
-                    class="ml-1 text-blue-600 hover:text-blue-900"
-                  >
-                    <XMarkIcon class="h-3 w-3" />
-                  </button>
-                </span>
-              </template>
-              <button
-                @click="resetFilters"
-                type="button"
-                class="text-sm font-medium text-red-600 hover:text-red-800"
-              >
-                {{ $t('gestlab.general.buttons.clear_all') }}
-              </button>
+      <dl class="grid border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 lg:grid-cols-5">
+        <div v-for="metric in metrics" :key="metric.label" class="border-b border-[var(--ds-border)] px-4 py-4 sm:border-r lg:border-b-0 lg:last:border-r-0">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
+              <dd class="mt-1 text-xl font-bold tabular-nums text-[var(--ds-text)]">{{ metric.value }}</dd>
+              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
             </div>
+            <component :is="metric.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
           </div>
-          
-          <!-- ACTIONS -->
-          <div class="flex items-center gap-2">
-            <button
-              @click="exportActivities"
-              type="button"
-              class="inline-flex items-center gap-2 rounded-lg border border-blue-900 px-4 py-2.5 text-sm font-semibold text-blue-900 shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-            >
-              <ArrowDownTrayIcon class="h-4 w-4" />
-              {{ $t('gestlab.general.buttons.export') }}
+        </div>
+      </dl>
+    </section>
+
+    <section v-if="showFilters" class="ds-command-surface p-4 sm:p-5">
+      <div class="flex flex-col gap-4 border-b border-[var(--ds-border)] pb-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p class="ds-kicker">Pesquisa estruturada</p>
+          <h2 class="ds-heading mt-2 text-base">Filtrar eventos</h2>
+        </div>
+        <div v-if="hasActiveFilters" class="flex flex-wrap gap-2">
+          <span v-for="filter in activeFilters" :key="filter.key" class="ds-badge ds-badge-info">
+            {{ filter.label }}: {{ filter.value }}
+            <button type="button" class="ml-1" :title="'Remover filtro ' + filter.label" @click="clearFilter(filter.key)">
+              <XMarkIcon class="h-3.5 w-3.5" />
             </button>
-            <button
-              @click="deleteAllActivities"
-              type="button"
-              class="inline-flex items-center gap-2 rounded-lg border border-red-300 px-4 py-2.5 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200"
-            >
-              <TrashIcon class="h-4 w-4" />
-              {{ $t('gestlab.general.buttons.clear_log') }}
-            </button>
-          </div>
+          </span>
         </div>
       </div>
 
-      <!-- FILTER FORM -->
-      <Transition
-        enter-active-class="transition-all duration-300 ease-out"
-        enter-from-class="opacity-0 max-h-0"
-        enter-to-class="opacity-100 max-h-[1000px]"
-        leave-active-class="transition-all duration-200 ease-in"
-        leave-from-class="opacity-100 max-h-[1000px]"
-        leave-to-class="opacity-0 max-h-0"
-      >
-        <div v-if="showFilters" class="px-6 py-6 border-b border-gray-200">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- LOG NAME FILTER -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                {{ $t('gestlab.general.labels.system_activity.log_name') }}
-              </label>
-              <comboboxEnhanced
-                v-model="filters.log_name"
-                :load-options="loadLogNames"
-                :placeholder="$t('gestlab.general.labels.system_activity.placeholders.select_log_name')"
-                class="w-full"
-              />
-            </div>
-
-            <!-- CAUSER FILTER -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                {{ $t('gestlab.general.labels.system_activity.causer') }}
-              </label>
-              <comboboxEnhanced
-                v-model="filters.causer_id"
-                :load-options="loadCausers"
-                :placeholder="$t('gestlab.general.labels.system_activity.placeholders.select_causer')"
-                class="w-full"
-              />
-            </div>
-
-            <!-- SUBJECT FILTER -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                {{ $t('gestlab.general.labels.system_activity.subject') }}
-              </label>
-              <comboboxEnhanced
-                v-model="filters.subject_id"
-                :load-options="loadSubjects"
-                :placeholder="$t('gestlab.general.labels.system_activity.placeholders.select_subject')"
-                class="w-full"
-              />
-            </div>
-
-            <!-- EVENT FILTER -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                {{ $t('gestlab.general.labels.system_activity.event') }}
-              </label>
-              <comboboxEnhanced
-                v-model="filters.event"
-                :load-options="loadEvents"
-                :placeholder="$t('gestlab.general.labels.system_activity.placeholders.select_event')"
-                class="w-full"
-              />
-            </div>
-
-            <!-- PROPERTY FILTER -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                {{ $t('gestlab.general.labels.system_activity.property') }}
-              </label>
-              <comboboxEnhanced
-                v-model="filters.property"
-                :load-options="loadProperties"
-                :placeholder="$t('gestlab.general.labels.system_activity.placeholders.select_property')"
-                class="w-full"
-              />
-            </div>
-
-            <!-- DESCRIPTION FILTER -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                {{ $t('gestlab.general.labels.system_activity.description') }}
-              </label>
-              <input
-                v-model="filters.description"
-                type="text"
-                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900 sm:text-sm"
-                :placeholder="$t('gestlab.general.labels.system_activity.placeholders.search_description')"
-              />
-            </div>
-
-            <!-- DATE RANGE FILTERS -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                {{ $t('gestlab.general.labels.system_activity.start_date') }}
-              </label>
-              <DatePickerEnhanced
-                v-model="filters.start_date"
-                mode="date"
-                :masks="masks"
-                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900 sm:text-sm"
-              />
-            </div>
-
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                {{ $t('gestlab.general.labels.system_activity.end_date') }}
-              </label>
-              <DatePickerEnhanced
-                v-model="filters.end_date"
-                mode="date"
-                :masks="masks"
-                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900 sm:text-sm"
-              />
-            </div>
-          </div>
-
-          <!-- FILTER ACTIONS -->
-          <div class="mt-6 pt-6 border-t border-gray-200 flex justify-end gap-3">
-            <button
-              @click="resetFilters"
-              type="button"
-              class="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-            >
-              {{ $t('gestlab.general.buttons.reset') }}
-            </button>
-            <button
-              @click="applyFilters"
-              :disabled="isLoading"
-              type="button"
-              :class="[
-                'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200',
-                isLoading
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2'
-              ]"
-            >
-              <ArrowPathIcon v-if="isLoading" class="h-4 w-4 animate-spin" />
-              <MagnifyingGlassIcon v-else class="h-4 w-4" />
-              {{ isLoading ? $t('gestlab.general.buttons.applying') : $t('gestlab.general.buttons.apply_filters') }}
-            </button>
-          </div>
+      <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div>
+          <label class="ds-field-label">Nome do log</label>
+          <ComboboxEnhanced v-model="filters.log_name" class="mt-2" :load-options="loadLogNames" placeholder="Todos os logs" />
         </div>
-      </Transition>
-    </div>
+        <div>
+          <label class="ds-field-label">Ator</label>
+          <ComboboxEnhanced v-model="filters.causer_id" class="mt-2" :load-options="loadCausers" placeholder="Todos os utilizadores" />
+        </div>
+        <div>
+          <label class="ds-field-label">Tipo de entidade</label>
+          <ComboboxEnhanced v-model="filters.subject_type" class="mt-2" :load-options="loadSubjects" placeholder="Todas as entidades" />
+        </div>
+        <div>
+          <label class="ds-field-label">Evento</label>
+          <ComboboxEnhanced v-model="filters.event" class="mt-2" :load-options="loadEvents" placeholder="Todos os eventos" />
+        </div>
+        <div>
+          <label class="ds-field-label">Propriedade</label>
+          <ComboboxEnhanced v-model="filters.property" class="mt-2" :load-options="loadProperties" placeholder="Qualquer propriedade" />
+        </div>
+        <div>
+          <label for="activity-description" class="ds-field-label">Descrição</label>
+          <input id="activity-description" v-model="filters.description" type="search" class="ds-field mt-2" placeholder="Pesquisar texto do evento" />
+        </div>
+        <div>
+          <label for="activity-start-date" class="ds-field-label">Data inicial</label>
+          <input id="activity-start-date" v-model="filters.start_date" type="date" class="ds-field mt-2" />
+        </div>
+        <div>
+          <label for="activity-end-date" class="ds-field-label">Data final</label>
+          <input id="activity-end-date" v-model="filters.end_date" type="date" class="ds-field mt-2" />
+        </div>
+        <div class="md:col-span-2">
+          <label for="activity-batch" class="ds-field-label">UUID do lote</label>
+          <input id="activity-batch" v-model="filters.batch_uuid" type="text" class="ds-field mt-2 font-mono" placeholder="Identificador exato do lote" />
+        </div>
+        <div>
+          <label for="activity-page-size" class="ds-field-label">Registos por página</label>
+          <select id="activity-page-size" v-model.number="filters.per_page" class="ds-field mt-2">
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+            <option :value="100">100</option>
+          </select>
+        </div>
+      </div>
 
-    <!-- ACTIVITIES CONTENT -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <!-- TABLE VIEW -->
-      <div v-if="viewMode === 'table'" class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+      <div class="mt-5 flex flex-wrap justify-end gap-3 border-t border-[var(--ds-border)] pt-4">
+        <button type="button" class="ds-button ds-button-secondary" @click="resetFilters">
+          <XMarkIcon class="h-4 w-4" />
+          Limpar
+        </button>
+        <button type="button" class="ds-button ds-button-primary" :disabled="isLoading" @click="applyFilters">
+          <ArrowPathIcon v-if="isLoading" class="h-4 w-4 animate-spin" />
+          <MagnifyingGlassIcon v-else class="h-4 w-4" />
+          Aplicar filtros
+        </button>
+      </div>
+    </section>
+
+    <section class="ds-table-shell">
+      <div class="ds-table-summary px-5 py-4 sm:px-6">
+        <div>
+          <p class="ds-kicker">Trilho de auditoria</p>
+          <h2 class="ds-heading mt-2 text-lg">Eventos registados</h2>
+        </div>
+        <span class="ds-badge ds-badge-neutral">{{ props.record.from || 0 }}–{{ props.record.to || 0 }} de {{ totalActivities }}</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
+          <thead class="ds-table-head">
             <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ $t('gestlab.general.labels.system_activity.description') }}
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ $t('gestlab.general.labels.system_activity.causer') }}
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ $t('gestlab.general.labels.system_activity.subject') }}
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ $t('gestlab.general.labels.system_activity.event') }}
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ $t('gestlab.general.labels.system_activity.timestamp') }}
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {{ $t('gestlab.general.labels.actions') }}
-              </th>
+              <th class="ds-table-heading px-5 py-3 text-left">Evento</th>
+              <th class="ds-table-heading px-4 py-3 text-left">Descrição</th>
+              <th class="ds-table-heading px-4 py-3 text-left">Ator</th>
+              <th class="ds-table-heading px-4 py-3 text-left">Entidade</th>
+              <th class="ds-table-heading px-4 py-3 text-left">Data</th>
+              <th class="ds-table-heading px-5 py-3 text-right"><span class="sr-only">Ações</span></th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr 
-              v-for="activity in filteredActivities" 
-              :key="activity.id"
-              class="hover:bg-gray-50 transition-colors duration-150"
-            >
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div :class="['rounded-lg p-2 mr-3', getActivityTypeColor(activity).bg]">
-                    <component :is="getActivityTypeColor(activity).icon" :class="['h-5 w-5', getActivityTypeColor(activity).text]" />
-                  </div>
-                  <div>
-                    <div class="text-sm font-medium text-gray-900">
-                      {{ activity.description }}
-                    </div>
-                    <div class="text-xs text-gray-500">
-                      {{ activity.log_name.label }}
-                    </div>
-                  </div>
-                </div>
+          <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
+            <tr v-for="activity in rows" :key="activity.id" class="ds-table-row">
+              <td class="ds-table-cell whitespace-nowrap px-5 py-4">
+                <span :class="activityBadgeClass(activity)">{{ activity.event || "registo" }}</span>
+                <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-muted)]">{{ activity.log_name || "system" }}</p>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div v-if="activity.causer" class="flex items-center">
-                  <div class="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                    <UserIcon class="h-4 w-4 text-blue-900" />
-                  </div>
-                  <div class="ml-3">
-                    <div class="text-sm font-medium text-gray-900">
-                      {{ activity.causer.name || 'N/A' }}
-                    </div>
-                    <div class="text-xs text-gray-500">
-                      {{ activity.causer.email || '' }}
-                    </div>
-                  </div>
-                </div>
-                <span v-else class="text-sm text-gray-500">
-                  {{ $t('gestlab.general.labels.system_activity.system') }}
-                </span>
+              <td class="ds-table-cell max-w-lg px-4 py-4">
+                <p class="line-clamp-2 text-sm font-bold text-[var(--ds-text)]">{{ activity.description }}</p>
+                <p v-if="activity.batch_uuid" class="mt-1 truncate font-mono text-xs text-[var(--ds-text-muted)]">{{ activity.batch_uuid }}</p>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {{ activity.subject_type || 'N/A' }}
+              <td class="ds-table-cell px-4 py-4">
+                <p class="text-sm font-bold text-[var(--ds-text)]">{{ activity.causer?.name || "Sistema" }}</p>
+                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ activity.causer?.email || "Evento automático" }}</p>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="['inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', getActivityTypeColor(activity).bg, getActivityTypeColor(activity).text]">
-                  {{ activity.event }}
-                </span>
+              <td class="ds-table-cell whitespace-nowrap px-4 py-4">
+                <p class="text-sm font-semibold text-[var(--ds-text)]">{{ subjectName(activity) }}</p>
+                <p class="mt-1 font-mono text-xs text-[var(--ds-text-muted)]">{{ activity.subject_id || "—" }}</p>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <div class="flex flex-col">
-                  <span>{{ formatDateTime(activity.created_at) }}</span>
-                  <span class="text-xs text-gray-400">{{ formatRelativeTime(activity.created_at) }}</span>
-                </div>
+              <td class="ds-table-cell whitespace-nowrap px-4 py-4">
+                <p class="text-sm font-semibold text-[var(--ds-text)]">{{ formatDateTime(activity.created_at) }}</p>
+                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ formatRelativeTime(activity.created_at) }}</p>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <div class="flex items-center gap-2">
-                  <button
-                    @click="viewActivityDetails(activity)"
-                    type="button"
-                    class="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-                  >
-                    <EyeIcon class="h-3 w-3" />
-                    {{ $t('gestlab.general.buttons.view') }}
+              <td class="ds-table-cell px-5 py-4">
+                <div class="flex justify-end gap-1">
+                  <button type="button" class="ds-icon-button" title="Ver detalhes" @click="viewActivityDetails(activity)">
+                    <EyeIcon class="h-4 w-4" />
                   </button>
-                  <button
-                    @click="deleteActivity(activity)"
-                    type="button"
-                    class="inline-flex items-center gap-1 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200"
-                  >
-                    <TrashIcon class="h-3 w-3" />
-                    {{ $t('gestlab.general.buttons.delete') }}
+                  <button v-if="hasPermission('delete_activity_log')" type="button" class="ds-icon-button hover:!text-red-600" title="Eliminar evento" @click="requestDelete(activity)">
+                    <TrashIcon class="h-4 w-4" />
                   </button>
                 </div>
+              </td>
+            </tr>
+            <tr v-if="!rows.length">
+              <td colspan="6" class="px-5 py-12 text-center">
+                <DocumentMagnifyingGlassIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
+                <p class="mt-3 text-sm font-bold text-[var(--ds-text)]">Nenhum evento encontrado</p>
+                <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Ajuste os filtros para alargar a pesquisa.</p>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- CARD VIEW -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-        <div
-          v-for="activity in filteredActivities"
-          :key="activity.id"
-          :class="['rounded-xl border shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md', getActivityTypeColor(activity).border]"
-        >
-          <!-- CARD HEADER -->
-          <div :class="['px-4 py-3', getActivityTypeColor(activity).bg]">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <component :is="getActivityTypeColor(activity).icon" :class="['h-5 w-5', getActivityTypeColor(activity).text]" />
-                <span :class="['text-sm font-semibold', getActivityTypeColor(activity).text]">
-                  {{ activity.event }}
-                </span>
-              </div>
-              <span class="text-xs font-medium text-gray-500">
-                {{ formatRelativeTime(activity.created_at) }}
-              </span>
-            </div>
-          </div>
-
-          <!-- CARD CONTENT -->
-          <div class="p-4">
-            <!-- DESCRIPTION -->
-            <div class="mb-4">
-              <h3 class="text-sm font-medium text-gray-900 mb-1">
-                {{ activity.description }}
-              </h3>
-              <p class="text-xs text-gray-500">
-                {{ activity.log_name.label }}
-              </p>
-            </div>
-
-            <!-- CAUSER -->
-            <div class="flex items-center gap-3 mb-3">
-              <div class="flex-shrink-0">
-                <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <UserIcon class="h-4 w-4 text-blue-900" />
-                </div>
-              </div>
-              <div>
-                <p class="text-sm font-medium text-gray-900">
-                  {{ activity.causer?.name || $t('gestlab.general.labels.system_activity.system') }}
-                </p>
-                <p class="text-xs text-gray-500">
-                  {{ activity.causer?.email || '' }}
-                </p>
-              </div>
-            </div>
-
-            <!-- SUBJECT -->
-            <div class="mb-3">
-              <p class="text-xs font-medium text-gray-500 mb-1">
-                {{ $t('gestlab.general.labels.system_activity.subject') }}
-              </p>
-              <p class="text-sm text-gray-900">
-                {{ activity.subject_type || 'N/A' }}
-              </p>
-            </div>
-
-            <!-- PROPERTIES PREVIEW -->
-            <div v-if="activity.properties" class="mb-4">
-              <p class="text-xs font-medium text-gray-500 mb-1">
-                {{ $t('gestlab.general.labels.system_activity.properties') }}
-              </p>
-              <div class="bg-gray-50 rounded-lg p-2 max-h-20 overflow-y-auto">
-                <pre class="text-xs text-gray-600">{{ formatProperties(activity.properties).substring(0, 100) }}...</pre>
-              </div>
-            </div>
-
-            <!-- ACTIONS -->
-            <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-              <button
-                @click="viewActivityDetails(activity)"
-                type="button"
-                class="text-xs font-medium text-blue-600 hover:text-blue-900"
-              >
-                {{ $t('gestlab.general.buttons.view_details') }}
-              </button>
-              <button
-                @click="deleteActivity(activity)"
-                type="button"
-                class="text-xs font-medium text-red-600 hover:text-red-900"
-              >
-                {{ $t('gestlab.general.buttons.delete') }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- EMPTY STATE -->
-      <div v-if="filteredActivities.length === 0" class="p-12 text-center">
-        <DocumentMagnifyingGlassIcon class="mx-auto h-12 w-12 text-gray-300" />
-        <h3 class="mt-4 text-sm font-semibold text-gray-900">
-          {{ $t('gestlab.general.labels.system_activity.no_activities_found') }}
-        </h3>
-        <p class="mt-2 text-sm text-gray-500">
-          {{ $t('gestlab.general.labels.system_activity.adjust_filters_or_try_again') }}
-        </p>
-        <button
-          v-if="hasActiveFilters"
-          @click="resetFilters"
-          type="button"
-          class="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-        >
-          <XMarkIcon class="h-4 w-4" />
-          {{ $t('gestlab.general.buttons.clear_filters') }}
-        </button>
-      </div>
-
-      <!-- PAGINATION -->
-      <div v-if="filteredActivities.length > 0 && props.record.links" class="px-6 py-4 border-t border-gray-200">
-        <nav class="flex items-center justify-between">
-          <div class="text-sm text-gray-500">
-            {{ $t('gestlab.general.labels.system_activity.showing_results', {
-              from: props.record?.meta?.from || 0,
-              to: props.record?.meta?.to || 0,
-              total: props.record?.meta?.total || 0
-            }) }}
-          </div>
-          <div class="flex gap-2">
-            <template v-for="link in props.record.links">
-              <Link
-                v-if="link.url"
-                :href="link.url"
-                :class="[
-                  'px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200',
-                  link.active
-                    ? 'bg-blue-900 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                ]"
-                v-html="link.label"
-              />
-              <span
-                v-else
-                class="px-3 py-2 text-sm text-gray-400"
-                v-html="link.label"
-              />
-            </template>
-          </div>
+      <div v-if="props.record.links?.length > 3" class="flex flex-col gap-3 border-t border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm font-semibold text-[var(--ds-text-muted)]">Página {{ props.record.current_page }} de {{ props.record.last_page }}</p>
+        <nav class="flex flex-wrap gap-1" aria-label="Paginação">
+          <template v-for="link in props.record.links" :key="link.label">
+            <Link
+              v-if="link.url"
+              :href="link.url"
+              preserve-scroll
+              class="ds-button min-h-9 px-3 py-1.5"
+              :class="link.active ? 'ds-button-primary' : 'ds-button-ghost'"
+              v-html="link.label"
+            />
+            <span v-else class="ds-button min-h-9 cursor-not-allowed px-3 py-1.5 opacity-40" v-html="link.label" />
+          </template>
         </nav>
       </div>
-    </div>
+    </section>
 
-    <!-- ACTIVITY DETAILS MODAL -->
-  <TransitionRoot 
-    :show="showDetailsModal && detailedActivity" 
-    as="template"
-  >
-    <Dialog 
-      as="div" 
-      class="relative z-50" 
-      @close="showDetailsModal = false"
-    >
-      <TransitionChild
-        as="template"
-        enter="ease-out duration-300"
-        enter-from="opacity-0"
-        enter-to="opacity-100"
-        leave="ease-in duration-200"
-        leave-from="opacity-100"
-        leave-to="opacity-0"
-      >
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
-      </TransitionChild>
-
-      <div class="fixed inset-0 z-10 overflow-y-auto">
-        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-          <TransitionChild
-            as="template"
-            enter="ease-out duration-300"
-            enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            enter-to="opacity-100 translate-y-0 sm:scale-100"
-            leave="ease-in duration-200"
-            leave-from="opacity-100 translate-y-0 sm:scale-100"
-            leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-          >
-            <DialogPanel class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl">
-              <!-- Modal Header -->
-              <div class="bg-white px-6 py-4 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                  <DialogTitle as="h3" class="text-lg font-semibold leading-6 text-gray-900">
-                    Activity Details
-                  </DialogTitle>
-                  <button
-                    @click="showDetailsModal = false"
-                    type="button"
-                    class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <XMarkIcon class="h-5 w-5" />
+    <TransitionRoot :show="showDetailsModal" as="template">
+      <Dialog as="div" class="relative z-50" @close="closeDetails">
+        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-150" leave-from="opacity-100" leave-to="opacity-0">
+          <div class="fixed inset-0 bg-black/45" />
+        </TransitionChild>
+        <div class="fixed inset-0 z-10 overflow-y-auto p-4 sm:p-6">
+          <div class="flex min-h-full items-center justify-center">
+            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-2" enter-to="opacity-100 translate-y-0" leave="ease-in duration-150" leave-from="opacity-100 translate-y-0" leave-to="opacity-0 translate-y-2">
+              <DialogPanel class="ds-floating-panel w-full max-w-4xl overflow-hidden">
+                <div class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
+                  <div>
+                    <p class="ds-kicker">Evidência de auditoria</p>
+                    <DialogTitle class="ds-heading mt-2 text-lg">Detalhes do evento</DialogTitle>
+                  </div>
+                  <button type="button" class="ds-icon-button" title="Fechar" @click="closeDetails">
+                    <XMarkIcon class="h-4 w-4" />
                   </button>
                 </div>
-              </div>
 
-              <!-- Loading State -->
-              <div v-if="isLoadingDetails" class="p-8 text-center">
-                <div class="inline-flex items-center gap-2">
-                  <ArrowPathIcon class="h-5 w-5 animate-spin text-blue-900" />
-                  <span class="text-sm text-gray-600">Loading details...</span>
+                <div v-if="isLoadingDetails" class="flex items-center justify-center gap-3 px-6 py-16 text-sm font-semibold text-[var(--ds-text-muted)]">
+                  <ArrowPathIcon class="h-5 w-5 animate-spin" />
+                  A carregar detalhes...
                 </div>
-              </div>
-
-              <!-- Activity Details Content -->
-              <div v-else-if="detailedActivity" class="px-6 py-4 max-h-[70vh] overflow-y-auto">
-                <!-- Basic Information -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <!-- Activity Info -->
-                  <div class="space-y-3">
-                    <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                      Activity Information
-                    </h4>
-                    
-                    <div>
-                      <label class="block text-xs font-medium text-gray-500 mb-1">
-                        ID
-                      </label>
-                      <p class="text-sm text-gray-900 font-mono bg-gray-50 p-2 rounded">
-                        {{ detailedActivity.id }}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <label class="block text-xs font-medium text-gray-500 mb-1">
-                        Description
-                      </label>
-                      <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded">
-                        {{ detailedActivity.description }}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <label class="block text-xs font-medium text-gray-500 mb-1">
-                        Event
-                      </label>
-                      <span :class="[
-                        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                        getActivityTypeColor(detailedActivity).bg,
-                        getActivityTypeColor(detailedActivity).text
-                      ]">
-                        {{ detailedActivity.event || 'N/A' }}
-                      </span>
-                    </div>
-                    
-                    <div>
-                      <label class="block text-xs font-medium text-gray-500 mb-1">
-                        Log Name
-                      </label>
-                      <p class="text-sm text-gray-900">
-                        {{ detailedActivity.log_name || 'default' }}
-                      </p>
-                    </div>
-                  </div>
-
-                  <!-- Timestamps -->
-                  <div class="space-y-3">
-                    <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                      Timestamps
-                    </h4>
-                    
-                    <div>
-                      <label class="block text-xs font-medium text-gray-500 mb-1">
-                        Created At
-                      </label>
-                      <p class="text-sm text-gray-900">
-                        {{ formatDateTime(detailedActivity.created_at) }}
-                      </p>
-                      <p class="text-xs text-gray-500 mt-1">
-                        {{ formatRelativeTime(detailedActivity.created_at) }}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <label class="block text-xs font-medium text-gray-500 mb-1">
-                        Updated At
-                      </label>
-                      <p class="text-sm text-gray-900">
-                        {{ formatDateTime(detailedActivity.updated_at) }}
-                      </p>
-                    </div>
-                    
-                    <div v-if="detailedActivity.batch_uuid">
-                      <label class="block text-xs font-medium text-gray-500 mb-1">
-                        Batch UUID
-                      </label>
-                      <p class="text-sm text-gray-900 font-mono truncate">
-                        {{ detailedActivity.batch_uuid }}
-                      </p>
-                    </div>
-                  </div>
+                <div v-else-if="detailsError" class="px-6 py-12 text-center">
+                  <ExclamationTriangleIcon class="mx-auto h-8 w-8 text-red-600" />
+                  <p class="mt-3 text-sm font-bold text-[var(--ds-text)]">{{ detailsError }}</p>
                 </div>
-
-                <!-- Causer Information -->
-                <div class="mb-6">
-                  <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
-                    Causer Information
-                  </h4>
-                  
-                  <div v-if="detailedActivity.causer" class="bg-gray-50 rounded-lg p-4">
-                    <div class="flex items-center space-x-4">
-                      <div class="flex-shrink-0">
-                        <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <UserIcon class="h-5 w-5 text-blue-900" />
-                        </div>
-                      </div>
-                      <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-900 truncate">
-                          {{ detailedActivity.causer.name }}
-                        </p>
-                        <p class="text-sm text-gray-500 truncate">
-                          {{ detailedActivity.causer.email }}
-                        </p>
-                        <div class="flex items-center mt-1">
-                          <span class="text-xs text-gray-400">
-                            ID: {{ detailedActivity.causer.id }}
-                          </span>
-                          <span class="mx-2 text-gray-300">•</span>
-                          <span class="text-xs text-gray-400">
-                            Type: {{ detailedActivity.causer_type }}
-                          </span>
-                        </div>
-                      </div>
+                <div v-else-if="detailedActivity" class="max-h-[72vh] space-y-6 overflow-y-auto p-5 sm:p-6">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <span :class="activityBadgeClass(detailedActivity)">{{ detailedActivity.event || "registo" }}</span>
+                      <p class="mt-3 text-base font-bold text-[var(--ds-text)]">{{ detailedActivity.description }}</p>
                     </div>
+                    <p class="font-mono text-xs font-semibold text-[var(--ds-text-muted)]">#{{ detailedActivity.id }}</p>
                   </div>
-                  <div v-else class="bg-gray-50 rounded-lg p-4 text-center">
-                    <p class="text-sm text-gray-500">
-                      No causer (System-generated activity)
-                    </p>
-                  </div>
-                </div>
 
-                <!-- Subject Information -->
-                <div class="mb-6">
-                  <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
-                    Subject Information
-                  </h4>
-                  
-                  <div class="bg-gray-50 rounded-lg p-4">
-                    <div class="grid grid-cols-2 gap-4">
+                  <dl class="grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="border-b border-[var(--ds-border)] p-4 sm:border-r">
+                      <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Log</dt>
+                      <dd class="mt-2 font-mono text-sm font-bold text-[var(--ds-text)]">{{ detailedActivity.log_name || "system" }}</dd>
+                    </div>
+                    <div class="border-b border-[var(--ds-border)] p-4 lg:border-r">
+                      <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Registado em</dt>
+                      <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ formatDateTime(detailedActivity.created_at) }}</dd>
+                    </div>
+                    <div class="border-b border-[var(--ds-border)] p-4 sm:border-r sm:border-b-0">
+                      <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Entidade</dt>
+                      <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ subjectName(detailedActivity) }} · {{ detailedActivity.subject_id || "—" }}</dd>
+                    </div>
+                    <div class="p-4">
+                      <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Lote</dt>
+                      <dd class="mt-2 break-all font-mono text-xs font-bold text-[var(--ds-text)]">{{ detailedActivity.batch_uuid || "Sem lote" }}</dd>
+                    </div>
+                  </dl>
+
+                  <section>
+                    <p class="ds-kicker">Ator</p>
+                    <div class="mt-3 flex items-center gap-3 border-y border-[var(--ds-border)] py-4">
+                      <UserGroupIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
                       <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">
-                          Subject Type
-                        </label>
-                        <p class="text-sm text-gray-900">
-                          {{ detailedActivity.subject_type || 'N/A' }}
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">
-                          Subject ID
-                        </label>
-                        <p class="text-sm text-gray-900">
-                          {{ detailedActivity.subject_id || 'N/A' }}
-                        </p>
+                        <p class="text-sm font-bold text-[var(--ds-text)]">{{ detailedActivity.causer?.name || "Sistema" }}</p>
+                        <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ detailedActivity.causer?.email || "Evento gerado automaticamente" }}</p>
                       </div>
                     </div>
-                    
-                    <!-- Display subject details if loaded -->
-                    <div v-if="detailedActivity.subject" class="mt-4 pt-4 border-t border-gray-200">
-                      <label class="block text-xs font-medium text-gray-500 mb-2">
-                        Subject Details
-                      </label>
-                      <pre class="text-xs text-gray-700 bg-gray-100 p-3 rounded overflow-x-auto">
-{{ JSON.stringify(detailedActivity.subject, null, 2) }}
-                      </pre>
-                    </div>
-                  </div>
-                </div>
+                  </section>
 
-                <!-- Properties -->
-                <div>
-                  <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
-                    Properties
-                  </h4>
-                  
-                  <div class="bg-gray-50 rounded-lg p-4">
-                    <div v-if="detailedProperties && Object.keys(detailedProperties).length > 0">
-                      <pre class="text-sm text-gray-900 whitespace-pre-wrap overflow-x-auto">
-{{ formatPropertiesForDisplay(detailedProperties) }}
-                      </pre>
-                    </div>
-                    <div v-else>
-                      <p class="text-sm text-gray-500 text-center py-4">
-                        No properties available for this activity
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                  <section v-if="detailedActivity.subject">
+                    <p class="ds-kicker">Objeto afetado</p>
+                    <pre class="mt-3 max-h-64 overflow-auto rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 text-xs leading-6 text-[var(--ds-text)]">{{ formatProperties(detailedActivity.subject) }}</pre>
+                  </section>
 
-              <!-- Modal Footer -->
-              <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
-                <div class="flex justify-end">
-                  <button
-                    type="button"
-                    class="rounded-md bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    @click="showDetailsModal = false"
-                  >
-                    Close
-                  </button>
+                  <section>
+                    <p class="ds-kicker">Propriedades registadas</p>
+                    <pre class="mt-3 max-h-80 overflow-auto rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 text-xs leading-6 text-[var(--ds-text)]">{{ formatProperties(detailedProperties) }}</pre>
+                  </section>
                 </div>
-              </div>
-            </DialogPanel>
-          </TransitionChild>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
         </div>
-      </div>
-    </Dialog>
-  </TransitionRoot>
+      </Dialog>
+    </TransitionRoot>
 
-    <!-- DELETE CONFIRMATION DIALOG -->
-    <confirm-dialog
-      @canceled="showDeleteConfirmation = false"
-      @close="showDeleteConfirmation = false"
-      @confirmed="confirmDelete"
+    <ConfirmDialog
       v-if="showDeleteConfirmation"
-      :title="$t('gestlab.actions.confirmation_dialog_title.delete')"
-      :description="$t('gestlab.actions.confirmation_dialog_description.delete')"
-      :confirm="$t('gestlab.general.buttons.confirm')"
-      :cancel="$t('gestlab.general.buttons.cancel')"
-    >
-      <div class="mt-4 space-y-4">
-        <div class="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-sm font-medium text-red-800">
-          <ExclamationTriangleIcon class="h-4 w-4" />
-          <p>{{ $t('gestlab.general.labels.system_activity.delete_warning') }}</p>
-        </div>
-        
-        <div v-if="selectedActivity" class="space-y-3">
-          <div class="flex items-center gap-3 text-sm">
-            <InformationCircleIcon class="h-5 w-5 text-blue-900 flex-shrink-0" />
-            <p class="text-gray-700">
-              {{ selectedActivity.description }}
-            </p>
-          </div>
-          <div class="flex items-center gap-3 text-sm">
-            <ClockIcon class="h-5 w-5 text-gray-500 flex-shrink-0" />
-            <p class="text-gray-700">
-              {{ formatDateTime(selectedActivity.created_at) }}
-            </p>
-          </div>
-        </div>
-      </div>
-    </confirm-dialog>
+      :title="deleteMode === 'all' ? 'Eliminar todo o registo de atividade?' : 'Eliminar este evento?'"
+      :description="deleteMode === 'all' ? 'Esta ação remove permanentemente todos os eventos de auditoria disponíveis.' : selectedActivity?.description"
+      variant="danger"
+      confirm="Eliminar"
+      cancel="Cancelar"
+      @canceled="closeDeleteConfirmation"
+      @confirmed="confirmDelete"
+    />
   </div>
 </template>
-
-<style scoped>
-/* Smooth transitions */
-* {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Custom scrollbar for properties panel */
-pre::-webkit-scrollbar {
-  width: 6px;
-}
-
-pre::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-pre::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
-}
-
-pre::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
-}
-
-/* Loading animation */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-/* Gradient backgrounds */
-.bg-gradient-to-r {
-  background-image: linear-gradient(to right, var(--tw-gradient-stops));
-}
-
-/* Focus styles */
-:focus {
-  outline: 2px solid #1e3a8a;
-  outline-offset: 2px;
-}
-
-:focus:not(:focus-visible) {
-  outline: none;
-}
-</style>

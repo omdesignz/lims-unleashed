@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Http\Requests\InventoryRequest;
+use App\Http\Requests\InventoryTransactionRequest;
 use App\Http\Resources\InventoryTransactionResource;
 use App\Models\InventoryTransaction;
 use Illuminate\Support\Facades\DB;
@@ -11,14 +10,12 @@ use Inertia\Inertia;
 
 class InventoryTransactionController extends Controller
 {
-
     /**
      * Display a listing of the resource.
-     *
      */
     public function index()
     {
-        abort_if(!auth()->user()->can('view_itransactions'), 403, '');
+        abort_if(! auth()->user()->can('view_itransactions'), 403, '');
 
         return Inertia::render('InventoryTransactions/Index', [
             'record' => InventoryTransactionResource::collection(
@@ -45,15 +42,15 @@ class InventoryTransactionController extends Controller
             'fields' => [
                 [
                     'name' => trans('gestlab.general.labels.itransactions.item_id'),
-                    'value' => 'item'
+                    'value' => 'item',
                 ],
                 [
                     'name' => trans('gestlab.general.labels.itransactions.type_id'),
-                    'value' => 'type'
+                    'value' => 'type',
                 ],
                 [
                     'name' => trans('gestlab.general.labels.itransactions.qty'),
-                    'value' => 'qty'
+                    'value' => 'qty',
                 ],
                 // [
                 //     'name' => trans('gestlab.general.labels.itransactions.min_stock_level'),
@@ -61,7 +58,7 @@ class InventoryTransactionController extends Controller
                 // ],
                 [
                     'name' => trans('gestlab.general.labels.itransactions.warehouse_id'),
-                    'value' => 'warehouse'
+                    'value' => 'warehouse',
                 ],
                 // [
                 //     'name' => trans('gestlab.general.labels.itransactions.reorder_point'),
@@ -70,21 +67,20 @@ class InventoryTransactionController extends Controller
             ],
             'model' => InventoryTransaction::MENU_NAME,
             'abilities' => method_exists(InventoryTransaction::class, 'getAbilities') ? collect(InventoryTransaction::ABILITIES)->map(function ($item) {
-                return $item . '_' . InventoryTransaction::MENU_NAME;
+                return $item.'_'.InventoryTransaction::MENU_NAME;
             }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
-                return $item . '_' . InventoryTransaction::MENU_NAME;
+                return $item.'_'.InventoryTransaction::MENU_NAME;
             }),
-            'query' => request()->only(['search', 'filter'])
+            'query' => request()->only(['search', 'filter']),
         ]);
     }
 
     /**
      * Show the form for creating a new resource.
-     *
      */
     public function create()
     {
-        abort_if(!auth()->user()->can('add_itransactions'), 403, '');
+        abort_if(! auth()->user()->can('add_itransactions'), 403, '');
 
         // Get any required data
 
@@ -95,11 +91,10 @@ class InventoryTransactionController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     *
      */
-    public function store(InventoryRequest $request)
+    public function store(InventoryTransactionRequest $request)
     {
-        abort_if(!auth()->user()->can('add_itransactions'), 403, '');
+        abort_if(! auth()->user()->can('add_itransactions'), 403, '');
 
         // Persiste data to DB
         InventoryTransaction::create($request->validated());
@@ -108,49 +103,46 @@ class InventoryTransactionController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
     }
 
     /**
      * Display the specified resource.
-     *
      */
     public function show($id)
     {
         return Inertia::render('InventoryTransactions/Show', [
             'record' => InventoryTransactionResource::make(
                 InventoryTransaction::query()
-                                 ->with('inventory', 'type', 'item', 'warehouse', 'user')
-                                 ->find($id)
-            )
+                    ->with('inventory', 'type', 'item', 'warehouse', 'user')
+                    ->find($id)
+            ),
         ]);
     }
 
     /**
      * Show the form for editing the specified resource.
-     *
      */
     public function edit($id)
     {
-        abort_if(!auth()->user()->can('edit_itransactions'), 403, '');
+        abort_if(! auth()->user()->can('edit_itransactions'), 403, '');
 
         // Find the record
         $record = InventoryTransaction::findOrFail($id);
 
         // Return Inertia View with record data
         return Inertia::render('InventoryTransactions/Edit', [
-            'record' => InventoryTransactionResource::make($record)
+            'record' => InventoryTransactionResource::make($record),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
-     *
      */
-    public function update(InventoryRequest $request, $id)
+    public function update(InventoryTransactionRequest $request, $id)
     {
-        abort_if(!auth()->user()->can('edit_itransactions'), 403, '');
+        abort_if(! auth()->user()->can('edit_itransactions'), 403, '');
 
         // Find the record
         $record = InventoryTransaction::findOrFail($id);
@@ -161,20 +153,19 @@ class InventoryTransactionController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
     /**
      * Remove the specified resource from storage.
-     *
      */
     public function destroy()
     {
-        abort_if(!auth()->user()->can('delete_itransactions'), 403, '');
+        abort_if(! auth()->user()->can('delete_itransactions'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and delete the record
         foreach (InventoryTransaction::withTrashed()->findOrFail(request('recordIds')) as $record) {
@@ -185,20 +176,19 @@ class InventoryTransactionController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ]
+            ],
         ]);
     }
 
     /**
      * restore the specified resource from storage.
-     *
      */
     public function restore()
     {
-        abort_if(!auth()->user()->can('restore_itransactions'), 403, '');
+        abort_if(! auth()->user()->can('restore_itransactions'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and restore the record
         foreach (InventoryTransaction::withTrashed()->findOrFail(request('recordIds')) as $record) {
@@ -209,10 +199,9 @@ class InventoryTransactionController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ]
+            ],
         ]);
     }
-
 
     public function getInventoryTransaction()
     {
@@ -221,7 +210,7 @@ class InventoryTransactionController extends Controller
         if (request()->has('q')) {
             $search = request()->q;
 
-            $data = DB::table("itransactions")
+            $data = DB::table('itransactions')
                 ->select('itransactions.*')
                 ->where('qty', 'LIKE', "%$search%")
                 ->get();

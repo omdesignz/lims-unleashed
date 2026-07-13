@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CustomerRequestRequest;
 use App\Http\Resources\CustomerRequestResource;
-use App\Models\CustomerCategory;
 use App\Models\CustomerRequest;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -53,11 +52,9 @@ class CustomerRequestController extends Controller
                     'value' => 'warehouse',
                 ],
             ],
-            'model' => CustomerCategory::MENU_NAME,
-            'abilities' => method_exists(CustomerCategory::class, 'getAbilities') ? collect(CustomerCategory::ABILITIES)->map(function ($item) {
-                return $item.'_'.CustomerCategory::MENU_NAME;
-            }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
-                return $item.'_'.CustomerCategory::MENU_NAME;
+            'model' => CustomerRequest::MENU_NAME,
+            'abilities' => collect(config('gestlab.default_abilities'))->map(function ($item) {
+                return $item.'_'.CustomerRequest::MENU_NAME;
             }),
             'query' => request()->only(['search', 'trashed']),
         ]);

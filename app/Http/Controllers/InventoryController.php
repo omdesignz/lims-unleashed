@@ -2,26 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Orders\InventoryOrderTrackingStatus;
-use Illuminate\Http\Request;
 use App\Http\Requests\InventoryRequest;
 use App\Http\Resources\InventoryResource;
 use App\Models\Inventory;
 use App\Models\ReagentConsumption;
 use App\Notifications\LowStockAlert;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class InventoryController extends Controller
 {
-
     /**
      * Display a listing of the resource.
-     *
      */
     public function index()
     {
-        abort_if(!auth()->user()->can('view_inventory'), 403, '');
+        abort_if(! auth()->user()->can('view_inventory'), 403, '');
 
         return Inertia::render('Inventory/Index', [
             'record' => InventoryResource::collection(
@@ -47,15 +44,15 @@ class InventoryController extends Controller
             'fields' => [
                 [
                     'name' => trans('gestlab.general.labels.inventory.item_id'),
-                    'value' => 'item'
+                    'value' => 'item',
                 ],
                 [
                     'name' => trans('gestlab.general.labels.inventory.category_id'),
-                    'value' => 'category'
+                    'value' => 'category',
                 ],
                 [
                     'name' => trans('gestlab.general.labels.inventory.qty_available'),
-                    'value' => 'qty_available'
+                    'value' => 'qty_available',
                 ],
                 // [
                 //     'name' => trans('gestlab.general.labels.inventory.min_stock_level'),
@@ -63,7 +60,7 @@ class InventoryController extends Controller
                 // ],
                 [
                     'name' => trans('gestlab.general.labels.inventory.warehouse_id'),
-                    'value' => 'warehouse'
+                    'value' => 'warehouse',
                 ],
                 // [
                 //     'name' => trans('gestlab.general.labels.inventory.reorder_point'),
@@ -72,21 +69,20 @@ class InventoryController extends Controller
             ],
             'model' => Inventory::MENU_NAME,
             'abilities' => method_exists(Inventory::class, 'getAbilities') ? collect(Inventory::ABILITIES)->map(function ($item) {
-                return $item . '_' . Inventory::MENU_NAME;
+                return $item.'_'.Inventory::MENU_NAME;
             }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
-                return $item . '_' . Inventory::MENU_NAME;
+                return $item.'_'.Inventory::MENU_NAME;
             }),
-            'query' => request()->only(['search', 'filter'])
+            'query' => request()->only(['search', 'filter']),
         ]);
     }
 
     /**
      * Show the form for creating a new resource.
-     *
      */
     public function create()
     {
-        abort_if(!auth()->user()->can('add_inventory'), 403, '');
+        abort_if(! auth()->user()->can('add_inventory'), 403, '');
 
         // Get any required data
 
@@ -97,11 +93,10 @@ class InventoryController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     *
      */
     public function store(InventoryRequest $request)
     {
-        abort_if(!auth()->user()->can('add_inventory'), 403, '');
+        abort_if(! auth()->user()->can('add_inventory'), 403, '');
 
         // Persiste data to DB
         Inventory::create($request->validated());
@@ -110,49 +105,46 @@ class InventoryController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
     }
 
     /**
      * Display the specified resource.
-     *
      */
     public function show($id)
     {
         return Inertia::render('Inventory/Show', [
             'record' => InventoryResource::make(
                 Inventory::query()
-                                 ->with('item.category', 'warehouse')
-                                 ->find($id)
-            )
+                    ->with('item.category', 'warehouse')
+                    ->find($id)
+            ),
         ]);
     }
 
     /**
      * Show the form for editing the specified resource.
-     *
      */
     public function edit($id)
     {
-        abort_if(!auth()->user()->can('edit_inventory'), 403, '');
+        abort_if(! auth()->user()->can('edit_inventory'), 403, '');
 
         // Find the record
         $record = Inventory::findOrFail($id);
 
         // Return Inertia View with record data
         return Inertia::render('Inventory/Edit', [
-            'record' => InventoryResource::make($record)
+            'record' => InventoryResource::make($record),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
-     *
      */
     public function update(InventoryRequest $request, $id)
     {
-        abort_if(!auth()->user()->can('edit_inventory'), 403, '');
+        abort_if(! auth()->user()->can('edit_inventory'), 403, '');
 
         // Find the record
         $record = Inventory::findOrFail($id);
@@ -163,20 +155,19 @@ class InventoryController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
     /**
      * Remove the specified resource from storage.
-     *
      */
     public function destroy()
     {
-        abort_if(!auth()->user()->can('delete_inventory'), 403, '');
+        abort_if(! auth()->user()->can('delete_inventory'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and delete the record
         foreach (Inventory::withTrashed()->findOrFail(request('recordIds')) as $record) {
@@ -187,20 +178,19 @@ class InventoryController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ]
+            ],
         ]);
     }
 
     /**
      * restore the specified resource from storage.
-     *
      */
     public function restore()
     {
-        abort_if(!auth()->user()->can('restore_inventory'), 403, '');
+        abort_if(! auth()->user()->can('restore_inventory'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and restore the record
         foreach (Inventory::withTrashed()->findOrFail(request('recordIds')) as $record) {
@@ -211,35 +201,34 @@ class InventoryController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ]
+            ],
         ]);
     }
 
-
     public function getInventory()
     {
-        $data = [];
+        $search = request()->string('q')->trim()->toString();
 
-        if (request()->filled('q')) {
-            $search = request('q');
-
-            $data = Inventory::query()
-                ->with(['item:id,name', 'warehouse:id,name'])
-                ->select(['id', 'item_id', 'warehouse_id', 'qty_available', 'name', 'status'])
-                ->where(function ($query) use ($search) {
+        $data = Inventory::query()
+            ->with(['item:id,name', 'warehouse:id,name'])
+            ->select(['id', 'item_id', 'warehouse_id', 'qty_available', 'name', 'status'])
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($query) use ($search): void {
                     $query->where('qty_available', 'like', "%{$search}%")
                         ->orWhere('name', 'like', "%{$search}%")
                         ->orWhereRelation('item', 'name', 'like', "%{$search}%")
                         ->orWhereRelation('warehouse', 'name', 'like', "%{$search}%");
-                })
-                ->limit(25)
-                ->get();
-        }
+                });
+            })
+            ->latest('id')
+            ->limit(25)
+            ->get();
 
         return response()->json($data);
     }
 
-    public function getInventoryReagentItem() {
+    public function getInventoryReagentItem()
+    {
         $data = [];
 
         if (request()->filled('q')) {
@@ -260,56 +249,64 @@ class InventoryController extends Controller
 
     public function increment(Request $request, $id)
     {
+        abort_if(! auth()->user()->can('edit_inventory'), 403, '');
+
+        $validated = $request->validate([
+            'qty' => ['required', 'integer', 'min:1'],
+        ]);
         $data = Inventory::findOrFail($id);
 
-        $data->increment('qty_available', $request->qty);
+        $data->increment('qty_available', $validated['qty']);
 
         $data->save();
 
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_updated') . '. Quantidade Disponível: ' . $data->qty_available . '.',
-            ]
+                'message' => trans('gestlab.toasts.record_successfully_updated').'. Quantidade Disponível: '.$data->qty_available.'.',
+            ],
         ]);
     }
 
-    // Decrement Inventory Quantity 
+    // Decrement Inventory Quantity
 
     public function decrement(Request $request, $id)
     {
-        // dd($request->all());
+        abort_if(! auth()->user()->can('edit_inventory'), 403, '');
 
         $data = Inventory::with('item')->findOrFail($id);
+        $validated = $request->validate([
+            'qty' => ['required', 'integer', 'min:1', 'max:'.$data->qty_available],
+        ]);
 
-        $data->decrement('qty_available', $request->qty);
+        $data->decrement('qty_available', $validated['qty']);
 
         $data->save();
 
         // Notify when stock is low
-        if($data->qty_available < $data->min_stock_level) {
+        if ($data->qty_available < $data->min_stock_level) {
             auth()->user()->notify(new LowStockAlert($data, auth()->user()));
         }
 
         // If Inventory Item Is Reagent, then also update the reagent consumption
-        if($data->category_id == 2) {
+        if ($data->category_id == 2) {
             ReagentConsumption::create([
                 'date' => now()->format('Y-m-d'),
                 'reagent_id' => $data->id,
                 'reagent_name' => $data?->item?->name,
-                'quantity_used' => $request->qty,
+                'quantity_used' => $validated['qty'],
                 'used_by' => auth()->user()->name,
                 'used_at' => now()->format('Y-m-d'),
                 'user_id' => auth()->user()->id,
                 'remarks' => null,
             ]);
         }
-        
+
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
-                'message' => trans('gestlab.toasts.record_successfully_updated') . '. Quantidade Disponível: ' . $data->qty_available . '.',
-            ]
+                'message' => trans('gestlab.toasts.record_successfully_updated').'. Quantidade Disponível: '.$data->qty_available.'.',
+            ],
         ]);
 
         // return response()->json($data);

@@ -1,175 +1,133 @@
 <script setup>
+import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import RecordsTable from "@/Components/records-table.vue";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import ModuleCard from '@/Components/base/ModuleCard.vue'
-import ModuleHero from '@/Components/base/ModuleHero.vue'
-import RecordsTable from '@/Components/records-table.vue';
-import confirmDialog from "@/Components/confirm-dialog.vue";
-import { ref, computed } from "vue";
-import { router } from "@inertiajs/vue3";
-import { trans } from 'laravel-vue-i18n';
+import {
+  ArrowTopRightOnSquareIcon,
+  BeakerIcon,
+  ClipboardDocumentCheckIcon,
+  ExclamationTriangleIcon,
+  LinkIcon,
+} from "@heroicons/vue/24/outline";
+import { Link, router } from "@inertiajs/vue3";
+import { trans } from "laravel-vue-i18n";
+import { computed, ref } from "vue";
 
+defineOptions({ layout: Layout });
 
 const props = defineProps({
-    record: Object,
-    fields: Array,
-    model: String,
-    abilities: Array,
-    query: Object,
-    entrypoint: { type: Object, default: () => ({}) },
-    slideOverEdit: {
-      type: Boolean,
-      default: false
-    }
+  record: { type: Object, default: () => ({ data: [], meta: {} }) },
+  fields: { type: Array, default: () => [] },
+  model: String,
+  abilities: { type: Array, default: () => [] },
+  query: { type: Object, default: () => ({}) },
+  entrypoint: { type: Object, default: () => ({}) },
+  slideOverEdit: { type: Boolean, default: false },
 });
 
-defineOptions({
-  layout: Layout
-});
-
-const range = ref({
-  start: null,
-  end: null,
-});
-
-const updateRange = (e) => {
-  range.value = e;
-}
-
-const actionId = ref(null);
-
-const masks = ref({
-  modelValue: 'YYYY-MM-DD',
-  data: 'YYYY-MM-DD',
-  // input: 'YYYY-MM-DD',
-});
-
-const confirmationDialogTitle = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_title.' + actionId.value);
-})
-
-
-const confirmationDialogDescription = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_description.' + actionId.value);
-})
-
-
-let actions = [
-  {
-    id: null,
-    label: 'gestlab.actions.bulk_actions_text'
-  },
-  {
-    id: 'delete',
-    label: 'gestlab.actions.delete'
-  },
-  {
-    id: 'restore',
-    label: 'gestlab.actions.restore'
-  },
+const selectedAction = ref(null);
+const showActionConfirmation = ref(false);
+const rows = computed(() => props.record?.data ?? []);
+const totalRecords = computed(() => props.record?.meta?.total ?? rows.value.length);
+const linkedToEntry = computed(() => rows.value.filter((row) => row.sample_entry || row.entry_origin?.is_sample_entry_first || row.entry_lineage).length);
+const requiringAttention = computed(() => rows.value.filter((row) => !["approved", "completed", "concluded"].includes(String(row.status ?? "").toLowerCase())).length);
+const metrics = computed(() => [
+  { label: "Contra-análises", value: totalRecords.value, detail: "registos técnicos", icon: BeakerIcon },
+  { label: "Com linhagem", value: linkedToEntry.value, detail: "nesta página", icon: LinkIcon },
+  { label: "Em acompanhamento", value: requiringAttention.value, detail: "decisão pendente", icon: ExclamationTriangleIcon },
+]);
+const actions = [
+  { id: null, label: "gestlab.actions.bulk_actions_text" },
+  { id: "delete", label: "gestlab.actions.delete" },
+  { id: "restore", label: "gestlab.actions.restore" },
 ];
+const confirmationTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${selectedAction.value}`));
+const confirmationDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${selectedAction.value}`));
 
-const handleEdit = () => {
-  router.get(props.entrypoint?.analysis_url || route('analysis.index', { category: 'insert' }));
+function openResults() {
+  router.visit(props.entrypoint?.analysis_url || route("analysis.index", { category: "insert" }));
 }
 
-const showDeleteConfirmation = ref(false);
-
-const prepareBulkAction = (selectedActionId) => {
-  actionId.value = selectedActionId;
-  showDeleteConfirmation.value = true;
+function requestBulkAction(action) {
+  selectedAction.value = action;
+  showActionConfirmation.value = true;
 }
 
+function closeConfirmation() {
+  selectedAction.value = null;
+  showActionConfirmation.value = false;
+}
 
-  const confirmAction = () => {
-    executeAction(actionId.value);
+function executeBulkAction() {
+  const recordIds = rows.value.filter((row) => row.selected).map((row) => row.id);
+
+  if (!recordIds.length || !["delete", "restore"].includes(selectedAction.value)) {
+    closeConfirmation();
+    return;
   }
 
-  const executeAction = (selectedActionId) => {
-  const recordIds = props.record.data.filter(record => record.selected).map(record => record.id);
-
-  if(!recordIds.length) return;
-
-  switch (selectedActionId) {
-    case 'delete':
-      router.get(`/counteranalysis/destroy`, {
-          recordIds: recordIds
-      }, {
-        preserveState: false,
-        preserveScroll: true,
-        onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            actionId.value = null;
-        }
-      });
-      showDeleteConfirmation.value = false;
-    break;  
-
-    case 'restore':
-        router.get(`/counteranalysis/restore`, {
-          recordIds: recordIds
-        }, {
-            preserveState:false,
-            preserveScroll: true,
-            onSuccess: () => {
-                showDeleteConfirmation.value = false;
-                actionId.value = null;
-            }
-        });
-        showDeleteConfirmation.value = false;
-  }
-}  
+  router.get(route(`counteranalysis.${selectedAction.value}`), { recordIds }, {
+    preserveScroll: true,
+    onFinish: closeConfirmation,
+  });
+}
 </script>
+
 <template>
-  <div class="counter-analysis-page space-y-8" :class="commercialDocumentThemeClasses">
-    <ModuleHero
-      eyebrow="Decisão técnica"
-      title="Contra-análises"
-      description="Abra, acompanhe e conclua contra-análises quando um resultado exige confirmação técnica, repetição ou evidência adicional."
-    >
-      <template #actions>
-        <button
-          type="button"
-          class="inline-flex items-center justify-center rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
-          @click="handleEdit"
-        >
-          Solicitar a partir dos resultados
-        </button>
-      </template>
-    </ModuleHero>
-
-    <ModuleCard
-      :title="props.entrypoint?.label || 'Contra-análises nascem de resultados existentes'"
-      :description="props.entrypoint?.description || 'Solicite uma contra-análise a partir do ecrã de gestão de resultados para preservar rastreabilidade técnica.'"
-    >
-      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <p class="text-sm text-slate-600 dark:text-slate-300">
-          A contra-análise deve manter ligação ao resultado original, parâmetro, amostra e lab code. Por isso, o pedido inicia no fluxo de resultados.
-        </p>
-        <button
-          type="button"
-          class="inline-flex items-center justify-center rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
-          @click="handleEdit"
-        >
-          Abrir gestão de resultados
-        </button>
+  <div class="space-y-6">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div class="flex items-start gap-3">
+          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+            <ClipboardDocumentCheckIcon class="h-5 w-5" />
+          </span>
+          <div>
+            <p class="ds-kicker">Confirmação técnica</p>
+            <h1 class="ds-heading mt-1 text-2xl">Contra-análises</h1>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Repetições e confirmações ligadas ao resultado original, amostra, parâmetro, incerteza e decisão técnica.</p>
+          </div>
+        </div>
+        <Link :href="entrypoint.analysis_url || route('analysis.index', { category: 'insert' })" class="ds-button ds-button-primary">
+          <ArrowTopRightOnSquareIcon class="h-4 w-4" /> Solicitar nos resultados
+        </Link>
       </div>
-    </ModuleCard>
 
-    <ModuleCard title="Fila de contra-análises" description="Registos pendentes e históricos, com ações em lote e restauração quando aplicável.">
-      <records-table
-        :record="props.record"
-        :model="props.model"
-        :abilities="props.abilities"
-        :fields="props.fields"
-        :slideOverEdit="props.slideOverEdit"
-        :query="props.query"
-        :actions="actions"
-        @execute-action="prepareBulkAction"
-        @create-record="handleEdit"
-      />
-    </ModuleCard>
+      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
+        <div v-for="metric in metrics" :key="metric.label" class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r sm:last:border-r-0">
+          <div class="flex items-start justify-between gap-3">
+            <div><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt><dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd><p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p></div>
+            <component :is="metric.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
+          </div>
+        </div>
+      </dl>
+    </section>
 
-    <confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
+    <section class="flex gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
+      <LinkIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
+      <div><p class="text-sm font-semibold text-[var(--ds-text)]">Pedido iniciado no resultado original</p><p class="mt-1 text-sm leading-6 text-[var(--ds-text-muted)]">Este ponto de entrada mantém a cadeia de rastreabilidade e impede contra-análises sem contexto técnico.</p></div>
+    </section>
+
+    <RecordsTable
+      :record="record"
+      :model="model"
+      :abilities="abilities"
+      :fields="fields"
+      :slide-over-edit="slideOverEdit"
+      :query="query"
+      :actions="actions"
+      @execute-action="requestBulkAction"
+      @create-record="openResults"
+    />
+
+    <ConfirmDialog
+      v-if="showActionConfirmation"
+      :title="confirmationTitle"
+      :description="confirmationDescription"
+      :variant="selectedAction === 'restore' ? 'question' : 'danger'"
+      confirm="Sim"
+      cancel="Não"
+      @canceled="closeConfirmation"
+      @confirmed="executeBulkAction"
+    />
   </div>
 </template>

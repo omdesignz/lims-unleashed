@@ -1,72 +1,20 @@
-<template>
-  <Head title="Verificação de email" />
-  <AuthExperienceShell
-    mode="portal"
-    title="Verifique o email da conta"
-    eyebrow="Portal do cliente"
-    description="A verificação garante que propostas, certificados e notificações laboratoriais chegam ao contacto correcto."
-    context-title="Comunicação confiável"
-    context-description="O email verificado é usado para alertas de propostas, amostras, resultados e documentos emitidos."
-  >
-    <div class="space-y-7">
-      <div>
-        <p class="text-sm font-semibold uppercase tracking-[0.22em] text-[#143d37] dark:text-[#f1d78b]">
-          Verificação
-        </p>
-        <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
-          Confirme o seu endereço de email
-        </h2>
-        <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-          Enviámos um link de verificação. Se não recebeu, pode pedir um novo envio.
-        </p>
-      </div>
-
-      <div
-        v-if="verificationLinkSent"
-        class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200"
-      >
-        Foi enviado um novo link de verificação para o seu email.
-      </div>
-
-      <form @submit.prevent="submit" class="space-y-3">
-        <button
-          type="submit"
-          :disabled="form.processing"
-          class="inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#143d37] to-[#1f7a68] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#143d37]/20 transition hover:from-[#0d2a25] hover:to-[#176452] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {{ form.processing ? 'A reenviar...' : 'Reenviar email de verificação' }}
-        </button>
-        <Link
-          :href="route('logout')"
-          method="post"
-          as="button"
-          class="inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-        >
-          Sair
-        </Link>
-      </form>
-    </div>
-  </AuthExperienceShell>
-</template>
-
 <script setup>
-import { computed } from 'vue'
-import { Head, Link, useForm } from '@inertiajs/vue3'
 import AuthExperienceShell from '@/Components/auth/AuthExperienceShell.vue'
 import EmptyLayout from '../../Shared/EmptyLayout.vue'
+import { Head, Link, useForm } from '@inertiajs/vue3'
+import { ArrowRightStartOnRectangleIcon, EnvelopeIcon } from '@heroicons/vue/24/outline'
+import { computed } from 'vue'
 
-const props = defineProps({
-  status: String,
-})
-
-defineOptions({
-  layout: EmptyLayout,
-})
-
+const props = defineProps({ status: String })
+defineOptions({ layout: EmptyLayout })
 const form = useForm({})
 const verificationLinkSent = computed(() => props.status === 'verification-link-sent')
-
-const submit = () => {
-  form.post(route('portal.verification.send'))
-}
+const submit = () => form.post(route('portal.verification.send'))
 </script>
+
+<template>
+  <Head title="Verificar email do portal" />
+  <AuthExperienceShell mode="portal" title="Verifique o email da conta" eyebrow="Portal do cliente" description="Confirme o endereco para receber propostas, certificados e notificacoes laboratoriais." context-title="Comunicacao confiavel" context-description="O email verificado garante que documentos e alertas chegam ao contacto correto.">
+    <div><p class="ds-kicker">Verificacao</p><h2 class="ds-heading mt-2 text-xl">Confirme o seu email</h2><p class="ds-copy mt-2 text-sm">Use o link enviado para a sua caixa de entrada ou solicite um novo envio.</p><div v-if="verificationLinkSent" class="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">Foi enviado um novo link de verificacao.</div><form class="mt-6 space-y-3" @submit.prevent="submit"><button type="submit" class="ds-button ds-button-primary w-full" :disabled="form.processing"><EnvelopeIcon class="h-4 w-4" />{{ form.processing ? 'A reenviar...' : 'Reenviar email de verificacao' }}</button><Link :href="route('portal.logout')" method="post" as="button" class="ds-button ds-button-ghost w-full"><ArrowRightStartOnRectangleIcon class="h-4 w-4" />Terminar sessao</Link></form></div>
+  </AuthExperienceShell>
+</template>

@@ -196,10 +196,11 @@ class SystemActivityController extends Controller
                 $activities->each->delete();
             });
 
-            return response()->json([
-                'success' => true,
-                'message' => __(':count activity logs deleted successfully.', ['count' => $count]),
-                'count' => $count,
+            return back()->with([
+                'toast' => [
+                    'title' => trans('gestlab.toasts.notification'),
+                    'message' => __(':count activity logs deleted successfully.', ['count' => $count]),
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([

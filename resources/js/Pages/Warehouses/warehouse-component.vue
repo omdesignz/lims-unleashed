@@ -1,506 +1,268 @@
-<template>
-  <div class="relative bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm transition-all duration-200 hover:border-blue-900">
-    <!-- WAREHOUSE HEADER -->
-    <div class="bg-gradient-to-r from-blue-50 to-white px-4 py-3 border-b border-gray-200">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-900">
-            <BuildingOfficeIcon class="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <h3 class="text-sm font-semibold text-gray-900">
-              {{ form.name || $t('gestlab.general.labels.warehouses.warehouse') }}
-            </h3>
-            <div class="flex items-center gap-2 mt-1">
-              <span v-if="form.code" class="text-xs text-blue-900 font-medium bg-blue-50 px-2 py-0.5 rounded-full">
-                {{ form.code }}
-              </span>
-              <span v-if="props.primary_warehouse == form.id" class="text-xs text-green-700 font-medium bg-green-50 px-2 py-0.5 rounded-full">
-                {{ $t('gestlab.general.status.primary') }}
-              </span>
-              <span v-else class="text-xs text-gray-500 font-medium bg-gray-50 px-2 py-0.5 rounded-full">
-                {{ $t('gestlab.general.status.secondary') }}
-              </span>
-            </div>
-          </div>
-        </div>
-        <button 
-          v-if="!props.record.id"
-          @click="$emit('removed-from-array')"
-          class="text-gray-400 hover:text-red-600 transition-colors duration-200 p-1 rounded-lg hover:bg-red-50"
-          :title="$t('gestlab.general.buttons.remove')"
-        >
-          <TrashIcon class="h-5 w-5" />
-        </button>
-        <button 
-          v-else
-          @click="deleteWarehouse(props.record.id)"
-          class="text-gray-400 hover:text-red-600 transition-colors duration-200 p-1 rounded-lg hover:bg-red-50"
-          :title="$t('gestlab.general.buttons.delete')"
-        >
-          <TrashIcon class="h-5 w-5" />
-        </button>
-      </div>
-    </div>
-
-    <!-- WAREHOUSE FORM -->
-    <div class="p-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6">
-        <!-- BASIC INFORMATION COLUMN -->
-        <div class="space-y-6">
-          <div>
-            <h4 class="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <UserCircleIcon class="h-4 w-4 text-blue-900" />
-              {{ $t('gestlab.general.labels.warehouses.basic_info') }}
-            </h4>
-            <div class="space-y-4">
-              <!-- NAME FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.warehouses.name') }}
-                  <span class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="form.name"
-                  type="text"
-                  :class="[
-                    'block w-full rounded-lg border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200',
-                    form.errors.name
-                      ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                      : 'ring-gray-300 focus:ring-blue-900'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.warehouses.placeholders.warehouse_name')"
-                />
-                <p v-if="form.errors.name" class="text-xs text-red-600">
-                  {{ form.errors.name }}
-                </p>
-              </div>
-
-              <!-- CODE FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.warehouses.code') }}
-                </label>
-                <input
-                  v-model="form.code"
-                  type="text"
-                  :class="[
-                    'block w-full rounded-lg border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200',
-                    form.errors.code
-                      ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                      : 'ring-gray-300 focus:ring-blue-900'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.warehouses.code')"
-                />
-                <p v-if="form.errors.code" class="text-xs text-red-600">
-                  {{ form.errors.code }}
-                </p>
-              </div>
-
-              <!-- DESCRIPTION FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.warehouses.description') }}
-                </label>
-                <textarea
-                  v-model="form.description"
-                  rows="3"
-                  :class="[
-                    'block w-full rounded-lg border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200',
-                    form.errors.description
-                      ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                      : 'ring-gray-300 focus:ring-blue-900'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.warehouses.description')"
-                />
-                <p v-if="form.errors.description" class="text-xs text-red-600">
-                  {{ form.errors.description }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CONTACT INFORMATION COLUMN -->
-        <div class="space-y-6">
-          <div>
-            <h4 class="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <PhoneIcon class="h-4 w-4 text-blue-900" />
-              {{ $t('gestlab.general.labels.warehouses.contact_info') }}
-            </h4>
-            <div class="space-y-4">
-              <!-- EMAIL FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.warehouses.email') }}
-                </label>
-                <input
-                  v-model="form.email"
-                  type="email"
-                  :class="[
-                    'block w-full rounded-lg border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200',
-                    form.errors.email
-                      ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                      : 'ring-gray-300 focus:ring-blue-900'
-                  ]"
-                  placeholder="warehouse@example.com"
-                />
-                <p v-if="form.errors.email" class="text-xs text-red-600">
-                  {{ form.errors.email }}
-                </p>
-              </div>
-
-              <!-- PRIMARY PHONE FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.warehouses.primary_phone') }}
-                </label>
-                <input
-                  v-model="form.primary_phone"
-                  type="tel"
-                  :class="[
-                    'block w-full rounded-lg border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200',
-                    form.errors.primary_phone
-                      ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                      : 'ring-gray-300 focus:ring-blue-900'
-                  ]"
-                  placeholder="+1234567890"
-                />
-                <p v-if="form.errors.primary_phone" class="text-xs text-red-600">
-                  {{ form.errors.primary_phone }}
-                </p>
-              </div>
-
-              <!-- ALTERNATIVE PHONE FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.warehouses.alternative_phone') }}
-                </label>
-                <input
-                  v-model="form.alternative_phone"
-                  type="tel"
-                  :class="[
-                    'block w-full rounded-lg border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200',
-                    form.errors.alternative_phone
-                      ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                      : 'ring-gray-300 focus:ring-blue-900'
-                  ]"
-                  placeholder="+1234567890"
-                />
-                <p v-if="form.errors.alternative_phone" class="text-xs text-red-600">
-                  {{ form.errors.alternative_phone }}
-                </p>
-              </div>
-
-              <!-- NIF FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.warehouses.nif') }}
-                </label>
-                <input
-                  v-model="form.nif"
-                  type="text"
-                  :class="[
-                    'block w-full rounded-lg border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200',
-                    form.errors.nif
-                      ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                      : 'ring-gray-300 focus:ring-blue-900'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.warehouses.nif')"
-                />
-                <p v-if="form.errors.nif" class="text-xs text-red-600">
-                  {{ form.errors.nif }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- LOCATION & FOCAL POINT COLUMN -->
-        <div class="space-y-6">
-          <div>
-            <h4 class="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <MapPinIcon class="h-4 w-4 text-blue-900" />
-              {{ $t('gestlab.general.labels.warehouses.location') }}
-            </h4>
-            <div class="space-y-4">
-              <!-- ADDRESS FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.warehouses.address') }}
-                </label>
-                <input
-                  v-model="form.address"
-                  type="text"
-                  :class="[
-                    'block w-full rounded-lg border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200',
-                    form.errors.address
-                      ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                      : 'ring-gray-300 focus:ring-blue-900'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.warehouses.address')"
-                />
-                <p v-if="form.errors.address" class="text-xs text-red-600">
-                  {{ form.errors.address }}
-                </p>
-              </div>
-
-              <!-- MUNICIPALITY FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.warehouses.municipality') }}
-                </label>
-                <input
-                  v-model="form.municipality"
-                  type="text"
-                  :class="[
-                    'block w-full rounded-lg border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200',
-                    form.errors.municipality
-                      ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                      : 'ring-gray-300 focus:ring-blue-900'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.warehouses.municipality')"
-                />
-                <p v-if="form.errors.municipality" class="text-xs text-red-600">
-                  {{ form.errors.municipality }}
-                </p>
-              </div>
-
-              <!-- PROVINCE FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.warehouses.province') }}
-                </label>
-                <input
-                  v-model="form.province"
-                  type="text"
-                  :class="[
-                    'block w-full rounded-lg border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200',
-                    form.errors.province
-                      ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                      : 'ring-gray-300 focus:ring-blue-900'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.warehouses.province')"
-                />
-                <p v-if="form.errors.province" class="text-xs text-red-600">
-                  {{ form.errors.province }}
-                </p>
-              </div>
-
-              <!-- FOCAL POINT FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.warehouses.focal_point') }}
-                </label>
-                <input
-                  v-model="form.focal_point"
-                  type="text"
-                  :class="[
-                    'block w-full rounded-lg border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200',
-                    form.errors.focal_point
-                      ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                      : 'ring-gray-300 focus:ring-blue-900'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.warehouses.focal_point')"
-                />
-                <p v-if="form.errors.focal_point" class="text-xs text-red-600">
-                  {{ form.errors.focal_point }}
-                </p>
-              </div>
-
-              <!-- FOCAL POINT CONTACT FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.warehouses.focal_point_contact') }}
-                </label>
-                <input
-                  v-model="form.focal_point_contact"
-                  type="tel"
-                  :class="[
-                    'block w-full rounded-lg border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200',
-                    form.errors.focal_point_contact
-                      ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                      : 'ring-gray-300 focus:ring-blue-900'
-                  ]"
-                  placeholder="+1234567890"
-                />
-                <p v-if="form.errors.focal_point_contact" class="text-xs text-red-600">
-                  {{ form.errors.focal_point_contact }}
-                </p>
-              </div>
-
-              <!-- FOCAL POINT EMAIL FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.warehouses.focal_point_email') }}
-                </label>
-                <input
-                  v-model="form.focal_point_email"
-                  type="email"
-                  :class="[
-                    'block w-full rounded-lg border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-inset sm:text-sm transition-colors duration-200',
-                    form.errors.focal_point_email
-                      ? 'ring-red-300 focus:ring-red-500 bg-red-50'
-                      : 'ring-gray-300 focus:ring-blue-900'
-                  ]"
-                  placeholder="focal.point@example.com"
-                />
-                <p v-if="form.errors.focal_point_email" class="text-xs text-red-600">
-                  {{ form.errors.focal_point_email }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ACTION BUTTONS -->
-      <div class="mt-8 pt-6 border-t border-gray-200">
-        <div class="flex flex-col sm:flex-row gap-4">
-          <!-- SAVE BUTTON -->
-          <button 
-            @click="submit"
-            :disabled="form.processing || !form.isDirty"
-            :class="[
-              'sm:flex-1 inline-flex justify-center items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
-              form.processing || !form.isDirty
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-900 to-blue-800 text-white hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2'
-            ]"
-          >
-            <CheckIcon v-if="!form.processing" class="h-5 w-5" />
-            <ArrowPathIcon v-else class="h-5 w-5 animate-spin" />
-            {{
-              form.processing 
-                ? $t('gestlab.general.buttons.processing')
-                : form.id 
-                  ? $t('gestlab.general.buttons.update')
-                  : $t('gestlab.general.buttons.submit')
-            }}
-          </button>
-
-          <!-- MAKE PRIMARY BUTTON -->
-          <button 
-            @click="makePrimary"
-            :disabled="props.primary_warehouse == form.id || !form.id"
-            :class="[
-              'sm:flex-1 inline-flex justify-center items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
-              props.primary_warehouse == form.id || !form.id
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-                : props.primary_warehouse == form.id
-                  ? 'bg-gradient-to-r from-green-600 to-green-500 text-white border border-green-600'
-                  : 'bg-white text-blue-900 border border-blue-900 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2'
-            ]"
-          >
-            <StarIcon v-if="props.primary_warehouse == form.id" class="h-5 w-5" />
-            <StarIcon v-else class="h-5 w-5" />
-            {{
-              props.primary_warehouse == form.id
-                ? $t('gestlab.general.buttons.is_primary_warehouse')
-                : $t('gestlab.general.buttons.make_primary_warehouse')
-            }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup>
-import { ref, computed, onMounted } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
-import combobox from '@/Components/combobox.vue';
-import { throttle } from "lodash";
-import { 
-  TrashIcon, 
+import Combobox from "@/Components/combobox.vue";
+import {
+  ArrowPathIcon,
+  BuildingOffice2Icon,
   CheckIcon,
-  BuildingOfficeIcon,
-  UserCircleIcon,
-  PhoneIcon,
+  EnvelopeIcon,
   MapPinIcon,
+  PhoneIcon,
   StarIcon,
-  ArrowPathIcon
+  TrashIcon,
+  UserCircleIcon,
 } from "@heroicons/vue/24/outline";
+import { computed } from "vue";
 
 const props = defineProps({
-  record: Object,
-  primary_warehouse: Number
+  record: { type: Object, required: true },
+  primary_warehouse: Number,
+  showCustomerSelector: { type: Boolean, default: false },
+  allowDelete: { type: Boolean, default: true },
+  managePrimary: { type: Boolean, default: true },
 });
+
+const emit = defineEmits(["removed-from-array", "saved"]);
 
 const form = useForm({
-  email: props.record?.email,
-  primary_phone: props.record?.primary_phone,
-  alternative_phone: props.record?.alternative_phone,
-  nif: props.record?.nif,
-  address: props.record?.address,
-  municipality: props.record?.municipality,
-  province: props.record?.province,
-  description: props.record?.description,
-  code: props.record?.code,
-  name: props.record?.name,
-  focal_point: props.record?.focal_point,
-  focal_point_email: props.record?.focal_point_email,
-  focal_point_contact: props.record?.focal_point_contact,
-  customer_id: props.record?.customer_id,
-  id: props.record?.id,
+  id: props.record?.id ?? null,
+  name: props.record?.name ?? "",
+  code: props.record?.code ?? "",
+  description: props.record?.description ?? "",
+  email: props.record?.email ?? "",
+  invoicing_email: props.record?.invoicing_email ?? "",
+  primary_phone: props.record?.primary_phone ?? "",
+  alternative_phone: props.record?.alternative_phone ?? "",
+  nif: props.record?.nif ?? "",
+  address: props.record?.address ?? "",
+  municipality: props.record?.municipality ?? "",
+  province: props.record?.province ?? "",
+  focal_point: props.record?.focal_point ?? "",
+  focal_point_email: props.record?.focal_point_email ?? "",
+  focal_point_contact: props.record?.focal_point_contact ?? "",
+  customer_id: typeof props.record?.customer_id === "object"
+    ? props.record.customer_id
+    : props.record?.customer_id
+      ? { value: props.record.customer_id, label: props.record.customer || `Cliente #${props.record.customer_id}` }
+      : null,
 });
 
-const emit = defineEmits(['removed-from-array']);
+const isPrimary = computed(() => Number(props.primary_warehouse) === Number(form.id));
+const siteTitle = computed(() => form.name || form.code || "Novo local operacional");
 
-let submit = () => {
-  if (!form.id) {
-    form.post(route('warehouses.store'), {
-      preserveScroll: true,
-      preserveState: false,
-      onSuccess: () => {
-        form.reset();
-      },
-    });
-  } else {
-    form.put(route('warehouses.update', { warehouse: form.id }), {
-      preserveScroll: true,
-      preserveState: false,
-      onSuccess: () => {
-        form.reset();
-      },
-    });
+function submit() {
+  const options = {
+    preserveScroll: true,
+    preserveState: false,
+    onSuccess: () => emit("saved"),
+  };
+
+  if (form.id) {
+    form.put(route("warehouses.update", { warehouse: form.id }), options);
+    return;
   }
-};
 
-function loadCustomers(query, setOptions) {
-  fetch('/customers/getCustomer?q=' + query)
-    .then(response => response.json())
-    .then(results => {
-      setOptions(
-        results.map(result => ({
-          value: result.id,
-          label: result.name,
-        }))
-      );
-    });
+  form.post(route("warehouses.store"), options);
 }
 
-let deleteWarehouse = (warehouse) => {
-  router.get(route('warehouses.destroy'), {
-    recordIds: [warehouse]
-  }, {
-    preserveState: false,
-    preserveScroll: true,
-    onSuccess: () => {
-      // Success handling
-    }
+async function loadCustomers(query, setOptions) {
+  const response = await fetch(`/customers/getCustomer?q=${encodeURIComponent(query)}`, {
+    credentials: "same-origin",
+    headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
   });
-};
 
-let makePrimary = () => {
-  router.put(route('customers.changePrimaryWarehouse', { customer: form.customer_id?.value }), {
-    warehouse_id: form.id,
-  }, {
-    preserveState: false,
+  if (!response.ok) {
+    setOptions([]);
+    return;
+  }
+
+  const results = await response.json();
+  setOptions(results.map((customer) => ({ value: customer.id, label: customer.name })));
+}
+
+function removeSite() {
+  if (!form.id) {
+    emit("removed-from-array");
+    return;
+  }
+
+  router.get(route("warehouses.destroy"), { recordIds: [form.id] }, {
     preserveScroll: true,
-    onSuccess: () => {
-      // Success handling
-    }
+    preserveState: false,
   });
-};
+}
+
+function makePrimary() {
+  const customerId = form.customer_id?.value ?? form.customer_id;
+
+  if (!form.id || !customerId || isPrimary.value) {
+    return;
+  }
+
+  router.put(route("customers.changePrimaryWarehouse", { customer: customerId }), { warehouse_id: form.id }, {
+    preserveScroll: true,
+    preserveState: false,
+  });
+}
 </script>
+
+<template>
+  <article class="ds-card overflow-hidden">
+    <header class="flex flex-col gap-4 border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
+      <div class="flex min-w-0 items-start gap-3">
+        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+          <BuildingOffice2Icon class="h-5 w-5" />
+        </span>
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <h3 class="break-words text-sm font-bold text-[var(--ds-text)]">{{ siteTitle }}</h3>
+            <span v-if="isPrimary" class="ds-chip bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20">Principal</span>
+            <span v-else class="ds-chip">Secundario</span>
+          </div>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ form.code || "Codigo por definir" }}</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button v-if="managePrimary && form.id && !isPrimary" type="button" class="ds-button ds-button-secondary min-h-0 px-3 py-2 text-xs" @click="makePrimary">
+          <StarIcon class="h-4 w-4" />
+          Tornar principal
+        </button>
+        <button v-if="allowDelete" type="button" class="ds-icon-button text-rose-600" title="Remover local" @click="removeSite">
+          <TrashIcon class="h-4 w-4" />
+          <span class="sr-only">Remover local</span>
+        </button>
+      </div>
+    </header>
+
+    <form :id="`warehouse-form-${form.id || 'new'}`" class="divide-y divide-[var(--ds-border)]" @submit.prevent="submit">
+      <section v-if="showCustomerSelector" class="grid gap-5 px-5 py-5 sm:px-6 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">
+        <div>
+          <div class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]">
+            <BuildingOffice2Icon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
+            Conta cliente
+          </div>
+          <p class="ds-copy mt-2 text-sm">Associe o local ao cliente responsavel pelas amostras e documentos.</p>
+        </div>
+        <div class="ds-field-group">
+          <label class="ds-field-label">Cliente <span class="ds-field-required">*</span></label>
+          <Combobox v-model="form.customer_id" :load-options="loadCustomers" placeholder="Pesquisar cliente" :has-error="Boolean(form.errors.customer_id)" />
+          <p v-if="form.errors.customer_id" class="ds-field-error">{{ form.errors.customer_id }}</p>
+        </div>
+      </section>
+
+      <section class="grid gap-5 px-5 py-5 sm:px-6 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">
+        <div>
+          <div class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]">
+            <MapPinIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
+            Identificacao e morada
+          </div>
+          <p class="ds-copy mt-2 text-sm">Local usado na rececao, recolha e emissao documental.</p>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="ds-field-group">
+            <label class="ds-field-label">Nome do local</label>
+            <input v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" />
+            <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
+          </div>
+          <div class="ds-field-group">
+            <label class="ds-field-label">Codigo</label>
+            <input v-model="form.code" type="text" class="ds-field font-mono uppercase" :aria-invalid="Boolean(form.errors.code)" />
+            <p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p>
+          </div>
+          <div class="ds-field-group sm:col-span-2">
+            <label class="ds-field-label">Endereco <span class="ds-field-required">*</span></label>
+            <input v-model="form.address" type="text" class="ds-field" autocomplete="street-address" :aria-invalid="Boolean(form.errors.address)" />
+            <p v-if="form.errors.address" class="ds-field-error">{{ form.errors.address }}</p>
+          </div>
+          <div class="ds-field-group">
+            <label class="ds-field-label">Municipio</label>
+            <input v-model="form.municipality" type="text" class="ds-field" />
+          </div>
+          <div class="ds-field-group">
+            <label class="ds-field-label">Provincia</label>
+            <input v-model="form.province" type="text" class="ds-field" />
+          </div>
+          <div class="ds-field-group">
+            <label class="ds-field-label">NIF</label>
+            <input v-model="form.nif" type="text" class="ds-field font-mono" />
+          </div>
+          <div class="ds-field-group">
+            <label class="ds-field-label">Descricao</label>
+            <input v-model="form.description" type="text" class="ds-field" />
+          </div>
+        </div>
+      </section>
+
+      <section class="grid gap-5 px-5 py-5 sm:px-6 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">
+        <div>
+          <div class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]">
+            <EnvelopeIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
+            Canais da conta
+          </div>
+          <p class="ds-copy mt-2 text-sm">Enderecos e telefones usados nas comunicacoes operacionais e financeiras.</p>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="ds-field-group">
+            <label class="ds-field-label">Email operacional <span class="ds-field-required">*</span></label>
+            <input v-model="form.email" type="email" class="ds-field" autocomplete="email" :aria-invalid="Boolean(form.errors.email)" />
+            <p v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</p>
+          </div>
+          <div class="ds-field-group">
+            <label class="ds-field-label">Email de faturacao</label>
+            <input v-model="form.invoicing_email" type="email" class="ds-field" :aria-invalid="Boolean(form.errors.invoicing_email)" />
+            <p v-if="form.errors.invoicing_email" class="ds-field-error">{{ form.errors.invoicing_email }}</p>
+          </div>
+          <div class="ds-field-group">
+            <label class="ds-field-label">Telefone principal</label>
+            <div class="relative">
+              <PhoneIcon class="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--ds-text-soft)]" />
+              <input v-model="form.primary_phone" type="tel" class="ds-field pl-10" autocomplete="tel" />
+            </div>
+          </div>
+          <div class="ds-field-group">
+            <label class="ds-field-label">Telefone alternativo</label>
+            <input v-model="form.alternative_phone" type="tel" class="ds-field" />
+          </div>
+        </div>
+      </section>
+
+      <section class="grid gap-5 px-5 py-5 sm:px-6 lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8">
+        <div>
+          <div class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]">
+            <UserCircleIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
+            Ponto focal
+          </div>
+          <p class="ds-copy mt-2 text-sm">Pessoa a contactar para amostras, agenda e esclarecimentos tecnicos.</p>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-3">
+          <div class="ds-field-group">
+            <label class="ds-field-label">Nome</label>
+            <input v-model="form.focal_point" type="text" class="ds-field" />
+          </div>
+          <div class="ds-field-group">
+            <label class="ds-field-label">Email</label>
+            <input v-model="form.focal_point_email" type="email" class="ds-field" :aria-invalid="Boolean(form.errors.focal_point_email)" />
+            <p v-if="form.errors.focal_point_email" class="ds-field-error">{{ form.errors.focal_point_email }}</p>
+          </div>
+          <div class="ds-field-group">
+            <label class="ds-field-label">Telefone</label>
+            <input v-model="form.focal_point_contact" type="tel" class="ds-field" />
+          </div>
+        </div>
+      </section>
+    </form>
+
+    <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:items-center sm:justify-end sm:px-6">
+      <span v-if="isPrimary" class="mr-auto inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-200">
+        <StarIcon class="h-4 w-4" />
+        Local principal da conta
+      </span>
+      <button type="submit" :form="`warehouse-form-${form.id || 'new'}`" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
+        <ArrowPathIcon v-if="form.processing" class="h-4 w-4 animate-spin" />
+        <CheckIcon v-else class="h-4 w-4" />
+        {{ form.processing ? "A guardar..." : form.id ? "Guardar local" : "Criar local" }}
+      </button>
+    </footer>
+  </article>
+</template>

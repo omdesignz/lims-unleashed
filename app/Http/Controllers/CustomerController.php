@@ -32,7 +32,11 @@ class CustomerController extends Controller
                 Customer::query()
                     ->with('category', 'main_warehouse')
                     ->when(request()->input('search'), function ($query, $search) {
-                        $query->where('name', 'like', "%{$search}%");
+                        $query->where(function ($query) use ($search) {
+                            $query->where('name', 'like', "%{$search}%")
+                                ->orWhere('code', 'like', "%{$search}%")
+                                ->orWhereHas('category', fn ($categoryQuery) => $categoryQuery->where('name', 'like', "%{$search}%"));
+                        });
                     })
                     ->when(request()->input('filter'), function ($query, $filter) {
                         if ($filter === 'trashed') {
@@ -112,6 +116,8 @@ class CustomerController extends Controller
      */
     public function show($id)
     {
+        abort_if(! auth()->user()->can('view_customers'), 403, '');
+
         $customer = Customer::query()
             ->with('category', 'main_warehouse', 'warehouses')
             ->findOrFail($id);
@@ -232,10 +238,10 @@ class CustomerController extends Controller
                 'code' => $record->code,
                 'description' => $record->description,
                 'warehouse_id' => $record->warehouse_id,
-                'category_id' => [
+                'category_id' => $record->category ? [
                     'value' => $record->category->id,
                     'label' => $record->category->name,
-                ],
+                ] : null,
                 'warehouses' => collect($record->warehouses)->map(function ($item) use ($record) {
                     return [
                         'id' => $item->id,
@@ -338,18 +344,17 @@ class CustomerController extends Controller
 
     public function changePrimaryWarehouse(Request $request, $id)
     {
-        // dd($request->warehouse_id);
-        DB::transaction(function () use ($request, $id): void {
+        abort_if(! auth()->user()->can('edit_customers'), 403, '');
 
-            $record = tap(Customer::findOrFail($id), function ($record) use ($request) {
+        $validated = $request->validate([
+            'warehouse_id' => ['required', 'integer', 'exists:warehouses,id'],
+        ]);
+        $customer = Customer::findOrFail($id);
+        abort_unless($customer->warehouses()->whereKey($validated['warehouse_id'])->exists(), 422, '');
 
-                $record->update([
-                    'warehouse_id' => $request->warehouse_id ?? null,
-                ]);
-
-            });
-
-        });
+        DB::transaction(fn () => $customer->update([
+            'warehouse_id' => $validated['warehouse_id'],
+        ]));
 
         return redirect()->back()->with([
             'toast' => [

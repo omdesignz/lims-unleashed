@@ -2,92 +2,86 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Http\Requests\ProfileRequest;
-use App\Http\Resources\ParameterResource;
 use App\Http\Resources\ProfileResource;
-use Illuminate\Support\Facades\DB;
-use App\Models\Profile;
-use App\Models\AnalysisCategory;
-use App\Models\Parameter;
 use App\Models\ParameterProfile;
+use App\Models\Profile;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class ProfileController extends Controller
 {
-     /**
+    /**
      * Display a listing of the resource.
-     *
      */
     public function index()
     {
-        abort_if( !auth()->user()->can('view_profiles'), 403, '');
+        abort_if(! auth()->user()->can('view_profiles'), 403, '');
 
         return Inertia::render('Profiles/Index', [
             'record' => ProfileResource::collection(
                 Profile::query()
-                            ->when(request()->input('search'), function($query, $search){
-                                $query->where('name', 'like', "%{$search}%");
-                            })
-                            ->when(request()->input('filter'), function($query, $filter){
-                                if($filter === 'trashed'){
-                                    $query->withTrashed();
-                                }
-                            })
-                            ->latest()
-                            ->paginate(10)
-                            ->withQueryString()
-                        ),
-            'slideOverEdit' => false,            
+                    ->with('parameters')
+                    ->when(request()->input('search'), function ($query, $search) {
+                        $query->where('name', 'like', "%{$search}%");
+                    })
+                    ->when(request()->input('filter'), function ($query, $filter) {
+                        if ($filter === 'trashed') {
+                            $query->withTrashed();
+                        }
+                    })
+                    ->latest()
+                    ->paginate(10)
+                    ->withQueryString()
+            ),
+            'slideOverEdit' => false,
             'fields' => [
                 [
                     'name' => trans('gestlab.general.labels.profiles.name'),
-                    'value' => 'name'
+                    'value' => 'name',
                 ],
                 [
                     'name' => trans('gestlab.general.labels.profiles.code'),
-                    'value' => 'code'
+                    'value' => 'code',
                 ],
                 [
                     'name' => trans('gestlab.general.labels.profiles.description'),
-                    'value' => 'description'
+                    'value' => 'description',
                 ],
                 [
                     'name' => trans('gestlab.general.labels.profiles.category_id_1'),
-                    'value' => 'category'
+                    'value' => 'category',
                 ],
             ],
             'model' => Profile::MENU_NAME,
-            'abilities' => method_exists(Profile::class, 'getAbilities') ? collect(Profile::ABILITIES)->map(function($item){
-                return $item . '_' . Profile::MENU_NAME;
-            }) : collect(config('gestlab.default_abilities'))->map(function($item){
-                return $item . '_' . Profile::MENU_NAME;
-            }),                           
-            'query' => request()->only(['search', 'trashed'])
+            'abilities' => method_exists(Profile::class, 'getAbilities') ? collect(Profile::ABILITIES)->map(function ($item) {
+                return $item.'_'.Profile::MENU_NAME;
+            }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
+                return $item.'_'.Profile::MENU_NAME;
+            }),
+            'query' => request()->only(['search', 'trashed']),
         ]);
     }
 
     /**
      * Show the form for creating a new resource.
-     *
      */
     public function create()
     {
-        abort_if( !auth()->user()->can('add_profiles'), 403, '');
+        abort_if(! auth()->user()->can('add_profiles'), 403, '');
 
         return Inertia::render('Profiles/Create', []);
     }
 
     /**
      * Store a newly created resource in storage.
-     *
      */
     public function store(ProfileRequest $request)
     {
-        abort_if( !auth()->user()->can('add_profiles'), 403, '');
+        abort_if(! auth()->user()->can('add_profiles'), 403, '');
 
         // dd($request->all());
-
 
         DB::transaction(function () use ($request): void {
             $profile = Profile::create($request->safe()->except(['parameters']));
@@ -100,38 +94,33 @@ class ProfileController extends Controller
             $profile->parameters()->attach($keyed);
         });
 
-        
-
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
-
 
     }
 
     /**
      * Display the specified resource.
-     *
      */
     public function show($id)
     {
         $record = Profile::with('parameters.pivot', 'type')->findOrFail($id);
 
         return Inertia::render('Profiles/Show', [
-            'record' => ProfileResource::make($record)
+            'record' => ProfileResource::make($record),
         ]);
     }
 
     /**
      * Show the form for editing the specified resource.
-     *
      */
     public function edit($id)
     {
-        abort_if( !auth()->user()->can('edit_profiles'), 403, '');
+        abort_if(! auth()->user()->can('edit_profiles'), 403, '');
 
         // Find the record
         $record = Profile::with(['parameters', 'type.department'])->findOrFail($id);
@@ -154,7 +143,7 @@ class ProfileController extends Controller
                     'department_id' => $record->type->department_id,
                     'department_name' => $record->type?->department?->name,
                 ],
-                'parameters' => collect($record->parameters)->map(function($item) { 
+                'parameters' => collect($record->parameters)->map(function ($item) {
                     return [
                         'parameter' => $item->name,
                         'parameter_id' => [
@@ -202,30 +191,29 @@ class ProfileController extends Controller
                         ],
                         'price' => $item->price,
                     ];
-                })
-            ]
+                }),
+            ],
         ]);
     }
 
     /**
      * Update the specified resource in storage.
-     *
      */
     public function update(ProfileRequest $request, $id)
     {
-        abort_if( !auth()->user()->can('edit_profiles'), 403, '');
+        abort_if(! auth()->user()->can('edit_profiles'), 403, '');
 
         DB::transaction(function () use ($request, $id): void {
 
-            $record = tap(Profile::findOrFail($id), function($record) use($request) {
+            $record = tap(Profile::findOrFail($id), function ($record) use ($request) {
 
                 $record->update($request->safe()->except(['parameters']));
-    
+
             });
 
-            if($request->parameters) {
-                ParameterProfile::where('profile_id', $id)->whereNotIn('parameter_id', collect($request->parameters)->pluck('parameter_id')->toArray() )->delete();
-            }    
+            if ($request->parameters) {
+                ParameterProfile::where('profile_id', $id)->whereNotIn('parameter_id', collect($request->parameters)->pluck('parameter_id')->toArray())->delete();
+            }
             // Structure parameters to Update
             $keyed = collect($request->parameters)->mapWithKeys(function (array $item, int $key) {
                 return [$item['parameter_id'] => $item];
@@ -240,20 +228,19 @@ class ProfileController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
     /**
      * Remove the specified resource from storage.
-     *
      */
     public function destroy()
     {
-        abort_if( !auth()->user()->can('delete_profiles'), 403, '');
+        abort_if(! auth()->user()->can('delete_profiles'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and delete the record
         foreach (Profile::withTrashed()->findOrFail(request('recordIds')) as $record) {
@@ -264,41 +251,39 @@ class ProfileController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ]
+            ],
         ]);
     }
 
     /**
      * restore the specified resource from storage.
-     *
      */
     public function restore()
     {
-        abort_if( !auth()->user()->can('restore_profiles'), 403, '');
+        abort_if(! auth()->user()->can('restore_profiles'), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and restore the record
         foreach (Profile::withTrashed()->findOrFail(request('recordIds')) as $record) {
             $record->restore();
         }
 
-       return redirect()->back()->with([
+        return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ]
-       ]);
+            ],
+        ]);
     }
-
 
     // public function getProfile() {
     //     $data = [];
 
     //     if(request()->has('q')){
     //         $search = request()->q;
-            
+
     //         $data = DB::table("profiles")
     //             ->select('profiles.*')
     //             ->where('name','LIKE',"%$search%")
@@ -306,16 +291,16 @@ class ProfileController extends Controller
     //             ->get();
     //     }
 
-    //     return response()->json($data); 
+    //     return response()->json($data);
     // }
 
-    public function getProfile() 
+    public function getProfile()
     {
         // Subquery to calculate total price per profile
         $parameterPrices = DB::table('parameter_profile')
             ->select('parameter_profile.profile_id')
             ->selectRaw('SUM(parameters.price * parameter_profile.count) as total_price')
-            ->join('parameters', function($join) {
+            ->join('parameters', function ($join) {
                 $join->on('parameter_profile.parameter_id', '=', 'parameters.id')
                     ->whereNull('parameters.deleted_at')
                     ->where('parameters.active', 1);  // Only active parameters
@@ -343,10 +328,10 @@ class ProfileController extends Controller
                 'analysis_categories.code as category_code',
                 'departments.name as department_name',
             ])
-            ->leftJoinSub($parameterPrices, 'param_prices', function($join) {
+            ->leftJoinSub($parameterPrices, 'param_prices', function ($join) {
                 $join->on('profiles.id', '=', 'param_prices.profile_id');
             })
-            ->leftJoinSub($parameterCounts, 'param_counts', function($join) {
+            ->leftJoinSub($parameterCounts, 'param_counts', function ($join) {
                 $join->on('profiles.id', '=', 'param_counts.profile_id');
             });
 
@@ -355,11 +340,11 @@ class ProfileController extends Controller
             ->leftJoin('departments', 'departments.id', '=', 'analysis_categories.department_id');
 
         // Search functionality
-        if(request()->has('q')) {
+        if (request()->has('q')) {
             $search = request()->q;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('profiles.name', 'LIKE', "%{$search}%")
-                ->orWhere('profiles.code', 'LIKE', "%{$search}%");
+                    ->orWhere('profiles.code', 'LIKE', "%{$search}%");
             });
         }
 

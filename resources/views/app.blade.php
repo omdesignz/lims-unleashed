@@ -14,6 +14,7 @@
 <html class="h-full bg-white dark:bg-gray-800">
 <head>
     <meta charset="utf-8" />
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
     <meta name="application-name" content="{{ $whiteLabelAppName }}">
     <meta name="theme-color" content="{{ $whiteLabelPrimaryColor }}">
@@ -38,7 +39,6 @@
             }
         })();
     </script>
-    <link href="https://fonts.bunny.net/css?family=manrope:400,500,600,700,800,900&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @inertiaHead
 </head>

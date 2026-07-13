@@ -1,408 +1,179 @@
+<script setup>
+import NotificationAdminHeader from '@/Components/notifications/NotificationAdminHeader.vue'
+import {
+  notificationIndicatorClasses,
+  notificationTypeClasses,
+  notificationTypeLabel,
+} from '@/Composables/useNotificationPresentation'
+import Layout from '@/Shared/Layouts/Layout.vue'
+import { Link } from '@inertiajs/vue3'
+import {
+  ArrowRightIcon,
+  BellAlertIcon,
+  BellIcon,
+  CalendarDaysIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  EyeIcon,
+  PaperAirplaneIcon,
+  UserGroupIcon,
+} from '@heroicons/vue/24/outline'
+import { computed } from 'vue'
+
+defineOptions({ layout: Layout })
+
+const props = defineProps({
+  stats: { type: Object, default: () => ({}) },
+  recentNotifications: { type: Array, default: () => [] },
+  notificationTypes: { type: Object, default: () => ({}) },
+})
+
+const metrics = computed(() => [
+  {
+    label: 'Total emitido',
+    value: props.stats.total ?? 0,
+    context: `${props.stats.unread ?? 0} por ler`,
+    icon: BellIcon,
+  },
+  {
+    label: 'Taxa de leitura',
+    value: `${props.stats.read_rate ?? 0}%`,
+    context: 'Mensagens confirmadas',
+    icon: CheckCircleIcon,
+  },
+  {
+    label: 'Enviadas hoje',
+    value: props.stats.today ?? 0,
+    context: `${props.stats.this_week ?? 0} nesta semana`,
+    icon: ClockIcon,
+  },
+  {
+    label: 'Este mes',
+    value: props.stats.this_month ?? 0,
+    context: 'Acumulado do periodo',
+    icon: CalendarDaysIcon,
+  },
+])
+
+const readRate = computed(() => Math.min(Number(props.stats.read_rate ?? 0), 100))
+</script>
+
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ChartBarIcon class="h-7 w-7 text-blue-900" />
-            {{ $t('gestlab.general.labels.admin.notifications.dashboard.title') }}
-          </h1>
-          <p class="mt-2 text-gray-600">
-            {{ $t('gestlab.general.labels.admin.notifications.dashboard.subtitle') }}
-            <span class="font-semibold text-blue-900">
-              {{ stats.total }}
+  <div class="space-y-5">
+    <NotificationAdminHeader
+      title="Visao geral"
+      description="Acompanhe alcance, leitura e distribuicao das mensagens operacionais do laboratorio."
+    >
+      <template #actions>
+        <Link :href="route('admin.notifications.create')" class="ds-button ds-button-primary">
+          <PaperAirplaneIcon class="h-4 w-4" />
+          Nova mensagem
+        </Link>
+      </template>
+    </NotificationAdminHeader>
+
+    <section class="ds-panel overflow-hidden">
+      <div class="grid divide-y divide-[var(--ds-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
+        <article v-for="metric in metrics" :key="metric.label" class="p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</p>
+              <p class="mt-2 text-2xl font-black tabular-nums text-[var(--ds-text)]">{{ metric.value }}</p>
+            </div>
+            <span class="grid h-9 w-9 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+              <component :is="metric.icon" class="h-4 w-4" />
             </span>
-            {{ $t('gestlab.general.labels.admin.notifications.dashboard.total_notifications') }}
-          </p>
+          </div>
+          <p class="mt-4 border-t border-[var(--ds-border)] pt-3 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.context }}</p>
+        </article>
+      </div>
+      <div class="border-t border-[var(--ds-border)] px-5 py-4">
+        <div class="flex items-center justify-between gap-3 text-xs font-bold text-[var(--ds-text-muted)]">
+          <span>Leitura global</span>
+          <span class="tabular-nums">{{ readRate }}%</span>
         </div>
-        <div class="flex items-center gap-3">
-          <Link
-            :href="route('admin.notifications.create')"
-            class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-          >
-            <PlusIcon class="h-5 w-5" />
-            {{ $t('gestlab.general.labels.admin.notifications.dashboard.buttons.create') }}
+        <div class="mt-2 h-2 overflow-hidden rounded-full bg-[var(--ds-panel-muted)]">
+          <div class="h-full rounded-full bg-emerald-500" :style="{ width: `${readRate}%` }" />
+        </div>
+      </div>
+    </section>
+
+    <div class="grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(18rem,0.85fr)]">
+      <section class="ds-panel overflow-hidden">
+        <header class="flex items-center justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4">
+          <div>
+            <p class="ds-kicker">Atividade recente</p>
+            <h2 class="ds-heading mt-1 text-base">Ultimas mensagens emitidas</h2>
+          </div>
+          <Link :href="route('admin.notifications.index')" class="ds-button ds-button-ghost">
+            Ver registo
+            <ArrowRightIcon class="h-4 w-4" />
           </Link>
-          <Link
-            :href="route('admin.notifications.analytics')"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-          >
-            <ChartBarIcon class="h-5 w-5" />
-            {{ $t('gestlab.general.labels.admin.notifications.dashboard.buttons.analytics') }}
-          </Link>
-        </div>
-      </div>
-    </div>
+        </header>
 
-    <!-- STATS GRID -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <!-- Total Notifications Card -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <BellIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.admin.notifications.dashboard.stats.total.title') }}
-            </h2>
-            <div class="rounded-full bg-white/20 p-2">
-              <BellIcon class="h-5 w-5 text-white" />
-            </div>
-          </div>
-        </div>
-        <div class="p-6">
-          <p class="text-3xl font-bold text-gray-900 mb-2">{{ stats.total }}</p>
-          <p class="text-sm text-gray-600">
-            {{ $t('gestlab.general.labels.admin.notifications.dashboard.stats.total.description') }}
-          </p>
-          <div class="mt-4 pt-4 border-t border-gray-200">
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-gray-600">{{ $t('gestlab.general.labels.admin.notifications.dashboard.stats.unread') }}</span>
-              <span class="font-semibold text-yellow-600">{{ stats.unread }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Read Rate Card -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-green-600 to-green-500 px-6 py-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <CheckCircleIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.admin.notifications.dashboard.stats.read_rate.title') }}
-            </h2>
-            <div class="rounded-full bg-white/20 p-2">
-              <CheckCircleIcon class="h-5 w-5 text-white" />
-            </div>
-          </div>
-        </div>
-        <div class="p-6">
-          <p class="text-3xl font-bold text-gray-900 mb-2">{{ stats.read_rate }}%</p>
-          <p class="text-sm text-gray-600">
-            {{ $t('gestlab.general.labels.admin.notifications.dashboard.stats.read_rate.description') }}
-          </p>
-          <div class="mt-4">
-            <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                class="h-full bg-green-500 rounded-full transition-all duration-500" 
-                :style="{ width: Math.min(stats.read_rate, 100) + '%' }"
-              ></div>
-            </div>
-            <div class="mt-2 flex justify-between text-xs text-gray-500">
-              <span>0%</span>
-              <span>100%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Today's Notifications Card -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-purple-600 to-purple-500 px-6 py-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <CalendarIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.admin.notifications.dashboard.stats.today.title') }}
-            </h2>
-            <div class="rounded-full bg-white/20 p-2">
-              <CalendarIcon class="h-5 w-5 text-white" />
-            </div>
-          </div>
-        </div>
-        <div class="p-6">
-          <p class="text-3xl font-bold text-gray-900 mb-2">{{ stats.today }}</p>
-          <p class="text-sm text-gray-600">
-            {{ $t('gestlab.general.labels.admin.notifications.dashboard.stats.today.description') }}
-          </p>
-          <div class="mt-4 pt-4 border-t border-gray-200">
-            <div class="flex items-center gap-2">
-              <ArrowTrendingUpIcon v-if="stats.today > 0" class="h-4 w-4 text-green-500" />
-              <ArrowTrendingDownIcon v-else class="h-4 w-4 text-red-500" />
-              <span class="text-sm text-gray-600">
-                {{ $t('gestlab.general.labels.admin.notifications.dashboard.stats.comparison') }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- This Month Card -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="bg-gradient-to-r from-orange-600 to-orange-500 px-6 py-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <CalendarDaysIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.admin.notifications.dashboard.stats.this_month.title') }}
-            </h2>
-            <div class="rounded-full bg-white/20 p-2">
-              <CalendarDaysIcon class="h-5 w-5 text-white" />
-            </div>
-          </div>
-        </div>
-        <div class="p-6">
-          <p class="text-3xl font-bold text-gray-900 mb-2">{{ stats.this_month }}</p>
-          <p class="text-sm text-gray-600">
-            {{ $t('gestlab.general.labels.admin.notifications.dashboard.stats.this_month.description') }}
-          </p>
-          <div class="mt-4 pt-4 border-t border-gray-200">
-            <div class="text-xs text-gray-500">
-              {{ $t('gestlab.general.labels.admin.notifications.dashboard.stats.month_to_date') }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- LEFT COLUMN -->
-      <div class="lg:col-span-2 space-y-6">
-        <!-- RECENT NOTIFICATIONS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                <BellAlertIcon class="h-5 w-5" />
-                {{ $t('gestlab.general.labels.admin.notifications.dashboard.recent.title') }}
-              </h2>
-              <Link 
-                :href="route('admin.notifications.index')" 
-                class="text-sm font-medium text-blue-100 hover:text-white transition-colors duration-200"
-              >
-                {{ $t('gestlab.general.labels.admin.notifications.dashboard.buttons.view_all') }} →
-              </Link>
-            </div>
-          </div>
-
-          <!-- Notifications List -->
-          <div class="divide-y divide-gray-200">
-            <div 
-              v-for="notification in recentNotifications" 
-              :key="notification.id"
-              class="group relative p-6 hover:bg-gray-50 transition-colors duration-150"
-            >
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <div 
-                    :class="[
-                      'flex h-10 w-10 items-center justify-center rounded-full',
-                      getNotificationIconClass(notification)
-                    ]"
-                  >
-                    <BellIcon class="h-5 w-5 text-white" />
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-2">
-                      <h3 class="text-sm font-semibold text-gray-900 truncate">
-                        {{ notification.title }}
-                      </h3>
-                      <span :class="[
-                        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-                        getTypeBadgeClass(notification.type)
-                      ]">
-                        {{ getTypeLabel(notification.type) }}
-                      </span>
-                    </div>
-                    <div class="mt-1 flex items-center gap-2 text-sm text-gray-500">
-                      <span>{{ $t('gestlab.general.labels.admin.notifications.dashboard.recent.sent_to') }}</span>
-                      <span class="font-medium text-gray-900">{{ notification.user_name }}</span>
-                      <span>•</span>
-                      <span>{{ notification.created_at }}</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span :class="[
-                    'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                    notification.read_at ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                  ]">
-                    {{ notification.read_at ? $t('gestlab.general.labels.admin.notifications.status.read') : $t('gestlab.general.labels.admin.notifications.status.unread') }}
-                  </span>
-                  <Link 
-                    :href="route('admin.notifications.show', notification.id)"
-                    class="p-1 text-gray-400 hover:text-blue-600 transition-colors duration-200 rounded-full hover:bg-blue-50"
-                    :title="$t('gestlab.general.labels.admin.notifications.dashboard.buttons.view_details')"
-                  >
-                    <EyeIcon class="h-4 w-4" />
-                  </Link>
-                </div>
+        <div v-if="recentNotifications.length" class="divide-y divide-[var(--ds-border)]">
+          <article v-for="notification in recentNotifications" :key="notification.id" class="flex items-start gap-3 px-5 py-4 hover:bg-[var(--ds-panel-subtle)]">
+            <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" :class="notificationIndicatorClasses(notification.type)" />
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <h3 class="truncate text-sm font-bold text-[var(--ds-text)]">{{ notification.title }}</h3>
+                <span class="ds-badge ring-1 ring-inset" :class="notificationTypeClasses(notification.type)">
+                  {{ notificationTypeLabel(notification.type) }}
+                </span>
+                <span class="ds-badge ring-1 ring-inset" :class="notification.read_at ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-300'">
+                  {{ notification.read_at ? 'Lida' : 'Por ler' }}
+                </span>
               </div>
-            </div>
-            
-            <!-- Empty State -->
-            <div v-if="recentNotifications.length === 0" class="p-12 text-center">
-              <BellSlashIcon class="mx-auto h-12 w-12 text-gray-300" />
-              <h3 class="mt-4 text-sm font-semibold text-gray-900">
-                {{ $t('gestlab.general.labels.admin.notifications.dashboard.recent.empty.title') }}
-              </h3>
-              <p class="mt-2 text-sm text-gray-500">
-                {{ $t('gestlab.general.labels.admin.notifications.dashboard.recent.empty.description') }}
+              <p class="mt-1 truncate text-xs font-semibold text-[var(--ds-text-muted)]">
+                {{ notification.user_name }} <span class="text-[var(--ds-text-soft)]">/ {{ notification.created_at }}</span>
               </p>
             </div>
-          </div>
+            <Link :href="route('admin.notifications.show', notification.id)" class="ds-icon-button" title="Abrir detalhes">
+              <EyeIcon class="h-4 w-4" />
+            </Link>
+          </article>
         </div>
-      </div>
 
-      <!-- RIGHT COLUMN -->
-      <div class="space-y-6">
-        <!-- TOP SENDERS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <UserGroupIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.admin.notifications.dashboard.top_senders.title') }}
-            </h2>
-          </div>
-          <div class="p-6">
-            <div class="space-y-4">
-              <div 
-                v-for="(sender, index) in stats.top_senders" 
-                :key="index"
-                class="group flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-900 hover:bg-blue-50 transition-all duration-200"
-              >
-                <div class="flex items-center gap-3">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-semibold text-blue-900">
-                    {{ getSenderRankEmoji(index + 1) }}
-                  </div>
-                  <div>
-                    <h3 class="text-sm font-semibold text-gray-900">{{ sender.name }}</h3>
-                    <p class="text-xs text-gray-500">
-                      {{ sender.count }} {{ $t('gestlab.general.labels.admin.notifications.dashboard.top_senders.notifications') }}
-                    </p>
-                  </div>
-                </div>
-                <div class="text-sm font-semibold text-blue-900">
-                  #{{ index + 1 }}
-                </div>
+        <div v-else class="px-5 py-12 text-center">
+          <BellAlertIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
+          <p class="mt-3 text-sm font-bold text-[var(--ds-text)]">Sem notificacoes recentes</p>
+          <p class="ds-copy mt-1 text-sm">As mensagens emitidas serao apresentadas aqui.</p>
+        </div>
+      </section>
+
+      <aside class="space-y-5">
+        <section class="ds-panel overflow-hidden">
+          <header class="border-b border-[var(--ds-border)] px-5 py-4">
+            <p class="ds-kicker">Volume por emissor</p>
+            <h2 class="ds-heading mt-1 flex items-center gap-2 text-base"><UserGroupIcon class="h-4 w-4" /> Principais emissores</h2>
+          </header>
+          <ol v-if="stats.top_senders?.length" class="divide-y divide-[var(--ds-border)]">
+            <li v-for="(sender, index) in stats.top_senders" :key="sender.name" class="flex items-center gap-3 px-5 py-3.5">
+              <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-xs font-black text-[var(--ds-text)]">{{ index + 1 }}</span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-bold text-[var(--ds-text)]">{{ sender.name }}</p>
+                <p class="text-xs font-semibold text-[var(--ds-text-muted)]">{{ sender.count }} mensagens</p>
               </div>
-              
-              <!-- Empty State -->
-              <div v-if="stats.top_senders.length === 0" class="text-center py-8">
-                <UserGroupIcon class="mx-auto h-12 w-12 text-gray-300" />
-                <h3 class="mt-4 text-sm font-semibold text-gray-900">
-                  {{ $t('gestlab.general.labels.admin.notifications.dashboard.top_senders.empty.title') }}
-                </h3>
-                <p class="mt-2 text-sm text-gray-500">
-                  {{ $t('gestlab.general.labels.admin.notifications.dashboard.top_senders.empty.description') }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+            </li>
+          </ol>
+          <p v-else class="px-5 py-8 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem dados de emissores.</p>
+        </section>
 
-        <!-- QUICK ACTIONS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <BoltIcon class="h-5 w-5 text-blue-900" />
-            {{ $t('gestlab.general.labels.admin.notifications.dashboard.quick_actions.title') }}
-          </h3>
-          <div class="space-y-3">
-            <Link
-              :href="route('admin.notifications.create')"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-            >
-              <PlusIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.admin.notifications.dashboard.quick_actions.create_notification') }}
+        <section class="ds-panel overflow-hidden">
+          <header class="border-b border-[var(--ds-border)] px-5 py-4">
+            <p class="ds-kicker">Fluxos rapidos</p>
+            <h2 class="ds-heading mt-1 text-base">Operacoes</h2>
+          </header>
+          <div class="divide-y divide-[var(--ds-border)]">
+            <Link :href="route('admin.notifications.create')" class="flex items-center gap-3 px-5 py-4 text-sm font-bold text-[var(--ds-text)] hover:bg-[var(--ds-panel-subtle)]">
+              <PaperAirplaneIcon class="h-4 w-4 text-[rgb(var(--primary-700-rgb))]" /> Compor mensagem <ArrowRightIcon class="ml-auto h-4 w-4" />
             </Link>
-            
-            <Link
-              :href="route('admin.notifications.index')"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-            >
-              <ListBulletIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.admin.notifications.dashboard.quick_actions.view_all') }}
-            </Link>
-            
-            <Link
-              :href="route('admin.notifications.analytics')"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-            >
-              <ChartBarIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.admin.notifications.dashboard.quick_actions.view_analytics') }}
+            <Link :href="route('admin.notifications.index', { read_status: 'unread' })" class="flex items-center gap-3 px-5 py-4 text-sm font-bold text-[var(--ds-text)] hover:bg-[var(--ds-panel-subtle)]">
+              <BellIcon class="h-4 w-4 text-amber-600" /> Rever por ler <ArrowRightIcon class="ml-auto h-4 w-4" />
             </Link>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- FOOTER -->
-    <div class="pt-6 border-t border-gray-200">
-      <div class="text-sm text-gray-500">
-        {{ $t('gestlab.general.labels.admin.notifications.dashboard.footer.last_updated') }}: 
-        <span class="font-medium text-gray-700">{{ new Date().toLocaleString() }}</span>
-      </div>
+        </section>
+      </aside>
     </div>
   </div>
 </template>
-
-<script setup>
-import Layout from "@/Shared/Layouts/Layout.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { Link } from '@inertiajs/vue3'
-import {
-  ChartBarIcon,
-  BellIcon,
-  PlusIcon,
-  CheckCircleIcon,
-  CalendarIcon,
-  CalendarDaysIcon,
-  BellAlertIcon,
-  BellSlashIcon,
-  EyeIcon,
-  UserGroupIcon,
-  BoltIcon,
-  ListBulletIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-} from '@heroicons/vue/24/outline'
-
-defineOptions({
-  layout: Layout
-});
-
-const props = defineProps({
-  stats: Object,
-  recentNotifications: Array,
-  notificationTypes: Object,
-})
-
-const getNotificationIconClass = (notification) => {
-  const type = notification.type || 'info'
-  const classMap = {
-    success: 'bg-gradient-to-r from-green-600 to-green-500',
-    error: 'bg-gradient-to-r from-red-600 to-red-500',
-    warning: 'bg-gradient-to-r from-yellow-600 to-yellow-500',
-    alert: 'bg-gradient-to-r from-orange-600 to-orange-500',
-    info: 'bg-gradient-to-r from-blue-900 to-blue-800'
-  }
-  return classMap[type] || 'bg-gradient-to-r from-blue-900 to-blue-800'
-}
-
-const getTypeBadgeClass = (type) => {
-  const classMap = {
-    success: 'bg-green-100 text-green-800',
-    error: 'bg-red-100 text-red-800',
-    warning: 'bg-yellow-100 text-yellow-800',
-    alert: 'bg-orange-100 text-orange-800',
-    info: 'bg-blue-100 text-blue-800'
-  }
-  return classMap[type] || 'bg-gray-100 text-gray-800'
-}
-
-const getTypeLabel = (type) => {
-  const labelMap = {
-    success: 'Success',
-    error: 'Error',
-    warning: 'Warning',
-    alert: 'Alert',
-    info: 'Info'
-  }
-  return labelMap[type] || 'Notification'
-}
-
-const getSenderRankEmoji = (position) => {
-  const emojis = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣']
-  return emojis[position - 1] || `${position}`
-}
-</script>

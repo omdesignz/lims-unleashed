@@ -1,55 +1,42 @@
 <template>
   <Head title="Login" />
-  <div class="relative min-h-screen overflow-hidden bg-[#07110f] text-[#f7f1e7]" :class="commercialDocumentThemeClasses">
-    <!-- Decorative Background Elements -->
-    <div class="absolute inset-0 overflow-hidden">
-      <div class="absolute -left-24 top-0 h-[32rem] w-[32rem] rounded-full bg-[#1f7a68]/25 blur-3xl"></div>
-      <div class="absolute bottom-0 right-0 h-[36rem] w-[36rem] rounded-full bg-accent-300/18 blur-3xl"></div>
-      <div class="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-[#fffaf0]/10 to-transparent"></div>
+  <div class="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100" :class="commercialDocumentThemeClasses">
+    <div class="pointer-events-none absolute inset-0">
+      <div class="absolute inset-0 bg-[linear-gradient(rgb(148_163_184/0.08)_1px,transparent_1px),linear-gradient(90deg,rgb(148_163_184/0.08)_1px,transparent_1px)] bg-[length:32px_32px]"></div>
+      <div class="absolute inset-x-0 top-0 h-24 border-b border-cyan-300/10 bg-slate-900/75"></div>
     </div>
 
-    <div class="relative min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <!-- Login Container -->
-      <div class="max-w-6xl w-full mx-auto">
+    <div class="relative flex min-h-screen items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
+      <div class="mx-auto w-full max-w-6xl">
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.8fr)] lg:gap-14">
-          
-          <!-- Left Column - Brand & Welcome -->
           <div class="hidden flex-col justify-center lg:flex">
-            <div class="mx-auto max-w-xl rounded-[2rem] border border-[#ded3bf]/15 bg-[#fffaf0]/[0.07] p-6 shadow-2xl shadow-black/30 backdrop-blur-xl lg:mx-0 lg:p-8">
-              <!-- Logo -->
-              <div class="flex items-center gap-4 mb-8">
-                <!-- <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#143d37] to-[#1f7a68] shadow-lg">
-                  <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                </div> -->
+            <section class="mx-auto max-w-xl rounded-xl border border-white/10 bg-slate-900/85 p-7 shadow-2xl shadow-slate-950/40 backdrop-blur-xl lg:mx-0 lg:p-8">
+              <div class="mb-8 flex items-center gap-4">
                 <img
                   v-if="brandLogoUrl"
-                  class="relative inset-0 max-h-20 object-contain"
+                  class="max-h-16 max-w-56 object-contain"
                   :src="brandLogoUrl"
                   :alt="brandAppName"
-                  width="50%"
                 />
                 <img
                   v-else
-                  class="relative inset-0 max-h-20"
+                  class="max-h-16 max-w-56 object-contain"
                   src="../../../images/sncqa_logo.svg"
-                  alt=""
-                  width="50%"
+                  :alt="brandAppName"
                 />
-
-                <!-- <div>
-                  <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">LIMS</h1>
-                  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Laboratory Information Management System</p>
-                </div> -->
+                <div class="hidden h-10 w-px bg-white/10 xl:block"></div>
+                <div class="hidden xl:block">
+                  <p class="text-xs font-black uppercase tracking-[0.2em] text-cyan-100">LIMS</p>
+                  <p class="mt-1 text-sm font-medium text-slate-400">ISO 17025 workspace</p>
+                </div>
               </div>
 
-              <!-- Welcome Message -->
               <div class="mb-10">
-                <p class="mb-4 inline-flex rounded-full border border-[#ded3bf]/15 bg-[#fffaf0]/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.24em] text-accent-100">
-                  ISO 17025 workspace
+                <p class="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.2em] text-cyan-100">
+                  <span class="lims-status-dot lims-status-dot-release"></span>
+                  {{ $t('gestlab.pages.login.internal_area') }}
                 </p>
-                <h2 class="text-4xl font-black tracking-tight text-white mb-4 lg:text-5xl">
+                <h2 class="mb-4 text-4xl font-black tracking-tight text-white lg:text-5xl">
                   {{ brandLoginHeadline }}
                 </h2>
                 <p class="text-lg leading-8 text-slate-300">
@@ -57,60 +44,64 @@
                 </p>
               </div>
 
-              <!-- Features -->
-              <div class="space-y-6">
-                <div class="flex items-start gap-4">
-                  <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[#fffaf0]/10 text-accent-100">
+              <div class="space-y-4">
+                <div class="rounded-lg border border-white/10 bg-slate-950/45 p-4">
+                  <div class="flex items-start gap-4">
+                    <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-cyan-300/10 text-cyan-100">
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
-                  </div>
-                  <div>
-                    <h3 class="text-lg font-semibold text-white mb-1">
-                      {{ $t('gestlab.pages.login.feature1_title') }}
-                    </h3>
-                    <p class="text-sm leading-6 text-slate-300">
-                      {{ $t('gestlab.pages.login.feature1_description') }}
-                    </p>
-                  </div>
-                </div>
-
-                <div class="flex items-start gap-4">
-                  <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[#fffaf0]/10 text-accent-100">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 class="text-lg font-semibold text-white mb-1">
-                      {{ $t('gestlab.pages.login.feature2_title') }}
-                    </h3>
-                    <p class="text-sm leading-6 text-slate-300">
-                      {{ $t('gestlab.pages.login.feature2_description') }}
-                    </p>
+                    </div>
+                    <div>
+                      <h3 class="mb-1 text-base font-semibold text-white">
+                        {{ $t('gestlab.pages.login.feature1_title') }}
+                      </h3>
+                      <p class="text-sm leading-6 text-slate-300">
+                        {{ $t('gestlab.pages.login.feature1_description') }}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <div class="flex items-start gap-4">
-                  <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[#fffaf0]/10 text-accent-100">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
+                <div class="rounded-lg border border-white/10 bg-slate-950/45 p-4">
+                  <div class="flex items-start gap-4">
+                    <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-amber-300/10 text-amber-100">
+                      <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 class="mb-1 text-base font-semibold text-white">
+                        {{ $t('gestlab.pages.login.feature2_title') }}
+                      </h3>
+                      <p class="text-sm leading-6 text-slate-300">
+                        {{ $t('gestlab.pages.login.feature2_description') }}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 class="text-lg font-semibold text-white mb-1">
-                      {{ $t('gestlab.pages.login.feature3_title') }}
-                    </h3>
-                    <p class="text-sm leading-6 text-slate-300">
-                      {{ $t('gestlab.pages.login.feature3_description') }}
-                    </p>
+                </div>
+
+                <div class="rounded-lg border border-white/10 bg-slate-950/45 p-4">
+                  <div class="flex items-start gap-4">
+                    <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-300/10 text-emerald-100">
+                      <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 class="mb-1 text-base font-semibold text-white">
+                        {{ $t('gestlab.pages.login.feature3_title') }}
+                      </h3>
+                      <p class="text-sm leading-6 text-slate-300">
+                        {{ $t('gestlab.pages.login.feature3_description') }}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
           </div>
 
-          <!-- Right Column - Login Form -->
           <div class="flex items-center justify-center">
             <div class="w-full max-w-md">
               <div class="mb-5 flex items-center justify-between gap-4 px-1 lg:hidden">
@@ -126,15 +117,17 @@
                   src="../../../images/sncqa_logo.svg"
                   :alt="brandAppName"
                 />
-                <span class="rounded-full border border-[#ded3bf]/20 bg-[#fffaf0]/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-accent-100">
+                <span class="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">
                   {{ $t('gestlab.pages.login.internal_area') }}
                 </span>
               </div>
 
-              <!-- Login Card -->
-              <div class="rounded-[2rem] border border-[#ded3bf] bg-[#fffaf0]/96 p-5 shadow-2xl shadow-black/30 backdrop-blur-xl dark:border-[#25443c] dark:bg-[#0c1714]/95 sm:p-8">
-                <div class="text-center mb-8">
-                  <h2 class="mb-2 text-2xl font-extrabold text-[#15231f] dark:text-[#f7f1e7]">
+              <div class="ds-panel bg-white p-5 shadow-2xl shadow-slate-950/30 backdrop-blur-xl dark:bg-slate-900/95 sm:p-8">
+                <div class="mb-8 text-center">
+                  <p class="ds-kicker mb-2">
+                    {{ $t('gestlab.pages.login.internal_area') }}
+                  </p>
+                  <h2 class="mb-2 text-2xl font-extrabold text-slate-950 dark:text-slate-50">
                     {{ $t('gestlab.pages.login.sign_in') }}
                   </h2>
                   <p class="text-sm font-medium text-slate-600 dark:text-slate-300">
@@ -156,7 +149,7 @@
                     </label>
                     <div class="relative">
                       <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                       </div>
@@ -186,14 +179,14 @@
                       </label>
                       <Link 
                         :href="route('password.request')" 
-                        class="text-xs font-bold text-[#143d37] transition-colors duration-200 hover:text-[#1f7a68] dark:text-accent-200"
+                        class="text-xs font-bold text-cyan-700 transition-colors duration-200 hover:text-cyan-600 dark:text-cyan-200"
                       >
                         {{ $t('gestlab.pages.login.forgot_password') }}
                       </Link>
                     </div>
                     <div class="relative">
                       <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                       </div>
@@ -213,7 +206,7 @@
                         <button
                           type="button"
                           @click="togglePasswordVisibility"
-                          class="rounded-lg p-1 text-slate-400 transition-colors duration-200 hover:bg-[#ede5d6] hover:text-[#143d37] dark:text-accent-200 dark:hover:bg-[#10231f]"
+                          class="rounded-lg p-1 text-slate-400 transition-colors duration-200 hover:bg-slate-100 hover:text-cyan-700 dark:text-cyan-200 dark:hover:bg-slate-800"
                           :title="showPassword ? $t('gestlab.pages.login.hide_password') : $t('gestlab.pages.login.show_password')"
                         >
                           <svg v-if="showPassword" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -246,7 +239,7 @@
                   </div>
 
                   <!-- Error Messages -->
-                  <div v-if="form.hasErrors" class="bg-red-50 rounded-xl p-4 border border-red-200 dark:border-red-900/60 dark:bg-red-950/30">
+                  <div v-if="form.hasErrors" class="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900/60 dark:bg-red-950/30">
                     <div class="flex items-center gap-3">
                       <svg class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.998-.833-2.732 0L4.346 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -267,10 +260,8 @@
                     type="submit"
                     :disabled="form.processing"
                     :class="[
-                      'inline-flex w-full items-center justify-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-bold shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#1f7a68] focus:ring-offset-2',
-                      form.processing
-                        ? 'bg-gray-100 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-[#143d37] to-[#1f7a68] text-white hover:from-[#0d2a25] hover:to-[#176452] hover:shadow-xl active:scale-[0.98]'
+                      'ds-button ds-button-primary w-full py-3.5',
+                      form.processing ? 'cursor-not-allowed opacity-60' : ''
                     ]"
                   >
                     <svg v-if="form.processing" class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -287,7 +278,7 @@
                     type="button"
                     @click="loginWithPasskey"
                     :disabled="passkeyProcessing"
-                    class="inline-flex w-full items-center justify-center gap-3 rounded-2xl border border-[#d8cfbe] bg-[#fffdf7] px-4 py-3.5 text-sm font-bold text-[#15231f] shadow-sm transition hover:bg-[#ede5d6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#25443c] dark:bg-[#07110f]/80 dark:text-[#f7f1e7] dark:hover:bg-[#10231f]"
+                    class="ds-button ds-button-secondary w-full py-3.5 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <svg v-if="passkeyProcessing" class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
                       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -312,16 +303,16 @@
 
                 <div v-if="socialProviders.length" class="mt-6 space-y-3">
                   <div class="flex items-center gap-3">
-                    <div class="h-px flex-1 bg-[#ded3bf] dark:bg-[#25443c]"></div>
+                    <div class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></div>
                     <span class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">SSO</span>
-                    <div class="h-px flex-1 bg-[#ded3bf] dark:bg-[#25443c]"></div>
+                    <div class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></div>
                   </div>
                   <div class="grid gap-3">
                     <a
                       v-for="provider in socialProviders"
                       :key="provider.service"
                       :href="route('auth.redirect', provider.service)"
-                      class="inline-flex items-center justify-center gap-3 rounded-2xl border border-[#d8cfbe] bg-[#fffdf7] px-4 py-3 text-sm font-bold text-[#15231f] shadow-sm transition hover:bg-[#ede5d6] dark:border-[#25443c] dark:bg-[#07110f]/80 dark:text-[#f7f1e7] dark:hover:bg-[#10231f]"
+                      class="ds-button ds-button-secondary w-full py-3"
                     >
                       <span>Entrar com {{ provider.label }}</span>
                     </a>
@@ -331,10 +322,10 @@
                 <!-- Divider -->
                 <div class="relative my-8">
                   <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                    <div class="w-full border-t border-[#ded3bf] dark:border-[#25443c]" />
+                    <div class="w-full border-t border-slate-200 dark:border-slate-800" />
                   </div>
                   <div class="relative flex justify-center text-sm">
-                    <span class="bg-[#fffaf0] px-4 font-semibold text-slate-500 dark:bg-[#0c1714] dark:text-slate-400">
+                    <span class="bg-white px-4 font-semibold text-slate-500 dark:bg-slate-900 dark:text-slate-400">
                       {{ $t('gestlab.pages.login.or') }}
                     </span>
                   </div>
@@ -344,8 +335,7 @@
                 <Link 
                   :href="route('portal.login')"
                   :class="[
-                    'inline-flex w-full items-center justify-center gap-3 rounded-2xl border px-4 py-3.5 text-sm font-bold shadow-sm transition-all duration-300 hover:shadow-md active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#1f7a68] focus:ring-offset-2',
-                    'border-[#d8cfbe] bg-[#fffdf7] text-[#15231f] hover:border-[#b8ad97] hover:bg-[#ede5d6] hover:text-[#143d37] dark:border-[#25443c] dark:bg-[#07110f]/80 dark:text-[#f7f1e7] dark:hover:bg-[#10231f]'
+                    'ds-button ds-button-secondary w-full py-3.5'
                   ]"
                 >
                   <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -355,11 +345,11 @@
                 </Link>
 
                 <!-- Footer -->
-                <div class="mt-8 border-t border-[#ded3bf] pt-6 dark:border-[#25443c]">
+                <div class="mt-8 border-t border-slate-200 pt-6 dark:border-slate-800">
                   <div class="text-center">
                     <p class="mb-2 text-xs font-medium text-slate-500 dark:text-slate-400">
                       {{ $t('gestlab.pages.login.need_help') }}
-                      <Link href="/help" class="font-bold text-[#143d37] transition-colors duration-200 hover:text-[#1f7a68] dark:text-accent-200">
+                      <Link href="/help" class="font-bold text-cyan-700 transition-colors duration-200 hover:text-cyan-600 dark:text-cyan-200">
                         {{ $t('gestlab.pages.login.contact_support') }}
                       </Link>
                     </p>
@@ -373,7 +363,7 @@
 
               <!-- Security Badge -->
               <div class="mt-6 flex items-center justify-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                <svg class="h-4 w-4 text-accent-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
                 <span>
@@ -461,39 +451,3 @@ const loginWithPasskey = async () => {
     }
 };
 </script>
-
-<style scoped>
-/* Smooth transitions */
-button, input, a, label {
-  transition: all 0.2s ease-in-out;
-}
-
-/* Background animation */
-.bg-gradient-to-br {
-  background-size: 200% 200%;
-  animation: gradientShift 20s ease infinite;
-}
-
-@keyframes gradientShift {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-/* Subtle pulse animation for security badge */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-.text-green-500 {
-  animation: pulse 2s ease-in-out infinite;
-}
-</style>

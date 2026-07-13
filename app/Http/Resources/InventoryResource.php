@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Models\ItemCategory;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -24,17 +23,18 @@ class InventoryResource extends JsonResource
             'warehouse' => InventoryItemWarehouseResource::make($this->warehouse)?->name ?? null,
             'item_id' => $this->item_id,
             'item' => InventoryItemResource::make($this->item)?->name ?? null,
+            'category_id' => $this->item?->category_id,
             'category' => $this->item?->category?->name ?? null,
             'deleted' => $this->deleted_at ? true : false,
             'links' => [
                 'edit_path' => route('inventory.edit', $this->id),
                 'delete_path' => route('inventory.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('inventory.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

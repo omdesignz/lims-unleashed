@@ -3027,8 +3027,12 @@ CSS,
         Result::query()->create([
             'code_id' => $labCode->id,
             'parameter_label' => 'Salmonella spp.',
+            'verified_value' => 'Ausência',
             'inserted_date' => $now,
             'verified_date' => $now,
+            'extra_data' => [
+                'display_format' => 'scientific',
+            ],
         ]);
         Result::query()->create([
             'code_id' => $labCode->id,
@@ -3068,6 +3072,7 @@ CSS,
         $this->assertStringContainsString('Method', $bodyHtml);
         $this->assertStringContainsString('Incerteza', $bodyHtml);
         $this->assertStringContainsString('1.20 × 10^-5', $bodyHtml);
+        $this->assertStringContainsString('Ausência', $bodyHtml);
         $this->assertStringContainsString('Contra-análise associada', $bodyHtml);
         $this->assertStringContainsString('2, 1, 1, 1, 1', $bodyHtml);
         $this->assertStringContainsString('5 parâmetro(s) associados ao certificado; 1 com contra-análise solicitada ou registada.', $bodyHtml);

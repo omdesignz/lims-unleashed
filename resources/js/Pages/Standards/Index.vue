@@ -1,242 +1,235 @@
 <script setup>
+import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import RecordsTable from "@/Components/records-table.vue";
+import SlideOver from "@/Components/slide-over.vue";
+import StandardForm from "@/Components/standards/StandardForm.vue";
+import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import RecordsTable from '@/Components/records-table.vue';
-import confirmDialog from "@/Components/confirm-dialog.vue";
-import { TransitionRoot } from '@headlessui/vue'
-import slideOver from '@/Components/slide-over.vue';
-import { ref, computed } from "vue";
-import { useForm, router } from "@inertiajs/vue3";
-import { trans } from 'laravel-vue-i18n';
-
-
-const props = defineProps({
-    record: Object,
-    fields: Array,
-    model: String,
-    abilities: Array,
-    query: Object,
-    slideOverEdit: {
-      type: Boolean,
-      default: false
-    }
-});
+import { router, useForm } from "@inertiajs/vue3";
+import {
+  ArchiveBoxIcon,
+  BookOpenIcon,
+  CheckBadgeIcon,
+  DocumentTextIcon,
+  PlusIcon,
+} from "@heroicons/vue/24/outline";
+import { computed, ref } from "vue";
+import { trans } from "laravel-vue-i18n";
 
 defineOptions({
-  layout: Layout
+  layout: Layout,
 });
 
-let form = useForm({
-    code: '',
-    description: '',
-    id: null,
-});
-
-const actionId = ref(null);
-
-const slideOverDescription = computed(() => {
-  return !form.id ? trans('gestlab.slideover.creating.description') + form.code : trans('gestlab.slideover.updating.description') + form.code;
-});
-
-const slideOverTitle = computed(() => {
-  return !form.id ? trans('gestlab.slideover.creating.title') : trans('gestlab.slideover.updating.description');
-});
-
-const confirmationDialogTitle = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_title.' + actionId.value);
-})
-
-
-const confirmationDialogDescription = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_description.' + actionId.value);
-})
-
-
-const openslideover = ref(false);
-
-let actions = [
-  {
-    id: null,
-    label: 'gestlab.actions.bulk_actions_text'
+const props = defineProps({
+  record: {
+    type: Object,
+    default: () => ({ data: [], meta: {} }),
   },
-  {
-    id: 'delete',
-    label: 'gestlab.actions.delete'
+  fields: {
+    type: Array,
+    default: () => [],
   },
-  {
-    id: 'restore',
-    label: 'gestlab.actions.restore'
+  model: String,
+  abilities: {
+    type: Array,
+    default: () => [],
   },
+  query: {
+    type: Object,
+    default: () => ({}),
+  },
+  slideOverEdit: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+const { hasPermission } = usePermission();
+const isPanelOpen = ref(false);
+const showActionConfirmation = ref(false);
+const selectedAction = ref(null);
+
+const emptyForm = () => ({ code: "", description: "", id: null });
+const form = useForm(emptyForm());
+
+const panelTitle = computed(() => form.id ? `Editar norma ${form.code}` : "Nova referencia normativa");
+const panelDescription = computed(() => form.id
+  ? "Atualize a identificacao e o escopo de aplicabilidade desta referencia."
+  : "Adicione uma norma para utilizacao nos perfis e metodos do laboratorio.");
+
+const confirmationDialogTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${selectedAction.value}`));
+const confirmationDialogDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${selectedAction.value}`));
+
+const pageRecords = computed(() => props.record?.data || []);
+const totalRecords = computed(() => props.record?.meta?.total ?? pageRecords.value.length);
+const archivedRecords = computed(() => pageRecords.value.filter((record) => record.deleted).length);
+const activeRecords = computed(() => pageRecords.value.length - archivedRecords.value);
+const describedRecords = computed(() => pageRecords.value.filter((record) => record.description?.trim()).length);
+
+const metrics = computed(() => [
+  { label: "Referencias", value: totalRecords.value, detail: "catalogo total", icon: BookOpenIcon },
+  { label: "Ativas nesta pagina", value: activeRecords.value, detail: "disponiveis para uso", icon: CheckBadgeIcon },
+  { label: "Com descricao", value: describedRecords.value, detail: "contexto documentado", icon: DocumentTextIcon },
+  { label: "Arquivadas nesta pagina", value: archivedRecords.value, detail: "fora da selecao ativa", icon: ArchiveBoxIcon },
+]);
+
+const actions = [
+  { id: null, label: "gestlab.actions.bulk_actions_text" },
+  { id: "delete", label: "gestlab.actions.delete" },
+  { id: "restore", label: "gestlab.actions.restore" },
 ];
 
-const close = () => {
-    openslideover.value = false;
-    form.clearErrors();
-    // form.reset();
+function openCreatePanel() {
+  form.defaults(emptyForm());
+  form.reset();
+  form.clearErrors();
+  isPanelOpen.value = true;
 }
 
-const showDeleteConfirmation = ref(false);
-const showDeleteConfirmationSlideover = ref(false);
-
-const openSlideoverWithData = (data) => {
-    openslideover.value = true;
-    form.id = data.id;
-    form.code = data.code;
-    form.description = data.description;
-    
+function openEditPanel(data) {
+  form.defaults({
+    code: data.code || "",
+    description: data.description || "",
+    id: data.id,
+  });
+  form.reset();
+  form.clearErrors();
+  isPanelOpen.value = true;
 }
 
-let submit = () => {
+function closePanel() {
+  isPanelOpen.value = false;
+  form.clearErrors();
+}
 
-    if(!form.id) {
-      form.post(route('standards.store'), {
-          preserveScroll: true,
-          preserveState: false,
-          onError: () => {
-            showDeleteConfirmationSlideover.value = false
-            openslideover.value = true
-          },
-          onSuccess: () => {
-            openslideover.value = false;
-            form.reset()
-          },
-      });
-    } else {
-      form.put(route('standards.update',{standard: form.id}), {
-          preserveScroll: true,
-          preserveState: false,
-          onError: () => {
-            showDeleteConfirmationSlideover.value = false
-            openslideover.value = true
-          },
-          onSuccess: () => {
-            openslideover.value = false;
-            form.reset()
-          },
-      });
-    }
-    
+function submit() {
+  const options = {
+    preserveScroll: true,
+    onSuccess: () => {
+      closePanel();
+      form.defaults(emptyForm());
+      form.reset();
+    },
+  };
+
+  if (form.id) {
+    form.put(route("standards.update", { standard: form.id }), options);
+    return;
   }
 
+  form.post(route("standards.store"), options);
+}
 
-  const confirmAction = () => {
-    executeAction(actionId.value);
+function requestBulkAction(action) {
+  selectedAction.value = action;
+  showActionConfirmation.value = true;
+}
+
+function executeBulkAction() {
+  const recordIds = pageRecords.value.filter((record) => record.selected).map((record) => record.id);
+
+  if (!recordIds.length || !["delete", "restore"].includes(selectedAction.value)) {
+    showActionConfirmation.value = false;
+    return;
   }
 
-  const executeAction = (actionId) => {
-  const recordIds = props.record.data.filter(record => record.selected).map(record => record.id);
-
-  if(!recordIds.length) return;
-
-  switch (actionId) {
-    case 'delete':
-      router.get(route('standards.destroy'), {
-          recordIds: recordIds
-      }, {
-        preserveState: false,
-        preserveScroll: true,
-        onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            actionId.value = null;
-        }
-      });
-      showDeleteConfirmation.value = false;
-    break;  
-
-    case 'restore':
-        router.get(route('standards.restore'), {
-          recordIds: recordIds
-        }, {
-            preserveState:false,
-            preserveScroll: true,
-            onSuccess: () => {
-                showDeleteConfirmation.value = false;
-                actionId.value = null;
-            }
-        });
-        showDeleteConfirmation.value = false;
-  }
-}  
+  router.get(
+    route(`standards.${selectedAction.value}`),
+    { recordIds },
+    {
+      preserveScroll: true,
+      onFinish: () => {
+        showActionConfirmation.value = false;
+        selectedAction.value = null;
+      },
+    },
+  );
+}
 </script>
+
 <template>
-<div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
-    <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.standards.page_title') }}</h3>
-    <p class="mt-2 max-w-4xl text-sm text-gray-500"></p>
-</div>
-
-<records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="openslideover=true" @slideover-on="openSlideoverWithData"/> <br>
-
-<slide-over v-if="openslideover" :class="commercialDocumentThemeClasses" @close="close" :title="slideOverTitle" :description="slideOverDescription">
-    <template #content>
-        <div class="space-y-6 py-6 sm:space-y-0 sm:divide-y sm:divide-gray-200 sm:py-0">
-              <!-- Code -->
-              <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="code" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.standards.code') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <input v-model="form.code" type="text" name="code" id="code" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.code ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
-                  <p v-if="form.errors.code" class="mt-2 text-sm text-red-600" id="code-error">{{ form.errors.code }}</p>
-                </div>
-              </div>
-
-              <!-- Email -->
-              <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="email" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.standards.description') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <textarea v-model="form.description" name="description" id="description" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.description ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
-                  <p v-if="form.errors.description" class="mt-2 text-sm text-red-600" id="description-error">{{ form.errors.description }}</p>
-                </div>
-              </div>
-        </div>
-    </template>
-
-    <template #action_buttons>
-        <div class="flex justify-end space-x-3">
-        <button type="button" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" @click="openslideover = false; form.reset()">{{ $t('gestlab.general.buttons.cancel') }}</button>
-        <!-- <TransitionRoot
-            :show="!form.isDirty"
-            enter="transition-opacity duration-75"
-            enter-from="opacity-0"
-            enter-to="opacity-100"
-            leave="transition-opacity duration-150"
-            leave-from="opacity-100"
-            leave-to="opacity-0"
-        >
-            I will appear and disappear.
-        </TransitionRoot> -->
-        <button v-if="form.isDirty" @click="showDeleteConfirmationSlideover = true" :disabled="form.processing" type="button" class="inline-flex justify-center rounded-md bg-blue-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-900">{{ !form.id ? $t('gestlab.general.buttons.submit') : $t('gestlab.general.buttons.update') }}</button>
-        </div>
-    </template>
-</slide-over>
-
-<confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
-
-<confirm-dialog size="sm:max-w-2xl" alignment="sm:items-start" @canceled="showDeleteConfirmationSlideover=false" @close="showDeleteConfirmationSlideover=false" @confirmed="submit" v-if="showDeleteConfirmationSlideover" :title="$t('gestlab.actions.confirmation_dialog_title.default')" :description="$t('gestlab.actions.confirmation_dialog_description.default')" confirm="Sim" cancel="Não">
-    <div class="mt-4">
-      <div class="font-semibold inline-flex px-2 py-1 leading-4 text-xs rounded-full text-white bg-blue-900 sm:text-xs mb-2"><p class="text-xs">{{ $t('gestlab.general.labels.summary') }}</p></div>
-      <div>
-        <div class="px-4 sm:px-0 rounded-full text-white bg-blue-900">
-          <!-- <h3 class="text-base font-semibold leading-7 text-gray-900">Resumo</h3>
-          <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-500">Personal details and application.</p> -->
-        </div>
-        <div class="mt-6 border-t border-gray-100">
-          <dl class="divide-y divide-gray-100">
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.standards.code') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.code }}</dd>
+  <div class="space-y-6">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0">
+          <p class="ds-kicker">Configuracao analitica</p>
+          <div class="mt-3 flex items-start gap-3">
+            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+              <BookOpenIcon class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+              <h1 class="ds-heading text-2xl">{{ $t('gestlab.general.labels.standards.page_title') }}</h1>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">
+                Catalogo controlado das referencias normativas usadas em perfis, metodos e evidencias laboratoriais.
+              </p>
             </div>
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.standards.description') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.description }}</dd>
-            </div>
-            
-          </dl>
+          </div>
         </div>
+
+        <button v-if="hasPermission('add_standards')" type="button" class="ds-button ds-button-primary" @click="openCreatePanel">
+          <PlusIcon class="h-4 w-4" />
+          Nova referencia
+        </button>
       </div>
 
-    </div>
-  </confirm-dialog>
+      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
+        <div
+          v-for="metric in metrics"
+          :key="metric.label"
+          class="border-b border-[var(--ds-border)] px-4 py-3 sm:[&:nth-child(odd)]:border-r sm:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
+              <dd class="mt-2 text-xl font-black text-[var(--ds-text)]">{{ metric.value }}</dd>
+              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
+            </div>
+            <component :is="metric.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
+          </div>
+        </div>
+      </dl>
+    </section>
+
+    <RecordsTable
+      :record="props.record"
+      :model="props.model"
+      :abilities="props.abilities"
+      :fields="props.fields"
+      :slide-over-edit="props.slideOverEdit"
+      :query="props.query"
+      :actions="actions"
+      :create-action="false"
+      @execute-action="requestBulkAction"
+      @create-record="openCreatePanel"
+      @slideover-on="openEditPanel"
+    />
+
+    <SlideOver v-if="isPanelOpen" :title="panelTitle" :description="panelDescription" @close="closePanel">
+      <template #content>
+        <form id="standard-form" @submit.prevent="submit">
+          <StandardForm :form="form" />
+        </form>
+      </template>
+
+      <template #action_buttons>
+        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button type="button" class="ds-button ds-button-secondary" @click="closePanel">{{ $t('gestlab.general.buttons.cancel') }}</button>
+          <button type="submit" form="standard-form" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
+            {{ form.processing ? "A guardar..." : form.id ? "Guardar alteracoes" : "Adicionar referencia" }}
+          </button>
+        </div>
+      </template>
+    </SlideOver>
+
+    <ConfirmDialog
+      v-if="showActionConfirmation"
+      :title="confirmationDialogTitle"
+      :description="confirmationDialogDescription"
+      :variant="selectedAction === 'restore' ? 'question' : 'danger'"
+      confirm="Sim"
+      cancel="Nao"
+      @canceled="showActionConfirmation = false"
+      @confirmed="executeBulkAction"
+    />
+  </div>
 </template>

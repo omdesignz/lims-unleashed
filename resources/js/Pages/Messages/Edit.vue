@@ -1,44 +1,51 @@
-<template>
-  <div class="space-y-6" :class="commercialDocumentThemeClasses">
-    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h1 class="text-2xl font-semibold text-slate-900">Editar mensagem</h1>
-      <p class="mt-2 text-sm text-slate-600">Atualize o conteúdo e substitua anexos quando necessário.</p>
-    </section>
-
-    <form class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4" @submit.prevent="submit">
-      <textarea v-model="form.message" rows="6" class="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm" placeholder="Mensagem"></textarea>
-      <input type="file" multiple @input="form.attachments = $event.target.files" class="w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm">
-      <div class="flex flex-wrap gap-2 text-xs text-slate-500">
-        <span v-for="attachment in attachments" :key="attachment.id" class="rounded-full bg-slate-100 px-3 py-1">{{ attachment.file_type }}</span>
-      </div>
-      <div class="flex gap-3">
-        <button type="submit" class="rounded-2xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Guardar</button>
-        <Link :href="route('messages.index')" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Voltar</Link>
-      </div>
-    </form>
-  </div>
-</template>
-
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, useForm } from '@inertiajs/vue3'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { ArrowLeftIcon, CheckIcon, ChatBubbleLeftRightIcon, PaperClipIcon } from '@heroicons/vue/24/outline'
+import { computed } from 'vue'
 
 defineOptions({ layout: Layout })
 
 const props = defineProps({
-  record: Object,
-  attachments: Array,
+  record: { type: Object, required: true },
+  attachments: { type: Array, default: () => [] },
 })
 
-const form = useForm({
-  message: props.record?.data?.message || '',
-  attachments: [],
-})
-
-const submit = () => {
-  form
-    .transform((data) => ({ ...data, _method: 'put' }))
-    .post(route('messages.update', props.record.data.id))
-}
+const message = computed(() => props.record?.data || {})
+const form = useForm({ message: message.value.message || '', attachments: [] })
+const replacementFiles = computed(() => Array.from(form.attachments || []))
+const handleFiles = (event) => { form.attachments = event.target.files }
+const submit = () => form.transform((data) => ({ ...data, _method: 'put' })).post(route('messages.update', message.value.id))
 </script>
+
+<template>
+  <div class="space-y-5">
+    <section class="ds-panel overflow-hidden">
+      <header class="flex flex-col gap-4 border-b border-[var(--ds-border)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div class="flex items-start gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><ChatBubbleLeftRightIcon class="h-5 w-5" /></span><div><p class="ds-kicker">Comunicacao interna</p><h1 class="ds-heading mt-1 text-xl sm:text-2xl">Rever mensagem</h1><p class="ds-copy mt-1 text-sm">Atualize o conteudo ou substitua o conjunto de anexos.</p></div></div>
+        <Link :href="route('messages.index')" class="ds-button ds-button-secondary"><ArrowLeftIcon class="h-4 w-4" />Registo</Link>
+      </header>
+    </section>
+
+    <form class="grid items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]" @submit.prevent="submit">
+      <section class="ds-panel overflow-hidden">
+        <header class="border-b border-[var(--ds-border)] px-5 py-4"><p class="ds-kicker">Edicao controlada</p><h2 class="ds-heading mt-1 text-base">Conteudo da mensagem</h2></header>
+        <div class="space-y-5 p-5 sm:p-6">
+          <div class="grid gap-4 sm:grid-cols-2"><div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4"><p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Emissor</p><p class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ message.sender || 'Sistema' }}</p></div><div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4"><p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Destinatario</p><p class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ message.receiver || 'Nao atribuido' }}</p></div></div>
+          <div class="ds-field-group"><label for="message" class="ds-field-label">Mensagem <span class="ds-field-required">*</span></label><textarea id="message" v-model="form.message" rows="9" class="ds-field resize-y" :aria-invalid="Boolean(form.errors.message)" /><p v-if="form.errors.message" class="ds-field-error">{{ form.errors.message }}</p></div>
+          <div class="ds-field-group"><label for="attachments" class="ds-field-label">Substituir anexos <span class="font-normal text-[var(--ds-text-soft)]">(opcional)</span></label><input id="attachments" type="file" multiple class="ds-field" accept=".jpg,.jpeg,.png,.pdf,.docx,.mp3,.wav" @change="handleFiles" /><p class="ds-field-help">Ao selecionar novos ficheiros, o conjunto atual sera substituido.</p><p v-if="form.errors.attachments" class="ds-field-error">{{ form.errors.attachments }}</p></div>
+        </div>
+        <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end"><Link :href="route('messages.index')" class="ds-button ds-button-ghost">Cancelar</Link><button type="submit" class="ds-button ds-button-primary" :disabled="form.processing"><CheckIcon class="h-4 w-4" />{{ form.processing ? 'A guardar...' : 'Guardar alteracoes' }}</button></footer>
+      </section>
+
+      <aside class="ds-panel overflow-hidden lg:sticky lg:top-5">
+        <header class="border-b border-[var(--ds-border)] px-5 py-4"><p class="ds-kicker">Evidencia</p><h2 class="ds-heading mt-1 text-base">Anexos associados</h2></header>
+        <div class="p-5">
+          <div v-if="attachments.length" class="space-y-2"><div v-for="attachment in attachments" :key="attachment.id" class="flex items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-3"><PaperClipIcon class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)]" /><div class="min-w-0"><p class="truncate text-xs font-bold text-[var(--ds-text)]">{{ attachment.file_type }}</p><p class="mt-0.5 truncate text-xs font-semibold text-[var(--ds-text-muted)]">{{ attachment.file_path }}</p></div></div></div>
+          <p v-else class="ds-copy text-sm">A mensagem nao possui anexos.</p>
+          <div v-if="replacementFiles.length" class="mt-5 border-t border-[var(--ds-border)] pt-4"><p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Nova selecao</p><ul class="mt-3 space-y-2"><li v-for="file in replacementFiles" :key="`${file.name}-${file.size}`" class="truncate text-xs font-semibold text-[var(--ds-text-muted)]">{{ file.name }}</li></ul></div>
+        </div>
+      </aside>
+    </form>
+  </div>
+</template>

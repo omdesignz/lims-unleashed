@@ -22,22 +22,23 @@ class MatrixResource extends JsonResource
             'fixed_price' => $this->fixed_price,
             'tax_percentage' => $this->tax_percentage,
             'charge_tax' => $this->charge_tax,
+            'withhold_tax' => $this->withhold_tax,
             'exemption_id' => TaxExemptionResource::make($this->exemption),
             'exemption' => TaxExemptionResource::make($this->exemption)?->code ?? null,
             'tax_id' => TaxTypeResource::make($this->tax_category),
-            'tax' => TaxTypeResource::make($this->exemption)?->name ?? null,
+            'tax' => TaxTypeResource::make($this->tax_category)?->name ?? null,
             'profiles' => ProfileResource::collection($this->whenLoaded('profiles')),
             'deleted' => $this->deleted_at ? true : false,
             'links' => [
                 'edit_path' => route('matrixes.edit', $this->id),
                 'show_path' => route('matrixes.show', $this->id),
                 'delete_path' => route('matrixes.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('matrixes.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

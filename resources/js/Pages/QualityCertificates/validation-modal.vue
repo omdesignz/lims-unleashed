@@ -1,163 +1,17 @@
-<template>
-  <Modal
-    :show="true"
-    maxWidth="2xl"
-    @close="closeModal"
-  >
-    <div class="quality-certificate-validation space-y-6 p-6 sm:p-8" :class="commercialDocumentThemeClasses">
-      <div class="ds-card p-6">
-        <div class="text-center">
-          <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[rgb(var(--primary-800-rgb)/1)] text-white shadow-lg shadow-[rgb(var(--primary-900-rgb)/0.2)] dark:bg-[rgb(var(--primary-400-rgb)/1)] dark:text-[rgb(var(--primary-950-rgb)/1)]">
-            <CheckBadgeIcon class="h-6 w-6" />
-          </div>
-          <h3 class="mt-4 text-xl font-extrabold text-[color:var(--ds-text)]">
-            {{ modalTitle }}
-          </h3>
-          <p class="mt-2 text-sm text-[color:var(--ds-text-muted)]">
-            {{ modalDescription }}
-          </p>
-        </div>
-      </div>
-
-      <form
-        class="space-y-6"
-        @submit.prevent="updateRecord"
-      >
-        <div>
-          <DocumentValidationSignature
-            :title="signatureTitle" 
-            @save="form.signature = $event" 
-          />
-        </div>
-
-        <div class="ds-panel p-5 sm:p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <h4 class="text-sm font-extrabold text-[color:var(--ds-text)]">
-                {{ $t('gestlab.general.labels.quality_certificates.sign_on_behalf') }}
-              </h4>
-              <p class="mt-1 text-sm text-[color:var(--ds-text-muted)]">
-                {{ $t('gestlab.general.labels.quality_certificates.sign_on_behalf_description') }}
-              </p>
-            </div>
-            
-            <button
-              type="button"
-              @click="toggleOnBehalfOf"
-              :class="[
-                'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-700-rgb))] focus:ring-offset-2',
-                isOnBehalfOf 
-                  ? 'bg-[rgb(var(--primary-800-rgb)/1)] dark:bg-[rgb(var(--primary-400-rgb)/1)]'
-                  : 'bg-[color:var(--ds-border-strong)]'
-              ]"
-              :aria-label="isOnBehalfOf ? $t('gestlab.general.labels.quality_certificates.disable_on_behalf') : $t('gestlab.general.labels.quality_certificates.enable_on_behalf')"
-            >
-              <span 
-                :class="[
-                  'inline-block h-4 w-4 transform rounded-full bg-white transition duration-200',
-                  isOnBehalfOf ? 'translate-x-6' : 'translate-x-1'
-                ]"
-              />
-            </button>
-          </div>
-
-          <div 
-            v-if="isOnBehalfOf"
-            class="mt-4 animate-slideIn"
-          >
-            <label class="ds-field-label mb-2 block">
-              {{ $t('gestlab.general.labels.quality_certificates.select_user') }}
-              <span class="text-red-500 ml-0.5">*</span>
-            </label>
-            <combobox-enhanced
-              name="user_id"
-              :hasError="form.errors.user_id"
-              v-model="form.user_id"
-              :load-options="loadUsers"
-              :placeholder="$t('gestlab.general.placeholders.select_user')"
-              class="w-full"
-            />
-            <p v-if="form.errors.user_id" class="mt-1 text-xs text-red-600 dark:text-red-400">
-              {{ form.errors.user_id }}
-            </p>
-            <p class="mt-2 text-xs text-[color:var(--ds-text-muted)]">
-              {{ $t('gestlab.general.labels.quality_certificates.on_behalf_of_warning') }}
-            </p>
-          </div>
-        </div>
-
-        <div v-if="form.signature" class="rounded-[24px] border border-green-200 bg-green-50/90 p-4 shadow-sm dark:border-green-500/20 dark:bg-green-500/10">
-          <div class="flex items-center gap-3">
-            <div class="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/15">
-              <CheckCircleIcon class="h-4 w-4 text-green-600" />
-            </div>
-            <div>
-              <h4 class="text-sm font-semibold text-green-900 dark:text-green-200">
-                {{ $t('gestlab.general.labels.quality_certificates.signature_ready') }}
-              </h4>
-              <p class="text-xs text-green-700 dark:text-green-300">
-                {{ $t('gestlab.general.labels.quality_certificates.signature_ready_description') }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="ds-panel sticky bottom-0 px-5 py-4">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div class="text-sm text-[color:var(--ds-text-muted)]">
-            {{ $t('gestlab.general.labels.quality_certificates.action_irreversible') }}
-          </div>
-          
-            <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                @click="closeModal"
-                class="ds-button ds-button-secondary"
-              >
-                {{ $t('gestlab.general.buttons.cancel') }}
-              </button>
-              
-              <button
-                type="submit"
-                :disabled="form.processing || !form.signature"
-                :class="[
-                  'ds-button ds-button-primary',
-                  form.processing || !form.signature
-                    ? 'cursor-not-allowed'
-                    : ''
-                ]"
-              >
-                <template v-if="form.processing">
-                  <ArrowPathIcon class="h-4 w-4 animate-spin" />
-                  {{ $t('gestlab.general.buttons.processing') }}
-                </template>
-                <template v-else>
-                  <CheckBadgeIcon class="h-4 w-4" />
-                  {{ actionButtonText }}
-                </template>
-              </button>
-            </div>
-          </div>
-        </div>
-      </form>
-    </div>
-  </Modal>
-</template>
-
 <script setup>
-import { useForm } from '@inertiajs/vue3'
-import { watch, computed } from 'vue'
 import Modal from "@/Components/modal.vue";
 import ComboboxEnhanced from "@/Components/combobox-enhanced.vue";
-import DocumentValidationSignature from '@/Components/document-validation-signature.vue';
-import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
+import DocumentValidationSignature from "@/Components/document-validation-signature.vue";
+import { computed, watch } from "vue";
+import { useForm } from "@inertiajs/vue3";
+import { trans } from "laravel-vue-i18n";
 import {
+  ArrowPathIcon,
   CheckBadgeIcon,
   CheckCircleIcon,
-  ArrowPathIcon,
-} from '@heroicons/vue/24/outline';
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { trans } from 'laravel-vue-i18n';
+  UserGroupIcon,
+} from "@heroicons/vue/24/outline";
+import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
 
 const props = defineProps({
   record: {
@@ -170,101 +24,110 @@ const props = defineProps({
   },
   title: {
     type: String,
-    default: '',
+    default: "",
   },
   url: {
     type: String,
     required: true,
   },
-})
+});
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(["close"]);
 
 const form = useForm({
-  verified_on_behalf_of: props.record?.data?.verified_on_behalf_of || false,
-  approve_on_behalf_of: props.record?.data?.approve_on_behalf_of || false,
+  verified_on_behalf_of:
+    props.record?.data?.verified_on_behalf_of || false,
+  approve_on_behalf_of:
+    props.record?.data?.approve_on_behalf_of || false,
   user_id: props.record?.data?.signed_by_user_id || null,
   signature: null,
   id: props.record?.data?.id || null,
-})
+});
 
-// Computed properties
+const isVerification = computed(() => props.action === "verify");
+
 const isOnBehalfOf = computed(() => {
-  return props.action === 'verify' 
-    ? form.verified_on_behalf_of 
+  return isVerification.value
+    ? form.verified_on_behalf_of
     : form.approve_on_behalf_of;
 });
 
 const modalTitle = computed(() => {
-  return props.action === 'verify' 
-    ? trans('gestlab.general.labels.quality_certificates.verify_certificate')
-    : trans('gestlab.general.labels.quality_certificates.validate_certificate');
+  if (props.title) {
+    return props.title;
+  }
+
+  return isVerification.value
+    ? trans("gestlab.general.labels.quality_certificates.verify_certificate")
+    : trans("gestlab.general.labels.quality_certificates.validate_certificate");
 });
 
 const modalDescription = computed(() => {
-  return props.action === 'verify' 
-    ? trans('gestlab.general.labels.quality_certificates.verify_description')
-    : trans('gestlab.general.labels.quality_certificates.validate_description');
+  return isVerification.value
+    ? trans("gestlab.general.labels.quality_certificates.verify_description")
+    : trans("gestlab.general.labels.quality_certificates.validate_description");
 });
 
 const signatureTitle = computed(() => {
-  return props.action === 'verify' 
-    ? trans('gestlab.general.labels.quality_certificates.verify_signature')
-    : trans('gestlab.general.labels.quality_certificates.validate_signature');
+  return isVerification.value
+    ? trans("gestlab.general.labels.quality_certificates.verify_signature")
+    : trans("gestlab.general.labels.quality_certificates.validate_signature");
 });
 
 const actionButtonText = computed(() => {
-  return props.action === 'verify'
-    ? trans('gestlab.general.labels.quality_certificates.verify_certificate')
-    : trans('gestlab.general.labels.quality_certificates.validate_certificate');
+  return isVerification.value
+    ? trans("gestlab.general.labels.quality_certificates.verify_certificate")
+    : trans("gestlab.general.labels.quality_certificates.validate_certificate");
 });
 
-// Watch for record changes
 watch(
   () => props.record,
   (record) => {
-    if (record) {
-      form.verified_on_behalf_of = record.data?.verified_on_behalf_of || false;
-      form.approve_on_behalf_of = record.data?.approve_on_behalf_of || false;
-      form.user_id = record.data?.signed_by_user_id || null;
-      form.id = record.data?.id || null;
+    if (!record) {
+      return;
     }
+
+    form.verified_on_behalf_of =
+      record.data?.verified_on_behalf_of || false;
+    form.approve_on_behalf_of =
+      record.data?.approve_on_behalf_of || false;
+    form.user_id = record.data?.signed_by_user_id || null;
+    form.id = record.data?.id || null;
   },
   { immediate: true },
-)
+);
 
-// Methods
-const closeModal = () => {
-  emit('close');
+function closeModal() {
+  emit("close");
 }
 
-const toggleOnBehalfOf = () => {
-  if (props.action === 'verify') {
+function toggleOnBehalfOf() {
+  if (isVerification.value) {
     form.verified_on_behalf_of = !form.verified_on_behalf_of;
   } else {
     form.approve_on_behalf_of = !form.approve_on_behalf_of;
   }
-  
-  // Clear user selection when disabling on behalf of
+
   if (!isOnBehalfOf.value) {
     form.user_id = null;
   }
 }
 
-const updateRecord = () => {
+function updateRecord() {
   const payload = {
     certificate: form.id,
     signature: form.signature,
   };
 
-  // Add on behalf of flag based on action
-  if (props.action === 'verify') {
+  if (isVerification.value) {
     payload.verified_on_behalf_of = form.verified_on_behalf_of;
+
     if (form.verified_on_behalf_of && form.user_id) {
       payload.signed_by_user_id = form.user_id;
     }
   } else {
     payload.approve_on_behalf_of = form.approve_on_behalf_of;
+
     if (form.approve_on_behalf_of && form.user_id) {
       payload.signed_by_user_id = form.user_id;
     }
@@ -273,57 +136,156 @@ const updateRecord = () => {
   form.transform(() => payload).post(props.url, {
     preserveScroll: true,
     preserveState: false,
-    onSuccess: () => {
-      closeModal();
-    },
+    onSuccess: closeModal,
   });
 }
 
-const loadUsers = (query, setOptions) => {
-  return loadSelectOptions('/users/getUser', query, setOptions, optionMappers.name);
+function loadUsers(query, setOptions) {
+  return loadSelectOptions(
+    "/users/getUser",
+    query,
+    setOptions,
+    optionMappers.name,
+  );
 }
 </script>
 
-<style scoped>
-/* Custom animations */
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+<template>
+  <Modal :show="true" max-width="2xl" @close="closeModal">
+    <div class="min-w-0 space-y-5 p-5 sm:p-6">
+      <header class="ds-command-surface p-5">
+        <div class="flex items-start gap-4">
+          <div class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[rgb(var(--primary-800-rgb))] text-white dark:bg-[rgb(var(--primary-300-rgb))] dark:text-[rgb(var(--primary-950-rgb))]">
+            <CheckBadgeIcon class="h-5 w-5" />
+          </div>
+          <div class="min-w-0">
+            <p class="ds-kicker">Gate de libertacao</p>
+            <h2 class="ds-heading mt-2 text-lg">{{ modalTitle }}</h2>
+            <p class="ds-copy mt-1 text-sm">{{ modalDescription }}</p>
+          </div>
+        </div>
+      </header>
 
-.animate-slideIn {
-  animation: slideIn 0.3s ease-out;
-}
+      <form class="space-y-5" @submit.prevent="updateRecord">
+        <DocumentValidationSignature
+          :title="signatureTitle"
+          @save="form.signature = $event"
+        />
 
-/* Focus states for accessibility */
-.quality-certificate-validation button:focus-visible {
-  outline: 2px solid rgb(var(--primary-700-rgb));
-  outline-offset: 2px;
-}
+        <section class="ds-panel overflow-hidden">
+          <div class="flex items-center justify-between gap-4 px-5 py-4">
+            <div class="flex min-w-0 items-start gap-3">
+              <div class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-[var(--ds-text-muted)]">
+                <UserGroupIcon class="h-4 w-4" />
+              </div>
+              <div>
+                <h3 class="ds-heading text-sm">
+                  {{ $t("gestlab.general.labels.quality_certificates.sign_on_behalf") }}
+                </h3>
+                <p class="ds-copy mt-1 text-xs">
+                  {{ $t("gestlab.general.labels.quality_certificates.sign_on_behalf_description") }}
+                </p>
+              </div>
+            </div>
 
-/* Disabled state styling */
-.quality-certificate-validation button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+            <button
+              type="button"
+              role="switch"
+              :aria-checked="isOnBehalfOf"
+              :aria-label="isOnBehalfOf
+                ? $t('gestlab.general.labels.quality_certificates.disable_on_behalf')
+                : $t('gestlab.general.labels.quality_certificates.enable_on_behalf')"
+              :class="[
+                'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--ds-focus)]',
+                isOnBehalfOf
+                  ? 'bg-[rgb(var(--primary-700-rgb))] dark:bg-[rgb(var(--primary-300-rgb))]'
+                  : 'bg-[var(--ds-border-strong)]',
+              ]"
+              @click="toggleOnBehalfOf"
+            >
+              <span
+                :class="[
+                  'h-4 w-4 rounded-full bg-[var(--ds-panel-raised)] transition-transform',
+                  isOnBehalfOf ? 'translate-x-6' : 'translate-x-1',
+                ]"
+              />
+            </button>
+          </div>
 
-/* Loading spinner animation */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+          <div
+            v-if="isOnBehalfOf"
+            class="border-t border-[var(--ds-border)] px-5 py-4"
+          >
+            <div class="ds-field-group">
+              <label class="ds-field-label">
+                {{ $t("gestlab.general.labels.quality_certificates.select_user") }}
+                <span class="ds-field-required">*</span>
+              </label>
+              <ComboboxEnhanced
+                v-model="form.user_id"
+                name="user_id"
+                :has-error="Boolean(form.errors.user_id)"
+                :load-options="loadUsers"
+                :placeholder="$t('gestlab.general.placeholders.select_user')"
+              />
+              <p v-if="form.errors.user_id" class="ds-field-error">
+                {{ form.errors.user_id }}
+              </p>
+              <p class="ds-field-hint">
+                {{ $t("gestlab.general.labels.quality_certificates.on_behalf_of_warning") }}
+              </p>
+            </div>
+          </div>
+        </section>
 
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-</style>
+        <div v-if="form.signature" class="lims-status-strip p-4">
+          <div class="flex items-start gap-3">
+            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-200">
+              <CheckCircleIcon class="h-4 w-4" />
+            </span>
+            <div>
+              <h3 class="ds-heading text-sm">
+                {{ $t("gestlab.general.labels.quality_certificates.signature_ready") }}
+              </h3>
+              <p class="ds-copy mt-1 text-xs">
+                {{ $t("gestlab.general.labels.quality_certificates.signature_ready_description") }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <footer class="flex flex-col gap-4 border-t border-[var(--ds-border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-start gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
+            <span class="lims-status-dot lims-status-dot-hold mt-0.5" />
+            {{ $t("gestlab.general.labels.quality_certificates.action_irreversible") }}
+          </div>
+
+          <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              class="ds-button ds-button-secondary"
+              @click="closeModal"
+            >
+              {{ $t("gestlab.general.buttons.cancel") }}
+            </button>
+
+            <button
+              type="submit"
+              class="ds-button ds-button-primary"
+              :disabled="form.processing || !form.signature"
+            >
+              <template v-if="form.processing">
+                <ArrowPathIcon class="h-4 w-4 animate-spin" />
+                {{ $t("gestlab.general.buttons.processing") }}
+              </template>
+              <template v-else>
+                <CheckBadgeIcon class="h-4 w-4" />
+                {{ actionButtonText }}
+              </template>
+            </button>
+          </div>
+        </footer>
+      </form>
+    </div>
+  </Modal>
+</template>

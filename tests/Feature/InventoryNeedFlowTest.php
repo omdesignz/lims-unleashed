@@ -11,9 +11,9 @@ use App\Models\InventoryNeedItem;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\VAPLab;
+use App\Notifications\InventoryNeedWorkflowNotification;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Notification;
-use App\Notifications\InventoryNeedWorkflowNotification;
 use Tests\TestCase;
 
 class InventoryNeedFlowTest extends TestCase
@@ -267,6 +267,7 @@ class InventoryNeedFlowTest extends TestCase
         $response = $this->actingAs($user)->get(route('vap-inventory.needs.pdf', $need));
 
         $response->assertOk();
+        $this->assertStringStartsWith('%PDF-', (string) $response->baseResponse->getContent());
     }
 
     public function test_need_submission_rejects_labs_from_another_department(): void

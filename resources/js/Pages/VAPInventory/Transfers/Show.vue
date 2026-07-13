@@ -1,638 +1,570 @@
 <template>
-  <div class="transfer-show-shell space-y-8" :class="commercialDocumentThemeClasses">
-    <ModuleHero
-      :icon="TruckIcon"
-      :title="`Transferência #${transfer.id}`"
-      subtitle="Detalhes da transferência, fluxo de stock e evidências de recepção."
-    >
-      <template #actions>
-        <div class="flex flex-wrap items-center gap-3">
-          <span :class="[
-            'inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ring-1 ring-inset',
-            statusClass
-          ]">
-            {{ transferStatus }}
-          </span>
-          <button
-            @click="goBack"
-            class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
-          >
-            <ArrowLeftIcon class="h-5 w-5" />
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+        <div class="min-w-0">
+          <p class="font-mono text-xs font-black uppercase tracking-[0.16em] text-[var(--ds-text-soft)]">
+            TRF-{{ transfer.id }} · Registo logístico
+          </p>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <span class="grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+              <TruckIcon class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-3">
+                <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">{{ transfer.item?.name || 'Transferência de stock' }}</h1>
+                <span :class="['ds-chip gap-2', statusClass]">
+                  <span :class="['h-2 w-2 rounded-full', statusDotClass]"></span>
+                  {{ transferStatus }}
+                </span>
+              </div>
+              <p class="mt-1 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
+                {{ transfer.source?.name || 'Origem não definida' }} → {{ transfer.destination?.name || 'Destino não definido' }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
+          <Link :href="route('vap-inventory.transfers.index')" class="ds-button ds-button-secondary">
+            <ArrowLeftIcon class="h-4 w-4" />
             Voltar
+          </Link>
+          <button v-if="canReceive" type="button" class="ds-button ds-button-primary" @click="openReceiveModal">
+            <CheckCircleIcon class="h-4 w-4" />
+            Confirmar receção
           </button>
         </div>
-      </template>
-    </ModuleHero>
+      </div>
 
-    <section class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-      <article class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div class="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 class="text-lg font-semibold text-gray-900">Fluxo de quantidade</h2>
-            <p class="mt-1 text-sm text-gray-500">
-              Comparação imediata entre a carga da transferência e o saldo dos dois armazéns.
-            </p>
-          </div>
-          <div class="rounded-2xl bg-slate-50 px-4 py-3 text-right">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Unidades monitorizadas</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900">{{ quantityFlowTotal }}</p>
-          </div>
-        </div>
-
-        <div class="mt-6">
-          <apexchart type="bar" height="300" :options="quantityFlowChartOptions" :series="quantityFlowChartSeries" />
-        </div>
-      </article>
-
-      <div class="grid gap-6">
-        <article class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div class="flex items-start justify-between gap-4">
+      <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <article v-for="card in summaryCards" :key="card.label" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4">
+          <div class="flex items-start justify-between gap-3">
             <div>
-              <h2 class="text-lg font-semibold text-gray-900">Pressão temporal</h2>
-              <p class="mt-1 text-sm text-gray-500">Tempo em curso, expectativa e atraso desta transferência.</p>
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
+              <p class="mt-3 text-2xl font-black text-[var(--ds-text)]">{{ card.value }}</p>
             </div>
-            <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-800">
-              {{ timingPressureTotal }} dias
-            </span>
+            <component :is="card.icon" :class="['h-5 w-5', card.tone]" />
           </div>
-
-          <div class="mt-6">
-            <apexchart type="donut" height="300" :options="timingPressureChartOptions" :series="timingPressureChartSeries" />
-          </div>
-        </article>
-
-        <article class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h2 class="text-lg font-semibold text-gray-900">Pulso de execução</h2>
-              <p class="mt-1 text-sm text-gray-500">Gap de destino e margem operacional para concluir ou cancelar.</p>
-            </div>
-          </div>
-
-          <div class="mt-6">
-            <apexchart type="bar" height="250" :options="executionPulseChartOptions" :series="executionPulseChartSeries" />
-          </div>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.detail }}</p>
         </article>
       </div>
     </section>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- LEFT COLUMN (2/3 width) -->
-      <div class="lg:col-span-2 space-y-6">
-        <!-- TRANSFER DETAILS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <ClipboardDocumentListIcon class="h-5 w-5 text-blue-900" />
-            Detalhes da Transferência
-          </h2>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Item Information -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                Item
-              </label>
-              <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <CubeIcon class="h-5 w-5 text-blue-900" />
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-900">{{ transfer.item?.name }}</p>
-                  <p class="text-xs text-gray-500">{{ transfer.item?.internal_code }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Quantity -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                Quantidade
-              </label>
-              <div class="p-3 bg-gray-50 rounded-lg">
-                <p class="text-2xl font-bold text-blue-900">{{ transfer.qty }}</p>
-                <p class="text-xs text-gray-500">{{ transfer.item?.unit?.code || 'unidades' }}</p>
-              </div>
-            </div>
-
-            <!-- Source Warehouse -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                De (Fonte)
-              </label>
-              <div class="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
-                <div class="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-                  <ArrowUpIcon class="h-5 w-5 text-red-600" />
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-900">{{ transfer.source?.name }}</p>
-                  <p class="text-xs text-gray-500">{{ transfer.source?.location?.name || 'N/A' }}</p>
-                  <p v-if="sourceStock" class="text-xs text-gray-500 mt-1">
-                    Estoque Actual: {{ sourceStock.qty_available }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Destination Warehouse -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                Para (Destino)
-              </label>
-              <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <ArrowDownIcon class="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-900">{{ transfer.destination?.name }}</p>
-                  <p class="text-xs text-gray-500">{{ transfer.destination?.location?.name || 'N/A' }}</p>
-                  <p v-if="destinationStock" class="text-xs text-gray-500 mt-1">
-                    Estoque Actual: {{ destinationStock.qty_available }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Dates -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                Datas
-              </label>
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Enviado:</span>
-                  <span class="font-medium text-gray-900">{{ formatDate(transfer.sent_date) }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Esperado:</span>
-                  <span class="font-medium text-gray-900">{{ formatDate(transfer.expected_date) || 'Não definido' }}</span>
-                </div>
-                <div v-if="transfer.received_date" class="flex justify-between text-sm">
-                  <span class="text-gray-600">Recebido:</span>
-                  <span class="font-medium text-green-600">{{ formatDate(transfer.received_date) }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Criado:</span>
-                  <span class="font-medium text-gray-900">{{ formatDateTime(transfer.created_at) }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Status Information -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                Informações de Estado
-              </label>
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Estado:</span>
-                  <span :class="statusClass">{{ transferStatus }}</span>
-                </div>
-                <div v-if="transfer.updated_at" class="flex justify-between text-sm">
-                  <span class="text-gray-600">Última Actualização:</span>
-                  <span class="font-medium text-gray-900">{{ formatDateTime(transfer.updated_at) }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Observations -->
-          <div v-if="transfer.obs" class="mt-6 space-y-2">
-            <label class="block text-sm font-medium text-gray-700">
-              Observações
-            </label>
-            <div class="p-3 bg-gray-50 rounded-lg">
-              <p class="text-sm text-gray-700 whitespace-pre-line">{{ transfer.obs }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- RECEIVE TRANSFER SECTION -->
-        <div v-if="canReceive" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <CheckCircleIcon class="h-5 w-5 text-blue-900" />
-            Receber Transferência
-          </h2>
-          
-          <form @submit.prevent="receiveTransfer" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <!-- Received Date -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Data de Recebimento
-                  <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  v-model="receiveForm.received_date"
-                  :max="maxDate"
-                  class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900"
-                  required
-                />
-              </div>
-
-              <!-- Actual Quantity -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Quantidade Actual Recebida
-                  <span class="text-red-500">*</span>
-                </label>
-                <div class="flex items-center gap-2">
-                  <input
-                    type="number"
-                    v-model="receiveForm.actual_qty"
-                    :min="1"
-                    :max="transfer.qty"
-                    class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900"
-                    required
-                  />
-                  <span class="text-sm text-gray-500 whitespace-nowrap">
-                    / {{ transfer.qty }} esperado
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Notes -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                Observações
-              </label>
-              <textarea
-                v-model="receiveForm.notes"
-                rows="3"
-                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900"
-                placeholder="Qualquer observação sobre o recebimento..."
-              ></textarea>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex justify-end gap-3 pt-4">
-              <button
-                type="button"
-                @click="cancelTransfer"
-                :disabled="processing"
-                :class="[
-                  'rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-200',
-                  processing
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                ]"
-              >
-                Cancelar Transferência
-              </button>
-              <button
-                type="submit"
-                :disabled="processing || !isReceiveFormValid"
-                :class="[
-                  'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200',
-                  processing || !isReceiveFormValid
-                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2'
-                ]"
-              >
-                <CheckCircleIcon class="h-5 w-5" />
-                {{ processing ? 'Processando...' : 'Marcar como Recebida' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- RIGHT COLUMN (1/3 width) -->
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
       <div class="space-y-6">
-        <!-- ACTIONS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            Acções
-          </h3>
-          <div class="space-y-3">
-            <!-- Print Button -->
-            <button 
-              @click="printTransfer"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-            >
-              <PrinterIcon class="h-5 w-5" />
-              Imprimir Transferência
-            </button>
-
-            <!-- Export Button -->
-            <button 
-              @click="exportTransfer"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-            >
-              <ArrowDownTrayIcon class="h-5 w-5" />
-              Exportar
-            </button>
-
-            <!-- View Transactions -->
-            <button 
-              @click="viewTransactions"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-            >
-              <ArrowsRightLeftIcon class="h-5 w-5" />
-              
-              Visualizar Transações
-            </button>
-          </div>
-        </div>
-
-        <!-- STATUS TIMELINE -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <ClockIcon class="h-5 w-5 text-blue-900" />
-            Linha do Tempo do Transferência
-          </h3>
-          <div class="space-y-4">
-            <div class="flex items-start">
-              <div class="flex-shrink-0 h-6 w-6 rounded-full bg-green-500 flex items-center justify-center">
-                <CheckIcon class="h-3 w-3 text-white" />
-              </div>
-              <div class="ml-3">
-                <p class="text-sm font-medium text-gray-900">Transferência Criada</p>
-                <p class="text-xs text-gray-500">{{ formatDateTime(transfer.created_at) }}</p>
-              </div>
-            </div>
-            
-            <div class="flex items-start">
-              <div :class="[
-                'flex-shrink-0 h-6 w-6 rounded-full flex items-center justify-center',
-                transfer.sent_date ? 'bg-green-500' : 'bg-gray-300'
-              ]">
-                <CheckIcon v-if="transfer.sent_date" class="h-3 w-3 text-white" />
-              </div>
-              <div class="ml-3">
-                <p class="text-sm font-medium text-gray-900">Transferência Enviada</p>
-                <p class="text-xs text-gray-500">
-                  {{ transfer.sent_date ? formatDate(transfer.sent_date) : 'Pendente' }}
-                </p>
-              </div>
-            </div>
-            
-            <div class="flex items-start">
-              <div :class="[
-                'flex-shrink-0 h-6 w-6 rounded-full flex items-center justify-center',
-                transfer.received_date ? 'bg-green-500' : 'bg-gray-300'
-              ]">
-                <CheckIcon v-if="transfer.received_date" class="h-3 w-3 text-white" />
-              </div>
-              <div class="ml-3">
-                <p class="text-sm font-medium text-gray-900">Transferência Recebida</p>
-                <p class="text-xs text-gray-500">
-                  {{ transfer.received_date ? formatDate(transfer.received_date) : 'Pendente' }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- STOCK INFORMATION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            Informações do Estoque
-          </h3>
-          <div class="space-y-3">
+        <section class="ds-card overflow-hidden">
+          <div class="ds-table-summary px-5 py-4">
             <div>
-              <p class="text-sm font-medium text-gray-600">Armazém de Origem</p>
-              <p v-if="sourceStock" class="mt-1 text-lg font-bold text-gray-900">
-                {{ sourceStock.qty_available }} UN
-              </p>
-              <p v-else class="mt-1 text-sm text-gray-500">Sem informações sobre o estoque</p>
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Dossiê da movimentação</p>
+              <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Identificação e rota</h2>
             </div>
-            <div>
-              <p class="text-sm font-medium text-gray-600">Armazém de Destino</p>
-              <p v-if="destinationStock" class="mt-1 text-lg font-bold text-gray-900">
-                {{ destinationStock.qty_available }} UN
-              </p>
-              <p v-else class="mt-1 text-sm text-gray-500">Sem informações sobre o estoque</p>
-            </div>
+            <ArrowsRightLeftIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
           </div>
-        </div>
+
+          <dl class="grid sm:grid-cols-2 xl:grid-cols-3">
+            <div v-for="field in detailFields" :key="field.label" class="border-b border-[var(--ds-border)] px-5 py-4 sm:border-r last:border-r-0">
+              <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">{{ field.label }}</dt>
+              <dd class="mt-2 text-sm font-black leading-6 text-[var(--ds-text)]">{{ field.value }}</dd>
+              <dd v-if="field.detail" class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ field.detail }}</dd>
+            </div>
+          </dl>
+
+          <div v-if="transfer.obs" class="border-t border-[var(--ds-border)] px-5 py-4">
+            <p class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Observações</p>
+            <p class="mt-2 whitespace-pre-line text-sm font-medium leading-6 text-[var(--ds-text-muted)]">{{ transfer.obs }}</p>
+          </div>
+        </section>
+
+        <section class="ds-command-surface overflow-hidden">
+          <div class="ds-table-summary px-5 py-4">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Telemetria da transferência</p>
+              <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Quantidade, prazo e capacidade de execução</h2>
+            </div>
+            <span class="ds-chip">Atualizado com o registo atual</span>
+          </div>
+
+          <div class="grid gap-4 p-4 lg:grid-cols-2">
+            <article class="ds-card p-5">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h3 class="text-sm font-black text-[var(--ds-text)]">Fluxo de quantidade</h3>
+                  <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Carga movimentada e saldo observado nos dois armazéns.</p>
+                </div>
+                <span class="text-xl font-black text-[var(--ds-text)]">{{ quantityFlowTotal }}</span>
+              </div>
+              <div class="mt-4 min-h-72">
+                <apexchart type="bar" height="288" :options="quantityFlowChartOptions" :series="quantityFlowChartSeries" />
+              </div>
+            </article>
+
+            <article class="ds-card p-5">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h3 class="text-sm font-black text-[var(--ds-text)]">Pressão temporal</h3>
+                  <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Dias em curso, margem até ao prazo e eventual atraso.</p>
+                </div>
+                <span class="text-xl font-black text-[var(--ds-text)]">{{ timingPressureTotal }} d</span>
+              </div>
+              <div class="mt-4 min-h-72">
+                <apexchart type="donut" height="288" :options="timingPressureChartOptions" :series="timingPressureChartSeries" />
+              </div>
+            </article>
+
+            <article class="ds-card p-5 lg:col-span-2">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h3 class="text-sm font-black text-[var(--ds-text)]">Pulso de execução</h3>
+                  <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Gap no destino e disponibilidade das ações de receção ou cancelamento.</p>
+                </div>
+                <BoltIcon class="h-5 w-5 text-amber-600 dark:text-amber-300" />
+              </div>
+              <div class="mt-4 min-h-56">
+                <apexchart type="bar" height="224" :options="executionPulseChartOptions" :series="executionPulseChartSeries" />
+              </div>
+            </article>
+          </div>
+        </section>
       </div>
+
+      <aside class="space-y-5">
+        <section class="ds-card p-5">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Estado do processo</p>
+              <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Linha de custódia</h2>
+            </div>
+            <ClockIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
+          </div>
+
+          <ol class="mt-5 space-y-0">
+            <li v-for="(step, index) in workflowSteps" :key="step.label" class="relative flex gap-3 pb-7 last:pb-0">
+              <span v-if="index < workflowSteps.length - 1" class="absolute left-[0.4375rem] top-4 h-[calc(100%-0.5rem)] w-px bg-[var(--ds-border)]"></span>
+              <span :class="['relative mt-1 h-4 w-4 shrink-0 rounded-full border-4 border-[var(--ds-panel-raised)]', step.complete ? 'bg-emerald-600' : step.current ? 'bg-amber-500' : 'bg-[var(--ds-border-strong)]']"></span>
+              <div>
+                <p class="text-sm font-black text-[var(--ds-text)]">{{ step.label }}</p>
+                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ step.detail }}</p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <section class="ds-card p-5">
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Posição de stock</p>
+          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Após reserva / receção</h2>
+          <dl class="mt-5 divide-y divide-[var(--ds-border)] border-y border-[var(--ds-border)]">
+            <div class="flex items-start justify-between gap-4 py-3">
+              <dt>
+                <p class="text-sm font-black text-[var(--ds-text)]">Origem</p>
+                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ transfer.source?.name || 'N/D' }}</p>
+              </dt>
+              <dd class="text-lg font-black text-rose-700 dark:text-rose-300">{{ sourceStock?.qty_available ?? 0 }}</dd>
+            </div>
+            <div class="flex items-start justify-between gap-4 py-3">
+              <dt>
+                <p class="text-sm font-black text-[var(--ds-text)]">Destino</p>
+                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ transfer.destination?.name || 'N/D' }}</p>
+              </dt>
+              <dd class="text-lg font-black text-emerald-700 dark:text-emerald-300">{{ destinationStock?.qty_available ?? 0 }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="ds-card p-5">
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Ações do registo</p>
+          <div class="mt-4 grid gap-2">
+            <button v-if="canReceive" type="button" class="ds-button ds-button-primary w-full" @click="openReceiveModal">
+              <CheckCircleIcon class="h-4 w-4" />
+              Confirmar receção
+            </button>
+            <button type="button" class="ds-button ds-button-secondary w-full" @click="printTransfer">
+              <PrinterIcon class="h-4 w-4" />
+              Imprimir registo
+            </button>
+            <button type="button" class="ds-button ds-button-secondary w-full" @click="exportTransfer">
+              <ArrowDownTrayIcon class="h-4 w-4" />
+              Exportar PDF
+            </button>
+            <button type="button" class="ds-button ds-button-secondary w-full" @click="viewTransactions">
+              <ArrowsRightLeftIcon class="h-4 w-4" />
+              Ver transações
+            </button>
+            <button v-if="canCancel" type="button" class="ds-button ds-button-danger w-full" @click="openCancelModal">
+              <XCircleIcon class="h-4 w-4" />
+              Cancelar transferência
+            </button>
+          </div>
+        </section>
+      </aside>
     </div>
+
+    <TransitionRoot as="template" :show="isReceiveModalOpen">
+      <Dialog class="relative z-50" @close="closeReceiveModal">
+        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-150" leave-from="opacity-100" leave-to="opacity-0">
+          <div class="ds-modal-backdrop fixed inset-0" />
+        </TransitionChild>
+        <div class="fixed inset-0 z-50 overflow-y-auto">
+          <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center">
+            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+              <DialogPanel class="ds-modal-panel w-full max-w-xl p-0 text-left">
+                <form @submit.prevent="submitReceive">
+                  <div class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] p-5">
+                    <div>
+                      <DialogTitle class="text-lg font-black text-[var(--ds-text)]">Confirmar receção física</DialogTitle>
+                      <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">TRF-{{ transfer.id }} · {{ transfer.item?.name }}</p>
+                    </div>
+                    <button type="button" class="ds-table-action" title="Fechar" @click="closeReceiveModal">
+                      <XMarkIcon class="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div class="space-y-5 p-5">
+                    <div class="ds-command-toolbar grid gap-3 p-3 sm:grid-cols-2">
+                      <div>
+                        <p class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Origem</p>
+                        <p class="mt-1 text-sm font-black text-[var(--ds-text)]">{{ transfer.source?.name }}</p>
+                      </div>
+                      <div>
+                        <p class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Destino</p>
+                        <p class="mt-1 text-sm font-black text-[var(--ds-text)]">{{ transfer.destination?.name }}</p>
+                      </div>
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                      <label class="ds-field-group">
+                        <span class="ds-field-label">Data de receção <span class="ds-field-required">*</span></span>
+                        <input v-model="receiveForm.received_date" type="date" :max="maxDate" class="ds-field" required />
+                        <span v-if="receiveForm.errors.received_date" class="ds-field-error">{{ receiveForm.errors.received_date }}</span>
+                      </label>
+                      <label class="ds-field-group">
+                        <span class="ds-field-label">Quantidade recebida <span class="ds-field-required">*</span></span>
+                        <input v-model="receiveForm.actual_qty" type="number" min="1" :max="transfer.qty" class="ds-field" required />
+                        <span class="ds-field-hint">Máximo previsto: {{ transfer.qty }}</span>
+                        <span v-if="receiveForm.errors.actual_qty" class="ds-field-error">{{ receiveForm.errors.actual_qty }}</span>
+                      </label>
+                    </div>
+
+                    <label class="ds-field-group">
+                      <span class="ds-field-label">Observações da receção</span>
+                      <textarea v-model="receiveForm.notes" rows="4" class="ds-field" placeholder="Condição da carga, divergências ou evidências"></textarea>
+                      <span v-if="receiveForm.errors.notes" class="ds-field-error">{{ receiveForm.errors.notes }}</span>
+                    </label>
+                  </div>
+
+                  <div class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] p-5 sm:flex-row sm:justify-end">
+                    <button type="button" class="ds-button ds-button-secondary" @click="closeReceiveModal">Voltar</button>
+                    <button type="submit" class="ds-button ds-button-primary" :disabled="receiveForm.processing || !isReceiveFormValid">
+                      <CheckCircleIcon class="h-4 w-4" />
+                      {{ receiveForm.processing ? 'A registar...' : 'Marcar como recebida' }}
+                    </button>
+                  </div>
+                </form>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
+
+    <TransitionRoot as="template" :show="isCancelModalOpen">
+      <Dialog class="relative z-50" @close="closeCancelModal">
+        <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-150" leave-from="opacity-100" leave-to="opacity-0">
+          <div class="ds-modal-backdrop fixed inset-0" />
+        </TransitionChild>
+        <div class="fixed inset-0 z-50 overflow-y-auto">
+          <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center">
+            <TransitionChild as="template" enter="ease-out duration-200" enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-150" leave-from="opacity-100 translate-y-0 sm:scale-100" leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+              <DialogPanel class="ds-modal-panel w-full max-w-lg p-0 text-left">
+                <form @submit.prevent="submitCancel">
+                  <div class="border-b border-[var(--ds-border)] p-5">
+                    <DialogTitle class="text-lg font-black text-[var(--ds-text)]">Cancelar TRF-{{ transfer.id }}</DialogTitle>
+                    <p class="mt-1 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
+                      {{ transfer.qty }} {{ transfer.item?.unit?.code || 'UN' }} serão devolvidas ao saldo de {{ transfer.source?.name }}.
+                    </p>
+                  </div>
+                  <div class="p-5">
+                    <label class="ds-field-group">
+                      <span class="ds-field-label">Motivo do cancelamento <span class="ds-field-required">*</span></span>
+                      <textarea v-model="cancelForm.notes" rows="4" class="ds-field" placeholder="Descreva a razão operacional" required></textarea>
+                      <span v-if="cancelForm.errors.notes" class="ds-field-error">{{ cancelForm.errors.notes }}</span>
+                    </label>
+                  </div>
+                  <div class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] p-5 sm:flex-row sm:justify-end">
+                    <button type="button" class="ds-button ds-button-secondary" @click="closeCancelModal">Manter transferência</button>
+                    <button type="submit" class="ds-button ds-button-danger" :disabled="cancelForm.processing || !cancelForm.notes.trim()">
+                      <XCircleIcon class="h-4 w-4" />
+                      {{ cancelForm.processing ? 'A cancelar...' : 'Cancelar transferência' }}
+                    </button>
+                  </div>
+                </form>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { useForm, router } from '@inertiajs/vue3'
-import ModuleHero from '@/Components/base/ModuleHero.vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { Link, router, useForm } from '@inertiajs/vue3'
+import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
-  TruckIcon,
-  ArrowLeftIcon,
-  ClipboardDocumentListIcon,
-  CubeIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  CheckCircleIcon,
-  PrinterIcon,
   ArrowDownTrayIcon,
+  ArrowLeftIcon,
   ArrowsRightLeftIcon,
+  BoltIcon,
+  CheckCircleIcon,
   ClockIcon,
-  CheckIcon
+  CubeIcon,
+  MapPinIcon,
+  PrinterIcon,
+  TruckIcon,
+  XCircleIcon,
+  XMarkIcon,
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
   transfer: {
     type: Object,
-    required: true
+    required: true,
   },
   sourceStock: {
     type: Object,
-    default: null
+    default: null,
   },
   destinationStock: {
     type: Object,
-    default: null
+    default: null,
   },
   canReceive: {
     type: Boolean,
-    default: false
+    default: false,
   },
   canCancel: {
     type: Boolean,
-    default: false
+    default: false,
   },
   charts: {
     type: Object,
-    default: () => ({})
-  }
+    default: () => ({}),
+  },
 })
 
-const processing = ref(false)
 const maxDate = new Date().toISOString().split('T')[0]
 const isDarkMode = ref(false)
+const isReceiveModalOpen = ref(false)
+const isCancelModalOpen = ref(false)
 let themeObserver
+
+const receiveForm = useForm({
+  received_date: maxDate,
+  actual_qty: props.transfer.qty,
+  notes: '',
+})
+
+const cancelForm = useForm({
+  notes: '',
+})
 
 const chartTextColor = computed(() => isDarkMode.value ? '#cbd5e1' : '#475569')
 const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#e2e8f0')
 const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 
-const syncDarkMode = () => {
-  if (typeof document === 'undefined') {
-    return
-  }
+const transferStatus = computed(() => {
+  if (props.transfer.deleted_at) return 'Cancelada'
+  if (props.transfer.received_date) return 'Recebida'
+  if (props.transfer.sent_date) return 'Em trânsito'
+  return 'Pendente'
+})
 
-  isDarkMode.value = document.documentElement.classList.contains('dark')
-}
+const statusClass = computed(() => ({
+  'Cancelada': 'border-rose-300/70 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-200',
+  'Recebida': 'border-emerald-300/70 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200',
+  'Em trânsito': 'border-cyan-300/70 bg-cyan-50 text-cyan-800 dark:border-cyan-800 dark:bg-cyan-950/30 dark:text-cyan-200',
+  'Pendente': 'border-amber-300/70 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200',
+}[transferStatus.value]))
 
-const quantityFlowChartSeries = computed(() => [
+const statusDotClass = computed(() => ({
+  'Cancelada': 'bg-rose-600',
+  'Recebida': 'bg-emerald-600',
+  'Em trânsito': 'bg-cyan-600',
+  'Pendente': 'bg-amber-500',
+}[transferStatus.value]))
+
+const daysInTransfer = computed(() => {
+  const start = new Date(props.transfer.created_at)
+  const end = props.transfer.received_date ? new Date(props.transfer.received_date) : new Date()
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0
+  return Math.max(Math.ceil((end.getTime() - start.getTime()) / 86400000), 0)
+})
+
+const summaryCards = computed(() => [
   {
-    name: 'Quantidade',
-    data: props.charts?.quantity_flow?.series || []
-  }
+    label: 'Quantidade',
+    value: `${props.transfer.qty} ${props.transfer.item?.unit?.code || 'UN'}`,
+    detail: 'Carga prevista no movimento',
+    icon: CubeIcon,
+    tone: 'text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200',
+  },
+  {
+    label: 'Stock na origem',
+    value: props.sourceStock?.qty_available ?? 0,
+    detail: props.transfer.source?.name || 'Armazém de origem',
+    icon: MapPinIcon,
+    tone: 'text-rose-700 dark:text-rose-300',
+  },
+  {
+    label: 'Stock no destino',
+    value: props.destinationStock?.qty_available ?? 0,
+    detail: props.transfer.destination?.name || 'Armazém de destino',
+    icon: MapPinIcon,
+    tone: 'text-emerald-700 dark:text-emerald-300',
+  },
+  {
+    label: 'Tempo em processo',
+    value: `${daysInTransfer.value} d`,
+    detail: props.transfer.received_date ? 'Ciclo concluído' : 'Ciclo ainda em curso',
+    icon: ClockIcon,
+    tone: 'text-amber-600 dark:text-amber-300',
+  },
 ])
 
-const quantityFlowTotal = computed(() =>
+const detailFields = computed(() => [
+  {
+    label: 'Item',
+    value: props.transfer.item?.name || 'N/D',
+    detail: props.transfer.item?.internal_code || props.transfer.item?.code || 'Sem código interno',
+  },
+  {
+    label: 'Origem',
+    value: props.transfer.source?.name || 'N/D',
+    detail: props.transfer.source?.location?.name || 'Sem localização registada',
+  },
+  {
+    label: 'Destino',
+    value: props.transfer.destination?.name || 'N/D',
+    detail: props.transfer.destination?.location?.name || 'Sem localização registada',
+  },
+  {
+    label: 'Data de envio',
+    value: formatDate(props.transfer.sent_date) || 'Por expedir',
+    detail: `Criada em ${formatDateTime(props.transfer.created_at)}`,
+  },
+  {
+    label: 'Receção esperada',
+    value: formatDate(props.transfer.expected_date) || 'Sem prazo definido',
+    detail: props.transfer.is_overdue ? `${props.transfer.days_overdue || 0} dias de atraso` : 'Sem atraso registado',
+  },
+  {
+    label: 'Receção efetiva',
+    value: formatDate(props.transfer.received_date) || 'Pendente',
+    detail: `Última atualização: ${formatDateTime(props.transfer.updated_at)}`,
+  },
+])
+
+const workflowSteps = computed(() => [
+  {
+    label: 'Transferência criada',
+    detail: formatDateTime(props.transfer.created_at),
+    complete: true,
+    current: false,
+  },
+  {
+    label: 'Stock expedido',
+    detail: props.transfer.sent_date ? formatDate(props.transfer.sent_date) : 'Aguardando expedição',
+    complete: Boolean(props.transfer.sent_date),
+    current: !props.transfer.sent_date,
+  },
+  {
+    label: 'Receção no destino',
+    detail: props.transfer.received_date ? formatDate(props.transfer.received_date) : 'Aguardando confirmação física',
+    complete: Boolean(props.transfer.received_date),
+    current: Boolean(props.transfer.sent_date && !props.transfer.received_date),
+  },
+])
+
+const isReceiveFormValid = computed(() => (
+  Boolean(receiveForm.received_date)
+  && Number(receiveForm.actual_qty) > 0
+  && Number(receiveForm.actual_qty) <= Number(props.transfer.qty)
+))
+
+const quantityFlowChartSeries = computed(() => [{
+  name: 'Quantidade',
+  data: props.charts?.quantity_flow?.series || [],
+}])
+
+const quantityFlowTotal = computed(() => (
   (props.charts?.quantity_flow?.series || []).reduce((sum, value) => sum + Number(value || 0), 0)
-)
+))
 
 const timingPressureChartSeries = computed(() => props.charts?.timing_pressure?.series || [])
+const timingPressureTotal = computed(() => timingPressureChartSeries.value.reduce((sum, value) => sum + Number(value || 0), 0))
 
-const timingPressureTotal = computed(() =>
-  timingPressureChartSeries.value.reduce((sum, value) => sum + Number(value || 0), 0)
-)
-
-const executionPulseChartSeries = computed(() => [
-  {
-    name: 'Indicador',
-    data: props.charts?.execution_pulse?.series || []
-  }
-])
+const executionPulseChartSeries = computed(() => [{
+  name: 'Indicador',
+  data: props.charts?.execution_pulse?.series || [],
+}])
 
 const quantityFlowChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
+  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
-  plotOptions: {
-    bar: {
-      borderRadius: 8,
-      distributed: true,
-      columnWidth: '48%'
-    }
-  },
-  colors: ['#0f172a', '#dc2626', '#16a34a'],
+  plotOptions: { bar: { borderRadius: 4, distributed: true, columnWidth: '48%' } },
+  colors: ['#0e7490', '#be123c', '#047857'],
   dataLabels: { enabled: false },
   xaxis: {
     categories: props.charts?.quantity_flow?.labels || [],
     axisBorder: { color: chartGridColor.value },
     axisTicks: { color: chartGridColor.value },
-    labels: { style: { colors: chartTextColor.value, fontSize: '12px' } }
+    labels: { style: { colors: chartTextColor.value, fontSize: '12px' } },
   },
-  yaxis: {
-    labels: {
-      formatter: (value) => Number(value || 0).toFixed(0),
-      style: { colors: chartTextColor.value },
-    }
-  },
-  grid: {
-    borderColor: chartGridColor.value,
-    strokeDashArray: 4
-  },
+  yaxis: { labels: { formatter: (value) => Number(value || 0).toFixed(0), style: { colors: chartTextColor.value } } },
+  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
   tooltip: { theme: chartTooltipTheme.value },
-  legend: { show: false }
+  legend: { show: false },
 }))
 
 const timingPressureChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
+  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
   labels: props.charts?.timing_pressure?.labels || [],
-  colors: ['#2563eb', '#f59e0b', '#dc2626'],
-  dataLabels: {
-    enabled: true,
-    formatter: (value) => `${Math.round(value)}%`
-  },
-  legend: {
-    position: 'bottom',
-    labels: { colors: chartTextColor.value },
-  },
-  stroke: {
-    colors: [isDarkMode.value ? '#020617' : '#ffffff']
-  },
+  colors: ['#0e7490', '#d97706', '#be123c'],
+  dataLabels: { enabled: true, formatter: (value) => `${Math.round(value)}%` },
+  legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
+  stroke: { colors: [isDarkMode.value ? '#020617' : '#ffffff'] },
   tooltip: { theme: chartTooltipTheme.value },
 }))
 
 const executionPulseChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
+  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
-  plotOptions: {
-    bar: {
-      borderRadius: 8,
-      distributed: true,
-      columnWidth: '52%'
-    }
-  },
-  colors: ['#7c3aed', '#0f766e', '#334155'],
+  plotOptions: { bar: { borderRadius: 4, distributed: true, columnWidth: '42%' } },
+  colors: ['#7c3aed', '#0e7490', '#475569'],
   dataLabels: { enabled: false },
   xaxis: {
     categories: props.charts?.execution_pulse?.labels || [],
     axisBorder: { color: chartGridColor.value },
     axisTicks: { color: chartGridColor.value },
-    labels: { style: { colors: chartTextColor.value, fontSize: '12px' } }
+    labels: { style: { colors: chartTextColor.value, fontSize: '12px' } },
   },
-  yaxis: {
-    labels: {
-      formatter: (value) => Number(value || 0).toFixed(0),
-      style: { colors: chartTextColor.value },
-    }
-  },
-  grid: {
-    borderColor: chartGridColor.value,
-    strokeDashArray: 4
-  },
+  yaxis: { labels: { formatter: (value) => Number(value || 0).toFixed(0), style: { colors: chartTextColor.value } } },
+  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
   tooltip: { theme: chartTooltipTheme.value },
-  legend: { show: false }
+  legend: { show: false },
 }))
 
-const receiveForm = useForm({
-  received_date: maxDate,
-  actual_qty: props.transfer.qty,
-  notes: ''
-})
-
-const transferStatus = computed(() => {
-  if (props.transfer.deleted_at) return 'Cancelada'
-  if (props.transfer.received_date) return 'Recebida'
-  if (props.transfer.sent_date) return 'Em Trânsito'
-  return 'Pendente'
-})
-
-const statusClass = computed(() => {
-  const classMap = {
-    'Cancelada': 'bg-red-100 text-red-800 ring-red-600/20 dark:bg-red-500/10 dark:text-red-200 dark:ring-red-400/20',
-    'Recebida': 'bg-green-100 text-green-800 ring-green-600/20 dark:bg-green-500/10 dark:text-green-200 dark:ring-green-400/20',
-    'Em Trânsito': 'bg-blue-100 text-blue-800 ring-blue-600/20 dark:bg-blue-500/10 dark:text-blue-200 dark:ring-blue-400/20',
-    'Pendente': 'bg-yellow-100 text-yellow-800 ring-yellow-600/20 dark:bg-yellow-500/10 dark:text-yellow-200 dark:ring-yellow-400/20'
-  }
-  return classMap[transferStatus.value] || 'bg-gray-100 text-gray-800 ring-gray-600/20 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-500/20'
-})
-
-const isReceiveFormValid = computed(() => {
-  return receiveForm.received_date && 
-         receiveForm.actual_qty > 0 && 
-         receiveForm.actual_qty <= props.transfer.qty
-})
-
 function formatDate(dateString) {
-  if (!dateString) return '-'
+  if (!dateString) return ''
   return new Date(dateString).toLocaleDateString('pt-PT', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   })
 }
 
@@ -643,33 +575,61 @@ function formatDateTime(dateString) {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 
-function receiveTransfer() {
-  if (!confirm('Tem a certeza que deseja receber esta transferência?')) {
-    return
-  }
+function syncDarkMode() {
+  if (typeof document === 'undefined') return
+  isDarkMode.value = document.documentElement.classList.contains('dark')
+}
 
-  processing.value = true
-  receiveForm.post(route('vap-inventory.transfers.receive', props.transfer.id), {
+function openReceiveModal() {
+  receiveForm.reset()
+  receiveForm.clearErrors()
+  receiveForm.received_date = maxDate
+  receiveForm.actual_qty = props.transfer.qty
+  isReceiveModalOpen.value = true
+}
+
+function closeReceiveModal() {
+  if (receiveForm.processing) return
+  isReceiveModalOpen.value = false
+  receiveForm.reset()
+  receiveForm.clearErrors()
+}
+
+function submitReceive() {
+  if (!isReceiveFormValid.value) return
+
+  receiveForm.transform((data) => ({
+    ...data,
+    actual_qty: Number(data.actual_qty),
+  })).post(route('vap-inventory.transfers.receive', props.transfer.id), {
     preserveScroll: true,
-    preserveState: true,
-    onFinish: () => processing.value = false
+    onSuccess: closeReceiveModal,
   })
 }
 
-function cancelTransfer() {
-  if (!confirm('Tem a certeza que deseja cancelar esta transferência? O estoque será devolvido para o armazém de origem.')) {
-    return
-  }
+function openCancelModal() {
+  cancelForm.reset()
+  cancelForm.clearErrors()
+  isCancelModalOpen.value = true
+}
 
-  processing.value = true
-  router.post(route('vap-inventory.transfers.cancel', props.transfer.id), {}, {
+function closeCancelModal() {
+  if (cancelForm.processing) return
+  isCancelModalOpen.value = false
+  cancelForm.reset()
+  cancelForm.clearErrors()
+}
+
+function submitCancel() {
+  if (!cancelForm.notes.trim()) return
+
+  cancelForm.post(route('vap-inventory.transfers.cancel', props.transfer.id), {
     preserveScroll: true,
-    preserveState: true,
-    onFinish: () => processing.value = false
+    onSuccess: closeCancelModal,
   })
 }
 
@@ -682,20 +642,14 @@ function exportTransfer() {
 }
 
 function viewTransactions() {
-  // Navigate to transactions related to this transfer
   router.visit(route('vap-inventory.reports.stock-movement', {
     item_id: props.transfer.item_id,
-    search: `Transfer #${props.transfer.id}`
+    search: `Transfer #${props.transfer.id}`,
   }))
-}
-
-function goBack() {
-  router.visit(route('vap-inventory.transfers.index'))
 }
 
 onMounted(() => {
   syncDarkMode()
-
   if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
     themeObserver = new MutationObserver(syncDarkMode)
     themeObserver.observe(document.documentElement, {
@@ -709,172 +663,3 @@ onBeforeUnmount(() => {
   themeObserver?.disconnect()
 })
 </script>
-
-<style scoped>
-.transfer-show-shell :deep(.bg-white.rounded-xl),
-.transfer-show-shell :deep(.rounded-2xl.border.border-gray-200.bg-white),
-.transfer-show-shell :deep(.rounded-xl.border.border-gray-200) {
-  border-color: rgb(226 232 240);
-  border-radius: 1.5rem;
-  background: rgb(255 255 255);
-  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
-}
-
-.transfer-show-shell :deep(.rounded-2xl.border.border-gray-200.bg-white) {
-  background:
-    radial-gradient(circle at top right, rgb(var(--color-primary-50, 239 246 255) / 0.72), transparent 34%),
-    rgb(255 255 255);
-}
-
-.transfer-show-shell :deep(.bg-gray-50),
-.transfer-show-shell :deep(.bg-slate-50) {
-  border-color: rgb(226 232 240);
-  background: rgb(248 250 252 / 0.84);
-}
-
-.transfer-show-shell :deep(.bg-red-50) {
-  background: rgb(254 242 242 / 0.86);
-}
-
-.transfer-show-shell :deep(.bg-green-50) {
-  background: rgb(240 253 244 / 0.86);
-}
-
-.transfer-show-shell :deep(.text-blue-900) {
-  color: rgb(var(--color-primary-900, 30 58 138));
-}
-
-.transfer-show-shell :deep(.bg-blue-100) {
-  background-color: rgb(var(--color-primary-100, 219 234 254));
-}
-
-.transfer-show-shell :deep(.bg-blue-50) {
-  background-color: rgb(var(--color-primary-50, 239 246 255));
-}
-
-.transfer-show-shell :deep(.border-gray-200),
-.transfer-show-shell :deep(.border-gray-300),
-.transfer-show-shell :deep(.border-slate-200) {
-  border-color: rgb(226 232 240);
-}
-
-.transfer-show-shell :deep(input),
-.transfer-show-shell :deep(textarea) {
-  border-color: rgb(203 213 225);
-  border-radius: 0.875rem;
-  background: rgb(255 255 255);
-  color: rgb(15 23 42);
-}
-
-.transfer-show-shell :deep(input:focus),
-.transfer-show-shell :deep(textarea:focus) {
-  border-color: rgb(var(--color-primary-500, 59 130 246));
-  box-shadow: 0 0 0 3px rgb(var(--color-primary-500, 59 130 246) / 0.16);
-}
-
-.transfer-show-shell :deep(textarea::placeholder),
-.transfer-show-shell :deep(input::placeholder) {
-  color: rgb(148 163 184);
-}
-
-.transfer-show-shell :deep(.hover\:bg-gray-50:hover) {
-  background: rgb(var(--color-primary-50, 239 246 255) / 0.58);
-}
-
-.transfer-show-shell :deep(.apexcharts-tooltip),
-.transfer-show-shell :deep(.apexcharts-menu) {
-  border-radius: 0.875rem;
-  border-color: rgb(226 232 240);
-  box-shadow: 0 20px 45px rgb(15 23 42 / 0.14);
-}
-
-:global(.dark) .transfer-show-shell :deep(.bg-white.rounded-xl),
-:global(.dark) .transfer-show-shell :deep(.rounded-2xl.border.border-gray-200.bg-white),
-:global(.dark) .transfer-show-shell :deep(.rounded-xl.border.border-gray-200) {
-  border-color: rgb(30 41 59);
-  background:
-    radial-gradient(circle at top right, rgb(var(--color-primary-500, 59 130 246) / 0.12), transparent 32%),
-    rgb(2 6 23);
-}
-
-:global(.dark) .transfer-show-shell :deep(.bg-white) {
-  background: rgb(2 6 23);
-}
-
-:global(.dark) .transfer-show-shell :deep(.bg-gray-50),
-:global(.dark) .transfer-show-shell :deep(.bg-slate-50),
-:global(.dark) .transfer-show-shell :deep(.hover\:bg-gray-50:hover) {
-  border-color: rgb(51 65 85);
-  background: rgb(15 23 42 / 0.72);
-}
-
-:global(.dark) .transfer-show-shell :deep(.bg-red-50) {
-  border-color: rgb(248 113 113 / 0.28);
-  background: rgb(239 68 68 / 0.1);
-}
-
-:global(.dark) .transfer-show-shell :deep(.bg-green-50) {
-  border-color: rgb(74 222 128 / 0.28);
-  background: rgb(34 197 94 / 0.1);
-}
-
-:global(.dark) .transfer-show-shell :deep(.bg-gray-100),
-:global(.dark) .transfer-show-shell :deep(.bg-gray-200),
-:global(.dark) .transfer-show-shell :deep(.bg-gray-300) {
-  background-color: rgb(30 41 59);
-}
-
-:global(.dark) .transfer-show-shell :deep(.text-gray-900),
-:global(.dark) .transfer-show-shell :deep(.text-gray-800),
-:global(.dark) .transfer-show-shell :deep(.text-gray-700),
-:global(.dark) .transfer-show-shell :deep(.text-slate-900),
-:global(.dark) .transfer-show-shell :deep(.text-slate-700) {
-  color: rgb(226 232 240);
-}
-
-:global(.dark) .transfer-show-shell :deep(.text-gray-600),
-:global(.dark) .transfer-show-shell :deep(.text-gray-500),
-:global(.dark) .transfer-show-shell :deep(.text-slate-600),
-:global(.dark) .transfer-show-shell :deep(.text-slate-500) {
-  color: rgb(148 163 184);
-}
-
-:global(.dark) .transfer-show-shell :deep(.border-gray-200),
-:global(.dark) .transfer-show-shell :deep(.border-gray-300),
-:global(.dark) .transfer-show-shell :deep(.border-slate-200) {
-  border-color: rgb(30 41 59);
-}
-
-:global(.dark) .transfer-show-shell :deep(.text-blue-900) {
-  color: rgb(var(--color-primary-200, 191 219 254));
-}
-
-:global(.dark) .transfer-show-shell :deep(.bg-blue-100),
-:global(.dark) .transfer-show-shell :deep(.bg-blue-50) {
-  background-color: rgb(var(--color-primary-500, 59 130 246) / 0.1);
-}
-
-:global(.dark) .transfer-show-shell :deep(input),
-:global(.dark) .transfer-show-shell :deep(textarea) {
-  border-color: rgb(51 65 85);
-  background: rgb(2 6 23 / 0.78);
-  color: rgb(241 245 249);
-}
-
-:global(.dark) .transfer-show-shell :deep(input[type='date']) {
-  color-scheme: dark;
-}
-
-:global(.dark) .transfer-show-shell :deep(textarea::placeholder),
-:global(.dark) .transfer-show-shell :deep(input::placeholder) {
-  color: rgb(100 116 139);
-}
-
-:global(.dark) .transfer-show-shell :deep(.text-green-600) {
-  color: rgb(110 231 183);
-}
-
-:global(.dark) .transfer-show-shell :deep(.text-red-600) {
-  color: rgb(252 165 165);
-}
-</style>

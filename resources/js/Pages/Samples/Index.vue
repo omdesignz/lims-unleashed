@@ -1,13 +1,10 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
 import VapTable from "@/Components/vap-table/table.vue";
-import ModuleHero from "@/Components/base/ModuleHero.vue";
-import ModuleCard from "@/Components/base/ModuleCard.vue";
 import ComboboxMultiple from "@/Components/combobox-multiple-enhanced.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { loadSelectOptions } from "@/Utils/selectOptions";
 import { Link, router } from "@inertiajs/vue3";
-import { ArrowTopRightOnSquareIcon, BeakerIcon, ClipboardDocumentListIcon } from "@heroicons/vue/24/outline";
+import { ArrowTopRightOnSquareIcon, BeakerIcon, ClipboardDocumentListIcon, FunnelIcon } from "@heroicons/vue/24/outline";
 import { computed, ref, watch } from "vue";
 import { trans } from "laravel-vue-i18n";
 
@@ -159,43 +156,62 @@ watch(selectedParameters, applyParameterFilter, { deep: true });
 </script>
 
 <template>
-  <div class="space-y-6" :class="commercialDocumentThemeClasses">
-    <ModuleHero
-      eyebrow="LIMS"
-      :title="$t('gestlab.general.labels.samples.page_title')"
-      :description="$t('gestlab.general.labels.samples.legacy_description')"
-    >
-      <template #actions>
+  <div class="space-y-6">
+    <section class="ds-command-surface overflow-hidden">
+      <div class="flex flex-col gap-5 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0">
+          <p class="ds-kicker">Rastreabilidade de espécimes</p>
+          <div class="mt-2 flex items-start gap-3">
+            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))]">
+              <BeakerIcon class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+              <h1 class="ds-heading text-xl sm:text-2xl">{{ $t('gestlab.general.labels.samples.page_title') }}</h1>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">{{ $t('gestlab.general.labels.samples.legacy_description') }}</p>
+            </div>
+          </div>
+        </div>
+
         <Link
           :href="sampleEntryUrl"
-          class="inline-flex items-center gap-2 rounded-2xl bg-primary-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:bg-primary-500 dark:hover:bg-primary-400 dark:focus:ring-offset-slate-900"
+          class="ds-button ds-button-primary shrink-0"
         >
           <BeakerIcon class="h-4 w-4" />
           {{ $t('gestlab.general.labels.sample_entry') }}
         </Link>
-      </template>
-
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div class="rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-slate-700/70 dark:bg-slate-950/45">
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.samples.records') }}</p>
-          <p class="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{{ props.record?.meta?.total ?? 0 }}</p>
-        </div>
-        <div class="rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-slate-700/70 dark:bg-slate-950/45">
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.samples.main_flow') }}</p>
-          <p class="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{{ $t('gestlab.general.labels.sample_entry') }}</p>
-        </div>
-        <div class="rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-slate-700/70 dark:bg-slate-950/45">
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.samples.active_filters') }}</p>
-          <p class="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{{ selectedParameters.length }}</p>
-        </div>
       </div>
-    </ModuleHero>
 
-    <ModuleCard
-      :title="$t('gestlab.general.labels.samples.worksheet_title')"
-      :description="$t('gestlab.general.labels.samples.worksheet_description')"
-    >
-      <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--ds-border)]">
+        <div class="px-5 py-4 sm:px-6">
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.samples.records') }}</dt>
+          <dd class="mt-1 text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ props.record?.meta?.total ?? 0 }}</dd>
+        </div>
+        <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.samples.main_flow') }}</dt>
+          <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ $t('gestlab.general.labels.sample_entry') }}</dd>
+        </div>
+        <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.samples.active_filters') }}</dt>
+          <dd class="mt-1 flex items-center gap-2 text-2xl font-bold tabular-nums text-[var(--ds-text)]">
+            {{ selectedParameters.length }}
+            <FunnelIcon class="h-4 w-4 text-[var(--ds-text-soft)]" />
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="ds-command-surface overflow-hidden">
+      <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
+        <div class="flex items-start gap-3">
+          <ClipboardDocumentListIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))]" />
+          <div>
+            <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.samples.worksheet_title') }}</h2>
+            <p class="ds-copy mt-1 text-sm">{{ $t('gestlab.general.labels.samples.worksheet_description') }}</p>
+          </div>
+        </div>
+      </header>
+
+      <div class="grid grid-cols-1 gap-4 px-5 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
         <ComboboxMultiple
           v-model="selectedParameters"
           :multiple="true"
@@ -211,14 +227,14 @@ watch(selectedParameters, applyParameterFilter, { deep: true });
           :href="worksheetUrl"
           target="_blank"
           rel="noopener"
-          class="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 dark:focus:ring-offset-slate-900"
+          class="ds-button ds-button-primary"
         >
           <ClipboardDocumentListIcon class="h-4 w-4" />
           {{ $t('gestlab.actions.multiple_sample_worksheet') }}
           <ArrowTopRightOnSquareIcon class="h-4 w-4" />
         </a>
       </div>
-    </ModuleCard>
+    </section>
 
     <vap-table
       :model="props.model"
@@ -242,11 +258,11 @@ watch(selectedParameters, applyParameterFilter, { deep: true });
       @execute-bulk-action="handleBulkAction"
     >
       <template #column-code="{ row }">
-        <strong class="font-semibold text-primary-900 dark:text-primary-300">{{ row.code || '-' }}</strong>
+        <strong class="font-mono text-xs font-bold text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--accent-200-rgb))]">{{ row.code || '-' }}</strong>
       </template>
 
       <template #column-collection="{ row }">
-        <span class="font-semibold text-slate-900 dark:text-slate-100">{{ row.collection || '-' }}</span>
+        <span class="font-semibold text-[var(--ds-text)]">{{ row.collection || '-' }}</span>
       </template>
     </vap-table>
   </div>

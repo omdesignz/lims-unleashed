@@ -39,6 +39,54 @@ class ResultController extends Controller
         return $isQualitative ? self::QUALITATIVE_RESULT_OPTIONS : [];
     }
 
+    private function parameterIsQualitative(mixed $parameter): bool
+    {
+        return (bool) data_get($parameter, 'result_is_qualitative')
+            || data_get($parameter, 'result_type') === 'qualitative';
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function qualitativeParameterIds(mixed $parameters): array
+    {
+        return collect($parameters)
+            ->filter(fn ($parameter): bool => $this->parameterIsQualitative($parameter))
+            ->pluck('id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int, int>  $qualitativeParameterIds
+     */
+    private function resultPayloadIsQualitative(array $result, array $qualitativeParameterIds = []): bool
+    {
+        $parameterId = data_get($result, 'parameter_id.value', data_get($result, 'parameter_id'));
+        $parameterId = is_numeric($parameterId) ? (int) $parameterId : 0;
+
+        return in_array($parameterId, $qualitativeParameterIds, true)
+            || (bool) data_get($result, 'result_is_qualitative')
+            || (bool) data_get($result, 'parameter_id.result_is_qualitative')
+            || data_get($result, 'result_type') === 'qualitative'
+            || data_get($result, 'parameter_id.result_type') === 'qualitative';
+    }
+
+    private function displayFormatForPayload(array $result, bool $isQualitative): string
+    {
+        if ($isQualitative) {
+            return self::RESULT_DISPLAY_FORMAT_STANDARD;
+        }
+
+        $displayFormat = data_get($result, 'display_format', data_get($result, 'extra_data.display_format'));
+
+        return $displayFormat === self::RESULT_DISPLAY_FORMAT_SCIENTIFIC
+            ? self::RESULT_DISPLAY_FORMAT_SCIENTIFIC
+            : self::RESULT_DISPLAY_FORMAT_STANDARD;
+    }
+
     /**
      * @return array{display_format: string}
      */
@@ -51,6 +99,10 @@ class ResultController extends Controller
 
     private function resultDisplayFormat(Result $result): string
     {
+        if ($this->parameterIsQualitative($result->parameter)) {
+            return self::RESULT_DISPLAY_FORMAT_STANDARD;
+        }
+
         $displayFormat = data_get($result->extra_data, 'display_format');
 
         return $displayFormat === self::RESULT_DISPLAY_FORMAT_SCIENTIFIC
@@ -111,7 +163,7 @@ class ResultController extends Controller
             }
 
             return collect($sample->analysis->profile->parameters)->map(function ($item) use ($sample) {
-                $isQualitative = (bool) $item->result_is_qualitative;
+                $isQualitative = $this->parameterIsQualitative($item);
 
                 return [
                     'sample_id' => request()->sample_id,
@@ -233,7 +285,7 @@ class ResultController extends Controller
             )->where('sample_id', '=', $sampleId)->get();
 
             return collect($results)->map(function ($item) {
-                $isQualitative = (bool) $item->parameter?->result_is_qualitative;
+                $isQualitative = $this->parameterIsQualitative($item->parameter);
 
                 return [
                     'result_id' => $item->id,
@@ -355,7 +407,7 @@ class ResultController extends Controller
             )->where('sample_id', '=', $sampleId)->get();
 
             return collect($results)->map(function ($item) {
-                $isQualitative = (bool) $item->parameter?->result_is_qualitative;
+                $isQualitative = $this->parameterIsQualitative($item->parameter);
 
                 return [
                     'result_id' => $item->id,
@@ -509,7 +561,7 @@ class ResultController extends Controller
             }
 
             return collect($sample->counteranalysis->profile->parameters)->map(function ($item) use ($sample) {
-                $isQualitative = (bool) $item->result_is_qualitative;
+                $isQualitative = $this->parameterIsQualitative($item);
 
                 return [
                     'sample_id' => request()->sample_id,
@@ -623,7 +675,7 @@ class ResultController extends Controller
             )->where('sample_id', '=', $sampleId)->get();
 
             return collect($results)->map(function ($item) {
-                $isQualitative = (bool) $item->parameter?->result_is_qualitative;
+                $isQualitative = $this->parameterIsQualitative($item->parameter);
 
                 return [
                     'result_id' => $item->id,
@@ -737,7 +789,7 @@ class ResultController extends Controller
             )->where('sample_id', '=', $sampleId)->get();
 
             return collect($results)->map(function ($item) {
-                $isQualitative = (bool) $item->parameter?->result_is_qualitative;
+                $isQualitative = $this->parameterIsQualitative($item->parameter);
 
                 return [
                     'result_id' => $item->id,
@@ -882,7 +934,11 @@ class ResultController extends Controller
             ], 'A amostra selecionada ainda não tem uma análise associada.');
         }
 
-        $results = $this->prepareResultsForWorkflow(collect($validated['results'] ?? [])->values()->all(), $action);
+        $results = $this->prepareResultsForWorkflow(
+            collect($validated['results'] ?? [])->values()->all(),
+            $action,
+            $this->qualitativeParameterIds($sample->analysis?->profile?->parameters ?? [])
+        );
         app(EquipmentMetrologyGate::class)->ensureResultsReady($results);
 
         // Persiste data to DB
@@ -998,7 +1054,11 @@ class ResultController extends Controller
             return $this->missingWorkflowRedirect('counteranalysis.index', [], 'A amostra selecionada ainda não tem uma contra-análise associada.');
         }
 
-        $results = $this->prepareResultsForWorkflow(collect($validated['results'] ?? [])->values()->all(), $action);
+        $results = $this->prepareResultsForWorkflow(
+            collect($validated['results'] ?? [])->values()->all(),
+            $action,
+            $this->qualitativeParameterIds($sample->counteranalysis?->profile?->parameters ?? [])
+        );
         app(EquipmentMetrologyGate::class)->ensureResultsReady($results);
 
         // Persiste data to DB
@@ -1141,7 +1201,7 @@ class ResultController extends Controller
         }
 
         // Get analysis ID from sample
-        $sample = Sample::with('analysis')->findOrFail($validated['sample_id']);
+        $sample = Sample::with('analysis.profile.parameters')->findOrFail($validated['sample_id']);
         $analysisId = $sample->analysis?->id;
 
         if (! $analysisId) {
@@ -1150,7 +1210,11 @@ class ResultController extends Controller
                 'message' => 'A amostra selecionada ainda não tem uma análise associada.',
             ], 422);
         }
-        $preparedResult = $this->prepareIndividualResultForWorkflow($validated, $action);
+        $preparedResult = $this->prepareIndividualResultForWorkflow(
+            $validated,
+            $action,
+            $this->qualitativeParameterIds($sample->analysis?->profile?->parameters ?? [])
+        );
 
         app(EquipmentMetrologyGate::class)->ensureResultsReady([$preparedResult]);
 
@@ -1219,7 +1283,12 @@ class ResultController extends Controller
         ]);
     }
 
-    private function prepareResultsForWorkflow(array $results, string $action): array
+    /**
+     * @param  array<int, array<string, mixed>>  $results
+     * @param  array<int, int>  $qualitativeParameterIds
+     * @return array<int, array<string, mixed>>
+     */
+    private function prepareResultsForWorkflow(array $results, string $action, array $qualitativeParameterIds = []): array
     {
         $valueKey = match ($action) {
             'verify' => 'verified_value',
@@ -1227,11 +1296,12 @@ class ResultController extends Controller
             default => 'inserted_value',
         };
 
-        return collect($results)->map(function (array $result) use ($action, $valueKey) {
+        return collect($results)->map(function (array $result) use ($action, $valueKey, $qualitativeParameterIds) {
             $value = data_get($result, $valueKey);
             $min = data_get($result, 'min_ref_value');
             $max = data_get($result, 'max_ref_value');
             $withinLimits = null;
+            $isQualitative = $this->resultPayloadIsQualitative($result, $qualitativeParameterIds);
 
             if (is_numeric($value)) {
                 $withinLimits = true;
@@ -1248,9 +1318,7 @@ class ResultController extends Controller
             $existingExtra = collect($result['extra_data'] ?? []);
 
             $result['extra_data'] = $existingExtra->merge([
-                'display_format' => data_get($result, 'display_format', $existingExtra->get('display_format', self::RESULT_DISPLAY_FORMAT_STANDARD)) === self::RESULT_DISPLAY_FORMAT_SCIENTIFIC
-                    ? self::RESULT_DISPLAY_FORMAT_SCIENTIFIC
-                    : self::RESULT_DISPLAY_FORMAT_STANDARD,
+                'display_format' => $this->displayFormatForPayload($result, $isQualitative),
                 'specification_check' => [
                     'action' => $action,
                     'value' => $value,
@@ -1268,6 +1336,7 @@ class ResultController extends Controller
 
             Arr::forget($result, [
                 'display_format',
+                'result_is_qualitative',
                 'result_options',
                 'parameter_id.result_options',
                 'parameter_id.result_is_qualitative',
@@ -1278,9 +1347,13 @@ class ResultController extends Controller
         })->all();
     }
 
-    private function prepareIndividualResultForWorkflow(array $result, string $action): array
+    /**
+     * @param  array<int, int>  $qualitativeParameterIds
+     * @return array<string, mixed>
+     */
+    private function prepareIndividualResultForWorkflow(array $result, string $action, array $qualitativeParameterIds = []): array
     {
-        return $this->prepareResultsForWorkflow([$result], $action)[0];
+        return $this->prepareResultsForWorkflow([$result], $action, $qualitativeParameterIds)[0];
     }
 
     private function duplicateRedirectResponse(string $route, array $parameters = [])

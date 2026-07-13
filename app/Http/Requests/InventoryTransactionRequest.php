@@ -2,12 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Inventory;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class InventoryTransactionRequest extends FormRequest
 {
-     /**
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
@@ -18,39 +20,24 @@ class InventoryTransactionRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
-        if ($this->isMethod('post')) {
-            $rules = [
-                'inventory_id' => 'required|exists:inventory,id',
-                'qty' => 'required|integer',
-                'user_id' => 'required|exists:users,id',
-                'warehouse_id' => 'required|exists:i_warehouses,id',
-                'item_id' => 'required|exists:i_items,id',
-                'type_id' => 'required|exists:itransaction_types,id',
-            ];
-        } else {
-            $rules = [
-                'inventory_id' => 'required|exists:inventory,id',
-                'qty' => 'required|integer',
-                'user_id' => 'required|exists:users,id',
-                'warehouse_id' => 'required|exists:i_warehouses,id',
-                'item_id' => 'required|exists:i_items,id',
-                'type_id' => 'required|exists:itransaction_types,id',
-            ];
-        }
-
-        return $rules;
+        return [
+            'inventory_id' => ['required', 'exists:inventory,id'],
+            'qty' => ['required', 'integer', 'min:1'],
+            'user_id' => ['required', 'exists:users,id'],
+            'warehouse_id' => ['required', 'exists:i_warehouses,id'],
+            'item_id' => ['required', 'exists:i_items,id'],
+            'type_id' => ['required', 'exists:itransaction_types,id'],
+        ];
     }
 
     /**
      * Get custom attributes for validator errors.
-     *
-     * @return array
      */
-    public function attributes()
+    public function attributes(): array
     {
         return [
             'inventory_id' => trans('gestlab.general.labels.itransactions.inventory_id'),
@@ -65,18 +52,20 @@ class InventoryTransactionRequest extends FormRequest
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
+     * @param  Validator  $validator
      */
-    public function prepareForValidation()
+    protected function prepareForValidation(): void
     {
+        $inventoryId = data_get($this->input('inventory_id'), 'value', $this->input('inventory_id'));
+        $typeId = data_get($this->input('type_id'), 'value', $this->input('type_id'));
+        $inventory = Inventory::query()->find($inventoryId);
+
         $this->merge([
-            'inventory_id' => !is_null(request()->inventory_id) ? request()->inventory_id['value'] : null,
-            'user_id' => auth()->user()->id,
-            'warehouse_id' => !is_null(request()->warehouse_id) ? request()->warehouse_id['value'] : null,
-            'item_id' => !is_null(request()->item_id) ? request()->item_id['value'] : null,
-            'type_id' => !is_null(request()->type_id) ? request()->type_id['value'] : null,
+            'inventory_id' => $inventoryId,
+            'user_id' => $this->user()?->id,
+            'warehouse_id' => $inventory?->warehouse_id,
+            'item_id' => $inventory?->item_id,
+            'type_id' => $typeId,
         ]);
-            
     }
 }

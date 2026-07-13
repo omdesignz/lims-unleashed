@@ -41,7 +41,7 @@
               <ChevronDownIcon class="h-4 w-4 text-slate-400" />
             </button>
 
-            <div v-if="languageMenuOpen" class="absolute right-0 z-10 mt-2 w-40 rounded-2xl border border-[#ded3bf] bg-[#fffaf0] p-2 shadow-[0_20px_55px_rgba(20,61,55,0.16)] dark:border-[#25443c] dark:bg-[#0c1714]">
+            <div v-if="languageMenuOpen" class="ds-floating-panel absolute right-0 z-10 mt-2 w-40 p-2">
               <button
                 v-for="language in page.props?.languages?.data ?? []"
                 :key="language.value"
@@ -66,23 +66,23 @@
           <div class="relative">
             <button
               type="button"
-              class="flex items-center gap-3 rounded-2xl border border-[#ded3bf] bg-[#fffdf7] px-3 py-2 transition hover:border-primary-300 dark:border-[#25443c] dark:bg-[#10231f]"
+              class="ds-button ds-button-secondary min-h-0 px-3 py-2"
               @click="profileMenuOpen = !profileMenuOpen"
             >
               <div class="flex h-9 w-9 items-center justify-center rounded-full bg-primary-700 text-sm font-bold text-white">
                 {{ page.props?.auth?.user?.name?.charAt(0)?.toUpperCase() || 'C' }}
               </div>
               <div class="hidden text-left md:block">
-                <div class="text-sm font-bold text-[#15231f] dark:text-[#f7f1e7]">{{ page.props?.auth?.user?.name || labels.customer }}</div>
+                <div class="text-sm font-bold text-slate-900 dark:text-slate-100">{{ page.props?.auth?.user?.name || labels.customer }}</div>
                 <div class="text-xs text-slate-500">{{ page.props?.auth?.user?.email }}</div>
               </div>
               <ChevronDownIcon class="h-4 w-4 text-slate-400" />
             </button>
 
-            <div v-if="profileMenuOpen" class="absolute right-0 mt-2 w-56 rounded-2xl border border-[#ded3bf] bg-[#fffaf0] p-2 shadow-[0_20px_55px_rgba(20,61,55,0.16)] dark:border-[#25443c] dark:bg-[#0c1714]">
+            <div v-if="profileMenuOpen" class="ds-floating-panel absolute right-0 mt-2 w-56 p-2">
               <Link
                 :href="route('portal.profile')"
-                class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-[#ede5d6] dark:text-slate-200 dark:hover:bg-[#10231f]"
+                class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                 @click="profileMenuOpen = false"
               >
                 <UserCircleIcon class="h-4 w-4" />
@@ -90,7 +90,7 @@
               </Link>
               <Link
                 :href="route('portal.security')"
-                class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-[#ede5d6] dark:text-slate-200 dark:hover:bg-[#10231f]"
+                class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                 @click="profileMenuOpen = false"
               >
                 <ShieldCheckIcon class="h-4 w-4" />
@@ -112,13 +112,13 @@
     <Dialog as="div" class="lg:hidden" :open="sidebarOpen" @close="sidebarOpen = false">
       <div class="fixed inset-0 z-50">
         <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" @click="sidebarOpen = false" />
-        <DialogPanel class="ds-surface fixed inset-y-0 left-0 flex w-full max-w-xs flex-col border-r shadow-xl">
-          <div class="flex items-center justify-between border-b border-[#ded3bf] px-5 py-4 dark:border-[#25443c]">
+        <DialogPanel class="ds-sidebar-panel fixed inset-y-0 left-0 flex w-full max-w-xs flex-col border-r shadow-xl">
+          <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <div>
-              <div class="text-sm font-bold text-[#15231f] dark:text-[#f7f1e7]">{{ labels.navigation }}</div>
-              <div class="text-xs text-slate-500 dark:text-slate-400">{{ labels.portalArea }}</div>
+              <div class="text-sm font-bold text-white">{{ labels.navigation }}</div>
+              <div class="text-xs text-slate-400">{{ labels.portalArea }}</div>
             </div>
-            <button type="button" class="rounded-xl border border-[#ded3bf] bg-[#fffdf7] p-2 text-slate-600 dark:border-[#25443c] dark:bg-[#10231f] dark:text-slate-300" @click="sidebarOpen = false">
+            <button type="button" class="ds-icon-button text-slate-300 hover:bg-white/10 hover:text-white" @click="sidebarOpen = false">
               <XMarkIcon class="h-5 w-5" />
             </button>
           </div>
@@ -127,8 +127,8 @@
               v-for="item in navigation"
               :key="item.href"
               :href="item.href"
-              class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition"
-              :class="isActive(item) ? 'bg-primary-50 text-primary-800 dark:bg-primary-400/10 dark:text-accent-100' : 'text-slate-700 hover:bg-[#ede5d6] dark:text-slate-200 dark:hover:bg-[#10231f]'"
+              class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition"
+              :class="isActive(item) ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'"
               @click="sidebarOpen = false"
             >
               <component :is="item.icon" class="h-5 w-5" />
@@ -142,7 +142,7 @@
     <div class="mx-auto flex max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:px-8">
       <aside class="hidden w-72 shrink-0 lg:block">
         <div class="ds-sidebar-panel sticky top-24 p-4">
-          <div class="rounded-[1.5rem] bg-gradient-to-br from-primary-700 to-primary-950 p-4 text-white shadow-[0_18px_45px_rgba(20,61,55,0.22)]">
+          <div class="rounded-lg border border-white/10 bg-slate-950/70 p-4 text-white">
             <div class="text-sm font-bold">{{ page.props?.auth?.user?.name || labels.customer }}</div>
             <div class="mt-1 text-xs text-slate-300">{{ page.props?.auth?.user?.customer || page.props?.auth?.user?.email }}</div>
           </div>
@@ -152,8 +152,8 @@
               v-for="item in navigation"
               :key="item.href"
               :href="item.href"
-              class="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition"
-              :class="isActive(item) ? 'bg-primary-50 text-primary-800 dark:bg-primary-400/10 dark:text-accent-100' : 'text-slate-700 hover:bg-[#ede5d6] dark:text-slate-200 dark:hover:bg-[#10231f]'"
+              class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition"
+              :class="isActive(item) ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'"
             >
               <component :is="item.icon" class="h-5 w-5" />
               {{ labels[item.key] }}

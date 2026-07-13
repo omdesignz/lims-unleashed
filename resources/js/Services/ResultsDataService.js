@@ -46,7 +46,13 @@ export class ResultsDataService {
     }
 
     static getDisplayFormat(result) {
-        return result?.display_format || result?.extra_data?.display_format || 'standard';
+        if (this.isQualitativeResult(result)) {
+            return 'standard';
+        }
+
+        const displayFormat = result?.display_format || result?.extra_data?.display_format;
+
+        return displayFormat === 'scientific' ? 'scientific' : 'standard';
     }
 
     static setDisplayFormat(result, displayFormat) {
@@ -54,7 +60,9 @@ export class ResultsDataService {
             return;
         }
 
-        const normalizedFormat = displayFormat === 'scientific' ? 'scientific' : 'standard';
+        const normalizedFormat = !this.isQualitativeResult(result) && displayFormat === 'scientific'
+            ? 'scientific'
+            : 'standard';
         result.display_format = normalizedFormat;
         result.extra_data = {
             ...(result.extra_data || {}),
@@ -93,8 +101,9 @@ export class ResultsDataService {
 
         const decimalPlaces = Number(result?.decimal_places ?? result?.parameter_id?.decimal_places ?? 2);
         const precision = Number.isFinite(decimalPlaces) ? Math.min(Math.max(decimalPlaces, 0), 8) : 2;
+        const [mantissa, exponent] = numericValue.toExponential(precision).split('e');
 
-        return numericValue.toExponential(precision).replace('e', ' × 10^');
+        return `${mantissa} × 10^${Number(exponent)}`;
     }
 
     static getDeclaredCalculationParameters(result) {
@@ -117,37 +126,48 @@ export class ResultsDataService {
      * Normalize results data from API
      */
     static normalizeResults(apiResults) {
-        return apiResults.map(result => ({
-            ...result,
-            result_id: result?.result_id,
-            cfu1: result.cfu1 || null,
-            cfu2: result.cfu2 || null,
-            d1: result.d1 || null,
-            d2: result.d2 || null,
-            verification_status: result.verification_status || null,
-            verification_notes: result.verification_notes || null,
-            insertion_notes: result.insertion_notes || null,
-            approval_notes: result.approval_notes || null,
-            volume: result.volume || 1,
-            parameter_id: { 
-                ...result.parameter_id, 
-                code: result.parameter_id?.code || result.parameter_code,
-                result_options: result.parameter_id?.result_options || result.result_options || [],
-                result_is_qualitative: Boolean(result.parameter_id?.result_is_qualitative || result.result_is_qualitative),
-            },
-            result_is_qualitative: Boolean(result.result_is_qualitative || result.parameter_id?.result_is_qualitative),
-            result_options: result.result_options || result.parameter_id?.result_options || [],
-            display_format: result.display_format || result.extra_data?.display_format || 'standard',
-            extra_data: {
-                ...(result.extra_data || {}),
-                display_format: result.display_format || result.extra_data?.display_format || 'standard',
-            },
-            requires_calculation: result.requires_calculation || false,
-            calculation_metadata: result.calculation_metadata || null,
-            manual_override: result.manual_override || false,
-            active: result.active !== undefined ? result.active : true,
-            insertion_method: result.insertion_method || 'batch'
-        }));
+        return apiResults.map(result => {
+            const isQualitative = this.isQualitativeResult(result);
+            const existingOptions = result.result_options || result.parameter_id?.result_options || [];
+            const resultOptions = Array.isArray(existingOptions) && existingOptions.length > 0
+                ? existingOptions
+                : (isQualitative ? ['Presença', 'Ausência'] : []);
+            const displayFormat = isQualitative
+                ? 'standard'
+                : ((result.display_format || result.extra_data?.display_format) === 'scientific' ? 'scientific' : 'standard');
+
+            return {
+                ...result,
+                result_id: result?.result_id,
+                cfu1: result.cfu1 || null,
+                cfu2: result.cfu2 || null,
+                d1: result.d1 || null,
+                d2: result.d2 || null,
+                verification_status: result.verification_status || null,
+                verification_notes: result.verification_notes || null,
+                insertion_notes: result.insertion_notes || null,
+                approval_notes: result.approval_notes || null,
+                volume: result.volume || 1,
+                parameter_id: { 
+                    ...result.parameter_id, 
+                    code: result.parameter_id?.code || result.parameter_code,
+                    result_options: resultOptions,
+                    result_is_qualitative: isQualitative,
+                },
+                result_is_qualitative: isQualitative,
+                result_options: resultOptions,
+                display_format: displayFormat,
+                extra_data: {
+                    ...(result.extra_data || {}),
+                    display_format: displayFormat,
+                },
+                requires_calculation: result.requires_calculation || false,
+                calculation_metadata: result.calculation_metadata || null,
+                manual_override: result.manual_override || false,
+                active: result.active !== undefined ? result.active : true,
+                insertion_method: result.insertion_method || 'batch'
+            };
+        });
     }
 
     /**

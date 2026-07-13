@@ -1,433 +1,48 @@
-<template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
-            <BeakerIcon class="h-7 w-7 text-blue-900" />
-            {{ $t('gestlab.general.labels.vap_labs.title') }}
-          </h1>
-          <p class="mt-2 text-gray-600 dark:text-gray-400">
-            {{ $t('gestlab.general.labels.vap_labs.description') }}
-            <span v-if="labsCount" class="font-semibold text-blue-900 dark:text-blue-400">
-              {{ labsCount }}
-            </span>
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-900/20 dark:text-blue-300 dark:ring-blue-700/30">
-            {{ labsCount }} {{ $t('gestlab.general.labels.vap_labs.items') }}
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <!-- MAIN CONTENT SECTION -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- LEFT COLUMN (2/3 width) -->
-      <div class="lg:col-span-2 space-y-6">
-        
-        <!-- BASIC INFORMATION SECTION -->
-        <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
-          <!-- GRADIENT HEADER -->
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <InformationCircleIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.vap_labs.basic_info') }}
-            </h2>
-          </div>
-          
-          <!-- CARD CONTENT -->
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <!-- LAB NAME -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                  <TagIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_labs.name') }}
-                  <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  v-model="form.name"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none focus:ring-2',
-                    form.errors.name 
-                      ? 'border-red-300 bg-red-50 focus:ring-red-500' 
-                      : 'border-gray-300 bg-white focus:border-blue-900 focus:ring-blue-900 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-100 dark:focus:border-blue-500 dark:focus:ring-blue-500'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.vap_labs.name_placeholder')"
-                />
-                <p v-if="form.errors.name" class="text-xs text-red-600">
-                  {{ form.errors.name }}
-                </p>
-              </div>
-
-              <!-- LAB CODE -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                  <HashtagIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_labs.code') }}
-                  <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  v-model="form.code"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none focus:ring-2',
-                    form.errors.code 
-                      ? 'border-red-300 bg-red-50 focus:ring-red-500' 
-                      : 'border-gray-300 bg-white focus:border-blue-900 focus:ring-blue-900 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-100 dark:focus:border-blue-500 dark:focus:ring-blue-500'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.vap_labs.code_placeholder')"
-                />
-                <p v-if="form.errors.code" class="text-xs text-red-600">
-                  {{ form.errors.code }}
-                </p>
-              </div>
-
-              <!-- ROOM NUMBER -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                  <BuildingOfficeIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_labs.room_no') }}
-                </label>
-                <input
-                  type="text"
-                  v-model="form.room_no"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none focus:ring-2',
-                    form.errors.room_no 
-                      ? 'border-red-300 bg-red-50 focus:ring-red-500' 
-                      : 'border-gray-300 bg-white focus:border-blue-900 focus:ring-blue-900 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-100 dark:focus:border-blue-500 dark:focus:ring-blue-500'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.vap_labs.room_no_placeholder')"
-                />
-                <p v-if="form.errors.room_no" class="text-xs text-red-600">
-                  {{ form.errors.room_no }}
-                </p>
-              </div>
-
-              <!-- CONTACT PERSON -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                  <UserIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_labs.contact') }}
-                </label>
-                <input
-                  type="text"
-                  v-model="form.contact"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none focus:ring-2',
-                    form.errors.contact 
-                      ? 'border-red-300 bg-red-50 focus:ring-red-500' 
-                      : 'border-gray-300 bg-white focus:border-blue-900 focus:ring-blue-900 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-100 dark:focus:border-blue-500 dark:focus:ring-blue-500'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.vap_labs.contact_placeholder')"
-                />
-                <p v-if="form.errors.contact" class="text-xs text-red-600">
-                  {{ form.errors.contact }}
-                </p>
-              </div>
-
-              <!-- EXTENSION -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                  <PhoneIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_labs.extension') }}
-                </label>
-                <input
-                  type="text"
-                  v-model="form.extension"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none focus:ring-2',
-                    form.errors.extension 
-                      ? 'border-red-300 bg-red-50 focus:ring-red-500' 
-                      : 'border-gray-300 bg-white focus:border-blue-900 focus:ring-blue-900 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-100 dark:focus:border-blue-500 dark:focus:ring-blue-500'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.vap_labs.extension_placeholder')"
-                />
-                <p v-if="form.errors.extension" class="text-xs text-red-600">
-                  {{ form.errors.extension }}
-                </p>
-              </div>
-
-              <!-- EMAIL -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                  <EnvelopeIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_labs.email') }}
-                </label>
-                <input
-                  type="email"
-                  v-model="form.email"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none focus:ring-2',
-                    form.errors.email 
-                      ? 'border-red-300 bg-red-50 focus:ring-red-500' 
-                      : 'border-gray-300 bg-white focus:border-blue-900 focus:ring-blue-900 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-100 dark:focus:border-blue-500 dark:focus:ring-blue-500'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.vap_labs.email_placeholder')"
-                />
-                <p v-if="form.errors.email" class="text-xs text-red-600">
-                  {{ form.errors.email }}
-                </p>
-              </div>
-
-              <!-- SUPERVISOR -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                  <UserCircleIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_labs.supervisor') }}
-                </label>
-                <comboboxEnhanced
-                  v-model="selectedSupervisor"
-                  :placeholder="$t('gestlab.general.labels.vap_labs.select_supervisor')"
-                  :options="supervisorOptions"
-                  :has-error="Boolean(form.errors.supervisor_id)"
-                />
-                <p v-if="form.errors.supervisor_id" class="text-xs text-red-600">
-                  {{ form.errors.supervisor_id }}
-                </p>
-              </div>
-
-              <!-- TECHNICAL HEAD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                  <CogIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_labs.technical_head') }}
-                </label>
-                <comboboxEnhanced
-                  v-model="selectedTechnicalHead"
-                  :placeholder="$t('gestlab.general.labels.vap_labs.select_technical_head')"
-                  :options="technicalHeadOptions"
-                  :has-error="Boolean(form.errors.technical_head_id)"
-                />
-                <p v-if="form.errors.technical_head_id" class="text-xs text-red-600">
-                  {{ form.errors.technical_head_id }}
-                </p>
-              </div>
-
-              <!-- DEPARTMENT -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                  <BuildingLibraryIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_labs.department') }}
-                </label>
-                <comboboxEnhanced
-                  v-model="selectedDepartment"
-                  :placeholder="$t('gestlab.general.labels.vap_labs.select_department')"
-                  :options="departmentOptions"
-                  :has-error="Boolean(form.errors.department_id)"
-                />
-                <p v-if="form.errors.department_id" class="text-xs text-red-600">
-                  {{ form.errors.department_id }}
-                </p>
-              </div>
-
-              <!-- DESCRIPTION (Full Width) -->
-              <div class="md:col-span-2 lg:col-span-3 space-y-2">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                  <DocumentTextIcon class="h-4 w-4" />
-                  {{ $t('gestlab.general.labels.vap_labs.description') }}
-                </label>
-                <textarea
-                  v-model="form.description"
-                  rows="3"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none focus:ring-2',
-                    form.errors.description 
-                      ? 'border-red-300 bg-red-50 focus:ring-red-500' 
-                      : 'border-gray-300 bg-white focus:border-blue-900 focus:ring-blue-900 dark:border-gray-700 dark:bg-slate-950 dark:text-gray-100 dark:focus:border-blue-500 dark:focus:ring-blue-500'
-                  ]"
-                  :placeholder="$t('gestlab.general.labels.vap_labs.description_placeholder')"
-                ></textarea>
-                <p v-if="form.errors.description" class="text-xs text-red-600">
-                  {{ form.errors.description }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- RIGHT COLUMN (1/3 width) -->
-      <div class="space-y-6">
-        <!-- ACTIONS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            {{ $t('gestlab.general.labels.vap_labs.actions.title') }}
-          </h3>
-          <div class="space-y-4">
-            <button 
-              @click="submit"
-              :disabled="form.processing || !isFormValid"
-              :class="[
-                'w-full inline-flex justify-center items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
-                form.processing || !isFormValid
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-900 to-blue-800 text-white hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2'
-              ]"
-            >
-              <CheckCircleIcon class="h-5 w-5" />
-              {{ form.processing ? $t('gestlab.general.labels.vap_labs.buttons.processing') : $t('gestlab.general.labels.vap_labs.buttons.save_lab') }}
-            </button>
-            
-            <button 
-              @click="resetForm"
-              type="button"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-            >
-              <ArrowPathIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.vap_labs.buttons.reset') }}
-            </button>
-            
-            <!-- QUICK STATS -->
-            <div class="border-t border-gray-200 pt-4">
-              <h4 class="text-sm font-medium text-gray-900 mb-2">
-                {{ $t('gestlab.general.labels.vap_labs.stats.title') }}
-              </h4>
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ $t('gestlab.general.labels.vap_labs.stats.total_labs') }}</span>
-                  <span class="font-semibold text-blue-900">{{ labsCount }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ $t('gestlab.general.labels.vap_labs.stats.active_labs') }}</span>
-                  <span class="font-semibold text-green-600">{{ activeLabsCount }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">{{ $t('gestlab.general.labels.vap_labs.stats.available_supervisors') }}</span>
-                  <span class="font-semibold text-blue-900">{{ supervisors.length }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- STATUS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Cog6ToothIcon class="h-5 w-5 text-blue-900" />
-            {{ $t('gestlab.general.labels.vap_labs.status.title') }}
-          </h3>
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_labs.status.basic_info') }}</span>
-              <span :class="[
-                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                isBasicInfoComplete ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-              ]">
-                {{ isBasicInfoComplete ? $t('gestlab.general.labels.vap_labs.status.complete') : $t('gestlab.general.labels.vap_labs.status.incomplete') }}
-              </span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_labs.status.contact_info') }}</span>
-              <span :class="[
-                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                isContactInfoComplete ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-              ]">
-                {{ isContactInfoComplete ? $t('gestlab.general.labels.vap_labs.status.complete') : $t('gestlab.general.labels.vap_labs.status.incomplete') }}
-              </span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.vap_labs.status.staff_assignment') }}</span>
-              <span :class="[
-                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                isStaffAssigned ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-              ]">
-                {{ isStaffAssigned ? $t('gestlab.general.labels.vap_labs.status.complete') : $t('gestlab.general.labels.vap_labs.status.incomplete') }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- FOOTER ACTIONS -->
-    <div class="flex items-center justify-between pt-6">
-      <div class="text-sm text-gray-500">
-        {{ $t('gestlab.general.labels.vap_labs.last_updated') }}: {{ lastUpdated }}
-      </div>
-      <div class="flex items-center gap-4">
-        <button 
-          @click="viewLabsList"
-          type="button"
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-        >
-          <ArrowLeftIcon class="h-5 w-5" />
-          {{ $t('gestlab.general.labels.vap_labs.buttons.back_to_labs') }}
-        </button>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
-import { ref, computed, watchEffect } from 'vue'
-import { useForm } from '@inertiajs/vue3'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import {
-  BeakerIcon,
-  InformationCircleIcon,
-  TagIcon,
-  HashtagIcon,
-  BuildingOfficeIcon,
-  UserIcon,
-  PhoneIcon,
-  EnvelopeIcon,
-  UserCircleIcon,
-  CogIcon,
-  BuildingLibraryIcon,
-  DocumentTextIcon,
-  CheckCircleIcon,
-  ArrowPathIcon,
-  Cog6ToothIcon,
   ArrowLeftIcon,
+  BeakerIcon,
+  BuildingLibraryIcon,
+  CheckCircleIcon,
+  EnvelopeIcon,
+  IdentificationIcon,
+  PhoneIcon,
+  UserGroupIcon,
 } from '@heroicons/vue/24/outline'
+import { router, useForm } from '@inertiajs/vue3'
+import { computed, ref, watchEffect } from 'vue'
 
 const props = defineProps({
   lab: Object,
-  labsCount: Number,
-  activeLabsCount: Number,
-  supervisors: Array,
-  technicalHeads: Array,
-  departments: Array,
+  labsCount: { type: Number, default: 0 },
+  activeLabsCount: { type: Number, default: 0 },
+  supervisors: { type: Array, default: () => [] },
+  technicalHeads: { type: Array, default: () => [] },
+  departments: { type: Array, default: () => [] },
   lastUpdated: String,
 })
 
-const mapOptions = (items = []) => items.map(item => ({
-  value: item.id,
-  label: item.name,
-}))
-
+const mapOptions = (items) => items.map((item) => ({ value: item.id, label: item.code ? `${item.name} (${item.code})` : item.name }))
 const supervisorOptions = computed(() => mapOptions(props.supervisors))
 const technicalHeadOptions = computed(() => mapOptions(props.technicalHeads))
 const departmentOptions = computed(() => mapOptions(props.departments))
 
-const selectedSupervisor = ref(
-  supervisorOptions.value.find(option => option.value === props.lab?.supervisor_id) ?? null,
-)
-const selectedTechnicalHead = ref(
-  technicalHeadOptions.value.find(option => option.value === props.lab?.technical_head_id) ?? null,
-)
-const selectedDepartment = ref(
-  departmentOptions.value.find(option => option.value === props.lab?.department_id) ?? null,
-)
+const selectedSupervisor = ref(supervisorOptions.value.find((option) => option.value === props.lab?.supervisor_id) ?? null)
+const selectedTechnicalHead = ref(technicalHeadOptions.value.find((option) => option.value === props.lab?.technical_head_id) ?? null)
+const selectedDepartment = ref(departmentOptions.value.find((option) => option.value === props.lab?.department_id) ?? null)
 
 const form = useForm({
-  name: props.lab?.name || '',
-  code: props.lab?.code || '',
-  room_no: props.lab?.room_no || '',
-  description: props.lab?.description || '',
-  contact: props.lab?.contact || '',
-  extension: props.lab?.extension || '',
-  email: props.lab?.email || '',
-  supervisor_id: props.lab?.supervisor_id || '',
-  technical_head_id: props.lab?.technical_head_id || '',
-  department_id: props.lab?.department_id || '',
+  name: props.lab?.name ?? '',
+  code: props.lab?.code ?? '',
+  room_no: props.lab?.room_no ?? '',
+  description: props.lab?.description ?? '',
+  contact: props.lab?.contact ?? '',
+  extension: props.lab?.extension ?? '',
+  email: props.lab?.email ?? '',
+  supervisor_id: props.lab?.supervisor_id ?? '',
+  technical_head_id: props.lab?.technical_head_id ?? '',
+  department_id: props.lab?.department_id ?? '',
 })
 
 watchEffect(() => {
@@ -436,35 +51,111 @@ watchEffect(() => {
   form.department_id = selectedDepartment.value?.value ?? ''
 })
 
-const isFormValid = computed(() => {
-  return form.name.trim() !== '' && form.code.trim() !== ''
-})
+const isEditing = computed(() => Boolean(props.lab?.id))
+const completionChecks = computed(() => [
+  { label: 'Identificacao', complete: Boolean(form.name.trim() && form.code.trim()) },
+  { label: 'Contacto', complete: Boolean(form.contact.trim() || form.email.trim() || form.extension.trim()) },
+  { label: 'Responsabilidade', complete: Boolean(form.supervisor_id || form.technical_head_id || form.department_id) },
+])
 
-const isBasicInfoComplete = computed(() => {
-  return form.name.trim() !== '' && form.code.trim() !== '' && form.room_no.trim() !== ''
-})
-
-const isContactInfoComplete = computed(() => {
-  return form.contact.trim() !== '' && form.email.trim() !== '' && form.extension.trim() !== ''
-})
-
-const isStaffAssigned = computed(() => {
-  return form.supervisor_id !== '' && form.technical_head_id !== '' && form.department_id !== ''
-})
-
-const submit = () => {
-  if (props.lab?.id) {
-    form.put(route('vap-labs.labs.update', props.lab.id))
-  } else {
-    form.post(route('vap-labs.labs.store'))
+function submit() {
+  if (isEditing.value) {
+    form.put(route('vap-labs.labs.update', props.lab.id), { preserveScroll: true })
+    return
   }
+
+  form.post(route('vap-labs.labs.store'), { preserveScroll: true })
 }
 
-const resetForm = () => {
+function resetForm() {
   form.reset()
-}
-
-const viewLabsList = () => {
-  window.location.href = route('vap-labs.labs.index')
+  selectedSupervisor.value = supervisorOptions.value.find((option) => option.value === props.lab?.supervisor_id) ?? null
+  selectedTechnicalHead.value = technicalHeadOptions.value.find((option) => option.value === props.lab?.technical_head_id) ?? null
+  selectedDepartment.value = departmentOptions.value.find((option) => option.value === props.lab?.department_id) ?? null
 }
 </script>
+
+<template>
+  <form class="space-y-5" @submit.prevent="submit">
+    <header class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-start sm:justify-between">
+        <div class="min-w-0">
+          <p class="ds-kicker">{{ $t('gestlab.general.labels.vap_labs.title') }}</p>
+          <h1 class="ds-heading mt-1 text-xl">{{ isEditing ? lab.name : $t('gestlab.general.labels.vap_labs.buttons.add_lab') }}</h1>
+          <p class="ds-copy mt-1 text-sm">{{ $t('gestlab.general.labels.vap_labs.description') }}</p>
+        </div>
+        <div class="flex gap-2">
+          <button type="button" class="ds-button ds-button-secondary" @click="router.visit(route('vap-labs.labs.index'))">
+            <ArrowLeftIcon class="h-4 w-4" />
+            {{ $t('gestlab.general.labels.vap_labs.buttons.back_to_labs') }}
+          </button>
+          <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.name.trim() || !form.code.trim()">
+            <CheckCircleIcon class="h-4 w-4" />
+            {{ form.processing ? $t('gestlab.general.labels.vap_labs.buttons.processing') : $t('gestlab.general.labels.vap_labs.buttons.save_lab') }}
+          </button>
+        </div>
+      </div>
+      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--ds-border)]">
+        <div class="px-5 py-3.5"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_labs.stats.total_labs') }}</dt><dd class="mt-1 text-lg font-black text-[var(--ds-text)]">{{ labsCount }}</dd></div>
+        <div class="border-t border-[var(--ds-border)] px-5 py-3.5 sm:border-t-0"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_labs.stats.active_labs') }}</dt><dd class="mt-1 text-lg font-black text-emerald-700 dark:text-emerald-300">{{ activeLabsCount }}</dd></div>
+        <div class="border-t border-[var(--ds-border)] px-5 py-3.5 sm:border-t-0"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_labs.last_updated') }}</dt><dd class="mt-1 text-sm font-bold text-[var(--ds-text)]">{{ lastUpdated || '-' }}</dd></div>
+      </dl>
+    </header>
+
+    <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <div class="space-y-5">
+        <section class="ds-panel overflow-hidden">
+          <header class="flex items-center gap-3 border-b border-[var(--ds-border)] px-5 py-4">
+            <IdentificationIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
+            <div><p class="ds-kicker">{{ $t('gestlab.general.labels.vap_labs.basic_info') }}</p><h2 class="ds-heading mt-1 text-base">{{ $t('gestlab.general.labels.vap_labs.lab_information') }}</h2></div>
+          </header>
+          <div class="grid gap-5 p-5 md:grid-cols-2 xl:grid-cols-3">
+            <div class="ds-field-group"><label for="lab-name" class="ds-field-label">{{ $t('gestlab.general.labels.vap_labs.name') }} <span class="ds-field-required">*</span></label><input id="lab-name" v-model="form.name" class="ds-field" :aria-invalid="Boolean(form.errors.name)" /><p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p></div>
+            <div class="ds-field-group"><label for="lab-code" class="ds-field-label">{{ $t('gestlab.general.labels.vap_labs.code') }} <span class="ds-field-required">*</span></label><input id="lab-code" v-model="form.code" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.code)" /><p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p></div>
+            <div class="ds-field-group"><label for="lab-room" class="ds-field-label">{{ $t('gestlab.general.labels.vap_labs.room_no') }}</label><input id="lab-room" v-model="form.room_no" class="ds-field" :aria-invalid="Boolean(form.errors.room_no)" /><p v-if="form.errors.room_no" class="ds-field-error">{{ form.errors.room_no }}</p></div>
+            <div class="ds-field-group md:col-span-2 xl:col-span-3"><label for="lab-description" class="ds-field-label">{{ $t('gestlab.general.labels.vap_labs.description') }}</label><textarea id="lab-description" v-model="form.description" rows="4" class="ds-field resize-y" :aria-invalid="Boolean(form.errors.description)" /><p v-if="form.errors.description" class="ds-field-error">{{ form.errors.description }}</p></div>
+          </div>
+        </section>
+
+        <section class="ds-panel overflow-hidden">
+          <header class="flex items-center gap-3 border-b border-[var(--ds-border)] px-5 py-4">
+            <PhoneIcon class="h-5 w-5 text-cyan-700 dark:text-cyan-300" />
+            <div><p class="ds-kicker">{{ $t('gestlab.general.labels.vap_labs.status.contact_info') }}</p><h2 class="ds-heading mt-1 text-base">{{ $t('gestlab.general.labels.vap_labs.contact') }}</h2></div>
+          </header>
+          <div class="grid gap-5 p-5 md:grid-cols-3">
+            <div class="ds-field-group"><label for="lab-contact" class="ds-field-label">{{ $t('gestlab.general.labels.vap_labs.contact') }}</label><input id="lab-contact" v-model="form.contact" class="ds-field" :aria-invalid="Boolean(form.errors.contact)" /><p v-if="form.errors.contact" class="ds-field-error">{{ form.errors.contact }}</p></div>
+            <div class="ds-field-group"><label for="lab-extension" class="ds-field-label">{{ $t('gestlab.general.labels.vap_labs.extension') }}</label><input id="lab-extension" v-model="form.extension" class="ds-field" :aria-invalid="Boolean(form.errors.extension)" /><p v-if="form.errors.extension" class="ds-field-error">{{ form.errors.extension }}</p></div>
+            <div class="ds-field-group"><label for="lab-email" class="ds-field-label">{{ $t('gestlab.general.labels.vap_labs.email') }}</label><input id="lab-email" v-model="form.email" type="email" class="ds-field" :aria-invalid="Boolean(form.errors.email)" /><p v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</p></div>
+          </div>
+        </section>
+
+        <section class="ds-panel overflow-hidden">
+          <header class="flex items-center gap-3 border-b border-[var(--ds-border)] px-5 py-4">
+            <UserGroupIcon class="h-5 w-5 text-amber-700 dark:text-amber-300" />
+            <div><p class="ds-kicker">{{ $t('gestlab.general.labels.vap_labs.staff_assignment') }}</p><h2 class="ds-heading mt-1 text-base">{{ $t('gestlab.general.labels.vap_labs.department') }}</h2></div>
+          </header>
+          <div class="grid gap-5 p-5 md:grid-cols-3">
+            <div class="ds-field-group"><label class="ds-field-label">{{ $t('gestlab.general.labels.vap_labs.supervisor') }}</label><comboboxEnhanced v-model="selectedSupervisor" :options="supervisorOptions" :has-error="Boolean(form.errors.supervisor_id)" :placeholder="$t('gestlab.general.labels.vap_labs.select_supervisor')" /><p v-if="form.errors.supervisor_id" class="ds-field-error">{{ form.errors.supervisor_id }}</p></div>
+            <div class="ds-field-group"><label class="ds-field-label">{{ $t('gestlab.general.labels.vap_labs.technical_head') }}</label><comboboxEnhanced v-model="selectedTechnicalHead" :options="technicalHeadOptions" :has-error="Boolean(form.errors.technical_head_id)" :placeholder="$t('gestlab.general.labels.vap_labs.select_technical_head')" /><p v-if="form.errors.technical_head_id" class="ds-field-error">{{ form.errors.technical_head_id }}</p></div>
+            <div class="ds-field-group"><label class="ds-field-label">{{ $t('gestlab.general.labels.vap_labs.department') }}</label><comboboxEnhanced v-model="selectedDepartment" :options="departmentOptions" :has-error="Boolean(form.errors.department_id)" :placeholder="$t('gestlab.general.labels.vap_labs.select_department')" /><p v-if="form.errors.department_id" class="ds-field-error">{{ form.errors.department_id }}</p></div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="space-y-5">
+        <section class="ds-panel overflow-hidden">
+          <header class="border-b border-[var(--ds-border)] px-4 py-3"><p class="ds-kicker">{{ $t('gestlab.general.labels.vap_labs.status.title') }}</p><h2 class="ds-heading mt-1 text-sm">{{ $t('gestlab.general.labels.vap_labs.stats.title') }}</h2></header>
+          <ul class="divide-y divide-[var(--ds-border)]">
+            <li v-for="check in completionChecks" :key="check.label" class="flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-[var(--ds-text-muted)]"><span>{{ check.label }}</span><span class="ds-badge ring-1 ring-inset" :class="check.complete ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-300' : 'bg-amber-50 text-amber-800 ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-300'">{{ check.complete ? $t('gestlab.general.labels.vap_labs.status.complete') : $t('gestlab.general.labels.vap_labs.status.incomplete') }}</span></li>
+          </ul>
+        </section>
+        <section class="ds-panel p-4">
+          <BeakerIcon class="h-6 w-6 text-[var(--ds-text-soft)]" />
+          <p class="mt-3 text-sm font-bold text-[var(--ds-text)]">{{ form.name || $t('gestlab.general.labels.vap_labs.name') }}</p>
+          <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-muted)]">{{ form.code || '-' }}</p>
+          <div class="mt-4 flex gap-2"><button type="button" class="ds-button ds-button-secondary flex-1" @click="resetForm">{{ $t('gestlab.general.labels.vap_labs.buttons.reset') }}</button><button type="submit" class="ds-button ds-button-primary flex-1" :disabled="form.processing || !form.name.trim() || !form.code.trim()">{{ $t('gestlab.general.buttons.save') }}</button></div>
+        </section>
+      </aside>
+    </div>
+  </form>
+</template>

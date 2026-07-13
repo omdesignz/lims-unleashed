@@ -1,140 +1,143 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-      <div class="relative isolate flex flex-col gap-5 overflow-hidden p-6 sm:flex-row sm:items-center sm:justify-between">
-        <div class="absolute inset-x-0 top-0 -z-10 h-28 bg-gradient-to-r from-primary-600/15 via-rose-400/10 to-amber-400/10 dark:from-primary-500/20 dark:via-rose-500/10 dark:to-amber-500/10"></div>
-        <div>
-          <h1 class="flex items-center gap-3 text-2xl font-bold text-slate-950 dark:text-white">
-            <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-600 text-white shadow-lg shadow-primary-600/20">
-              <ExclamationTriangleIcon class="h-6 w-6" />
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-5 border-b border-[var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
+        <div class="max-w-3xl">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="ds-kicker">CAPA dossier</span>
+            <span :class="['inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-black ring-1 ring-inset', statusChipClass]">
+              <span :class="['h-2 w-2 rounded-full', statusDotClass]"></span>
+              {{ $t(`gestlab.general.labels.vap_non_conformities.status.${nonConformity.status}`) }}
             </span>
-            {{ $t('gestlab.general.labels.vap_non_conformities.edit_title') }}
-          </h1>
-          <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
-            {{ $t('gestlab.general.labels.vap_non_conformities.edit_description') }}
-            <span class="font-semibold text-primary-700 dark:text-primary-300">
-              #{{ nonConformity.nc_number }}
+          </div>
+          <div class="mt-3 flex items-start gap-3">
+            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-rose-700 dark:text-rose-300">
+              <ExclamationTriangleIcon class="h-5 w-5" />
             </span>
-          </p>
+            <div>
+              <h1 class="ds-heading text-2xl">{{ $t('gestlab.general.labels.vap_non_conformities.edit_title') }}</h1>
+              <p class="ds-copy mt-2 text-sm">
+                {{ $t('gestlab.general.labels.vap_non_conformities.edit_description') }}
+                <span class="font-bold text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]">#{{ nonConformity.nc_number }}</span>
+              </p>
+            </div>
+          </div>
         </div>
-        <div class="flex items-center gap-3">
-          <span :class="statusClasses" class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ring-1 ring-inset">
-            {{ $t(`gestlab.general.labels.vap_non_conformities.status.${form.status}`) }}
-          </span>
+
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <Link :href="route('vap_non_conformities.show', nonConformity.id)" class="ds-button ds-button-secondary">
+            <EyeIcon class="h-4 w-4" />
+            {{ $t('gestlab.general.labels.vap_non_conformities.buttons.view') }}
+          </Link>
+          <Link :href="route('vap_non_conformities.index')" class="ds-button ds-button-secondary">
+            <ArrowLeftIcon class="h-4 w-4" />
+            {{ $t('gestlab.general.labels.vap_non_conformities.buttons.back_to_list') }}
+          </Link>
         </div>
       </div>
-    </div>
 
-    <!-- Reuse the Form component -->
+      <dl class="grid grid-cols-2 divide-x divide-y divide-[var(--ds-border)] md:grid-cols-4 md:divide-y-0">
+        <div v-for="metric in dossierMetrics" :key="metric.label" class="px-5 py-4">
+          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[var(--ds-text-soft)]">
+            <span class="lims-status-dot" :class="metric.dotClass"></span>
+            {{ metric.label }}
+          </dt>
+          <dd class="mt-2 text-xl font-bold" :class="metric.valueClass">{{ metric.value }}</dd>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ metric.caption }}</p>
+        </div>
+      </dl>
+    </section>
+
     <NonConformityForm
-      :nonConformity="form"
-      :actions="actions"
+      :non-conformity="nonConformity"
       :labs="labs"
       :departments="departments"
       :is-editing="true"
-      @submit="submit"
-      @reset="reset"
-      @add-action="addAction"
-      @remove-action="removeAction"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { useForm } from '@inertiajs/vue3'
-import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline'
 import NonConformityForm from '@/Pages/VAPNonConformities/NonConformityForm.vue'
+import { Link } from '@inertiajs/vue3'
+import { ArrowLeftIcon, ExclamationTriangleIcon, EyeIcon } from '@heroicons/vue/24/outline'
+import { computed } from 'vue'
 
-// Props
 const props = defineProps({
   nonConformity: {
     type: Object,
-    required: true
+    required: true,
   },
   labs: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   departments: {
     type: Array,
-    default: () => []
+    default: () => [],
+  },
+})
+
+const statusChipClasses = {
+  opened: 'bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] ring-[rgb(var(--primary-200-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-100-rgb))] dark:ring-[rgb(var(--primary-300-rgb)/0.22)]',
+  in_progress: 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20',
+  resolved: 'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20',
+  closed: 'bg-[var(--ds-panel-muted)] text-[var(--ds-text-muted)] ring-[var(--ds-border-strong)]',
+}
+
+const statusDotClasses = {
+  opened: 'bg-[rgb(var(--primary-700-rgb))]',
+  in_progress: 'bg-amber-500',
+  resolved: 'bg-emerald-500',
+  closed: 'bg-[var(--ds-text-soft)]',
+}
+
+const severityClasses = {
+  low: 'text-emerald-700 dark:text-emerald-300',
+  medium: 'text-amber-700 dark:text-amber-300',
+  high: 'text-orange-700 dark:text-orange-300',
+  critical: 'text-rose-700 dark:text-rose-300',
+}
+
+const statusChipClass = computed(() => statusChipClasses[props.nonConformity.status] || statusChipClasses.opened)
+const statusDotClass = computed(() => statusDotClasses[props.nonConformity.status] || statusDotClasses.opened)
+
+const dossierMetrics = computed(() => [
+  {
+    label: 'Severidade',
+    value: props.nonConformity.severity || 'medium',
+    caption: 'Prioridade do desvio',
+    valueClass: severityClasses[props.nonConformity.severity] || severityClasses.medium,
+    dotClass: props.nonConformity.severity === 'critical' ? 'lims-status-dot-critical' : 'lims-status-dot-hold',
+  },
+  {
+    label: 'Ações',
+    value: props.nonConformity.actions?.length || 0,
+    caption: 'Correções e CAPA registadas',
+    valueClass: 'text-[var(--ds-text)]',
+    dotClass: 'lims-status-dot-instrument',
+  },
+  {
+    label: 'Laboratório',
+    value: props.nonConformity.lab?.name || '--',
+    caption: 'Origem técnica do evento',
+    valueClass: 'text-[var(--ds-text)]',
+    dotClass: 'lims-status-dot-release',
+  },
+  {
+    label: 'Prazo',
+    value: props.nonConformity.due_date ? new Date(props.nonConformity.due_date).toLocaleDateString('pt-PT') : '--',
+    caption: 'Data alvo para resolução',
+    valueClass: isOverdue(props.nonConformity) ? 'text-rose-700 dark:text-rose-300' : 'text-[var(--ds-text)]',
+    dotClass: isOverdue(props.nonConformity) ? 'lims-status-dot-critical' : 'lims-status-dot-hold',
+  },
+])
+
+function isOverdue(nonConformity) {
+  if (!nonConformity.due_date || nonConformity.status === 'closed') {
+    return false
   }
-})
 
-// Form
-const form = useForm({
-  id:  props.nonConformity.id,
-  lab_id: props.nonConformity.lab_id || '',
-  department_id: props.nonConformity.department_id || '',
-  nc_number: props.nonConformity.nc_number,
-  title: props.nonConformity.title,
-  description: props.nonConformity.description,
-  status: props.nonConformity.status,
-  severity: props.nonConformity.severity,
-  category: props.nonConformity.category,
-  sample_id: props.nonConformity.sample_id || '',
-  test_method: props.nonConformity.test_method || '',
-  equipment_id: props.nonConformity.equipment_id || '',
-  batch_number: props.nonConformity.batch_number || '',
-  reported_by: props.nonConformity.reported_by,
-  reported_by_id: props.nonConformity.reported_by_id || '',
-  assigned_to: props.nonConformity.assigned_to || '',
-  assigned_to_id: props.nonConformity.assigned_to_id || '',
-  reported_at: formatDateForInput(props.nonConformity.reported_at),
-  due_date: formatDateForInput(props.nonConformity.due_date),
-  occurrence_area: props.nonConformity.occurrence_area || '',
-  root_cause: props.nonConformity.root_cause || '',
-  corrective_actions: props.nonConformity.corrective_actions || '',
-  preventive_actions: props.nonConformity.preventive_actions || '',
-  comments: props.nonConformity.comments || '',
-  attachments: props.nonConformity.attachments || [],
-  media_attachments: props.nonConformity.media_attachments || [],
-  actions: props.nonConformity.actions || [],
-})
-
-// Actions
-const actions = ref(props.nonConformity.actions || [])
-
-// Computed
-const statusClasses = computed(() => {
-  const classes = {
-    opened: 'bg-blue-50 text-blue-700 ring-blue-700/10 dark:bg-blue-500/10 dark:text-blue-200 dark:ring-blue-400/20',
-    in_progress: 'bg-yellow-50 text-yellow-700 ring-yellow-700/10 dark:bg-yellow-500/10 dark:text-yellow-200 dark:ring-yellow-400/20',
-    resolved: 'bg-green-50 text-green-700 ring-green-700/10 dark:bg-green-500/10 dark:text-green-200 dark:ring-green-400/20',
-    closed: 'bg-slate-50 text-slate-700 ring-slate-700/10 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-600'
-  }
-  return classes[form.status] || classes.opened
-})
-
-// Methods
-function formatDateForInput(dateString) {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toISOString().slice(0, 16)
-}
-
-function submit() {
-  form.actions = actions.value
-  form.put(route('vap_non_conformities.update', props.nonConformity.id))
-}
-
-function reset() {
-  form.reset()
-  actions.value = props.nonConformity.actions || []
-}
-
-function addAction() {
-  actions.value.push({
-    correction: '',
-    corrective_action: '',
-    due_at: ''
-  })
-}
-
-function removeAction(index) {
-  actions.value.splice(index, 1)
+  return new Date(nonConformity.due_date) < new Date()
 }
 </script>

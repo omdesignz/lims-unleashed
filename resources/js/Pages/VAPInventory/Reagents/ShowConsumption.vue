@@ -1,410 +1,422 @@
 <template>
-  <div class="reagent-consumption-show-shell space-y-8" :class="commercialDocumentThemeClasses">
-    <ModuleHero
-      :icon="BeakerIcon"
-      :title="`Registo de Consumo #${consumption.id}`"
-      subtitle="Visualize o consumo de reagente, impacto em stock e rastreabilidade do registo."
-    >
-      <template #actions>
-        <div class="flex flex-wrap items-center gap-3">
-          <button
-            @click="goBack"
-            class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
-          >
-            <ArrowLeftIcon class="h-5 w-5" />
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
+        <div class="max-w-3xl">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="ds-kicker">Reagent control</span>
+            <span class="ds-chip">
+              <span class="lims-status-dot lims-status-dot-release" />
+              Registado
+            </span>
+            <span class="ds-chip">#{{ consumption.id }}</span>
+          </div>
+          <h1 class="ds-heading mt-3 text-2xl">Registo de consumo #{{ consumption.id }}</h1>
+          <p class="ds-copy mt-2 text-sm">
+            Reveja material, quantidade, armazém, responsável e impacto de stock associados a este consumo.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <button type="button" class="ds-button ds-button-secondary" @click="goBack">
+            <ArrowLeftIcon class="h-4 w-4" />
             Voltar
           </button>
-          <button
-            @click="deleteConsumption"
-            class="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-white/90 px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-red-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
-          >
-            <TrashIcon class="h-5 w-5" />
+          <button type="button" class="ds-button ds-button-danger" @click="showDeleteConfirmation = true">
+            <TrashIcon class="h-4 w-4" />
             Excluir
           </button>
         </div>
-      </template>
-    </ModuleHero>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- LEFT COLUMN (2/3 width) -->
-      <div class="lg:col-span-2 space-y-6">
-        <!-- CONSUMPTION DETAILS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <ClipboardDocumentListIcon class="h-5 w-5 text-blue-900" />
-            Detalhes do Consumo
-          </h2>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Reagent Information -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                Reagente
-              </label>
-              <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <BeakerIcon class="h-5 w-5 text-blue-900" />
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-900">{{ consumption.reagent_name }}</p>
-                  <p class="text-xs text-gray-500">{{ consumption.item?.internal_code || 'N/A' }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Quantity Used -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                Quantidade Usada
-              </label>
-              <div class="p-3 bg-gray-50 rounded-lg">
-                <p class="text-2xl font-bold text-red-600">{{ consumption.quantity_used }}</p>
-                <p class="text-xs text-gray-500">{{ consumption.item?.unit?.code || 'units' }}</p>
-              </div>
-            </div>
-
-            <!-- Warehouse -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                Armazém
-              </label>
-              <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <BuildingStorefrontIcon class="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-900">{{ consumption.warehouse?.name }}</p>
-                  <p class="text-xs text-gray-500">{{ consumption.warehouse?.location?.name || 'N/A' }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Used By -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                Usado Por
-              </label>
-              <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div class="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                  <UserIcon class="h-5 w-5 text-purple-600" />
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-900">{{ consumption.used_by }}</p>
-                  <p class="text-xs text-gray-500">Registado por: {{ consumption.user?.name || 'Sistema' }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Dates -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                Datas
-              </label>
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Data de Consumo:</span>
-                  <span class="font-medium text-gray-900">{{ formatDate(consumption.date) }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Data de Registro:</span>
-                  <span class="font-medium text-gray-900">{{ formatDateTime(consumption.created_at) }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Usado Em:</span>
-                  <span class="font-medium text-gray-900">{{ formatDateTime(consumption.used_at) }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Status Information -->
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">
-                Informações de Registro
-              </label>
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">ID de Registro:</span>
-                  <span class="font-medium text-blue-900">#{{ consumption.id }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Estado:</span>
-                  <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                    Registrado
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Remarks -->
-          <div v-if="consumption.remarks" class="mt-6 space-y-2">
-            <label class="block text-sm font-medium text-gray-700">
-              Observações
-            </label>
-            <div class="p-3 bg-gray-50 rounded-lg">
-              <p class="text-sm text-gray-700 whitespace-pre-line">{{ consumption.remarks }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- REAGENT INFORMATION -->
-        <div v-if="consumption.item" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <InformationCircleIcon class="h-5 w-5 text-blue-900" />
-            Informações do Reagente
-          </h2>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-2">
-              <div class="p-4 bg-gray-50 rounded-lg">
-                <div class="space-y-2">
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Nome:</span>
-                    <span class="font-medium text-gray-900">{{ consumption.item.name }}</span>
-                  </div>
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Código Interno:</span>
-                    <span class="font-medium text-gray-900">{{ consumption.item.internalcode }}</span>
-                  </div>
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Categoria:</span>
-                    <span class="font-medium text-gray-900">{{ consumption.item.category?.name || 'N/A' }}</span>
-                  </div>
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Unidade:</span>
-                    <span class="font-medium text-gray-900">{{ consumption.item.unit?.code || 'N/A' }}</span>
-                  </div>
-                  <div v-if="consumption.item.reagent_expiry_date" class="flex justify-between text-sm">
-                    <span class="text-gray-600">Data de Validade:</span>
-                    <span :class="[
-                      'font-medium',
-                      isReagentExpired ? 'text-red-600' : 'text-gray-900'
-                    ]">
-                      {{ formatDate(consumption.item.reagent_expiry_date) }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="space-y-2">
-              <div class="p-4 bg-gray-50 rounded-lg">
-                <div class="space-y-2">
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Marca:</span>
-                    <span class="font-medium text-gray-900">{{ consumption.item.brand || 'N/A' }}</span>
-                  </div>
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Modelo:</span>
-                    <span class="font-medium text-gray-900">{{ consumption.item.model || 'N/A' }}</span>
-                  </div>
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Número de Série:</span>
-                    <span class="font-medium text-gray-900">{{ consumption.item.serial_number || 'N/A' }}</span>
-                  </div>
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Fornecedor:</span>
-                    <span class="font-medium text-gray-900">{{ consumption.item.supplier?.name || 'N/A' }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- RIGHT COLUMN (1/3 width) -->
-      <div class="space-y-6">
-        <!-- ACTIONS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            Acções
-          </h3>
-          <div class="space-y-3">
-            <!-- Edit Button -->
-            <a 
-              :href="route('vap-inventory.items.show', consumption.reagent_id)"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-            >
-              <PencilIcon class="h-5 w-5" />
-            
-              Visualizar Detalhes do Reagente
-            </a>
-
-            <!-- Print Button -->
-            <button 
-              @click="printConsumption"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-            >
-              <PrinterIcon class="h-5 w-5" />
-              
-              Imprimir Registro
-            </button>
-
-            <!-- Export Button -->
-            <button 
-              @click="exportConsumption"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-            >
-              <ArrowDownTrayIcon class="h-5 w-5" />
-              
-              Exportar como PDF
-            </button>
-          </div>
+      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] md:grid-cols-4 md:divide-y-0">
+        <div v-for="metric in summaryCards" :key="metric.label" class="px-5 py-4">
+          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
+            <span class="lims-status-dot" :class="metric.dotClass" />
+            {{ metric.label }}
+          </dt>
+          <dd class="mt-2 text-xl font-bold" :class="metric.valueClass">{{ metric.value }}</dd>
+          <p class="mt-1 truncate text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ metric.caption }}</p>
         </div>
+      </dl>
+    </section>
 
-        <!-- RECORD TIMELINE -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <ClockIcon class="h-5 w-5 text-blue-900" />
-            Linha do Tempo do Registro
-          </h3>
-          <div class="space-y-4">
-            <div class="flex items-start">
-              <div class="flex-shrink-0 h-6 w-6 rounded-full bg-green-500 flex items-center justify-center">
-                <CheckIcon class="h-3 w-3 text-white" />
-              </div>
-              <div class="ml-3">
-                <p class="text-sm font-medium text-gray-900">Registro de Consumo</p>
-                <p class="text-xs text-gray-500">{{ formatDateTime(consumption.created_at) }}</p>
-                <p class="text-xs text-gray-500">por {{ consumption.user?.name || 'Sistema' }}</p>
-              </div>
-            </div>
-            
-            <div class="flex items-start">
-              <div class="flex-shrink-0 h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center">
-                <CubeIcon class="h-3 w-3 text-white" />
-              </div>
-              <div class="ml-3">
-                <p class="text-sm font-medium text-gray-900">Estoque Atualizado</p>
-                <p class="text-xs text-gray-500">{{ formatDateTime(consumption.created_at) }}</p>
-                <p class="text-xs text-gray-500">Stock reduzido em {{ consumption.quantity_used }}</p>
+    <section class="grid gap-4 xl:grid-cols-[1fr_22rem]">
+      <div class="space-y-4">
+        <article class="ds-panel overflow-hidden">
+          <div class="ds-table-summary px-5 py-4">
+            <div class="flex items-start gap-3">
+              <ClipboardDocumentListIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
+              <div>
+                <h2 class="ds-heading text-base">Detalhes do consumo</h2>
+                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Rastreabilidade do registo e da saída de stock.</p>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- STOCK INFORMATION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            Impacto no Estoque
-          </h3>
-          <div class="space-y-3">
-            <div>
-              <p class="text-sm font-medium text-gray-600">Quantidade Consumida</p>
-              <p class="mt-1 text-lg font-bold text-red-600">
-                {{ consumption.quantity_used }}
-              </p>
+          <dl class="grid divide-y divide-[color:var(--ds-border)] md:grid-cols-2 md:divide-x md:divide-y-0">
+            <div class="space-y-4 p-5">
+              <div v-for="field in primaryFields" :key="field.label" class="flex items-start gap-3">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-panel-subtle)] text-primary-700 dark:text-primary-300">
+                  <component :is="field.icon" class="h-4 w-4" />
+                </span>
+                <div class="min-w-0">
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
+                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ field.value }}</dd>
+                  <p v-if="field.caption" class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ field.caption }}</p>
+                </div>
+              </div>
             </div>
-            <div v-if="consumption.item?.inventory">
-              <p class="text-sm font-medium text-gray-600">Estoque Actual no Armazém</p>
-              <p class="mt-1 text-lg font-bold text-gray-900">
-                {{ getCurrentStockInWarehouse() }}
-              </p>
+
+            <div class="space-y-3 p-5">
+              <div v-for="field in auditFields" :key="field.label" class="flex items-start justify-between gap-4 text-sm">
+                <dt class="font-semibold text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
+                <dd class="text-right font-bold text-[color:var(--ds-text)]">{{ field.value }}</dd>
+              </div>
             </div>
-            <div>
-              <p class="text-sm font-medium text-gray-600">Impacto</p>
-              <p class="text-xs text-gray-500">
-                Este consumo reduziu o estoque no {{ consumption.warehouse?.name }} por {{ consumption.quantity_used }} unidades.
-              </p>
-            </div>
+          </dl>
+
+          <div v-if="consumption.remarks" class="border-t border-[color:var(--ds-border)] p-5">
+            <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Observações</p>
+            <p class="mt-2 whitespace-pre-line text-sm text-[color:var(--ds-text-muted)]">{{ consumption.remarks }}</p>
           </div>
-        </div>
+        </article>
 
-        <!-- WARNING CARD -->
-        <div v-if="isReagentExpired" class="bg-yellow-50 rounded-xl border border-yellow-200 p-6">
-          <div class="flex">
-            <ExclamationTriangleIcon class="h-5 w-5 text-yellow-600 flex-shrink-0" />
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-yellow-800">Reagente Vencido</h3>
-              <div class="mt-2 text-sm text-yellow-700">
-                <p>Este reagente venceu em {{ formatDate(consumption.item.reagent_expiry_date) }}</p>
-                <p class="mt-1">A consumo de reagentes vencidos deve ser documentado separadamente.</p>
+        <article v-if="consumption.item" class="ds-panel overflow-hidden">
+          <div class="ds-table-summary px-5 py-4">
+            <div class="flex items-start gap-3">
+              <InformationCircleIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
+              <div>
+                <h2 class="ds-heading text-base">Dossier do reagente</h2>
+                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Identificação do material afectado por este consumo.</p>
               </div>
             </div>
           </div>
-        </div>
+
+          <dl class="grid divide-y divide-[color:var(--ds-border)] md:grid-cols-2 md:divide-x md:divide-y-0">
+            <div class="p-5">
+              <div v-for="field in reagentIdentityFields" :key="field.label" class="flex items-start justify-between gap-4 py-2 text-sm">
+                <dt class="font-semibold text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
+                <dd class="text-right font-bold" :class="field.valueClass">{{ field.value }}</dd>
+              </div>
+            </div>
+            <div class="p-5">
+              <div v-for="field in reagentSupplyFields" :key="field.label" class="flex items-start justify-between gap-4 py-2 text-sm">
+                <dt class="font-semibold text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
+                <dd class="text-right font-bold text-[color:var(--ds-text)]">{{ field.value }}</dd>
+              </div>
+            </div>
+          </dl>
+        </article>
       </div>
-    </div>
+
+      <aside class="space-y-4">
+        <section class="ds-command-surface p-5">
+          <h2 class="ds-heading text-base">Acções</h2>
+          <div class="mt-4 grid gap-2">
+            <Link :href="route('vap-inventory.items.show', consumption.reagent_id)" class="ds-button ds-button-secondary w-full">
+              <PencilIcon class="h-4 w-4" />
+              Ver reagente
+            </Link>
+            <button type="button" class="ds-button ds-button-secondary w-full" @click="printConsumption">
+              <PrinterIcon class="h-4 w-4" />
+              Imprimir registo
+            </button>
+          </div>
+        </section>
+
+        <section class="ds-panel overflow-hidden">
+          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
+            <h2 class="ds-heading text-base">Linha do tempo</h2>
+          </div>
+          <ol class="space-y-4 p-5">
+            <li v-for="item in timelineItems" :key="item.label" class="flex gap-3">
+              <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-panel-subtle)] text-primary-700 dark:text-primary-300">
+                <component :is="item.icon" class="h-4 w-4" />
+              </span>
+              <div>
+                <p class="text-sm font-bold text-[color:var(--ds-text)]">{{ item.label }}</p>
+                <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ item.timestamp }}</p>
+                <p class="mt-1 text-xs text-[color:var(--ds-text-muted)]">{{ item.caption }}</p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <section class="ds-panel overflow-hidden">
+          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
+            <h2 class="ds-heading text-base">Impacto no stock</h2>
+          </div>
+          <div class="grid gap-3 p-5">
+            <div v-for="item in stockImpactCards" :key="item.label" class="ds-card p-4">
+              <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ item.label }}</p>
+              <p class="mt-2 text-xl font-bold" :class="item.valueClass">{{ item.value }}</p>
+              <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ item.caption }}</p>
+            </div>
+          </div>
+        </section>
+
+        <section v-if="isReagentExpired" class="ds-card border-l-4 border-amber-500 p-4">
+          <div class="flex items-start gap-3">
+            <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 text-amber-700 dark:text-amber-300" />
+            <div>
+              <h3 class="text-sm font-bold text-[color:var(--ds-text)]">Reagente vencido</h3>
+              <p class="mt-1 text-sm text-[color:var(--ds-text-soft)]">
+                Validade: {{ formatDate(consumption.item.reagent_expiry_date) }}.
+              </p>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </section>
+
+    <confirm-dialog
+      v-if="showDeleteConfirmation"
+      title="Excluir registo de consumo"
+      description="Esta ação restaura o stock associado ao consumo e remove o registo da trilha operacional visível."
+      confirm="Excluir registo"
+      cancel="Manter registo"
+      variant="danger"
+      @confirmed="confirmDeleteConsumption"
+      @canceled="showDeleteConfirmation = false"
+    >
+      <div class="mt-4 rounded-lg border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] p-4 text-left">
+        <p class="text-sm font-bold text-[color:var(--ds-text)]">{{ consumption.reagent_name }}</p>
+        <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
+          {{ formatQuantity(consumption.quantity_used) }} em {{ consumption.warehouse?.name || 'armazém não definido' }}
+        </p>
+      </div>
+    </confirm-dialog>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { router } from '@inertiajs/vue3'
-import ModuleHero from '@/Components/base/ModuleHero.vue'
+import ConfirmDialog from '@/Components/confirm-dialog.vue'
+import { Link, router } from '@inertiajs/vue3'
 import {
-  BeakerIcon,
   ArrowLeftIcon,
-  TrashIcon,
-  ClipboardDocumentListIcon,
+  BeakerIcon,
   BuildingStorefrontIcon,
-  UserIcon,
+  CheckIcon,
+  ClipboardDocumentListIcon,
+  ClockIcon,
+  CubeIcon,
+  ExclamationTriangleIcon,
   InformationCircleIcon,
   PencilIcon,
   PrinterIcon,
-  ArrowDownTrayIcon,
-  ClockIcon,
-  CheckIcon,
-  CubeIcon,
-  ExclamationTriangleIcon
+  TrashIcon,
+  UserIcon,
 } from '@heroicons/vue/24/outline'
+import { computed, ref } from 'vue'
 
 const props = defineProps({
   consumption: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 })
+
+const quantityFormatter = new Intl.NumberFormat('pt-PT', {
+  maximumFractionDigits: 2,
+})
+const showDeleteConfirmation = ref(false)
 
 const isReagentExpired = computed(() => {
-  if (!props.consumption.item || !props.consumption.item.reagent_expiry_date) return false
-  
-  const expiryDate = new Date(props.consumption.item.reagent_expiry_date)
-  return expiryDate < new Date()
+  if (!props.consumption.item?.reagent_expiry_date) {
+    return false
+  }
+
+  return new Date(props.consumption.item.reagent_expiry_date) < new Date()
 })
 
+const summaryCards = computed(() => [
+  {
+    label: 'Quantidade',
+    value: formatQuantity(props.consumption.quantity_used),
+    caption: props.consumption.item?.unit?.code || 'unidades',
+    dotClass: 'lims-status-dot-critical',
+    valueClass: 'text-rose-700 dark:text-rose-300',
+  },
+  {
+    label: 'Consumo',
+    value: formatDate(props.consumption.date),
+    caption: 'Data operacional',
+    dotClass: 'lims-status-dot-hold',
+    valueClass: 'text-[color:var(--ds-text)]',
+  },
+  {
+    label: 'Armazém',
+    value: props.consumption.warehouse?.name || 'N/A',
+    caption: props.consumption.warehouse?.location?.name || 'Local não definido',
+    dotClass: 'lims-status-dot-instrument',
+    valueClass: 'text-[color:var(--ds-text)]',
+  },
+  {
+    label: 'Estado',
+    value: isReagentExpired.value ? 'Atenção' : 'Registado',
+    caption: isReagentExpired.value ? 'Validade expirada' : 'Rastreabilidade activa',
+    dotClass: isReagentExpired.value ? 'lims-status-dot-hold' : 'lims-status-dot-release',
+    valueClass: isReagentExpired.value ? 'text-amber-700 dark:text-amber-300' : 'text-[color:var(--ds-text)]',
+  },
+])
+
+const primaryFields = computed(() => [
+  {
+    label: 'Reagente',
+    value: props.consumption.reagent_name,
+    caption: props.consumption.item?.internal_code || props.consumption.item?.internalcode || 'Código N/A',
+    icon: BeakerIcon,
+  },
+  {
+    label: 'Quantidade usada',
+    value: formatQuantity(props.consumption.quantity_used),
+    caption: props.consumption.item?.unit?.code || 'unidades',
+    icon: CubeIcon,
+  },
+  {
+    label: 'Armazém',
+    value: props.consumption.warehouse?.name || 'N/A',
+    caption: props.consumption.warehouse?.location?.name || 'Localização N/A',
+    icon: BuildingStorefrontIcon,
+  },
+  {
+    label: 'Usado por',
+    value: props.consumption.used_by,
+    caption: `Registado por ${props.consumption.user?.name || 'Sistema'}`,
+    icon: UserIcon,
+  },
+])
+
+const auditFields = computed(() => [
+  ['Data de consumo', formatDate(props.consumption.date)],
+  ['Data de registo', formatDateTime(props.consumption.created_at)],
+  ['Usado em', formatDateTime(props.consumption.used_at)],
+  ['ID de registo', `#${props.consumption.id}`],
+  ['Estado', 'Registado'],
+].map(([label, value]) => ({ label, value })))
+
+const reagentIdentityFields = computed(() => [
+  ['Nome', props.consumption.item?.name || 'N/A'],
+  ['Código interno', props.consumption.item?.internalcode || props.consumption.item?.internal_code || 'N/A'],
+  ['Categoria', props.consumption.item?.category?.name || 'N/A'],
+  ['Unidade', props.consumption.item?.unit?.code || 'N/A'],
+  [
+    'Validade',
+    props.consumption.item?.reagent_expiry_date ? formatDate(props.consumption.item.reagent_expiry_date) : 'N/A',
+    isReagentExpired.value ? 'text-rose-700 dark:text-rose-300' : 'text-[color:var(--ds-text)]',
+  ],
+].map(([label, value, valueClass = 'text-[color:var(--ds-text)]']) => ({ label, value, valueClass })))
+
+const reagentSupplyFields = computed(() => [
+  ['Marca', props.consumption.item?.brand || 'N/A'],
+  ['Modelo', props.consumption.item?.model || 'N/A'],
+  ['Número de série', props.consumption.item?.serial_number || 'N/A'],
+  ['Fornecedor', props.consumption.item?.supplier?.name || 'N/A'],
+].map(([label, value]) => ({ label, value })))
+
+const timelineItems = computed(() => [
+  {
+    label: 'Registo de consumo',
+    timestamp: formatDateTime(props.consumption.created_at),
+    caption: `por ${props.consumption.user?.name || 'Sistema'}`,
+    icon: CheckIcon,
+  },
+  {
+    label: 'Stock actualizado',
+    timestamp: formatDateTime(props.consumption.created_at),
+    caption: `Stock reduzido em ${formatQuantity(props.consumption.quantity_used)}.`,
+    icon: CubeIcon,
+  },
+])
+
+const stockImpactCards = computed(() => [
+  {
+    label: 'Quantidade consumida',
+    value: formatQuantity(props.consumption.quantity_used),
+    caption: props.consumption.item?.unit?.code || 'unidades',
+    valueClass: 'text-rose-700 dark:text-rose-300',
+  },
+  {
+    label: 'Stock actual',
+    value: formatQuantity(getCurrentStockInWarehouse()),
+    caption: props.consumption.warehouse?.name || 'Armazém N/A',
+    valueClass: 'text-[color:var(--ds-text)]',
+  },
+  {
+    label: 'Impacto',
+    value: 'Saída',
+    caption: `Redução aplicada ao ${props.consumption.warehouse?.name || 'armazém'}.`,
+    valueClass: 'text-[color:var(--ds-text)]',
+  },
+])
+
+function formatQuantity(value) {
+  const numericValue = Number(value ?? 0)
+
+  if (!Number.isFinite(numericValue)) {
+    return 'N/A'
+  }
+
+  return quantityFormatter.format(numericValue)
+}
+
 function formatDate(dateString) {
-  if (!dateString) return '-'
-  return new Date(dateString).toLocaleDateString('pt-PT', {
-    year: 'numeric',
+  if (!dateString) {
+    return '-'
+  }
+
+  const date = new Date(dateString)
+
+  if (Number.isNaN(date.getTime())) {
+    return '-'
+  }
+
+  return new Intl.DateTimeFormat('pt-PT', {
+    day: '2-digit',
     month: 'short',
-    day: 'numeric'
-  })
+    year: 'numeric',
+  }).format(date)
 }
 
 function formatDateTime(dateString) {
-  if (!dateString) return '-'
-  return new Date(dateString).toLocaleString('pt-PT', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
+  if (!dateString) {
+    return '-'
+  }
+
+  const date = new Date(dateString)
+
+  if (Number.isNaN(date.getTime())) {
+    return '-'
+  }
+
+  return new Intl.DateTimeFormat('pt-PT', {
+    day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
-  })
+    minute: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date)
 }
 
 function getCurrentStockInWarehouse() {
-  if (!props.consumption.item || !props.consumption.item.inventory) return 'N/A'
-  
-  const inventory = props.consumption.item.inventory.find(
-    inv => inv.warehouse_id === props.consumption.warehouse_id
-  )
-  
-  return inventory ? inventory.qty_available : 'N/A'
+  if (!props.consumption.item?.inventory) {
+    return null
+  }
+
+  const inventory = props.consumption.item.inventory.find((stockItem) => stockItem.warehouse_id === props.consumption.warehouse_id)
+
+  return inventory?.qty_available ?? null
 }
 
-function deleteConsumption() {
-  if (!confirm('Tem a certeza de que pretende eliminar este registo de consumo? O stock será restaurado.')) {
-    return
-  }
+function confirmDeleteConsumption() {
+  showDeleteConfirmation.value = false
 
   router.delete(route('vap-inventory.reagents.consumption.destroy', props.consumption.id), {
     preserveScroll: true,
     onSuccess: () => {
       router.visit(route('vap-inventory.reagents.consumption.index'))
-    }
+    },
   })
 }
 
@@ -412,109 +424,7 @@ function printConsumption() {
   window.print()
 }
 
-function exportConsumption() {
-  // Implement export functionality
-  alert('A exportação deste registo ainda não está configurada.')
-}
-
 function goBack() {
   router.visit(route('vap-inventory.reagents.consumption.index'))
 }
 </script>
-
-<style scoped>
-.reagent-consumption-show-shell :deep(.bg-white.rounded-xl),
-.reagent-consumption-show-shell :deep(.rounded-xl.border.border-gray-200) {
-  border-color: rgb(226 232 240);
-  border-radius: 1.5rem;
-  background: rgb(255 255 255);
-  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
-}
-
-.reagent-consumption-show-shell :deep(.bg-gray-50) {
-  border-color: rgb(226 232 240);
-  background: rgb(248 250 252 / 0.84);
-}
-
-.reagent-consumption-show-shell :deep(.text-blue-900) {
-  color: rgb(var(--color-primary-900, 30 58 138));
-}
-
-.reagent-consumption-show-shell :deep(.bg-blue-100) {
-  background-color: rgb(var(--color-primary-100, 219 234 254));
-}
-
-.reagent-consumption-show-shell :deep(.border-gray-200),
-.reagent-consumption-show-shell :deep(.border-gray-300) {
-  border-color: rgb(226 232 240);
-}
-
-.reagent-consumption-show-shell :deep(.hover\:bg-gray-50:hover) {
-  background: rgb(var(--color-primary-50, 239 246 255) / 0.58);
-}
-
-:global(.dark) .reagent-consumption-show-shell :deep(.bg-white.rounded-xl),
-:global(.dark) .reagent-consumption-show-shell :deep(.rounded-xl.border.border-gray-200) {
-  border-color: rgb(30 41 59);
-  background:
-    radial-gradient(circle at top right, rgb(var(--color-primary-500, 59 130 246) / 0.1), transparent 30%),
-    rgb(2 6 23);
-}
-
-:global(.dark) .reagent-consumption-show-shell :deep(.bg-white) {
-  background: rgb(2 6 23);
-}
-
-:global(.dark) .reagent-consumption-show-shell :deep(.bg-gray-50),
-:global(.dark) .reagent-consumption-show-shell :deep(.hover\:bg-gray-50:hover) {
-  border-color: rgb(51 65 85);
-  background: rgb(15 23 42 / 0.72);
-}
-
-:global(.dark) .reagent-consumption-show-shell :deep(.bg-yellow-50) {
-  border-color: rgb(245 158 11 / 0.32);
-  background: rgb(245 158 11 / 0.1);
-}
-
-:global(.dark) .reagent-consumption-show-shell :deep(.bg-blue-100),
-:global(.dark) .reagent-consumption-show-shell :deep(.bg-green-100),
-:global(.dark) .reagent-consumption-show-shell :deep(.bg-purple-100) {
-  background-color: rgb(var(--color-primary-500, 59 130 246) / 0.1);
-}
-
-:global(.dark) .reagent-consumption-show-shell :deep(.text-gray-900),
-:global(.dark) .reagent-consumption-show-shell :deep(.text-gray-800),
-:global(.dark) .reagent-consumption-show-shell :deep(.text-gray-700) {
-  color: rgb(226 232 240);
-}
-
-:global(.dark) .reagent-consumption-show-shell :deep(.text-gray-600),
-:global(.dark) .reagent-consumption-show-shell :deep(.text-gray-500),
-:global(.dark) .reagent-consumption-show-shell :deep(.text-gray-400) {
-  color: rgb(148 163 184);
-}
-
-:global(.dark) .reagent-consumption-show-shell :deep(.border-gray-200),
-:global(.dark) .reagent-consumption-show-shell :deep(.border-gray-300) {
-  border-color: rgb(30 41 59);
-}
-
-:global(.dark) .reagent-consumption-show-shell :deep(.text-blue-900) {
-  color: rgb(var(--color-primary-200, 191 219 254));
-}
-
-:global(.dark) .reagent-consumption-show-shell :deep(.text-green-600) {
-  color: rgb(110 231 183);
-}
-
-:global(.dark) .reagent-consumption-show-shell :deep(.text-red-600),
-:global(.dark) .reagent-consumption-show-shell :deep(.text-red-700) {
-  color: rgb(252 165 165);
-}
-
-:global(.dark) .reagent-consumption-show-shell :deep(.text-yellow-800),
-:global(.dark) .reagent-consumption-show-shell :deep(.text-yellow-700),
-:global(.dark) .reagent-consumption-show-shell :deep(.text-yellow-600) {
-  color: rgb(253 230 138);
-}
-</style>

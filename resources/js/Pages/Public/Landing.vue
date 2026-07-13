@@ -545,10 +545,8 @@ function IconArrow() {
 </script>
 
 <style scoped>
-@import url('https://fonts.bunny.net/css?family=manrope:500,600,700,800,900');
-
 .landing-shell {
-  font-family: "Manrope", "Aptos", sans-serif;
+  font-family: var(--font-sans);
 }
 
 .laboratory-grid {

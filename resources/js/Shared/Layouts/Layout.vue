@@ -71,23 +71,24 @@
               </TransitionChild>
 
               <div
-                class="ds-surface flex grow flex-col gap-y-5 overflow-y-auto px-4 pb-4 scrollbar-thin"
+                class="ds-sidebar-panel flex grow flex-col gap-y-5 overflow-y-auto rounded-none border-l-0 border-y-0 px-4 pb-4 scrollbar-thin"
               >
                 <div class="flex h-16 shrink-0 items-center">
-<Link :href="route('dashboard')">
-                <img
-                  v-if="$page.props.settings?.logo_url"
-                  class="h-12 w-auto"
-                  :src="$page.props.settings.logo_url"
-                  :alt="$page.props.settings?.app_name ?? ''"
-                />
-                <img
-                  v-else
-                  class="h-12 w-auto"
-                  src="../../../images/sncqa_logo.svg"
-                  alt=""
-                />
-            </Link>
+                  <Link :href="route('dashboard')" class="flex min-w-0 items-center gap-3">
+                    <span v-if="!$page.props.settings?.logo_url" class="lims-brand-mark">
+                      {{ settings?.app_name?.slice(0, 2).toUpperCase() || 'LU' }}
+                    </span>
+                    <img
+                      v-else
+                      class="max-h-9 max-w-36 rounded bg-white/95 object-contain px-2 py-1"
+                      :src="$page.props.settings.logo_url"
+                      :alt="$page.props.settings?.app_name ?? ''"
+                    />
+                    <span class="min-w-0">
+                      <span class="block truncate text-sm font-semibold text-white">{{ settings?.app_name || 'LIMS Unleashed' }}</span>
+                      <span class="block truncate font-mono text-[0.65rem] uppercase text-slate-400">ISO 17025 workspace</span>
+                    </span>
+                  </Link>
                 </div>
                 <side-nav class="relative" />
               </div>
@@ -108,20 +109,31 @@
         class="ds-sidebar-panel relative flex grow flex-col gap-y-4 overflow-y-auto px-4 pb-4 pt-2 scrollbar-thin"
       >
         <div class="flex h-16 shrink-0 items-center px-2">
-<Link :href="route('dashboard')" class="flex items-center gap-3 transition-opacity hover:opacity-80">
-                <img
-                  v-if="$page.props.settings?.logo_url"
-                  class="h-10 w-auto"
-                  :src="$page.props.settings.logo_url"
-                  :alt="$page.props.settings?.app_name ?? ''"
-                />
-                <img
-                  v-else
-                  class="h-10 w-auto"
-                  src="../../../images/sncqa_logo.svg"
-                  alt=""
-                />
-            </Link>
+          <Link :href="route('dashboard')" class="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-90">
+            <span v-if="!$page.props.settings?.logo_url" class="lims-brand-mark">
+              {{ settings?.app_name?.slice(0, 2).toUpperCase() || 'LU' }}
+            </span>
+            <img
+              v-else
+              class="max-h-9 max-w-36 rounded bg-white/95 object-contain px-2 py-1"
+              :src="$page.props.settings.logo_url"
+              :alt="$page.props.settings?.app_name ?? ''"
+            />
+            <span class="min-w-0">
+              <span class="block truncate text-sm font-semibold text-white">{{ settings?.app_name || 'LIMS Unleashed' }}</span>
+              <span class="block truncate font-mono text-[0.65rem] uppercase text-slate-400">ISO 17025 workspace</span>
+            </span>
+          </Link>
+        </div>
+        <div class="lims-sidebar-meta mx-2 grid grid-cols-2 gap-2 p-3 text-xs">
+          <div>
+            <p class="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-slate-500">Scope</p>
+            <p class="mt-1 truncate font-semibold text-slate-200">{{ moduleFamilyLabel }}</p>
+          </div>
+          <div>
+            <p class="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-slate-500">Session</p>
+            <p class="mt-1 font-semibold text-slate-200">{{ formattedTime }}</p>
+          </div>
         </div>
         <side-nav class="relative" />
       </div>
@@ -131,7 +143,7 @@
     <div :class="desktopSidebarOpen ? 'lg:pl-80' : 'lg:pl-0'" class="min-h-screen transition-all duration-300">
       <!-- Topbar -->
       <div
-        class="ds-topbar sticky top-0 z-40 mx-0 flex h-16 shrink-0 items-center gap-x-4 border-b px-4 sm:gap-x-6 sm:px-6 lg:top-3 lg:mx-4 lg:rounded-[1.6rem] lg:border lg:px-6"
+        class="ds-topbar sticky top-0 z-40 mx-0 flex min-h-16 shrink-0 items-center gap-x-4 border-b px-4 py-2 sm:gap-x-6 sm:px-6 lg:top-3 lg:mx-4 lg:rounded-[0.75rem] lg:border lg:px-4"
       >
         <button type="button" class="-m-2.5 p-2.5 text-gray-400 lg:hidden" @click="sidebarOpen = true">
           <span class="sr-only">Abrir menu lateral</span>
@@ -140,22 +152,40 @@
 
         <div class="h-6 w-px bg-gray-200/80 lg:hidden dark:bg-gray-600" aria-hidden="true" />
 
-        <div class="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-          <div class="relative flex flex-1 items-center">
+        <div class="flex min-w-0 flex-1 gap-x-4 self-stretch lg:gap-x-5">
+          <div class="relative flex min-w-0 flex-1 items-center gap-3">
             <button
               type="button"
-              class="ds-button ds-button-secondary hidden min-h-0 rounded-full px-3 py-1.5 text-xs lg:inline-flex"
+              class="ds-button ds-button-secondary hidden min-h-0 px-2.5 py-1.5 text-xs lg:inline-flex"
               :title="desktopSidebarOpen ? 'Ocultar menu lateral' : 'Mostrar menu lateral'"
               @click="toggleDesktopSidebar"
             >
               <Bars3Icon class="h-4 w-4" aria-hidden="true" />
-              <span>{{ desktopSidebarOpen ? 'Ocultar menu' : 'Mostrar menu' }}</span>
             </button>
 
+            <button
+              type="button"
+              class="hidden min-w-0 flex-1 items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-3 py-2 text-left shadow-[var(--ds-shadow-control)] transition hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-panel-subtle)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--ds-focus)] xl:flex"
+              @click="openCommandPalette"
+            >
+              <MagnifyingGlassIcon class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)]" aria-hidden="true" />
+              <span class="truncate text-sm font-medium text-[var(--ds-text-muted)]">
+                Buscar amostras, certificados, instrumentos ou clientes
+              </span>
+              <span class="ml-auto rounded border border-[var(--ds-border)] px-1.5 py-0.5 font-mono text-[0.63rem] font-semibold uppercase text-[var(--ds-text-soft)]">
+                cmd k
+              </span>
+            </button>
+
+            <span class="lims-module-chip hidden md:inline-flex">
+              <span class="lims-status-dot lims-status-dot-instrument" aria-hidden="true" />
+              {{ moduleFamilyLabel }}
+            </span>
+
             <!-- Clock -->
-            <div class="hidden lg:block ml-4">
+            <div class="hidden lg:block">
               <div
-                class="inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-3 py-1 text-xs font-bold leading-4 text-primary-700 ring-1 ring-primary-200/50 dark:bg-primary-400/10 dark:text-accent-200 dark:ring-primary-300/20"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-2.5 py-1.5 font-mono text-xs font-semibold leading-4 text-[var(--ds-text-muted)]"
               >
                 <p class="text-xs">{{ clockTime }}</p>
               </div>
@@ -164,12 +194,12 @@
 
           <div class="flex items-center gap-x-4 lg:gap-x-6">
             <!-- Session timer -->
-            <div class="hidden lg:block ml-4">
+            <div class="hidden lg:block">
               <div
                 v-if="!showSessionModal"
-                class="inline-flex items-center gap-1.5 rounded-full bg-[#ede5d6] px-3 py-1 text-xs font-bold leading-4 text-slate-600 ring-1 ring-[#ded3bf]/80 dark:bg-[#10231f] dark:text-slate-300 dark:ring-[#25443c]"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-2.5 py-1.5 font-mono text-xs font-semibold leading-4 text-[var(--ds-text-muted)]"
               >
-                <p class="text-xs">{{ 'Sessão Expira Em: ' + formattedTime }}</p>
+                <p class="text-xs">{{ formattedTime }}</p>
               </div>
             </div>
 
@@ -177,7 +207,7 @@
             <Link
               prefetch
               :href="route('notifications.index')"
-              class="relative rounded-full p-2.5 text-slate-500 transition hover:bg-[#ede5d6] hover:text-primary-700 dark:text-slate-300 dark:hover:bg-[#10231f] dark:hover:text-accent-200"
+              class="relative rounded-lg p-2.5 text-[var(--ds-text-soft)] transition hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]"
             >
               <span class="sr-only">Ver notificações</span>
               <BellIcon class="h-6 w-6" aria-hidden="true" />
@@ -193,7 +223,7 @@
             <!-- Theme toggle -->
             <button
               type="button"
-              class="rounded-full p-2.5 text-slate-500 transition-colors duration-150 hover:bg-[#ede5d6] hover:text-primary-700 dark:text-slate-300 dark:hover:bg-[#10231f] dark:hover:text-accent-200"
+              class="rounded-lg p-2.5 text-[var(--ds-text-soft)] transition-colors duration-150 hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]"
               :title="isDark ? 'Mudar para modo claro' : 'Mudar para modo escuro'"
               @click="toggleTheme"
             >
@@ -211,7 +241,7 @@
                   viewBox="0 0 24 24"
                   stroke-width="1.5"
                   stroke="currentColor"
-                  class="h-6 w-6 text-primary-800 dark:text-accent-200"
+                  class="h-6 w-6 text-[var(--ds-text-soft)]"
                 >
                   <path
                     stroke-linecap="round"
@@ -232,9 +262,9 @@
                     @click="switchLanguage(language.value)"
                     :class="[
                       language.value === $page.props.language
-                        ? 'bg-primary-700 text-white dark:bg-primary-400/12 dark:text-accent-100'
-                        : 'text-slate-700 hover:bg-[#ede5d6] dark:text-slate-300 dark:hover:bg-[#10231f]',
-                      'block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition',
+                        ? 'bg-[rgb(var(--primary-700-rgb))] text-white dark:bg-[rgb(var(--primary-400-rgb)/0.18)] dark:text-white'
+                        : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]',
+                      'block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold transition',
                     ]"
                   >
                     {{ language.label }}
@@ -243,7 +273,7 @@
               </template>
             </Dropdown>
 
-            <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-[#ded3bf] dark:lg:bg-[#25443c]" aria-hidden="true" />
+            <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-[var(--ds-border)]" aria-hidden="true" />
 
             <!-- Profile dropdown -->
             <Menu as="div" class="relative">
@@ -257,7 +287,7 @@
                 />
                 <span
                   v-else
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary-700 to-primary-950 ring-2 ring-[#fffaf0]/90 dark:from-primary-600 dark:to-[#07110f] dark:ring-[#25443c]"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[rgb(var(--primary-800-rgb))] ring-2 ring-white/80 dark:bg-[rgb(var(--primary-400-rgb)/0.18)] dark:ring-[var(--ds-border)]"
                 >
                   <span class="text-sm font-semibold leading-none text-white">
                     {{ auth?.user?.name?.charAt(0) }}
@@ -265,7 +295,7 @@
                 </span>
                 <span class="hidden lg:flex lg:items-center">
                   <span
-                    class="ml-4 text-sm font-bold leading-6 text-[#15231f] dark:text-[#f7f1e7]"
+                    class="ml-4 text-sm font-bold leading-6 text-[var(--ds-text)]"
                     aria-hidden="true"
                   >
                     {{ auth?.user?.name }}
@@ -282,7 +312,7 @@
                 leave-to-class="transform opacity-0 scale-95"
               >
                 <MenuItems
-                  class="absolute right-0 z-10 mt-2.5 w-44 origin-top-right rounded-2xl border border-[#ded3bf] bg-[#fffaf0] p-1.5 shadow-[0_20px_55px_rgba(20,61,55,0.16)] ring-1 ring-[#143d37]/5 focus:outline-none dark:border-[#25443c] dark:bg-[#0c1714] dark:ring-white/10"
+                  class="ds-floating-panel absolute right-0 z-10 mt-2.5 w-48 origin-top-right p-1.5 focus:outline-none"
                 >
                   <MenuItem
                     v-for="item in userNavigation"
@@ -294,9 +324,9 @@
                       as="button"
                       :class="[
                         active
-                          ? 'bg-primary-50 text-primary-800 dark:bg-primary-400/10 dark:text-accent-100'
-                          : 'text-slate-700 dark:text-slate-300',
-                        'block w-full text-left px-3 py-2 text-sm font-semibold rounded-xl transition-colors duration-150',
+                          ? 'bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.14)] dark:text-white'
+                          : 'text-[var(--ds-text-muted)]',
+                        'block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors duration-150',
                       ]"
                       :method="item.method"
                     >
@@ -310,66 +340,116 @@
         </div>
       </div>
 
-<!-- Page content -->
-  <main class="min-h-[calc(100vh-4rem)] py-5 animate-fade-in lg:py-8">
-    <!-- Dashboard header image -->
+      <TransitionRoot as="template" :show="commandPaletteOpen">
+        <Dialog as="div" class="relative z-[70]" @close="commandPaletteOpen = false">
+          <TransitionChild
+            as="template"
+            enter="ease-out duration-200"
+            enter-from="opacity-0"
+            enter-to="opacity-100"
+            leave="ease-in duration-150"
+            leave-from="opacity-100"
+            leave-to="opacity-0"
+          >
+            <div class="fixed inset-0 bg-slate-950/55 backdrop-blur-sm" />
+          </TransitionChild>
 
-    <!-- Dashboard header image -->
-        <div v-if="route().current('dashboard')" class="-mt-12 pb-2">
-          <div class="relative isolate overflow-hidden">
-            <div class="bg-transparent">
-              <div
-                class="group relative overflow-hidden focus-within:ring-4 focus-within:ring-primary-500 focus-within:ring-opacity-50 focus-within:ring-offset-2 focus:outline-none focus:ring-4 focus:ring-primary-500 focus:ring-opacity-50 focus:ring-offset-2 dark:ring-offset-gray-900"
-                tabindex="0"
-              >
-                <img
-                  v-if="auth?.user?.dashboard_header_image"
-                  :src="auth?.user?.dashboard_header_image"
-                  alt=""
-                  class="rounded-br-full object-cover w-full h-48"
-                  loading="lazy"
-                />
-                <div
-                  v-else
-                  class="h-48 rounded-br-[5rem] bg-[radial-gradient(circle_at_18%_20%,rgba(var(--accent-300-rgb),0.35),transparent_24rem),linear-gradient(135deg,#143d37,#07110f)]"
-                  aria-hidden="true"
-                />
+          <div class="fixed inset-0 z-[70] overflow-y-auto p-4 sm:p-6 md:p-20">
+            <TransitionChild
+              as="template"
+              enter="ease-out duration-200"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="ease-in duration-150"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel class="ds-command-palette mx-auto max-w-2xl overflow-hidden">
+                <div class="flex items-center gap-3 border-b border-[var(--ds-border)] px-4">
+                  <MagnifyingGlassIcon class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" aria-hidden="true" />
+                  <input
+                    ref="commandPaletteInput"
+                    v-model="commandPaletteQuery"
+                    type="search"
+                    class="h-14 min-w-0 flex-1 border-0 bg-transparent text-sm font-semibold text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-soft)] focus:ring-0"
+                    placeholder="Buscar amostras, boletins, instrumentos, clientes..."
+                    @keydown.enter.prevent="activateFirstCommandPaletteResult"
+                  />
+                  <kbd class="hidden rounded border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-2 py-1 font-mono text-[0.65rem] font-semibold uppercase text-[var(--ds-text-soft)] sm:inline-flex">
+                    esc
+                  </kbd>
+                </div>
 
-                <div
-                  class="absolute inset-0 flex -translate-y-full flex-col items-center justify-center bg-primary-800/80 dark:bg-gray-700/80 rounded-br-full opacity-0 transition duration-300 ease-out group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:translate-y-0 group-hover:opacity-100 group-focus:translate-y-0 group-focus:opacity-100"
-                >
-                  <div class="text-center">
-                    <h4 class="text-lg font-semibold text-white">
-                      {{ $t('gestlab.general.labels.dashboard.change_header_image') }}
-                    </h4>
-                    <p v-if="form.errors.photo" class="mt-2 text-sm text-red-600">
-                      {{ form.errors.photo }}
-                    </p>
-                    <input ref="photoInput" type="file" class="hidden" @change="updateHeaderImage" />
-                    <button @click="selectNewPhoto" class="mt-2">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="currentColor"
-                        class="inline-block h-12 w-12 opacity-50 text-white"
+                <div class="max-h-[70vh] overflow-y-auto p-2 sm:max-h-[32rem]">
+                  <div v-if="filteredCommandGroups.length" class="space-y-3">
+                    <section v-for="group in filteredCommandGroups" :key="group.label">
+                      <div class="flex items-center justify-between px-3 py-2">
+                        <p class="font-mono text-[0.68rem] font-bold uppercase text-[var(--ds-text-soft)]">
+                          {{ group.label }}
+                        </p>
+                        <span class="rounded-full bg-[var(--ds-panel-muted)] px-2 py-0.5 font-mono text-[0.62rem] font-semibold text-[var(--ds-text-soft)]">
+                          {{ group.items.length }}
+                        </span>
+                      </div>
+                      <button
+                        v-for="command in group.items"
+                        :key="`${group.label}-${command.href}-${command.label}`"
+                        type="button"
+                        class="ds-command-palette-item group"
+                        @click="visitCommand(command)"
                       >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"
-                        />
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"
-                        />
-                      </svg>
-                    </button>
+                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text-soft)] group-hover:border-[rgb(var(--primary-300-rgb))] group-hover:text-[rgb(var(--primary-700-rgb))] dark:group-hover:border-[rgb(var(--primary-400-rgb)/0.35)] dark:group-hover:text-[rgb(var(--primary-200-rgb))]">
+                          <component :is="command.icon" class="h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <span class="min-w-0 flex-1 text-left">
+                          <span class="block truncate text-sm font-semibold text-[var(--ds-text)]">
+                            {{ command.label }}
+                          </span>
+                          <span class="block truncate font-mono text-[0.68rem] uppercase text-[var(--ds-text-soft)]">
+                            {{ command.path }}
+                          </span>
+                        </span>
+                        <ChevronRightIcon class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)] transition group-hover:translate-x-0.5 group-hover:text-[var(--ds-text-muted)]" aria-hidden="true" />
+                      </button>
+                    </section>
+                  </div>
+
+                  <div v-else class="px-6 py-14 text-center">
+                    <div class="mx-auto grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
+                      <MagnifyingGlassIcon class="h-5 w-5 text-[var(--ds-text-soft)]" aria-hidden="true" />
+                    </div>
+                    <p class="mt-4 text-sm font-semibold text-[var(--ds-text)]">Nenhum módulo encontrado</p>
+                    <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">
+                      Tente pesquisar por amostras, inventário, boletins, clientes ou qualidade.
+                    </p>
                   </div>
                 </div>
-              </div>
+
+                <div class="flex flex-wrap items-center gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3 font-mono text-[0.68rem] font-semibold uppercase text-[var(--ds-text-soft)]">
+                  <span class="lims-status-dot lims-status-dot-instrument" aria-hidden="true" />
+                  {{ filteredCommandGroups.length }} grupos disponíveis
+                  <span class="ml-auto hidden sm:inline">Enter para abrir</span>
+                </div>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </Dialog>
+      </TransitionRoot>
+
+<!-- Page content -->
+  <main class="min-h-[calc(100vh-4rem)] py-5 animate-fade-in lg:py-7">
+        <div v-if="route().current('dashboard')" class="px-4 pb-4 sm:px-6 lg:px-8">
+          <div class="lims-status-strip grid gap-3 px-4 py-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div
+              v-for="status in operationalStatus"
+              :key="status.label"
+              class="flex items-center gap-3"
+            >
+              <span :class="['lims-status-dot', status.dot]" aria-hidden="true" />
+              <span class="min-w-0">
+                <span class="block truncate text-sm font-semibold text-[var(--ds-text)]">{{ status.label }}</span>
+                <span class="block truncate font-mono text-[0.68rem] uppercase text-[var(--ds-text-soft)]">{{ status.caption }}</span>
+              </span>
             </div>
           </div>
         </div>
@@ -414,7 +494,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, nextTick, ref, watch, onMounted, onUnmounted } from 'vue'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import { useDateFormat, useTimestamp, useIdle, useCounter } from '@vueuse/core'
 import sideNav from '../Navigation/side-nav.vue'
@@ -456,11 +536,13 @@ import {
   ExclamationTriangleIcon,
   SwatchIcon,
   Cog6ToothIcon,
+  BeakerIcon,
   ChevronRightIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/vue/24/outline'
 import { ChevronDownIcon } from '@heroicons/vue/20/solid'
 import { SunIcon, MoonIcon } from '@heroicons/vue/24/outline'
-import { useForm, router, usePage } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
 import { usePermission } from '@/Composables/usePermissions'
 import { useTheme } from '@/Composables/useTheme'
 import { trans, loadLanguageAsync } from 'laravel-vue-i18n'
@@ -579,6 +661,40 @@ const moduleFamily = computed(() => {
   return 'general'
 })
 
+const moduleFamilyLabels = {
+  inventory: 'Inventory control',
+  'sample-lifecycle': 'Sample lifecycle',
+  commercial: 'Commercial ops',
+  operations: 'Field operations',
+  admin: 'System control',
+  general: 'Laboratory ops',
+}
+
+const moduleFamilyLabel = computed(() => moduleFamilyLabels[moduleFamily.value] || moduleFamilyLabels.general)
+
+const operationalStatus = computed(() => [
+  {
+    label: 'Sample intake',
+    caption: moduleFamily.value === 'sample-lifecycle' ? 'active queue' : 'ready',
+    dot: moduleFamily.value === 'sample-lifecycle' ? 'lims-status-dot-release' : 'lims-status-dot-instrument',
+  },
+  {
+    label: 'Result review',
+    caption: 'verification track',
+    dot: 'lims-status-dot-instrument',
+  },
+  {
+    label: 'Document control',
+    caption: moduleFamily.value === 'admin' ? 'audit mode' : 'released',
+    dot: moduleFamily.value === 'admin' ? 'lims-status-dot-hold' : 'lims-status-dot-release',
+  },
+  {
+    label: 'QMS watch',
+    caption: 'deviation monitor',
+    dot: 'lims-status-dot-critical',
+  },
+])
+
 // --- Session timeout ---
 const timerDuration = 1500
 const { count: countdown, dec, reset } = useCounter(timerDuration, { step: -1 })
@@ -621,21 +737,6 @@ const resetTimerOnActivity = () => {
 const clockTime = useDateFormat(useTimestamp({ interval: 1000 }), 'HH:mm:ss', {
   locales: 'pt-Pt',
 })
-
-// --- Header image ---
-const photoInput = ref(null)
-const form = useForm({ photo: null })
-const selectNewPhoto = () => photoInput.value.click()
-const updateHeaderImage = () => {
-  if (photoInput.value) form.photo = photoInput.value.files[0]
-  form.post(route('users.setDashboardHeader'), {
-    preserveScroll: true,
-    forceFormData: true,
-    onSuccess: () => {
-      if (photoInput.value?.value) photoInput.value.value = null
-    },
-  })
-}
 
 // --- Language ---
 const switchLanguage = async (language) => {
@@ -763,9 +864,11 @@ const navigation = [
       { title: 'gestlab.menu.ilocations', name: '/ilocations', href: route('ilocations.index'), show: hasPermission('view_ilocations') },
       { title: 'gestlab.menu.ideliveries', name: '/ideliveries', href: route('ideliveries.index'), show: hasPermission('view_ideliveries') },
       { title: 'gestlab.menu.iorders', name: '/vap-inventory/orders', href: route('vap-inventory.orders.index'), show: hasPermission('view_iorders') },
+      { title: 'gestlab.menu.lab_needs', name: '/vap-inventory/needs', href: route('vap-inventory.needs.index'), show: hasPermission('view_iorders') },
       { title: 'gestlab.menu.isuppliers', name: '/isuppliers', href: route('isuppliers.index'), show: hasPermission('view_isuppliers') },
       { title: 'gestlab.menu.itransfers', name: '/vap-inventory/transfers', href: route('vap-inventory.transfers.index'), show: hasPermission('view_itransfers') },
       { title: 'gestlab.menu.iwarehouses', name: '/iwarehouses', href: route('iwarehouses.index'), show: hasPermission('view_iwarehouses') },
+      { title: 'gestlab.menu.inventory_analytics', name: '/vap-inventory/analytics', href: route('vap-inventory.analytics.index'), show: hasPermission('view_inventory') },
     ],
   },
   {
@@ -775,9 +878,27 @@ const navigation = [
       { title: 'gestlab.menu.maintenance_tasks', name: '/maintenance/tasks', href: route('vap-maintenance.tasks'), show: hasPermission('view_maintenance_tasks') },
     ],
   },
-  { title: 'QMS', name: '/qms', href: route('qms.index'), icon: ShieldCheckIcon, show: hasPermission('view_activity_log') },
-  { title: 'Competência do pessoal', name: '/users', href: route('users.index'), icon: UsersIcon, show: hasPermission('view_users') },
-  { title: 'Avaliação de fornecedores', name: '/supplier-assessments', href: route('supplier-assessments.index'), icon: InboxStackIcon, show: hasPermission('view_isuppliers') },
+  {
+    title: 'gestlab.menu.quality_compliance', name: 'qualidade', icon: ShieldCheckIcon, show: true,
+    children: [
+      { title: 'gestlab.menu.qms', name: '/qms', href: route('qms.index'), show: hasPermission('view_activity_log') },
+      { title: 'gestlab.menu.staff_competence', name: '/users', href: route('users.index'), show: hasPermission('view_users') },
+      { title: 'gestlab.menu.supplier_assessments', name: '/supplier-assessments', href: route('supplier-assessments.index'), show: hasPermission('view_isuppliers') },
+      { title: 'gestlab.menu.lab_non_conformities', name: '/vap-non-conformities', href: route('vap_non_conformities.index'), show: hasPermission('view_occurrences') || hasPermission('view_activity_log') },
+      { title: 'gestlab.menu.responsibility_matrix', name: '/responsibility-matrix', href: route('responsibility-matrix.index'), show: hasPermission('view_users') },
+      { title: 'gestlab.menu.uncertainty_sources', name: '/uncertainty-sources', href: route('uncertainty-sources.index'), show: hasPermission('view_parameters') },
+      { title: 'gestlab.menu.proficiency_tests', name: '/proficiency-tests', href: route('proficiency_tests.index'), show: hasPermission('view_analysis') },
+      { title: 'gestlab.menu.report_studios', name: '/report-studios', href: route('report-studios.index'), show: hasPermission('view_quality_certificates') || hasPermission('view_proposal_templates') || hasPermission('view_settings') },
+    ],
+  },
+  {
+    title: 'gestlab.menu.lab_operations', name: 'operacoes-laboratoriais', icon: BeakerIcon, show: true,
+    children: [
+      { title: 'gestlab.menu.labs', name: '/vap-labs/labs', href: route('vap-labs.labs.index'), show: hasPermission('view_departments') },
+      { title: 'gestlab.menu.labels', name: '/vap-labels/labels', href: route('vap_labels.labels.index'), show: hasPermission('view_inventory') },
+      { title: 'gestlab.menu.document_manager', name: '/file-manager', href: route('file-manager'), show: hasPermission('view_documents') || hasPermission('view_activity_log') },
+    ],
+  },
   { title: 'gestlab.menu.users', name: '/users', href: route('users.index'), icon: UsersIcon, show: hasPermission('view_users') },
   { title: 'gestlab.menu.departments', name: '/departments', href: route('departments.index'), icon: RectangleStackIcon, show: hasPermission('view_departments') },
   { title: 'gestlab.menu.adverts', name: '/announcements', href: '#', icon: MegaphoneIcon, show: hasPermission('view_announcements') },
@@ -796,6 +917,98 @@ const userNavigation = [
 
 const sidebarOpen = ref(false)
 const desktopSidebarOpen = ref(true)
+const commandPaletteOpen = ref(false)
+const commandPaletteQuery = ref('')
+const commandPaletteInput = ref(null)
+
+const navLabel = (item) => {
+  if (!item?.title) {
+    return ''
+  }
+
+  return item.title.startsWith('gestlab.') ? trans(item.title) : item.title
+}
+
+const visibleChildren = (item) => (item.children || []).filter((child) => child.show && child.href && child.href !== '#')
+
+const commandGroups = computed(() => navigation
+  .filter((item) => item.show)
+  .map((item) => {
+    const children = visibleChildren(item)
+    const items = children.length
+      ? children
+      : item.href && item.href !== '#'
+        ? [item]
+        : []
+
+    return {
+      label: navLabel(item),
+      icon: item.icon,
+      items: items.map((command) => ({
+        href: command.href,
+        icon: command.icon || item.icon,
+        label: navLabel(command),
+        path: command.name || item.name || '',
+      })),
+    }
+  })
+  .filter((group) => group.items.length > 0))
+
+const filteredCommandGroups = computed(() => {
+  const query = commandPaletteQuery.value.trim().toLowerCase()
+
+  return commandGroups.value
+    .map((group) => {
+      const items = query
+        ? group.items.filter((command) => [
+          command.label,
+          command.path,
+          group.label,
+        ].some((value) => String(value || '').toLowerCase().includes(query)))
+        : group.items
+
+      return {
+        ...group,
+        items: items.slice(0, 8),
+      }
+    })
+    .filter((group) => group.items.length > 0)
+    .slice(0, 8)
+})
+
+const firstCommandPaletteResult = computed(() => filteredCommandGroups.value[0]?.items?.[0] ?? null)
+
+const openCommandPalette = () => {
+  commandPaletteOpen.value = true
+  commandPaletteQuery.value = ''
+
+  nextTick(() => {
+    commandPaletteInput.value?.focus()
+  })
+}
+
+const visitCommand = (command) => {
+  if (!command?.href || command.href === '#') {
+    return
+  }
+
+  commandPaletteOpen.value = false
+  commandPaletteQuery.value = ''
+  router.visit(command.href)
+}
+
+const activateFirstCommandPaletteResult = () => {
+  if (firstCommandPaletteResult.value) {
+    visitCommand(firstCommandPaletteResult.value)
+  }
+}
+
+const handleCommandPaletteShortcut = (event) => {
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+    event.preventDefault()
+    openCommandPalette()
+  }
+}
 
 const toggleDesktopSidebar = () => {
   desktopSidebarOpen.value = !desktopSidebarOpen.value
@@ -807,6 +1020,8 @@ onMounted(() => {
   if (savedSidebarState !== null) {
     desktopSidebarOpen.value = savedSidebarState === '1'
   }
+
+  window.addEventListener('keydown', handleCommandPaletteShortcut)
 
   startCountdown()
 
@@ -823,6 +1038,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  window.removeEventListener('keydown', handleCommandPaletteShortcut)
+
   if (countdownInterval) clearInterval(countdownInterval)
 })
 </script>

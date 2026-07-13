@@ -1,20 +1,19 @@
 <template>
   <div class="mt-6">
-    <!-- Header -->
     <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-3">
-        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] shadow-sm ring-1 ring-[rgb(var(--primary-200-rgb)/0.65)] dark:bg-[rgb(var(--primary-500-rgb)/0.14)] dark:text-[rgb(var(--primary-100-rgb))] dark:ring-[rgb(var(--primary-300-rgb)/0.18)]">
+        <div class="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
           <RectangleGroupIcon class="h-5 w-5" />
         </div>
         <div>
-          <h3 class="text-sm font-semibold text-[#15231f] dark:text-[#f7f1e7]">
+          <h3 class="text-sm font-bold text-[var(--ds-text)]">
           {{ $t('gestlab.quick_menu.title') }}
           </h3>
-          <p class="mt-1 text-xs text-[#5f6f68] dark:text-[#a9bbb4]">
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
             {{ $t('gestlab.quick_menu.description') }}
           </p>
         </div>
-        <span class="inline-flex items-center rounded-full bg-[rgb(var(--primary-100-rgb))] px-3 py-1 text-xs font-semibold text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-500-rgb)/0.16)] dark:text-[rgb(var(--primary-100-rgb))]">
+        <span class="ds-badge ds-badge-neutral">
           {{ actions.length }}
         </span>
       </div>
@@ -22,7 +21,7 @@
       <button
         @click="isShowing = !isShowing"
         type="button"
-        class="inline-flex items-center gap-1.5 self-start rounded-2xl border border-[#d8cbb8] bg-[#fffdf7] px-3 py-2 text-xs font-semibold text-[#31413b] shadow-sm transition-colors duration-150 hover:bg-[#f7f1e7] hover:text-[rgb(var(--primary-800-rgb))] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#d7e2dd] dark:hover:bg-[#16342e]"
+        class="ds-button ds-button-secondary min-h-0 self-start px-3 py-2 text-xs"
       >
         <EyeIcon v-if="!isShowing" class="h-3.5 w-3.5" />
         <EyeSlashIcon v-else class="h-3.5 w-3.5" />
@@ -30,70 +29,34 @@
       </button>
     </div>
 
-    <!-- Grid -->
     <transition
-      enter-active-class="transition-all duration-300 ease-out"
-      enter-from-class="opacity-0 -translate-y-2"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition-all duration-200 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 -translate-y-2"
+      enter-active-class="transition-opacity duration-200 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-150 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
     >
       <div
         v-if="isShowing"
-        class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+        class="grid overflow-hidden rounded-lg border-l border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
       >
         <Link
-          v-for="(action, index) in actions"
+          v-for="action in actions"
           :key="action.title"
           prefetch
           :href="action.href"
-          class="group block overflow-hidden rounded-[1.5rem] border border-[#ded3bf] bg-[#fffdf7] p-4 shadow-[0_16px_45px_rgb(20_61_55/0.07)] ring-1 ring-white/70 transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--primary-300-rgb))] hover:shadow-[0_24px_65px_rgb(20_61_55/0.14)] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.26)] focus:ring-offset-2 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10 dark:hover:border-[rgb(var(--primary-500-rgb)/0.55)] dark:focus:ring-offset-[#07110f]"
-          :class="'animate-fade-in-up delay-' + Math.min(index + 1, 8)"
+          class="group flex min-h-28 items-start gap-3 border-b border-r border-[var(--ds-border)] p-4 transition-colors hover:bg-[var(--ds-panel-raised)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--primary-500-rgb))]"
         >
-          <div class="flex items-start justify-between gap-3">
-            <div
-              class="inline-flex items-center justify-center rounded-2xl bg-[rgb(var(--primary-50-rgb))] p-2.5 transition-colors duration-200 group-hover:bg-[rgb(var(--primary-100-rgb))] dark:bg-[rgb(var(--primary-500-rgb)/0.14)] dark:group-hover:bg-[rgb(var(--primary-500-rgb)/0.22)]"
-            >
-              <component
-                :is="action.icon"
-                class="h-5 w-5 text-[rgb(var(--primary-800-rgb))] transition-transform duration-200 group-hover:scale-110 dark:text-[rgb(var(--primary-200-rgb))]"
-                aria-hidden="true"
-              />
-            </div>
-            <span class="rounded-full bg-[#f7f1e7] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#5f6f68] dark:bg-[#10231f] dark:text-[#a9bbb4]">
-              {{ index + 1 }}
-            </span>
+          <div class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel)]">
+            <component :is="action.icon" class="h-4 w-4 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" aria-hidden="true" />
           </div>
-
-          <h4
-            class="mt-4 text-sm font-semibold text-[#15231f] transition-colors duration-150 group-hover:text-[rgb(var(--primary-800-rgb))] dark:text-[#f7f1e7] dark:group-hover:text-[rgb(var(--primary-200-rgb))]"
-          >
-            {{ $t(action.title) }}
-          </h4>
-          <p
-            class="mt-2 line-clamp-2 text-xs leading-relaxed text-[#5f6f68] dark:text-[#a9bbb4]"
-          >
-            {{ $t(action.text) }}
-          </p>
-
-          <div
-            class="mt-4 flex items-center text-xs font-semibold text-[rgb(var(--primary-700-rgb))] opacity-0 transition-opacity duration-200 group-hover:opacity-100 dark:text-[rgb(var(--primary-200-rgb))]"
-          >
-            <span>{{ $t('gestlab.quick_menu.access') }}</span>
-            <svg
-              class="ml-1 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform duration-200"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M14 5l7 7m0 0l-7 7m7-7H3"
-              />
-            </svg>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-start justify-between gap-3">
+              <h4 class="text-sm font-bold text-[var(--ds-text)] group-hover:text-[rgb(var(--primary-700-rgb))] dark:group-hover:text-cyan-200">{{ $t(action.title) }}</h4>
+              <ChevronRightIcon class="mt-0.5 h-4 w-4 shrink-0 text-[var(--ds-text-soft)]" />
+            </div>
+            <p class="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ $t(action.text) }}</p>
           </div>
         </Link>
       </div>
@@ -128,6 +91,7 @@ import {
   ShieldCheckIcon,
   TagIcon,
   BuildingOffice2Icon,
+  ChevronRightIcon,
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({

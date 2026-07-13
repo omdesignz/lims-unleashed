@@ -1,19 +1,30 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-      <p class="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-700">Metrology</p>
-      <h1 class="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Registo de fontes de incerteza</h1>
-      <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-        Documente fontes de incerteza associadas a equipamento, método, ambiente, amostragem, pessoal e materiais de referência.
-      </p>
+  <div class="space-y-6">
+    <section class="ds-panel px-5 py-5 sm:px-6">
+      <p class="ds-kicker">Metrology</p>
+      <div class="mt-2 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight text-[var(--ds-text)] sm:text-3xl">Registo de fontes de incerteza</h1>
+          <p class="mt-3 max-w-3xl text-sm leading-6 text-[var(--ds-text-muted)]">
+            Documente fontes de incerteza associadas a equipamento, método, ambiente, amostragem, pessoal e materiais de referência.
+          </p>
+        </div>
+        <span class="lims-module-chip w-fit">
+          <span class="lims-status-dot lims-status-dot-instrument" aria-hidden="true" />
+          {{ sources.length }} fontes
+        </span>
+      </div>
     </section>
 
-    <section class="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-      <form class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900" @submit.prevent="submit">
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ editingId ? 'Editar fonte' : 'Nova fonte' }}</h2>
-        <input v-model="form.title" type="text" placeholder="Título" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+    <section class="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
+      <form class="ds-card space-y-4 p-5" @submit.prevent="submit">
+        <div>
+          <p class="font-mono text-xs font-semibold uppercase text-[var(--ds-text-soft)]">Incerteza</p>
+          <h2 class="mt-1 text-lg font-semibold text-[var(--ds-text)]">{{ editingId ? 'Editar fonte' : 'Nova fonte' }}</h2>
+        </div>
+        <input v-model="form.title" type="text" placeholder="Título" class="ds-field">
         <div class="grid gap-4 md:grid-cols-2">
-          <select v-model="form.source_type" class="rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+          <select v-model="form.source_type" class="ds-field">
             <option value="">Tipo de fonte</option>
             <option value="equipment">Equipamento</option>
             <option value="method">Método</option>
@@ -26,44 +37,49 @@
           <comboboxEnhanced v-model="selectedParameter" title-label="Parâmetro associado" placeholder="Seleccione o parâmetro associado" :options="parameterOptions" />
           <comboboxEnhanced v-model="selectedInventoryItem" title-label="Equipamento / item associado" placeholder="Seleccione o equipamento ou item" :options="inventoryItemOptions" />
         </div>
-        <textarea v-model="form.description" rows="3" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="Descrição da fonte de incerteza"></textarea>
-        <textarea v-model="form.estimation_method" rows="3" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="Como a incerteza é estimada"></textarea>
-        <textarea v-model="form.control_strategy" rows="3" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="Como a fonte é monitorizada e controlada"></textarea>
-        <label class="inline-flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
-          <input v-model="form.is_active" type="checkbox" class="h-4 w-4 rounded border-slate-300 dark:border-slate-700">
+        <textarea v-model="form.description" rows="3" class="ds-field" placeholder="Descrição da fonte de incerteza"></textarea>
+        <textarea v-model="form.estimation_method" rows="3" class="ds-field" placeholder="Como a incerteza é estimada"></textarea>
+        <textarea v-model="form.control_strategy" rows="3" class="ds-field" placeholder="Como a fonte é monitorizada e controlada"></textarea>
+        <label class="inline-flex items-center gap-3 text-sm font-semibold text-[var(--ds-text-muted)]">
+          <input v-model="form.is_active" type="checkbox" class="ds-checkbox">
           Fonte ativa
         </label>
-        <div class="flex gap-3">
-          <button type="submit" class="rounded-2xl bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800">{{ editingId ? 'Atualizar' : 'Guardar' }}</button>
-          <button v-if="editingId" type="button" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" @click="resetForm">Cancelar</button>
+        <div class="flex flex-wrap gap-3">
+          <button type="submit" class="ds-button ds-button-primary">{{ editingId ? 'Atualizar' : 'Guardar' }}</button>
+          <button v-if="editingId" type="button" class="ds-button ds-button-secondary" @click="resetForm">Cancelar</button>
         </div>
       </form>
 
-      <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div v-if="sources.length" class="space-y-4">
-          <article v-for="source in sources" :key="source.id" class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
-            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <div>
+      <section class="ds-card overflow-hidden">
+        <div class="border-b border-[var(--ds-border)] px-5 py-4">
+          <h2 class="text-base font-semibold text-[var(--ds-text)]">Fontes documentadas</h2>
+          <p class="mt-1 text-sm text-[var(--ds-text-muted)]">Rastreie impacto metrológico, método de estimação e estratégia de controlo.</p>
+        </div>
+
+        <div v-if="sources.length" class="divide-y divide-[var(--ds-border)]">
+          <article v-for="source in sources" :key="source.id" class="px-5 py-4">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">{{ source.source_type }}</span>
+                  <span class="rounded-full bg-[var(--ds-panel-muted)] px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-[var(--ds-text-muted)]">{{ source.source_type }}</span>
                   <span v-if="source.is_active" class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Ativa</span>
                 </div>
-                <h2 class="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ source.title }}</h2>
-                <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">{{ source.description || 'Sem descrição adicional.' }}</p>
-                <div class="mt-3 grid gap-2 text-sm text-slate-500 dark:text-slate-400 md:grid-cols-2">
-                  <div>Departamento: {{ source.department?.name || '—' }}</div>
-                  <div>Parâmetro: {{ source.parameter?.name || '—' }}</div>
-                  <div>Item associado: {{ source.inventory_item?.name || '—' }}</div>
+                <h2 class="mt-2 text-base font-semibold text-[var(--ds-text)]">{{ source.title }}</h2>
+                <p class="mt-2 text-sm text-[var(--ds-text-muted)]">{{ source.description || 'Sem descrição adicional.' }}</p>
+                <div class="mt-4 grid gap-2 text-sm text-[var(--ds-text-muted)] md:grid-cols-2">
+                  <div><span class="font-semibold text-[var(--ds-text)]">Departamento:</span> {{ source.department?.name || '—' }}</div>
+                  <div><span class="font-semibold text-[var(--ds-text)]">Parâmetro:</span> {{ source.parameter?.name || '—' }}</div>
+                  <div><span class="font-semibold text-[var(--ds-text)]">Item associado:</span> {{ source.inventory_item?.name || '—' }}</div>
                 </div>
               </div>
-              <div class="flex gap-2">
-                <button type="button" class="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" @click="edit(source)">Editar</button>
-                <button type="button" class="rounded-2xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50" @click="destroy(source)">Arquivar</button>
+              <div class="flex shrink-0 gap-2">
+                <button type="button" class="ds-button ds-button-secondary min-h-0 px-3 py-2" @click="edit(source)">Editar</button>
+                <button type="button" class="ds-button ds-button-danger min-h-0 px-3 py-2" @click="destroy(source)">Arquivar</button>
               </div>
             </div>
           </article>
         </div>
-        <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+        <div v-else class="m-5 rounded-lg border border-dashed border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-10 text-center text-sm font-medium text-[var(--ds-text-muted)]">
           Nenhuma fonte de incerteza registada.
         </div>
       </section>
@@ -74,7 +90,6 @@
 <script setup>
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { router, useForm } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
 

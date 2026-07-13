@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\AnalysisCategory;
 use App\Models\Parameter;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -20,7 +21,7 @@ class ProfileRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
@@ -41,6 +42,7 @@ class ProfileRequest extends FormRequest
                 'parameters.*.nwp_label' => 'nullable',
                 'parameters.*.standard_id' => 'nullable',
                 'parameters.*.standard_label' => 'nullable',
+                'parameters.*.count' => 'boolean',
                 'parameters.*.min_ref_value' => 'required',
                 'parameters.*.max_ref_value' => 'nullable',
                 'parameters.*.category_label' => 'nullable',
@@ -55,7 +57,7 @@ class ProfileRequest extends FormRequest
         } else {
             $rules = [
                 'name' => 'required',
-                'code' => 'nullable|min:1|unique:profiles,code,' . request()->profile,
+                'code' => 'nullable|min:1|unique:profiles,code,'.request()->profile,
                 'description' => 'nullable',
                 'price' => 'nullable',
                 'category_id' => 'nullable|exists:analysis_categories,id',
@@ -69,6 +71,7 @@ class ProfileRequest extends FormRequest
                 'parameters.*.nwp_label' => 'nullable',
                 'parameters.*.standard_id' => 'nullable',
                 'parameters.*.standard_label' => 'nullable',
+                'parameters.*.count' => 'boolean',
                 'parameters.*.min_ref_value' => 'required',
                 'parameters.*.max_ref_value' => 'nullable',
                 'parameters.*.category_label' => 'nullable',
@@ -88,10 +91,8 @@ class ProfileRequest extends FormRequest
 
     /**
      * Get custom attributes for validator errors.
-     *
-     * @return array
      */
-    public function attributes()
+    public function attributes(): array
     {
         return [
             'name' => trans('gestlab.general.labels.profiles.name'),
@@ -127,42 +128,74 @@ class ProfileRequest extends FormRequest
         ];
     }
 
-    /**
-     * Configure the validator instance.
-     *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
-     */
-    public function prepareForValidation()
+    public function prepareForValidation(): void
     {
-        // dd(request()->all());
+        $parameters = $this->input('parameters');
+
         $this->merge([
-            'category_id' => !is_null(request()->category_id) ? request()->category_id['value'] : null,
-            'parameters' => is_null(request()->parameters) ? [] : collect(request()->parameters)->map(function ($item) {
+            'category_id' => $this->optionValue($this->input('category_id')),
+            'parameters' => is_array($parameters) ? collect($parameters)->map(function (mixed $item): mixed {
+                if (! is_array($item)) {
+                    return $item;
+                }
+
                 return [
-                    'parameter_id' => $item['parameter_id']['value'],
-                    'unit_id' => $item['unit_id']['value'],
-                    'unit_label' => $item['unit_id']['label'],
-                    'protocol_id' => $item['protocol_id']['value'],
-                    'protocol_label' => $item['protocol_id']['label'],
-                    'nwp_id' => $item['nwp_id']['value'],
-                    'nwp_label' => $item['nwp_id']['label'],
-                    'standard_id' => $item['standard_id']['value'],
-                    'standard_label' => $item['standard_id']['label'],
-                    'count' => $item['count'],
-                    'formula_id' => $item['formula_id']['value'] ?? null,
-                    'formula_label' => $item['formula_id']['label'] ?? null,
-                    'category_id' => $item['category_id']['value'],
-                    'category_label' => $item['category_id']['label'],
-                    'min_ref_value' => $item['min_ref_value'],
-                    'max_ref_value' => $item['max_ref_value'],
-                    'dilutions' => json_encode($item['dilutions']) ?? json_encode([]),
-                    'extra_data' => json_encode($item['extra_data']) ?? json_encode([]),
-                    'optimal_analysis_time' => $item['optimal_analysis_time'],
-                    'ref_val_origin' => $item['ref_val_origin'],
+                    'parameter_id' => $this->optionValue(data_get($item, 'parameter_id')),
+                    'unit_id' => $this->optionValue(data_get($item, 'unit_id')),
+                    'unit_label' => $this->optionLabel(data_get($item, 'unit_id')),
+                    'protocol_id' => $this->optionValue(data_get($item, 'protocol_id')),
+                    'protocol_label' => $this->optionLabel(data_get($item, 'protocol_id')),
+                    'nwp_id' => $this->optionValue(data_get($item, 'nwp_id')),
+                    'nwp_label' => $this->optionLabel(data_get($item, 'nwp_id')),
+                    'standard_id' => $this->optionValue(data_get($item, 'standard_id')),
+                    'standard_label' => $this->optionLabel(data_get($item, 'standard_id')),
+                    'count' => data_get($item, 'count', true),
+                    'formula_id' => $this->optionValue(data_get($item, 'formula_id')),
+                    'formula_label' => $this->optionLabel(data_get($item, 'formula_id')),
+                    'category_id' => $this->optionValue(data_get($item, 'category_id')),
+                    'category_label' => $this->optionLabel(data_get($item, 'category_id')),
+                    'min_ref_value' => data_get($item, 'min_ref_value'),
+                    'max_ref_value' => data_get($item, 'max_ref_value'),
+                    'dilutions' => $this->encodeJsonValue(data_get($item, 'dilutions')),
+                    'extra_data' => $this->encodeJsonValue(data_get($item, 'extra_data')),
+                    'optimal_analysis_time' => data_get($item, 'optimal_analysis_time'),
+                    'ref_val_origin' => data_get($item, 'ref_val_origin'),
                 ];
-            })->toArray()
+            })->all() : $parameters,
         ]);
+    }
+
+    private function optionValue(mixed $option): mixed
+    {
+        if (is_array($option) || is_object($option)) {
+            return data_get($option, 'value');
+        }
+
+        return $option === '' ? null : $option;
+    }
+
+    private function optionLabel(mixed $option): ?string
+    {
+        if ($this->optionValue($option) === null) {
+            return null;
+        }
+
+        $label = data_get($option, 'label');
+
+        return is_scalar($label) ? (string) $label : null;
+    }
+
+    private function encodeJsonValue(mixed $value): string
+    {
+        if (is_string($value)) {
+            json_decode($value, true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return $value;
+            }
+        }
+
+        return json_encode($value ?? [], JSON_THROW_ON_ERROR);
     }
 
     public function after(): array
@@ -191,12 +224,16 @@ class ProfileRequest extends FormRequest
                 if ($inactiveParameters->isNotEmpty()) {
                     $validator->errors()->add(
                         'parameters',
-                        'Todos os parâmetros do perfil devem estar ativos. Inativos: ' . $inactiveParameters->implode(', ')
+                        'Todos os parâmetros do perfil devem estar ativos. Inativos: '.$inactiveParameters->implode(', ')
                     );
                 }
 
                 collect($this->input('parameters', []))
-                    ->each(function (array $parameter, int $index) use ($validator): void {
+                    ->each(function (mixed $parameter, int $index) use ($validator): void {
+                        if (! is_array($parameter)) {
+                            return;
+                        }
+
                         $min = data_get($parameter, 'min_ref_value');
                         $max = data_get($parameter, 'max_ref_value');
 

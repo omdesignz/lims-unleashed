@@ -1,654 +1,614 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <ModuleHero
-      eyebrow="Expiry control"
-      title="Relatório de Validade de Reagentes"
-      :description="`Monitore a data de validade de reagentes e gerencie a rotação de estoque. ${stats.expired} itens vencidos.`"
-    >
-      <template #actions>
-        <div class="flex items-center gap-3">
-          <button
-            @click="exportReport"
-            class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            Exportar Relatório
-          </button>
-          <Link
-            :href="route('vap-inventory.items.index')"
-            class="inline-flex items-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
-          >
-            <ArrowLeftIcon class="h-4 w-4" />
-            
-            Voltar ao Inventário
-          </Link>
-        </div>
-      </template>
-    </ModuleHero>
-
-    <!-- FILTERS -->
-    <ModuleCard title="Filtros de validade" description="Refine por estado de validade, categoria, armazém e ordenação.">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- STATUS FILTER -->
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            <CheckCircleIcon class="h-4 w-4 inline mr-1" />
-            Estado
-          </label>
-          <BaseSelect v-model="filters.status">
-            <option value="">Todos os Estados</option>
-            <option value="expired">Vencido</option>
-            <option value="expiring_soon">Vencendo em Breve (≤ 60 dias)</option>
-            <option value="good">Bom (> 60 dias)</option>
-          </BaseSelect>
-        </div>
-
-        <!-- CATEGORY FILTER -->
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            <TagIcon class="h-4 w-4 inline mr-1" />
-            Categoria
-          </label>
-          <BaseSelect v-model="filters.category_id">
-            <option value="">Todas as Categorias</option>
-            <option v-for="category in categories" :key="category.id" :value="category.id">
-              {{ category.name }}
-            </option>
-          </BaseSelect>
-        </div>
-
-        <!-- WAREHOUSE FILTER -->
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            <BuildingLibraryIcon class="h-4 w-4 inline mr-1" />
-            Armazém
-          </label>
-          <BaseSelect v-model="filters.warehouse_id">
-            <option value="">Todos os Armazéns</option>
-            <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
-              {{ warehouse.name }}
-            </option>
-          </BaseSelect>
-        </div>
-
-        <!-- SORT BY -->
-        <div>
-          <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-            <ArrowsUpDownIcon class="h-4 w-4 inline mr-1" />
-            Ordenar Por
-          </label>
-          <BaseSelect v-model="filters.sort_by">
-            <option value="expiry_date">Data de Validade</option>
-            <option value="days_to_expiry">Dias para Vencimento</option>
-            <option value="name">Nome do Reagente</option>
-            <option value="current_stock">Estoque Actual</option>
-          </BaseSelect>
-        </div>
-      </div>
-    </ModuleCard>
-
-    <!-- STATS CARDS -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-      <div class="bg-gradient-to-r from-red-900 to-red-800 rounded-xl shadow-sm p-6 text-white">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium opacity-90">Vencido</p>
-            <p class="text-2xl font-bold mt-1">{{ stats.expired }}</p>
-          </div>
-          <XCircleIcon class="h-8 w-8 opacity-50" />
-        </div>
-        <p class="text-xs opacity-80 mt-2">Past expiry date</p>
-      </div>
-
-      <div class="bg-gradient-to-r from-orange-900 to-orange-800 rounded-xl shadow-sm p-6 text-white">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium opacity-90">Vencendo em Breve</p>
-            <p class="text-2xl font-bold mt-1">{{ stats.expiring_soon }}</p>
-          </div>
-          <ExclamationTriangleIcon class="h-8 w-8 opacity-50" />
-        </div>
-        <p class="text-xs opacity-80 mt-2">Dentro de 60 dias</p>
-      </div>
-
-      <div class="bg-gradient-to-r from-yellow-900 to-yellow-800 rounded-xl shadow-sm p-6 text-white">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium opacity-90">Bom</p>
-            <p class="text-2xl font-bold mt-1">{{ stats.total_reagents - (stats.expired + stats.expiring_soon) }}</p>
-          </div>
-          <CheckCircleIcon class="h-8 w-8 opacity-50" />
-        </div>
-        <p class="text-xs opacity-80 mt-2">Mais de 60 dias</p>
-      </div>
-
-      <div class="bg-gradient-to-r from-blue-900 to-blue-800 rounded-xl shadow-sm p-6 text-white">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium opacity-90">Total de Reagentes</p>
-            <p class="text-2xl font-bold mt-1">{{ stats.total_reagents }}</p>
-          </div>
-          <BeakerIcon class="h-8 w-8 opacity-50" />
-        </div>
-        <p class="text-xs opacity-80 mt-2">Com datas de validade</p>
-      </div>
-    </div>
-
-    <!-- REAGENTS TABLE -->
-    <ModuleCard class="overflow-hidden" title="Detalhes de Validade de Reagentes">
-      <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-slate-900 dark:text-white">
-            Detalhes de Validade de Reagentes
-            <span class="ml-2 text-sm font-normal text-slate-500 dark:text-slate-400">
-              ({{ reagents.data.length }} itens)
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="ds-kicker">Reagent lifecycle</span>
+            <span class="ds-chip">
+              <span class="lims-status-dot lims-status-dot-hold"></span>
+              FEFO · First expiry, first out
             </span>
-          </h2>
-          <div class="flex items-center gap-2">
-            <button
-              @click="markAllExpired"
-              class="inline-flex items-center gap-2 rounded-lg bg-red-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-red-800"
-            >
-              <ExclamationTriangleIcon class="h-4 w-4" />
-              Marcar Todos como Descartados
-            </button>
           </div>
-        </div>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-          <thead class="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-900/70">
-            <tr>
-              <th :class="tableHeadClass">
-                Detalhes do Reagente
-              </th>
-              <th :class="tableHeadClass">
-                Informações de Validade
-              </th>
-              <th :class="tableHeadClass">
-                Informações de Estoque
-              </th>
-              <th :class="tableHeadClass">
-                Estado
-              </th>
-              <th :class="tableHeadClass">
-                Acções
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
-            <tr
-              v-for="reagent in reagents.data"
-              :key="reagent.id"
-              class="transition-colors duration-150 hover:bg-blue-50/60 dark:hover:bg-blue-950/20"
-            >
-              <td class="px-6 py-4">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0 h-10 w-10">
-                    <div :class="[
-                      'h-10 w-10 rounded-lg flex items-center justify-center',
-                      getExpiryColor(reagent).bg
-                    ]">
-                      <BeakerIcon :class="['h-6 w-6', getExpiryColor(reagent).text]" />
-                    </div>
-                  </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-semibold text-slate-900 dark:text-white">
-                      {{ reagent.name }}
-                    </div>
-                    <div class="text-sm text-slate-500 dark:text-slate-400">
-                      {{ reagent.internal_code || 'Sem Código Interno' }}
-                    </div>
-                    <div class="text-xs text-slate-400 dark:text-slate-500">
-                      {{ reagent.category?.name || 'Sem Categoria' }}
-                      <span v-if="reagent.supplier" class="ml-2">
-                        • {{ reagent.supplier.name }}
-                      </span>
-                    </div>
-                    <div v-if="reagent.lot" class="text-xs text-slate-400 dark:text-slate-500">
-                      Lote: {{ reagent.lot }}
-                    </div>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="space-y-2">
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm text-slate-600 dark:text-slate-400">Data de Validade:</span>
-                    <span class="font-semibold" :class="getExpiryDateColor(reagent)">
-                      {{ formatDate(reagent.reagent_expiry_date) }}
-                    </span>
-                  </div>
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm text-slate-600 dark:text-slate-400">Dias para Vencimento:</span>
-                    <span class="font-semibold" :class="getDaysColor(reagent.days_to_expiry)">
-                      {{ reagent.days_to_expiry }}
-                    </span>
-                  </div>
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm text-slate-600 dark:text-slate-400">Data de Abertura:</span>
-                    <span class="font-semibold text-slate-900 dark:text-white">
-                      {{ formatDate(reagent.reagent_open_date) || 'Não aberto' }}
-                    </span>
-                  </div>
-                  <div v-if="reagent.reagent_open_date" class="mt-2">
-                    <div class="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                      <div
-                        :class="['h-full rounded-full', getShelfLifeBarColor(reagent)]"
-                        :style="{ width: getShelfLifePercentage(reagent) + '%' }"
-                      ></div>
-                    </div>
-                    <div class="mt-1 flex justify-between text-xs text-slate-500 dark:text-slate-400">
-                      <span>Aberto</span>
-                      <span>{{ getShelfLifePercentage(reagent).toFixed(0) }}% usado</span>
-                    </div>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="space-y-2">
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm text-slate-600 dark:text-slate-400">Total de Estoque:</span>
-                    <span class="font-semibold text-blue-900 dark:text-blue-300">{{ reagent.total_stock || 0 }}</span>
-                  </div>
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm text-slate-600 dark:text-slate-400">Armazéns:</span>
-                    <span class="font-semibold text-slate-900 dark:text-white">{{ reagent.warehouse_count || 1 }}</span>
-                  </div>
-                  <div v-if="reagent.refrigerated" class="mt-2">
-                    <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-500/10 dark:text-blue-200">
-                      <SunIcon class="mr-1 h-3 w-3" />
-                      Requer Refrigeração
-                    </span>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4">
-                <span :class="getStatusClasses(reagent)">
-                  {{ getStatusText(reagent) }}
-                </span>
-                <div v-if="reagent.is_expired" class="mt-2">
-                  <span class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200">
-                    <ExclamationTriangleIcon class="mr-1 h-3 w-3" />
-                    Requer Descarte
-                  </span>
-                </div>
-                <div v-if="reagent.days_to_expiry <= 30 && reagent.days_to_expiry > 0" class="mt-2">
-                  <span class="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-200">
-                    <ClockIcon class="mr-1 h-3 w-3" />
-                    Prioridade de Uso
-                  </span>
-                </div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-2">
-                  <Link
-                    :href="route('vap-inventory.items.show', reagent.id)"
-                    class="inline-flex items-center rounded-xl bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-900 transition hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-200 dark:hover:bg-blue-500/20"
-                  >
-                    <EyeIcon class="h-4 w-4 mr-1" />
-                    
-                    Visualizar
-                  </Link>
-                  <Link
-                    :href="route('vap-inventory.items.edit', reagent.id)"
-                    class="inline-flex items-center rounded-xl bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                  >
-                    <PencilSquareIcon class="h-4 w-4 mr-1" />
-                    Modificar
-                  </Link>
-                  <button
-                    v-if="reagent.is_expired"
-                    @click="markDisposed(reagent)"
-                    class="inline-flex items-center rounded-xl bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-900 transition hover:bg-red-100 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
-                  >
-                    <TrashIcon class="h-4 w-4 mr-1" />
-                    Descartar
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- EMPTY STATE -->
-      <div v-if="reagents.data.length === 0" class="p-12 text-center">
-        <BeakerIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
-        <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
-          Nenhum reagente encontrado
-        </h3>
-        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Nenhum reagente com datas de validade encontrado correspondendo aos seus filtros
-        </p>
-        <Link
-          :href="route('vap-inventory.items.index')"
-          class="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
-        >
-          <ArrowLeftIcon class="h-5 w-5" />
-          
-          Voltar ao Inventário
-        </Link>
-      </div>
-
-      <!-- PAGINATION -->
-      <div v-if="reagents.data.length > 0" class="border-t border-slate-200 px-6 py-4 dark:border-slate-800">
-        <Pagination :links="reagents.links" />
-      </div>
-    </ModuleCard>
-
-    <!-- UPCOMING EXPIRIES -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- EXPIRY TIMELINE -->
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-          Linha do Tempo de Validade (Próximos 90 Dias)
-        </h3>
-        <div class="space-y-4">
-          <div
-            v-for="month in expiryTimeline"
-            :key="month.month"
-            class="border-l-4 border-blue-900 pl-4 py-2"
-          >
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="font-medium text-slate-900 dark:text-white">{{ month.month }}</div>
-                <div class="text-sm text-slate-500 dark:text-slate-400">{{ month.count }} itens vencendo em breve</div>
-              </div>
-              <div class="text-sm font-semibold" :class="month.color">
-                {{ month.percentage }}%
-              </div>
-            </div>
-            <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-              <div
-                class="h-full rounded-full"
-                :class="month.barColor"
-                :style="{ width: month.percentage + '%' }"
-              ></div>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <span class="grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-rose-700 dark:text-rose-300">
+              <CalendarDaysIcon class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Controlo de validade de reagentes</h1>
+              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
+                Priorize consumo, segregação e substituição com rastreabilidade de validade, lote, fornecedor e posição de stock.
+              </p>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- QUICK ACTIONS -->
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-          Acções Rápidas
-        </h3>
-        <div class="space-y-3">
-          <button
-            @click="generateDisposalReport"
-            class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-red-300 hover:bg-red-50/60 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-red-500/40 dark:hover:bg-red-500/10"
-          >
-            <div class="flex items-center gap-3">
-              <div class="rounded-lg bg-red-100 p-2">
-                <DocumentTextIcon class="h-5 w-5 text-red-900" />
-              </div>
-              <div>
-                <div class="font-medium text-slate-900 dark:text-white">Relatório de Descarte</div>
-                <div class="text-sm text-slate-500 dark:text-slate-400">Gerar documentação de descarte</div>
-              </div>
-            </div>
-            <ChevronRightIcon class="h-5 w-5 text-slate-400 dark:text-slate-500" />
+        <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
+          <button type="button" class="ds-button ds-button-secondary" :disabled="exporting" @click="exportReport">
+            <ArrowPathIcon v-if="exporting" class="h-4 w-4 animate-spin" />
+            <ArrowDownTrayIcon v-else class="h-4 w-4" />
+            {{ exporting ? 'A preparar...' : 'Exportar PDF' }}
           </button>
-
-          <button
-            @click="sendExpiryAlerts"
-            class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-orange-300 hover:bg-orange-50/60 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-orange-500/40 dark:hover:bg-orange-500/10"
-          >
-            <div class="flex items-center gap-3">
-              <div class="rounded-lg bg-orange-100 p-2">
-                <BellAlertIcon class="h-5 w-5 text-orange-900" />
-              </div>
-              <div>
-                <div class="font-medium text-slate-900 dark:text-white">Enviar Alertas</div>
-                <div class="text-sm text-slate-500 dark:text-slate-400">Notificar a equipa sobre reagentes próximos da validade</div>
-              </div>
-            </div>
-            <ChevronRightIcon class="h-5 w-5 text-slate-400 dark:text-slate-500" />
-          </button>
-
-          <Link
-            :href="route('vap-inventory.orders.create')"
-            class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-green-300 hover:bg-green-50/60 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-emerald-500/40 dark:hover:bg-emerald-500/10"
-          >
-            <div class="flex items-center gap-3">
-              <div class="rounded-lg bg-green-100 p-2">
-                <ShoppingCartIcon class="h-5 w-5 text-green-900" />
-              </div>
-              <div>
-                <div class="font-medium text-slate-900 dark:text-white">Reabastecer Vencimento</div>
-                <div class="text-sm text-slate-500 dark:text-slate-400">Criar pedidos de compra para substituições</div>
-              </div>
-            </div>
-            <ChevronRightIcon class="h-5 w-5 text-slate-400 dark:text-slate-500" />
+          <Link :href="route('vap-inventory.items.index')" class="ds-button ds-button-primary">
+            <ArrowLeftIcon class="h-4 w-4" />
+            Voltar ao inventário
           </Link>
         </div>
       </div>
+
+      <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <article v-for="card in summaryCards" :key="card.label" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
+              <p class="mt-3 truncate text-2xl font-black tabular-nums text-[var(--ds-text)]">{{ card.value }}</p>
+            </div>
+            <component :is="card.icon" :class="['h-5 w-5 shrink-0', card.tone]" />
+          </div>
+          <p class="mt-1 truncate text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.detail }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="ds-command-surface p-5 sm:p-6">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <BaseSelect v-model="filters.status" label="Estado de validade">
+          <option value="">Todos os estados</option>
+          <option value="expired">Expirado</option>
+          <option value="expiring_soon">Até 60 dias</option>
+          <option value="good">Mais de 60 dias</option>
+        </BaseSelect>
+
+        <BaseSelect v-model="filters.category_id" label="Categoria">
+          <option value="">Todas as categorias</option>
+          <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+        </BaseSelect>
+
+        <BaseSelect v-model="filters.warehouse_id" label="Armazém">
+          <option value="">Todos os armazéns</option>
+          <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">{{ warehouse.name }}</option>
+        </BaseSelect>
+
+        <BaseInput v-model="filters.search" label="Pesquisar reagente" placeholder="Nome, código ou lote">
+          <template #leading><MagnifyingGlassIcon class="h-4 w-4" /></template>
+        </BaseInput>
+
+        <div class="grid grid-cols-2 gap-3">
+          <BaseSelect v-model="filters.sort_by" label="Ordenar por">
+            <option value="expiry_date">Validade</option>
+            <option value="name">Nome</option>
+            <option value="current_stock">Stock</option>
+          </BaseSelect>
+          <BaseSelect v-model="filters.sort_direction" label="Direção">
+            <option value="asc">Ascendente</option>
+            <option value="desc">Descendente</option>
+          </BaseSelect>
+        </div>
+      </div>
+
+      <div class="ds-command-toolbar mt-5 grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div class="min-w-0">
+          <p class="text-sm font-bold text-[var(--ds-text)]">{{ reagents.total || reagentRows.length }} reagentes no âmbito</p>
+          <div v-if="activeFilterPills.length" class="mt-2 flex flex-wrap gap-2">
+            <span v-for="pill in activeFilterPills" :key="pill" class="ds-chip">{{ pill }}</span>
+          </div>
+          <p v-else class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">Ordenação FEFO aplicada a todos os reagentes com validade definida.</p>
+        </div>
+        <button type="button" class="ds-button ds-button-secondary" :disabled="!hasActiveFilters" @click="clearFilters">
+          <FunnelIcon class="h-4 w-4" />
+          Limpar filtros
+        </button>
+      </div>
+
+      <div v-if="exportError" class="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300" role="alert">
+        {{ exportError }}
+      </div>
+    </section>
+
+    <section class="ds-command-surface overflow-hidden">
+      <div class="ds-table-summary px-5 py-4">
+        <div>
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">FEFO control windows</p>
+          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Carga de revisão nos próximos 90 dias</h2>
+        </div>
+        <span class="ds-chip">{{ expiryWindowTotal }} ocorrências</span>
+      </div>
+
+      <div class="grid divide-y divide-[var(--ds-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
+        <article v-for="window in expiryWindows" :key="window.label" class="min-w-0 p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ window.label }}</p>
+              <p class="mt-2 text-2xl font-black tabular-nums text-[var(--ds-text)]">{{ window.count }}</p>
+            </div>
+            <span :class="['h-2.5 w-2.5 rounded-full', window.dot]"></span>
+          </div>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ window.detail }}</p>
+          <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-[var(--ds-panel-muted)]">
+            <div :class="['h-full rounded-full', window.bar]" :style="{ width: `${window.percentage}%` }"></div>
+          </div>
+          <p class="mt-2 text-right font-mono text-xs font-black tabular-nums text-[var(--ds-text-soft)]">{{ formatNumber(window.percentage) }}%</p>
+        </article>
+      </div>
+    </section>
+
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <section class="ds-table-shell">
+        <div class="ds-table-summary px-5 py-4">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Reagent expiry ledger</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Reagentes por prioridade FEFO</h2>
+          </div>
+          <span class="ds-chip">{{ reagents.total || reagentRows.length }} registos</span>
+        </div>
+
+        <div v-if="loading" class="ds-empty-state m-5 p-8 text-center">
+          <span class="mx-auto block h-7 w-7 animate-spin rounded-full border-2 border-[var(--ds-border)] border-t-[rgb(var(--primary-700-rgb))]"></span>
+          <p class="mt-3 text-sm font-semibold text-[var(--ds-text-muted)]">A atualizar o controlo de validade...</p>
+        </div>
+
+        <div v-else-if="reagentRows.length" class="divide-y divide-[var(--ds-border)] lg:hidden">
+          <article v-for="reagent in reagentRows" :key="`mobile-${reagent.id}`" class="space-y-4 p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <p class="font-mono text-xs font-bold text-[var(--ds-text-soft)]">{{ reagent.internal_code || reagent.code || 'Sem código' }}</p>
+                <h3 class="mt-1 text-base font-black text-[var(--ds-text)]">{{ reagent.name }}</h3>
+                <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ reagent.category?.name || 'Sem categoria' }}</p>
+              </div>
+              <span :class="['ds-chip shrink-0', statusChipClass(reagent)]">{{ statusLabel(reagent) }}</span>
+            </div>
+
+            <dl class="grid grid-cols-2 gap-3">
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Validade</dt>
+                <dd :class="['mt-2 text-sm font-black', statusTextClass(reagent)]">{{ formatDate(reagent.reagent_expiry_date) }}</dd>
+              </div>
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Stock total</dt>
+                <dd class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ formatNumber(reagent.total_stock) }} un.</dd>
+              </div>
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Lote</dt>
+                <dd class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ reagent.lot || 'N/D' }}</dd>
+              </div>
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Posições</dt>
+                <dd class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ reagent.warehouse_count || 0 }}</dd>
+              </div>
+            </dl>
+
+            <div>
+              <div class="flex items-center justify-between gap-3 text-xs font-bold">
+                <span class="text-[var(--ds-text-muted)]">Vida útil desde abertura</span>
+                <span class="text-[var(--ds-text)]">{{ formatNumber(shelfLifePercentage(reagent)) }}%</span>
+              </div>
+              <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ds-panel-muted)]">
+                <div :class="['h-full rounded-full', shelfLifeBarClass(reagent)]" :style="{ width: `${shelfLifePercentage(reagent)}%` }"></div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <Link :href="route('vap-inventory.items.show', reagent.id)" class="ds-table-action">
+                <EyeIcon class="h-4 w-4" />
+                Abrir dossiê
+              </Link>
+              <Link :href="route('vap-inventory.items.edit', reagent.id)" class="ds-table-action">
+                <PencilSquareIcon class="h-4 w-4" />
+                Rever dados
+              </Link>
+            </div>
+          </article>
+        </div>
+
+        <div v-else-if="!loading" class="ds-empty-state m-5 p-8 text-center">
+          <BeakerIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
+          <h3 class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem reagentes no âmbito</h3>
+          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Ajuste os filtros ou confirme que as datas de validade foram registadas.</p>
+        </div>
+
+        <div v-if="!loading && reagentRows.length" class="hidden overflow-x-auto lg:block">
+          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+            <thead class="bg-[var(--ds-panel-subtle)]">
+              <tr>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Reagente</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Validade</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Lote e fornecedor</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Posições de stock</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Estado</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Ações</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
+              <tr v-for="reagent in reagentRows" :key="reagent.id" class="transition-colors hover:bg-[var(--ds-panel-subtle)]">
+                <td class="px-5 py-4 align-top">
+                  <div class="flex items-start gap-3">
+                    <span :class="['grid h-9 w-9 shrink-0 place-items-center rounded-lg', statusIconSurface(reagent)]">
+                      <BeakerIcon class="h-4 w-4" />
+                    </span>
+                    <div class="min-w-0">
+                      <p class="font-black text-[var(--ds-text)]">{{ reagent.name }}</p>
+                      <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-soft)]">{{ reagent.internal_code || reagent.code || 'Sem código' }}</p>
+                      <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ reagent.category?.name || 'Sem categoria' }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-5 py-4 align-top">
+                  <p :class="['font-mono text-sm font-black tabular-nums', statusTextClass(reagent)]">{{ formatDate(reagent.reagent_expiry_date) }}</p>
+                  <p :class="['mt-1 text-xs font-black', statusTextClass(reagent)]">{{ daysLabel(reagent) }}</p>
+                  <div v-if="reagent.reagent_open_date" class="mt-3 min-w-36">
+                    <div class="flex items-center justify-between gap-3 text-xs font-semibold text-[var(--ds-text-muted)]">
+                      <span>Aberto {{ formatDate(reagent.reagent_open_date) }}</span>
+                      <span>{{ formatNumber(shelfLifePercentage(reagent)) }}%</span>
+                    </div>
+                    <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--ds-panel-muted)]">
+                      <div :class="['h-full rounded-full', shelfLifeBarClass(reagent)]" :style="{ width: `${shelfLifePercentage(reagent)}%` }"></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-5 py-4 align-top">
+                  <p class="font-mono text-xs font-black text-[var(--ds-text)]">{{ reagent.lot || 'Sem lote' }}</p>
+                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ reagent.supplier?.name || 'Sem fornecedor' }}</p>
+                  <span v-if="reagent.refrigerated" class="mt-2 inline-flex items-center gap-1 text-xs font-black text-cyan-800 dark:text-cyan-200">
+                    <CubeTransparentIcon class="h-3.5 w-3.5" />
+                    Cadeia de frio
+                  </span>
+                </td>
+                <td class="px-5 py-4 align-top">
+                  <p class="font-mono text-sm font-black tabular-nums text-[var(--ds-text)]">{{ formatNumber(reagent.total_stock) }} un.</p>
+                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ reagent.warehouse_count || 0 }} posições</p>
+                  <p class="mt-1 max-w-52 text-xs font-semibold leading-5 text-[var(--ds-text-soft)]">{{ warehouseNames(reagent) }}</p>
+                </td>
+                <td class="px-5 py-4 align-top">
+                  <span :class="['ds-chip', statusChipClass(reagent)]">{{ statusLabel(reagent) }}</span>
+                  <p class="mt-2 max-w-44 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ statusInstruction(reagent) }}</p>
+                </td>
+                <td class="px-5 py-4 text-right align-top">
+                  <div class="flex justify-end gap-1">
+                    <Link :href="route('vap-inventory.items.show', reagent.id)" class="ds-icon-button" title="Abrir dossiê">
+                      <EyeIcon class="h-4 w-4" />
+                    </Link>
+                    <Link :href="route('vap-inventory.items.edit', reagent.id)" class="ds-icon-button" title="Rever dados de validade">
+                      <PencilSquareIcon class="h-4 w-4" />
+                    </Link>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <Pagination
+          v-if="reagentRows.length"
+          :links="reagents.links"
+          :total="reagents.total"
+          :from="reagents.from"
+          :to="reagents.to"
+          :last_page="reagents.last_page"
+          :current_page="reagents.current_page"
+        />
+      </section>
+
+      <aside class="space-y-6">
+        <section class="ds-panel overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Quarantine review</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Expirados no resultado</h2>
+          </div>
+          <ol v-if="expiredRows.length" class="divide-y divide-[var(--ds-border)]">
+            <li v-for="reagent in expiredRows.slice(0, 7)" :key="reagent.id" class="px-5 py-3">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-black text-[var(--ds-text)]">{{ reagent.name }}</p>
+                  <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-soft)]">{{ reagent.lot || 'Sem lote' }}</p>
+                </div>
+                <span class="shrink-0 font-mono text-xs font-black tabular-nums text-rose-700 dark:text-rose-300">{{ daysLabel(reagent) }}</span>
+              </div>
+              <Link :href="route('vap-inventory.items.edit', reagent.id)" class="ds-table-action mt-2">
+                Rever disposição
+              </Link>
+            </li>
+          </ol>
+          <div v-else class="px-5 py-4 text-sm font-semibold text-[var(--ds-text-muted)]">Nenhum expirado nesta página.</div>
+        </section>
+
+        <section class="ds-panel p-5">
+          <div class="flex items-start gap-3">
+            <ShieldCheckIcon class="mt-0.5 h-5 w-5 shrink-0 text-emerald-700 dark:text-emerald-300" />
+            <div>
+              <p class="text-sm font-black text-[var(--ds-text)]">Regra de segregação</p>
+              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Reagentes expirados devem sair de uso, ser segregados fisicamente e seguir o procedimento documentado de disposição.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="ds-panel overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Replacement planning</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Substituição e abastecimento</h2>
+          </div>
+          <div class="space-y-3 p-5">
+            <p class="text-sm font-semibold leading-6 text-[var(--ds-text-muted)]">Crie uma necessidade ou ordem apenas após rever stock remanescente, consumo previsto e lotes alternativos.</p>
+            <Link :href="route('vap-inventory.orders.create')" class="ds-button ds-button-primary w-full">
+              <ShoppingCartIcon class="h-4 w-4" />
+              Preparar ordem
+            </Link>
+            <Link :href="route('vap-inventory.needs.create')" class="ds-button ds-button-secondary w-full">
+              <ClipboardDocumentListIcon class="h-4 w-4" />
+              Registar necessidade
+            </Link>
+          </div>
+        </section>
+      </aside>
     </div>
   </div>
 </template>
 
 <script setup>
-import BaseSelect from '@/Components/base/BaseSelect.vue'
-import ModuleCard from '@/Components/base/ModuleCard.vue'
-import ModuleHero from '@/Components/base/ModuleHero.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { ref, computed, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import { debounce } from 'lodash'
+import BaseInput from '@/Components/base/BaseInput.vue'
+import BaseSelect from '@/Components/base/BaseSelect.vue'
+import Pagination from '@/Components/Pagination.vue'
 import {
-  ClockIcon,
   ArrowDownTrayIcon,
   ArrowLeftIcon,
-  CheckCircleIcon,
-  TagIcon,
-  BuildingLibraryIcon,
-  ArrowsUpDownIcon,
-  XCircleIcon,
-  ExclamationTriangleIcon,
+  ArrowPathIcon,
   BeakerIcon,
+  CalendarDaysIcon,
+  CheckCircleIcon,
+  ClipboardDocumentListIcon,
+  ClockIcon,
+  CubeTransparentIcon,
+  ExclamationTriangleIcon,
   EyeIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon,
   PencilSquareIcon,
-  TrashIcon,
-  SunIcon,
-  DocumentTextIcon,
-  BellAlertIcon,
+  ShieldCheckIcon,
   ShoppingCartIcon,
-  ChevronRightIcon,
+  XCircleIcon,
 } from '@heroicons/vue/24/outline'
-import Pagination from '@/Components/Pagination.vue'
-import { debounce } from 'lodash'
 
 const props = defineProps({
-  reagents: Object,
-  filters: Object,
-  categories: Array,
-  warehouses: Array,
-  stats: Object,
+  reagents: { type: Object, default: () => ({ data: [] }) },
+  filters: { type: Object, default: () => ({}) },
+  categories: { type: Array, default: () => [] },
+  warehouses: { type: Array, default: () => [] },
+  stats: { type: Object, default: () => ({}) },
 })
 
-const tableHeadClass = 'px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300'
+const loading = ref(false)
+const exporting = ref(false)
+const exportError = ref('')
+const filters = reactive({
+  status: props.filters?.status ?? '',
+  category_id: props.filters?.category_id ?? '',
+  warehouse_id: props.filters?.warehouse_id ?? '',
+  search: props.filters?.search ?? '',
+  sort_by: ['expiry_date', 'name', 'current_stock'].includes(props.filters?.sort_by) ? props.filters.sort_by : 'expiry_date',
+  sort_direction: props.filters?.sort_direction === 'desc' ? 'desc' : 'asc',
+})
 
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
+const reagentRows = computed(() => props.reagents?.data || [])
+const expiredRows = computed(() => reagentRows.value.filter(isExpired))
+const goodCount = computed(() => Math.max(Number(props.stats?.total_reagents || 0) - Number(props.stats?.expired || 0) - Number(props.stats?.expiring_soon || 0), 0))
+const expiryWindowTotal = computed(() => Number(props.stats?.expired || 0) + Number(props.stats?.expiring_30 || 0) + Number(props.stats?.expiring_31_60 || 0) + Number(props.stats?.expiring_61_90 || 0))
+
+const summaryCards = computed(() => [
+  {
+    label: 'Expirados',
+    value: props.stats?.expired || 0,
+    detail: 'Segregar e rever disposição',
+    icon: XCircleIcon,
+    tone: 'text-rose-700 dark:text-rose-300',
+  },
+  {
+    label: 'Até 30 dias',
+    value: props.stats?.expiring_30 || 0,
+    detail: 'Prioridade de consumo',
+    icon: ExclamationTriangleIcon,
+    tone: 'text-amber-700 dark:text-amber-300',
+  },
+  {
+    label: '31 a 60 dias',
+    value: props.stats?.expiring_31_60 || 0,
+    detail: 'Revisão de utilização',
+    icon: ClockIcon,
+    tone: 'text-violet-700 dark:text-violet-300',
+  },
+  {
+    label: 'Conformes',
+    value: goodCount.value,
+    detail: `${props.stats?.total_reagents || 0} com validade registada`,
+    icon: CheckCircleIcon,
+    tone: 'text-emerald-700 dark:text-emerald-300',
+  },
+])
+
+const expiryWindows = computed(() => {
+  const total = Math.max(expiryWindowTotal.value, 1)
+  return [
+    { label: 'Expirado', count: Number(props.stats?.expired || 0), detail: 'Segregação imediata', dot: 'bg-rose-500', bar: 'bg-rose-500' },
+    { label: '0-30 dias', count: Number(props.stats?.expiring_30 || 0), detail: 'Consumir primeiro', dot: 'bg-amber-500', bar: 'bg-amber-500' },
+    { label: '31-60 dias', count: Number(props.stats?.expiring_31_60 || 0), detail: 'Plano de utilização', dot: 'bg-violet-500', bar: 'bg-violet-500' },
+    { label: '61-90 dias', count: Number(props.stats?.expiring_61_90 || 0), detail: 'Monitorização preventiva', dot: 'bg-cyan-600', bar: 'bg-cyan-600' },
+  ].map((window) => ({ ...window, percentage: (window.count / total) * 100 }))
+})
+
+const activeFilterPills = computed(() => {
+  const pills = []
+  if (filters.status) pills.push(`Estado: ${statusFilterLabel(filters.status)}`)
+  if (filters.category_id) pills.push(`Categoria: ${categoryName(filters.category_id)}`)
+  if (filters.warehouse_id) pills.push(`Armazém: ${warehouseName(filters.warehouse_id)}`)
+  if (filters.search) pills.push(`Pesquisa: ${filters.search}`)
+  return pills
+})
+const hasActiveFilters = computed(() => activeFilterPills.value.length > 0)
+
+function daysToExpiry(reagent) {
+  if (Number.isFinite(Number(reagent.days_to_expiry))) return Number(reagent.days_to_expiry)
+  if (!reagent.reagent_expiry_date) return null
+  const expiry = new Date(`${String(reagent.reagent_expiry_date).slice(0, 10)}T00:00:00Z`)
+  const today = new Date()
+  const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
+  return Math.round((expiry.getTime() - todayUtc) / 86400000)
+}
+
+function isExpired(reagent) {
+  return reagent.is_expired === true || Number(daysToExpiry(reagent)) < 0
+}
+
+function statusLabel(reagent) {
+  const days = daysToExpiry(reagent)
+  if (days === null) return 'Sem data'
+  if (days < 0) return 'Expirado'
+  if (days <= 30) return 'Prioridade FEFO'
+  if (days <= 60) return 'Revisão próxima'
+  return 'Conforme'
+}
+
+function statusInstruction(reagent) {
+  const days = daysToExpiry(reagent)
+  if (days === null) return 'Completar dados de validade.'
+  if (days < 0) return 'Segregar e iniciar revisão de disposição.'
+  if (days <= 30) return 'Consumir primeiro ou planear substituição.'
+  if (days <= 60) return 'Confirmar plano de utilização do lote.'
+  return 'Manter monitorização FEFO.'
+}
+
+function statusChipClass(reagent) {
+  const days = daysToExpiry(reagent)
+  if (days === null || days < 0) return 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300'
+  if (days <= 30) return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300'
+  if (days <= 60) return 'border-violet-200 bg-violet-50 text-violet-800 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300'
+  return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300'
+}
+
+function statusTextClass(reagent) {
+  const days = daysToExpiry(reagent)
+  if (days === null || days < 0) return 'text-rose-700 dark:text-rose-300'
+  if (days <= 30) return 'text-amber-700 dark:text-amber-300'
+  if (days <= 60) return 'text-violet-700 dark:text-violet-300'
+  return 'text-emerald-700 dark:text-emerald-300'
+}
+
+function statusIconSurface(reagent) {
+  const days = daysToExpiry(reagent)
+  if (days === null || days < 0) return 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300'
+  if (days <= 30) return 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'
+  if (days <= 60) return 'bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300'
+  return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'
+}
+
+function daysLabel(reagent) {
+  const days = daysToExpiry(reagent)
+  if (days === null) return 'Sem data'
+  if (days < 0) return `${formatNumber(Math.abs(days))} dias vencido`
+  if (days === 0) return 'Expira hoje'
+  return `${formatNumber(days)} dias`
+}
+
+function shelfLifePercentage(reagent) {
+  if (!reagent.reagent_open_date || !reagent.reagent_expiry_date) return 0
+  const opened = new Date(reagent.reagent_open_date).getTime()
+  const expiry = new Date(reagent.reagent_expiry_date).getTime()
+  const total = expiry - opened
+  if (total <= 0) return 100
+  return Math.min(Math.max(((Date.now() - opened) / total) * 100, 0), 100)
+}
+
+function shelfLifeBarClass(reagent) {
+  const percentage = shelfLifePercentage(reagent)
+  if (isExpired(reagent)) return 'bg-rose-500'
+  if (percentage >= 80) return 'bg-amber-500'
+  if (percentage >= 50) return 'bg-violet-500'
+  return 'bg-emerald-500'
+}
+
+function warehouseNames(reagent) {
+  const names = (reagent.inventory || []).map((position) => position.warehouse?.name).filter(Boolean)
+  return names.length ? [...new Set(names)].join(', ') : 'Sem posição de stock'
+}
+
+function formatDate(value) {
+  if (!value) return 'N/D'
+  return new Intl.DateTimeFormat('pt-AO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(value))
+}
+
+function formatNumber(value) {
+  return new Intl.NumberFormat('pt-AO', { maximumFractionDigits: 1 }).format(Number(value || 0))
+}
+
+function statusFilterLabel(value) {
+  return ({ expired: 'Expirado', expiring_soon: 'Até 60 dias', good: 'Mais de 60 dias' })[value] || 'Todos'
+}
+
+function categoryName(id) {
+  return props.categories.find((category) => String(category.id) === String(id))?.name || 'N/D'
+}
+
+function warehouseName(id) {
+  return props.warehouses.find((warehouse) => String(warehouse.id) === String(id))?.name || 'N/D'
+}
+
+function clearFilters() {
+  Object.assign(filters, {
+    status: '',
+    category_id: '',
+    warehouse_id: '',
+    search: '',
+    sort_by: 'expiry_date',
+    sort_direction: 'asc',
   })
 }
 
-const getExpiryColor = (reagent) => {
-  if (reagent.is_expired) {
-    return { bg: 'bg-red-100 dark:bg-red-500/10', text: 'text-red-900 dark:text-red-200' }
-  } else if (reagent.days_to_expiry <= 30) {
-    return { bg: 'bg-orange-100 dark:bg-orange-500/10', text: 'text-orange-900 dark:text-orange-200' }
-  } else if (reagent.days_to_expiry <= 60) {
-    return { bg: 'bg-yellow-100 dark:bg-amber-500/10', text: 'text-yellow-900 dark:text-amber-200' }
-  } else {
-    return { bg: 'bg-green-100 dark:bg-emerald-500/10', text: 'text-green-900 dark:text-emerald-200' }
-  }
+function csrfToken() {
+  return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
 }
 
-const getExpiryDateColor = (reagent) => {
-  if (reagent.is_expired) return 'text-red-900 dark:text-red-200'
-  if (reagent.days_to_expiry <= 30) return 'text-orange-900 dark:text-orange-200'
-  if (reagent.days_to_expiry <= 60) return 'text-yellow-900 dark:text-amber-200'
-  return 'text-green-900 dark:text-emerald-200'
-}
+async function exportReport() {
+  exporting.value = true
+  exportError.value = ''
 
-const getDaysColor = (days) => {
-  if (days <= 0) return 'text-red-900 dark:text-red-200'
-  if (days <= 30) return 'text-orange-900 dark:text-orange-200'
-  if (days <= 60) return 'text-yellow-900 dark:text-amber-200'
-  return 'text-green-900 dark:text-emerald-200'
-}
-
-const getShelfLifeBarColor = (reagent) => {
-  if (reagent.is_expired) return 'bg-red-900'
-  const percentage = getShelfLifePercentage(reagent)
-  if (percentage > 80) return 'bg-orange-900'
-  if (percentage > 50) return 'bg-yellow-900'
-  return 'bg-green-900'
-}
-
-const getShelfLifePercentage = (reagent) => {
-  if (!reagent.reagent_open_date || !reagent.reagent_expiry_date) return 0
-  
-  const openDate = new Date(reagent.reagent_open_date)
-  const expiryDate = new Date(reagent.reagent_expiry_date)
-  const today = new Date()
-  
-  const totalShelfLife = expiryDate - openDate
-  const usedShelfLife = today - openDate
-  
-  if (totalShelfLife <= 0) return 100
-  return Math.min(100, (usedShelfLife / totalShelfLife) * 100)
-}
-
-const getStatusClasses = (reagent) => {
-  if (reagent.is_expired) {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
-  } else if (reagent.days_to_expiry <= 30) {
-    return 'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-200'
-  } else if (reagent.days_to_expiry <= 60) {
-    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 dark:bg-amber-500/10 dark:text-amber-200'
-  } else {
-    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200'
-  }
-}
-
-const getStatusText = (reagent) => {
-  if (reagent.is_expired) return 'Vencido'
-  if (reagent.days_to_expiry <= 30) return 'Vencendo em Breve'
-  if (reagent.days_to_expiry <= 60) return 'Vencendo em Curto Prazo'
-  return 'Bom'
-}
-
-const expiryTimeline = computed(() => {
-  const months = []
-  const today = new Date()
-  
-  for (let i = 0; i < 3; i++) {
-    const monthDate = new Date(today.getFullYear(), today.getMonth() + i, 1)
-    const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-    
-    // Count reagents expiring in this month
-    const count = props.reagents.data.filter(reagent => {
-      if (!reagent.reagent_expiry_date) return false
-      const expiryDate = new Date(reagent.reagent_expiry_date)
-      return expiryDate.getMonth() === monthDate.getMonth() && 
-             expiryDate.getFullYear() === monthDate.getFullYear()
-    }).length
-    
-    const percentage = Math.min(100, (count / props.reagents.data.length) * 100)
-    
-    let color = 'text-green-900'
-    let barColor = 'bg-green-900'
-    if (i === 0) {
-      color = 'text-orange-900'
-      barColor = 'bg-orange-900'
-    } else if (i === 1) {
-      color = 'text-yellow-900'
-      barColor = 'bg-yellow-900'
-    }
-    
-    months.push({
-      month: monthName,
-      count,
-      percentage: percentage.toFixed(1),
-      color,
-      barColor
-    })
-  }
-  
-  return months
-})
-
-const exportReport = () => {
-  const params = new URLSearchParams(props.filters)
-  window.open(route('vap-inventory.reports.export', {
-    report_type: 'expiry',
-    format: 'pdf',
-    filters: JSON.stringify(props.filters)
-  }), '_blank')
-}
-
-const markAllExpired = async () => {
-  if (confirm('Tem a certeza que deseja marcar todos os reagentes vencidos como descartados? Esta ação não pode ser desfeita.')) {
-    try {
-      await router.post(route('vap-inventory.reagents.mark-disposed'), {
-        reagent_ids: props.reagents.data
-          .filter(r => r.is_expired)
-          .map(r => r.id)
-      })
-      router.reload()
-    } catch (error) {
-      console.error('Error marking reagents as disposed:', error)
-    }
-  }
-}
-
-const markDisposed = async (reagent) => {
-  if (confirm(`Deseja marcar ${reagent.name} como descartado? Isso removerá ele do inventário.`)) {
-    try {
-      await router.post(route('vap-inventory.reagents.dispose', reagent.id))
-      router.reload()
-    } catch (error) {
-      console.error('Error marking reagent as disposed:', error)
-    }
-  }
-}
-
-const generateDisposalReport = () => {
-  window.open(route('vap-inventory.reports.export', {
-    report_type: 'expiry',
-    format: 'pdf',
-    filters: JSON.stringify({ ...props.filters, status: 'expired' })
-  }), '_blank')
-}
-
-const sendExpiryAlerts = async () => {
   try {
-    await router.post(route('vap-inventory.reagents.send-alerts'), {
-      days_threshold: 30
+    const response = await fetch(route('vap-inventory.analytics.report'), {
+      method: 'POST',
+      headers: {
+        Accept: 'application/pdf',
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken(),
+      },
+      body: JSON.stringify({ reportType: 'expiry', format: 'pdf', dateRange: '1y' }),
     })
-    alert('Alertas de validade enviados com sucesso!')
+    if (!response.ok) throw new Error('Não foi possível gerar o relatório de validade.')
+    const blob = await response.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = objectUrl
+    anchor.download = `expiry_report_${new Date().toISOString().split('T')[0]}.pdf`
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(objectUrl)
   } catch (error) {
-    console.error('Error sending alerts:', error)
+    exportError.value = error instanceof Error ? error.message : 'Não foi possível gerar o relatório.'
+  } finally {
+    exporting.value = false
   }
 }
 
-// Watch filters
 watch(
-  () => props.filters,
+  filters,
   debounce((value) => {
-    router.get(route('vap-inventory.reagents.expiry'), value, {
+    router.get(route('vap-inventory.items.reagents.expiry'), value, {
       preserveState: true,
+      preserveScroll: true,
       replace: true,
+      onStart: () => { loading.value = true },
+      onFinish: () => { loading.value = false },
     })
-  }, 300),
-  { deep: true }
+  }, 350),
+  { deep: true },
 )
 </script>

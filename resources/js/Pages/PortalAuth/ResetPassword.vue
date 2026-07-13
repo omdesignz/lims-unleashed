@@ -1,114 +1,21 @@
+<script setup>
+import AuthExperienceShell from '@/Components/auth/AuthExperienceShell.vue'
+import EmptyLayout from '../../Shared/EmptyLayout.vue'
+import { Head, useForm } from '@inertiajs/vue3'
+import { EyeIcon, EyeSlashIcon, KeyIcon } from '@heroicons/vue/24/outline'
+import { ref } from 'vue'
+
+defineOptions({ layout: EmptyLayout })
+const showPassword = ref(false)
+const form = useForm({ token: route().params.token, email: route().params.email, password: '', password_confirmation: '' })
+const submit = () => form.post(route('portal.password.update'), { onFinish: () => form.reset('password', 'password_confirmation') })
+</script>
+
 <template>
-  <Head title="Redefinir palavra-passe" />
-  <AuthExperienceShell
-    mode="portal"
-    title="Defina uma nova palavra-passe"
-    eyebrow="Portal do cliente"
-    description="Conclua a recuperação de acesso com uma palavra-passe forte para proteger propostas, certificados e comunicação comercial."
-    context-title="Acesso revalidado"
-    context-description="Depois de redefinir a palavra-passe, o cliente volta ao fluxo normal do portal com sessão segura."
-  >
-    <div class="space-y-7">
-      <div>
-        <p class="text-sm font-semibold uppercase tracking-[0.22em] text-[#143d37] dark:text-[#f1d78b]">
-          Segurança
-        </p>
-        <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
-          Nova palavra-passe
-        </h2>
-        <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-          Use uma palavra-passe única e robusta. O email vem do link de recuperação e fica associado ao pedido.
-        </p>
-      </div>
-
-      <form @submit.prevent="submit" class="space-y-5">
-        <input type="hidden" v-model="form.token" />
-
-        <div>
-          <label for="email" class="text-sm font-semibold text-slate-800 dark:text-slate-100">
-            Email
-          </label>
-          <input
-            id="email"
-            v-model="form.email"
-            name="email"
-            type="email"
-            autocomplete="email"
-            readonly
-            class="mt-2 block w-full cursor-not-allowed rounded-2xl border border-slate-300 bg-slate-100 px-4 py-3 text-sm text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400"
-          />
-          <p v-if="form.errors.email" class="mt-2 text-xs font-medium text-red-600 dark:text-red-400">
-            {{ form.errors.email }}
-          </p>
-        </div>
-
-        <div>
-          <label for="password" class="text-sm font-semibold text-slate-800 dark:text-slate-100">
-            Palavra-passe
-          </label>
-          <input
-            id="password"
-            v-model="form.password"
-            name="password"
-            type="password"
-            autocomplete="new-password"
-            required
-            class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none transition focus:border-[#1f7a68] focus:ring-4 focus:ring-[#1f7a68]/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-          />
-          <p v-if="form.errors.password" class="mt-2 text-xs font-medium text-red-600 dark:text-red-400">
-            {{ form.errors.password }}
-          </p>
-        </div>
-
-        <div>
-          <label for="password_confirmation" class="text-sm font-semibold text-slate-800 dark:text-slate-100">
-            Confirmar palavra-passe
-          </label>
-          <input
-            id="password_confirmation"
-            v-model="form.password_confirmation"
-            name="password_confirmation"
-            type="password"
-            autocomplete="new-password"
-            required
-            class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-950 shadow-sm outline-none transition focus:border-[#1f7a68] focus:ring-4 focus:ring-[#1f7a68]/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-          />
-          <p v-if="form.errors.password_confirmation" class="mt-2 text-xs font-medium text-red-600 dark:text-red-400">
-            {{ form.errors.password_confirmation }}
-          </p>
-        </div>
-
-        <button
-          type="submit"
-          :disabled="form.processing"
-          class="inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[#143d37] to-[#1f7a68] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-[#143d37]/20 transition hover:from-[#0d2a25] hover:to-[#176452] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {{ form.processing ? 'A actualizar...' : 'Redefinir palavra-passe' }}
-        </button>
-      </form>
+  <Head title="Redefinir acesso ao portal" />
+  <AuthExperienceShell mode="portal" title="Defina uma nova palavra-passe" eyebrow="Portal do cliente" description="Conclua a recuperacao com uma credencial forte para proteger propostas, resultados e certificados." context-title="Acesso revalidado" context-description="Depois da redefinicao, o cliente regressa ao fluxo normal do portal com sessao segura.">
+    <div><p class="ds-kicker">Seguranca</p><h2 class="ds-heading mt-2 text-xl">Nova palavra-passe</h2><p class="ds-copy mt-2 text-sm">Use uma credencial forte e exclusiva para esta conta.</p>
+      <form class="mt-6 space-y-4" @submit.prevent="submit"><input v-model="form.token" type="hidden" /><div class="ds-field-group"><label for="portal-reset-email" class="ds-field-label">Email</label><input id="portal-reset-email" v-model="form.email" name="email" type="email" autocomplete="email" readonly class="ds-field cursor-not-allowed bg-[var(--ds-panel-muted)]" /><p v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</p></div><div class="ds-field-group"><label for="portal-reset-password" class="ds-field-label">Palavra-passe</label><div class="relative"><input id="portal-reset-password" v-model="form.password" name="password" :type="showPassword ? 'text' : 'password'" autocomplete="new-password" required class="ds-field pr-11" :aria-invalid="Boolean(form.errors.password)" /><button type="button" class="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)]" :title="showPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'" @click="showPassword = !showPassword"><EyeSlashIcon v-if="showPassword" class="h-4 w-4" /><EyeIcon v-else class="h-4 w-4" /></button></div><p v-if="form.errors.password" class="ds-field-error">{{ form.errors.password }}</p></div><div class="ds-field-group"><label for="portal-reset-confirmation" class="ds-field-label">Confirmar palavra-passe</label><input id="portal-reset-confirmation" v-model="form.password_confirmation" name="password_confirmation" :type="showPassword ? 'text' : 'password'" autocomplete="new-password" required class="ds-field" :aria-invalid="Boolean(form.errors.password_confirmation)" /><p v-if="form.errors.password_confirmation" class="ds-field-error">{{ form.errors.password_confirmation }}</p></div><button type="submit" class="ds-button ds-button-primary w-full" :disabled="form.processing"><KeyIcon class="h-4 w-4" />{{ form.processing ? 'A atualizar...' : 'Redefinir palavra-passe' }}</button></form>
     </div>
   </AuthExperienceShell>
 </template>
-
-<script setup>
-import { Head, useForm } from '@inertiajs/vue3'
-import AuthExperienceShell from '@/Components/auth/AuthExperienceShell.vue'
-import EmptyLayout from '../../Shared/EmptyLayout.vue'
-
-defineOptions({
-  layout: EmptyLayout,
-})
-
-const form = useForm({
-  token: route().params.token,
-  email: route().params.email,
-  password: '',
-  password_confirmation: '',
-})
-
-const submit = () => {
-  form.post(route('portal.password.update'), {
-    onFinish: () => form.reset('password', 'password_confirmation'),
-  })
-}
-</script>

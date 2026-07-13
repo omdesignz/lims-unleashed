@@ -72,8 +72,8 @@ class CustomerRequestCategoryController extends Controller
      */
     public function store(CustomerRequestCategoryRequest $request)
     {
+        abort_if(! auth()->user()->can('add_request_categories'), 403, '');
 
-        // Persiste data to DB
         CustomerRequestCategory::create($request->validated());
 
         return redirect()->back()->with([

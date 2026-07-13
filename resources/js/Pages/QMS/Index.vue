@@ -1,191 +1,202 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <section class="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950 p-6 text-white shadow-sm">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-300">QMS</p>
-          <h1 class="mt-2 text-3xl font-semibold tracking-tight">Quality Management System</h1>
-          <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-200">
-            Consolida competência técnica, revisões, não conformidades, reclamações, responsabilidades e fontes de incerteza num único painel operacional.
-          </p>
-        </div>
-        <div class="flex flex-wrap gap-3">
-          <Link :href="route('users.index')" class="rounded-2xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/15">Competência do pessoal</Link>
-          <Link :href="route('supplier-assessments.index')" class="rounded-2xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/15">Avaliação de fornecedores</Link>
-          <Link :href="route('responsibility-matrix.index')" class="rounded-2xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/15">Matriz de responsabilidades</Link>
-          <Link :href="route('uncertainty-sources.index')" class="rounded-2xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-400">Fontes de incerteza</Link>
+  <div class="space-y-6" :class="commercialDocumentThemeClasses">
+    <section class="ds-panel overflow-hidden">
+      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p class="ds-kicker">QMS</p>
+            <h1 class="mt-2 text-2xl font-semibold tracking-tight text-[var(--ds-text)] sm:text-3xl">Quality Management System</h1>
+            <p class="mt-3 max-w-3xl text-sm leading-6 text-[var(--ds-text-muted)]">
+              Consolida competência técnica, revisões, não conformidades, reclamações, responsabilidades e fontes de incerteza num único painel operacional.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <Link :href="route('users.index')" class="ds-button ds-button-secondary">Competência</Link>
+            <Link :href="route('supplier-assessments.index')" class="ds-button ds-button-secondary">Fornecedores</Link>
+            <Link :href="route('responsibility-matrix.index')" class="ds-button ds-button-secondary">Responsabilidades</Link>
+            <Link :href="route('uncertainty-sources.index')" class="ds-button ds-button-primary">Incerteza</Link>
+          </div>
         </div>
       </div>
-    </section>
 
-    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <article v-for="card in cards" :key="card.label" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="text-sm text-slate-500">{{ card.label }}</div>
-        <div class="mt-3 text-3xl font-semibold text-slate-900">{{ card.value }}</div>
-      </article>
-    </section>
-
-    <section class="grid gap-6 xl:grid-cols-3">
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-slate-900">Competências em risco</h2>
-          <span class="text-sm text-slate-500">{{ expiringQualifications.length }} registos</span>
+      <dl class="grid divide-y divide-[var(--ds-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-5">
+        <div v-for="card in priorityCards" :key="card.label" class="px-5 py-4 sm:px-6">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-[var(--ds-text-soft)]">{{ card.label }}</dt>
+          <dd class="mt-2 text-2xl font-semibold text-[var(--ds-text)]">{{ card.value }}</dd>
         </div>
-        <div v-if="expiringQualifications.length" class="mt-6 space-y-4">
-          <article v-for="qualification in expiringQualifications" :key="qualification.id" class="rounded-2xl border border-slate-200 p-4">
-            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      </dl>
+    </section>
+
+    <section class="ds-panel overflow-hidden">
+      <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
+        <h2 class="text-base font-semibold text-[var(--ds-text)]">Indicadores QMS</h2>
+        <p class="mt-1 text-sm text-[var(--ds-text-muted)]">Resumo compacto para revisão técnica e gestão ISO 17025.</p>
+      </div>
+      <dl class="grid divide-y divide-[var(--ds-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-5">
+        <div v-for="card in supportingCards" :key="card.label" class="px-5 py-4 sm:px-6">
+          <dt class="text-xs font-semibold uppercase tracking-wide text-[var(--ds-text-soft)]">{{ card.label }}</dt>
+          <dd class="mt-2 text-xl font-semibold text-[var(--ds-text)]">{{ card.value }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="grid gap-5 xl:grid-cols-3">
+      <div class="ds-card p-5">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-base font-semibold text-[var(--ds-text)]">Competências em risco</h2>
+          <span class="font-mono text-xs font-semibold uppercase text-[var(--ds-text-soft)]">{{ expiringQualifications.length }} registos</span>
+        </div>
+        <div v-if="expiringQualifications.length" class="mt-5 space-y-3">
+          <article v-for="qualification in expiringQualifications" :key="qualification.id" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
+            <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
-                <div class="text-sm font-semibold text-slate-900">{{ qualification.user?.name }}</div>
-                <div class="text-xs text-slate-500">{{ qualification.capability }} · {{ qualification.department?.name || 'Sem departamento' }}</div>
+                <div class="text-sm font-semibold text-[var(--ds-text)]">{{ qualification.user?.name }}</div>
+                <div class="mt-1 text-xs text-[var(--ds-text-muted)]">{{ qualification.capability }} · {{ qualification.department?.name || 'Sem departamento' }}</div>
               </div>
-              <div class="text-right">
+              <div class="md:text-right">
                 <div :class="['inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold', statusTone(qualification.monitoring_status)]">
                   {{ statusLabel(qualification.monitoring_status) }}
                 </div>
-                <div class="mt-2 text-sm text-amber-700">Válida até {{ formatDate(qualification.authorized_until) }}</div>
-                <div class="mt-1 text-xs text-slate-500">{{ expiryLabel(qualification.days_until_expiry) }}</div>
+                <div class="mt-2 text-sm font-semibold text-[var(--ds-text)]">Válida até {{ formatDate(qualification.authorized_until) }}</div>
+                <div class="mt-1 text-xs text-[var(--ds-text-soft)]">{{ expiryLabel(qualification.days_until_expiry) }}</div>
               </div>
             </div>
           </article>
         </div>
-        <div v-else class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
+        <div v-else class="mt-5 rounded-lg border border-dashed border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-8 text-center text-sm font-medium text-[var(--ds-text-muted)]">
           Nenhuma competência com renovação próxima.
         </div>
       </div>
 
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-slate-900">Plano de follow-up</h2>
-          <span class="text-sm text-slate-500">{{ qualificationFollowUps.length }} registos</span>
+      <div class="ds-card p-5">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-base font-semibold text-[var(--ds-text)]">Plano de follow-up</h2>
+          <span class="font-mono text-xs font-semibold uppercase text-[var(--ds-text-soft)]">{{ qualificationFollowUps.length }} registos</span>
         </div>
-        <div v-if="qualificationFollowUps.length" class="mt-6 space-y-4">
-          <article v-for="qualification in qualificationFollowUps" :key="qualification.id" class="rounded-2xl border border-slate-200 p-4">
-            <div class="flex flex-col gap-3">
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <div class="text-sm font-semibold text-slate-900">{{ qualification.user?.name }}</div>
-                  <div class="text-xs text-slate-500">{{ qualification.capability }}</div>
-                </div>
-                <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium', followUpTone(qualification.follow_up_state)]">
-                  {{ followUpLabel(qualification.follow_up_state) }}
-                </span>
+        <div v-if="qualificationFollowUps.length" class="mt-5 space-y-3">
+          <article v-for="qualification in qualificationFollowUps" :key="qualification.id" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="text-sm font-semibold text-[var(--ds-text)]">{{ qualification.user?.name }}</div>
+                <div class="mt-1 text-xs text-[var(--ds-text-muted)]">{{ qualification.capability }}</div>
               </div>
-              <div class="text-sm text-slate-600">
-                Próxima ação até <span class="font-semibold text-slate-900">{{ formatDate(qualification.follow_up_due_at) }}</span>
-              </div>
-              <div :class="['inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-medium', readinessTone(qualification.renewal_readiness)]">
-                {{ readinessLabel(qualification.renewal_readiness) }}
-              </div>
+              <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium', followUpTone(qualification.follow_up_state)]">
+                {{ followUpLabel(qualification.follow_up_state) }}
+              </span>
+            </div>
+            <div class="mt-3 text-sm text-[var(--ds-text-muted)]">
+              Próxima ação até <span class="font-semibold text-[var(--ds-text)]">{{ formatDate(qualification.follow_up_due_at) }}</span>
+            </div>
+            <div :class="['mt-3 inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-medium', readinessTone(qualification.renewal_readiness)]">
+              {{ readinessLabel(qualification.renewal_readiness) }}
             </div>
           </article>
         </div>
-        <div v-else class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
+        <div v-else class="mt-5 rounded-lg border border-dashed border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-8 text-center text-sm font-medium text-[var(--ds-text-muted)]">
           Nenhum follow-up de competência com ação imediata.
         </div>
       </div>
 
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-slate-900">Prontidão para renovação</h2>
-          <span class="text-sm text-slate-500">{{ renewalReadyQualifications.length }} registos</span>
+      <div class="ds-card p-5">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-base font-semibold text-[var(--ds-text)]">Prontidão para renovação</h2>
+          <span class="font-mono text-xs font-semibold uppercase text-[var(--ds-text-soft)]">{{ renewalReadyQualifications.length }} registos</span>
         </div>
-        <div v-if="renewalReadyQualifications.length" class="mt-6 space-y-4">
-          <article v-for="qualification in renewalReadyQualifications" :key="qualification.id" class="rounded-2xl border border-slate-200 p-4">
-            <div class="flex flex-col gap-2">
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <div class="text-sm font-semibold text-slate-900">{{ qualification.user?.name }}</div>
-                  <div class="text-xs text-slate-500">{{ qualification.capability }}</div>
-                </div>
-                <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium', readinessTone(qualification.renewal_readiness)]">
-                  {{ readinessLabel(qualification.renewal_readiness) }}
-                </span>
+        <div v-if="renewalReadyQualifications.length" class="mt-5 space-y-3">
+          <article v-for="qualification in renewalReadyQualifications" :key="qualification.id" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="text-sm font-semibold text-[var(--ds-text)]">{{ qualification.user?.name }}</div>
+                <div class="mt-1 text-xs text-[var(--ds-text-muted)]">{{ qualification.capability }}</div>
               </div>
-              <div class="text-sm text-slate-600">
-                Evidência: <span class="font-medium text-slate-900">{{ qualification.training_reference || 'Não registada' }}</span>
-              </div>
+              <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium', readinessTone(qualification.renewal_readiness)]">
+                {{ readinessLabel(qualification.renewal_readiness) }}
+              </span>
+            </div>
+            <div class="mt-3 text-sm text-[var(--ds-text-muted)]">
+              Evidência: <span class="font-semibold text-[var(--ds-text)]">{{ qualification.training_reference || 'Não registada' }}</span>
             </div>
           </article>
         </div>
-        <div v-else class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
+        <div v-else class="mt-5 rounded-lg border border-dashed border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-8 text-center text-sm font-medium text-[var(--ds-text-muted)]">
           Nenhuma renovação requer ação adicional neste momento.
         </div>
       </div>
     </section>
 
-    <section class="grid gap-6 xl:grid-cols-2">
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-slate-900">Avaliações de fornecedores em revisão</h2>
-          <span class="text-sm text-slate-500">{{ dueSupplierAssessments.length }} registos</span>
+    <section class="grid gap-5 xl:grid-cols-2">
+      <div class="ds-card p-5">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-base font-semibold text-[var(--ds-text)]">Avaliações de fornecedores em revisão</h2>
+          <span class="font-mono text-xs font-semibold uppercase text-[var(--ds-text-soft)]">{{ dueSupplierAssessments.length }} registos</span>
         </div>
-        <div v-if="dueSupplierAssessments.length" class="mt-6 space-y-4">
-          <article v-for="assessment in dueSupplierAssessments" :key="assessment.id" class="rounded-2xl border border-slate-200 p-4">
-            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div v-if="dueSupplierAssessments.length" class="mt-5 space-y-3">
+          <article v-for="assessment in dueSupplierAssessments" :key="assessment.id" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
+            <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
-                <div class="text-sm font-semibold text-slate-900">{{ assessment.supplier?.name }}</div>
-                <div class="text-xs text-slate-500">{{ assessment.department?.name || 'Cobertura transversal' }} · Risco {{ assessment.risk_level }}</div>
+                <div class="text-sm font-semibold text-[var(--ds-text)]">{{ assessment.supplier?.name }}</div>
+                <div class="mt-1 text-xs text-[var(--ds-text-muted)]">{{ assessment.department?.name || 'Cobertura transversal' }} · Risco {{ assessment.risk_level }}</div>
               </div>
-              <div class="text-right">
-                <div class="text-sm text-cyan-700">Rever até {{ formatDate(assessment.next_review_at) }}</div>
-                <div class="mt-1 text-xs text-slate-500">Score {{ assessment.total_score }}/100 · {{ assessment.status }}</div>
+              <div class="md:text-right">
+                <div class="text-sm font-semibold text-[var(--ds-text)]">Rever até {{ formatDate(assessment.next_review_at) }}</div>
+                <div class="mt-1 text-xs text-[var(--ds-text-soft)]">Score {{ assessment.total_score }}/100 · {{ assessment.status }}</div>
               </div>
             </div>
           </article>
         </div>
-        <div v-else class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
+        <div v-else class="mt-5 rounded-lg border border-dashed border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-8 text-center text-sm font-medium text-[var(--ds-text-muted)]">
           Nenhuma avaliação de fornecedor requer revisão imediata.
         </div>
       </div>
 
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-slate-900">Recepções com não conformidade</h2>
-          <span class="text-sm text-slate-500">{{ receivingNonConformities.length }} registos</span>
+      <div class="ds-card p-5">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-base font-semibold text-[var(--ds-text)]">Recepções com não conformidade</h2>
+          <span class="font-mono text-xs font-semibold uppercase text-[var(--ds-text-soft)]">{{ receivingNonConformities.length }} registos</span>
         </div>
-        <div v-if="receivingNonConformities.length" class="mt-6 space-y-4">
-          <article v-for="record in receivingNonConformities" :key="record.id" class="rounded-2xl border border-slate-200 p-4">
-            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div v-if="receivingNonConformities.length" class="mt-5 space-y-3">
+          <article v-for="record in receivingNonConformities" :key="record.id" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
+            <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <div class="flex flex-wrap items-center gap-2">
-                  <div class="text-sm font-semibold text-slate-900">{{ record.title }}</div>
+                  <div class="text-sm font-semibold text-[var(--ds-text)]">{{ record.title }}</div>
                   <span :class="['inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold', receivingSeverityTone(record.severity)]">
                     {{ receivingSeverityLabel(record.severity) }}
                   </span>
                 </div>
-                <div class="mt-1 text-xs text-slate-500">
+                <div class="mt-1 text-xs text-[var(--ds-text-muted)]">
                   {{ record.nc_number }} · {{ record.department?.name || 'Sem departamento' }} · lote/referência {{ record.batch_number || 'N/D' }}
                 </div>
               </div>
-              <div class="text-right">
-                <div class="text-sm text-slate-900">{{ formatDate(record.reported_at) }}</div>
-                <div class="mt-1 text-xs text-slate-500">Estado {{ record.status }}</div>
+              <div class="md:text-right">
+                <div class="text-sm font-semibold text-[var(--ds-text)]">{{ formatDate(record.reported_at) }}</div>
+                <div class="mt-1 text-xs text-[var(--ds-text-soft)]">Estado {{ record.status }}</div>
               </div>
             </div>
           </article>
         </div>
-        <div v-else class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
+        <div v-else class="mt-5 rounded-lg border border-dashed border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-8 text-center text-sm font-medium text-[var(--ds-text-muted)]">
           Nenhuma recepção com não conformidade aberta.
         </div>
       </div>
 
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-slate-900">Documentos com revisão próxima</h2>
-          <span class="text-sm text-slate-500">{{ dueDocumentReviews.length }} registos</span>
+      <div class="ds-card p-5 xl:col-span-2">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-base font-semibold text-[var(--ds-text)]">Documentos com revisão próxima</h2>
+          <span class="font-mono text-xs font-semibold uppercase text-[var(--ds-text-soft)]">{{ dueDocumentReviews.length }} registos</span>
         </div>
-        <div v-if="dueDocumentReviews.length" class="mt-6 space-y-4">
-          <article v-for="document in dueDocumentReviews" :key="document.id" class="rounded-2xl border border-slate-200 p-4">
+        <div v-if="dueDocumentReviews.length" class="mt-5 divide-y divide-[var(--ds-border)] overflow-hidden rounded-lg border border-[var(--ds-border)]">
+          <article v-for="document in dueDocumentReviews" :key="document.id" class="bg-[var(--ds-panel-subtle)] px-4 py-3">
             <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
-                <div class="text-sm font-semibold text-slate-900">{{ document.name }}</div>
-                <div class="text-xs text-slate-500">Responsável: {{ document.owner?.name || 'Sem responsável' }}</div>
+                <div class="text-sm font-semibold text-[var(--ds-text)]">{{ document.name }}</div>
+                <div class="mt-1 text-xs text-[var(--ds-text-muted)]">Responsável: {{ document.owner?.name || 'Sem responsável' }}</div>
               </div>
-              <div class="text-sm text-cyan-700">Rever até {{ formatDate(document.review_due_at) }}</div>
+              <div class="text-sm font-semibold text-[var(--ds-text)]">Rever até {{ formatDate(document.review_due_at) }}</div>
             </div>
           </article>
         </div>
-        <div v-else class="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-500">
+        <div v-else class="mt-5 rounded-lg border border-dashed border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-8 text-center text-sm font-medium text-[var(--ds-text-muted)]">
           Nenhum documento crítico com revisão próxima.
         </div>
       </div>
@@ -195,7 +206,7 @@
 
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import { Link } from '@inertiajs/vue3'
 import { computed } from 'vue'
 
@@ -228,6 +239,9 @@ const cards = computed(() => [
   { label: 'NCs de recepção abertas', value: props.summary.receiving_non_conformities_open },
   { label: 'Documentos com revisão próxima', value: props.summary.documents_due_review },
 ])
+
+const priorityCards = computed(() => cards.value.slice(0, 5))
+const supportingCards = computed(() => cards.value.slice(5))
 
 const formatDate = (value) => value ? new Date(value).toLocaleDateString('pt-PT') : '—'
 const statusLabel = (status) => ({

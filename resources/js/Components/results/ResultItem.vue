@@ -1,302 +1,340 @@
 <script setup>
-import { computed } from "vue";
-import Combobox from '@/Components/combobox.vue';
-import { TrashIcon } from "@heroicons/vue/24/outline";
+import Combobox from "@/Components/combobox.vue";
+import { ResultsDataService } from "@/Services/ResultsDataService.js";
 import { loadSelectOptions, optionMappers } from "@/Utils/selectOptions";
-import { ResultsDataService } from '@/Services/ResultsDataService.js';
+import { computed } from "vue";
+import {
+  CalculatorIcon,
+  ExclamationTriangleIcon,
+  TrashIcon,
+  VariableIcon,
+} from "@heroicons/vue/24/outline";
 
 const props = defineProps({
-    result: Object,
-    index: Number,
-    form: Object,
-    record: Object,
-    isInputVariable: Boolean,
-    isReadOnly: {
-        type: Boolean,
-        default: false
-    }
+  result: {
+    type: Object,
+    required: true,
+  },
+  index: {
+    type: Number,
+    required: true,
+  },
+  form: {
+    type: Object,
+    required: true,
+  },
+  record: {
+    type: Object,
+    default: () => ({}),
+  },
+  isInputVariable: Boolean,
+  isReadOnly: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-const emit = defineEmits(['remove', 'update']);
+const emit = defineEmits(["remove", "update"]);
+
+const isOutOfRange = computed(() => {
+  const value = Number.parseFloat(props.result.inserted_value);
+  if (Number.isNaN(value)) {
+    return false;
+  }
+
+  if (props.result.min_ref_value !== null && value < props.result.min_ref_value) {
+    return true;
+  }
+
+  return (
+    props.result.max_ref_value !== null &&
+    value > props.result.max_ref_value
+  );
+});
+
+const isQualitative = computed(() => {
+  return ResultsDataService.isQualitativeResult(props.result);
+});
+
+const qualitativeOptions = computed(() => {
+  return ResultsDataService.getQualitativeOptions(props.result);
+});
+
+const formattedInsertedValue = computed(() => {
+  return ResultsDataService.formatResultValue(
+    props.result.inserted_value,
+    props.result,
+  );
+});
+
+const displayFormatLabel = computed(() => {
+  return ResultsDataService.getDisplayFormat(props.result) === "scientific"
+    ? "Notação normal"
+    : "Notação científica";
+});
 
 function normalizeCalculationParameters(value) {
-    if (Array.isArray(value)) {
-        return value;
-    }
+  if (Array.isArray(value)) {
+    return value;
+  }
 
-    if (!value) {
-        return [];
-    }
+  if (!value) {
+    return [];
+  }
 
-    try {
-        const parsed = JSON.parse(value);
-
-        return Array.isArray(parsed) ? parsed : [];
-    } catch {
-        return [];
-    }
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 function loadParameters(query, setOptions) {
-    return loadSelectOptions('/parameters/getParameter', query, setOptions, result => ({
-        value: result.id,
-        label: result.code,
-        name: result.name,
-        code: result.code,
-        result_is_qualitative: result.result_is_qualitative,
-        result_options: result.result_is_qualitative ? ['Presença', 'Ausência'] : [],
-        decimal_places: result.decimal_places,
-        result_type: result.result_type,
-        requires_calculation: result.requires_calculation,
-        formula_id: result.formula_id,
-        formula_expression: result.formula_expression,
-        calculation_parameters: normalizeCalculationParameters(result.calculation_parameters),
-    }));
+  return loadSelectOptions(
+    "/parameters/getParameter",
+    query,
+    setOptions,
+    (result) => ({
+      value: result.id,
+      label: result.code,
+      name: result.name,
+      code: result.code,
+      result_is_qualitative: result.result_is_qualitative,
+      result_options: result.result_is_qualitative ? ["Presença", "Ausência"] : [],
+      decimal_places: result.decimal_places,
+      result_type: result.result_type,
+      requires_calculation: result.requires_calculation,
+      formula_id: result.formula_id,
+      formula_expression: result.formula_expression,
+      calculation_parameters: normalizeCalculationParameters(
+        result.calculation_parameters,
+      ),
+    }),
+  );
 }
 
 function loadUnits(query, setOptions) {
-    return loadSelectOptions('/units/getUnit', query, setOptions, result => ({
-        ...optionMappers.code(result),
-        name: result.name,
-    }));
+  return loadSelectOptions("/units/getUnit", query, setOptions, (result) => ({
+    ...optionMappers.code(result),
+    name: result.name,
+  }));
 }
 
-// Determine if result is out of range
-const isOutOfRange = computed(() => {
-    const value = parseFloat(props.result.inserted_value);
-    if (isNaN(value)) return false;
-    
-    if (props.result.min_ref_value !== null && value < props.result.min_ref_value) return true;
-    if (props.result.max_ref_value !== null && value > props.result.max_ref_value) return true;
-    
-    return false;
-});
+function handleValueChange(value) {
+  props.result.inserted_value = value;
+  emit("update", props.index, props.result);
+}
 
-const isQualitative = computed(() => ResultsDataService.isQualitativeResult(props.result));
+function applyQualitativeOption(value) {
+  handleValueChange(value);
+}
 
-const qualitativeOptions = computed(() => ResultsDataService.getQualitativeOptions(props.result));
+function toggleDisplayFormat() {
+  ResultsDataService.setDisplayFormat(
+    props.result,
+    ResultsDataService.getDisplayFormat(props.result) === "scientific"
+      ? "standard"
+      : "scientific",
+  );
+  emit("update", props.index, props.result);
+}
 
-const formattedInsertedValue = computed(() => ResultsDataService.formatResultValue(props.result.inserted_value, props.result));
+function handleParameterSelect(selected) {
+  props.result.parameter_id = selected;
+  props.result.result_is_qualitative = Boolean(selected?.result_is_qualitative);
+  props.result.result_options =
+    selected?.result_options ||
+    (selected?.result_is_qualitative ? ["Presença", "Ausência"] : []);
+  props.result.decimal_places =
+    selected?.decimal_places ?? props.result.decimal_places;
+  props.result.result_type = selected?.result_type ?? props.result.result_type;
+  props.result.requires_calculation = Boolean(selected?.requires_calculation);
 
-const displayFormatLabel = computed(() => (
-    ResultsDataService.getDisplayFormat(props.result) === 'scientific'
-        ? 'Notação normal'
-        : 'Notação científica'
-));
+  if (selected?.unit_id) {
+    props.result.unit_id = selected.unit_id;
+  }
 
-// Handle value change
-const handleValueChange = (value) => {
-    props.result.inserted_value = value;
-    emit('update', props.index, props.result);
-};
-
-const applyQualitativeOption = (value) => {
-    handleValueChange(value);
-};
-
-const toggleDisplayFormat = () => {
-    ResultsDataService.setDisplayFormat(
-        props.result,
-        ResultsDataService.getDisplayFormat(props.result) === 'scientific' ? 'standard' : 'scientific'
-    );
-
-    emit('update', props.index, props.result);
-};
-
-// Handle parameter selection
-const handleParameterSelect = (selected) => {
-    props.result.parameter_id = selected;
-    props.result.result_is_qualitative = Boolean(selected?.result_is_qualitative);
-    props.result.result_options = selected?.result_options || (selected?.result_is_qualitative ? ['Presença', 'Ausência'] : []);
-    props.result.decimal_places = selected?.decimal_places ?? props.result.decimal_places;
-    props.result.result_type = selected?.result_type ?? props.result.result_type;
-    props.result.requires_calculation = Boolean(selected?.requires_calculation);
-    
-    // You might want to auto-fill unit or other fields based on parameter
-    if (selected && selected.unit_id) {
-        props.result.unit_id = selected.unit_id;
-    }
-    
-    emit('update', props.index, props.result);
-};
+  emit("update", props.index, props.result);
+}
 </script>
 
 <template>
-<div class="rounded-[1.5rem] border p-4 shadow-sm transition-colors"
-     :class="{
-         'border-primary-200 bg-primary-50/70 dark:border-primary-500/25 dark:bg-primary-500/10': isInputVariable,
-         'border-red-200 bg-red-50/80 dark:border-red-500/25 dark:bg-red-500/10': isOutOfRange && !isInputVariable,
-         'border-slate-200 bg-white/95 hover:border-primary-300 dark:border-slate-800 dark:bg-slate-950/80 dark:hover:border-primary-500/40': !isInputVariable && !isOutOfRange,
-         'bg-slate-50 dark:bg-slate-900/80': isReadOnly
-     }">
-    <div class="mb-4 flex items-start justify-between gap-4">
-        <div class="flex flex-wrap items-center gap-2">
-            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-bold text-slate-700 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700">
-                {{ index + 1 }}
-            </div>
-            <span v-if="isInputVariable" class="rounded-full bg-primary-100 px-2.5 py-1 text-xs font-semibold text-primary-900 dark:bg-primary-500/15 dark:text-primary-100">
-                Variável de Entrada
-            </span>
-            <span v-if="result.requires_calculation" class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900 dark:bg-amber-500/15 dark:text-amber-100">
-                Calculado
-            </span>
-        </div>
-        
-        <button v-if="!isReadOnly" 
-                @click="$emit('remove', index)"
-                class="rounded-full p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-300">
-            <TrashIcon class="h-5 w-5" />
-        </button>
+  <article
+    :class="[
+      'rounded-lg border p-4',
+      isOutOfRange
+        ? 'border-red-300 bg-red-50/60 dark:border-red-500/30 dark:bg-red-500/10'
+        : isInputVariable
+          ? 'border-[rgb(var(--primary-300-rgb))] bg-[var(--ds-panel-subtle)]'
+          : 'border-[var(--ds-border)] bg-[var(--ds-panel-raised)]',
+    ]"
+  >
+    <div class="flex items-start justify-between gap-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="grid h-7 w-7 place-items-center rounded-full border border-[var(--ds-border-strong)] text-xs font-bold text-[var(--ds-text)]">
+          {{ index + 1 }}
+        </span>
+        <span v-if="isInputVariable" class="ds-chip">
+          <VariableIcon class="h-3.5 w-3.5" />
+          Variável de entrada
+        </span>
+        <span v-if="result.requires_calculation" class="ds-chip">
+          <CalculatorIcon class="h-3.5 w-3.5" />
+          Calculado
+        </span>
+      </div>
+      <button
+        v-if="!isReadOnly"
+        type="button"
+        class="ds-icon-button text-red-700 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10"
+        title="Remover parâmetro"
+        @click="emit('remove', index)"
+      >
+        <TrashIcon class="h-4 w-4" />
+        <span class="sr-only">Remover parâmetro</span>
+      </button>
     </div>
 
-    <!-- Parameter Selection -->
-    <div class="mb-4">
-        <label class="mb-1.5 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
-            Parâmetro
-        </label>
-        <Combobox v-if="!isReadOnly"
-                  :hasError="form.errors[`results.${index}.parameter_id`]"
-                  v-model="result.parameter_id"
-                  :load-options="loadParameters"
-                  @update:model-value="handleParameterSelect"
-                  :disable-input="result.requires_calculation"
-                  :placeholder="isInputVariable ? 'Seleccione a variável de entrada' : 'Seleccione o parâmetro'"
+    <div class="mt-4 grid gap-4 lg:grid-cols-2">
+      <div class="ds-field-group">
+        <label class="ds-field-label">Parâmetro</label>
+        <Combobox
+          v-if="!isReadOnly"
+          v-model="result.parameter_id"
+          class="mt-2"
+          :has-error="form.errors['results.' + index + '.parameter_id']"
+          :load-options="loadParameters"
+          :disable-input="result.requires_calculation"
+          :placeholder="isInputVariable ? 'Selecione a variável de entrada' : 'Selecione o parâmetro'"
+          @update:model-value="handleParameterSelect"
         />
-        <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
-            {{ result.parameter_id?.code }} - {{ result.parameter_id?.name }}
-        </div>
-        <p v-if="form.errors[`results.${index}.parameter_id`]" 
-           class="mt-1.5 text-xs font-medium text-red-600 dark:text-red-300">
-            {{ form.errors[`results.${index}.parameter_id`] }}
+        <p v-else class="mt-2 text-sm font-bold text-[var(--ds-text)]">
+          {{ result.parameter_id?.code }} - {{ result.parameter_id?.name }}
         </p>
-    </div>
+        <p
+          v-if="form.errors['results.' + index + '.parameter_id']"
+          class="ds-field-error"
+        >
+          {{ form.errors["results." + index + ".parameter_id"] }}
+        </p>
+      </div>
 
-    <!-- Unit Selection -->
-    <div class="mb-4" v-if="!isInputVariable && !result.requires_calculation">
-        <label class="mb-1.5 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
-            Unidade
-        </label>
-        <Combobox v-if="!isReadOnly"
-                  :hasError="form.errors[`results.${index}.unit_id`]"
-                  v-model="result.unit_id"
-                  :load-options="loadUnits"
-                  placeholder="Seleccione a unidade"
+      <div
+        v-if="!isInputVariable && !result.requires_calculation"
+        class="ds-field-group"
+      >
+        <label class="ds-field-label">Unidade</label>
+        <Combobox
+          v-if="!isReadOnly"
+          v-model="result.unit_id"
+          class="mt-2"
+          :has-error="form.errors['results.' + index + '.unit_id']"
+          :load-options="loadUnits"
+          placeholder="Selecione a unidade"
         />
-        <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
-            {{ result.unit_id?.code || '-' }}
-        </div>
-    </div>
+        <p v-else class="mt-2 text-sm font-bold text-[var(--ds-text)]">
+          {{ result.unit_id?.code || "-" }}
+        </p>
+      </div>
 
-    <!-- Value Input -->
-    <div class="mb-4">
-        <label class="mb-1.5 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
-            Resultado
-            <span v-if="isInputVariable" class="ml-1 text-xs text-primary-700 dark:text-primary-300">
-                (Variável para cálculo)
-            </span>
-            <span v-if="result.requires_calculation" class="ml-1 text-xs text-amber-700 dark:text-amber-300">
-                (Calculado automaticamente)
-            </span>
+      <div class="ds-field-group" :class="{ 'lg:col-span-2': isInputVariable || result.requires_calculation }">
+        <label class="ds-field-label">
+          Resultado
+          <span v-if="isInputVariable" class="font-semibold text-[var(--lims-instrument)]">
+            / variável de cálculo
+          </span>
         </label>
-        
-        <div v-if="!isReadOnly">
-            <div v-if="isQualitative" class="mb-3 flex flex-wrap items-center gap-2">
-                <button
-                    v-for="option in qualitativeOptions"
-                    :key="option"
-                    type="button"
-                    @click="applyQualitativeOption(option)"
-                    :class="[
-                        'rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-inset transition',
-                        result.inserted_value === option
-                            ? 'bg-primary-900 text-white ring-primary-900 dark:bg-primary-400 dark:text-slate-950 dark:ring-primary-300'
-                            : 'bg-white text-[#31413b] ring-[#ded3bf] hover:bg-primary-50 hover:text-primary-900 dark:bg-slate-900 dark:text-[#d7e2dd] dark:ring-[#25443c] dark:hover:bg-primary-500/10 dark:hover:text-primary-200'
-                    ]"
-                >
-                    {{ option }}
-                </button>
-            </div>
 
-            <input 
-                v-model="result.inserted_value"
-                @input="handleValueChange($event.target.value)"
-                type="text"
-                :disabled="result.requires_calculation"
-                :class="[
-                    'block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium shadow-sm ring-1 ring-inset transition focus:ring-2 focus:ring-inset dark:bg-slate-900/90 dark:text-slate-100 dark:placeholder:text-slate-500',
-                    'disabled:bg-slate-100 disabled:text-slate-500 disabled:ring-slate-200 dark:disabled:bg-slate-800 dark:disabled:text-slate-500 dark:disabled:ring-slate-700',
-                    isOutOfRange ? 'text-red-900 ring-red-300 placeholder-red-300 focus:ring-red-500 dark:text-red-200 dark:ring-red-500/40' :
-                    isInputVariable ? 'ring-primary-300 focus:ring-primary-600 dark:ring-primary-500/35' :
-                    'text-slate-900 ring-slate-300 focus:ring-primary-600 dark:ring-slate-700'
-                ]"
-                :placeholder="result.requires_calculation ? 'Será calculado automaticamente' : 'Introduza o resultado'"
-            />
+        <template v-if="!isReadOnly">
+          <div v-if="isQualitative" class="mt-2 flex flex-wrap gap-2">
+            <button
+              v-for="option in qualitativeOptions"
+              :key="option"
+              type="button"
+              :class="[
+                'ds-button',
+                result.inserted_value === option
+                  ? 'ds-button-primary'
+                  : 'ds-button-secondary',
+              ]"
+              @click="applyQualitativeOption(option)"
+            >
+              {{ option }}
+            </button>
+          </div>
 
-            <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
-                <p v-if="result.inserted_value && formattedInsertedValue !== result.inserted_value"
-                   class="text-xs font-semibold text-[#51645d] dark:text-[#b7c6c0]">
-                    Visualização: {{ formattedInsertedValue }}
-                </p>
-
-                <button
-                    v-if="!isQualitative"
-                    type="button"
-                    @click="toggleDisplayFormat"
-                    class="ml-auto rounded-full border border-[#ded3bf] bg-white px-3 py-1.5 text-xs font-semibold text-[#31413b] transition hover:border-primary-500 hover:text-primary-900 dark:border-[#25443c] dark:bg-slate-900 dark:text-[#d7e2dd] dark:hover:border-primary-400 dark:hover:text-primary-200"
-                >
-                    {{ displayFormatLabel }}
-                </button>
-            </div>
-            
-            <!-- Reference Range Warning -->
-            <div v-if="isOutOfRange" class="mt-2 flex items-center text-xs font-semibold text-red-600 dark:text-red-300">
-                <svg class="mr-1 h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-                Fora do intervalo de referência
-            </div>
-            
-            <!-- Reference Range Display -->
-            <div v-if="!isInputVariable && (result.min_ref_value || result.max_ref_value)"
-                 class="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                Referência: 
-                <span v-if="result.min_ref_value && result.max_ref_value">
-                    {{ result.min_ref_value }} - {{ result.max_ref_value }} {{ result.unit_id?.code }}
-                </span>
-                <span v-else-if="result.min_ref_value">
-                    ≥ {{ result.min_ref_value }} {{ result.unit_id?.code }}
-                </span>
-                <span v-else-if="result.max_ref_value">
-                    ≤ {{ result.max_ref_value }} {{ result.unit_id?.code }}
-                </span>
-            </div>
-        </div>
-        
-        <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold dark:border-slate-800 dark:bg-slate-900"
-             :class="{ 'text-red-600 dark:text-red-300': isOutOfRange, 'text-slate-700 dark:text-slate-200': !isOutOfRange }">
-            {{ formattedInsertedValue || '-' }} {{ result.unit_id?.code }}
-        </div>
-    </div>
-
-    <!-- Uncertainty Input -->
-
-    <div class="mb-2">
-        <label class="mb-1.5 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]" :for="`item-${index}-error`">Incerteza</label>
-
+          <div v-else class="mt-2 flex gap-2">
             <input
-                v-model="result.uncertainty_value"
-                type="text"
-                :name="`item-${index}-error`"
-                :id="`item-${index}-error`"
-                class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500">
-            
-       
+              v-model="result.inserted_value"
+              class="ds-field"
+              :class="{ 'border-red-400 text-red-800 dark:text-red-200': isOutOfRange }"
+              :disabled="result.requires_calculation"
+              :placeholder="result.requires_calculation ? 'Calculado automaticamente' : 'Introduza o resultado'"
+              @input="handleValueChange($event.target.value)"
+            />
+            <button
+              type="button"
+              class="ds-button ds-button-secondary shrink-0"
+              @click="toggleDisplayFormat"
+            >
+              {{ displayFormatLabel }}
+            </button>
+          </div>
+        </template>
+        <p v-else class="mt-2 text-sm font-bold text-[var(--ds-text)]">
+          {{ formattedInsertedValue || "-" }} {{ result.unit_id?.code }}
+        </p>
+
+        <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <p
+            v-if="result.inserted_value && formattedInsertedValue !== result.inserted_value"
+            class="ds-field-hint"
+          >
+            Visualização: {{ formattedInsertedValue }}
+          </p>
+          <p
+            v-if="!isInputVariable && (result.min_ref_value || result.max_ref_value)"
+            class="text-xs font-semibold text-[var(--ds-text-muted)]"
+          >
+            Referência:
+            <template v-if="result.min_ref_value && result.max_ref_value">
+              {{ result.min_ref_value }} - {{ result.max_ref_value }}
+            </template>
+            <template v-else-if="result.min_ref_value">≥ {{ result.min_ref_value }}</template>
+            <template v-else>≤ {{ result.max_ref_value }}</template>
+            {{ result.unit_id?.code }}
+          </p>
+        </div>
+
+        <p
+          v-if="isOutOfRange"
+          class="mt-2 flex items-center gap-2 text-xs font-bold text-[var(--lims-critical)]"
+        >
+          <ExclamationTriangleIcon class="h-4 w-4" />
+          Fora do intervalo de referência
+        </p>
+      </div>
+
+      <div class="ds-field-group lg:col-span-2">
+        <label class="ds-field-label" :for="'item-' + index + '-uncertainty'">
+          Incerteza
+        </label>
+        <input
+          :id="'item-' + index + '-uncertainty'"
+          v-model="result.uncertainty_value"
+          class="ds-field mt-2"
+          :disabled="isReadOnly"
+          inputmode="decimal"
+        />
+      </div>
     </div>
 
-    <!-- Error Display -->
-    <div v-if="form.errors[`results.${index}.inserted_value`]" 
-         class="mt-2 text-xs font-medium text-red-600 dark:text-red-300">
-        {{ form.errors[`results.${index}.inserted_value`] }}
-    </div>
-</div>
+    <p
+      v-if="form.errors['results.' + index + '.inserted_value']"
+      class="ds-field-error mt-3"
+    >
+      {{ form.errors["results." + index + ".inserted_value"] }}
+    </p>
+  </article>
 </template>

@@ -37,6 +37,7 @@ class AdminPagesSmokeTest extends TestCase
             route('roles.index', ['filter' => 'trashed']),
             route('permissions.index'),
             route('permissions.index', ['filter' => 'trashed']),
+            route('archived_documents.index'),
             route('samples.index'),
             route('qms.index'),
             route('supplier-assessments.index'),
@@ -83,5 +84,20 @@ class AdminPagesSmokeTest extends TestCase
         }
 
         $this->assertSame([], $missingRoutes, json_encode($missingRoutes, JSON_PRETTY_PRINT));
+    }
+
+    public function test_system_activity_static_endpoints_are_not_shadowed_by_the_detail_route(): void
+    {
+        $user = $this->verifiedAdmin();
+
+        $this->actingAs($user)
+            ->getJson(route('systemactivity.stats'))
+            ->assertOk()
+            ->assertJsonStructure(['total', 'today', 'yesterday', 'last_7_days', 'last_30_days']);
+
+        $this->actingAs($user)
+            ->getJson(route('systemactivity.cleanup.recommendations'))
+            ->assertOk()
+            ->assertJsonIsArray();
     }
 }

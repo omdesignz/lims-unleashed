@@ -10,9 +10,9 @@ class Matrix extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public CONST MENU_NAME = 'matrixes';
+    public const MENU_NAME = 'matrixes';
 
-     /**
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -31,10 +31,10 @@ class Matrix extends Model
     ];
 
     protected $table = 'matrixes';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
-
-     /**
+    /**
      * The attributes that should be cast.
      *
      * @var array<string, string>
@@ -43,7 +43,6 @@ class Matrix extends Model
         'charge_tax' => 'boolean',
         'withhold_tax' => 'boolean',
     ];
-
 
     /**
      * Profiles
@@ -55,15 +54,14 @@ class Matrix extends Model
         return $this->belongsToMany(Profile::class)->whereNull('matrix_profile.deleted_at')->withPivot('matrix_id', 'matrix', 'profile_id', 'profile')->withTimestamps();
     }
 
-    public function getPriceBasedOnProfilesAttribute()
+    public function getPriceBasedOnProfilesAttribute(): float
     {
-        $profileIDs = collect($this->profiles)->pluck('id')->toArray();
+        $profiles = $this->relationLoaded('profiles')
+            ? $this->profiles
+            : $this->profiles()->with('parameters')->get();
 
-        $total_price = Profile::whereIn('id', $profileIDs)->sum('price');
-
-        return $total_price ?? 0;
+        return (float) $profiles->sum(fn (Profile $profile) => $profile->price_based_on_parameters);
     }
-
 
     /**
      * Products
@@ -77,16 +75,13 @@ class Matrix extends Model
 
     /**
      * Paramenters
-     *
-     * 
      */
     public function scopeParameters($q, $matrix_id)
     {
-        return $q->findOrFail($matrix_id)->profiles->map(function($item) {
+        return $q->findOrFail($matrix_id)->profiles->map(function ($item) {
             return $item->parameters->pluck('id');
         })->flatten()->toArray();
     }
-
 
     /**
      * Collections
@@ -103,12 +98,13 @@ class Matrix extends Model
         return $this->hasMany(MatrixProfile::class)->withTrashed();
     }
 
-     /**
+    /**
      * Tax Exemption
      *
      * @return Relationship
      */
-    public function exemption() {
+    public function exemption()
+    {
         return $this->belongsTo(TaxExemption::class, 'exemption_id');
     }
 
@@ -117,7 +113,8 @@ class Matrix extends Model
      *
      * @return Relationship
      */
-    public function tax_category() {
+    public function tax_category()
+    {
         return $this->belongsTo(TaxType::class, 'tax_id');
     }
 

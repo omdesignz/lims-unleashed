@@ -24,16 +24,18 @@ class CustomerResource extends JsonResource
             'warehouse_id' => $this->warehouse_id,
             'warehouse' => WarehouseResource::make($this->whenLoaded('main_warehouse')),
             'warehouses' => WarehouseResource::collection($this->whenLoaded('warehouses')),
+            'created_at' => optional($this->created_at)?->toIso8601String(),
+            'updated_at' => optional($this->updated_at)?->toIso8601String(),
             'deleted' => $this->deleted_at ? true : false,
             'links' => [
                 'edit_path' => route('customers.edit', $this->id),
                 'delete_path' => route('customers.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('customers.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class ContractGuideRequest extends FormRequest
 {
@@ -17,62 +19,51 @@ class ContractGuideRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
+        $rules = [
+            'collection_id' => 'nullable|exists:lab_codes,id',
+            'customer_id' => 'required|exists:customers,id',
+            'warehouse_id' => 'required|exists:warehouses,id',
+            'guide_no' => 'nullable',
+            'ref_no' => 'nullable',
+            'entry_point' => 'nullable',
+            'collection_point' => 'nullable',
+            'du_no' => 'nullable',
+            'nif' => 'nullable',
+            'contact' => 'nullable',
+            'email' => 'nullable',
+            'bl' => 'nullable',
+            'obs' => 'nullable',
+            'date' => 'nullable|date_format:Y-m-d',
+            'extra_data' => 'nullable',
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'nullable|integer|exists:contract_guide_items,id',
+            'items.*.guide_id' => 'nullable|exists:contract_guides,id',
+            'items.*.product_id' => 'nullable|exists:products,id',
+            'items.*.country_id' => 'nullable|exists:countries,id',
+            'items.*.collection_id' => 'nullable|exists:lab_codes,id',
+            'items.*.bl' => 'nullable',
+            'items.*.lot' => 'nullable',
+            'items.*.manufacturer' => 'required',
+            'items.*.origin' => 'required',
+            'items.*.brand' => 'required',
+            'items.*.du_no' => 'nullable',
+            'items.*.obs' => 'nullable',
+            'items.*.date' => 'nullable|date_format:Y-m-d',
+        ];
+
         if ($this->isMethod('post')) {
-            $rules = [
+            $rules = array_merge($rules, [
                 'user_id' => 'required|exists:users,id',
                 'guide_month' => 'required',
-                'collection_id' => 'nullable|exists:lab_codes,id',
-                'customer_id' => 'required|exists:customers,id',
-                'warehouse_id' => 'required|exists:warehouses,id',
-                'guide_no' => 'nullable',
-                'ref_no' => 'nullable',
-                'entry_point' => 'nullable',
-                'collection_point' => 'nullable',
-                'du_no' => 'nullable',
-                'nif' => 'nullable',
-                'contact' => 'nullable',
-                'email' => 'nullable',
-                'bl' => 'nullable',
-                'date' => 'nullable|date_format:Y-m-d',
-                'extra_data' => 'nullable',
-                'items' => 'required|array|min:1',
-                'items.*.guide_id' => 'nullable|exists:contract_guides,id',
-                'items.*.product_id' => 'nullable|exists:products,id',
-                'items.*.country_id' => 'nullable|exists:countries,id',
-                'items.*.collection_id' => 'nullable|exists:lab_codes,id',
-                'items.*.bl' => 'nullable',    
-                'items.*.lot' => 'nullable',                                                                                                                                                                                                                                                   
-                'items.*.manufacturer' => 'required',                                                                                                                                                                                                                                                   
-                'items.*.origin' => 'required',                                                                                                                                                                                                                                                   
-                'items.*.brand' => 'required',                                                                                                                                                                                                                                                
-                'items.*.du_no' => 'nullable',                                                                                                                                                                                                                                                   
-                'items.*.obs' => 'nullable',                                                                                                                                                                                                                                                   
-                'items.*.date' => 'nullable',
-            ];
+            ]);
         } else {
-            $rules = [
+            $rules = array_merge($rules, [
                 'id' => 'required|exists:contract_guides,id',
-                'collection_id' => 'nullable|exists:lab_codes,id',
-                'customer_id' => 'required|exists:customers,id',
-                'warehouse_id' => 'required|exists:warehouses,id',
-                'guide_no' => 'nullable',
-                'ref_no' => 'nullable',
-                'entry_point' => 'nullable',
-                'collection_point' => 'nullable',
-                'du_no' => 'nullable',
-                'nif' => 'nullable',
-                'contact' => 'nullable',
-                'email' => 'nullable',
-                'bl' => 'nullable',
-                'obs' => 'nullable',
-                'date' => 'nullable|date_format:Y-m-d',
-                'extra_data' => 'nullable',
-
-            ];
+            ]);
         }
 
         return $rules;
@@ -80,10 +71,8 @@ class ContractGuideRequest extends FormRequest
 
     /**
      * Get custom attributes for validator errors.
-     *
-     * @return array
      */
-    public function attributes()
+    public function attributes(): array
     {
         return [
             'user_id' => trans('gestlab.general.labels.contract_guides.user_id'),
@@ -119,82 +108,62 @@ class ContractGuideRequest extends FormRequest
     }
 
     /**
- * Get the error messages for the defined validation rules.
- *
- * @return array<string, string>
- */
-public function messages(): array
-{
-    return [
-        'items.*.product_id.required' => 'É obrigatória a indicação de um valor para o campo produto',
-    ];
-}
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'items.*.product_id.required' => 'É obrigatória a indicação de um valor para o campo produto',
+        ];
+    }
 
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
+     * @param  Validator  $validator
      */
-    public function prepareForValidation()
+    protected function prepareForValidation(): void
     {
-        // dd(request()->all());
+        $items = collect($this->input('items', []))->map(function (array $item): array {
+            $country = $item['country_id'] ?? null;
 
-        if ($this->isMethod('post')) {
+            return [
+                'id' => $item['id'] ?? null,
+                'guide_id' => $item['guide_id'] ?? null,
+                'product_id' => $this->optionValue($item['product_id'] ?? null),
+                'country_id' => $this->optionValue($country),
+                'bl' => $item['bl'] ?? null,
+                'lot' => $item['lot'] ?? null,
+                'manufacturer' => $item['manufacturer'] ?? null,
+                'origin' => $item['origin'] ?? (is_array($country) ? ($country['label'] ?? null) : null),
+                'brand' => $item['brand'] ?? null,
+                'obs' => $item['obs'] ?? null,
+                'du_no' => $item['du_no'] ?? null,
+                'date' => $item['date'] ?? null,
+                'collection_id' => $this->optionValue($item['collection_id'] ?? null),
+            ];
+        })->all();
 
-            $this->merge([
-                'user_id' => auth()->user()->id ?? null,
-                'obs' => request()->obs,
-                'ref_no' => request()->ref_no,
-                'entry_point' => request()->entry_point,
-                'collection_point' => request()->collection_point,
-                'du_no' => request()->du_no,
-                'nif' => request()->nif,
-                'contact' => request()->contact,
-                'obs' => request()->obs,
-                'email' => request()->email,
-                'bl' => request()->bl,
-                'guide_month' => now()->format('Y'),
-                'collection_id' => !is_null(request()->collection_id) ? request()->collection_id['value'] : null,
-                'customer_id' => !is_null(request()->customer_id) ? request()->customer_id['value'] : null,
-                'warehouse_id' => !is_null(request()->warehouse_id) ? request()->warehouse_id['value'] : null,
-                'date' => now()->format('Y-m-d'),
-                'items' => is_null(request()->items) ? [] : collect(request()->items)->map(function($item) {
-                    return [
-                        'guide_id' => $item['guide_id'] ?? null,
-                        'product_id' => $item['product_id']['value'] ?? null,
-                        'country_id' => $item['country_id']['value'] ?? null,
-                        'bl' => $item['bl'] ?? null,
-                        'lot' => $item['lot'],
-                        'manufacturer' => $item['manufacturer'],
-                        'origin' => $item['country_id']['label'] ?? null,
-                        'brand' => $item['brand'],
-                        'obs' => $item['obs'],
-                        'du_no' => $item['du_no'],
-                        'date' => $item['date'],
-                        'collection_id' => $item['collection_id'],
-                    ];
-                })->toArray()
-            ]);
-        } else {
+        $this->merge([
+            'id' => $this->route('guide') ?? $this->input('id'),
+            'user_id' => auth()->id(),
+            'guide_month' => now()->format('Y'),
+            'customer_id' => $this->optionValue($this->input('customer_id')),
+            'warehouse_id' => $this->optionValue($this->input('warehouse_id')),
+            'collection_id' => $this->optionValue($this->input('collection_id')),
+            'date' => $this->input('date') ?: now()->format('Y-m-d'),
+            'items' => $items,
+        ]);
+    }
 
-            $this->merge([
-                'obs' => request()->obs,
-                'ref_no' => request()->ref_no,
-                'entry_point' => request()->entry_point,
-                'collection_point' => request()->collection_point,
-                'du_no' => request()->du_no,
-                'nif' => request()->nif,
-                'contact' => request()->contact,
-                'email' => request()->email,
-                'bl' => request()->bl,
-                'customer_id' => !is_null(request()->customer_id) ? request()->customer_id['value'] : null,
-                'warehouse_id' => !is_null(request()->warehouse_id) ? request()->warehouse_id['value'] : null,
-                'collection_id' => !is_null(request()->collection_id) ? request()->collection_id['value'] : null,
-            ]);
-
+    private function optionValue(mixed $option): mixed
+    {
+        if (is_array($option)) {
+            return $option['value'] ?? null;
         }
 
-        
+        return filled($option) ? $option : null;
     }
 }

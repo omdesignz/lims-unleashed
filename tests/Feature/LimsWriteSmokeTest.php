@@ -2,13 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\InsertAnalysisResults;
 use App\Jobs\VerifyAnalysisResults;
 use App\Models\AnalysisCategory;
 use App\Models\CollectionProduct;
 use App\Models\Complaint;
+use App\Models\ContactCategory;
 use App\Models\CounterAnalysis;
 use App\Models\Customer;
+use App\Models\CustomerCategory;
 use App\Models\CustomerRequest;
+use App\Models\CustomerRequestCategory;
 use App\Models\Department;
 use App\Models\Formula;
 use App\Models\Inventory;
@@ -17,6 +21,8 @@ use App\Models\InventoryItemWarehouse;
 use App\Models\InventoryTransaction;
 use App\Models\LabCode;
 use App\Models\ManagementReview;
+use App\Models\Matrix;
+use App\Models\MatrixProfile;
 use App\Models\NormativeWorkProcedure;
 use App\Models\PackagingCategory;
 use App\Models\Parameter;
@@ -81,6 +87,14 @@ class LimsWriteSmokeTest extends TestCase
             ob_end_clean();
 
             throw $exception;
+        }
+
+        if ($output === '') {
+            $content = $response->baseResponse->getContent();
+
+            if (is_string($content)) {
+                $output = $content;
+            }
         }
 
         return [$response, (string) $output];
@@ -620,7 +634,7 @@ class LimsWriteSmokeTest extends TestCase
         $this->assertNotNull($profile);
 
         $department = Department::query()->findOrFail($profile->type->department_id);
-        $this->qualifyUser($user, ['sample_intake_validation'], $department);
+        $this->qualifyUser($user, ['sample_intake_validation', 'insert_results'], $department);
 
         $suffix = Str::upper(Str::random(6));
         $calculatedParameter = Parameter::query()->create([
@@ -689,8 +703,8 @@ class LimsWriteSmokeTest extends TestCase
             'standard_label' => $standard->code,
             'category_id' => $resultCategory->id,
             'category_label' => $resultCategory->name,
-            'min_ref_value' => null,
-            'max_ref_value' => null,
+            'min_ref_value' => 0,
+            'max_ref_value' => 1,
             'dilutions' => json_encode([]),
             'extra_data' => json_encode([]),
             'count' => true,
@@ -759,6 +773,60 @@ class LimsWriteSmokeTest extends TestCase
         $this->assertSame(['Presença', 'Ausência'], data_get($qualitativePayload, 'parameter_id.result_options'));
         $this->assertSame('standard', data_get($qualitativePayload, 'display_format'));
         $this->assertSame('standard', data_get($qualitativePayload, 'extra_data.display_format'));
+
+        Queue::fake();
+
+        $qualitativeIndex = collect($payload)->search(fn (array $result): bool => (int) data_get($result, 'parameter_id.value') === $qualitativeParameter->id);
+
+        $this->assertNotFalse($qualitativeIndex);
+
+        $payload[$qualitativeIndex]['inserted_value'] = 'Detectado';
+        $payload[$qualitativeIndex]['display_format'] = 'scientific';
+        $payload[$qualitativeIndex]['extra_data'] = array_merge(
+            $payload[$qualitativeIndex]['extra_data'] ?? [],
+            ['display_format' => 'scientific']
+        );
+
+        $this->from(route('analysis.index', ['category' => 'insert']))
+            ->actingAs($user)
+            ->post(route('results.store'), [
+                'action' => 'analyze',
+                'sample_id' => [
+                    'value' => $analysis->sample_id,
+                    'label' => (string) $analysis->sample_id,
+                ],
+                'results' => $payload,
+            ])
+            ->assertRedirect(route('analysis.index', ['category' => 'insert']))
+            ->assertSessionHasErrors("results.$qualitativeIndex.inserted_value");
+
+        Queue::assertNotPushed(InsertAnalysisResults::class);
+
+        $payload[$qualitativeIndex]['inserted_value'] = 'Presença';
+
+        $this->from(route('analysis.index', ['category' => 'insert']))
+            ->actingAs($user)
+            ->post(route('results.store'), [
+                'action' => 'analyze',
+                'sample_id' => [
+                    'value' => $analysis->sample_id,
+                    'label' => (string) $analysis->sample_id,
+                ],
+                'results' => $payload,
+            ])
+            ->assertRedirect(route('analysis.index', ['category' => 'insert']))
+            ->assertSessionHasNoErrors();
+
+        Queue::assertPushed(InsertAnalysisResults::class, function (InsertAnalysisResults $job) use ($qualitativeParameter): bool {
+            $queuedResult = collect($job->results)->firstWhere('parameter_id', $qualitativeParameter->id);
+
+            return $queuedResult !== null
+                && data_get($queuedResult, 'inserted_value') === 'Presença'
+                && data_get($queuedResult, 'extra_data.display_format') === 'standard'
+                && data_get($queuedResult, 'extra_data.specification_check.within_limits') === null
+                && data_get($queuedResult, 'display_format') === null
+                && data_get($queuedResult, 'result_is_qualitative') === null;
+        });
     }
 
     public function test_result_verification_preserves_scientific_display_format(): void
@@ -1099,6 +1167,65 @@ class LimsWriteSmokeTest extends TestCase
         $this->assertNotNull(data_get($notification->data, 'analysis_url'));
     }
 
+    public function test_profile_catalog_accepts_cleared_optional_method_selectors(): void
+    {
+        $user = $this->verifiedAdmin();
+        $category = AnalysisCategory::query()->whereNotNull('department_id')->firstOrFail();
+        $parameter = Parameter::query()->where('active', true)->firstOrFail();
+        $unit = Unit::query()->firstOrFail();
+        $resultCategory = ResultCategory::query()->firstOrFail();
+        $code = 'PRF-'.Str::upper(Str::random(6));
+
+        $response = $this->from(route('profiles.create'))
+            ->actingAs($user)
+            ->post(route('profiles.store'), [
+                'name' => 'Profile With Cleared Optional Methods',
+                'code' => $code,
+                'description' => 'Valid controlled profile without optional method selectors.',
+                'category_id' => [
+                    'value' => $category->id,
+                    'label' => $category->code,
+                ],
+                'parameters' => [
+                    [
+                        'parameter_id' => ['value' => $parameter->id, 'label' => $parameter->name],
+                        'unit_id' => ['value' => $unit->id, 'label' => $unit->code],
+                        'protocol_id' => null,
+                        'nwp_id' => null,
+                        'standard_id' => null,
+                        'formula_id' => null,
+                        'count' => false,
+                        'category_id' => ['value' => $resultCategory->id, 'label' => $resultCategory->name],
+                        'min_ref_value' => '0',
+                        'max_ref_value' => '100',
+                        'dilutions' => 'Rotina',
+                        'extra_data' => ['dilutions' => []],
+                        'optimal_analysis_time' => null,
+                        'ref_val_origin' => 'catalog-test',
+                    ],
+                ],
+            ]);
+
+        $response
+            ->assertRedirect(route('profiles.create'))
+            ->assertSessionHasNoErrors();
+
+        $profile = Profile::query()->where('code', $code)->firstOrFail();
+        $this->assertModelExists($profile);
+
+        $attachedParameter = $profile->parameters()->whereKey($parameter->id)->firstOrFail();
+
+        $this->assertNull($attachedParameter->pivot->protocol_id);
+        $this->assertNull($attachedParameter->pivot->protocol_label);
+        $this->assertNull($attachedParameter->pivot->nwp_id);
+        $this->assertNull($attachedParameter->pivot->nwp_label);
+        $this->assertNull($attachedParameter->pivot->standard_id);
+        $this->assertNull($attachedParameter->pivot->standard_label);
+        $this->assertNull($attachedParameter->pivot->formula_id);
+        $this->assertNull($attachedParameter->pivot->formula_label);
+        $this->assertFalse((bool) $attachedParameter->pivot->count);
+    }
+
     public function test_profile_catalog_rejects_duplicate_or_inactive_parameters(): void
     {
         $user = $this->verifiedAdmin();
@@ -1169,6 +1296,240 @@ class LimsWriteSmokeTest extends TestCase
         $this->assertDatabaseMissing('profiles', [
             'name' => 'Invalid Controlled Scope Profile',
         ]);
+    }
+
+    public function test_customer_directory_persists_controlled_accounts_sites_and_crm_taxonomies(): void
+    {
+        $user = $this->verifiedAdmin();
+        $suffix = Str::upper(Str::random(8));
+
+        $this->actingAs($user)
+            ->post(route('customercategories.store'), [
+                'name' => "Customer Category {$suffix}",
+                'code' => "CC-{$suffix}",
+                'description' => 'Controlled customer segmentation.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $category = CustomerCategory::query()->where('code', "CC-{$suffix}")->firstOrFail();
+
+        $this->actingAs($user)
+            ->post(route('contactcategories.store'), [
+                'name' => "Technical Contact {$suffix}",
+                'code' => "TC-{$suffix}",
+                'description' => 'Technical focal point.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($user)
+            ->post(route('customerrequestcategories.store'), [
+                'name' => "Portal Request {$suffix}",
+                'description' => 'Portal triage category.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($user)
+            ->post(route('customers.store'), [
+                'name' => "LIMS Customer {$suffix}",
+                'code' => "CLI-{$suffix}",
+                'description' => 'Controlled LIMS account.',
+                'category_id' => ['value' => $category->id, 'label' => $category->name],
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $customer = Customer::query()->where('code', "CLI-{$suffix}")->firstOrFail();
+
+        $this->actingAs($user)
+            ->put(route('customers.update', $customer), [
+                'name' => "LIMS Customer Updated {$suffix}",
+                'code' => "CLI-{$suffix}",
+                'description' => 'Updated controlled account.',
+                'category_id' => $category->id,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($user)
+            ->post(route('warehouses.store'), [
+                'name' => "Primary Site {$suffix}",
+                'code' => "SITE-{$suffix}",
+                'email' => "site-{$suffix}@example.test",
+                'invoicing_email' => "billing-{$suffix}@example.test",
+                'address' => 'Laboratory Avenue 10',
+                'customer_id' => $customer->id,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $site = Warehouse::query()->where('code', "SITE-{$suffix}")->firstOrFail();
+
+        $this->actingAs($user)
+            ->put(route('customers.changePrimaryWarehouse', $customer), ['warehouse_id' => $site->id])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame($site->id, $customer->refresh()->warehouse_id);
+        $this->assertSame('Updated controlled account.', $customer->description);
+        $this->assertTrue(ContactCategory::query()->where('code', "TC-{$suffix}")->exists());
+        $this->assertTrue(CustomerRequestCategory::query()->where('name', "Portal Request {$suffix}")->exists());
+    }
+
+    public function test_analytical_reference_catalogs_persist_controlled_records(): void
+    {
+        $user = $this->verifiedAdmin();
+        $department = Department::query()->firstOrFail();
+        $suffix = Str::upper(Str::random(6));
+
+        $this->actingAs($user)
+            ->post(route('analysiscategories.store'), [
+                'name' => 'Reference Category '.$suffix,
+                'code' => 'AC-'.$suffix,
+                'description' => 'Controlled analytical category.',
+                'department_id' => [
+                    'value' => $department->id,
+                    'label' => $department->name,
+                ],
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $category = AnalysisCategory::query()->where('name', 'Reference Category '.$suffix)->firstOrFail();
+
+        $this->actingAs($user)
+            ->put(route('analysiscategories.update', ['category' => $category->id]), [
+                'name' => $category->name,
+                'code' => 'ACU-'.$suffix,
+                'description' => 'Updated controlled analytical category.',
+                'department_id' => $department->id,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($user)
+            ->post(route('protocols.store'), [
+                'code' => 'MET-'.$suffix,
+                'description' => 'Controlled methodology reference.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($user)
+            ->post(route('nwps.store'), [
+                'code' => 'PNT-'.$suffix,
+                'description' => 'Controlled work procedure.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($user)
+            ->post(route('units.store'), [
+                'code' => 'U-'.$suffix,
+                'description' => 'Controlled result unit.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('analysis_categories', [
+            'id' => $category->id,
+            'code' => 'ACU-'.$suffix,
+            'department_id' => $department->id,
+        ]);
+        $this->assertDatabaseHas('protocols', ['code' => 'MET-'.$suffix]);
+        $this->assertDatabaseHas('nwps', ['code' => 'PNT-'.$suffix]);
+        $this->assertDatabaseHas('units', ['code' => 'U-'.$suffix]);
+    }
+
+    public function test_matrix_catalog_persists_authoritative_scope_tax_and_soft_deleted_profile_links(): void
+    {
+        $user = $this->verifiedAdmin();
+        $taxType = TaxType::query()->first();
+
+        if (! $taxType) {
+            $taxType = TaxType::query()->create([
+                'name' => 'IVA Matrix Smoke',
+                'percent' => 14,
+                'compound_tax' => false,
+                'collective_tax' => false,
+                'description' => 'Authoritative matrix tax validation',
+                'user_id' => $user->id,
+            ]);
+        }
+
+        $profile = Profile::query()
+            ->with(['parameters', 'type:id,department_id,name'])
+            ->whereHas('parameters', fn ($query) => $query->where('parameters.active', true))
+            ->whereHas('type', fn ($query) => $query->whereNotNull('department_id'))
+            ->firstOrFail();
+        $code = 'MAT-'.Str::upper(Str::random(6));
+        $payload = [
+            'code' => $code,
+            'description' => 'Authoritative matrix catalog smoke test.',
+            'price' => 999999,
+            'fixed_price' => 1500,
+            'charge_tax' => true,
+            'withhold_tax' => true,
+            'tax_id' => [
+                'value' => $taxType->id,
+                'label' => 'Stale browser tax label',
+                'percent' => 99,
+            ],
+            'profiles' => [
+                [
+                    'profile_id' => [
+                        'value' => $profile->id,
+                        'label' => 'Stale browser profile label',
+                    ],
+                ],
+            ],
+        ];
+
+        $this->actingAs($user)
+            ->post(route('matrixes.store'), $payload)
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $matrix = Matrix::query()->where('code', $code)->firstOrFail();
+        $this->assertSame((float) $taxType->percent, (float) $matrix->tax_percentage);
+        $this->assertSame($profile->price_based_on_parameters, (float) $matrix->price);
+        $this->assertTrue($matrix->withhold_tax);
+        $this->assertDatabaseHas('matrix_profile', [
+            'matrix_id' => $matrix->id,
+            'profile_id' => $profile->id,
+            'profile' => $profile->name,
+            'deleted_at' => null,
+        ]);
+
+        MatrixProfile::query()
+            ->where('matrix_id', $matrix->id)
+            ->where('profile_id', $profile->id)
+            ->delete();
+
+        $this->actingAs($user)
+            ->put(route('matrixes.update', $matrix), [
+                ...$payload,
+                'description' => 'Profile link restored through the catalog workflow.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(1, MatrixProfile::withTrashed()
+            ->where('matrix_id', $matrix->id)
+            ->where('profile_id', $profile->id)
+            ->whereNull('deleted_at')
+            ->count());
+
+        $this->actingAs($user)
+            ->get(route('matrixes.show', $matrix))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Matrixes/Show')
+                ->where('record.data.id', $matrix->id)
+                ->where('record.data.withhold_tax', true)
+                ->where('record.data.profiles.0.id', $profile->id));
     }
 
     public function test_matrix_catalog_rejects_profiles_from_multiple_departments(): void
@@ -1289,6 +1650,49 @@ class LimsWriteSmokeTest extends TestCase
         $this->assertDatabaseMissing('matrixes', [
             'description' => 'Should be rejected for mixed departments.',
         ]);
+    }
+
+    public function test_parameter_edit_exposes_complete_calculation_and_tax_contract(): void
+    {
+        $user = $this->verifiedAdmin();
+        $formula = Formula::active()->firstOrFail();
+        $exemption = TaxExemption::query()->firstOrFail();
+        $suffix = Str::upper(Str::random(6));
+
+        $parameter = Parameter::query()->create([
+            'name' => 'Edit Contract Parameter '.$suffix,
+            'code' => 'ECP-'.$suffix,
+            'description' => 'Parameter used to verify edit initialization.',
+            'price' => 1250,
+            'charge_tax' => false,
+            'withhold_tax' => true,
+            'active' => true,
+            'exemption_id' => $exemption->id,
+            'exemption_code' => $exemption->code,
+            'tax_percentage' => 0,
+            'optimal_analysis_time' => '24h',
+            'result_is_qualitative' => false,
+            'requires_calculation' => true,
+            'formula_id' => $formula->id,
+            'formula_expression' => '({input_a} * 2)',
+            'calculation_parameters' => ['input_a'],
+            'decimal_places' => 3,
+            'result_type' => 'quantitative',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('parameters.edit', $parameter))
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Parameters/Edit')
+                ->where('record.data.withhold_tax', true)
+                ->where('record.data.requires_calculation', true)
+                ->where('record.data.formula_id', $formula->id)
+                ->where('record.data.formula_expression', '({input_a} * 2)')
+                ->where('record.data.calculation_parameters.0', 'input_a')
+                ->where('record.data.decimal_places', 3)
+                ->where('record.data.result_type', 'quantitative')
+                ->has('formulas', Formula::active()->count()));
     }
 
     public function test_parameter_catalog_rejects_inconsistent_calculated_parameter_definitions(): void
@@ -1997,12 +2401,51 @@ class LimsWriteSmokeTest extends TestCase
         $this->assertSame('UPDATED', $revision->change_type);
         $this->assertSame('ISO revision smoke target updated', $certificate->obs);
 
+        $this->actingAs($user)
+            ->get(route('qualitycertificates.iso-revisions.show', [$certificate, $revision]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('QualityCertificates/ISORevisions/Show')
+                ->has('approvers'));
+
         $snapshot = $this->actingAs($user)
             ->get(route('qualitycertificates.iso-revisions.snapshot', [$certificate, $revision]));
 
         $snapshot->assertOk()
             ->assertJsonPath('revision.id', $revision->id)
             ->assertJsonPath('certificate.id', $certificate->id);
+
+        $this->actingAs($user)
+            ->post(route('qualitycertificates.iso-revisions.store', $certificate), [
+                'change_type' => 'CORRECTED',
+                'change_reason' => 'Second smoke test revision for side-by-side comparison.',
+                'iso_section' => '7.8.8',
+                'risk_assessment' => 'LOW',
+                'approved_by_id' => $user->id,
+                'fields' => [
+                    'obs' => 'ISO revision smoke target corrected',
+                ],
+            ])
+            ->assertRedirect(route('qualitycertificates.iso-revisions.index', $certificate));
+
+        $revisions = QualityCertificateRevision::query()
+            ->where('quality_certificate_id', $certificate->id)
+            ->latest('id')
+            ->limit(2)
+            ->get();
+
+        $this->assertCount(2, $revisions);
+
+        $this->actingAs($user)
+            ->get(route('qualitycertificates.iso-revisions.compare', [
+                'certificate' => $certificate,
+                'revision_a' => $revisions->last()->id,
+                'revision_b' => $revisions->first()->id,
+            ]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('QualityCertificates/ISORevisions/Compare')
+                ->has('differences'));
 
         [$historyExport, $historyExportOutput] = $this->captureResponseOutput(
             fn () => $this->actingAs($user)->get(route('qualitycertificates.iso-revisions.export', $certificate))

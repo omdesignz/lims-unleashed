@@ -171,6 +171,17 @@ function clearQueryFilters() {
   query.date = null;
 }
 
+function editRecord(record) {
+  if (props.slideOverEdit) {
+    emit("slideover-on", record);
+    return;
+  }
+
+  router.visit(record.links.edit_path, {
+    preserveScroll: true,
+  });
+}
+
 function confirmAction() {
   processAction(actionId.value);
 }
@@ -192,29 +203,6 @@ function processAction(currentActionId) {
           },
         },
       );
-      showDeleteConfirmation.value = false;
-      break;
-
-    case "edit":
-      router.get(
-        recordUrl.value,
-        { recordIds: [recordId.value] },
-        {
-          preserveState: false,
-          preserveScroll: true,
-          onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            actionId.value = null;
-            recordId.value = null;
-            recordUrl.value = null;
-          },
-        },
-      );
-      showDeleteConfirmation.value = false;
-      break;
-
-    case "edit_slide":
-      emit("slideover-on", recordId.value);
       showDeleteConfirmation.value = false;
       break;
 
@@ -417,7 +405,7 @@ const masks = ref({
                 v-if="!item.deleted && !props.slideOverEdit && hasPermission('edit_' + props.model)"
                 type="button"
                 class="ds-table-action"
-                @click="() => { recordId = item.id; actionId = 'edit'; recordUrl = item.links.edit_path; showDeleteConfirmation = true; }"
+                @click="editRecord(item)"
               >
                 {{ $t("gestlab.actions.edit") }}
               </button>
@@ -426,7 +414,7 @@ const masks = ref({
                 v-if="!item.deleted && props.slideOverEdit && hasPermission('edit_' + props.model)"
                 type="button"
                 class="ds-table-action"
-                @click="() => { recordId = item; actionId = 'edit_slide'; showDeleteConfirmation = true; }"
+                @click="editRecord(item)"
               >
                 {{ $t("gestlab.actions.edit") }}
               </button>
@@ -539,7 +527,7 @@ const masks = ref({
                       v-if="!row.deleted && !props.slideOverEdit && hasPermission('edit_' + props.model)"
                       type="button"
                       class="ds-table-action"
-                      @click="() => { recordId = row.id; actionId = 'edit'; recordUrl = row.links.edit_path; showDeleteConfirmation = true; }"
+                      @click="editRecord(row)"
                     >
                       {{ $t("gestlab.actions.edit") }}
                     </button>
@@ -548,7 +536,7 @@ const masks = ref({
                       v-if="!row.deleted && props.slideOverEdit && hasPermission('edit_' + props.model)"
                       type="button"
                       class="ds-table-action"
-                      @click="() => { recordId = row; actionId = 'edit_slide'; showDeleteConfirmation = true; }"
+                      @click="editRecord(row)"
                     >
                       {{ $t("gestlab.actions.edit") }}
                     </button>

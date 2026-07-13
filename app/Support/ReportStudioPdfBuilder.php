@@ -3051,8 +3051,9 @@ HTML;
 
         $decimalPlaces = (int) ($result->parameter?->decimal_places ?? $result->decimal_places ?? 2);
         $precision = min(max($decimalPlaces, 0), 8);
+        [$mantissa, $exponent] = explode('E', sprintf('%.'.$precision.'E', (float) $value));
 
-        return str_replace('E', ' × 10^', sprintf('%.'.$precision.'E', (float) $value));
+        return $mantissa.' × 10^'.((int) $exponent);
     }
 
     /**

@@ -1,15 +1,15 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { computed } from "vue";
 import { Link } from "@inertiajs/vue3";
 import {
-  DocumentTextIcon,
-  Squares2X2Icon,
+  ArrowRightIcon,
   CheckBadgeIcon,
   ClockIcon,
-  ArrowRightIcon,
+  DocumentTextIcon,
+  MagnifyingGlassIcon,
+  Squares2X2Icon,
 } from "@heroicons/vue/24/outline";
+import { computed, ref } from "vue";
 
 defineOptions({
   layout: Layout,
@@ -22,7 +22,10 @@ const props = defineProps({
   },
 });
 
-const worksheetCards = computed(() =>
+const searchTerm = ref("");
+const statusFilter = ref("all");
+
+const worksheetRows = computed(() =>
   (props.worksheets || []).map((worksheet) => {
     const sheets = Array.isArray(worksheet.worksheets?.sheets) ? worksheet.worksheets.sheets : [];
     const scopeControl = worksheet.worksheets?.scope_control || {};
@@ -42,34 +45,51 @@ const worksheetCards = computed(() =>
 );
 
 const summary = computed(() => {
-  const total = worksheetCards.value.length;
-  const complete = worksheetCards.value.filter((worksheet) => worksheet.status === "complete").length;
-  const partial = worksheetCards.value.filter((worksheet) => worksheet.status === "partial").length;
+  const total = worksheetRows.value.length;
+  const complete = worksheetRows.value.filter((worksheet) => worksheet.status === "complete").length;
+  const partial = worksheetRows.value.filter((worksheet) => worksheet.status === "partial").length;
   const pending = total - complete - partial;
+  const completionRate = total ? Math.round((complete / total) * 100) : 0;
 
-  return {
-    total,
-    complete,
-    partial,
-    pending,
-  };
+  return { total, complete, partial, pending, completionRate };
 });
 
-const getStatusClasses = (status) => {
+const statusOptions = computed(() => [
+  { value: "all", label: "Todas", count: summary.value.total },
+  { value: "pending", label: "Pendentes", count: summary.value.pending },
+  { value: "partial", label: "Parciais", count: summary.value.partial },
+  { value: "complete", label: "Completas", count: summary.value.complete },
+]);
+
+const filteredWorksheets = computed(() => {
+  const query = searchTerm.value.trim().toLocaleLowerCase("pt-PT");
+
+  return worksheetRows.value.filter((worksheet) => {
+    const matchesStatus = statusFilter.value === "all" || worksheet.status === statusFilter.value;
+    const searchableText = [worksheet.name, worksheet.id, worksheet.analysisId, worksheet.statusLabel]
+      .filter(Boolean)
+      .join(" ")
+      .toLocaleLowerCase("pt-PT");
+
+    return matchesStatus && (!query || searchableText.includes(query));
+  });
+});
+
+function statusClasses(status) {
   if (status === "complete") {
-    return "bg-emerald-100 text-emerald-800 ring-emerald-700/10 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20";
+    return "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-200";
   }
 
   if (status === "partial") {
-    return "bg-amber-100 text-amber-800 ring-amber-700/10 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20";
+    return "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-200";
   }
 
-  return "bg-slate-100 text-slate-700 ring-slate-700/10 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-600/20";
-};
+  return "border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[var(--ds-text-muted)]";
+}
 
-const formatDate = (date) => {
+function formatDate(date) {
   if (!date) {
-    return "-";
+    return "Sem registo";
   }
 
   return new Date(date).toLocaleString("pt-PT", {
@@ -79,140 +99,154 @@ const formatDate = (date) => {
     hour: "2-digit",
     minute: "2-digit",
   });
-};
+}
 </script>
 
 <template>
-  <div class="worksheet-index space-y-8" :class="commercialDocumentThemeClasses">
-    <div class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
-      <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgb(var(--primary-900-rgb))] text-white shadow-lg shadow-[rgb(var(--primary-900-rgb)/0.2)] dark:bg-[rgb(var(--primary-300-rgb))] dark:text-[#07110f]">
-            <DocumentTextIcon class="h-6 w-6" />
-          </div>
-          <h1 class="text-2xl font-bold text-slate-900 dark:text-white">
-            Worksheets laboratoriais
-          </h1>
-          <p class="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
-            Gere folhas de trabalho operacionais com contexto analítico, controlo de escopo e progresso de execução sempre visível.
-          </p>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-3">
-          <span class="inline-flex items-center rounded-full bg-[rgb(var(--primary-50-rgb))] px-3 py-1 text-sm font-medium text-[rgb(var(--primary-900-rgb))] ring-1 ring-inset ring-[rgb(var(--primary-700-rgb)/0.12)] dark:bg-[rgb(var(--primary-500-rgb)/0.12)] dark:text-[rgb(var(--primary-100-rgb))] dark:ring-[rgb(var(--primary-300-rgb)/0.2)]">
-            {{ summary.total }} worksheets
-          </span>
-          <span class="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700 ring-1 ring-inset ring-emerald-700/10 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20">
-            {{ summary.complete }} completas
-          </span>
-        </div>
-      </div>
-
-      <div class="mt-6 grid gap-4 border-t border-slate-200 pt-6 md:grid-cols-4 dark:border-slate-800">
-        <article class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Total</p>
-          <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.total }}</p>
-        </article>
-        <article class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Completas</p>
-          <p class="mt-2 text-2xl font-semibold text-emerald-700 dark:text-emerald-300">{{ summary.complete }}</p>
-        </article>
-        <article class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Parciais</p>
-          <p class="mt-2 text-2xl font-semibold text-amber-700 dark:text-amber-300">{{ summary.partial }}</p>
-        </article>
-        <article class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
-          <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Pendentes</p>
-          <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ summary.pending }}</p>
-        </article>
-      </div>
-    </div>
-
-    <div
-      v-if="worksheetCards.length"
-      class="grid gap-5 xl:grid-cols-2 2xl:grid-cols-3"
-    >
-      <article
-        v-for="worksheet in worksheetCards"
-        :key="worksheet.id"
-        class="overflow-hidden rounded-[26px] border border-slate-200 bg-white/95 p-5 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] transition-transform duration-200 hover:-translate-y-0.5 dark:border-slate-800 dark:bg-slate-950/85"
-      >
-        <div class="flex items-start justify-between gap-4">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-              Worksheet #{{ worksheet.id }}
-            </p>
-            <h2 class="mt-2 text-lg font-semibold text-slate-900 dark:text-white">
-              {{ worksheet.name || "Worksheet sem nome" }}
-            </h2>
-          </div>
-
-          <span
-            class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset"
-            :class="getStatusClasses(worksheet.status)"
-          >
-            {{ worksheet.statusLabel }}
-          </span>
-        </div>
-
-        <div class="mt-5 grid grid-cols-2 gap-3">
-          <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
-            <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Sheets</p>
-            <p class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">{{ worksheet.sheetCount }}</p>
-          </div>
-          <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
-            <p class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">Escopo</p>
-            <p class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">{{ worksheet.expectedCount }}</p>
-          </div>
-        </div>
-
-        <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-          <div class="flex items-center justify-between text-sm">
-            <span class="text-slate-500 dark:text-slate-400">Com resultado</span>
-            <span class="font-semibold text-slate-900 dark:text-white">{{ worksheet.completedCount }}</span>
-          </div>
-          <div class="mt-2 flex items-center justify-between text-sm">
-            <span class="text-slate-500 dark:text-slate-400">Em falta</span>
-            <span class="font-semibold text-slate-900 dark:text-white">{{ worksheet.missingCount }}</span>
-          </div>
-          <div class="mt-2 flex items-center justify-between text-sm">
-            <span class="text-slate-500 dark:text-slate-400">Origem</span>
-            <span class="font-medium text-slate-700 dark:text-slate-200">
-              {{ worksheet.generatedFrom === "analysis_scope" ? "Análise controlada" : "Manual" }}
+  <div class="space-y-6">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0">
+          <p class="ds-kicker">Execucao analitica</p>
+          <div class="mt-3 flex items-start gap-3">
+            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+              <DocumentTextIcon class="h-5 w-5" />
             </span>
+            <div class="min-w-0">
+              <h1 class="ds-heading text-2xl">Worksheets laboratoriais</h1>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">
+                Folhas de bancada geradas a partir do escopo analitico, com progresso e lacunas tecnicas visiveis.
+              </p>
+            </div>
           </div>
         </div>
 
-        <div class="mt-5 flex items-center justify-between gap-3 border-t border-slate-200 pt-4 dark:border-slate-800">
-          <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <ClockIcon class="h-4 w-4" />
-            {{ formatDate(worksheet.updated_at) }}
-          </div>
-
-          <Link
-            :href="route('worksheets.show', worksheet.id)"
-            class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[rgb(var(--primary-900-rgb))] to-[rgb(var(--primary-700-rgb))] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:from-[rgb(var(--primary-800-rgb))] hover:to-[rgb(var(--primary-600-rgb))]"
-          >
-            Abrir worksheet
-            <ArrowRightIcon class="h-4 w-4" />
-          </Link>
+        <div class="flex flex-wrap gap-2">
+          <span class="ds-chip">
+            <Squares2X2Icon class="h-3.5 w-3.5" />
+            {{ summary.total }} folhas
+          </span>
+          <span class="ds-chip">
+            <CheckBadgeIcon class="h-3.5 w-3.5" />
+            {{ summary.completionRate }}% completas
+          </span>
         </div>
-      </article>
-    </div>
-
-    <div
-      v-else
-      class="rounded-[26px] border border-dashed border-slate-300 bg-white/90 p-12 text-center shadow-sm dark:border-slate-700 dark:bg-slate-950/70"
-    >
-      <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
-        <Squares2X2Icon class="h-7 w-7" />
       </div>
-      <h2 class="mt-4 text-lg font-semibold text-slate-900 dark:text-white">
-        Ainda não existem worksheets disponíveis
-      </h2>
-      <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-        As worksheets serão geradas a partir do fluxo analítico ou criadas manualmente conforme a operação laboratorial.
-      </p>
-    </div>
+
+      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
+        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-r xl:border-b-0">
+          <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Total</dt>
+          <dd class="mt-2 text-xl font-black text-[var(--ds-text)]">{{ summary.total }}</dd>
+        </div>
+        <div class="border-b border-[var(--ds-border)] px-4 py-3 xl:border-b-0 xl:border-r">
+          <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Pendentes</dt>
+          <dd class="mt-2 text-xl font-black text-[var(--ds-text)]">{{ summary.pending }}</dd>
+        </div>
+        <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
+          <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Parciais</dt>
+          <dd class="mt-2 text-xl font-black text-amber-700 dark:text-amber-200">{{ summary.partial }}</dd>
+        </div>
+        <div class="px-4 py-3">
+          <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Completas</dt>
+          <dd class="mt-2 text-xl font-black text-emerald-700 dark:text-emerald-200">{{ summary.complete }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="ds-table-shell">
+      <div class="ds-table-summary flex-col items-stretch px-4 py-4 lg:flex-row lg:items-center">
+        <div>
+          <p class="ds-kicker">Fila de worksheets</p>
+          <h2 class="ds-heading mt-1 text-base">Escopo e progresso operacional</h2>
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div class="relative min-w-0 sm:w-72">
+            <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
+            <input
+              v-model="searchTerm"
+              type="search"
+              class="ds-field min-h-10 pl-9"
+              placeholder="Pesquisar nome, ID ou analise"
+              aria-label="Pesquisar worksheets"
+            />
+          </div>
+
+          <div class="flex min-w-max rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-1" aria-label="Filtrar por estado">
+            <button
+              v-for="option in statusOptions"
+              :key="option.value"
+              type="button"
+              class="rounded-md px-2.5 py-1.5 text-xs font-bold transition"
+              :class="statusFilter === option.value
+                ? 'bg-[rgb(var(--primary-800-rgb))] text-white dark:bg-[rgb(var(--primary-300-rgb))] dark:text-[rgb(var(--primary-950-rgb))]'
+                : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]'"
+              @click="statusFilter = option.value"
+            >
+              {{ option.label }} <span class="opacity-70">{{ option.count }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="filteredWorksheets.length" class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-[var(--ds-border)]">
+          <thead class="ds-table-head">
+            <tr>
+              <th class="ds-table-heading px-4 py-3 text-left">Worksheet</th>
+              <th class="ds-table-heading px-4 py-3 text-left">Estado</th>
+              <th class="ds-table-heading px-4 py-3 text-left">Escopo</th>
+              <th class="ds-table-heading px-4 py-3 text-left">Sheets</th>
+              <th class="ds-table-heading px-4 py-3 text-left">Origem</th>
+              <th class="ds-table-heading px-4 py-3 text-left">Atualizacao</th>
+              <th class="ds-table-heading px-4 py-3 text-right"><span class="sr-only">Acoes</span></th>
+            </tr>
+          </thead>
+          <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
+            <tr v-for="worksheet in filteredWorksheets" :key="worksheet.id" class="ds-table-row">
+              <td class="px-4 py-4">
+                <p class="text-sm font-black text-[var(--ds-text)]">{{ worksheet.name || "Worksheet sem nome" }}</p>
+                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">
+                  #{{ worksheet.id }}<template v-if="worksheet.analysisId"> · Analise #{{ worksheet.analysisId }}</template>
+                </p>
+              </td>
+              <td class="px-4 py-4">
+                <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-bold" :class="statusClasses(worksheet.status)">
+                  {{ worksheet.statusLabel }}
+                </span>
+              </td>
+              <td class="px-4 py-4">
+                <p class="text-sm font-black text-[var(--ds-text)]">{{ worksheet.completedCount }} / {{ worksheet.expectedCount }}</p>
+                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ worksheet.missingCount }} em falta</p>
+              </td>
+              <td class="ds-table-cell px-4 py-4">{{ worksheet.sheetCount }}</td>
+              <td class="ds-table-cell px-4 py-4">
+                {{ worksheet.generatedFrom === "analysis_scope" ? "Analise controlada" : "Manual" }}
+              </td>
+              <td class="ds-table-cell px-4 py-4">
+                <span class="inline-flex items-center gap-1.5 whitespace-nowrap">
+                  <ClockIcon class="h-4 w-4 text-[var(--ds-text-soft)]" />
+                  {{ formatDate(worksheet.updated_at) }}
+                </span>
+              </td>
+              <td class="px-4 py-4 text-right">
+                <Link :href="route('worksheets.show', worksheet.id)" class="ds-table-action whitespace-nowrap">
+                  Abrir
+                  <ArrowRightIcon class="h-3.5 w-3.5" />
+                </Link>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-else class="ds-empty-state m-4 px-6 py-12 text-center">
+        <DocumentTextIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
+        <h3 class="ds-heading mt-3 text-sm">Nenhuma worksheet encontrada</h3>
+        <p class="ds-copy mt-1 text-sm">
+          Ajuste a pesquisa ou o filtro de estado para voltar a ver a fila operacional.
+        </p>
+      </div>
+    </section>
   </div>
 </template>

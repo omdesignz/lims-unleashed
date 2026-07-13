@@ -1,620 +1,569 @@
-<template>
-
-    <div class="iso-audit-trail-page space-y-8" :class="commercialDocumentThemeClasses">
-      <!-- HEADER CARD -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <ClipboardDocumentCheckIcon class="h-7 w-7 text-blue-900" />
-              {{ $t('gestlab.general.labels.iso_revisions.audit_trail.title') }}
-            </h1>
-            <p class="mt-2 text-gray-600">
-              {{ $t('gestlab.general.labels.iso_revisions.audit_trail.description') }}
-              <span class="font-semibold text-blue-900">
-                {{ certificate.code }}
-              </span>
-            </p>
-          </div>
-          <div class="flex items-center gap-3">
-            <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900 ring-1 ring-inset ring-blue-700/10">
-              {{ logs.total }} {{ $t('gestlab.general.labels.iso_revisions.audit_trail.entries') }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- FILTERS CARD -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <!-- DATE RANGE -->
-          <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700">
-              {{ $t('gestlab.general.labels.iso_revisions.audit_trail.date_range') }}
-            </label>
-            <div class="flex gap-2">
-              <input 
-                type="date" 
-                v-model="localFilters.date_from"
-                class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-              />
-              <input 
-                type="date" 
-                v-model="localFilters.date_to"
-                class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-              />
-            </div>
-          </div>
-
-          <!-- USER FILTER -->
-          <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700">
-              {{ $t('gestlab.general.labels.iso_revisions.audit_trail.user') }}
-            </label>
-            <select 
-              v-model="localFilters.user_id"
-              class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-            >
-              <option value="">{{ $t('gestlab.general.labels.iso_revisions.audit_trail.all_users') }}</option>
-              <option v-for="user in uniqueUsers" :key="user.id" :value="user.id">
-                {{ user.name }}
-              </option>
-            </select>
-          </div>
-
-          <!-- ACTION TYPE FILTER -->
-          <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700">
-              {{ $t('gestlab.general.labels.iso_revisions.audit_trail.action_type') }}
-            </label>
-            <select 
-              v-model="localFilters.action"
-              class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-            >
-              <option value="">{{ $t('gestlab.general.labels.iso_revisions.audit_trail.all_actions') }}</option>
-              <option v-for="action in uniqueActions" :key="action" :value="action">
-                {{ action }}
-              </option>
-            </select>
-          </div>
-
-          <!-- ENTITY TYPE FILTER -->
-          <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700">
-              {{ $t('gestlab.general.labels.iso_revisions.audit_trail.entity_type') }}
-            </label>
-            <select 
-              v-model="localFilters.entity_type"
-              class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-            >
-              <option value="">{{ $t('gestlab.general.labels.iso_revisions.audit_trail.all_entities') }}</option>
-              <option v-for="type in uniqueEntityTypes" :key="type" :value="type">
-                {{ type }}
-              </option>
-            </select>
-          </div>
-        </div>
-
-        <!-- FILTER ACTIONS -->
-        <div class="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
-          <button 
-            @click="resetFilters"
-            type="button"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-          >
-            <XMarkIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.clear_filters') }}
-          </button>
-          <button 
-            @click="applyFilters"
-            type="button"
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-          >
-            <FunnelIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.apply_filters') }}
-          </button>
-        </div>
-      </div>
-
-      <!-- AUDIT LOGS SECTION -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="border-b border-gray-200 px-6 py-4">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-gray-900">
-              {{ $t('gestlab.general.labels.iso_revisions.audit_trail.audit_logs') }}
-            </h2>
-            <div class="flex items-center gap-3">
-              <button 
-                @click="exportAuditLogs"
-                type="button"
-                class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-              >
-                <ArrowDownTrayIcon class="h-4 w-4" />
-                {{ $t('gestlab.general.labels.iso_revisions.export_logs') }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- EMPTY STATE -->
-        <div v-if="logs.data.length === 0" class="p-12 text-center">
-          <ClipboardDocumentCheckIcon class="mx-auto h-12 w-12 text-gray-300" />
-          <h3 class="mt-4 text-sm font-semibold text-gray-900">
-            {{ $t('gestlab.general.labels.iso_revisions.audit_trail.no_logs_title') }}
-          </h3>
-          <p class="mt-2 text-sm text-gray-500">
-            {{ $t('gestlab.general.labels.iso_revisions.audit_trail.no_logs_description') }}
-          </p>
-          <button 
-            @click="resetFilters"
-            v-if="hasActiveFilters"
-            type="button"
-            class="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-          >
-            <XMarkIcon class="h-5 w-5" />
-            {{ $t('gestlab.general.labels.iso_revisions.clear_filters') }}
-          </button>
-        </div>
-
-        <!-- AUDIT LOGS TABLE -->
-        <div v-else class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-300">
-            <thead class="bg-gray-50">
-              <tr>
-                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
-                  {{ $t('gestlab.general.labels.iso_revisions.audit_trail.timestamp') }}
-                </th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  {{ $t('gestlab.general.labels.iso_revisions.audit_trail.user') }}
-                </th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  {{ $t('gestlab.general.labels.iso_revisions.audit_trail.action') }}
-                </th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  {{ $t('gestlab.general.labels.iso_revisions.audit_trail.entity') }}
-                </th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                  {{ $t('gestlab.general.labels.iso_revisions.audit_trail.details') }}
-                </th>
-                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                  <span class="sr-only">{{ $t('gestlab.general.labels.iso_revisions.audit_trail.actions') }}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 bg-white">
-              <tr v-for="log in logs.data" :key="log.id" 
-                  class="hover:bg-gray-50 transition-colors duration-150"
-                  v-motion
-                  :initial="{ opacity: 0, y: 10 }"
-                  :enter="{ opacity: 1, y: 0 }">
-                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-900 sm:pl-6">
-                  {{ formatDateTime(log.created_at) }}
-                </td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                  <div class="flex items-center gap-2">
-                    <UserIcon class="h-4 w-4 text-gray-400" />
-                    {{ log.causer?.name || 'System' }}
-                  </div>
-                </td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm">
-                  <span :class="getActionBadgeClass(log.action)" class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium">
-                    {{ log.action }}
-                  </span>
-                </td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                  {{ getEntityLabel(log) }}
-                </td>
-                <td class="px-3 py-4 text-sm text-gray-900">
-                  <p class="line-clamp-2 max-w-xs">{{ log.description }}</p>
-                  <button 
-                    @click="toggleLogDetails(log.id)"
-                    class="text-xs text-blue-900 hover:text-blue-800 mt-1"
-                  >
-                    {{ expandedLogs[log.id] ? $t('gestlab.general.labels.iso_revisions.show_less') : $t('gestlab.general.labels.iso_revisions.show_more') }}
-                  </button>
-                  
-                  <!-- EXPANDED DETAILS -->
-                  <div v-if="expandedLogs[log.id]" class="mt-3 space-y-3">
-                    <!-- CHANGE DETAILS -->
-                    <div v-if="log.properties" class="bg-gray-50 rounded-lg p-3">
-                      <h4 class="text-xs font-medium text-gray-900 mb-2">
-                        {{ $t('gestlab.general.labels.iso_revisions.audit_trail.change_details') }}
-                      </h4>
-                      <div class="space-y-2 text-xs">
-                        <div v-if="log.properties.change_reason" class="flex">
-                          <span class="w-24 text-gray-600">Reason:</span>
-                          <span class="flex-1 text-gray-900">{{ log.properties.change_reason }}</span>
-                        </div>
-                        <div v-if="log.properties.version" class="flex">
-                          <span class="w-24 text-gray-600">Version:</span>
-                          <span class="flex-1 text-gray-900">{{ log.properties.version }}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- FIELD CHANGES -->
-                    <div v-if="log.properties?.attributes && log.properties?.old" class="bg-yellow-50 rounded-lg p-3">
-                      <h4 class="text-xs font-medium text-gray-900 mb-2">
-                        {{ $t('gestlab.general.labels.iso_revisions.audit_trail.field_changes') }}
-                      </h4>
-                      <div class="space-y-1">
-                        <div v-for="(value, key) in log.properties.attributes" :key="key" 
-                             v-if="log.properties.old[key] !== value"
-                             class="flex items-center text-xs">
-                          <span class="w-32 text-gray-600 truncate">{{ formatFieldLabel(key) }}:</span>
-                          <span class="flex-1 text-gray-900 truncate">
-                            {{ formatValue(log.properties.old[key]) }} → {{ formatValue(value) }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- TECHNICAL DETAILS -->
-                    <div class="bg-gray-100 rounded-lg p-3">
-                      <h4 class="text-xs font-medium text-gray-900 mb-2">
-                        {{ $t('gestlab.general.labels.iso_revisions.audit_trail.technical_details') }}
-                      </h4>
-                      <div class="space-y-1 text-xs">
-                        <div class="flex">
-                          <span class="w-20 text-gray-600">IP:</span>
-                          <span class="flex-1 text-gray-900">{{ log.ip_address || 'N/A' }}</span>
-                        </div>
-                        <div class="flex">
-                          <span class="w-20 text-gray-600">User Agent:</span>
-                          <span class="flex-1 text-gray-900 truncate">{{ log.user_agent || 'N/A' }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                  <button 
-                    @click="viewLogDetails(log)"
-                    class="text-blue-900 hover:text-blue-800"
-                    :title="$t('gestlab.general.labels.iso_revisions.view_details')"
-                  >
-                    <EyeIcon class="h-5 w-5" />
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- PAGINATION -->
-        <div v-if="logs.data.length > 0" class="border-t border-gray-200 px-6 py-4">
-          <Pagination :links="logs.links" />
-        </div>
-      </div>
-
-      <!-- SUMMARY STATISTICS -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.audit_trail.total_entries') }}</p>
-              <p class="mt-2 text-2xl font-bold text-blue-900">{{ logs.total }}</p>
-            </div>
-            <ClipboardDocumentListIcon class="h-8 w-8 text-blue-900" />
-          </div>
-        </div>
-        
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.audit_trail.unique_users') }}</p>
-              <p class="mt-2 text-2xl font-bold text-green-600">{{ uniqueUsers.length }}</p>
-            </div>
-            <UsersIcon class="h-8 w-8 text-green-600" />
-          </div>
-        </div>
-        
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.audit_trail.compliance_rate') }}</p>
-              <p class="mt-2 text-2xl font-bold text-green-600">{{ complianceRate }}%</p>
-            </div>
-            <CheckCircleIcon class="h-8 w-8 text-green-600" />
-          </div>
-        </div>
-        
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.audit_trail.period') }}</p>
-              <p class="mt-2 text-sm font-semibold text-gray-900">{{ auditPeriod }}</p>
-            </div>
-            <CalendarIcon class="h-8 w-8 text-gray-900" />
-          </div>
-        </div>
-      </div>
-
-      <!-- FOOTER ACTIONS -->
-      <div class="flex items-center justify-between pt-6">
-        <button 
-          @click="router.get(route('qualitycertificates.iso-revisions.index', certificate.id))"
-          type="button"
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-        >
-          <ArrowLeftIcon class="h-4 w-4" />
-          {{ $t('gestlab.general.labels.iso_revisions.back_to_revisions') }}
-        </button>
-        
-        <button 
-          @click="refreshLogs"
-          type="button"
-          class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-        >
-          <ArrowPathIcon class="h-4 w-4" />
-          {{ $t('gestlab.general.labels.iso_revisions.refresh') }}
-        </button>
-      </div>
-    </div>
-</template>
-
 <script setup>
-import { ref, computed, reactive } from 'vue'
-import { router } from '@inertiajs/vue3'
 import Layout from "@/Shared/Layouts/Layout.vue";
-import Pagination from '@/Components/Pagination.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-
-// Icons
+import Pagination from "@/Components/Pagination.vue";
+import { computed, reactive, ref } from "vue";
+import { Link, router } from "@inertiajs/vue3";
 import {
-  ClipboardDocumentCheckIcon,
-  XMarkIcon,
-  FunnelIcon,
   ArrowDownTrayIcon,
-  EyeIcon,
-  ClipboardDocumentListIcon,
-  UsersIcon,
-  CheckCircleIcon,
-  CalendarIcon,
   ArrowLeftIcon,
   ArrowPathIcon,
-  UserIcon
-} from '@heroicons/vue/24/outline'
+  ChevronDownIcon,
+  ClipboardDocumentCheckIcon,
+  ClockIcon,
+  FunnelIcon,
+  UserIcon,
+  XMarkIcon,
+} from "@heroicons/vue/24/outline";
 
 defineOptions({
-  layout: Layout
+  layout: Layout,
 });
 
 const props = defineProps({
-  certificate: Object,
-  logs: Object,
-  filters: Object,
-})
+  certificate: {
+    type: Object,
+    default: () => ({}),
+  },
+  logs: {
+    type: Object,
+    default: () => ({ data: [], links: [], total: 0 }),
+  },
+  filters: {
+    type: Object,
+    default: () => ({}),
+  },
+});
 
-// Local state
-const expandedLogs = ref({})
+const expandedLogs = ref({});
 const localFilters = reactive({
-  date_from: props.filters?.date_from || '',
-  date_to: props.filters?.date_to || '',
-  user_id: props.filters?.user_id || '',
-  action: props.filters?.action || '',
-  entity_type: props.filters?.entity_type || '',
-})
+  date_from: props.filters?.date_from || "",
+  date_to: props.filters?.date_to || "",
+  causer_id: props.filters?.causer_id || "",
+  change_type: props.filters?.change_type || "",
+  entity_type: "",
+});
 
-// Computed properties
+const logRows = computed(() => props.logs?.data ?? []);
+
 const uniqueUsers = computed(() => {
-  const users = new Map()
-  props.logs.data.forEach(log => {
-    if (log.causer) {
-      users.set(log.causer.id, log.causer)
+  const users = new Map();
+  logRows.value.forEach((log) => {
+    if (log.causer?.id) {
+      users.set(log.causer.id, log.causer);
     }
-  })
-  return Array.from(users.values())
-})
+  });
+  return Array.from(users.values());
+});
 
 const uniqueActions = computed(() => {
-  const actions = new Set()
-  props.logs.data.forEach(log => {
-    actions.add(log.action)
-  })
-  return Array.from(actions).sort()
-})
+  return Array.from(
+    new Set(logRows.value.map((log) => log.action).filter(Boolean)),
+  ).sort();
+});
 
 const uniqueEntityTypes = computed(() => {
-  const types = new Set()
-  props.logs.data.forEach(log => {
-    types.add(log.subject_type)
-  })
-  return Array.from(types).sort()
-})
+  return Array.from(
+    new Set(logRows.value.map((log) => log.subject_type).filter(Boolean)),
+  ).sort();
+});
+
+const filteredLogs = computed(() => {
+  const fromDate = localFilters.date_from
+    ? new Date(`${localFilters.date_from}T00:00:00`)
+    : null;
+  const toDate = localFilters.date_to
+    ? new Date(`${localFilters.date_to}T23:59:59`)
+    : null;
+
+  return logRows.value.filter((log) => {
+    const loggedAt = log.created_at ? new Date(log.created_at) : null;
+    const matchesUser =
+      !localFilters.causer_id ||
+      String(log.causer?.id ?? "") === String(localFilters.causer_id);
+    const matchesAction =
+      !localFilters.change_type || log.action === localFilters.change_type;
+    const matchesEntity =
+      !localFilters.entity_type || log.subject_type === localFilters.entity_type;
+    const matchesFrom = !fromDate || (loggedAt && loggedAt >= fromDate);
+    const matchesTo = !toDate || (loggedAt && loggedAt <= toDate);
+
+    return matchesUser && matchesAction && matchesEntity && matchesFrom && matchesTo;
+  });
+});
 
 const hasActiveFilters = computed(() => {
-  return Object.values(localFilters).some(value => value !== '')
-})
+  return Object.values(localFilters).some(Boolean);
+});
+
+const activeFilterCount = computed(() => {
+  return Object.values(localFilters).filter(Boolean).length;
+});
 
 const complianceRate = computed(() => {
-  const compliantLogs = props.logs.data.filter(log => 
-    log.properties?.change_reason || 
-    (log.properties?.iso_section && log.properties?.risk_assessment)
-  ).length
-  
-  return props.logs.data.length > 0 
-    ? Math.round((compliantLogs / props.logs.data.length) * 100) 
-    : 100
-})
+  if (!logRows.value.length) {
+    return 100;
+  }
+
+  const compliantLogs = logRows.value.filter((log) => {
+    return Boolean(
+      log.properties?.change_reason ||
+      (log.properties?.iso_section && log.properties?.risk_assessment),
+    );
+  }).length;
+
+  return Math.round((compliantLogs / logRows.value.length) * 100);
+});
 
 const auditPeriod = computed(() => {
-  if (props.logs.data.length === 0) return 'N/A'
-  
-  const dates = props.logs.data.map(log => new Date(log.created_at))
-  const oldest = new Date(Math.min(...dates))
-  const newest = new Date(Math.max(...dates))
-  
-  return `${oldest.toLocaleDateString()} - ${newest.toLocaleDateString()}`
-})
+  const dates = logRows.value
+    .map((log) => new Date(log.created_at))
+    .filter((date) => !Number.isNaN(date.getTime()));
 
-// Methods
-const getActionBadgeClass = (action) => {
-  const actionMap = {
-    CREATED: 'bg-green-100 text-green-800',
-    UPDATED: 'bg-blue-100 text-blue-800',
-    DELETED: 'bg-red-100 text-red-800',
-    RESTORED: 'bg-yellow-100 text-yellow-800',
-    APPROVED: 'bg-purple-100 text-purple-800',
-    REJECTED: 'bg-orange-100 text-orange-800',
-    REVISION_CREATED: 'bg-indigo-100 text-indigo-800',
-    REVISION_RESTORE: 'bg-pink-100 text-pink-800',
+  if (!dates.length) {
+    return "Sem periodo";
   }
-  return actionMap[action] || 'bg-gray-100 text-gray-800'
-}
 
-const getEntityLabel = (log) => {
-  const entityMap = {
-    'App\\Models\\QualityCertificate': 'Quality Certificate',
-    'App\\Models\\QualityCertificateRevision': 'Revision',
-    'App\\Models\\CollectionProduct': 'Collection',
-    'App\\Models\\Result': 'Test Result',
-  }
-  return entityMap[log.subject_type] || log.subject_type?.split('\\').pop() || 'Unknown'
-}
+  const oldest = new Date(Math.min(...dates));
+  const newest = new Date(Math.max(...dates));
+  return `${formatDate(oldest)} - ${formatDate(newest)}`;
+});
 
-const formatDateTime = (date) => {
-  if (!date) return 'N/A'
-  return new Date(date).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
-}
+const auditMetrics = computed(() => [
+  {
+    label: "Eventos no trilho",
+    value: props.logs?.total ?? logRows.value.length,
+    note: "registos auditaveis",
+  },
+  {
+    label: "Conformidade",
+    value: `${complianceRate.value}%`,
+    note: "metadados ISO presentes",
+  },
+  {
+    label: "Utilizadores",
+    value: uniqueUsers.value.length,
+    note: "intervenientes nesta pagina",
+  },
+  {
+    label: "Periodo visivel",
+    value: auditPeriod.value,
+    note: "intervalo carregado",
+  },
+]);
 
-const formatFieldLabel = (field) => {
+function actionLabel(action) {
   const labels = {
-    status: 'Status',
-    obs: 'Observations',
-    validated_by: 'Validated By',
-    validated_at: 'Validation Date',
-    change_reason: 'Change Reason',
-    iso_section: 'ISO Section',
-    risk_assessment: 'Risk Assessment',
+    CREATED: "Criado",
+    UPDATED: "Atualizado",
+    DELETED: "Eliminado",
+    RESTORED: "Reposto",
+    APPROVED: "Aprovado",
+    REJECTED: "Rejeitado",
+    REVISION_CREATED: "Revisao criada",
+    REVISION_RESTORE: "Revisao reposta",
+  };
+
+  return labels[action] || action || "Evento";
+}
+
+function actionDot(action) {
+  const tones = {
+    CREATED: "lims-status-dot-release",
+    UPDATED: "lims-status-dot-instrument",
+    DELETED: "lims-status-dot-critical",
+    RESTORED: "lims-status-dot-hold",
+    APPROVED: "lims-status-dot-release",
+    REJECTED: "lims-status-dot-critical",
+    REVISION_CREATED: "lims-status-dot-instrument",
+    REVISION_RESTORE: "lims-status-dot-hold",
+  };
+
+  return tones[action] || "lims-status-dot-instrument";
+}
+
+function entityLabel(subjectType) {
+  const entities = {
+    "App\\Models\\QualityCertificate": "Certificado",
+    "App\\Models\\QualityCertificateRevision": "Revisao",
+    "App\\Models\\CollectionProduct": "Colheita",
+    "App\\Models\\Result": "Resultado",
+  };
+
+  return entities[subjectType] || subjectType?.split("\\").pop() || "Entidade";
+}
+
+function formatDate(date) {
+  if (!date) {
+    return "Nao registada";
   }
-  return labels[field] || field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+
+  return new Date(date).toLocaleDateString("pt-PT", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
-const formatValue = (value) => {
-  if (value === null || value === undefined) return 'N/A'
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
-  if (Array.isArray(value)) return value.length > 0 ? JSON.stringify(value) : '[]'
-  if (typeof value === 'object') return JSON.stringify(value)
-  return String(value)
-}
-
-const toggleLogDetails = (logId) => {
-  expandedLogs.value[logId] = !expandedLogs.value[logId]
-}
-
-const viewLogDetails = (log) => {
-  // Open modal or detailed view for the log
-  console.log('View log details:', log)
-}
-
-const applyFilters = () => {
-  router.visit(route('qualitycertificates.iso-revisions.audit-trail', props.certificate.id), {
-    data: localFilters,
-    preserveState: true,
-    preserveScroll: true,
-  })
-}
-
-const resetFilters = () => {
-  Object.keys(localFilters).forEach(key => {
-    localFilters[key] = ''
-  })
-  applyFilters()
-}
-
-const exportAuditLogs = async () => {
-  try {
-    const params = new URLSearchParams()
-    Object.entries(localFilters).forEach(([key, value]) => {
-      if (value) params.append(key, value)
-    })
-    
-    const url = route('qualitycertificates.iso-revisions.export', props.certificate.id) + '?' + params.toString()
-    window.open(url, '_blank')
-  } catch (error) {
-    console.error('Export failed:', error)
+function formatDateTime(date) {
+  if (!date) {
+    return "Nao registada";
   }
+
+  return new Date(date).toLocaleString("pt-PT", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
-const refreshLogs = () => {
-  router.reload()
+function formatFieldLabel(field) {
+  const labels = {
+    status: "Estado",
+    obs: "Observacoes",
+    validated_by: "Validado por",
+    validated_at: "Data de validacao",
+    change_reason: "Motivo da mudanca",
+    iso_section: "Secao ISO",
+    risk_assessment: "Avaliacao de risco",
+  };
+
+  return (
+    labels[field] ||
+    String(field)
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase())
+  );
+}
+
+function formatValue(value) {
+  if (value === null || value === undefined || value === "") {
+    return "Nao registado";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Sim" : "Nao";
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+
+  return String(value);
+}
+
+function propertyEntries(properties) {
+  if (!properties || typeof properties !== "object") {
+    return [];
+  }
+
+  return Object.entries(properties).filter(
+    ([key]) => !["old", "attributes"].includes(key),
+  );
+}
+
+function changedFieldEntries(log) {
+  const before = log.properties?.old ?? {};
+  const after = log.properties?.attributes ?? {};
+  const fields = new Set([...Object.keys(before), ...Object.keys(after)]);
+
+  return Array.from(fields).map((field) => ({
+    field,
+    before: before[field],
+    after: after[field],
+  }));
+}
+
+function toggleLogDetails(logId) {
+  expandedLogs.value[logId] = !expandedLogs.value[logId];
+}
+
+function resetFilters() {
+  Object.keys(localFilters).forEach((key) => {
+    localFilters[key] = "";
+  });
 }
 </script>
 
-<style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+<template>
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0 max-w-3xl">
+          <Link
+            :href="route('qualitycertificates.iso-revisions.index', certificate.id)"
+            class="ds-table-action -ml-2 mb-3"
+          >
+            <ArrowLeftIcon class="h-4 w-4" />
+            Voltar ao historico
+          </Link>
+          <div class="flex flex-wrap items-center gap-2">
+            <p class="ds-kicker">Evidencia ISO/IEC 17025</p>
+            <span class="ds-chip font-mono">{{ certificate.code || "Sem codigo" }}</span>
+          </div>
+          <h1 class="ds-heading mt-2 text-2xl">Trilho de auditoria</h1>
+          <p class="ds-copy mt-2 max-w-2xl text-sm">
+            Sequencia cronologica de alteracoes, utilizadores e metadados que
+            sustentam a integridade do certificado.
+          </p>
+        </div>
 
-.iso-audit-trail-page :deep(.bg-blue-900) {
-  background-color: rgb(var(--primary-900-rgb)) !important;
-}
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <button type="button" class="ds-button ds-button-secondary" @click="router.reload()">
+            <ArrowPathIcon class="h-4 w-4" />
+            Atualizar
+          </button>
+          <a
+            :href="route('qualitycertificates.iso-revisions.export', certificate.id)"
+            class="ds-button ds-button-primary"
+          >
+            <ArrowDownTrayIcon class="h-4 w-4" />
+            Exportar historico
+          </a>
+        </div>
+      </div>
 
-.iso-audit-trail-page :deep(.text-blue-900),
-.iso-audit-trail-page :deep(.text-blue-800) {
-  color: rgb(var(--primary-800-rgb)) !important;
-}
+      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-[var(--ds-border)]">
+        <div
+          v-for="metric in auditMetrics"
+          :key="metric.label"
+          class="border-b border-[var(--ds-border)] px-5 py-4 last:border-b-0 sm:[&:nth-last-child(-n+2)]:border-b-0 xl:border-b-0"
+        >
+          <dt class="ds-table-heading">{{ metric.label }}</dt>
+          <dd class="ds-heading mt-2 truncate text-lg" :title="String(metric.value)">
+            {{ metric.value }}
+          </dd>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ metric.note }}</p>
+        </div>
+      </dl>
+    </section>
 
-.iso-audit-trail-page :deep(.bg-blue-50),
-.iso-audit-trail-page :deep(.bg-blue-100) {
-  background-color: rgb(var(--primary-50-rgb) / 0.82) !important;
-}
+    <section class="ds-command-surface p-5 sm:p-6">
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <p class="ds-kicker">Filtros locais</p>
+          <h2 class="ds-heading mt-2 text-lg">Refinar eventos carregados</h2>
+          <p class="ds-copy mt-1 text-sm">
+            {{ filteredLogs.length }} de {{ logRows.length }} evento(s) visivel(is)
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span v-if="activeFilterCount" class="ds-chip">
+            <FunnelIcon class="h-3.5 w-3.5" />
+            {{ activeFilterCount }} filtro(s)
+          </span>
+          <button
+            v-if="hasActiveFilters"
+            type="button"
+            class="ds-button ds-button-secondary"
+            @click="resetFilters"
+          >
+            <XMarkIcon class="h-4 w-4" />
+            Limpar
+          </button>
+        </div>
+      </div>
 
-.iso-audit-trail-page :deep(input),
-.iso-audit-trail-page :deep(select),
-.iso-audit-trail-page :deep(textarea) {
-  border-color: #d8cbb8;
-  background: #fffdf7;
-  color: #15231f;
-  border-radius: 0.875rem;
-}
+      <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div class="ds-field-group">
+          <label class="ds-field-label" for="audit-date-from">Desde</label>
+          <input id="audit-date-from" v-model="localFilters.date_from" type="date" class="ds-field" />
+        </div>
+        <div class="ds-field-group">
+          <label class="ds-field-label" for="audit-date-to">Ate</label>
+          <input id="audit-date-to" v-model="localFilters.date_to" type="date" class="ds-field" />
+        </div>
+        <div class="ds-field-group">
+          <label class="ds-field-label" for="audit-user">Utilizador</label>
+          <select id="audit-user" v-model="localFilters.causer_id" class="ds-field">
+            <option value="">Todos</option>
+            <option v-for="user in uniqueUsers" :key="user.id" :value="user.id">
+              {{ user.name }}
+            </option>
+          </select>
+        </div>
+        <div class="ds-field-group">
+          <label class="ds-field-label" for="audit-action">Acao</label>
+          <select id="audit-action" v-model="localFilters.change_type" class="ds-field">
+            <option value="">Todas</option>
+            <option v-for="action in uniqueActions" :key="action" :value="action">
+              {{ actionLabel(action) }}
+            </option>
+          </select>
+        </div>
+        <div class="ds-field-group">
+          <label class="ds-field-label" for="audit-entity">Entidade</label>
+          <select id="audit-entity" v-model="localFilters.entity_type" class="ds-field">
+            <option value="">Todas</option>
+            <option v-for="entity in uniqueEntityTypes" :key="entity" :value="entity">
+              {{ entityLabel(entity) }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </section>
 
-.iso-audit-trail-page :deep(input:focus),
-.iso-audit-trail-page :deep(select:focus),
-.iso-audit-trail-page :deep(textarea:focus) {
-  border-color: rgb(var(--primary-500-rgb));
-  box-shadow: 0 0 0 3px rgb(var(--primary-500-rgb) / 0.18);
-  outline: none;
-}
+    <section class="ds-table-shell">
+      <div class="ds-table-summary px-5 py-4 sm:px-6">
+        <div>
+          <p class="ds-kicker">Sequencia de eventos</p>
+          <h2 class="ds-heading mt-2 text-base">Atividade auditavel</h2>
+        </div>
+        <span class="ds-chip">{{ filteredLogs.length }} evento(s)</span>
+      </div>
 
-:global(.dark) .iso-audit-trail-page :deep(.bg-white),
-:global(.dark) .iso-audit-trail-page :deep(.bg-gray-50),
-:global(.dark) .iso-audit-trail-page :deep(.bg-gray-100),
-:global(.dark) .iso-audit-trail-page :deep(.bg-yellow-50) {
-  background-color: rgb(15 23 42 / 0.86) !important;
-}
+      <div v-if="filteredLogs.length">
+        <div class="divide-y divide-[var(--ds-border)] lg:hidden">
+          <article v-for="log in filteredLogs" :key="log.id" class="px-5 py-5">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="inline-flex items-center gap-2 text-xs font-bold text-[var(--ds-text)]">
+                    <span :class="['lims-status-dot', actionDot(log.action)]" />
+                    {{ actionLabel(log.action) }}
+                  </span>
+                  <span class="ds-chip">{{ entityLabel(log.subject_type) }}</span>
+                </div>
+                <p class="ds-heading mt-3 text-sm">
+                  {{ log.description || "Evento registado" }}
+                </p>
+                <p class="mt-2 flex items-center gap-1.5 text-xs font-semibold text-[var(--ds-text-muted)]">
+                  <UserIcon class="h-3.5 w-3.5" />
+                  {{ log.causer?.name || "Sistema" }}
+                </p>
+                <p class="mt-1 flex items-center gap-1.5 text-xs font-semibold text-[var(--ds-text-muted)]">
+                  <ClockIcon class="h-3.5 w-3.5" />
+                  {{ formatDateTime(log.created_at) }}
+                </p>
+              </div>
+              <button
+                type="button"
+                class="ds-icon-button"
+                :aria-expanded="Boolean(expandedLogs[log.id])"
+                title="Ver detalhes"
+                @click="toggleLogDetails(log.id)"
+              >
+                <ChevronDownIcon :class="['h-5 w-5 transition-transform', expandedLogs[log.id] ? 'rotate-180' : '']" />
+              </button>
+            </div>
 
-:global(.dark) .iso-audit-trail-page :deep(.border-gray-200),
-:global(.dark) .iso-audit-trail-page :deep(.divide-gray-200),
-:global(.dark) .iso-audit-trail-page :deep(.divide-gray-300) {
-  border-color: rgb(51 65 85) !important;
-}
+            <div v-if="expandedLogs[log.id]" class="mt-4 border-t border-[var(--ds-border)] pt-4">
+              <div v-if="changedFieldEntries(log).length" class="grid gap-2">
+                <div
+                  v-for="change in changedFieldEntries(log)"
+                  :key="change.field"
+                  class="ds-command-toolbar p-3"
+                >
+                  <p class="ds-table-heading">{{ formatFieldLabel(change.field) }}</p>
+                  <p class="mt-2 text-xs font-semibold text-[var(--ds-text-muted)]">
+                    {{ formatValue(change.before) }} to {{ formatValue(change.after) }}
+                  </p>
+                </div>
+              </div>
+              <dl v-else class="grid gap-2">
+                <div
+                  v-for="([key, value]) in propertyEntries(log.properties)"
+                  :key="key"
+                  class="ds-command-toolbar p-3"
+                >
+                  <dt class="ds-table-heading">{{ formatFieldLabel(key) }}</dt>
+                  <dd class="mt-2 break-words text-xs font-semibold text-[var(--ds-text)]">
+                    {{ formatValue(value) }}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </article>
+        </div>
 
-:global(.dark) .iso-audit-trail-page :deep(.text-gray-900) {
-  color: #f8fafc !important;
-}
+        <div class="hidden overflow-x-auto lg:block">
+          <table class="min-w-full">
+            <thead class="ds-table-head">
+              <tr>
+                <th class="ds-table-heading px-5 py-4 text-left">Evento</th>
+                <th class="ds-table-heading px-4 py-4 text-left">Entidade</th>
+                <th class="ds-table-heading px-4 py-4 text-left">Utilizador</th>
+                <th class="ds-table-heading px-4 py-4 text-left">Data</th>
+                <th class="ds-table-heading px-5 py-4 text-right">Detalhes</th>
+              </tr>
+            </thead>
+            <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
+              <template v-for="log in filteredLogs" :key="log.id">
+                <tr class="ds-table-row">
+                  <td class="max-w-md px-5 py-4">
+                    <div class="flex items-center gap-2">
+                      <span :class="['lims-status-dot', actionDot(log.action)]" />
+                      <span class="text-xs font-bold text-[var(--ds-text)]">{{ actionLabel(log.action) }}</span>
+                    </div>
+                    <p class="mt-2 text-xs font-semibold text-[var(--ds-text-muted)]">
+                      {{ log.description || "Evento registado" }}
+                    </p>
+                  </td>
+                  <td class="ds-table-cell px-4 py-4">{{ entityLabel(log.subject_type) }}</td>
+                  <td class="ds-table-cell px-4 py-4">{{ log.causer?.name || "Sistema" }}</td>
+                  <td class="ds-table-cell whitespace-nowrap px-4 py-4">{{ formatDateTime(log.created_at) }}</td>
+                  <td class="px-5 py-4 text-right">
+                    <button
+                      type="button"
+                      class="ds-table-action"
+                      :aria-expanded="Boolean(expandedLogs[log.id])"
+                      @click="toggleLogDetails(log.id)"
+                    >
+                      {{ expandedLogs[log.id] ? "Ocultar" : "Abrir" }}
+                      <ChevronDownIcon :class="['h-4 w-4 transition-transform', expandedLogs[log.id] ? 'rotate-180' : '']" />
+                    </button>
+                  </td>
+                </tr>
+                <tr v-if="expandedLogs[log.id]" class="ds-table-row">
+                  <td colspan="5" class="px-5 py-4">
+                    <div v-if="changedFieldEntries(log).length" class="grid gap-3 xl:grid-cols-2">
+                      <div
+                        v-for="change in changedFieldEntries(log)"
+                        :key="change.field"
+                        class="ds-command-toolbar p-3"
+                      >
+                        <p class="ds-table-heading">{{ formatFieldLabel(change.field) }}</p>
+                        <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                          <p class="break-words text-xs font-semibold text-[var(--ds-text-muted)]">
+                            Antes: {{ formatValue(change.before) }}
+                          </p>
+                          <p class="break-words text-xs font-semibold text-[var(--ds-text)]">
+                            Depois: {{ formatValue(change.after) }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <dl v-else class="grid gap-3 xl:grid-cols-2">
+                      <div
+                        v-for="([key, value]) in propertyEntries(log.properties)"
+                        :key="key"
+                        class="ds-command-toolbar p-3"
+                      >
+                        <dt class="ds-table-heading">{{ formatFieldLabel(key) }}</dt>
+                        <dd class="mt-2 break-words text-xs font-semibold text-[var(--ds-text)]">
+                          {{ formatValue(value) }}
+                        </dd>
+                      </div>
+                    </dl>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-:global(.dark) .iso-audit-trail-page :deep(.text-gray-700),
-:global(.dark) .iso-audit-trail-page :deep(.text-gray-600),
-:global(.dark) .iso-audit-trail-page :deep(.text-gray-500) {
-  color: #cbd5e1 !important;
-}
+      <div v-else class="ds-empty-state m-5 p-10 text-center">
+        <ClipboardDocumentCheckIcon class="mx-auto h-7 w-7 text-[var(--ds-text-soft)]" />
+        <h3 class="ds-heading mt-3 text-sm">Nenhum evento corresponde aos filtros</h3>
+        <p class="ds-copy mt-1 text-xs">Limpe os filtros para rever o trilho carregado.</p>
+      </div>
 
-:global(.dark) .iso-audit-trail-page :deep(input),
-:global(.dark) .iso-audit-trail-page :deep(select),
-:global(.dark) .iso-audit-trail-page :deep(textarea) {
-  border-color: #315149;
-  background: #10231f;
-  color: #f7f1e7;
-}
-</style>
+      <div v-if="logRows.length" class="border-t border-[var(--ds-border)] px-5 py-4">
+        <Pagination :links="logs.links" />
+      </div>
+    </section>
+  </div>
+</template>

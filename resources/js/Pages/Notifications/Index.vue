@@ -1,454 +1,281 @@
 <template>
-  <div class="space-y-6" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <BellIcon class="h-7 w-7 text-blue-900" />
-            {{ $t('gestlab.general.labels.notifications.page_title') }}
-          </h1>
-          <p class="mt-2 text-gray-600">
-            {{ $t('gestlab.general.labels.notifications.subtitle') }}
-            <span class="font-semibold text-blue-900">{{ totalNotifications }}</span>
-            {{ $t('gestlab.general.labels.notifications.notifications_total') }}
-            <span v-if="unreadCount > 0" class="ml-2 font-semibold text-blue-900">
-              ({{ unreadCount }} {{ $t('gestlab.general.labels.notifications.unread') }})
+  <div class="space-y-6">
+    <section class="ds-command-surface overflow-hidden">
+      <div class="flex flex-col gap-5 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0">
+          <p class="ds-kicker">Centro de trabalho</p>
+          <div class="mt-2 flex items-center gap-3">
+            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))]">
+              <BellIcon class="h-5 w-5" />
             </span>
-          </p>
+            <div class="min-w-0">
+              <h1 class="ds-heading text-xl sm:text-2xl">Caixa de notificações</h1>
+              <p class="ds-copy mt-1 text-sm">Alertas de trabalho, decisões pendentes e atualizações do laboratório.</p>
+            </div>
+          </div>
         </div>
-        
-        <div class="flex items-center gap-3">
-          <!-- Mark All as Read Button -->
-          <button
-            v-if="unreadCount > 0"
-            @click="markAllAsRead"
-            :disabled="isProcessing"
-            :class="[
-              'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2',
-              isProcessing
-                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-900 to-blue-800 text-white hover:from-blue-800 hover:to-blue-700' 
-            ]"
-          >
-            <CheckCircleIcon v-if="!isProcessing" class="h-4 w-4" />
-            <ArrowPathIcon v-else class="h-4 w-4 animate-spin" />
-            {{ isProcessing ? $t('gestlab.general.labels.notifications.processing') : $t('gestlab.general.labels.notifications.mark_all_read') }}
-          </button>
-          
-          <!-- Clear All Button -->
-          <button
-            v-if="notifications.length > 0"
-            @click="clearAllNotifications"
-            :disabled="isProcessing"
-            :class="[
-              'inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2',
-              isProcessing
-                ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-                : 'border-gray-300 bg-white text-gray-700 hover:border-red-600 hover:text-red-600 hover:bg-red-50'
-            ]"
-          >
-            <TrashIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.notifications.clear_all') }}
-          </button>
-        </div>
+
+        <button
+          type="button"
+          class="ds-button ds-button-primary shrink-0"
+          :disabled="unreadCount === 0 || isBulkProcessing"
+          @click="markAllAsRead"
+        >
+          <ArrowPathIcon v-if="isBulkProcessing" class="h-4 w-4 animate-spin" />
+          <CheckIcon v-else class="h-4 w-4" />
+          Marcar todas como lidas
+        </button>
       </div>
-    </div>
 
-    <!-- NOTIFICATIONS CONTENT -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- LEFT COLUMN - Notifications List -->
-      <div class="lg:col-span-2 space-y-6">
-        <!-- FILTERS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div class="flex flex-wrap items-center gap-3">
-            <!-- Filter Toggles -->
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="filter in filters"
-                :key="filter.id"
-                @click="activeFilter = filter.id"
-                :class="[
-                  'inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2',
-                  activeFilter === filter.id
-                    ? 'bg-gradient-to-r from-blue-900 to-blue-800 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                ]"
-              >
-                <component :is="filter.icon" class="h-3 w-3" />
-                {{ filter.label }}
-                <span v-if="filter.count > 0" class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-white/20">
-                  {{ filter.count }}
-                </span>
-              </button>
-            </div>
-            
-            <!-- Search -->
-            <div class="relative flex-1 min-w-[200px]">
-              <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <MagnifyingGlassIcon class="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                v-model="searchQuery"
-                type="search"
-                :placeholder="$t('gestlab.general.labels.notifications.search_placeholder')"
-                class="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2 pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-500 focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20 focus:outline-none transition-colors duration-200"
-              />
-            </div>
-          </div>
+      <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--ds-border)]">
+        <div class="px-5 py-4 sm:px-6">
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Total registado</dt>
+          <dd class="mt-1 text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ totalNotifications }}</dd>
         </div>
+        <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Não lidas nesta página</dt>
+          <dd class="mt-1 flex items-baseline gap-2">
+            <span class="text-2xl font-bold tabular-nums text-amber-700 dark:text-amber-300">{{ unreadCount }}</span>
+            <span class="text-xs font-semibold text-[var(--ds-text-soft)]">de {{ notifications.length }}</span>
+          </dd>
+        </div>
+        <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Recebidas hoje</dt>
+          <dd class="mt-1 text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ todayCount }}</dd>
+        </div>
+      </dl>
+    </section>
 
-        <!-- NOTIFICATIONS LIST CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <!-- List Header -->
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-                <BellAlertIcon class="h-5 w-5" />
-                {{ $t('gestlab.general.labels.notifications.recent_notifications') }}
-              </h2>
-              <div class="text-sm text-blue-100">
-                {{ filteredNotifications.length }} {{ $t('gestlab.general.labels.notifications.notifications_found') }}
+    <div class="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
+      <div class="min-w-0 space-y-4">
+        <section class="ds-command-surface overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] p-4 sm:p-5">
+            <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div class="flex min-w-0 gap-1 overflow-x-auto" aria-label="Filtrar notificações">
+                <button
+                  v-for="filter in filters"
+                  :key="filter.id"
+                  type="button"
+                  class="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-xs font-bold transition-colors"
+                  :class="activeFilter === filter.id
+                    ? 'bg-[rgb(var(--primary-700-rgb))] text-white'
+                    : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]'"
+                  :aria-pressed="activeFilter === filter.id"
+                  @click="activeFilter = filter.id"
+                >
+                  <component :is="filter.icon" class="h-4 w-4" />
+                  {{ filter.label }}
+                  <span
+                    class="rounded-md px-1.5 py-0.5 tabular-nums"
+                    :class="activeFilter === filter.id ? 'bg-[rgb(255_255_255/0.15)] text-white' : 'bg-[var(--ds-panel-subtle)] text-[var(--ds-text-soft)]'"
+                  >
+                    {{ filter.count }}
+                  </span>
+                </button>
               </div>
+
+              <label class="relative block w-full xl:w-72">
+                <span class="sr-only">Pesquisar notificações</span>
+                <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
+                <input
+                  v-model="searchQuery"
+                  type="search"
+                  class="ds-field h-10 pl-9"
+                  placeholder="Título, mensagem ou remetente"
+                >
+              </label>
             </div>
           </div>
 
-          <!-- Empty State -->
-          <div v-if="filteredNotifications.length === 0" class="p-12 text-center">
-            <BellSlashIcon class="mx-auto h-12 w-12 text-gray-300" />
-            <h3 class="mt-4 text-sm font-semibold text-gray-900">
-              {{ getEmptyStateTitle }}
-            </h3>
-            <p class="mt-2 text-sm text-gray-500">
-              {{ getEmptyStateDescription }}
-            </p>
-          </div>
-
-          <!-- Notifications List -->
-          <div v-else class="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
-            <div
+          <div v-if="filteredNotifications.length" class="divide-y divide-[var(--ds-border)]">
+            <article
               v-for="notification in filteredNotifications"
               :key="notification.id"
-              :class="[
-                'group relative p-6 hover:bg-gray-50 transition-colors duration-150 cursor-pointer',
-                !notification.read_at ? 'bg-blue-50/30' : 'bg-white'
-              ]"
-              @click="markAsRead(notification)"
+              class="group relative grid gap-3 px-4 py-4 transition-colors hover:bg-[var(--ds-panel-subtle)] sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-start sm:px-5"
+              :class="!notification.read_at ? 'bg-[rgb(var(--primary-50-rgb)/0.42)] dark:bg-[rgb(var(--primary-400-rgb)/0.06)]' : ''"
             >
-              <div class="flex items-start gap-4">
-                <!-- Notification Icon -->
-                <div class="flex-shrink-0">
-                  <div 
-                    :class="[
-                      'flex h-10 w-10 items-center justify-center rounded-full',
-                      getNotificationIconClass(notification)
-                    ]"
-                  >
-                    <component :is="getNotificationIcon(notification)" class="h-5 w-5 text-white" />
-                  </div>
+              <div
+                class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border"
+                :class="notificationType(notification).iconClass"
+              >
+                <component :is="notificationType(notification).icon" class="h-4.5 w-4.5" />
+              </div>
+
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h2 class="truncate text-sm font-bold text-[var(--ds-text)]">
+                    {{ notificationTitle(notification) }}
+                  </h2>
+                  <span v-if="!notification.read_at" class="inline-flex items-center gap-1 text-[0.7rem] font-bold uppercase text-amber-700 dark:text-amber-300">
+                    <span class="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                    Nova
+                  </span>
+                  <span class="rounded-md border px-1.5 py-0.5 text-[0.68rem] font-bold uppercase" :class="notificationType(notification).badgeClass">
+                    {{ notificationType(notification).label }}
+                  </span>
                 </div>
-
-                <!-- Notification Content -->
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <h3 class="text-sm font-semibold text-gray-900">
-                        {{ notification.data.title || $t('gestlab.general.labels.notifications.no_title') }}
-                      </h3>
-                      <p class="mt-1 text-xs text-gray-500 flex items-center gap-1">
-                        <ClockIcon class="h-3 w-3" />
-                        {{ formatRelativeTime(notification.created_at) }}
-                      </p>
-                    </div>
-                    
-                    <!-- Unread Badge -->
-                    <div v-if="!notification.read_at" class="flex items-center">
-                      <span class="inline-flex h-2 w-2 rounded-full bg-gradient-to-r from-blue-900 to-blue-800 animate-pulse">
-                        <span class="sr-only">{{ $t('gestlab.general.labels.notifications.unread') }}</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  <p class="mt-2 text-sm text-gray-700 line-clamp-2">
-                    {{ notification.data.message || notification.data.body || '' }}
-                  </p>
-
-                  <!-- Notification Metadata -->
-                  <div class="mt-3 flex flex-wrap items-center gap-3 text-xs">
-                    <span :class="[
-                      'inline-flex items-center rounded-full px-2.5 py-0.5 font-medium',
-                      getTypeBadgeClass(notification)
-                    ]">
-                      {{ getTypeText(notification) }}
-                    </span>
-                    
-                    <span class="text-gray-500">
-                      {{ formatDate(notification.created_at) }}
-                    </span>
-                    
-                    <span v-if="notification.data.sender" class="text-gray-500 flex items-center gap-1">
-                      <UserIcon class="h-3 w-3" />
-                      {{ notification.data.sender }}
-                    </span>
-                  </div>
-
-                  <!-- Actions -->
-                  <div class="mt-4 flex items-center gap-3">
-                    <button
-                      v-if="!notification.read_at"
-                      @click.stop="markAsRead(notification)"
-                      class="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-900 hover:bg-blue-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-                    >
-                      <CheckCircleIcon class="h-3 w-3" />
-                      {{ $t('gestlab.general.labels.notifications.mark_as_read') }}
-                    </button>
-                    
-                    <button
-                      @click.stop="markAsUnread(notification)"
-                      v-if="notification.read_at"
-                      class="inline-flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-                    >
-                      <EyeSlashIcon class="h-3 w-3" />
-                      {{ $t('gestlab.general.labels.notifications.mark_as_unread') }}
-                    </button>
-
-                    <button
-                      v-if="getNotificationTargetUrl(notification)"
-                      @click.stop="openNotificationTarget(notification)"
-                      class="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
-                    >
-                      <BellAlertIcon class="h-3 w-3" />
-                      Abrir registo
-                    </button>
-                    
-                    <button
-                      @click.stop="deleteNotification(notification)"
-                      class="inline-flex items-center gap-1 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 ml-auto"
-                    >
-                      <TrashIcon class="h-3 w-3" />
-                      {{ $t('gestlab.general.labels.notifications.delete') }}
-                    </button>
-                  </div>
+                <p class="mt-1 line-clamp-2 text-sm leading-6 text-[var(--ds-text-muted)]">
+                  {{ notificationMessage(notification) }}
+                </p>
+                <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-[var(--ds-text-soft)]">
+                  <span class="inline-flex items-center gap-1.5">
+                    <ClockIcon class="h-3.5 w-3.5" />
+                    <time :datetime="notification.created_at">{{ formatRelativeTime(notification.created_at) }}</time>
+                  </span>
+                  <span v-if="notificationSender(notification)" class="inline-flex min-w-0 items-center gap-1.5">
+                    <UserIcon class="h-3.5 w-3.5 shrink-0" />
+                    <span class="truncate">{{ notificationSender(notification) }}</span>
+                  </span>
                 </div>
+              </div>
 
-                <!-- Quick Actions Dropdown -->
-                <div class="absolute right-4 top-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <Menu as="div" class="relative">
-                    <MenuButton class="p-1 rounded-full text-gray-400 hover:text-blue-900 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2">
-                      <EllipsisVerticalIcon class="h-5 w-5" />
-                    </MenuButton>
-                    <MenuItems class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-xl bg-white shadow-lg border border-gray-200 py-2">
-                      <MenuItem v-slot="{ active }">
-                        <button
-                          @click.stop="!notification.read_at ? markAsRead(notification) : markAsUnread(notification)"
-                          :class="[
-                            active ? 'bg-gray-50' : '',
-                            'w-full text-left px-4 py-2 text-sm text-gray-700 flex items-center gap-2'
-                          ]"
-                        >
-                          <component :is="!notification.read_at ? CheckCircleIcon : EyeSlashIcon" class="h-4 w-4" />
-                          {{ !notification.read_at ? $t('gestlab.general.labels.notifications.mark_as_read') : $t('gestlab.general.labels.notifications.mark_as_unread') }}
-                        </button>
-                      </MenuItem>
-                      <MenuItem v-slot="{ active }">
-                        <button
-                          @click.stop="deleteNotification(notification)"
-                          :class="[
-                            active ? 'bg-gray-50' : '',
-                            'w-full text-left px-4 py-2 text-sm text-red-600 flex items-center gap-2'
-                          ]"
-                        >
-                          <TrashIcon class="h-4 w-4" />
-                          {{ $t('gestlab.general.labels.notifications.delete') }}
-                        </button>
-                      </MenuItem>
-                    </MenuItems>
-                  </Menu>
-                </div>
+              <div class="flex items-center gap-1 sm:justify-self-end">
+                <button
+                  v-if="getNotificationTargetUrl(notification)"
+                  type="button"
+                  class="ds-icon-button"
+                  :title="notificationTargetLabel(notification)"
+                  :disabled="processingId === notification.id"
+                  @click="openNotificationTarget(notification)"
+                >
+                  <ArrowTopRightOnSquareIcon class="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  class="ds-icon-button"
+                  :title="notification.read_at ? 'Marcar como não lida' : 'Marcar como lida'"
+                  :disabled="processingId === notification.id"
+                  @click="notification.read_at ? markAsUnread(notification) : markAsRead(notification)"
+                >
+                  <ArrowPathIcon v-if="processingId === notification.id" class="h-4 w-4 animate-spin" />
+                  <EnvelopeIcon v-else-if="notification.read_at" class="h-4 w-4" />
+                  <EnvelopeOpenIcon v-else class="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  class="ds-icon-button hover:!text-red-600"
+                  title="Apagar notificação"
+                  :disabled="processingId === notification.id"
+                  @click="requestConfirmation('delete', notification)"
+                >
+                  <TrashIcon class="h-4 w-4" />
+                </button>
+              </div>
+            </article>
+          </div>
+
+          <div v-else class="p-5 sm:p-8">
+            <div class="ds-empty-state grid min-h-52 place-items-center px-6 py-10 text-center">
+              <div>
+                <BellSlashIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
+                <h2 class="ds-heading mt-3 text-base">{{ emptyStateTitle }}</h2>
+                <p class="ds-copy mt-1 text-sm">{{ emptyStateDescription }}</p>
+                <button
+                  v-if="activeFilter !== 'all' || searchQuery"
+                  type="button"
+                  class="ds-button ds-button-secondary mt-4"
+                  @click="resetFilters"
+                >
+                  Repor filtros
+                </button>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- Pagination -->
-        <Pagination
-          v-if="props.pagination.total > props.pagination.per_page"
-          :links="props.pagination.links"
-          :from="props.pagination.from"
-          :to="props.pagination.to"
-          :total="props.pagination.total"
-          :current_page="props.pagination.current_page"
-          :last_page="props.pagination.last_page"
-          :per_page="props.pagination.per_page"
-          class="mt-4"
-        />
+        <Pagination v-if="pagination.last_page > 1" v-bind="pagination" />
       </div>
 
-      <!-- RIGHT COLUMN - Stats & Actions -->
-      <div class="space-y-6">
-        <!-- STATS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <ChartBarIcon class="h-5 w-5 text-blue-900" />
-            {{ $t('gestlab.general.labels.notifications.stats_title') }}
-          </h3>
-          <div class="space-y-4">
-            <!-- Total Notifications -->
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <BellIcon class="h-4 w-4 text-blue-900" />
-                </div>
-                <span class="text-sm text-gray-700">{{ $t('gestlab.general.labels.notifications.total') }}</span>
-              </div>
-              <span class="text-lg font-bold text-blue-900">{{ totalNotifications }}</span>
-            </div>
-            
-            <!-- Unread Notifications -->
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <div class="h-8 w-8 rounded-full bg-yellow-100 flex items-center justify-center">
-                  <BellAlertIcon class="h-4 w-4 text-yellow-600" />
-                </div>
-                <span class="text-sm text-gray-700">{{ $t('gestlab.general.labels.notifications.unread') }}</span>
-              </div>
-              <span class="text-lg font-bold text-yellow-600">{{ unreadCount }}</span>
-            </div>
-            
-            <!-- Today's Notifications -->
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <div class="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                  <CalendarIcon class="h-4 w-4 text-green-600" />
-                </div>
-                <span class="text-sm text-gray-700">{{ $t('gestlab.general.labels.notifications.today') }}</span>
-              </div>
-              <span class="text-lg font-bold text-green-600">{{ todayCount }}</span>
-            </div>
-            
-            <!-- This Week -->
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <div class="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                  <CalendarDaysIcon class="h-4 w-4 text-purple-600" />
-                </div>
-                <span class="text-sm text-gray-700">{{ $t('gestlab.general.labels.notifications.this_week') }}</span>
-              </div>
-              <span class="text-lg font-bold text-purple-600">{{ thisWeekCount }}</span>
-            </div>
+      <aside class="space-y-4">
+        <section class="ds-command-surface overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-4 py-3">
+            <h2 class="ds-heading text-sm">Composição da página</h2>
+            <p class="mt-1 text-xs font-medium text-[var(--ds-text-soft)]">Distribuição por severidade.</p>
           </div>
-        </div>
+          <dl v-if="notificationTypes.length" class="divide-y divide-[var(--ds-border)]">
+            <div v-for="type in notificationTypes" :key="type.id" class="flex items-center justify-between gap-3 px-4 py-3">
+              <dt class="flex min-w-0 items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
+                <span class="h-2 w-2 shrink-0 rounded-full" :class="type.dotClass" />
+                <span class="truncate">{{ type.label }}</span>
+              </dt>
+              <dd class="text-sm font-bold tabular-nums text-[var(--ds-text)]">{{ type.count }}</dd>
+            </div>
+          </dl>
+          <p v-else class="px-4 py-5 text-xs font-medium text-[var(--ds-text-soft)]">Sem notificações nesta página.</p>
+        </section>
 
-        <!-- QUICK ACTIONS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <BoltIcon class="h-5 w-5 text-blue-900" />
-            {{ $t('gestlab.general.labels.notifications.quick_actions') }}
-          </h3>
-          <div class="space-y-3">
+        <section class="ds-command-surface p-4">
+          <p class="ds-kicker">Gestão</p>
+          <h2 class="ds-heading mt-2 text-sm">Higiene da caixa</h2>
+          <p class="ds-copy mt-1 text-xs">Remova registos concluídos sem afetar os alertas ainda por tratar.</p>
+          <div class="mt-4 grid gap-2">
             <button
-              @click="markAllAsRead"
-              :disabled="unreadCount === 0 || isProcessing"
-              :class="[
-                'w-full inline-flex justify-center items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2',
-                unreadCount === 0 || isProcessing
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-900 to-blue-800 text-white hover:from-blue-800 hover:to-blue-700'
-              ]"
+              type="button"
+              class="ds-button ds-button-secondary w-full justify-start"
+              :disabled="readCount === 0 || isBulkProcessing"
+              @click="requestConfirmation('clearRead')"
             >
-              <CheckCircleIcon class="h-4 w-4" />
-              {{ $t('gestlab.general.labels.notifications.mark_all_read') }}
+              <ArchiveBoxXMarkIcon class="h-4 w-4" />
+              Limpar notificações lidas
             </button>
-            
             <button
-              @click="clearAllRead"
-              :disabled="readCount === 0 || isProcessing"
-              :class="[
-                'w-full inline-flex justify-center items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2',
-                readCount === 0 || isProcessing
-                  ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-                  : 'border-gray-300 bg-white text-gray-700 hover:border-red-600 hover:text-red-600 hover:bg-red-50'
-              ]"
+              type="button"
+              class="ds-button w-full justify-start border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300"
+              :disabled="notifications.length === 0 || isBulkProcessing"
+              @click="requestConfirmation('clearAll')"
             >
               <TrashIcon class="h-4 w-4" />
-              {{ $t('gestlab.general.labels.notifications.clear_all_read') }}
-            </button>
-            
-            <button
-              @click="openNotificationSettings"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium shadow-sm hover:bg-gray-50 hover:text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-            >
-              <Cog6ToothIcon class="h-4 w-4" />
-              {{ $t('gestlab.general.labels.notifications.notification_settings') }}
+              Limpar toda a caixa
             </button>
           </div>
-        </div>
-
-        <!-- NOTIFICATION TYPES CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <TagIcon class="h-5 w-5 text-blue-900" />
-            {{ $t('gestlab.general.labels.notifications.types_title') }}
-          </h3>
-          <div class="space-y-2">
-            <div
-              v-for="type in notificationTypes"
-              :key="type.id"
-              class="flex items-center justify-between py-2"
-            >
-              <div class="flex items-center gap-2">
-                <span :class="['inline-flex h-3 w-3 rounded-full', type.color]"></span>
-                <span class="text-sm text-gray-700">{{ type.label }}</span>
-              </div>
-              <span class="text-sm font-semibold text-gray-900">{{ type.count }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+        </section>
+      </aside>
     </div>
+
+    <ConfirmDialog
+      v-if="pendingConfirmation"
+      :title="confirmationCopy.title"
+      :description="confirmationCopy.description"
+      :confirm="confirmationCopy.confirm"
+      @confirmed="performConfirmedAction"
+      @canceled="pendingConfirmation = null"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { computed, ref, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
-import Pagination from '@/Components/pagination.vue'
 import {
-  BellIcon,
-  BellAlertIcon,
-  BellSlashIcon,
-  CheckCircleIcon,
-  TrashIcon,
-  MagnifyingGlassIcon,
-  ClockIcon,
-  UserIcon,
-  EyeSlashIcon,
-  EllipsisVerticalIcon,
-  ChartBarIcon,
-  CalendarIcon,
-  CalendarDaysIcon,
-  BoltIcon,
-  Cog6ToothIcon,
-  TagIcon,
+  ArchiveBoxXMarkIcon,
   ArrowPathIcon,
+  ArrowTopRightOnSquareIcon,
+  BellAlertIcon,
+  BellIcon,
+  BellSlashIcon,
+  CheckBadgeIcon,
+  CheckCircleIcon,
+  CheckIcon,
+  ClockIcon,
   EnvelopeIcon,
+  EnvelopeOpenIcon,
   ExclamationTriangleIcon,
   InformationCircleIcon,
-  CheckBadgeIcon,
-  XCircleIcon
+  MagnifyingGlassIcon,
+  TrashIcon,
+  UserIcon,
+  XCircleIcon,
 } from '@heroicons/vue/24/outline'
-import Layout from "@/Shared/Layouts/Layout.vue";
+import ConfirmDialog from '@/Components/confirm-dialog.vue'
+import Pagination from '@/Components/pagination.vue'
+import Layout from '@/Shared/Layouts/Layout.vue'
 
-defineOptions({
-  layout: Layout
-});
+defineOptions({ layout: Layout })
 
 const props = defineProps({
   notifications: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   pagination: {
     type: Object,
@@ -459,458 +286,364 @@ const props = defineProps({
       total: 0,
       current_page: 1,
       last_page: 1,
-      per_page: 20
-    })
-  }
+      per_page: 20,
+    }),
+  },
 })
 
-// State
-const isProcessing = ref(false)
+const notifications = ref([...props.notifications])
 const activeFilter = ref('all')
 const searchQuery = ref('')
-const notifications = ref(props.notifications)
+const processingId = ref(null)
+const isBulkProcessing = ref(false)
+const pendingConfirmation = ref(null)
 
-// Watch for prop changes (when paginating)
-watch(() => props.notifications, (newNotifications) => {
-  notifications.value = newNotifications
+watch(() => props.notifications, (value) => {
+  notifications.value = [...value]
 }, { deep: true })
 
-// Computed Properties
-const totalNotifications = computed(() => props.pagination.total || notifications.value.length)
-const unreadCount = computed(() => notifications.value.filter(n => !n.read_at).length)
-const readCount = computed(() => notifications.value.filter(n => n.read_at).length)
-
+const totalNotifications = computed(() => props.pagination.total ?? notifications.value.length)
+const unreadCount = computed(() => notifications.value.filter((notification) => !notification.read_at).length)
+const readCount = computed(() => notifications.value.filter((notification) => notification.read_at).length)
 const todayCount = computed(() => {
   const today = new Date().toDateString()
-  return notifications.value.filter(n => {
-    const notificationDate = new Date(n.created_at).toDateString()
-    return notificationDate === today
-  }).length
+
+  return notifications.value.filter((notification) => new Date(notification.created_at).toDateString() === today).length
 })
 
-const thisWeekCount = computed(() => {
-  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  return notifications.value.filter(n => new Date(n.created_at) > oneWeekAgo).length
-})
-
-const filteredNotifications = computed(() => {
-  let filtered = notifications.value
-  
-  // Apply filter
-  switch (activeFilter.value) {
-    case 'unread':
-      filtered = filtered.filter(n => !n.read_at)
-      break
-    case 'read':
-      filtered = filtered.filter(n => n.read_at)
-      break
-    case 'today':
-      const today = new Date().toDateString()
-      filtered = filtered.filter(n => new Date(n.created_at).toDateString() === today)
-      break
-    case 'important':
-      filtered = filtered.filter(n => (n.data && (n.data.priority === 'high' || n.data.type === 'alert')))
-      break
-  }
-  
-  // Apply search
-  if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase().trim()
-    filtered = filtered.filter(n => {
-      // Safely access notification data
-      const title = n.data?.title || ''
-      const message = n.data?.message || ''
-      const body = n.data?.body || ''
-      const sender = n.data?.sender || ''
-      
-      return title.toLowerCase().includes(query) ||
-             message.toLowerCase().includes(query) ||
-             body.toLowerCase().includes(query) ||
-             sender.toLowerCase().includes(query)
-    })
-  }
-  
-  return filtered
-})
+const importantCount = computed(() => notifications.value.filter((notification) => (
+  notification.data?.priority === 'high' || notification.data?.type === 'alert'
+)).length)
 
 const filters = computed(() => [
   { id: 'all', label: 'Todas', icon: BellIcon, count: notifications.value.length },
   { id: 'unread', label: 'Não lidas', icon: BellAlertIcon, count: unreadCount.value },
   { id: 'read', label: 'Lidas', icon: CheckCircleIcon, count: readCount.value },
-  { id: 'today', label: 'Hoje', icon: CalendarIcon, count: todayCount.value },
-  { id: 'important', label: 'Importantes', icon: ExclamationTriangleIcon, count: notifications.value.filter(n => n.data?.priority === 'high').length }
+  { id: 'today', label: 'Hoje', icon: ClockIcon, count: todayCount.value },
+  { id: 'important', label: 'Críticas', icon: ExclamationTriangleIcon, count: importantCount.value },
 ])
 
+const filteredNotifications = computed(() => {
+  let records = notifications.value
+
+  if (activeFilter.value === 'unread') {
+    records = records.filter((notification) => !notification.read_at)
+  } else if (activeFilter.value === 'read') {
+    records = records.filter((notification) => notification.read_at)
+  } else if (activeFilter.value === 'today') {
+    const today = new Date().toDateString()
+    records = records.filter((notification) => new Date(notification.created_at).toDateString() === today)
+  } else if (activeFilter.value === 'important') {
+    records = records.filter((notification) => notification.data?.priority === 'high' || notification.data?.type === 'alert')
+  }
+
+  const query = searchQuery.value.trim().toLocaleLowerCase('pt-PT')
+
+  if (!query) {
+    return records
+  }
+
+  return records.filter((notification) => [
+    notificationTitle(notification),
+    notificationMessage(notification),
+    notificationSender(notification),
+  ].some((value) => value.toLocaleLowerCase('pt-PT').includes(query)))
+})
+
+const notificationTypeDefinitions = {
+  success: {
+    label: 'Sucesso',
+    icon: CheckBadgeIcon,
+    iconClass: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300',
+    badgeClass: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300',
+    dotClass: 'bg-emerald-500',
+  },
+  error: {
+    label: 'Erro',
+    icon: XCircleIcon,
+    iconClass: 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300',
+    badgeClass: 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300',
+    dotClass: 'bg-red-500',
+  },
+  warning: {
+    label: 'Aviso',
+    icon: ExclamationTriangleIcon,
+    iconClass: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300',
+    badgeClass: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300',
+    dotClass: 'bg-amber-500',
+  },
+  alert: {
+    label: 'Alerta',
+    icon: BellAlertIcon,
+    iconClass: 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-300',
+    badgeClass: 'border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-300',
+    dotClass: 'bg-orange-500',
+  },
+  email: {
+    label: 'Mensagem',
+    icon: EnvelopeIcon,
+    iconClass: 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300',
+    badgeClass: 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300',
+    dotClass: 'bg-violet-500',
+  },
+  info: {
+    label: 'Informação',
+    icon: InformationCircleIcon,
+    iconClass: 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300',
+    badgeClass: 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300',
+    dotClass: 'bg-sky-500',
+  },
+}
+
 const notificationTypes = computed(() => {
-  const types = {
-    info: { id: 'info', label: 'Informação', color: 'bg-blue-500', count: 0 },
-    success: { id: 'success', label: 'Sucesso', color: 'bg-green-500', count: 0 },
-    warning: { id: 'warning', label: 'Aviso', color: 'bg-yellow-500', count: 0 },
-    error: { id: 'error', label: 'Erro', color: 'bg-red-500', count: 0 },
-    alert: { id: 'alert', label: 'Alerta', color: 'bg-orange-500', count: 0 }
-  }
-  
-  notifications.value.forEach(n => {
-    const type = n.data?.type || 'info'
-    if (types[type]) {
-      types[type].count++
-    } else {
-      types.info.count++
-    }
+  const counts = new Map()
+
+  notifications.value.forEach((notification) => {
+    const type = notificationTypeKey(notification)
+    counts.set(type, (counts.get(type) ?? 0) + 1)
   })
-  
-  return Object.values(types).filter(t => t.count > 0)
+
+  return [...counts.entries()].map(([id, count]) => ({
+    id,
+    count,
+    ...notificationTypeDefinitions[id],
+  }))
 })
 
-const getEmptyStateTitle = computed(() => {
-  if (searchQuery.value.trim()) return 'Nenhuma notificação encontrada'
+const emptyStateTitle = computed(() => {
+  if (searchQuery.value.trim()) {
+    return 'Nenhuma correspondência'
+  }
+
   if (activeFilter.value !== 'all') {
-    const filterLabels = {
-      'unread': 'não lidas',
-      'read': 'lidas',
-      'today': 'de hoje',
-      'important': 'importantes'
+    return 'Nenhuma notificação neste filtro'
+  }
+
+  return 'Caixa de notificações vazia'
+})
+
+const emptyStateDescription = computed(() => {
+  if (searchQuery.value.trim()) {
+    return 'Altere os termos da pesquisa ou reponha os filtros.'
+  }
+
+  if (activeFilter.value !== 'all') {
+    return 'Selecione outro estado para consultar os restantes registos.'
+  }
+
+  return 'Os novos alertas operacionais serão apresentados aqui.'
+})
+
+const confirmationCopy = computed(() => {
+  if (pendingConfirmation.value?.action === 'delete') {
+    return {
+      title: 'Apagar notificação',
+      description: `A notificação “${notificationTitle(pendingConfirmation.value.notification)}” será removida permanentemente.`,
+      confirm: 'Apagar',
     }
-    return `Nenhuma notificação ${filterLabels[activeFilter.value] || activeFilter.value}`
   }
-  return 'Nenhuma notificação'
+
+  if (pendingConfirmation.value?.action === 'clearRead') {
+    return {
+      title: 'Limpar notificações lidas',
+      description: 'Todas as notificações já tratadas serão removidas da sua caixa.',
+      confirm: 'Limpar lidas',
+    }
+  }
+
+  return {
+    title: 'Limpar toda a caixa',
+    description: 'Todas as notificações, incluindo as ainda não lidas, serão removidas permanentemente.',
+    confirm: 'Limpar caixa',
+  }
 })
 
-const getEmptyStateDescription = computed(() => {
-  if (searchQuery.value.trim()) return 'Tente buscar com outros termos'
-  if (activeFilter.value !== 'all') return 'Mude o filtro para ver outras notificações'
-  return 'As notificações aparecerão aqui quando você tiver alguma'
-})
+function notificationTypeKey(notification) {
+  const key = notification.data?.type ?? 'info'
 
-// Helper Functions
-const getNotificationIcon = (notification) => {
-  const type = notification.data?.type || 'info'
-  const iconMap = {
-    success: CheckBadgeIcon,
-    error: XCircleIcon,
-    warning: ExclamationTriangleIcon,
-    alert: BellAlertIcon,
-    info: InformationCircleIcon,
-    email: EnvelopeIcon
+  return notificationTypeDefinitions[key] ? key : 'info'
+}
+
+function notificationType(notification) {
+  return notificationTypeDefinitions[notificationTypeKey(notification)]
+}
+
+function notificationTitle(notification) {
+  return String(notification.data?.title || 'Notificação sem título')
+}
+
+function notificationMessage(notification) {
+  return String(notification.data?.message || notification.data?.body || 'Sem descrição adicional.')
+}
+
+function notificationSender(notification) {
+  const sender = notification.data?.sender
+
+  if (sender && typeof sender === 'object') {
+    return String(sender.name || sender.email || '')
   }
-  return iconMap[type] || BellIcon
+
+  return sender ? String(sender) : ''
 }
 
-const getNotificationIconClass = (notification) => {
-  const type = notification.data?.type || 'info'
-  const classMap = {
-    success: 'bg-gradient-to-r from-green-600 to-green-500',
-    error: 'bg-gradient-to-r from-red-600 to-red-500',
-    warning: 'bg-gradient-to-r from-yellow-600 to-yellow-500',
-    alert: 'bg-gradient-to-r from-orange-600 to-orange-500',
-    info: 'bg-gradient-to-r from-blue-900 to-blue-800'
-  }
-  return classMap[type] || 'bg-gradient-to-r from-blue-900 to-blue-800'
-}
+function formatRelativeTime(dateString) {
+  const elapsed = Math.max(0, Date.now() - new Date(dateString).getTime())
+  const minutes = Math.floor(elapsed / 60000)
+  const hours = Math.floor(elapsed / 3600000)
+  const days = Math.floor(elapsed / 86400000)
 
-const getTypeBadgeClass = (notification) => {
-  const type = notification.data?.type || 'info'
-  const classMap = {
-    success: 'bg-green-100 text-green-800',
-    error: 'bg-red-100 text-red-800',
-    warning: 'bg-yellow-100 text-yellow-800',
-    alert: 'bg-orange-100 text-orange-800',
-    info: 'bg-blue-100 text-blue-800'
-  }
-  return classMap[type] || 'bg-gray-100 text-gray-800'
-}
+  if (minutes < 1) return 'Agora'
+  if (minutes < 60) return `Há ${minutes} min`
+  if (hours < 24) return `Há ${hours} h`
+  if (days === 1) return 'Ontem'
+  if (days < 7) return `Há ${days} dias`
 
-const getTypeText = (notification) => {
-  const type = notification.data?.type || 'info'
-  const textMap = {
-    success: 'Sucesso',
-    error: 'Erro',
-    warning: 'Aviso',
-    alert: 'Alerta',
-    info: 'Informação'
-  }
-  return textMap[type] || 'Notificação'
-}
-
-const formatRelativeTime = (dateString) => {
-  const now = new Date()
-  const date = new Date(dateString)
-  const diffTime = Math.abs(now - date)
-  const diffMinutes = Math.floor(diffTime / (1000 * 60))
-  const diffHours = Math.floor(diffTime / (1000 * 60 * 60))
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-  
-  if (diffMinutes < 1) return 'Agora'
-  if (diffMinutes < 60) return `${diffMinutes} min atrás`
-  if (diffHours < 24) return `${diffHours} h atrás`
-  if (diffDays === 1) return 'Ontem'
-  if (diffDays < 7) return `${diffDays} dias atrás`
-  return formatDate(dateString)
-}
-
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('pt-PT', {
+  return new Intl.DateTimeFormat('pt-PT', {
     day: '2-digit',
     month: 'short',
-    year: 'numeric'
-  })
+    year: 'numeric',
+  }).format(new Date(dateString))
 }
 
-// Actions
-const markAsRead = async (notification) => {
-  if (notification.read_at) return
-  
-  isProcessing.value = true
-  try {
-    await router.post(route('notifications.read', { notification: notification.id }), {}, {
-      preserveScroll: true,
-      onSuccess: () => {
-        notification.read_at = new Date().toISOString()
-      },
-      onError: () => {
-        // Handle error if needed
-      },
-      onFinish: () => {
-        isProcessing.value = false
-      }
-    })
-  } catch (error) {
-    console.error('Error marking as read:', error)
-    isProcessing.value = false
-  }
-}
-
-const markAsUnread = async (notification) => {
-  if (!notification.read_at) return
-  
-  isProcessing.value = true
-  try {
-    await router.post(route('notifications.unread', { notification: notification.id }), {}, {
-      preserveScroll: true,
-      onSuccess: () => {
-        notification.read_at = null
-      },
-      onError: () => {
-        // Handle error if needed
-      },
-      onFinish: () => {
-        isProcessing.value = false
-      }
-    })
-  } catch (error) {
-    console.error('Error marking as unread:', error)
-    isProcessing.value = false
-  }
-}
-
-const markAllAsRead = async () => {
-  if (unreadCount.value === 0) return
-  
-  if (!confirm('Tem certeza que deseja marcar todas as notificações como lidas?')) return
-  
-  isProcessing.value = true
-  try {
-    await router.post(route('notifications.read-all'), {}, {
-      preserveScroll: true,
-      onSuccess: () => {
-        notifications.value.forEach(n => {
-          if (!n.read_at) {
-            n.read_at = new Date().toISOString()
-          }
-        })
-      },
-      onError: () => {
-        // Handle error if needed
-      },
-      onFinish: () => {
-        isProcessing.value = false
-      }
-    })
-  } catch (error) {
-    console.error('Error marking all as read:', error)
-    isProcessing.value = false
-  }
-}
-
-const deleteNotification = async (notification) => {
-  if (!confirm('Tem certeza que deseja apagar esta notificação?')) return
-  
-  isProcessing.value = true
-  try {
-    await router.delete(route('notifications.delete', { id: notification.id }), {
-      preserveScroll: true,
-      onSuccess: () => {
-        const index = notifications.value.findIndex(n => n.id === notification.id)
-        if (index !== -1) {
-          notifications.value.splice(index, 1)
-        }
-      },
-      onError: () => {
-        // Handle error if needed
-      },
-      onFinish: () => {
-        isProcessing.value = false
-      }
-    })
-  } catch (error) {
-    console.error('Error deleting notification:', error)
-    isProcessing.value = false
-  }
-}
-
-const clearAllNotifications = async () => {
-  if (notifications.value.length === 0) return
-  
-  if (!confirm('Tem certeza que deseja apagar todas as notificações?')) return
-  
-  isProcessing.value = true
-  try {
-    await router.delete(route('notifications.clear-all'), {
-      preserveScroll: true,
-      onSuccess: () => {
-        notifications.value = []
-      },
-      onError: () => {
-        // Handle error if needed
-      },
-      onFinish: () => {
-        isProcessing.value = false
-      }
-    })
-  } catch (error) {
-    console.error('Error clearing all notifications:', error)
-    isProcessing.value = false
-  }
-}
-
-const getNotificationTargetUrl = (notification) => {
-  return notification?.data?.need_url
-    || notification?.data?.analysis_url
-    || notification?.data?.collection_url
-    || notification?.data?.worksheet_url
+function getNotificationTargetUrl(notification) {
+  return notification.data?.need_url
+    || notification.data?.analysis_url
+    || notification.data?.collection_url
+    || notification.data?.worksheet_url
     || null
 }
 
-const openNotificationTarget = async (notification) => {
-  const targetUrl = getNotificationTargetUrl(notification)
+function notificationTargetLabel(notification) {
+  if (notification.data?.need_url) return 'Abrir necessidade'
+  if (notification.data?.analysis_url) return 'Abrir análise'
+  if (notification.data?.collection_url) return 'Abrir colheita'
+  if (notification.data?.worksheet_url) return 'Abrir folha de trabalho'
 
-  if (!targetUrl) {
+  return 'Abrir registo relacionado'
+}
+
+function markAsRead(notification, afterSuccess = null) {
+  if (notification.read_at) {
+    afterSuccess?.()
     return
   }
 
-  if (!notification.read_at) {
-    await markAsRead(notification)
+  processingId.value = notification.id
+  router.post(route('notifications.read', { notification: notification.id }), {}, {
+    preserveScroll: true,
+    onSuccess: () => {
+      notification.read_at = new Date().toISOString()
+      afterSuccess?.()
+    },
+    onFinish: () => {
+      processingId.value = null
+    },
+  })
+}
+
+function markAsUnread(notification) {
+  if (!notification.read_at) return
+
+  processingId.value = notification.id
+  router.post(route('notifications.unread', { notification: notification.id }), {}, {
+    preserveScroll: true,
+    onSuccess: () => {
+      notification.read_at = null
+    },
+    onFinish: () => {
+      processingId.value = null
+    },
+  })
+}
+
+function markAllAsRead() {
+  if (unreadCount.value === 0) return
+
+  isBulkProcessing.value = true
+  router.post(route('notifications.read-all'), {}, {
+    preserveScroll: true,
+    onSuccess: () => {
+      const readAt = new Date().toISOString()
+      notifications.value.forEach((notification) => {
+        notification.read_at = notification.read_at || readAt
+      })
+    },
+    onFinish: () => {
+      isBulkProcessing.value = false
+    },
+  })
+}
+
+function openNotificationTarget(notification) {
+  const targetUrl = getNotificationTargetUrl(notification)
+
+  if (!targetUrl) return
+
+  markAsRead(notification, () => router.visit(targetUrl))
+}
+
+function requestConfirmation(action, notification = null) {
+  pendingConfirmation.value = { action, notification }
+}
+
+function performConfirmedAction() {
+  const pending = pendingConfirmation.value
+  pendingConfirmation.value = null
+
+  if (pending.action === 'delete') {
+    deleteNotification(pending.notification)
+  } else if (pending.action === 'clearRead') {
+    clearReadNotifications()
+  } else {
+    clearAllNotifications()
   }
-
-  router.visit(targetUrl)
 }
 
-const clearAllRead = async () => {
-  const readNotifications = notifications.value.filter(n => n.read_at)
-  if (readNotifications.length === 0) return
-  
-  if (!confirm('Tem certeza que deseja apagar todas as notificações lidas?')) return
-  
-  isProcessing.value = true
-  try {
-    await router.delete(route('notifications.clear-read'), {
-      preserveScroll: true,
-      onSuccess: () => {
-        notifications.value = notifications.value.filter(n => !n.read_at)
-      },
-      onError: () => {
-        // Handle error if needed
-      },
-      onFinish: () => {
-        isProcessing.value = false
-      }
-    })
-  } catch (error) {
-    console.error('Error clearing read notifications:', error)
-    isProcessing.value = false
-  }
+function deleteNotification(notification) {
+  processingId.value = notification.id
+  router.delete(route('notifications.delete', { notification: notification.id }), {
+    preserveScroll: true,
+    onSuccess: () => {
+      notifications.value = notifications.value.filter((record) => record.id !== notification.id)
+    },
+    onFinish: () => {
+      processingId.value = null
+    },
+  })
 }
 
-const openNotificationSettings = () => {
-  router.get(route('notification-settings'))
+function clearReadNotifications() {
+  if (readCount.value === 0) return
+
+  isBulkProcessing.value = true
+  router.delete(route('notifications.clear-read'), {
+    preserveScroll: true,
+    onSuccess: () => {
+      notifications.value = notifications.value.filter((notification) => !notification.read_at)
+    },
+    onFinish: () => {
+      isBulkProcessing.value = false
+    },
+  })
 }
 
-// Lifecycle
-onMounted(() => {
-  // Initialize from props
-  notifications.value = props.notifications
-})
+function clearAllNotifications() {
+  if (notifications.value.length === 0) return
+
+  isBulkProcessing.value = true
+  router.delete(route('notifications.clear-all'), {
+    preserveScroll: true,
+    onSuccess: () => {
+      notifications.value = []
+    },
+    onFinish: () => {
+      isBulkProcessing.value = false
+    },
+  })
+}
+
+function resetFilters() {
+  activeFilter.value = 'all'
+  searchQuery.value = ''
+}
 </script>
-
-<style scoped>
-/* Custom scrollbar for notifications list */
-.max-h-\[600px\]::-webkit-scrollbar {
-  width: 6px;
-}
-
-.max-h-\[600px\]::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 3px;
-}
-
-.max-h-\[600px\]::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-.max-h-\[600px\]::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Smooth transitions */
-button, div, input {
-  transition: all 0.2s ease-in-out;
-}
-
-/* Line clamp for notification content */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Pulse animation for unread badge */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Focus states for accessibility */
-button:focus-visible {
-  outline: 2px solid #1e3a8a;
-  outline-offset: 2px;
-}
-
-/* Loading spinner */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-/* Ensure proper spacing for pagination */
-.mt-4 {
-  margin-top: 1rem;
-}
-</style>

@@ -1,241 +1,285 @@
 <script setup>
+import ConfirmDialog from "@/Components/confirm-dialog.vue";
+import RecordsTable from "@/Components/records-table.vue";
+import SlideOver from "@/Components/slide-over.vue";
+import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import RecordsTable from '@/Components/records-table.vue';
-import confirmDialog from "@/Components/confirm-dialog.vue";
-import { TransitionRoot } from '@headlessui/vue'
-import slideOver from '@/Components/slide-over.vue';
-import combobox from '@/Components/combobox.vue';
-import { ref, computed } from "vue";
-import { useForm, router } from "@inertiajs/vue3";
-import { trans } from 'laravel-vue-i18n';
+import { router, useForm } from "@inertiajs/vue3";
+import {
+  FingerPrintIcon,
+  KeyIcon,
+  PlusIcon,
+  ShieldCheckIcon,
+  TagIcon,
+} from "@heroicons/vue/24/outline";
+import { trans } from "laravel-vue-i18n";
+import { computed, ref } from "vue";
 
+defineOptions({ layout: Layout });
 
 const props = defineProps({
-    record: Object,
-    fields: Array,
-    model: String,
-    abilities: Array,
-    query: Object,
-    slideOverEdit: {
-      type: Boolean,
-      default: false
-    }
+  record: { type: Object, default: () => ({ data: [], meta: {} }) },
+  fields: { type: Array, default: () => [] },
+  model: String,
+  abilities: { type: Array, default: () => [] },
+  query: { type: Object, default: () => ({}) },
+  slideOverEdit: { type: Boolean, default: true },
 });
 
-defineOptions({
-  layout: Layout
+const { hasPermission } = usePermission();
+const editorOpen = ref(false);
+const selectedAction = ref(null);
+const showActionConfirmation = ref(false);
+
+const form = useForm("PermissionEditor", {
+  id: null,
+  name: "",
+  label: "",
+  guard_name: "web",
 });
 
-let form = useForm({
-    name: '',
-    label: '',
-    guard_name: '',
-    id: null,
-});
-
-const actionId = ref(null);
-
-const slideOverDescription = computed(() => {
-  return !form.id ? trans('gestlab.slideover.creating.description') + form.name : trans('gestlab.slideover.updating.description') + form.name;
-});
-
-const slideOverTitle = computed(() => {
-  return !form.id ? trans('gestlab.slideover.creating.title') : trans('gestlab.slideover.updating.description');
-});
-
-const confirmationDialogTitle = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_title.' + actionId.value);
-})
-
-
-const confirmationDialogDescription = computed(() => {
-  return trans('gestlab.actions.confirmation_dialog_description.' + actionId.value);
-})
-
-
-const openslideover = ref(false);
-
-let actions = [
+const pageRecords = computed(() => props.record?.data || []);
+const totalRecords = computed(() => props.record?.meta?.total ?? pageRecords.value.length);
+const metrics = computed(() => [
   {
-    id: null,
-    label: 'gestlab.actions.bulk_actions_text'
+    label: "Permissões",
+    value: totalRecords.value,
+    detail: "regras registadas",
+    icon: FingerPrintIcon,
   },
   {
-    id: 'delete',
-    label: 'gestlab.actions.delete'
+    label: "Com etiqueta",
+    value: pageRecords.value.filter((permission) => permission.label).length,
+    detail: "legíveis na interface",
+    icon: TagIcon,
   },
   {
-    id: 'restore',
-    label: 'gestlab.actions.restore'
+    label: "Guard web",
+    value: pageRecords.value.filter((permission) => !permission.guard_name || permission.guard_name === "web").length,
+    detail: "sessão de backoffice",
+    icon: ShieldCheckIcon,
   },
+  {
+    label: "Outros guards",
+    value: pageRecords.value.filter((permission) => permission.guard_name && permission.guard_name !== "web").length,
+    detail: "contextos segregados",
+    icon: KeyIcon,
+  },
+]);
+
+const actions = [
+  { id: null, label: "gestlab.actions.bulk_actions_text" },
+  { id: "delete", label: "gestlab.actions.delete" },
+  { id: "restore", label: "gestlab.actions.restore" },
 ];
 
-const close = () => {
-    openslideover.value = false;
-    form.clearErrors();
-    // form.reset();
+const editorTitle = computed(() => form.id ? "Editar permissão" : "Nova permissão");
+const editorDescription = computed(() => form.id
+  ? `Atualize a apresentação e o contexto de ${form.name}.`
+  : "Registe uma chave de autorização para funções e políticas do sistema.",
+);
+const confirmationDialogTitle = computed(() =>
+  trans(`gestlab.actions.confirmation_dialog_title.${selectedAction.value}`),
+);
+const confirmationDialogDescription = computed(() =>
+  trans(`gestlab.actions.confirmation_dialog_description.${selectedAction.value}`),
+);
+
+function resetEditor() {
+  form.reset();
+  form.clearErrors();
 }
 
-const showDeleteConfirmation = ref(false);
-const showDeleteConfirmationSlideover = ref(false);
-
-const openSlideoverWithData = (data) => {
-    openslideover.value = true;
-    form.id = data.id;
-    form.name = data.name;
-    form.label = data.label;
-    form.guard_name = data.guard_name;
-    
+function openCreatePanel() {
+  resetEditor();
+  editorOpen.value = true;
 }
 
-let submit = () => {
+function openEditPanel(permission) {
+  resetEditor();
+  form.id = permission.id;
+  form.name = permission.name ?? "";
+  form.label = permission.label ?? "";
+  form.guard_name = permission.guard_name ?? "web";
+  editorOpen.value = true;
+}
 
-    if(!form.id) {
-      form.post(route('permissions.store'), {
-          preserveScroll: true,
-          preserveState: false,
-          onSuccess: () => {
-            openslideover.value = false;
-            form.reset()
-          },
-      });
-    } else {
-      form.put(route('permissions.update',{permission: form.id}), {
-          preserveScroll: true,
-          preserveState: false,
-          onSuccess: () => {
-            openslideover.value = false;
-            form.reset()
-          },
-      });
-    }
-    
+function closeEditor() {
+  editorOpen.value = false;
+  resetEditor();
+}
+
+function submit() {
+  const options = {
+    preserveScroll: true,
+    onSuccess: closeEditor,
+  };
+
+  if (form.id) {
+    form.put(route("permissions.update", { permission: form.id }), options);
+    return;
   }
 
+  form.post(route("permissions.store"), options);
+}
 
-  const confirmAction = () => {
-    executeAction(actionId.value);
+function requestBulkAction(action) {
+  selectedAction.value = action;
+  showActionConfirmation.value = true;
+}
+
+function closeActionConfirmation() {
+  selectedAction.value = null;
+  showActionConfirmation.value = false;
+}
+
+function executeBulkAction() {
+  const recordIds = pageRecords.value
+    .filter((permission) => permission.selected)
+    .map((permission) => permission.id);
+
+  if (!recordIds.length || !["delete", "restore"].includes(selectedAction.value)) {
+    closeActionConfirmation();
+    return;
   }
 
-  const executeAction = (actionId) => {
-  const recordIds = props.record.data.filter(record => record.selected).map(record => record.id);
-
-  if(!recordIds.length) return;
-
-  switch (actionId) {
-    case 'delete':
-      router.get(route('permissions.destroy'), {
-          recordIds: recordIds
-      }, {
-        preserveState: false,
-        preserveScroll: true,
-        onSuccess: () => {
-            showDeleteConfirmation.value = false;
-            actionId = null;
-        }
-      });
-      showDeleteConfirmation.value = false;
-    break;  
-
-    case 'restore':
-        router.get(route('permissions.restore'), {
-          recordIds: recordIds
-        }, {
-            preserveState:false,
-            preserveScroll: true,
-            onSuccess: () => {
-                showDeleteConfirmation.value = false;
-                actionId = null;
-            }
-        });
-        showDeleteConfirmation.value = false;
-  }
-
-  
-}  
+  router.get(route(`permissions.${selectedAction.value}`), { recordIds }, {
+    preserveScroll: true,
+    onFinish: closeActionConfirmation,
+  });
+}
 </script>
+
 <template>
-<div class="border-b border-gray-200 pb-5" :class="commercialDocumentThemeClasses">
-    <h3 class="text-base font-semibold leading-6 text-gray-900">{{ $t('gestlab.general.labels.permissions.page_title') }}</h3>
-    <p class="mt-2 max-w-4xl text-sm text-gray-500"></p>
-</div>
-
-<records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="openslideover=true" @slideover-on="openSlideoverWithData"/> <br>
-
-<slide-over v-if="openslideover" :class="commercialDocumentThemeClasses" @close="close" :title="slideOverTitle" :description="slideOverDescription">
-    <template #content>
-        <div class="space-y-6 py-6 sm:space-y-0 sm:divide-y sm:divide-gray-200 sm:py-0">
-              <!-- Name -->
-              <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="name" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.permissions.name') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <input v-model="form.name" type="text" name="name" id="name" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.name ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
-                  <p v-if="form.errors.name" class="mt-2 text-sm text-red-600" id="name-error">{{ form.errors.name }}</p>
-                </div>
-              </div>
-
-              <!-- Label -->
-              <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-                <div>
-                  <label for="label" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.permissions.label') }}</label>
-                </div>
-                <div class="sm:col-span-2">
-                  <input v-model="form.label" type="text" name="label" id="label" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.label ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
-                  <p v-if="form.errors.label" class="mt-2 text-sm text-red-600" id="label-error">{{ form.errors.label }}</p>
-                </div>
-              </div>
+  <div class="space-y-6">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0">
+          <p class="ds-kicker">Controlo de acesso</p>
+          <div class="mt-3 flex items-start gap-3">
+            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+              <FingerPrintIcon class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+              <h1 class="ds-heading text-2xl">{{ $t("gestlab.general.labels.permissions.page_title") }}</h1>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">
+                Chaves de autorização usadas por funções, políticas e operações protegidas do LIMS.
+              </p>
+            </div>
+          </div>
         </div>
-    </template>
 
-    <template #action_buttons>
-        <div class="flex justify-end space-x-3">
-        <button type="button" class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" @click="openslideover = false; form.reset()">{{ $t('gestlab.general.buttons.cancel') }}</button>
-        <!-- <TransitionRoot
-            :show="!form.isDirty"
-            enter="transition-opacity duration-75"
-            enter-from="opacity-0"
-            enter-to="opacity-100"
-            leave="transition-opacity duration-150"
-            leave-from="opacity-100"
-            leave-to="opacity-0"
+        <button
+          v-if="hasPermission('add_permissions')"
+          type="button"
+          class="ds-button ds-button-primary whitespace-nowrap"
+          @click="openCreatePanel"
         >
-            I will appear and disappear.
-        </TransitionRoot> -->
-        <button v-if="form.isDirty" @click="showDeleteConfirmationSlideover = true" :disabled="form.processing" type="button" class="inline-flex justify-center rounded-md bg-blue-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-900">{{ !form.id ? $t('gestlab.general.buttons.submit') : $t('gestlab.general.buttons.update') }}</button>
-        </div>
-    </template>
-</slide-over>
-
-<confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" confirm="Sim" cancel="Não" />
-
-<confirm-dialog size="sm:max-w-2xl" alignment="sm:items-start" @canceled="showDeleteConfirmationSlideover=false" @close="showDeleteConfirmationSlideover=false" @confirmed="submit" v-if="showDeleteConfirmationSlideover" :title="$t('gestlab.actions.confirmation_dialog_title.default')" :description="$t('gestlab.actions.confirmation_dialog_description.default')" confirm="Sim" cancel="Não">
-    <div class="mt-4">
-      <div class="font-semibold inline-flex px-2 py-1 leading-4 text-xs rounded-full text-white bg-blue-900 sm:text-xs mb-2"><p class="text-xs">{{ $t('gestlab.general.labels.summary') }}</p></div>
-      <div>
-        <div class="px-4 sm:px-0 rounded-full text-white bg-blue-900">
-          <!-- <h3 class="text-base font-semibold leading-7 text-gray-900">Resumo</h3>
-          <p class="mt-1 max-w-2xl text-sm leading-6 text-gray-500">Personal details and application.</p> -->
-        </div>
-        <div class="mt-6 border-t border-gray-100">
-          <dl class="divide-y divide-gray-100">
-
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.permissions.name') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.name }}</dd>
-            </div>
-            <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-              <dt class="text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.permissions.label') }}</dt>
-              <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.label }}</dd>
-            </div>
-            
-          </dl>
-        </div>
+          <PlusIcon class="h-4 w-4" />
+          Nova permissão
+        </button>
       </div>
 
-    </div>
-</confirm-dialog>
+      <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
+        <div
+          v-for="metric in metrics"
+          :key="metric.label"
+          class="border-b border-[var(--ds-border)] px-4 py-3 sm:[&:nth-child(odd)]:border-r sm:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
+              <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd>
+              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
+            </div>
+            <component :is="metric.icon" class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" />
+          </div>
+        </div>
+      </dl>
+    </section>
 
+    <RecordsTable
+      :record="record"
+      :model="model"
+      :abilities="abilities"
+      :fields="fields"
+      :slide-over-edit="slideOverEdit"
+      :query="query"
+      :actions="actions"
+      :create-action="false"
+      @execute-action="requestBulkAction"
+      @create-record="openCreatePanel"
+      @slideover-on="openEditPanel"
+    />
+
+    <SlideOver
+      v-if="editorOpen"
+      :title="editorTitle"
+      :description="editorDescription"
+      @close="closeEditor"
+    >
+      <template #content>
+        <form id="permission-editor" class="space-y-6 px-6 py-6" @submit.prevent="submit">
+          <div>
+            <p class="ds-kicker">Regra de autorização</p>
+            <h2 class="ds-heading mt-2 text-base">Identidade e contexto</h2>
+          </div>
+
+          <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
+            <div class="flex gap-3">
+              <KeyIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
+              <div>
+                <h3 class="text-sm font-bold text-[var(--ds-text)]">Chave técnica estável</h3>
+                <p class="mt-1 text-sm leading-6 text-[var(--ds-text-muted)]">
+                  Alterar a chave pode afetar políticas e verificações existentes. Prefira ajustar apenas a etiqueta quando a regra não mudou.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label for="permission-name" class="ds-field-label">Chave técnica</label>
+            <input id="permission-name" v-model="form.name" type="text" autocomplete="off" class="ds-field mt-2 font-mono" required />
+            <p class="ds-field-hint mt-2">Exemplo: approve_quality_certificates</p>
+            <p v-if="form.errors.name" class="ds-field-error mt-2">{{ form.errors.name }}</p>
+          </div>
+
+          <div>
+            <label for="permission-label" class="ds-field-label">Etiqueta</label>
+            <input id="permission-label" v-model="form.label" type="text" class="ds-field mt-2" />
+            <p class="ds-field-hint mt-2">Texto apresentado a administradores na configuração de funções.</p>
+            <p v-if="form.errors.label" class="ds-field-error mt-2">{{ form.errors.label }}</p>
+          </div>
+
+          <div>
+            <label for="permission-guard" class="ds-field-label">Guard</label>
+            <input id="permission-guard" v-model="form.guard_name" type="text" autocomplete="off" class="ds-field mt-2 font-mono" />
+            <p class="ds-field-hint mt-2">Use web para a sessão normal do backoffice.</p>
+            <p v-if="form.errors.guard_name" class="ds-field-error mt-2">{{ form.errors.guard_name }}</p>
+          </div>
+        </form>
+      </template>
+
+      <template #action_buttons>
+        <div class="flex items-center justify-end gap-3">
+          <button type="button" class="ds-button ds-button-secondary" @click="closeEditor">Cancelar</button>
+          <button type="submit" form="permission-editor" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
+            <FingerPrintIcon class="h-4 w-4" />
+            {{ form.processing ? "A guardar..." : form.id ? "Guardar alterações" : "Registar permissão" }}
+          </button>
+        </div>
+      </template>
+    </SlideOver>
+
+    <ConfirmDialog
+      v-if="showActionConfirmation"
+      :title="confirmationDialogTitle"
+      :description="confirmationDialogDescription"
+      :variant="selectedAction === 'restore' ? 'question' : 'danger'"
+      confirm="Sim"
+      cancel="Não"
+      @canceled="closeActionConfirmation"
+      @confirmed="executeBulkAction"
+    />
+  </div>
 </template>

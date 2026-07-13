@@ -1,117 +1,133 @@
-<template>
-<span>
-        <span @click="startConfirmingPassword">
-            <slot />
-        </span>
-
-        <DialogModal :show="confirmingPassword" @close="closeModal">
-            <template #title>
-                {{ title }}
-            </template>
-
-            <template #content>
-                {{ content }}
-
-                <div class="mt-4">
-                    <TextInput
-                        ref="passwordInput"
-                        v-model="form.password"
-                        type="password"
-                        class="mt-1 block w-3/4"
-                        placeholder="Senha"
-                        @keyup.enter="confirmPassword"
-                    />
-
-                    <InputError :message="form.error" class="mt-2" />
-                </div>
-            </template>
-
-            <template #footer>
-                <SecondaryButton @click="closeModal">
-                    Cancelar
-                </SecondaryButton>
-
-                <PrimaryButton
-                    class="ml-3"
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                    @click="confirmPassword"
-                >
-                    {{ button }}
-                </PrimaryButton>
-            </template>
-        </DialogModal>
-    </span>
-</template>
-
 <script setup>
-import { ref, reactive, nextTick } from 'vue';
-import DialogModal from './dialog-modal.vue';
-import InputError from './input-error.vue';
-import PrimaryButton from './primary-button.vue';
-import SecondaryButton from './secondary-button.vue';
-import TextInput from './text-input.vue';
+import { nextTick, reactive, ref } from 'vue'
+import { ArrowPathIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import DialogModal from './dialog-modal.vue'
 
-const emit = defineEmits(['confirmed']);
+const emit = defineEmits(['confirmed'])
 
 defineProps({
-    title: {
-        type: String,
-        default: 'Confirmar Senha',
-    },
-    content: {
-        type: String,
-        default: 'Para sua segurança, confirme sua senha para continuar.',
-    },
-    button: {
-        type: String,
-        default: 'Confirmar',
-    },
-});
+  title: { type: String, default: 'Confirmar palavra-passe' },
+  content: { type: String, default: 'Para sua segurança, confirme a palavra-passe antes de continuar.' },
+  button: { type: String, default: 'Confirmar' },
+})
 
-const confirmingPassword = ref(false);
-
+const confirmingPassword = ref(false)
+const passwordInput = ref(null)
 const form = reactive({
-    password: '',
-    error: '',
-    processing: false,
-});
+  password: '',
+  error: '',
+  processing: false,
+})
 
-const passwordInput = ref(null);
+function csrfToken() {
+  return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
+}
 
-const startConfirmingPassword = () => {
-    axios.get(route('password.confirmation')).then(response => {
-        if (response.data.confirmed) {
-            emit('confirmed');
-        } else {
-            confirmingPassword.value = true;
-            setTimeout(() => passwordInput.value.focus(), 250);
-        }
-    });
-};
+async function startConfirmingPassword() {
+  form.error = ''
 
-const confirmPassword = () => {
-    form.processing = true;
-    axios.post(route('password.confirm'), {
-        password: form.password,
-    }).then(() => {
-        form.processing = false;
-        closeModal();
-        nextTick().then(() => emit('confirmed'));
-    }).catch(error => {
-        form.processing = false;
-        form.error = error.response.data.errors.password[0];
-        passwordInput.value.focus();
-    });
-};
+  try {
+    const response = await fetch(route('password.confirmation'), {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' },
+    })
+    const payload = await response.json()
 
-const closeModal = () => {
-    confirmingPassword.value = false;
-    form.password = '';
-    form.error = '';
-};
+    if (payload.confirmed) {
+      emit('confirmed')
+      return
+    }
+
+    confirmingPassword.value = true
+    await nextTick()
+    passwordInput.value?.focus()
+  } catch {
+    form.error = 'Não foi possível verificar a confirmação da palavra-passe.'
+    confirmingPassword.value = true
+  }
+}
+
+async function confirmPassword() {
+  form.processing = true
+  form.error = ''
+
+  try {
+    const response = await fetch(route('password.confirm.store'), {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken(),
+      },
+      body: JSON.stringify({ password: form.password }),
+    })
+    const payload = await response.json().catch(() => ({}))
+
+    if (!response.ok) {
+      throw new Error(payload.errors?.password?.[0] || payload.message || 'Palavra-passe inválida.')
+    }
+
+    closeModal()
+    await nextTick()
+    emit('confirmed')
+  } catch (error) {
+    form.error = error.message
+    await nextTick()
+    passwordInput.value?.focus()
+  } finally {
+    form.processing = false
+  }
+}
+
+function closeModal() {
+  confirmingPassword.value = false
+  form.password = ''
+  form.error = ''
+}
 </script>
 
-<style scoped>
+<template>
+  <span class="contents">
+    <span class="contents" @click="startConfirmingPassword">
+      <slot />
+    </span>
 
-</style>
+    <DialogModal :show="confirmingPassword" max-width="lg" @close="closeModal">
+    <template #title>
+      <div class="flex items-center justify-between gap-4">
+        <span>{{ title }}</span>
+        <button type="button" class="ds-icon-button" title="Fechar" @click="closeModal">
+          <XMarkIcon class="h-5 w-5" />
+          <span class="sr-only">Fechar</span>
+        </button>
+      </div>
+    </template>
+
+    <template #content>
+      <p>{{ content }}</p>
+      <label class="ds-field-group mt-5">
+        <span class="ds-field-label">Palavra-passe</span>
+        <input
+          ref="passwordInput"
+          v-model="form.password"
+          type="password"
+          autocomplete="current-password"
+          class="ds-field"
+          :aria-invalid="Boolean(form.error)"
+          @keyup.enter="confirmPassword"
+        >
+        <span v-if="form.error" class="ds-field-error">{{ form.error }}</span>
+      </label>
+    </template>
+
+    <template #footer>
+      <button type="button" class="ds-button ds-button-secondary" @click="closeModal">Cancelar</button>
+      <button type="button" class="ds-button ds-button-primary" :disabled="form.processing || !form.password" @click="confirmPassword">
+        <ArrowPathIcon v-if="form.processing" class="h-4 w-4 animate-spin" />
+        {{ form.processing ? 'A confirmar...' : button }}
+      </button>
+    </template>
+    </DialogModal>
+  </span>
+</template>

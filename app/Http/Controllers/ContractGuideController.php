@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ContractGuideRequest;
 use App\Http\Resources\ContractGuideResource;
 use App\Models\ContractGuide;
-use App\Models\ContractGuideItem;
 use App\Settings\GeneralSettings;
 use App\Support\PdfResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use NumberToWords\NumberToWords;
@@ -84,38 +85,21 @@ class ContractGuideController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ContractGuideRequest $request)
+    public function store(ContractGuideRequest $request): RedirectResponse
     {
         abort_if(! auth()->user()->can('add_contract_guides'), 403, '');
 
-        // dd(collect($request->safe()->only(['items']))->first());
+        $guide = DB::transaction(function () use ($request): ContractGuide {
+            $validated = $request->validated();
+            $items = Arr::pull($validated, 'items', []);
+            $guide = ContractGuide::create($validated);
 
-        DB::transaction(function () use ($request): void {
-            $guide = ContractGuide::create($request->safe()->except(['items']));
+            $this->syncItems($guide, $items);
 
-            foreach (collect($request->safe()->only(['items']))->first() as $item) {
-
-                $obj = new ContractGuideItem;
-
-                $obj->guide_id = $guide->id;
-                $obj->product_id = $item['product_id'];
-                $obj->country_id = $item['country_id'];
-                $obj->bl = $item['bl'];
-                $obj->lot = $item['lot'];
-                $obj->manufacturer = $item['manufacturer'];
-                $obj->origin = $item['origin'];
-                $obj->brand = $item['brand'];
-                $obj->obs = $item['obs'];
-                $obj->du_no = $item['du_no'];
-                $obj->collection_id = $item['collection_id'];
-                $obj->date = $item['date'];
-
-                $obj->save();
-
-            }
+            return $guide;
         });
 
-        return redirect()->back()->with([
+        return to_route('contractguides.edit', ['guide' => $guide->id])->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
@@ -206,18 +190,18 @@ class ContractGuideController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(ContractGuideRequest $request, $id)
+    public function update(ContractGuideRequest $request, $id): RedirectResponse
     {
         abort_if(! auth()->user()->can('edit_contract_guides'), 403, '');
 
         DB::transaction(function () use ($request, $id): void {
+            $validated = $request->validated();
+            $items = Arr::pull($validated, 'items', []);
+            Arr::forget($validated, 'id');
+            $record = ContractGuide::findOrFail($id);
 
-            tap(ContractGuide::findOrFail($id), function ($record) use ($request) {
-
-                $record->update($request->validated());
-
-            });
-
+            $record->update($validated);
+            $this->syncItems($record, $items);
         });
 
         return redirect()->back()->with([
@@ -226,6 +210,30 @@ class ContractGuideController extends Controller
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
             ],
         ]);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $items
+     */
+    private function syncItems(ContractGuide $guide, array $items): void
+    {
+        $retainedItemIds = [];
+
+        foreach ($items as $itemData) {
+            $itemId = Arr::pull($itemData, 'id');
+            Arr::forget($itemData, 'guide_id');
+
+            if ($itemId) {
+                $item = $guide->items()->findOrFail($itemId);
+                $item->update($itemData);
+            } else {
+                $item = $guide->items()->create($itemData);
+            }
+
+            $retainedItemIds[] = $item->id;
+        }
+
+        $guide->items()->whereNotIn('id', $retainedItemIds)->delete();
     }
 
     /**

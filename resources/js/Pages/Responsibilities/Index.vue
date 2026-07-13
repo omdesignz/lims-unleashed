@@ -1,69 +1,81 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+  <div class="space-y-6">
+    <section class="ds-panel px-5 py-5 sm:px-6">
+      <p class="ds-kicker">ISO 17025</p>
+      <div class="mt-2 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-700">ISO 17025</p>
-          <h1 class="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Matriz de responsabilidades</h1>
-          <p class="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+          <h1 class="text-2xl font-semibold tracking-tight text-[var(--ds-text)] sm:text-3xl">Matriz de responsabilidades</h1>
+          <p class="mt-3 max-w-3xl text-sm leading-6 text-[var(--ds-text-muted)]">
             Defina quem executa, responde, consulta e recebe informação para cada processo crítico do laboratório.
           </p>
         </div>
+        <span class="lims-module-chip w-fit">
+          <span class="lims-status-dot lims-status-dot-release" aria-hidden="true" />
+          {{ entries.length }} responsabilidades
+        </span>
       </div>
     </section>
 
-    <section class="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-      <form class="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900" @submit.prevent="submit">
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">{{ editingId ? 'Editar entrada' : 'Nova entrada' }}</h2>
+    <section class="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
+      <form class="ds-card space-y-4 p-5" @submit.prevent="submit">
+        <div>
+          <p class="font-mono text-xs font-semibold uppercase text-[var(--ds-text-soft)]">RACI</p>
+          <h2 class="mt-1 text-lg font-semibold text-[var(--ds-text)]">{{ editingId ? 'Editar entrada' : 'Nova entrada' }}</h2>
+        </div>
         <div class="grid gap-4 md:grid-cols-2">
           <comboboxEnhanced v-model="selectedDepartment" title-label="Departamento" placeholder="Seleccione um departamento" :options="departmentOptions" />
           <comboboxEnhanced v-model="selectedLab" title-label="Laboratório" placeholder="Seleccione um laboratório" :options="labOptions" />
-          <input v-model="form.process_area" type="text" placeholder="Área de processo" class="rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
-          <input v-model="form.activity" type="text" placeholder="Atividade" class="rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+          <input v-model="form.process_area" type="text" placeholder="Área de processo" class="ds-field">
+          <input v-model="form.activity" type="text" placeholder="Atividade" class="ds-field">
           <comboboxEnhanced v-model="selectedResponsibleUser" title-label="Responsável" placeholder="Seleccione o responsável" :options="userOptions" />
           <comboboxEnhanced v-model="selectedAccountableUser" title-label="Aprovador / accountable" placeholder="Seleccione o aprovador" :options="userOptions" />
-          <input v-model="form.consulted_roles" type="text" placeholder="Funções consultadas" class="rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
-          <input v-model="form.informed_roles" type="text" placeholder="Funções informadas" class="rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
-          <input v-model="form.effective_from" type="date" class="rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
-          <input v-model="form.effective_until" type="date" class="rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+          <input v-model="form.consulted_roles" type="text" placeholder="Funções consultadas" class="ds-field">
+          <input v-model="form.informed_roles" type="text" placeholder="Funções informadas" class="ds-field">
+          <input v-model="form.effective_from" type="date" class="ds-field">
+          <input v-model="form.effective_until" type="date" class="ds-field">
         </div>
-        <textarea v-model="form.evidence_requirement" rows="4" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="Evidência esperada para demonstrar execução e controlo."></textarea>
-        <label class="inline-flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
-          <input v-model="form.is_active" type="checkbox" class="h-4 w-4 rounded border-slate-300 dark:border-slate-700">
+        <textarea v-model="form.evidence_requirement" rows="4" class="ds-field" placeholder="Evidência esperada para demonstrar execução e controlo."></textarea>
+        <label class="inline-flex items-center gap-3 text-sm font-semibold text-[var(--ds-text-muted)]">
+          <input v-model="form.is_active" type="checkbox" class="ds-checkbox">
           Entrada ativa
         </label>
-        <div class="flex gap-3">
-          <button type="submit" class="rounded-2xl bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800">{{ editingId ? 'Atualizar' : 'Guardar' }}</button>
-          <button v-if="editingId" type="button" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" @click="resetForm">Cancelar</button>
+        <div class="flex flex-wrap gap-3">
+          <button type="submit" class="ds-button ds-button-primary">{{ editingId ? 'Atualizar' : 'Guardar' }}</button>
+          <button v-if="editingId" type="button" class="ds-button ds-button-secondary" @click="resetForm">Cancelar</button>
         </div>
       </form>
 
-      <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <div v-if="entries.length" class="space-y-4">
-          <article v-for="entry in entries" :key="entry.id" class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
-            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <div>
+      <section class="ds-card overflow-hidden">
+        <div class="border-b border-[var(--ds-border)] px-5 py-4">
+          <h2 class="text-base font-semibold text-[var(--ds-text)]">Entradas ativas</h2>
+          <p class="mt-1 text-sm text-[var(--ds-text-muted)]">Responsabilidade, prestação de contas, consulta e informação por processo.</p>
+        </div>
+
+        <div v-if="entries.length" class="divide-y divide-[var(--ds-border)]">
+          <article v-for="entry in entries" :key="entry.id" class="px-5 py-4">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{{ entry.process_area }}</span>
+                  <span class="rounded-full bg-[var(--ds-panel-muted)] px-2.5 py-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ entry.process_area }}</span>
                   <span v-if="entry.is_active" class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Ativa</span>
                 </div>
-                <h2 class="mt-2 text-lg font-semibold text-slate-900 dark:text-slate-100">{{ entry.activity }}</h2>
-                <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">{{ entry.evidence_requirement || 'Sem requisito adicional de evidência.' }}</p>
-                <div class="mt-3 grid gap-2 text-sm text-slate-500 dark:text-slate-400 md:grid-cols-2">
-                  <div>Responsável: {{ entry.responsible_user?.name || '—' }}</div>
-                  <div>Accountable: {{ entry.accountable_user?.name || '—' }}</div>
-                  <div>Consultados: {{ entry.consulted_roles || '—' }}</div>
-                  <div>Informados: {{ entry.informed_roles || '—' }}</div>
+                <h2 class="mt-2 text-base font-semibold text-[var(--ds-text)]">{{ entry.activity }}</h2>
+                <p class="mt-2 text-sm text-[var(--ds-text-muted)]">{{ entry.evidence_requirement || 'Sem requisito adicional de evidência.' }}</p>
+                <div class="mt-4 grid gap-2 text-sm text-[var(--ds-text-muted)] md:grid-cols-2">
+                  <div><span class="font-semibold text-[var(--ds-text)]">Responsável:</span> {{ entry.responsible_user?.name || '—' }}</div>
+                  <div><span class="font-semibold text-[var(--ds-text)]">Accountable:</span> {{ entry.accountable_user?.name || '—' }}</div>
+                  <div><span class="font-semibold text-[var(--ds-text)]">Consultados:</span> {{ entry.consulted_roles || '—' }}</div>
+                  <div><span class="font-semibold text-[var(--ds-text)]">Informados:</span> {{ entry.informed_roles || '—' }}</div>
                 </div>
               </div>
-              <div class="flex gap-2">
-                <button type="button" class="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" @click="edit(entry)">Editar</button>
-                <button type="button" class="rounded-2xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50" @click="destroy(entry)">Arquivar</button>
+              <div class="flex shrink-0 gap-2">
+                <button type="button" class="ds-button ds-button-secondary min-h-0 px-3 py-2" @click="edit(entry)">Editar</button>
+                <button type="button" class="ds-button ds-button-danger min-h-0 px-3 py-2" @click="destroy(entry)">Arquivar</button>
               </div>
             </div>
           </article>
         </div>
-        <div v-else class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+        <div v-else class="m-5 rounded-lg border border-dashed border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-10 text-center text-sm font-medium text-[var(--ds-text-muted)]">
           Ainda não existem entradas na matriz de responsabilidades.
         </div>
       </section>
@@ -74,7 +86,6 @@
 <script setup>
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
 import Layout from '@/Shared/Layouts/Layout.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { router, useForm } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
 

@@ -1,773 +1,706 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <ModuleHero
-      eyebrow="Stock movement"
-      title="Relatório de Movimento de Estoque"
-      :description="filterPeriod ? `Monitore entradas, saídas, ajustes e transferências · ${filterPeriod}` : 'Monitore entradas, saídas, ajustes e transferências com rastreabilidade operacional.'"
-    >
-      <template #actions>
-        <span class="inline-flex items-center rounded-full bg-white/80 px-3 py-1 text-sm font-semibold text-blue-900 ring-1 ring-blue-700/10 dark:bg-white/10 dark:text-blue-100 dark:ring-white/10">
-          {{ stats.total_transactions }} transações
-        </span>
-        <button
-          @click="exportReport"
-          class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/90 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
-        >
-          <ArrowDownTrayIcon class="h-5 w-5" />
-          Exportar
-        </button>
-      </template>
-    </ModuleHero>
-
-    <!-- FILTERS SECTION -->
-    <ModuleCard title="Filtros de movimento" description="Combine período, item, armazém e visualização para auditar o fluxo de stock.">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <!-- Date Range -->
-        <div class="space-y-2">
-          <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
-            <CalendarIcon class="h-4 w-4" />
-            Intervalo de Datas
-          </label>
-          <div class="flex gap-2">
-            <BaseInput
-              type="date"
-              v-model="filters.date_from"
-            />
-            <BaseInput
-              type="date"
-              v-model="filters.date_to"
-            />
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="ds-kicker">Inventory traceability</span>
+            <span class="ds-chip">
+              <span class="lims-status-dot lims-status-dot-release"></span>
+              Livro de movimentos
+            </span>
           </div>
-        </div>
-
-        <!-- Item Filter -->
-        <div class="space-y-2">
-          <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
-            <CubeIcon class="h-4 w-4" />
-            Item
-          </label>
-          <BaseSelect
-            v-model="filters.item_id"
-          >
-            <option value="">Todos os Itens</option>
-            <option v-for="item in items" :key="item.id" :value="item.id">
-              {{ item.name }} ({{ item.code }})
-            </option>
-          </BaseSelect>
-        </div>
-
-        <!-- Warehouse Filter -->
-        <div class="space-y-2">
-          <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
-            <BuildingStorefrontIcon class="h-4 w-4" />
-            Armazém
-          </label>
-          <BaseSelect
-            v-model="filters.warehouse_id"
-          >
-            <option value="">Todos os Armazéns</option>
-            <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">
-              {{ warehouse.name }}
-            </option>
-          </BaseSelect>
-        </div>
-
-        <!-- View Type -->
-        <div class="space-y-2">
-          <label class="flex items-center gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
-            <EyeIcon class="h-4 w-4" />
-            Visualizar
-          </label>
-          <BaseSelect
-            v-model="filters.view"
-            @change="applyFilters"
-          >
-            <option value="detailed">Visão Detalhada</option>
-            <option value="summary">Visão Resumida</option>
-          </BaseSelect>
-        </div>
-      </div>
-
-      <!-- Search -->
-      <div class="mt-4">
-        <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
-          Pesquisar
-        </label>
-        <BaseInput
-          type="text"
-          v-model="filters.search"
-          placeholder="Pesquisar por item, código ou utilizador..."
-          @keyup.enter="applyFilters"
-        />
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="flex justify-end gap-3 mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
-        <button
-          @click="resetFilters"
-          class="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
-        >
-          Redefinir
-        </button>
-        <button
-          @click="applyFilters"
-          class="rounded-2xl bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500"
-        >
-          Aplicar Filtros
-        </button>
-      </div>
-    </ModuleCard>
-
-    <!-- SUMMARY VIEW -->
-    <div v-if="filters.view === 'summary' && summary" class="space-y-6">
-      <!-- SUMMARY STATS -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total de Entrada</p>
-              <p class="mt-2 text-3xl font-bold text-green-600">{{ stats.total_in }}</p>
-            </div>
-            <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-              <ArrowDownIcon class="h-6 w-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total de Saída</p>
-              <p class="mt-2 text-3xl font-bold text-red-600">{{ stats.total_out }}</p>
-            </div>
-            <div class="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
-              <ArrowUpIcon class="h-6 w-6 text-red-600" />
-            </div>
-          </div>
-        </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Movimento Total</p>
-              <p class="mt-2 text-3xl font-bold text-blue-900">{{ stats.net_movement }}</p>
-            </div>
-            <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-              <ArrowsRightLeftIcon class="h-6 w-6 text-blue-900" />
-            </div>
-          </div>
-        </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Transações Diárias Médias</p>
-              <p class="mt-2 text-3xl font-bold text-purple-600">{{ stats.avg_daily_transactions }}</p>
-            </div>
-            <div class="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-              <ChartBarIcon class="h-6 w-6 text-purple-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <section class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Ritmo diário</h2>
-              <p class="mt-1 text-sm text-slate-500">
-                Evolução diária de entradas, saídas e volume operacional.
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <span class="grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+              <ArrowsUpDownIcon class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Movimento de stock</h1>
+              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
+                Audite entradas, saídas, ajustes, transferências e consumo com rastreabilidade por item, armazém e operador.
               </p>
             </div>
-            <div class="rounded-2xl bg-slate-50 px-4 py-3 text-right dark:bg-white/5">
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Dias monitorizados</p>
-              <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ dailyActivityTotal }}</p>
-            </div>
           </div>
+        </div>
 
-          <div class="mt-6">
-            <apexchart type="line" height="300" :options="dailyActivityChartOptions" :series="dailyActivityChartSeries" />
+        <div class="flex flex-col gap-2 sm:flex-row xl:justify-end">
+          <button type="button" class="ds-button ds-button-secondary" @click="exportReport">
+            <ArrowDownTrayIcon class="h-4 w-4" />
+            Exportar PDF
+          </button>
+          <Link :href="route('vap-inventory.items.index')" class="ds-button ds-button-primary">
+            <ArrowLeftIcon class="h-4 w-4" />
+            Voltar ao inventário
+          </Link>
+        </div>
+      </div>
+
+      <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <article v-for="card in summaryCards" :key="card.label" class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
+              <p class="mt-3 truncate text-2xl font-black tabular-nums text-[var(--ds-text)]">{{ card.value }}</p>
+            </div>
+            <component :is="card.icon" :class="['h-5 w-5 shrink-0', card.tone]" />
+          </div>
+          <p class="mt-1 truncate text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.detail }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="ds-command-surface p-5 sm:p-6">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <BaseInput v-model="filters.date_from" type="date" label="Data inicial" />
+        <BaseInput v-model="filters.date_to" type="date" label="Data final" />
+
+        <div class="ds-field-group xl:col-span-2">
+          <label class="ds-field-label">Item de inventário</label>
+          <ComboboxEnhanced
+            :model-value="selectedItem"
+            :options="itemOptions"
+            placeholder="Pesquisar item por nome ou código"
+            @update:model-value="selectItem"
+          />
+        </div>
+
+        <BaseSelect v-model="filters.warehouse_id" label="Armazém">
+          <option value="">Todos os armazéns</option>
+          <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">{{ warehouse.name }}</option>
+        </BaseSelect>
+
+        <BaseInput v-model="filters.search" label="Pesquisa livre" placeholder="Item, código ou utilizador">
+          <template #leading><MagnifyingGlassIcon class="h-4 w-4" /></template>
+        </BaseInput>
+
+        <BaseSelect v-model="filters.sort_by" label="Ordenar por">
+          <option value="created_at">Data e hora</option>
+          <option value="qty">Quantidade</option>
+        </BaseSelect>
+
+        <BaseSelect v-model="filters.sort_direction" label="Direção">
+          <option value="desc">Descendente</option>
+          <option value="asc">Ascendente</option>
+        </BaseSelect>
+      </div>
+
+      <div class="ds-command-toolbar mt-5 grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div class="min-w-0">
+          <p class="text-sm font-bold text-[var(--ds-text)]">{{ transactions.total || transactionRows.length }} movimentos no resultado</p>
+          <div v-if="activeFilterPills.length" class="mt-2 flex flex-wrap gap-2">
+            <span v-for="pill in activeFilterPills" :key="pill" class="ds-chip">{{ pill }}</span>
+          </div>
+          <p v-else class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">A mostrar o histórico completo disponível.</p>
+        </div>
+
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div class="inline-flex rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-1" aria-label="Modo do relatório">
+            <button
+              type="button"
+              :aria-pressed="filters.view === 'detailed'"
+              :class="modeButtonClass('detailed')"
+              @click="setView('detailed')"
+            >
+              Movimentos
+            </button>
+            <button
+              type="button"
+              :aria-pressed="filters.view === 'summary'"
+              :class="modeButtonClass('summary')"
+              @click="setView('summary')"
+            >
+              Resumo diário
+            </button>
+          </div>
+          <button type="button" class="ds-button ds-button-secondary" :disabled="!hasActiveFilters" @click="clearFilters">
+            <FunnelIcon class="h-4 w-4" />
+            Limpar filtros
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="ds-command-surface overflow-hidden">
+      <div class="ds-table-summary px-5 py-4">
+        <div>
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Análise de fluxo</p>
+          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Direção, composição e ritmo diário</h2>
+        </div>
+        <span class="ds-chip">{{ filterPeriod || 'Período completo' }}</span>
+      </div>
+
+      <div class="grid divide-y divide-[var(--ds-border)] xl:grid-cols-[1.2fr_0.8fr] xl:divide-x xl:divide-y-0">
+        <article class="min-w-0 p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <h3 class="text-sm font-black text-[var(--ds-text)]">Atividade diária</h3>
+              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Entradas, saídas e número de transações ao longo do período.</p>
+            </div>
+            <span class="ds-chip">{{ dailyActivityDays }} dias</span>
+          </div>
+          <div class="mt-4 min-h-72">
+            <apexchart type="line" height="288" :options="dailyActivityChartOptions" :series="dailyActivityChartSeries" />
           </div>
         </article>
 
-        <div class="grid gap-6">
-          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+        <div class="grid divide-y divide-[var(--ds-border)]">
+          <article class="min-w-0 p-5">
             <div class="flex items-start justify-between gap-4">
               <div>
-                <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Direção do movimento</h2>
-                <p class="mt-1 text-sm text-slate-500">Entradas, saídas e saldo líquido no período.</p>
+                <h3 class="text-sm font-black text-[var(--ds-text)]">Mix operacional</h3>
+                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Peso relativo dos tipos de movimento.</p>
               </div>
+              <span class="ds-chip">{{ typeMixTotal }} eventos</span>
             </div>
-
-            <div class="mt-6">
-              <apexchart type="bar" height="250" :options="directionBreakdownChartOptions" :series="directionBreakdownChartSeries" />
+            <div class="mt-4 min-h-64">
+              <apexchart type="donut" height="256" :options="typeMixChartOptions" :series="typeMixChartSeries" />
             </div>
           </article>
 
-          <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+          <article class="min-w-0 p-5">
             <div class="flex items-start justify-between gap-4">
               <div>
-                <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Mix operacional</h2>
-                <p class="mt-1 text-sm text-slate-500">Peso relativo entre entradas, saídas, consumo e transferências.</p>
+                <h3 class="text-sm font-black text-[var(--ds-text)]">Balanço do período</h3>
+                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Volume de entrada, saída e saldo líquido.</p>
               </div>
-              <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-800">
-                {{ typeMixTotal }} movimentos
-              </span>
+              <ShieldCheckIcon class="h-5 w-5 text-emerald-700 dark:text-emerald-300" />
             </div>
-
-            <div class="mt-6">
-              <apexchart type="donut" height="250" :options="typeMixChartOptions" :series="typeMixChartSeries" />
+            <div class="mt-4 min-h-56">
+              <apexchart type="bar" height="224" :options="directionBreakdownChartOptions" :series="directionBreakdownChartSeries" />
             </div>
           </article>
+        </div>
+      </div>
+    </section>
+
+    <div v-if="filters.view === 'detailed'" class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <section class="ds-table-shell">
+        <div class="ds-table-summary px-5 py-4">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Audit trail</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Livro de movimentos</h2>
+          </div>
+          <span class="ds-chip">{{ transactions.total || transactionRows.length }} registos</span>
+        </div>
+
+        <div v-if="loading" class="ds-empty-state m-5 p-8 text-center">
+          <span class="mx-auto block h-7 w-7 animate-spin rounded-full border-2 border-[var(--ds-border)] border-t-[rgb(var(--primary-700-rgb))]"></span>
+          <p class="mt-3 text-sm font-semibold text-[var(--ds-text-muted)]">A atualizar movimentos...</p>
+        </div>
+
+        <div v-else-if="transactionRows.length" class="divide-y divide-[var(--ds-border)] lg:hidden">
+          <article v-for="transaction in transactionRows" :key="`mobile-${transaction.id}`" class="space-y-4 p-5">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <p class="font-mono text-xs font-bold text-[var(--ds-text-soft)]">{{ transaction.item?.code || 'Sem código' }}</p>
+                <h3 class="mt-1 text-base font-black text-[var(--ds-text)]">{{ transaction.item?.name || 'Item não identificado' }}</h3>
+                <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ formatDateTime(transaction.created_at) }}</p>
+              </div>
+              <span :class="['ds-chip shrink-0', transactionTypeTone(transaction.type?.code)]">{{ transaction.type?.name || 'Movimento' }}</span>
+            </div>
+
+            <dl class="grid grid-cols-2 gap-3">
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Quantidade</dt>
+                <dd :class="['mt-2 font-mono text-sm font-black tabular-nums', quantityTone(transaction.type?.code)]">{{ quantityLabel(transaction) }}</dd>
+              </div>
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</dt>
+                <dd class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ transaction.warehouse?.name || 'N/D' }}</dd>
+              </div>
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Operador</dt>
+                <dd class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ transaction.user?.name || 'N/D' }}</dd>
+              </div>
+              <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Categoria</dt>
+                <dd class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ transaction.item?.category?.name || 'N/D' }}</dd>
+              </div>
+            </dl>
+            <p class="text-sm font-semibold leading-5 text-[var(--ds-text-muted)]">{{ transaction.notes || 'Sem observações.' }}</p>
+          </article>
+        </div>
+
+        <div v-else-if="!loading" class="ds-empty-state m-5 p-8 text-center">
+          <ClipboardDocumentListIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
+          <h3 class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem movimentos encontrados</h3>
+          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Ajuste o período ou os filtros de rastreabilidade.</p>
+        </div>
+
+        <div v-if="!loading && transactionRows.length" class="hidden overflow-x-auto lg:block">
+          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+            <thead class="bg-[var(--ds-panel-subtle)]">
+              <tr>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Data e hora</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Item</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Tipo</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Quantidade</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Operador</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Evidência</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
+              <tr v-for="transaction in transactionRows" :key="transaction.id" class="transition-colors hover:bg-[var(--ds-panel-subtle)]">
+                <td class="whitespace-nowrap px-5 py-4 align-top font-mono text-xs font-black tabular-nums text-[var(--ds-text)]">{{ formatDateTime(transaction.created_at) }}</td>
+                <td class="px-5 py-4 align-top">
+                  <p class="font-black text-[var(--ds-text)]">{{ transaction.item?.name || 'Item não identificado' }}</p>
+                  <p class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-soft)]">{{ transaction.item?.code || 'Sem código' }}</p>
+                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ transaction.item?.category?.name || 'Sem categoria' }}</p>
+                </td>
+                <td class="px-5 py-4 align-top">
+                  <p class="font-bold text-[var(--ds-text)]">{{ transaction.warehouse?.name || 'N/D' }}</p>
+                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ transaction.warehouse?.location?.name || 'Sem localização' }}</p>
+                </td>
+                <td class="whitespace-nowrap px-5 py-4 align-top">
+                  <span :class="['ds-chip', transactionTypeTone(transaction.type?.code)]">{{ transaction.type?.name || 'Movimento' }}</span>
+                </td>
+                <td :class="['whitespace-nowrap px-5 py-4 text-right align-top font-mono font-black tabular-nums', quantityTone(transaction.type?.code)]">{{ quantityLabel(transaction) }}</td>
+                <td class="px-5 py-4 align-top font-bold text-[var(--ds-text)]">{{ transaction.user?.name || 'N/D' }}</td>
+                <td class="max-w-xs px-5 py-4 align-top text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ transaction.notes || 'Sem observações.' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <Pagination
+          v-if="transactionRows.length"
+          :links="transactions.links"
+          :total="transactions.total"
+          :from="transactions.from"
+          :to="transactions.to"
+          :last_page="transactions.last_page"
+          :current_page="transactions.current_page"
+        />
+      </section>
+
+      <aside class="space-y-6">
+        <section class="ds-panel p-5">
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Maior atividade</p>
+          <div class="mt-3 flex items-start gap-3">
+            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-cyan-50 text-cyan-800 dark:bg-cyan-500/10 dark:text-cyan-200">
+              <TrophyIcon class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+              <p class="truncate text-lg font-black text-[var(--ds-text)]">{{ stats.most_active_item?.item?.name || 'Sem dados' }}</p>
+              <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ stats.most_active_item?.transaction_count || 0 }} transações no período</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="ds-panel p-5">
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Responsabilidade</p>
+          <div class="mt-3 flex items-start gap-3">
+            <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300">
+              <UserIcon class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+              <p class="truncate text-lg font-black text-[var(--ds-text)]">{{ stats.most_active_user?.user?.name || 'Sem dados' }}</p>
+              <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ stats.most_active_user?.transaction_count || 0 }} movimentos registados</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="ds-panel overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Composição</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Tipos de movimento</h2>
+          </div>
+          <ol class="divide-y divide-[var(--ds-border)]">
+            <li v-for="row in typeMixRows" :key="row.label" class="flex items-center gap-3 px-5 py-3">
+              <span :class="['h-2.5 w-2.5 shrink-0 rounded-full', row.dot]"></span>
+              <span class="min-w-0 flex-1 truncate text-sm font-bold text-[var(--ds-text)]">{{ row.label }}</span>
+              <span class="font-mono text-xs font-black tabular-nums text-[var(--ds-text-muted)]">{{ row.value }}</span>
+            </li>
+          </ol>
+        </section>
+
+        <section class="ds-panel p-5">
+          <div class="flex items-start gap-3">
+            <MapPinIcon class="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-300" />
+            <div>
+              <p class="text-sm font-black text-[var(--ds-text)]">Rastreabilidade operacional</p>
+              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Cada linha preserva o item, local, tipo, quantidade, operador, momento e observação associados ao movimento.</p>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <div v-else class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <section class="ds-table-shell">
+        <div class="ds-table-summary px-5 py-4">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Reconciliação diária</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Resumo por dia</h2>
+          </div>
+          <span class="ds-chip">{{ summaryRows.length }} dias</span>
+        </div>
+
+        <div v-if="loading" class="ds-empty-state m-5 p-8 text-center">
+          <span class="mx-auto block h-7 w-7 animate-spin rounded-full border-2 border-[var(--ds-border)] border-t-[rgb(var(--primary-700-rgb))]"></span>
+          <p class="mt-3 text-sm font-semibold text-[var(--ds-text-muted)]">A consolidar o período...</p>
+        </div>
+
+        <div v-else-if="summaryRows.length" class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+            <thead class="bg-[var(--ds-panel-subtle)]">
+              <tr>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Data</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Transações</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Entradas</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Saídas</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Saldo</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
+              <tr v-for="day in summaryRows" :key="day.date" class="transition-colors hover:bg-[var(--ds-panel-subtle)]">
+                <td class="px-5 py-4 font-mono text-xs font-black text-[var(--ds-text)]">{{ formatDate(day.date) }}</td>
+                <td class="px-5 py-4 text-right font-black tabular-nums text-[var(--ds-text)]">{{ day.total_transactions }}</td>
+                <td class="px-5 py-4 text-right font-mono font-black tabular-nums text-emerald-700 dark:text-emerald-300">+{{ formatQuantity(day.total_in) }}</td>
+                <td class="px-5 py-4 text-right font-mono font-black tabular-nums text-rose-700 dark:text-rose-300">-{{ formatQuantity(day.total_out) }}</td>
+                <td :class="['px-5 py-4 text-right font-mono font-black tabular-nums', netTone(day)]">{{ netLabel(day) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-else-if="!loading" class="ds-empty-state m-5 p-8 text-center">
+          <ChartBarSquareIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
+          <h3 class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem atividade diária</h3>
+          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Selecione outro período para gerar a reconciliação.</p>
         </div>
       </section>
 
-      <!-- SUMMARY TABLE -->
-      <ModuleCard class="overflow-hidden" title="Resumo Diário">
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead class="bg-slate-50 dark:bg-slate-900/80">
-              <tr>
-                <th :class="tableHeadClass">Data</th>
-                <th :class="tableHeadClass">Transações</th>
-                <th :class="tableHeadClass">Entrada</th>
-                <th :class="tableHeadClass">Saída</th>
-                <th :class="tableHeadClass">Movimento Total</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
-              <tr v-for="day in summary" :key="day.date" class="hover:bg-blue-50/60 dark:hover:bg-blue-950/20">
-                <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                  {{ formatDate(day.date) }}
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                  {{ day.total_transactions }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
-                  +{{ day.total_in }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-semibold">
-                  -{{ day.total_out }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold" :class="day.total_in - day.total_out >= 0 ? 'text-green-600' : 'text-red-600'">
-                  {{ day.total_in - day.total_out >= 0 ? '+' : '' }}{{ day.total_in - day.total_out }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </ModuleCard>
-    </div>
+      <aside class="space-y-6">
+        <section class="ds-panel p-5">
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Ritmo médio</p>
+          <p class="mt-3 text-3xl font-black tabular-nums text-[var(--ds-text)]">{{ formatQuantity(stats.avg_daily_transactions) }}</p>
+          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">transações por dia no período</p>
+        </section>
 
-    <!-- DETAILED VIEW -->
-    <div v-else>
-      <!-- MOVEMENTS TABLE -->
-      <ModuleCard class="overflow-hidden" title="Movimentos de Estoque">
-        <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-slate-900 flex items-center gap-2 dark:text-white">
-              <ListBulletIcon class="h-5 w-5 text-blue-900" />
-              Movimentos de Estoque
-              <span class="text-sm font-normal text-slate-500 ml-2 dark:text-slate-400">
-                ({{ transactions.total }} registros)
-              </span>
-            </h2>
-            <div class="flex items-center gap-4">
-              <div class="text-sm text-slate-600 dark:text-slate-300">
-                Ordenar por:
-                <BaseSelect v-model="filters.sort_by" @change="applyFilters" class="ml-2 inline-block w-auto min-w-32 text-sm">
-                  <option value="created_at">Data</option>
-                  <option value="qty">Quantidade</option>
-                </BaseSelect>
-                <BaseSelect v-model="filters.sort_direction" @change="applyFilters" class="ml-2 inline-block w-auto min-w-24 text-sm">
-                  <option value="desc">Desc</option>
-                  <option value="asc">Asc</option>
-                </BaseSelect>
-              </div>
+        <section class="ds-panel overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Controlo de balanço</p>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Totais reconciliados</h2>
+          </div>
+          <dl class="divide-y divide-[var(--ds-border)]">
+            <div class="flex items-center justify-between gap-4 px-5 py-4">
+              <dt class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text-muted)]"><ArrowDownCircleIcon class="h-4 w-4 text-emerald-700 dark:text-emerald-300" /> Entradas</dt>
+              <dd class="font-mono text-sm font-black tabular-nums text-emerald-700 dark:text-emerald-300">{{ formatQuantity(stats.total_in) }}</dd>
             </div>
-          </div>
-        </div>
-
-        <!-- LOADING STATE -->
-        <div v-if="loading" class="p-12 text-center">
-          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-900"></div>
-          <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">Carregando...</p>
-        </div>
-
-        <!-- TRANSACTIONS TABLE -->
-        <div v-else-if="transactions.data && transactions.data.length > 0" class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead class="bg-slate-50 dark:bg-slate-900/80">
-              <tr>
-                <th :class="tableHeadClass">Data & Hora</th>
-                <th :class="tableHeadClass">Item</th>
-                <th :class="tableHeadClass">Categoria</th>
-                <th :class="tableHeadClass">Armazém</th>
-                <th :class="tableHeadClass">Tipo de Transação</th>
-                <th :class="tableHeadClass">Quantidade</th>
-                <th :class="tableHeadClass">Usuário</th>
-                <th :class="tableHeadClass">Observações</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
-              <tr 
-                v-for="transaction in transactions.data" 
-                :key="transaction.id"
-                class="hover:bg-blue-50/60 dark:hover:bg-blue-950/20"
-              >
-                <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                  {{ formatDateTime(transaction.created_at) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="flex items-center">
-                    <div class="flex-shrink-0 h-8 w-8">
-                      <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/10">
-                        <CubeIcon class="h-4 w-4 text-blue-900 dark:text-blue-300" />
-                      </div>
-                    </div>
-                    <div class="ml-3">
-                      <div class="text-sm font-medium text-slate-900 dark:text-white">{{ transaction.item?.name }}</div>
-                      <div class="text-xs text-slate-500 dark:text-slate-400">{{ transaction.item?.code }}</div>
-                    </div>
-                  </div>
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
-                  {{ transaction.item?.category?.name || 'N/A' }}
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                  {{ transaction.warehouse?.name }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span :class="[
-                    'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                    getTransactionTypeClass(transaction.type?.code)
-                  ]">
-                    {{ transaction.type?.name }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold" :class="getQuantityClass(transaction.type?.code, transaction.qty)">
-                  {{ getQuantitySign(transaction.type?.code) }}{{ transaction.qty }}
-                </td>
-                <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                  {{ transaction.user?.name }}
-                </td>
-                <td class="max-w-xs px-6 py-4 text-sm text-slate-500 dark:text-slate-400">
-                  <div class="truncate">{{ transaction.notes }}</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- EMPTY STATE -->
-        <div v-else class="p-12 text-center">
-          <DocumentMagnifyingGlassIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
-          <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
-            Nenhum movimento de estoque encontrado
-          </h3>
-          <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Tente ajustar seus filtros ou critérios de pesquisa
-          </p>
-        </div>
-
-        <!-- PAGINATION -->
-        <div v-if="transactions.data && transactions.data.length > 0" class="border-t border-slate-200 px-6 py-4 dark:border-slate-800">
-          <div class="flex items-center justify-between">
-            <div class="text-sm text-slate-500 dark:text-slate-400">
-              Mostrando {{ transactions.from }} a {{ transactions.to }} de {{ transactions.total }} registros
+            <div class="flex items-center justify-between gap-4 px-5 py-4">
+              <dt class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text-muted)]"><ArrowUpCircleIcon class="h-4 w-4 text-rose-700 dark:text-rose-300" /> Saídas</dt>
+              <dd class="font-mono text-sm font-black tabular-nums text-rose-700 dark:text-rose-300">{{ formatQuantity(stats.total_out) }}</dd>
             </div>
-            <div class="flex gap-2">
-              <button
-                @click="previousPage"
-                :disabled="!transactions.prev_page_url"
-                :class="[
-                  'rounded-lg px-3 py-2 text-sm font-medium',
-                  transactions.prev_page_url
-                    ? 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
-                    : 'text-slate-400 cursor-not-allowed dark:text-slate-600'
-                ]"
-              >
-                Anterior
-              </button>
-              <button
-                @click="nextPage"
-                :disabled="!transactions.next_page_url"
-                :class="[
-                  'rounded-lg px-3 py-2 text-sm font-medium',
-                  transactions.next_page_url
-                    ? 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
-                    : 'text-slate-400 cursor-not-allowed dark:text-slate-600'
-                ]"
-              >
-                Próxima
-              </button>
+            <div class="flex items-center justify-between gap-4 px-5 py-4">
+              <dt class="text-sm font-bold text-[var(--ds-text-muted)]">Saldo líquido</dt>
+              <dd :class="['font-mono text-sm font-black tabular-nums', Number(stats.net_movement || 0) >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300']">{{ signedNumber(stats.net_movement) }}</dd>
             </div>
-          </div>
-        </div>
-      </ModuleCard>
-    </div>
-
-    <!-- ADDITIONAL STATS -->
-    <div v-if="filters.view === 'detailed'" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Itens Mais Activos</p>
-            <p v-if="stats.most_active_item" class="mt-2 text-lg font-bold text-blue-900">
-              {{ stats.most_active_item.item?.name }}
-            </p>
-            <p v-else class="mt-2 text-lg font-bold text-gray-400">Sem dados</p>
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-              {{ stats.most_active_item?.transaction_count || 0 }} transações
-            </p>
-          </div>
-          <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-            <StarIcon class="h-6 w-6 text-blue-900" />
-          </div>
-        </div>
-      </div>
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Usuários Mais Activos</p>
-            <p v-if="stats.most_active_user" class="mt-2 text-lg font-bold text-green-900">
-              {{ stats.most_active_user.user?.name }}
-            </p>
-            <p v-else class="mt-2 text-lg font-bold text-gray-400">Sem dados</p>
-            <p class="text-sm text-slate-500 dark:text-slate-400">
-              {{ stats.most_active_user?.transaction_count || 0 }} transações
-            </p>
-          </div>
-          <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
-            <UserIcon class="h-6 w-6 text-green-900" />
-          </div>
-        </div>
-      </div>
-      <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Transações Diárias Médias</p>
-            <p class="mt-2 text-3xl font-bold text-purple-600">{{ stats.avg_daily_transactions }}</p>
-          </div>
-          <div class="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-            <ChartBarIcon class="h-6 w-6 text-purple-600" />
-          </div>
-        </div>
-      </div>
+          </dl>
+        </section>
+      </aside>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
-import { router, useForm } from '@inertiajs/vue3'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import { debounce } from 'lodash'
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseSelect from '@/Components/base/BaseSelect.vue'
-import ModuleCard from '@/Components/base/ModuleCard.vue'
-import ModuleHero from '@/Components/base/ModuleHero.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import ComboboxEnhanced from '@/Components/combobox-enhanced.vue'
+import Pagination from '@/Components/Pagination.vue'
 import {
+  ArrowDownCircleIcon,
   ArrowDownTrayIcon,
-  CalendarIcon,
-  CubeIcon,
-  BuildingStorefrontIcon,
-  EyeIcon,
-  ListBulletIcon,
-  DocumentMagnifyingGlassIcon,
-  ArrowDownIcon,
-  ArrowUpIcon,
-  ArrowsRightLeftIcon,
-  ChartBarIcon,
-  TableCellsIcon,
-  StarIcon,
-  UserIcon
+  ArrowLeftIcon,
+  ArrowUpCircleIcon,
+  ArrowsUpDownIcon,
+  ChartBarSquareIcon,
+  ClipboardDocumentListIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon,
+  MapPinIcon,
+  ShieldCheckIcon,
+  TrophyIcon,
+  UserIcon,
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
-  transactions: {
-    type: Object,
-    default: () => ({ data: [], links: {} })
-  },
-  summary: {
-    type: Array,
-    default: () => []
-  },
-  items: {
-    type: Array,
-    default: () => []
-  },
-  warehouses: {
-    type: Array,
-    default: () => []
-  },
-  filters: {
-    type: Object,
-    default: () => ({})
-  },
-  charts: {
-    type: Object,
-    default: () => ({})
-  },
-  stats: {
-    type: Object,
-    default: () => ({})
-  }
+  transactions: { type: Object, default: () => ({ data: [] }) },
+  summary: { type: Array, default: () => [] },
+  items: { type: Array, default: () => [] },
+  warehouses: { type: Array, default: () => [] },
+  filters: { type: Object, default: () => ({}) },
+  charts: { type: Object, default: () => ({}) },
+  stats: { type: Object, default: () => ({}) },
 })
 
+const inboundCodes = ['stock_in', 'stock_adjustment_add']
+const outboundCodes = ['stock_out', 'stock_adjustment_remove', 'consumption']
 const loading = ref(false)
-const filters = useForm({
-  date_from: '',
-  date_to: '',
-  item_id: '',
-  warehouse_id: '',
-  search: '',
-  view: 'detailed',
-  sort_by: 'created_at',
-  sort_direction: 'desc'
-})
-
-const tableHeadClass = 'px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300'
 const isDarkMode = ref(false)
 let themeObserver
 
+const filters = reactive({
+  date_from: props.filters?.date_from ?? '',
+  date_to: props.filters?.date_to ?? '',
+  item_id: props.filters?.item_id ?? '',
+  warehouse_id: props.filters?.warehouse_id ?? '',
+  search: props.filters?.search ?? '',
+  view: props.filters?.view === 'summary' ? 'summary' : 'detailed',
+  sort_by: ['created_at', 'qty'].includes(props.filters?.sort_by) ? props.filters.sort_by : 'created_at',
+  sort_direction: props.filters?.sort_direction === 'asc' ? 'asc' : 'desc',
+})
+
+const itemOptions = computed(() => props.items.map((item) => ({
+  value: item.id,
+  label: `${item.name}${item.code ? ` · ${item.code}` : ''}`,
+})))
+const selectedItem = ref(itemOptions.value.find((option) => String(option.value) === String(filters.item_id)) || null)
+const transactionRows = computed(() => props.transactions?.data || [])
+const summaryRows = computed(() => props.summary || [])
 const chartTextColor = computed(() => isDarkMode.value ? '#cbd5e1' : '#475569')
 const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#e2e8f0')
 const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 
-const syncDarkMode = () => {
-  if (typeof document === 'undefined') {
-    return
-  }
-
-  isDarkMode.value = document.documentElement.classList.contains('dark')
-}
+const summaryCards = computed(() => [
+  {
+    label: 'Transações',
+    value: formatQuantity(props.stats?.total_transactions),
+    detail: 'Registos no período',
+    icon: ClipboardDocumentListIcon,
+    tone: 'text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200',
+  },
+  {
+    label: 'Entradas',
+    value: formatQuantity(props.stats?.total_in),
+    detail: 'Unidades adicionadas',
+    icon: ArrowDownCircleIcon,
+    tone: 'text-emerald-700 dark:text-emerald-300',
+  },
+  {
+    label: 'Saídas',
+    value: formatQuantity(props.stats?.total_out),
+    detail: 'Unidades removidas',
+    icon: ArrowUpCircleIcon,
+    tone: 'text-rose-700 dark:text-rose-300',
+  },
+  {
+    label: 'Saldo líquido',
+    value: signedNumber(props.stats?.net_movement),
+    detail: `${formatQuantity(props.stats?.avg_daily_transactions)} transações / dia`,
+    icon: ChartBarSquareIcon,
+    tone: Number(props.stats?.net_movement || 0) >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-amber-700 dark:text-amber-300',
+  },
+])
 
 const filterPeriod = computed(() => {
-  if (filters.date_from && filters.date_to) {
-    return `${filters.date_from} to ${filters.date_to}`
-  }
+  if (filters.date_from && filters.date_to) return `${formatDate(filters.date_from)} - ${formatDate(filters.date_to)}`
+  if (filters.date_from) return `Desde ${formatDate(filters.date_from)}`
+  if (filters.date_to) return `Até ${formatDate(filters.date_to)}`
   return ''
 })
 
+const activeFilterPills = computed(() => {
+  const pills = []
+  if (filterPeriod.value) pills.push(filterPeriod.value)
+  if (filters.item_id) pills.push(`Item: ${selectedItem.value?.label || 'Selecionado'}`)
+  if (filters.warehouse_id) pills.push(`Armazém: ${warehouseName(filters.warehouse_id)}`)
+  if (filters.search) pills.push(`Pesquisa: ${filters.search}`)
+  return pills
+})
+
+const hasActiveFilters = computed(() => activeFilterPills.value.length > 0)
 const directionBreakdownChartSeries = computed(() => props.charts?.direction_breakdown?.series || [])
 const typeMixChartSeries = computed(() => props.charts?.type_mix?.series || [])
-const typeMixTotal = computed(() => (props.charts?.type_mix?.series || []).reduce((total, value) => total + Number(value || 0), 0))
+const typeMixTotal = computed(() => typeMixChartSeries.value.reduce((total, value) => total + Number(value || 0), 0))
 const dailyActivityChartSeries = computed(() => props.charts?.daily_activity?.series || [])
-const dailyActivityTotal = computed(() => props.charts?.daily_activity?.labels?.length || 0)
+const dailyActivityDays = computed(() => props.charts?.daily_activity?.labels?.length || 0)
+const typeMixRows = computed(() => {
+  const dots = ['bg-emerald-500', 'bg-rose-500', 'bg-amber-500', 'bg-cyan-600']
+  return (props.charts?.type_mix?.labels || []).map((label, index) => ({
+    label,
+    value: props.charts?.type_mix?.series?.[index] || 0,
+    dot: dots[index] || 'bg-zinc-500',
+  }))
+})
 
 const directionBreakdownChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
+  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
-  colors: ['#1e3a8a'],
+  colors: ['#0e7490'],
   dataLabels: { enabled: false },
-  grid: {
-    borderColor: chartGridColor.value,
-    strokeDashArray: 4,
-  },
-  plotOptions: {
-    bar: {
-      borderRadius: 6,
-      columnWidth: '50%',
-    },
-  },
+  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
+  plotOptions: { bar: { borderRadius: 4, columnWidth: '52%' } },
   xaxis: {
     categories: props.charts?.direction_breakdown?.labels || [],
     axisBorder: { color: chartGridColor.value },
     axisTicks: { color: chartGridColor.value },
-    labels: {
-      style: { colors: chartTextColor.value },
-    },
+    labels: { style: { colors: chartTextColor.value } },
   },
-  yaxis: {
-    labels: {
-      style: { colors: chartTextColor.value },
-    },
-  },
-  tooltip: {
-    theme: chartTooltipTheme.value,
-  },
+  yaxis: { labels: { style: { colors: chartTextColor.value } } },
+  tooltip: { theme: chartTooltipTheme.value },
   legend: { show: false },
 }))
 
 const typeMixChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
+  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
   labels: props.charts?.type_mix?.labels || [],
-  colors: ['#15803d', '#dc2626', '#ea580c', '#2563eb'],
-  legend: {
-    position: 'bottom',
-    labels: {
-      colors: chartTextColor.value,
-    },
-  },
-  dataLabels: {
-    formatter: (value) => `${value.toFixed(0)}%`,
-  },
-  stroke: {
-    width: 0,
-  },
-  tooltip: {
-    theme: chartTooltipTheme.value,
-  },
+  colors: ['#059669', '#e11d48', '#d97706', '#0891b2'],
+  legend: { position: 'bottom', labels: { colors: chartTextColor.value } },
+  dataLabels: { formatter: (value) => `${value.toFixed(0)}%` },
+  stroke: { width: 0 },
+  tooltip: { theme: chartTooltipTheme.value },
 }))
 
 const dailyActivityChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    fontFamily: 'inherit',
-    background: 'transparent',
-  },
+  chart: { toolbar: { show: false }, fontFamily: 'inherit', background: 'transparent' },
   theme: { mode: isDarkMode.value ? 'dark' : 'light' },
   foreColor: chartTextColor.value,
-  colors: ['#15803d', '#dc2626', '#1e3a8a'],
+  colors: ['#059669', '#e11d48', '#0e7490'],
   dataLabels: { enabled: false },
-  grid: {
-    borderColor: chartGridColor.value,
-    strokeDashArray: 4,
-  },
-  stroke: {
-    curve: 'smooth',
-    width: [3, 3, 2],
-  },
+  grid: { borderColor: chartGridColor.value, strokeDashArray: 4 },
+  stroke: { curve: 'straight', width: [3, 3, 2] },
+  markers: { size: 2 },
   xaxis: {
     categories: props.charts?.daily_activity?.labels || [],
-    labels: {
-      rotate: -20,
-      trim: true,
-      style: { colors: chartTextColor.value },
-    },
+    labels: { rotate: -20, trim: true, style: { colors: chartTextColor.value } },
     axisBorder: { color: chartGridColor.value },
     axisTicks: { color: chartGridColor.value },
   },
-  yaxis: {
-    labels: {
-      style: { colors: chartTextColor.value },
-    },
-  },
-  tooltip: {
-    theme: chartTooltipTheme.value,
-  },
+  yaxis: { labels: { style: { colors: chartTextColor.value } } },
+  tooltip: { theme: chartTooltipTheme.value },
 }))
 
-function formatDate(dateString) {
-  if (!dateString) return '-'
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
+function syncDarkMode() {
+  if (typeof document === 'undefined') return
+  isDarkMode.value = document.documentElement.classList.contains('dark')
 }
 
-function formatDateTime(dateString) {
-  if (!dateString) return '-'
-  return new Date(dateString).toLocaleString('en-US', {
-    year: 'numeric',
+function formatDate(value) {
+  if (!value) return 'N/D'
+  return new Intl.DateTimeFormat('pt-AO', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(value))
+}
+
+function formatDateTime(value) {
+  if (!value) return 'N/D'
+  return new Intl.DateTimeFormat('pt-AO', {
+    day: '2-digit',
     month: 'short',
-    day: 'numeric',
+    year: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+  }).format(new Date(value))
+}
+
+function formatQuantity(value) {
+  return new Intl.NumberFormat('pt-AO', { maximumFractionDigits: 2 }).format(Number(value || 0))
+}
+
+function signedNumber(value) {
+  const number = Number(value || 0)
+  return `${number > 0 ? '+' : ''}${formatQuantity(number)}`
+}
+
+function warehouseName(id) {
+  return props.warehouses.find((warehouse) => String(warehouse.id) === String(id))?.name || 'N/D'
+}
+
+function selectItem(option) {
+  selectedItem.value = option
+  filters.item_id = option?.value ?? ''
+}
+
+function setView(view) {
+  filters.view = view
+}
+
+function modeButtonClass(view) {
+  return [
+    'rounded-lg px-3 py-2 text-xs font-black transition-colors',
+    filters.view === view
+      ? 'bg-[rgb(var(--primary-700-rgb))] text-white shadow-xs'
+      : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]',
+  ]
+}
+
+function transactionTypeTone(code) {
+  if (inboundCodes.includes(code)) return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300'
+  if (outboundCodes.includes(code)) return 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300'
+  if (code === 'transfer') return 'border-cyan-200 bg-cyan-50 text-cyan-800 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-200'
+  return 'text-[var(--ds-text-muted)]'
+}
+
+function quantityTone(code) {
+  if (inboundCodes.includes(code)) return 'text-emerald-700 dark:text-emerald-300'
+  if (outboundCodes.includes(code)) return 'text-rose-700 dark:text-rose-300'
+  return 'text-[var(--ds-text)]'
+}
+
+function quantityLabel(transaction) {
+  const code = transaction.type?.code
+  const sign = inboundCodes.includes(code) ? '+' : outboundCodes.includes(code) ? '-' : ''
+  return `${sign}${formatQuantity(Math.abs(Number(transaction.qty || 0)))}`
+}
+
+function netValue(day) {
+  return Number(day.total_in || 0) - Number(day.total_out || 0)
+}
+
+function netLabel(day) {
+  return signedNumber(netValue(day))
+}
+
+function netTone(day) {
+  return netValue(day) >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'
+}
+
+function clearFilters() {
+  selectedItem.value = null
+  Object.assign(filters, {
+    date_from: '',
+    date_to: '',
+    item_id: '',
+    warehouse_id: '',
+    search: '',
+    sort_by: 'created_at',
+    sort_direction: 'desc',
   })
-}
-
-function getTransactionTypeClass(typeCode) {
-  const classMap = {
-    'stock_in': 'bg-green-100 text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200',
-    'stock_adjustment_add': 'bg-green-100 text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200',
-    'stock_out': 'bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-200',
-    'stock_adjustment_remove': 'bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-200',
-    'consumption': 'bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-200',
-    'transfer': 'bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-200'
-  }
-  return classMap[typeCode] || 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200'
-}
-
-function getQuantityClass(typeCode, qty) {
-  if (['stock_in', 'stock_adjustment_add'].includes(typeCode)) {
-    return 'text-green-600'
-  } else if (['stock_out', 'stock_adjustment_remove', 'consumption'].includes(typeCode)) {
-    return 'text-red-600'
-  }
-  return 'text-slate-600 dark:text-slate-300'
-}
-
-function getQuantitySign(typeCode) {
-  if (['stock_in', 'stock_adjustment_add'].includes(typeCode)) {
-    return '+'
-  } else if (['stock_out', 'stock_adjustment_remove', 'consumption'].includes(typeCode)) {
-    return '-'
-  }
-  return ''
-}
-
-function applyFilters() {
-  filters.get(route('vap-inventory.reports.stock-movement'), {
-    preserveScroll: true,
-    preserveState: true,
-    onStart: () => loading.value = true,
-    onFinish: () => loading.value = false
-  })
-}
-
-function resetFilters() {
-  filters.reset()
-  applyFilters()
 }
 
 function exportReport() {
-  const exportFilters = {
+  router.post(route('vap-inventory.reports.export'), {
     report_type: 'stock_movement',
     format: 'pdf',
-    filters: filters.data()
-  }
-  
-  router.post(route('vap-inventory.reports.export'), exportFilters)
+    filters: { ...filters },
+  })
 }
 
-function previousPage() {
-  if (props.transactions.prev_page_url) {
-    router.visit(props.transactions.prev_page_url, {
-      preserveScroll: true,
+watch(
+  filters,
+  debounce((value) => {
+    router.get(route('vap-inventory.reports.stock-movement'), value, {
       preserveState: true,
-      onStart: () => loading.value = true,
-      onFinish: () => loading.value = false
-    })
-  }
-}
-
-function nextPage() {
-  if (props.transactions.next_page_url) {
-    router.visit(props.transactions.next_page_url, {
       preserveScroll: true,
-      preserveState: true,
-      onStart: () => loading.value = true,
-      onFinish: () => loading.value = false
+      replace: true,
+      onStart: () => { loading.value = true },
+      onFinish: () => { loading.value = false },
     })
-  }
-}
+  }, 350),
+  { deep: true },
+)
 
 onMounted(() => {
   syncDarkMode()
-
-  if (typeof MutationObserver !== 'undefined') {
+  if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
     themeObserver = new MutationObserver(syncDarkMode)
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-  }
-
-  // Initialize filters from props
-  if (props.filters) {
-    Object.keys(props.filters).forEach(key => {
-      if (filters.hasOwnProperty(key)) {
-        filters[key] = props.filters[key]
-      }
-    })
   }
 })
 

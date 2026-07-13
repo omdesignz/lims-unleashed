@@ -1,286 +1,229 @@
+<script setup>
+import Modal from "@/Components/Modal.vue";
+import { computed, ref } from "vue";
+import { useForm } from "@inertiajs/vue3";
+import {
+  CheckIcon,
+  DocumentPlusIcon,
+  ExclamationTriangleIcon,
+  XMarkIcon,
+} from "@heroicons/vue/24/outline";
+
+const props = defineProps({
+  show: Boolean,
+  certificate: {
+    type: Object,
+    default: () => ({}),
+  },
+  approvers: {
+    type: Array,
+    default: () => [],
+  },
+});
+
+const emit = defineEmits(["close", "created"]);
+
+const form = useForm({
+  change_type: "UPDATED",
+  change_reason: "",
+  iso_section: "8.9.1",
+  risk_assessment: "LOW",
+  approved_by_id: "",
+  fields: {},
+});
+
+const selectedFields = ref([]);
+const updatableFields = [
+  { name: "status", label: "Estado do certificado" },
+  { name: "obs", label: "Observacoes" },
+  { name: "validated_by", label: "Validado por" },
+  { name: "extra_data", label: "Dados adicionais" },
+];
+
+const isReady = computed(() => {
+  return (
+    form.change_type &&
+    form.change_reason.length >= 10 &&
+    form.iso_section &&
+    form.risk_assessment &&
+    selectedFields.value.length > 0 &&
+    !form.processing
+  );
+});
+
+function toggleField(fieldName) {
+  const index = selectedFields.value.indexOf(fieldName);
+  if (index >= 0) {
+    selectedFields.value.splice(index, 1);
+    return;
+  }
+
+  selectedFields.value.push(fieldName);
+  form.clearErrors("fields");
+}
+
+function closeModal() {
+  form.reset();
+  form.clearErrors();
+  selectedFields.value = [];
+  emit("close");
+}
+
+function createRevision() {
+  if (!selectedFields.value.length) {
+    form.setError("fields", "Selecione pelo menos um campo.");
+    return;
+  }
+
+  form.fields = Object.fromEntries(
+    selectedFields.value.map((field) => [field, props.certificate[field]]),
+  );
+
+  form.post(
+    route("qualitycertificates.iso-revisions.store", props.certificate.id),
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        closeModal();
+        emit("created");
+      },
+    },
+  );
+}
+</script>
+
 <template>
-  <Modal :show="show" @close="closeModal" max-width="2xl">
-    <form @submit.prevent="createRevision" class="iso-revision-create-modal p-6">
-      <!-- HEADER -->
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <DocumentPlusIcon class="h-6 w-6 text-blue-900" />
-            {{ $t('gestlab.general.labels.iso_revisions.create.title') }}
-          </h2>
-          <p class="mt-1 text-sm text-gray-600">
-            {{ $t('gestlab.general.labels.iso_revisions.create.description') }}
-          </p>
+  <Modal :show="show" max-width="2xl" @close="closeModal">
+    <form class="min-w-0" @submit.prevent="createRevision">
+      <header class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
+        <div class="flex min-w-0 items-start gap-3">
+          <div class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-[var(--ds-text-muted)]">
+            <DocumentPlusIcon class="h-5 w-5" />
+          </div>
+          <div>
+            <p class="ds-kicker">Alteracao rapida</p>
+            <h2 class="ds-heading mt-2 text-lg">Criar revisao ISO</h2>
+            <p class="ds-copy mt-1 text-xs">
+              {{ certificate.code || "Certificado" }} - v{{ certificate.current_revision?.version || "1.0" }}
+            </p>
+          </div>
         </div>
-        <button 
-          @click="closeModal"
-          type="button"
-          class="rounded-full p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-900"
-        >
-          <XMarkIcon class="h-6 w-6" />
+        <button type="button" class="ds-icon-button" title="Fechar" @click="closeModal">
+          <XMarkIcon class="h-5 w-5" />
+          <span class="sr-only">Fechar</span>
         </button>
-      </div>
+      </header>
 
-      <!-- FORM -->
-      <div class="space-y-6">
-        <!-- CHANGE TYPE -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-            <TagIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.create.change_type') }}
-            <span class="text-red-500">*</span>
-          </label>
-          <select 
-            v-model="form.change_type"
-            required
-            class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-          >
-            <option value="UPDATED">{{ $t('gestlab.general.labels.iso_revisions.change_types.UPDATED') }}</option>
-            <option value="CORRECTED">{{ $t('gestlab.general.labels.iso_revisions.change_types.CORRECTED') }}</option>
-            <option value="REISSUED">{{ $t('gestlab.general.labels.iso_revisions.change_types.REISSUED') }}</option>
-            <option value="WITHDRAWN">{{ $t('gestlab.general.labels.iso_revisions.change_types.WITHDRAWN') }}</option>
-          </select>
+      <div class="space-y-5 px-5 py-5 sm:px-6">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div class="ds-field-group">
+            <label class="ds-field-label" for="modal-change-type">
+              Tipo de alteracao <span class="ds-field-required">*</span>
+            </label>
+            <select id="modal-change-type" v-model="form.change_type" class="ds-field">
+              <option value="UPDATED">Atualizacao</option>
+              <option value="CORRECTED">Correcao</option>
+              <option value="REISSUED">Reemissao</option>
+              <option value="WITHDRAWN">Retirada</option>
+            </select>
+          </div>
+
+          <div class="ds-field-group">
+            <label class="ds-field-label" for="modal-risk">
+              Avaliacao de risco <span class="ds-field-required">*</span>
+            </label>
+            <select id="modal-risk" v-model="form.risk_assessment" class="ds-field">
+              <option value="LOW">Baixo</option>
+              <option value="MEDIUM">Medio</option>
+              <option value="HIGH">Alto</option>
+              <option value="CRITICAL">Critico</option>
+            </select>
+          </div>
+
+          <div class="ds-field-group">
+            <label class="ds-field-label" for="modal-iso-section">
+              Secao ISO <span class="ds-field-required">*</span>
+            </label>
+            <input id="modal-iso-section" v-model="form.iso_section" class="ds-field" />
+          </div>
+
+          <div class="ds-field-group">
+            <label class="ds-field-label" for="modal-approver">Aprovador</label>
+            <select id="modal-approver" v-model="form.approved_by_id" class="ds-field">
+              <option value="">Sem aprovador designado</option>
+              <option v-for="approver in approvers" :key="approver.id" :value="approver.id">
+                {{ approver.name }}
+              </option>
+            </select>
+          </div>
         </div>
 
-        <!-- CHANGE REASON -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-            <ChatBubbleLeftRightIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.create.change_reason') }}
-            <span class="text-red-500">*</span>
+        <div class="ds-field-group">
+          <label class="ds-field-label" for="modal-change-reason">
+            Justificacao <span class="ds-field-required">*</span>
           </label>
-          <textarea 
+          <textarea
+            id="modal-change-reason"
             v-model="form.change_reason"
-            required
-            rows="3"
-            :placeholder="$t('gestlab.general.labels.iso_revisions.create.reason_placeholder')"
-            class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
+            class="ds-field min-h-28"
+            :aria-invalid="Boolean(form.errors.change_reason)"
+            placeholder="Descreva o motivo da revisao"
           />
-          <p class="text-xs text-gray-500">
-            {{ $t('gestlab.general.labels.iso_revisions.create.reason_help') }}
+          <p class="ds-field-hint">Minimo de 10 caracteres.</p>
+          <p v-if="form.errors.change_reason" class="ds-field-error">
+            {{ form.errors.change_reason }}
           </p>
         </div>
 
-        <!-- ISO SECTION -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-            <DocumentMagnifyingGlassIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.create.iso_section') }}
-            <span class="text-red-500">*</span>
-          </label>
-          <input 
-            v-model="form.iso_section"
-            required
-            placeholder="e.g., 8.9.1"
-            class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-          />
-        </div>
+        <section class="ds-command-surface overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-4 py-3">
+            <p class="ds-table-heading">Campos a preservar na nova revisao</p>
+          </div>
+          <div class="grid sm:grid-cols-2">
+            <button
+              v-for="field in updatableFields"
+              :key="field.name"
+              type="button"
+              role="checkbox"
+              :aria-checked="selectedFields.includes(field.name)"
+              class="flex items-center gap-3 border-b border-[var(--ds-border)] px-4 py-3 text-left hover:bg-[var(--ds-panel-subtle)] sm:odd:border-r"
+              @click="toggleField(field.name)"
+            >
+              <span
+                :class="[
+                  'grid h-5 w-5 shrink-0 place-items-center rounded border',
+                  selectedFields.includes(field.name)
+                    ? 'border-[rgb(var(--primary-700-rgb))] bg-[rgb(var(--primary-700-rgb))] text-white'
+                    : 'border-[var(--ds-border-strong)] bg-[var(--ds-panel-raised)]',
+                ]"
+              >
+                <CheckIcon v-if="selectedFields.includes(field.name)" class="h-3.5 w-3.5" />
+              </span>
+              <span class="text-sm font-bold text-[var(--ds-text)]">{{ field.label }}</span>
+            </button>
+          </div>
+        </section>
+        <p v-if="form.errors.fields" class="ds-field-error">{{ form.errors.fields }}</p>
 
-        <!-- RISK ASSESSMENT -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-            <ExclamationTriangleIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.create.risk_assessment') }}
-            <span class="text-red-500">*</span>
-          </label>
-          <select 
-            v-model="form.risk_assessment"
-            required
-            class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-          >
-            <option value="LOW">{{ $t('gestlab.general.labels.iso_revisions.risk_levels.LOW') }}</option>
-            <option value="MEDIUM">{{ $t('gestlab.general.labels.iso_revisions.risk_levels.MEDIUM') }}</option>
-            <option value="HIGH">{{ $t('gestlab.general.labels.iso_revisions.risk_levels.HIGH') }}</option>
-            <option value="CRITICAL">{{ $t('gestlab.general.labels.iso_revisions.risk_levels.CRITICAL') }}</option>
-          </select>
-        </div>
-
-        <!-- APPROVER -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-            <UserIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.create.approver') }}
-          </label>
-          <select 
-            v-model="form.approved_by_id"
-            class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-          >
-            <option value="">{{ $t('gestlab.general.labels.iso_revisions.create.select_approver') }}</option>
-            <option v-for="approver in approvers" :key="approver.id" :value="approver.id">
-              {{ approver.name }} - {{ approver.role }}
-            </option>
-          </select>
-        </div>
-
-        <!-- FIELDS TO UPDATE -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700">
-            {{ $t('gestlab.general.labels.iso_revisions.create.fields_to_update') }}
-          </label>
-          <div class="space-y-3">
-            <div v-for="field in updatableFields" :key="field.name" class="flex items-center">
-              <input 
-                type="checkbox" 
-                :id="`field-${field.name}`"
-                v-model="selectedFields"
-                :value="field.name"
-                class="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
-              />
-              <label :for="`field-${field.name}`" class="ml-3 text-sm text-gray-700">
-                {{ field.label }}
-              </label>
-            </div>
+        <div v-if="form.hasErrors" class="lims-status-strip p-4">
+          <div class="flex items-start gap-3">
+            <ExclamationTriangleIcon class="h-5 w-5 shrink-0 text-[var(--lims-critical)]" />
+            <p class="text-xs font-semibold text-[var(--ds-text-muted)]">
+              Reveja os campos assinalados antes de criar a revisao.
+            </p>
           </div>
         </div>
       </div>
 
-      <!-- FOOTER -->
-      <div class="mt-8 flex items-center justify-end gap-4">
-        <button 
-          @click="closeModal"
-          type="button"
-          class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-        >
-          {{ $t('gestlab.general.labels.iso_revisions.cancel') }}
+      <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+        <button type="button" class="ds-button ds-button-secondary" @click="closeModal">
+          Cancelar
         </button>
-        <button 
-          type="submit"
-          :disabled="form.processing"
-          :class="[
-            'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200',
-            form.processing
-              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : 'bg-gradient-to-r from-blue-900 to-blue-800 text-white hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2'
-          ]"
-        >
+        <button type="submit" class="ds-button ds-button-primary" :disabled="!isReady">
           <DocumentPlusIcon class="h-4 w-4" />
-          {{ form.processing ? $t('gestlab.general.labels.iso_revisions.creating') : $t('gestlab.general.labels.iso_revisions.create_revision') }}
+          {{ form.processing ? "A criar..." : "Criar revisao" }}
         </button>
-      </div>
+      </footer>
     </form>
   </Modal>
 </template>
-
-<script setup>
-import { ref } from 'vue'
-import { useForm } from '@inertiajs/vue3'
-import Modal from '@/Components/Modal.vue'
-import {
-  DocumentPlusIcon,
-  XMarkIcon,
-  TagIcon,
-  ChatBubbleLeftRightIcon,
-  DocumentMagnifyingGlassIcon,
-  ExclamationTriangleIcon,
-  UserIcon
-} from '@heroicons/vue/24/outline'
-
-const props = defineProps({
-  show: Boolean,
-  certificate: Object,
-  approvers: {
-    type: Array,
-    default: () => []
-  }
-})
-
-const emit = defineEmits(['close', 'created'])
-
-// Form
-const form = useForm({
-  change_type: 'UPDATED',
-  change_reason: '',
-  iso_section: '8.9.1',
-  risk_assessment: 'LOW',
-  approved_by_id: '',
-  fields: {}
-})
-
-const selectedFields = ref([])
-const updatableFields = [
-  { name: 'status', label: 'Certificate Status' },
-  { name: 'obs', label: 'Observations' },
-  { name: 'validated_by', label: 'Validated By' },
-  { name: 'extra_data', label: 'Additional Data' }
-]
-
-// Methods
-const closeModal = () => {
-  form.reset()
-  selectedFields.value = []
-  emit('close')
-}
-
-const createRevision = () => {
-  // Get updated values for selected fields
-  const updates = {}
-  selectedFields.value.forEach(field => {
-    updates[field] = props.certificate[field]
-  })
-
-  form.fields = updates
-
-  form.post(route('qualitycertificates.iso-revisions.store', props.certificate.id), {
-    preserveScroll: true,
-    onSuccess: () => {
-      closeModal()
-      emit('created')
-    }
-  })
-}
-</script>
-
-<style scoped>
-.iso-revision-create-modal :deep(.text-blue-900),
-.iso-revision-create-modal :deep(.text-blue-800) {
-  color: rgb(var(--primary-800-rgb)) !important;
-}
-
-.iso-revision-create-modal :deep(.bg-blue-900) {
-  background-color: rgb(var(--primary-900-rgb)) !important;
-}
-
-.iso-revision-create-modal :deep(.from-blue-900) {
-  --tw-gradient-from: rgb(var(--primary-900-rgb)) var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: rgb(var(--primary-900-rgb) / 0) var(--tw-gradient-to-position) !important;
-}
-
-.iso-revision-create-modal :deep(.to-blue-800) {
-  --tw-gradient-to: rgb(var(--primary-700-rgb)) var(--tw-gradient-to-position) !important;
-}
-
-.iso-revision-create-modal :deep(input),
-.iso-revision-create-modal :deep(select),
-.iso-revision-create-modal :deep(textarea) {
-  border-color: #d8cbb8;
-  background: #fffdf7;
-  color: #15231f;
-  border-radius: 0.875rem;
-}
-
-:global(.dark) .iso-revision-create-modal {
-  background-color: rgb(2 6 23 / 0.92);
-}
-
-:global(.dark) .iso-revision-create-modal :deep(.bg-white),
-:global(.dark) .iso-revision-create-modal :deep(.bg-gray-50) {
-  background-color: rgb(15 23 42 / 0.86) !important;
-}
-
-:global(.dark) .iso-revision-create-modal :deep(.text-gray-900) {
-  color: #f8fafc !important;
-}
-
-:global(.dark) .iso-revision-create-modal :deep(.text-gray-700),
-:global(.dark) .iso-revision-create-modal :deep(.text-gray-600) {
-  color: #cbd5e1 !important;
-}
-
-:global(.dark) .iso-revision-create-modal :deep(input),
-:global(.dark) .iso-revision-create-modal :deep(select),
-:global(.dark) .iso-revision-create-modal :deep(textarea) {
-  border-color: #315149;
-  background: #10231f;
-  color: #f7f1e7;
-}
-</style>

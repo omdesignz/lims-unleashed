@@ -82,6 +82,7 @@ use App\Models\VAPSampleEntry;
 use App\Models\Variable;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class LimsSmokeTest extends TestCase
@@ -106,6 +107,7 @@ class LimsSmokeTest extends TestCase
 
         $routes = [
             'dashboard',
+            'metrics.index',
             'analysis.index',
             'samples.index',
             'standards.index',
@@ -141,6 +143,21 @@ class LimsSmokeTest extends TestCase
         }
 
         $this->assertSame([], $failures, implode(PHP_EOL, $failures));
+    }
+
+    public function test_customer_request_index_exposes_the_correct_resource_contract(): void
+    {
+        $user = $this->verifiedAdmin();
+
+        $this->actingAs($user)
+            ->get(route('customerrequests.index'))
+            ->assertSuccessful()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('CustomerRequests/Index')
+                ->where('model', CustomerRequest::MENU_NAME)
+                ->where('abilities', fn ($abilities): bool => collect($abilities)->contains('add_customer_requests')
+                    && collect($abilities)->contains('edit_customer_requests')
+                    && collect($abilities)->contains('delete_customer_requests')));
     }
 
     public function test_verified_admin_can_open_broad_backoffice_index_and_create_pages(): void
@@ -280,6 +297,7 @@ class LimsSmokeTest extends TestCase
         $user = $this->verifiedAdmin();
 
         $routes = [
+            'file-manager',
             'proficiency_tests.index',
             'proficiency_tests.create',
             'ratings.index',

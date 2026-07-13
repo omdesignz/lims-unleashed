@@ -1,485 +1,437 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <WrenchScrewdriverIcon class="h-7 w-7 text-blue-900" />
-            Tarefas de Manutenção
-          </h1>
-          <p class="mt-2 text-gray-600">
-            Gerencie todas as tarefas de manutenção e calibração
-            <span v-if="stats?.overdue > 0" class="font-semibold text-red-600 ml-2">
-              {{ stats?.overdue }} tarefas atrasadas
+  <div class="space-y-6" :class="commercialDocumentThemeClasses">
+    <section class="ds-panel overflow-hidden">
+      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:flex sm:items-start sm:justify-between sm:gap-6 lg:px-6">
+        <div class="min-w-0">
+          <p class="ds-kicker">Metrologia e manutenção</p>
+          <div class="mt-2 flex flex-wrap items-center gap-3">
+            <h1 class="ds-heading text-2xl">Tarefas de manutenção</h1>
+            <span
+              :class="[
+                'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ring-1',
+                stats?.overdue > 0
+                  ? 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20'
+                  : 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20',
+              ]"
+            >
+              {{ stats?.overdue > 0 ? `${stats.overdue} atrasadas` : 'Agenda em dia' }}
             </span>
+          </div>
+          <p class="ds-copy mt-2 max-w-3xl text-sm">
+            Controle calibrações, preventivas, fornecedores e custos com uma lista operacional densa para rastreabilidade diária.
           </p>
         </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-900 ring-1 ring-inset ring-blue-700/10">
-            {{ tasks?.total }} tarefas
-          </span>
-          <Link
-            :href="route('vap-maintenance.tasks.create')"
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-          >
-            <PlusIcon class="h-5 w-5" />
-            Nova Tarefa
+
+        <div class="mt-4 flex flex-wrap items-center gap-2 sm:mt-0 sm:justify-end">
+          <span class="ds-chip">{{ taskTotal }} tarefas</span>
+          <Link :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-primary">
+            <PlusIcon class="h-4 w-4" />
+            Nova tarefa
           </Link>
         </div>
       </div>
-    </div>
 
-    <!-- FILTERS -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- CATEGORY FILTER -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            <TagIcon class="h-4 w-4 inline mr-1" />
+      <div class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
+        <article v-for="card in statsCards" :key="card.label" class="bg-[var(--ds-panel)] p-5">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">{{ card.label }}</p>
+              <p class="mt-3 text-3xl font-bold text-[var(--ds-text)]">{{ card.value }}</p>
+              <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">{{ card.caption }}</p>
+            </div>
+            <span :class="['inline-flex h-10 w-10 items-center justify-center rounded-lg ring-1', card.tone]">
+              <component :is="card.icon" class="h-5 w-5" />
+            </span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="ds-command-surface p-4">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <label class="ds-field-group">
+          <span class="ds-field-label">
+            <TagIcon class="mr-1 inline h-4 w-4" />
             Categoria
-          </label>
-          <select
-            v-model="filters.category_id"
-            @change="applyFilters"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-          >
-            <option value="">Todas as Categorias</option>
+          </span>
+          <select v-model="filters.category_id" class="ds-field" @change="applyFilters">
+            <option value="">Todas as categorias</option>
             <option v-for="category in categories" :key="category.id" :value="category.id">
               {{ category.name }}
             </option>
           </select>
-        </div>
+        </label>
 
-        <!-- EQUIPMENT FILTER -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            <CogIcon class="h-4 w-4 inline mr-1" />
+        <label class="ds-field-group">
+          <span class="ds-field-label">
+            <CogIcon class="mr-1 inline h-4 w-4" />
             Equipamento
-          </label>
-          <select
-            v-model="filters.equipment_id"
-            @change="applyFilters"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-          >
-            <option value="">Todos os Equipamentos</option>
-            <option v-for="equipment in equipment" :key="equipment.id" :value="equipment.id">
-              {{ equipment.name }} ({{ equipment.internal_code || 'N/A' }})
+          </span>
+          <select v-model="filters.equipment_id" class="ds-field" @change="applyFilters">
+            <option value="">Todos os equipamentos</option>
+            <option v-for="equipmentItem in equipment" :key="equipmentItem.id" :value="equipmentItem.id">
+              {{ equipmentItem.name }} ({{ equipmentItem.internal_code || 'N/A' }})
             </option>
           </select>
-        </div>
+        </label>
 
-        <!-- STATUS FILTER -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            <CheckCircleIcon class="h-4 w-4 inline mr-1" />
+        <label class="ds-field-group">
+          <span class="ds-field-label">
+            <CheckCircleIcon class="mr-1 inline h-4 w-4" />
             Estado
-          </label>
-          <select
-            v-model="filters.status"
-            @change="applyFilters"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-          >
-            <option value="">Todos os Estados</option>
+          </span>
+          <select v-model="filters.status" class="ds-field" @change="applyFilters">
+            <option value="">Todos os estados</option>
             <option value="overdue">Atrasadas</option>
             <option value="executed">Executadas</option>
             <option value="planned">Planeadas</option>
           </select>
-        </div>
+        </label>
 
-        <!-- DATE RANGE -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            <CalendarIcon class="h-4 w-4 inline mr-1" />
+        <div class="ds-field-group">
+          <span class="ds-field-label">
+            <CalendarIcon class="mr-1 inline h-4 w-4" />
             Período
-          </label>
-          <div class="flex gap-2">
+          </span>
+          <div class="grid grid-cols-2 gap-2">
             <input
               v-model="filters.date_from"
               type="date"
-              @change="applyFilters"
-              class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
+              class="ds-field"
               placeholder="De"
+              @change="applyFilters"
             />
             <input
               v-model="filters.date_to"
               type="date"
-              @change="applyFilters"
-              class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
+              class="ds-field"
               placeholder="Até"
+              @change="applyFilters"
             />
           </div>
         </div>
       </div>
 
-      <!-- ADVANCED FILTERS -->
-      <div class="mt-6 pt-6 border-t border-gray-200">
+      <div class="mt-4 border-t border-[var(--ds-border)] pt-4">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
+            type="button"
+            class="ds-button ds-button-secondary"
             @click="showAdvancedFilters = !showAdvancedFilters"
-            class="inline-flex items-center gap-2 text-sm font-medium text-blue-900 hover:text-blue-800"
           >
             <FunnelIcon class="h-4 w-4" />
-            Filtros Avançados
+            Filtros avançados
             <ChevronDownIcon :class="['h-4 w-4 transition-transform', showAdvancedFilters ? 'rotate-180' : '']" />
           </button>
-          <button
-            @click="resetFilters"
-            class="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900"
-          >
-            <XMarkIcon class="h-4 w-4" />
-            Limpar Filtros
-          </button>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <span v-if="hasActiveFilters" class="ds-chip">Filtros ativos</span>
+            <button type="button" class="ds-button ds-button-secondary" @click="resetFilters">
+              <XMarkIcon class="h-4 w-4" />
+              Limpar filtros
+            </button>
+          </div>
         </div>
 
-        <div v-if="showAdvancedFilters" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <!-- SUPPLIER FILTER -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              <TruckIcon class="h-4 w-4 inline mr-1" />
+        <div v-if="showAdvancedFilters" class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <label class="ds-field-group">
+            <span class="ds-field-label">
+              <TruckIcon class="mr-1 inline h-4 w-4" />
               Fornecedor
-            </label>
-            <select
-              v-model="filters.supplier_id"
-              @change="applyFilters"
-              class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-            >
-              <option value="">Todos os Fornecedores</option>
+            </span>
+            <select v-model="filters.supplier_id" class="ds-field" @change="applyFilters">
+              <option value="">Todos os fornecedores</option>
               <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">
                 {{ supplier.name }}
               </option>
             </select>
-          </div>
+          </label>
 
-          <!-- COST RANGE -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              <CurrencyEuroIcon class="h-4 w-4 inline mr-1" />
+          <div class="ds-field-group">
+            <span class="ds-field-label">
+              <CurrencyEuroIcon class="mr-1 inline h-4 w-4" />
               Custo
-            </label>
-            <div class="flex gap-2">
+            </span>
+            <div class="grid grid-cols-2 gap-2">
               <input
                 v-model="filters.cost_min"
                 type="number"
                 step="0.01"
                 min="0"
-                @change="applyFilters"
-                class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
+                class="ds-field"
                 placeholder="Mín"
+                @change="applyFilters"
               />
               <input
                 v-model="filters.cost_max"
                 type="number"
                 step="0.01"
                 min="0"
-                @change="applyFilters"
-                class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
+                class="ds-field"
                 placeholder="Máx"
+                @change="applyFilters"
               />
             </div>
           </div>
 
-          <!-- SORT BY -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              <ArrowsUpDownIcon class="h-4 w-4 inline mr-1" />
-              Ordenar Por
-            </label>
-            <select
-              v-model="filters.sort_by"
-              @change="applyFilters"
-              class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-            >
-              <option value="due_date">Data de Vencimento</option>
-              <option value="created_at">Data de Criação</option>
-              <option value="name">Nome da Tarefa</option>
+          <label class="ds-field-group">
+            <span class="ds-field-label">
+              <ArrowsUpDownIcon class="mr-1 inline h-4 w-4" />
+              Ordenar por
+            </span>
+            <select v-model="filters.sort_by" class="ds-field" @change="applyFilters">
+              <option value="due_date">Data de vencimento</option>
+              <option value="created_at">Data de criação</option>
+              <option value="name">Nome da tarefa</option>
               <option value="cost">Custo</option>
             </select>
-          </div>
+          </label>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- BULK ACTIONS -->
-    <div v-if="selectedTasks.length > 0" class="bg-gradient-to-r from-blue-900 to-blue-800 rounded-xl shadow-sm p-6">
+    <section v-if="selectedTasks.length > 0" class="ds-command-toolbar px-5 py-4">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <CheckCircleIcon class="h-5 w-5 text-white" />
-          <div class="text-white">
-            <div class="font-semibold">{{ selectedTasks.length }} tarefas selecionadas</div>
-            <div class="text-sm opacity-90">Selecione uma ação em massa</div>
+        <div class="flex items-start gap-3">
+          <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[rgb(var(--primary-50-rgb)/0.9)] text-[rgb(var(--primary-800-rgb)/1)] ring-1 ring-[rgb(var(--primary-200-rgb)/0.8)] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-[rgb(var(--accent-100-rgb)/1)] dark:ring-[rgb(var(--primary-300-rgb)/0.18)]">
+            <CheckCircleIcon class="h-5 w-5" />
+          </span>
+          <div>
+            <p class="font-bold text-[var(--ds-text)]">{{ selectedTasks.length }} tarefas selecionadas</p>
+            <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Aplique alterações em lote apenas a tarefas verificadas.</p>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <select
-            v-model="bulkAction"
-            class="rounded-lg border border-blue-700 bg-blue-800 text-white px-4 py-2.5 text-sm focus:border-white focus:ring-white"
-          >
+
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <select v-model="bulkAction" class="ds-field min-w-60">
             <option value="">Seleccionar acção</option>
-            <option value="mark_executed">Marcar como Executadas</option>
+            <option value="mark_executed">Marcar como executadas</option>
             <option value="reschedule">Reagendar</option>
             <option value="delete">Eliminar</option>
           </select>
-          <button
-            @click="executeBulkAction"
-            :disabled="!bulkAction"
-            class="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-blue-900 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <button type="button" class="ds-button ds-button-primary" :disabled="!bulkAction" @click="executeBulkAction">
             <PlayIcon class="h-4 w-4" />
             Aplicar
           </button>
-          <button
-            @click="clearSelection"
-            class="inline-flex items-center gap-2 rounded-lg border border-blue-300 bg-transparent px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
-          >
+          <button type="button" class="ds-button ds-button-secondary" @click="clearSelection">
             <XMarkIcon class="h-4 w-4" />
             Cancelar
           </button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- TASKS TABLE -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div class="border-b border-gray-200 px-6 py-4">
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <ClipboardDocumentListIcon class="h-5 w-5 text-blue-900" />
-            Lista de Tarefas
-            <span class="text-sm font-normal text-gray-500 ml-2">
-              ({{ tasks.total }} itens)
-            </span>
+    <section class="ds-table-shell">
+      <div class="ds-table-summary px-5 py-4">
+        <div>
+          <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
+            <ClipboardDocumentListIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)]" />
+            Lista de tarefas
           </h2>
-          <div class="flex items-center gap-2">
-            <button
-              @click="exportTasks"
-              class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              <ArrowDownTrayIcon class="h-4 w-4" />
-              Exportar
-            </button>
-          </div>
+          <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">
+            {{ taskItems.length }} tarefas nesta página, {{ taskTotal }} no total.
+          </p>
         </div>
+        <button type="button" class="ds-button ds-button-secondary" @click="exportTasks">
+          <ArrowDownTrayIcon class="h-4 w-4" />
+          Exportar
+        </button>
       </div>
 
-      <div class="grid gap-4 p-4 md:hidden" v-if="tasks.data.length > 0">
+      <div v-if="taskItems.length > 0" class="grid gap-3 p-4 md:hidden">
         <article
-          v-for="task in tasks.data"
+          v-for="task in taskItems"
           :key="`mobile-${task.id}`"
-          class="rounded-xl border border-gray-200 p-4 shadow-sm"
+          :class="[
+            'ds-card p-4',
+            selectedTaskIds.includes(task.id) ? 'ring-2 ring-[rgb(var(--primary-500-rgb)/0.45)]' : '',
+          ]"
         >
           <div class="flex items-start justify-between gap-3">
-            <label class="flex items-start gap-3">
+            <label class="flex min-w-0 items-start gap-3">
               <input
                 type="checkbox"
                 :checked="selectedTaskIds.includes(task.id)"
+                class="ds-checkbox mt-1 shrink-0"
                 @change="toggleTaskSelection(task.id)"
-                class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
               />
-              <div>
-                <p class="text-sm font-semibold text-gray-900">{{ task.name }}</p>
-                <p class="text-xs text-gray-500">{{ task.category?.name || 'Sem categoria' }}</p>
-              </div>
+              <span class="min-w-0">
+                <span class="block truncate text-sm font-bold text-[var(--ds-text)]">{{ task.name }}</span>
+                <span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">{{ task.category?.name || 'Sem categoria' }}</span>
+              </span>
             </label>
             <span :class="getStatusClasses(task)">{{ getStatusText(task) }}</span>
           </div>
 
-          <dl class="mt-4 grid grid-cols-1 gap-2 text-sm">
-            <div class="rounded-lg bg-gray-50 px-3 py-2">
-              <dt class="text-xs uppercase tracking-wide text-gray-500">Equipamento</dt>
-              <dd class="mt-1 text-gray-900">{{ task.equipment?.name || 'Equipamento não encontrado' }}</dd>
+          <dl class="mt-4 grid gap-2 text-sm">
+            <div class="rounded-lg bg-[var(--ds-panel-subtle)] px-3 py-2">
+              <dt class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Equipamento</dt>
+              <dd class="mt-1 font-semibold text-[var(--ds-text)]">{{ task.equipment?.name || 'Equipamento não encontrado' }}</dd>
             </div>
             <div class="grid grid-cols-2 gap-2">
-              <div class="rounded-lg bg-gray-50 px-3 py-2">
-                <dt class="text-xs uppercase tracking-wide text-gray-500">Vencimento</dt>
-                <dd class="mt-1 text-gray-900">{{ formatDate(task.due_date) }}</dd>
+              <div class="rounded-lg bg-[var(--ds-panel-subtle)] px-3 py-2">
+                <dt class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Vencimento</dt>
+                <dd :class="['mt-1 font-bold', getDueDateColor(task)]">{{ formatDate(task.due_date) }}</dd>
               </div>
-              <div class="rounded-lg bg-gray-50 px-3 py-2">
-                <dt class="text-xs uppercase tracking-wide text-gray-500">Custo</dt>
-                <dd class="mt-1 text-gray-900">{{ task.cost > 0 ? formatCurrency(task.cost) : 'Sem custo' }}</dd>
+              <div class="rounded-lg bg-[var(--ds-panel-subtle)] px-3 py-2">
+                <dt class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Custo</dt>
+                <dd class="mt-1 font-bold text-[var(--ds-text)]">{{ task.cost > 0 ? formatCurrency(task.cost) : 'Sem custo' }}</dd>
               </div>
             </div>
-            <div v-if="task.description" class="rounded-lg bg-gray-50 px-3 py-2">
-              <dt class="text-xs uppercase tracking-wide text-gray-500">Descrição</dt>
-              <dd class="mt-1 text-gray-900">{{ task.description }}</dd>
+            <div v-if="task.description" class="rounded-lg bg-[var(--ds-panel-subtle)] px-3 py-2">
+              <dt class="text-xs font-bold uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Descrição</dt>
+              <dd class="mt-1 text-[var(--ds-text-muted)]">{{ task.description }}</dd>
             </div>
           </dl>
 
           <div class="mt-4 flex flex-wrap gap-2">
-            <Link :href="route('vap-maintenance.tasks.show', task.id)" class="inline-flex items-center rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-900 hover:bg-blue-100">Abrir</Link>
-            <button v-if="!task.is_executed" @click="markAsExecuted(task)" class="inline-flex items-center rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-900 hover:bg-green-100">Concluir</button>
-            <Link :href="route('vap-maintenance.tasks.show', task.id)" class="inline-flex items-center rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">Actualizar</Link>
+            <Link :href="route('vap-maintenance.tasks.show', task.id)" class="ds-table-action">
+              <EyeIcon class="mr-1 h-4 w-4" />
+              Abrir
+            </Link>
+            <button v-if="!task.is_executed" type="button" class="ds-table-action" @click="markAsExecuted(task)">
+              <CheckCircleIcon class="mr-1 h-4 w-4" />
+              Concluir
+            </button>
+            <Link :href="route('vap-maintenance.tasks.show', task.id)" class="ds-table-action">
+              <PencilIcon class="mr-1 h-4 w-4" />
+              Actualizar
+            </Link>
           </div>
         </article>
       </div>
 
-      <div class="hidden overflow-x-auto md:block">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+      <div v-if="taskItems.length > 0" class="hidden overflow-x-auto md:block">
+        <table class="min-w-full align-middle text-sm">
+          <thead class="ds-table-head">
             <tr>
-              <th class="w-12 px-6 py-3">
+              <th class="w-12 px-5 py-3">
                 <input
                   type="checkbox"
                   :checked="allTasksSelected"
+                  class="ds-checkbox"
                   @change="toggleAllTasks"
-                  class="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
                 />
               </th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                Tarefa
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                Equipamento
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                Datas
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                Custo
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                Estado
-              </th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
-                Acções
-              </th>
+              <th class="ds-table-heading px-5 py-3 text-left">Tarefa</th>
+              <th class="ds-table-heading px-5 py-3 text-left">Equipamento</th>
+              <th class="ds-table-heading px-5 py-3 text-left">Datas</th>
+              <th class="ds-table-heading px-5 py-3 text-left">Custo</th>
+              <th class="ds-table-heading px-5 py-3 text-left">Estado</th>
+              <th class="ds-table-heading px-5 py-3 text-right">Ações</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
             <tr
-              v-for="task in tasks.data"
+              v-for="task in taskItems"
               :key="task.id"
-              :class="['hover:bg-gray-50 transition-colors duration-150', selectedTaskIds.includes(task.id) ? 'bg-blue-50' : '']"
+              :class="[
+                'ds-table-row',
+                selectedTaskIds.includes(task.id) ? 'bg-[rgb(var(--primary-50-rgb)/0.85)] dark:bg-[rgb(var(--primary-400-rgb)/0.1)]' : '',
+              ]"
             >
-              <td class="px-6 py-4">
+              <td class="px-5 py-4">
                 <input
                   type="checkbox"
                   :checked="selectedTaskIds.includes(task.id)"
+                  class="ds-checkbox"
                   @change="toggleTaskSelection(task.id)"
-                  class="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
                 />
               </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center">
-                  <div :class="[
-                    'flex-shrink-0 h-10 w-10 rounded-lg flex items-center justify-center',
-                    getTaskColor(task).bg
-                  ]">
-                    <WrenchScrewdriverIcon :class="['h-6 w-6', getTaskColor(task).text]" />
-                  </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-semibold text-gray-900">
-                      {{ task.name }}
-                    </div>
-                    <div class="text-sm text-gray-500">
+              <td class="px-5 py-4">
+                <div class="flex items-start gap-3">
+                  <span :class="['inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ring-1', getTaskColor(task).bg]">
+                    <WrenchScrewdriverIcon :class="['h-5 w-5', getTaskColor(task).text]" />
+                  </span>
+                  <div class="min-w-0">
+                    <p class="font-bold text-[var(--ds-text)]">{{ task.name }}</p>
+                    <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
                       {{ task.maintenance_task_no || 'Sem número' }}
-                    </div>
-                    <div class="text-xs text-gray-400">
+                    </p>
+                    <p class="mt-1 text-xs font-medium text-[var(--ds-text-soft)]">
                       {{ task.category?.name || 'Sem categoria' }}
-                    </div>
-                    <div v-if="task.description" class="text-xs text-gray-500 truncate max-w-xs">
+                    </p>
+                    <p v-if="task.description" class="mt-1 max-w-xs truncate text-xs font-medium text-[var(--ds-text-muted)]">
                       {{ task.description }}
-                    </div>
+                    </p>
                   </div>
                 </div>
               </td>
-              <td class="px-6 py-4">
-                <div class="space-y-1">
-                  <div class="text-sm font-medium text-gray-900">
-                    {{ task.equipment?.name || 'Equipamento não encontrado' }}
-                  </div>
-                  <div v-if="task.equipment" class="text-xs text-gray-500">
-                    {{ task.equipment.internal_code || 'Sem código' }}
-                    <span v-if="task.equipment.model" class="ml-2">• {{ task.equipment.model }}</span>
-                  </div>
-                  <div v-if="task.equipment?.location" class="text-xs text-gray-400">
-                    <MapPinIcon class="h-3 w-3 inline mr-1" />
-                    {{ task.equipment.location }}
-                  </div>
-                </div>
+              <td class="ds-table-cell px-5 py-4">
+                <p class="font-bold text-[var(--ds-text)]">
+                  {{ task.equipment?.name || 'Equipamento não encontrado' }}
+                </p>
+                <p v-if="task.equipment" class="mt-1 text-xs text-[var(--ds-text-soft)]">
+                  {{ task.equipment.internal_code || 'Sem código' }}
+                  <span v-if="task.equipment.model" class="ml-2">{{ task.equipment.model }}</span>
+                </p>
+                <p v-if="task.equipment?.location" class="mt-1 flex items-center gap-1 text-xs text-[var(--ds-text-soft)]">
+                  <MapPinIcon class="h-3 w-3" />
+                  {{ task.equipment.location }}
+                </p>
               </td>
-              <td class="px-6 py-4">
-                <div class="space-y-1">
-                  <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-600">Vencimento:</span>
-                    <span :class="getDueDateColor(task)">
-                      {{ formatDate(task.due_date) }}
-                    </span>
+              <td class="px-5 py-4">
+                <dl class="grid gap-1 text-xs">
+                  <div class="flex items-center justify-between gap-4">
+                    <dt class="font-semibold text-[var(--ds-text-soft)]">Vencimento</dt>
+                    <dd :class="['font-bold', getDueDateColor(task)]">{{ formatDate(task.due_date) }}</dd>
                   </div>
-                  <div v-if="task.previous_date" class="flex items-center justify-between text-sm">
-                    <span class="text-gray-600">Anterior:</span>
-                    <span class="text-gray-900">{{ formatDate(task.previous_date) }}</span>
+                  <div v-if="task.previous_date" class="flex items-center justify-between gap-4">
+                    <dt class="font-semibold text-[var(--ds-text-soft)]">Anterior</dt>
+                    <dd class="font-bold text-[var(--ds-text-muted)]">{{ formatDate(task.previous_date) }}</dd>
                   </div>
-                  <div v-if="task.next_date" class="flex items-center justify-between text-sm">
-                    <span class="text-gray-600">Próximo:</span>
-                    <span class="text-gray-900">{{ formatDate(task.next_date) }}</span>
+                  <div v-if="task.next_date" class="flex items-center justify-between gap-4">
+                    <dt class="font-semibold text-[var(--ds-text-soft)]">Próximo</dt>
+                    <dd class="font-bold text-[var(--ds-text-muted)]">{{ formatDate(task.next_date) }}</dd>
                   </div>
-                  <div v-if="task.periodicity" class="mt-2 text-xs text-gray-500">
-                    <ArrowPathRoundedSquareIcon class="h-3 w-3 inline mr-1" />
+                  <div v-if="task.periodicity" class="mt-2 flex items-center gap-1 font-semibold text-[var(--ds-text-soft)]">
+                    <ArrowPathRoundedSquareIcon class="h-3 w-3" />
                     A cada {{ task.periodicity }} {{ getPeriodicityUnitText(task.periodicity_unit) }}
                   </div>
-                </div>
+                </dl>
               </td>
-              <td class="px-6 py-4">
-                <div class="text-center">
-                  <div v-if="task.cost > 0" class="text-sm font-bold text-green-900">
-                    {{ formatCurrency(task.cost) }}
-                  </div>
-                  <div v-else class="text-sm text-gray-400">Sem custo</div>
-                  <div v-if="task.supplier" class="text-xs text-gray-500 mt-1">
-                    {{ task.supplier.name }}
-                  </div>
-                  <div v-if="task.calibration_certificate_no" class="text-xs text-blue-600 mt-1">
-                    <DocumentTextIcon class="h-3 w-3 inline mr-1" />
-                    Cert: {{ task.calibration_certificate_no }}
-                  </div>
-                </div>
+              <td class="px-5 py-4">
+                <p v-if="task.cost > 0" class="font-bold text-emerald-700 dark:text-emerald-200">
+                  {{ formatCurrency(task.cost) }}
+                </p>
+                <p v-else class="font-semibold text-[var(--ds-text-soft)]">Sem custo</p>
+                <p v-if="task.supplier" class="mt-1 text-xs font-medium text-[var(--ds-text-muted)]">
+                  {{ task.supplier.name }}
+                </p>
+                <p v-if="task.calibration_certificate_no" class="mt-1 flex items-center gap-1 text-xs font-semibold text-[rgb(var(--primary-700-rgb)/1)]">
+                  <DocumentTextIcon class="h-3 w-3" />
+                  Cert: {{ task.calibration_certificate_no }}
+                </p>
               </td>
-              <td class="px-6 py-4">
-                <span :class="getStatusClasses(task)">
-                  {{ getStatusText(task) }}
-                </span>
-                <div v-if="task.is_planned && !task.is_executed" class="mt-2">
-                  <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+              <td class="px-5 py-4">
+                <div class="flex flex-wrap gap-2">
+                  <span :class="getStatusClasses(task)">{{ getStatusText(task) }}</span>
+                  <span v-if="task.is_planned && !task.is_executed" class="inline-flex items-center rounded-full bg-sky-50 px-2 py-1 text-xs font-bold text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-200 dark:ring-sky-400/20">
                     <CalendarIcon class="mr-1 h-3 w-3" />
                     Planeada
                   </span>
-                </div>
-                <div v-if="task.executed_by_supplier" class="mt-2">
-                  <span class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-800">
+                  <span v-if="task.executed_by_supplier" class="inline-flex items-center rounded-full bg-violet-50 px-2 py-1 text-xs font-bold text-violet-700 ring-1 ring-violet-200 dark:bg-violet-500/10 dark:text-violet-200 dark:ring-violet-400/20">
                     <TruckIcon class="mr-1 h-3 w-3" />
-                    Fornecedor Externo
+                    Fornecedor
                   </span>
-                </div>
-                <div v-if="task.result" class="mt-2">
-                  <span class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                  <span v-if="task.result" class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20">
                     <CheckCircleIcon class="mr-1 h-3 w-3" />
-                    Resultado Registado
+                    Resultado
                   </span>
                 </div>
               </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-2">
-                  <Link
-                    :href="route('vap-maintenance.tasks.show', task.id)"
-                    class="inline-flex items-center rounded-lg bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-900 hover:bg-blue-100"
-                  >
-                    <EyeIcon class="h-4 w-4 mr-1" />
+              <td class="px-5 py-4 text-right">
+                <div class="inline-flex flex-wrap items-center justify-end gap-1">
+                  <Link :href="route('vap-maintenance.tasks.show', task.id)" class="ds-table-action">
+                    <EyeIcon class="mr-1 h-4 w-4" />
                     Ver
                   </Link>
-                  <button
-                    v-if="!task.is_executed"
-                    @click="markAsExecuted(task)"
-                    class="inline-flex items-center rounded-lg bg-green-50 px-3 py-1.5 text-sm font-medium text-green-900 hover:bg-green-100"
-                  >
-                    <CheckCircleIcon class="h-4 w-4 mr-1" />
+                  <button v-if="!task.is_executed" type="button" class="ds-table-action" @click="markAsExecuted(task)">
+                    <CheckCircleIcon class="mr-1 h-4 w-4" />
                     Concluir
                   </button>
-                  <Link
-                    :href="route('vap-maintenance.tasks.show', task.id)"
-                    class="inline-flex items-center rounded-lg bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                  >
-                    <PencilIcon class="h-4 w-4 mr-1" />
+                  <Link :href="route('vap-maintenance.tasks.show', task.id)" class="ds-table-action">
+                    <PencilIcon class="mr-1 h-4 w-4" />
                     Editar
                   </Link>
                 </div>
@@ -489,199 +441,145 @@
         </table>
       </div>
 
-      <!-- EMPTY STATE -->
-      <div v-if="tasks.data.length === 0" class="p-12 text-center">
-        <ClipboardDocumentListIcon class="mx-auto h-12 w-12 text-gray-300" />
-        <h3 class="mt-4 text-sm font-semibold text-gray-900">
-          Nenhuma tarefa encontrada
-        </h3>
-        <p class="mt-2 text-sm text-gray-500">
-          Não foram encontradas tarefas para os filtros aplicados
-        </p>
-        <div class="mt-6 flex items-center justify-center gap-3">
-          <button
-            @click="resetFilters"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            <XMarkIcon class="h-5 w-5" />
-            Limpar Filtros
-          </button>
-          <Link
-            :href="route('vap-maintenance.tasks.create')"
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
-          >
-            <PlusIcon class="h-5 w-5" />
-            Registar primeira tarefa
-          </Link>
-        </div>
-      </div>
-
-      <!-- PAGINATION -->
-      <div v-if="tasks.data.length > 0" class="border-t border-gray-200 px-6 py-4">
-        <Pagination :links="tasks.links" :from="tasks.from" :to="tasks.to" :total="tasks.total" :current_page="tasks.current_page" :last_page="tasks.last_page" />
-        <!-- <Pagination :links="tasks.links" /> -->
-      </div>
-    </div>
-
-    <!-- QUICK STATS -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-sm font-medium text-gray-600">Tarefas atrasadas</div>
-            <div class="text-2xl font-bold text-red-600 mt-1">{{ stats?.overdue }}</div>
+      <div v-if="taskItems.length === 0" class="p-6">
+        <div class="ds-empty-state px-6 py-10 text-center">
+          <ClipboardDocumentListIcon class="mx-auto h-10 w-10 text-[var(--ds-text-soft)]" />
+          <h3 class="mt-4 text-sm font-bold text-[var(--ds-text)]">Nenhuma tarefa encontrada</h3>
+          <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">
+            Não foram encontradas tarefas para os filtros aplicados.
+          </p>
+          <div class="mt-5 flex flex-wrap items-center justify-center gap-2">
+            <button type="button" class="ds-button ds-button-secondary" @click="resetFilters">
+              <XMarkIcon class="h-4 w-4" />
+              Limpar filtros
+            </button>
+            <Link :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-primary">
+              <PlusIcon class="h-4 w-4" />
+              Registar primeira tarefa
+            </Link>
           </div>
-          <ExclamationTriangleIcon class="h-8 w-8 text-red-600 opacity-50" />
         </div>
       </div>
 
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-sm font-medium text-gray-600">Tarefas executadas</div>
-            <div class="text-2xl font-bold text-green-600 mt-1">{{ stats.executed }}</div>
-          </div>
-          <CheckCircleIcon class="h-8 w-8 text-green-600 opacity-50" />
-        </div>
+      <div v-if="taskItems.length > 0" class="border-t border-[var(--ds-border)] px-5 py-4">
+        <Pagination
+          :links="tasks.links"
+          :from="tasks.from"
+          :to="tasks.to"
+          :total="tasks.total"
+          :current_page="tasks.current_page"
+          :last_page="tasks.last_page"
+        />
       </div>
+    </section>
 
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-sm font-medium text-gray-600">Custo Total</div>
-            <div class="text-2xl font-bold text-blue-900 mt-1">{{ formatCurrency(stats.total_cost || 0) }}</div>
-          </div>
-          <CurrencyEuroIcon class="h-8 w-8 text-blue-900 opacity-50" />
-        </div>
-      </div>
-
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-sm font-medium text-gray-600">Média mensal</div>
-            <div class="text-2xl font-bold text-purple-900 mt-1">{{ stats.monthly_average }}</div>
-          </div>
-          <PresentationChartBarIcon class="h-8 w-8 text-purple-900 opacity-50" />
-        </div>
-      </div>
-    </div>
-
-    <!-- EXPORT MODAL -->
     <Modal :show="showExportModal" @close="showExportModal = false">
-      <div class="p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-6">Exportar Tarefas</h2>
-        
-        <div class="space-y-6">
-          <!-- EXPORT FORMAT -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Formato
-            </label>
+      <div class="p-5 sm:p-6">
+        <div>
+          <p class="ds-kicker">Relatório operacional</p>
+          <h2 class="ds-heading mt-2 text-lg">Exportar tarefas</h2>
+          <p class="ds-copy mt-1 text-sm">Prepare uma extração para auditoria, planeamento ou análise de custos.</p>
+        </div>
+
+        <div class="mt-6 space-y-6">
+          <div class="ds-field-group">
+            <span class="ds-field-label">Formato</span>
             <div class="grid grid-cols-3 gap-3">
               <button
-                @click="exportFormat = 'pdf'"
+                type="button"
                 :class="[
-                  'rounded-lg border p-4 text-center transition-all',
+                  'ds-card p-4 text-center transition',
                   exportFormat === 'pdf'
-                    ? 'border-blue-900 bg-blue-50 text-blue-900'
-                    : 'border-gray-300 hover:border-gray-400'
+                    ? 'border-[rgb(var(--primary-500-rgb)/1)] bg-[rgb(var(--primary-50-rgb)/0.75)] text-[rgb(var(--primary-900-rgb)/1)]'
+                    : 'text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)]',
                 ]"
+                @click="exportFormat = 'pdf'"
               >
-                <DocumentTextIcon class="mx-auto h-8 w-8 mb-2" />
-                <div class="font-medium">PDF</div>
+                <DocumentTextIcon class="mx-auto h-7 w-7" />
+                <span class="mt-2 block text-sm font-bold">PDF</span>
               </button>
               <button
-                @click="exportFormat = 'excel'"
+                type="button"
                 :class="[
-                  'rounded-lg border p-4 text-center transition-all',
+                  'ds-card p-4 text-center transition',
                   exportFormat === 'excel'
-                    ? 'border-green-900 bg-green-50 text-green-900'
-                    : 'border-gray-300 hover:border-gray-400'
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200'
+                    : 'text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)]',
                 ]"
+                @click="exportFormat = 'excel'"
               >
-                <PresentationChartBarIcon class="mx-auto h-8 w-8 mb-2" />
-                <div class="font-medium">Excel</div>
+                <PresentationChartBarIcon class="mx-auto h-7 w-7" />
+                <span class="mt-2 block text-sm font-bold">Excel</span>
               </button>
               <button
-                @click="exportFormat = 'csv'"
+                type="button"
                 :class="[
-                  'rounded-lg border p-4 text-center transition-all',
+                  'ds-card p-4 text-center transition',
                   exportFormat === 'csv'
-                    ? 'border-orange-900 bg-orange-50 text-orange-900'
-                    : 'border-gray-300 hover:border-gray-400'
+                    ? 'border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200'
+                    : 'text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)]',
                 ]"
+                @click="exportFormat = 'csv'"
               >
-                <TableCellsIcon class="mx-auto h-8 w-8 mb-2" />
-                <div class="font-medium">CSV</div>
+                <TableCellsIcon class="mx-auto h-7 w-7" />
+                <span class="mt-2 block text-sm font-bold">CSV</span>
               </button>
             </div>
           </div>
 
-          <!-- EXPORT RANGE -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Intervalo de Exportação
-            </label>
+          <div class="ds-field-group">
+            <span class="ds-field-label">Intervalo de exportação</span>
             <div class="grid grid-cols-2 gap-3">
               <button
                 v-for="range in exportRanges"
                 :key="range.value"
-                @click="exportRange = range.value"
+                type="button"
                 :class="[
-                  'rounded-lg border p-3 text-center transition-all',
+                  'ds-card px-3 py-3 text-center text-sm font-bold transition',
                   exportRange === range.value
-                    ? 'border-blue-900 bg-blue-50 text-blue-900'
-                    : 'border-gray-300 hover:border-gray-400'
+                    ? 'border-[rgb(var(--primary-500-rgb)/1)] bg-[rgb(var(--primary-50-rgb)/0.75)] text-[rgb(var(--primary-900-rgb)/1)]'
+                    : 'text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)]',
                 ]"
+                @click="exportRange = range.value"
               >
                 {{ range.label }}
               </button>
             </div>
           </div>
 
-          <!-- INCLUDE FIELDS -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Campos Incluídos
-            </label>
-            <div class="space-y-2">
-              <label class="flex items-center">
-                <input v-model="exportFields" type="checkbox" value="all" class="rounded border-gray-300 text-blue-900 focus:ring-blue-900" />
-                <span class="ml-2 text-sm text-gray-700">Todos os campos</span>
+          <div class="ds-field-group">
+            <span class="ds-field-label">Campos incluídos</span>
+            <div class="space-y-3">
+              <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
+                <input v-model="exportFields" type="checkbox" value="all" class="ds-checkbox" />
+                Todos os campos
               </label>
-              <div class="grid grid-cols-2 gap-2 ml-6">
-                <label class="flex items-center">
-                  <input v-model="exportFields" type="checkbox" value="equipment" class="rounded border-gray-300 text-blue-900 focus:ring-blue-900" />
-                  <span class="ml-2 text-sm text-gray-700">Equipamento</span>
+              <div class="grid gap-2 sm:grid-cols-2">
+                <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
+                  <input v-model="exportFields" type="checkbox" value="equipment" class="ds-checkbox" />
+                  Equipamento
                 </label>
-                <label class="flex items-center">
-                  <input v-model="exportFields" type="checkbox" value="dates" class="rounded border-gray-300 text-blue-900 focus:ring-blue-900" />
-                  <span class="ml-2 text-sm text-gray-700">Datas</span>
+                <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
+                  <input v-model="exportFields" type="checkbox" value="dates" class="ds-checkbox" />
+                  Datas
                 </label>
-                <label class="flex items-center">
-                  <input v-model="exportFields" type="checkbox" value="cost" class="rounded border-gray-300 text-blue-900 focus:ring-blue-900" />
-                  <span class="ml-2 text-sm text-gray-700">Custo</span>
+                <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
+                  <input v-model="exportFields" type="checkbox" value="cost" class="ds-checkbox" />
+                  Custo
                 </label>
-                <label class="flex items-center">
-                  <input v-model="exportFields" type="checkbox" value="supplier" class="rounded border-gray-300 text-blue-900 focus:ring-blue-900" />
-                  <span class="ml-2 text-sm text-gray-700">Fornecedor</span>
+                <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
+                  <input v-model="exportFields" type="checkbox" value="supplier" class="ds-checkbox" />
+                  Fornecedor
                 </label>
               </div>
             </div>
           </div>
 
-          <!-- FORM ACTIONS -->
-          <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
-            <button
-              @click="showExportModal = false"
-              class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
+          <div class="flex items-center justify-end gap-2 border-t border-[var(--ds-border)] pt-5">
+            <button type="button" class="ds-button ds-button-secondary" @click="showExportModal = false">
               Cancelar
             </button>
-            <button
-              @click="proceedExport"
-              class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
-            >
+            <button type="button" class="ds-button ds-button-primary" @click="proceedExport">
               <ArrowDownTrayIcon class="h-4 w-4" />
               Exportar
             </button>
@@ -690,50 +588,46 @@
       </div>
     </Modal>
 
-    <!-- RESCHEDULE MODAL -->
     <Modal :show="showRescheduleModal" @close="showRescheduleModal = false">
-      <div class="p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-6">
-          Reagendar {{ selectedTasks.length }} Tarefas
-        </h2>
-        
-        <div class="space-y-6">
-          <!-- NEW DATE -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Nova Data de Vencimento
-            </label>
+      <div class="p-5 sm:p-6">
+        <div>
+          <p class="ds-kicker">Ajuste de agenda</p>
+          <h2 class="ds-heading mt-2 text-lg">Reagendar {{ selectedTasks.length }} tarefas</h2>
+          <p class="ds-copy mt-1 text-sm">Registe uma nova data de vencimento para o conjunto selecionado.</p>
+        </div>
+
+        <div class="mt-6 space-y-6">
+          <label class="ds-field-group">
+            <span class="ds-field-label">Nova data de vencimento</span>
             <input
               v-model="rescheduleDate"
               type="date"
               :min="new Date().toISOString().split('T')[0]"
-              class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
+              class="ds-field"
             />
-          </div>
+          </label>
 
-          <!-- ADD NOTIFICATION -->
-          <div>
-            <label class="flex items-center">
-              <input v-model="sendRescheduleNotification" type="checkbox" class="rounded border-gray-300 text-blue-900 focus:ring-blue-900" />
-              <span class="ml-2 text-sm text-gray-700">Enviar notificação aos responsáveis</span>
+          <div class="ds-command-toolbar p-4">
+            <label class="flex items-start gap-3">
+              <input v-model="sendRescheduleNotification" type="checkbox" class="ds-checkbox mt-1" />
+              <span>
+                <span class="block text-sm font-bold text-[var(--ds-text)]">Enviar notificação aos responsáveis</span>
+                <span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">
+                  Os responsáveis serão notificados sobre a alteração das datas.
+                </span>
+              </span>
             </label>
-            <p class="mt-1 text-xs text-gray-500">
-              Os responsáveis serão notificados sobre a alteração das datas
-            </p>
           </div>
 
-          <!-- FORM ACTIONS -->
-          <div class="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
-            <button
-              @click="showRescheduleModal = false"
-              class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
+          <div class="flex items-center justify-end gap-2 border-t border-[var(--ds-border)] pt-5">
+            <button type="button" class="ds-button ds-button-secondary" @click="showRescheduleModal = false">
               Cancelar
             </button>
             <button
-              @click="executeReschedule"
+              type="button"
+              class="ds-button ds-button-primary"
               :disabled="!rescheduleDate"
-              class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="executeReschedule"
             >
               <CalendarIcon class="h-4 w-4" />
               Reagendar
@@ -746,8 +640,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { computed, ref } from 'vue'
+import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import { Link, router } from '@inertiajs/vue3'
 import {
   WrenchScrewdriverIcon,
@@ -800,13 +694,21 @@ const rescheduleDate = ref('')
 const sendRescheduleNotification = ref(true)
 
 // Computed
+const taskItems = computed(() => props.tasks?.data ?? [])
+
+const taskTotal = computed(() => props.tasks?.total ?? taskItems.value.length)
+
+const hasActiveFilters = computed(() => {
+  return Object.values(props.filters ?? {}).some(value => value !== null && value !== undefined && value !== '')
+})
+
 const allTasksSelected = computed(() => {
-  return props.tasks.data.length > 0 && 
-         props.tasks.data.every(task => selectedTaskIds.value.includes(task.id))
+  return taskItems.value.length > 0 &&
+         taskItems.value.every(task => selectedTaskIds.value.includes(task.id))
 })
 
 const selectedTasks = computed(() => {
-  return props.tasks.data.filter(task => selectedTaskIds.value.includes(task.id))
+  return taskItems.value.filter(task => selectedTaskIds.value.includes(task.id))
 })
 
 const exportRanges = [
@@ -834,9 +736,43 @@ const formatCurrency = (amount) => {
   }).format(amount)
 }
 
+const statsCards = computed(() => [
+  {
+    label: 'Tarefas atrasadas',
+    value: props.stats?.overdue ?? 0,
+    caption: 'Fora do prazo planeado',
+    icon: ExclamationTriangleIcon,
+    tone: 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20',
+  },
+  {
+    label: 'Executadas',
+    value: props.stats?.executed ?? 0,
+    caption: 'Com resultado registado',
+    icon: CheckCircleIcon,
+    tone: 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20',
+  },
+  {
+    label: 'Custo total',
+    value: formatCurrency(props.stats?.total_cost ?? 0),
+    caption: 'Serviços e calibrações',
+    icon: CurrencyEuroIcon,
+    tone: 'bg-cyan-50 text-cyan-700 ring-cyan-200 dark:bg-cyan-500/10 dark:text-cyan-200 dark:ring-cyan-400/20',
+  },
+  {
+    label: 'Média mensal',
+    value: props.stats?.monthly_average ?? 0,
+    caption: 'Cadência operacional',
+    icon: PresentationChartBarIcon,
+    tone: 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20',
+  },
+])
+
 const getTaskColor = (task) => {
   if (task.is_executed) {
-    return { bg: 'bg-green-100', text: 'text-green-900' }
+    return {
+      bg: 'bg-emerald-50 ring-emerald-200 dark:bg-emerald-500/10 dark:ring-emerald-400/20',
+      text: 'text-emerald-700 dark:text-emerald-200',
+    }
   }
   
   const dueDate = new Date(task.due_date)
@@ -844,27 +780,39 @@ const getTaskColor = (task) => {
   const daysDiff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24))
   
   if (daysDiff < 0) {
-    return { bg: 'bg-red-100', text: 'text-red-900' }
+    return {
+      bg: 'bg-rose-50 ring-rose-200 dark:bg-rose-500/10 dark:ring-rose-400/20',
+      text: 'text-rose-700 dark:text-rose-200',
+    }
   } else if (daysDiff <= 7) {
-    return { bg: 'bg-orange-100', text: 'text-orange-900' }
+    return {
+      bg: 'bg-orange-50 ring-orange-200 dark:bg-orange-500/10 dark:ring-orange-400/20',
+      text: 'text-orange-700 dark:text-orange-200',
+    }
   } else if (daysDiff <= 30) {
-    return { bg: 'bg-yellow-100', text: 'text-yellow-900' }
+    return {
+      bg: 'bg-amber-50 ring-amber-200 dark:bg-amber-500/10 dark:ring-amber-400/20',
+      text: 'text-amber-700 dark:text-amber-200',
+    }
   } else {
-    return { bg: 'bg-blue-100', text: 'text-blue-900' }
+    return {
+      bg: 'bg-cyan-50 ring-cyan-200 dark:bg-cyan-500/10 dark:ring-cyan-400/20',
+      text: 'text-cyan-700 dark:text-cyan-200',
+    }
   }
 }
 
 const getDueDateColor = (task) => {
-  if (task.is_executed) return 'text-green-900'
+  if (task.is_executed) return 'text-emerald-700 dark:text-emerald-200'
   
   const dueDate = new Date(task.due_date)
   const today = new Date()
   const daysDiff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24))
   
-  if (daysDiff < 0) return 'text-red-900'
-  if (daysDiff <= 7) return 'text-orange-900'
-  if (daysDiff <= 30) return 'text-yellow-900'
-  return 'text-blue-900'
+  if (daysDiff < 0) return 'text-rose-700 dark:text-rose-200'
+  if (daysDiff <= 7) return 'text-orange-700 dark:text-orange-200'
+  if (daysDiff <= 30) return 'text-amber-700 dark:text-amber-200'
+  return 'text-cyan-700 dark:text-cyan-200'
 }
 
 const getPeriodicityUnitText = (unit) => {
@@ -880,7 +828,7 @@ const getPeriodicityUnitText = (unit) => {
 
 const getStatusClasses = (task) => {
   if (task.is_executed) {
-    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800'
+    return 'inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20'
   }
   
   const dueDate = new Date(task.due_date)
@@ -888,13 +836,13 @@ const getStatusClasses = (task) => {
   const daysDiff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24))
   
   if (daysDiff < 0) {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800'
+    return 'inline-flex items-center rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 ring-1 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20'
   } else if (daysDiff <= 7) {
-    return 'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800'
+    return 'inline-flex items-center rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700 ring-1 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-200 dark:ring-orange-400/20'
   } else if (daysDiff <= 30) {
-    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800'
+    return 'inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20'
   } else {
-    return 'inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800'
+    return 'inline-flex items-center rounded-full bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-700 ring-1 ring-cyan-200 dark:bg-cyan-500/10 dark:text-cyan-200 dark:ring-cyan-400/20'
   }
 }
 
@@ -938,7 +886,7 @@ const toggleAllTasks = () => {
   if (allTasksSelected.value) {
     selectedTaskIds.value = []
   } else {
-    selectedTaskIds.value = props.tasks.data.map(task => task.id)
+    selectedTaskIds.value = taskItems.value.map(task => task.id)
   }
 }
 

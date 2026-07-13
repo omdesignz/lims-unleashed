@@ -23,13 +23,14 @@
 </template>
 
 <script setup>
-import { computed, useAttrs } from 'vue'
+import { computed, useAttrs, useId } from 'vue'
 
 defineOptions({
   inheritAttrs: false,
 })
 
 const attrs = useAttrs()
+const generatedId = useId()
 
 const props = defineProps({
   modelValue: {
@@ -60,7 +61,7 @@ const props = defineProps({
 
 defineEmits(['update:modelValue'])
 
-const controlId = computed(() => attrs.id || attrs.name || undefined)
+const controlId = computed(() => attrs.id || attrs.name || `field-${generatedId}`)
 const hintId = computed(() => controlId.value ? `${controlId.value}-hint` : undefined)
 const errorId = computed(() => controlId.value ? `${controlId.value}-error` : undefined)
 const describedBy = computed(() => props.error ? errorId.value : (props.hint ? hintId.value : undefined))

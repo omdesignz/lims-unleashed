@@ -1,873 +1,601 @@
-<!-- resources/js/Components/results/CalculationResultEntry.vue - Updated with additional inputs -->
-<template>
-  <div class="result-entry-modal space-y-8 text-[#17231f] dark:text-[#f7f1e7]">
-    <!-- MODAL HEADER -->
-    <div class="rounded-[1.75rem] border border-[#ded3bf] bg-[#fffdf7] p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.32)] dark:border-[#25443c] dark:bg-slate-950/85">
-      <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-primary-700 dark:text-primary-300">Cálculo rastreável</p>
-          <h1 class="mt-2 flex items-center gap-3 text-2xl font-bold text-[#17231f] dark:text-[#f7f1e7]">
-            <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-900 text-white shadow-lg shadow-primary-900/20 dark:bg-primary-400 dark:text-slate-950">
-              <CalculatorIcon class="h-6 w-6" />
-            </span>
-            Resultados de Parâmetros Calculados
-            <span class="rounded-full bg-primary-50 px-3 py-1 text-sm font-semibold text-primary-900 dark:bg-primary-500/15 dark:text-primary-100">{{ calculationMode === 'single' ? 'Individual' : 'Em Lote' }}</span>
-          </h1>
-        </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <button @click="calculationMode = 'single'"
-                  :class="[
-                    'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all',
-                    calculationMode === 'single'
-                      ? 'bg-primary-900 text-white shadow-lg shadow-primary-900/20 dark:bg-primary-400 dark:text-slate-950'
-                      : 'border border-slate-200 bg-white text-slate-700 hover:bg-primary-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-primary-500/10'
-                  ]">
-            <DocumentPlusIcon class="h-4 w-4" />
-            Individual
-          </button>
-          <button @click="calculationMode = 'batch'"
-                  :class="[
-                    'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all',
-                    calculationMode === 'batch'
-                      ? 'bg-primary-900 text-white shadow-lg shadow-primary-900/20 dark:bg-primary-400 dark:text-slate-950'
-                      : 'border border-slate-200 bg-white text-slate-700 hover:bg-primary-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-primary-500/10'
-                  ]">
-            <DocumentTextIcon class="h-4 w-4" />
-            Em Lote
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- SINGLE PARAMETER CALCULATION MODE -->
-    <div v-if="calculationMode === 'single'" class="space-y-6">
-      <!-- PARAMETER SELECTION -->
-      <div class="rounded-[1.75rem] border border-slate-200 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950/75">
-        <h3 class="mb-4 text-lg font-semibold text-[#17231f] dark:text-[#f7f1e7]">
-          Calcular Parâmetro Individual
-        </h3>
-        
-        <div class="space-y-4">
-          <!-- Parameter Selector -->
-          <div>
-            <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
-              Seleccione um parâmetro para calcular
-            </label>
-            <select v-model="selectedSingleParameter"
-                    @change="onSingleParameterChange"
-                    class="block w-full rounded-2xl border border-slate-300/90 bg-white/95 py-3 pl-4 pr-10 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-white/50 transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-800/60">
-              <option value="">Seleccione um parâmetro</option>
-              <option v-for="param in availableSingleParameters" 
-                      :key="param.parameter_id.code"
-                      :value="param.parameter_id.code">
-                {{ param.parameter_id.code }} - {{ param.parameter_id.name }}
-                <span v-if="results[param.parameter_id.code]">(✓ {{ results[param.parameter_id.code] }})</span>
-              </option>
-            </select>
-          </div>
-
-          <!-- Selected Parameter Info -->
-          <div v-if="selectedSingleParameterObj" class="rounded-2xl border border-primary-200 bg-primary-50/70 p-4 dark:border-primary-500/25 dark:bg-primary-500/10">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h4 class="font-semibold text-[#17231f] dark:text-[#f7f1e7]">{{ selectedSingleParameterObj.parameter_id.name }}</h4>
-                <p class="text-sm text-slate-600 dark:text-slate-400">{{ selectedSingleParameterObj.parameter_id.code }}</p>
-                <div v-if="selectedSingleParameterObj.formula?.output_unit" class="mt-1 text-sm font-medium text-primary-700 dark:text-primary-300">
-                  Unidade: {{ selectedSingleParameterObj.formula.output_unit }}
-                </div>
-              </div>
-              <span class="rounded-full bg-white px-3 py-1 text-sm font-semibold text-primary-900 shadow-sm ring-1 ring-primary-200 dark:bg-slate-900 dark:text-primary-100 dark:ring-primary-500/25">
-                {{ getSingleCalculationStatus().complete ? 'Pronto para calcular' : 'A aguardar variáveis' }}
-              </span>
-            </div>
-            
-            <!-- Formula Display -->
-            <div v-if="selectedSingleParameterObj.formula" class="mt-3 border-t border-primary-200 pt-3 dark:border-primary-500/25">
-              <p class="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-600 dark:text-slate-400">Fórmula:</p>
-              <code class="block rounded-xl border border-slate-200 bg-white/90 p-3 font-mono text-sm text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
-                {{ selectedSingleParameterObj.formula.expression }}
-              </code>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- INPUT VARIABLES SECTION -->
-      <div v-if="selectedSingleParameterObj && singleParameterInputs.length > 0" 
-           class="overflow-hidden rounded-[1.75rem] border border-[#25443c] bg-slate-950/90 shadow-sm">
-        <div class="bg-gradient-to-r from-primary-950 via-primary-900 to-primary-700 px-6 py-4">
-          <h3 class="flex items-center gap-2 text-lg font-semibold text-white">
-            <VariableIcon class="h-5 w-5" />
-            Variáveis de Entrada
-            <span class="text-sm font-normal">({{ getSingleCalculationStatus().complete ? `${singleParameterInputs.length}/${singleParameterInputs.length}` : `${filledInputCount}/${singleParameterInputs.length}` }})</span>
-          </h3>
-        </div>
-        
-        <div class="p-6 space-y-4">
-          <div v-for="variableName in singleParameterInputs" :key="variableName"
-              class="group rounded-2xl border border-slate-200 bg-white/95 p-4 transition-all duration-200 hover:border-primary-400 dark:border-slate-800 dark:bg-slate-900/80 dark:hover:border-primary-500/40">
-            
-            <label class="mb-2 flex items-center gap-1 text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
-              <HashtagIcon class="h-4 w-4 text-primary-700 dark:text-primary-300" />
-              {{ variableName }}
-            </label>
-            
-            <div class="relative">
-              <input
-                v-model="singleCalcInputs[variableName]" 
-                type="number" 
-                step="0.0001"
-                @input="onSingleInputChange"
-                class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-950/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
-                :class="{
-                  'ring-amber-500 bg-amber-50 dark:bg-amber-500/10': !singleCalcInputs[variableName] || singleCalcInputs[variableName] === '',
-                  'ring-emerald-500 bg-emerald-50 dark:bg-emerald-500/10': singleCalcInputs[variableName] && singleCalcInputs[variableName] !== ''
-                }"
-                placeholder="Introduza o valor..."
-              />
-              <div v-if="singleCalcInputs[variableName] && singleCalcInputs[variableName] !== ''"
-                  class="absolute inset-y-0 right-0 flex items-center pr-3">
-                <CheckCircleIcon class="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
-              </div>
-            </div>
-            
-            <!-- Show existing value from main results -->
-            <div v-if="results[variableName] && singleCalcInputs[variableName] !== results[variableName]"
-                 class="mt-2 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-              <InformationCircleIcon class="h-3 w-3" />
-              Valor pré-existente: {{ results[variableName] }}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ADDITIONAL PARAMETER FIELDS -->
-      <div v-if="selectedSingleParameterObj" class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white/90 shadow-sm dark:border-slate-800 dark:bg-slate-950/75">
-        <div class="border-b border-slate-200 bg-gradient-to-r from-primary-50 to-white px-6 py-4 dark:border-slate-800 dark:from-primary-500/10 dark:to-transparent">
-          <h3 class="flex items-center gap-2 text-lg font-semibold text-primary-900 dark:text-primary-100">
-            <Cog6ToothIcon class="h-5 w-5" />
-            Configurações do Parâmetro
-          </h3>
-        </div>
-        
-        <div class="p-6 space-y-6">
-          <!-- Uncertainty Input -->
-          <div>
-            <label class="mb-2 flex items-center gap-2 text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
-              <ScaleIcon class="h-4 w-4 text-primary-700 dark:text-primary-300" />
-              Incerteza do Resultado
-              <span v-if="selectedSingleParameterObj.formula?.output_unit" class="text-slate-500 dark:text-slate-400">
-                ({{ selectedSingleParameterObj.formula.output_unit }})
-              </span>
-            </label>
-            <div class="relative">
-              <input 
-                v-model="singleParameterUncertainty"
-                type="number"
-                step="0.0001"
-                class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
-                placeholder="Ex.: 0,1"
-              />
-              <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <span class="text-slate-500 dark:text-slate-400">±</span>
-              </div>
-            </div>
-            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Incerteza padrão associada ao resultado calculado
-            </p>
-          </div>
-
-          <!-- Reference Range Section -->
-          <div class="space-y-4">
-            <h4 class="flex items-center gap-2 text-sm font-semibold text-[#17231f] dark:text-[#f7f1e7]">
-              <ChartBarIcon class="h-4 w-4 text-primary-700 dark:text-primary-300" />
-              Valores de Referência
-            </h4>
-            
-            <!-- Min Reference Value -->
-            <div>
-              <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
-                Valor Mínimo de Referência
-                <span v-if="selectedSingleParameterObj.formula?.output_unit" class="text-slate-500 dark:text-slate-400">
-                  ({{ selectedSingleParameterObj.formula.output_unit }})
-                </span>
-              </label>
-              <div class="relative">
-                <input 
-                  v-model="singleParameterMinRef"
-                  type="number"
-                  step="0.0001"
-                  class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
-                  placeholder="Valor mínimo aceitável"
-                />
-                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <span class="text-slate-500 dark:text-slate-400">≥</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Max Reference Value -->
-            <div>
-              <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
-                Valor Máximo de Referência
-                <span v-if="selectedSingleParameterObj.formula?.output_unit" class="text-slate-500 dark:text-slate-400">
-                  ({{ selectedSingleParameterObj.formula.output_unit }})
-                </span>
-              </label>
-              <div class="relative">
-                <input 
-                  v-model="singleParameterMaxRef"
-                  type="number"
-                  step="0.0001"
-                  class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
-                  placeholder="Valor máximo aceitável"
-                />
-                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <span class="text-slate-500 dark:text-slate-400">≤</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Reference Range Display -->
-            <div v-if="singleParameterMinRef || singleParameterMaxRef" 
-                 class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/75">
-              <p class="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-300">Intervalo de Referência:</p>
-              <p class="text-lg font-bold text-primary-900 dark:text-primary-200">
-                <span v-if="singleParameterMinRef && singleParameterMaxRef">
-                  {{ singleParameterMinRef }} - {{ singleParameterMaxRef }}
-                </span>
-                <span v-else-if="singleParameterMinRef">
-                  ≥ {{ singleParameterMinRef }}
-                </span>
-                <span v-else-if="singleParameterMaxRef">
-                  ≤ {{ singleParameterMaxRef }}
-                </span>
-                <span v-if="selectedSingleParameterObj.formula?.output_unit" class="text-sm font-normal">
-                  {{ selectedSingleParameterObj.formula.output_unit }}
-                </span>
-              </p>
-            </div>
-          </div>
-
-          <!-- Notes Section -->
-          <div>
-            <label class="mb-2 flex items-center gap-2 text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
-              <ChatBubbleLeftRightIcon class="h-4 w-4 text-primary-700 dark:text-primary-300" />
-              Observações
-            </label>
-            <textarea 
-              v-model="singleParameterNotes"
-              rows="3"
-              class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
-              :placeholder="`Observações sobre ${selectedSingleParameterObj.parameter_id.code}...`"
-            ></textarea>
-            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Observações sobre o cálculo ou resultado
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- CALCULATION RESULT -->
-      <div v-if="selectedSingleParameterObj" class="rounded-[1.75rem] border border-slate-200 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950/75">
-        <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h3 class="text-lg font-semibold text-[#17231f] dark:text-[#f7f1e7]">Resultado Final</h3>
-          
-          <!-- Override Toggle -->
-          <label class="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-            <input 
-              v-model="singleParameterOverride" 
-              type="checkbox" 
-              @change="onOverrideToggle"
-              class="h-4 w-4 rounded border-slate-300 text-primary-900 focus:ring-primary-600 dark:border-slate-700 dark:bg-slate-900"
-            >
-            <span>Inserir valor manualmente</span>
-          </label>
-        </div>
-        
-        <!-- Manual Input when overridden -->
-        <div v-if="singleParameterOverride" class="mb-6 space-y-4">
-          <div>
-            <label class="mb-2 block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
-              Valor Manual
-              <span v-if="selectedSingleParameterObj.formula?.output_unit" class="text-slate-500 dark:text-slate-400">
-                ({{ selectedSingleParameterObj.formula.output_unit }})
-              </span>
-            </label>
-            <input 
-              v-model="singleCalcManualValue"
-              type="text"
-              class="block w-full rounded-2xl border-0 bg-white/95 px-3 py-3 text-sm font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 transition focus:ring-2 focus:ring-inset focus:ring-primary-600 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
-              placeholder="Introduza o valor manual"
-            />
-          </div>
-        </div>
-        
-        <!-- Calculated Result Display -->
-        <div v-else-if="singleCalculationResult !== null" 
-             class="mb-6 rounded-[1.5rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-primary-50 p-6 dark:border-emerald-500/25 dark:from-emerald-500/10 dark:to-primary-500/10">
-          <div class="text-center">
-            <p class="mb-2 text-sm font-semibold text-slate-600 dark:text-slate-300">Resultado Calculado</p>
-            <p class="text-3xl font-bold text-emerald-900 dark:text-emerald-100">
-              {{ singleCalculationResult }}
-              <span v-if="selectedSingleParameterObj.formula?.output_unit" 
-                    class="text-xl font-normal text-slate-600 dark:text-slate-300">
-                {{ selectedSingleParameterObj.formula.output_unit }}
-              </span>
-            </p>
-            
-            <!-- Uncertainty Display -->
-            <div v-if="singleParameterUncertainty" 
-                 class="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-emerald-900 dark:bg-emerald-500/15 dark:text-emerald-100">
-              <span class="text-sm">± {{ singleParameterUncertainty }}</span>
-            </div>
-            
-            <!-- Reference Range Check -->
-            <div v-if="singleParameterMinRef || singleParameterMaxRef" class="mt-4">
-              <div v-if="isWithinReferenceRange()"
-                   class="inline-flex items-center gap-2 rounded-full bg-primary-100 px-3 py-1 text-primary-900 dark:bg-primary-500/15 dark:text-primary-100">
-                <CheckCircleIcon class="h-4 w-4" />
-                <span class="text-sm">Dentro do intervalo de referência</span>
-              </div>
-              <div v-else
-                   class="inline-flex items-center gap-2 rounded-full bg-red-100 px-3 py-1 text-red-900 dark:bg-red-500/15 dark:text-red-100">
-                <ExclamationTriangleIcon class="h-4 w-4" />
-                <span class="text-sm">Fora do intervalo de referência</span>
-              </div>
-            </div>
-            
-            <div v-if="selectedSingleParameterObj.formula" class="mt-4 text-xs text-slate-500 dark:text-slate-400">
-              Usando fórmula: {{ selectedSingleParameterObj.formula.expression }}
-            </div>
-          </div>
-        </div>
-
-        <div v-if="singleCalculationError" class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-500/25 dark:bg-red-500/10">
-          <p class="text-sm font-semibold text-red-900 dark:text-red-100">
-            {{ singleCalculationError }}
-          </p>
-        </div>
-        
-        <!-- Missing Inputs Warning -->
-        <div v-if="getSingleCalculationStatus().missing.length > 0 && !singleParameterOverride"
-             class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/25 dark:bg-amber-500/10">
-          <div class="flex items-start gap-3">
-            <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 text-amber-600 dark:text-amber-300" />
-            <div>
-              <p class="text-sm font-semibold text-amber-900 dark:text-amber-100">A aguardar variáveis</p>
-              <p class="mt-1 text-sm text-amber-700 dark:text-amber-200">
-                Introduza valores para: {{ getSingleCalculationStatus().missing.join(', ') }}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Action Buttons -->
-        <div class="flex justify-end gap-3 border-t border-slate-200 pt-4 dark:border-slate-800">
-          <button @click="clearSingleCalculation"
-                  class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:ring-offset-slate-950">
-            Limpar
-          </button>
-          
-          <button @click="applySingleCalculation"
-                  :disabled="!canApplySingleCalculation"
-                  :class="[
-                    'inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
-                    !canApplySingleCalculation
-                      ? 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500'
-                      : 'bg-primary-900 text-white hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:focus:ring-offset-slate-950'
-                  ]">
-            <CheckIcon class="h-5 w-5" />
-            {{ singleParameterOverride ? 'Aplicar Valor Manual' : 'Aplicar Resultado Calculado' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- NEXT PARAMETER SUGGESTION -->
-      <div v-if="nextAvailableParameter && selectedSingleParameter" class="rounded-[1.5rem] border border-slate-200 bg-white/90 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950/75">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 class="text-sm font-semibold text-[#17231f] dark:text-[#f7f1e7]">Próximo parâmetro sugerido</h3>
-            <p class="text-sm text-slate-600 dark:text-slate-400">{{ nextAvailableParameter.parameter_id.name }} ({{ nextAvailableParameter.parameter_id.code }})</p>
-          </div>
-          <button @click="selectNextParameter"
-                  class="inline-flex items-center gap-2 rounded-full bg-primary-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-800">
-            Calcular Agora
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- BATCH CALCULATION MODE -->
-    <div v-else class="space-y-6">
-      <!-- Batch mode content remains the same -->
-      <!-- ... -->
-    </div>
-
-    <!-- FOOTER ACTIONS -->
-    <div class="flex flex-col gap-4 border-t border-slate-200 pt-6 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
-      <div class="text-sm text-slate-500 dark:text-slate-400">
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2">
-            <div class="h-3 w-3 rounded-full" 
-                 :class="canSave ? 'bg-emerald-500' : 'bg-amber-500'"></div>
-            <span>
-              {{ calculationMode === 'single' ? 'Parâmetro individual' : `${calculatedCount} de ${allCalculatedParameters.length} calculados` }}
-            </span>
-          </div>
-        </div>
-      </div>
-      <div class="flex items-center gap-4">
-        <button 
-          @click="closeModal"
-          class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:ring-offset-slate-950"
-        >
-          <XMarkIcon class="h-5 w-5" />
-          Fechar
-        </button>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { 
+import { computed, ref, watch } from "vue";
+import {
   CalculatorIcon,
-  VariableIcon,
-  HashtagIcon,
   CheckCircleIcon,
-  XMarkIcon,
   CheckIcon,
   ExclamationTriangleIcon,
-  DocumentTextIcon,
-  DocumentPlusIcon,
   InformationCircleIcon,
   ScaleIcon,
-  Cog6ToothIcon,
-  ChartBarIcon,
-  ChatBubbleLeftRightIcon
+  VariableIcon,
+  XMarkIcon,
 } from "@heroicons/vue/24/outline";
 
 const props = defineProps({
-  parameters: Array,
-  existingResults: Object,
-  action: String
-})
+  parameters: {
+    type: Array,
+    default: () => [],
+  },
+  existingResults: {
+    type: Object,
+    default: () => ({}),
+  },
+  action: {
+    type: String,
+    default: "analyze",
+  },
+});
 
-const emit = defineEmits(['calculatedResults', 'close'])
+const emit = defineEmits(["calculatedResults", "close"]);
 
-// State for calculation mode
-const calculationMode = ref('single') // 'single' or 'batch'
-const selectedSingleParameter = ref('')
-const singleCalcInputs = ref({})
-const singleCalculationResult = ref(null)
-const singleCalculationError = ref('')
-const singleParameterOverride = ref(false)
-const singleCalcManualValue = ref('')
+const selectedParameterCode = ref("");
+const calculationInputs = ref({});
+const calculationResult = ref(null);
+const calculationError = ref("");
+const manualOverride = ref(false);
+const manualValue = ref("");
+const uncertaintyValue = ref("");
+const minimumReference = ref("");
+const maximumReference = ref("");
+const notes = ref("");
+const results = ref({});
+const overrides = ref({});
+const uncertaintyValues = ref({});
+const minimumReferences = ref({});
+const maximumReferences = ref({});
+const notesValues = ref({});
+const calculationInProgress = ref(false);
 
-// Additional parameter fields
-const singleParameterUncertainty = ref('')
-const singleParameterMinRef = ref('')
-const singleParameterMaxRef = ref('')
-const singleParameterNotes = ref('')
+const calculatedParameters = computed(() => {
+  return props.parameters.filter((parameter) => parameter.parameter_id?.active !== false);
+});
 
-// Existing state for batch mode
-const results = ref({})
-const overrides = ref({})
-const uncertaintyValues = ref({})
-const minRefValues = ref({})
-const maxRefValues = ref({})
-const notesValues = ref({})
-const calculationInProgress = ref(false)
+const selectedParameter = computed(() => {
+  return calculatedParameters.value.find(
+    (parameter) => parameter.parameter_id?.code === selectedParameterCode.value,
+  ) || null;
+});
 
-const allCalculatedParameters = computed(() => props.parameters.filter(p => p.parameter_id.active))
-
-// Single parameter mode computed properties
-const availableSingleParameters = computed(() => {
-  return allCalculatedParameters.value
-})
-
-const selectedSingleParameterObj = computed(() => {
-  return allCalculatedParameters.value.find(
-    param => param.parameter_id.code === selectedSingleParameter.value
-  )
-})
-
-const singleParameterInputs = computed(() => {
-  if (!selectedSingleParameterObj.value) return []
-  return getCalculationRequirements(selectedSingleParameterObj.value)
-})
+const requiredVariables = computed(() => {
+  return getCalculationRequirements(selectedParameter.value);
+});
 
 const filledInputCount = computed(() => {
-  return Object.values(singleCalcInputs.value).filter(val => 
-    val !== undefined && val !== null && val !== ''
-  ).length
-})
+  return requiredVariables.value.filter((variable) => hasInputValue(variable)).length;
+});
 
-const getSingleCalculationStatus = () => {
-  if (!selectedSingleParameterObj.value) return { complete: false, missing: [] }
-  
-  const required = getCalculationRequirements(selectedSingleParameterObj.value)
-  const missing = required.filter(input => 
-    !singleCalcInputs.value[input] || singleCalcInputs.value[input] === ''
-  )
-  
-  return {
-    complete: missing.length === 0,
-    missing: missing
+const missingVariables = computed(() => {
+  return requiredVariables.value.filter((variable) => !hasInputValue(variable));
+});
+
+const nextParameter = computed(() => {
+  const currentIndex = calculatedParameters.value.findIndex(
+    (parameter) => parameter.parameter_id?.code === selectedParameterCode.value,
+  );
+
+  return currentIndex >= 0
+    ? calculatedParameters.value[currentIndex + 1] || null
+    : null;
+});
+
+const canApply = computed(() => {
+  if (manualOverride.value) {
+    return String(manualValue.value).trim() !== "";
   }
-}
 
-const canApplySingleCalculation = computed(() => {
-  if (singleParameterOverride.value) {
-    return singleCalcManualValue.value && singleCalcManualValue.value.trim() !== ''
+  return Boolean(
+    selectedParameter.value &&
+      !missingVariables.value.length &&
+      calculationResult.value !== null,
+  );
+});
+
+const referenceStatus = computed(() => {
+  if (calculationResult.value === null) {
+    return null;
   }
-  
-  if (!selectedSingleParameter.value) return false
-  if (!selectedSingleParameterObj.value) return false
-  
-  const missing = getSingleCalculationStatus().missing
-  if (missing.length > 0) return false
-  
-  return singleCalculationResult.value !== null
-})
 
-const nextAvailableParameter = computed(() => {
-  const currentIndex = availableSingleParameters.value.findIndex(
-    p => p.parameter_id.code === selectedSingleParameter.value
-  )
-  
-  if (currentIndex < availableSingleParameters.value.length - 1) {
-    return availableSingleParameters.value[currentIndex + 1]
+  const value = Number.parseFloat(calculationResult.value);
+  const minimum = minimumReference.value === ""
+    ? null
+    : Number.parseFloat(minimumReference.value);
+  const maximum = maximumReference.value === ""
+    ? null
+    : Number.parseFloat(maximumReference.value);
+
+  if (Number.isNaN(value)) {
+    return false;
   }
-  return null
-})
 
-const isWithinReferenceRange = () => {
-  if (!singleCalculationResult.value) return false
-  
-  const result = parseFloat(singleCalculationResult.value)
-  if (isNaN(result)) return false
-  
-  const min = singleParameterMinRef.value ? parseFloat(singleParameterMinRef.value) : null
-  const max = singleParameterMaxRef.value ? parseFloat(singleParameterMaxRef.value) : null
-  
-  if (min !== null && max !== null) {
-    return result >= min && result <= max
-  } else if (min !== null) {
-    return result >= min
-  } else if (max !== null) {
-    return result <= max
+  if (minimum !== null && value < minimum) {
+    return false;
   }
-  
-  return true // No reference range defined
-}
 
-// Batch mode computed properties
-const calculatedCount = computed(() =>
-  allCalculatedParameters.value.filter(p => results.value[p.parameter_id.code]).length
-)
-
-const canSave = computed(() => {
-  return calculationMode.value === 'batch' 
-    ? Object.keys(results.value).filter(key => 
-        results.value[key] && 
-        allCalculatedParameters.value.some(p => p.parameter_id.code === key)
-      ).length > 0
-    : canApplySingleCalculation.value
-})
-
-// Single parameter calculation methods
-const onSingleParameterChange = () => {
-  if (!selectedSingleParameterObj.value) {
-    resetSingleParameterFields()
-    return
+  if (maximum !== null && value > maximum) {
+    return false;
   }
-  
-  const param = selectedSingleParameterObj.value
-  const paramCode = param.parameter_id.code
-  const required = getCalculationRequirements(param)
-  
-  // Initialize inputs with existing values
-  required.forEach(variable => {
-    // First check if we have existing input from previous session
-    if (singleCalcInputs.value[variable] !== undefined) {
-      // Keep existing input value
-      return
-    }
-    
-    // Then check main results
-    if (results.value[variable] !== undefined) {
-      singleCalcInputs.value[variable] = results.value[variable]
-    } else {
-      // Initialize as empty
-      singleCalcInputs.value[variable] = ''
-    }
-  })
-  
-  // Initialize result with existing value
-  if (results.value[paramCode]) {
-    singleCalculationResult.value = results.value[paramCode]
-  } else {
-    singleCalculationResult.value = null
-  }
-  
-  // Initialize additional fields
-  singleParameterUncertainty.value = uncertaintyValues.value[paramCode] || ''
-  singleParameterMinRef.value = minRefValues.value[paramCode] || ''
-  singleParameterMaxRef.value = maxRefValues.value[paramCode] || ''
-  singleParameterNotes.value = notesValues.value[paramCode] || ''
-  
-  // Clear override
-  singleParameterOverride.value = overrides.value[paramCode] || false
-  singleCalcManualValue.value = ''
-  
-  // Try to calculate if all inputs are available
-  if (required.every(v => singleCalcInputs.value[v] && singleCalcInputs.value[v] !== '')) {
-    calculateSingleParameter()
-  }
-}
 
-const onSingleInputChange = () => {
-  calculateSingleParameter()
-}
+  return true;
+});
 
-const onOverrideToggle = () => {
-  if (singleParameterOverride.value) {
-    singleCalcManualValue.value = results.value[selectedSingleParameter.value] || ''
-  } else {
-    singleCalcManualValue.value = ''
-    calculateSingleParameter()
-  }
-}
+watch(
+  () => props.existingResults,
+  (newResults) => {
+    results.value = { ...(newResults || {}) };
 
-const calculateSingleParameter = async () => {
-  if (!selectedSingleParameterObj.value || singleParameterOverride.value) {
-    singleCalculationResult.value = null
-    singleCalculationError.value = ''
-    return
-  }
-  
-  const param = selectedSingleParameterObj.value
-  
-  // Check if all required inputs are available
-  const required = getCalculationRequirements(param)
-  const missing = required.filter(input => 
-    !singleCalcInputs.value[input] || singleCalcInputs.value[input] === ''
-  )
-  
-  if (missing.length > 0) {
-    singleCalculationResult.value = null
-    singleCalculationError.value = ''
-    return
-  }
-  
-  calculationInProgress.value = true
-  singleCalculationError.value = ''
-  
-  try {
-    const vars = {}
-    required.forEach(input => {
-      const value = parseFloat(singleCalcInputs.value[input])
-      vars[input] = isNaN(value) ? 0 : value
-    })
-
-    const context = {
-      ...vars,
-      Math: {
-        sqrt: Math.sqrt,
-        log: Math.log,
-        log10: (x) => Math.log10(x),
-        exp: Math.exp,
-        abs: Math.abs,
-        round: Math.round,
-        ceil: Math.ceil,
-        floor: Math.floor,
-        max: Math.max,
-        min: Math.min,
-        pow: Math.pow,
-        PI: Math.PI,
-        E: Math.E
+    props.parameters.forEach((parameter) => {
+      const code = parameter.parameter_id?.code;
+      if (!code) {
+        return;
       }
+
+      uncertaintyValues.value[code] = parameter.uncertainty_value || null;
+      minimumReferences.value[code] = parameter.min_ref_value || null;
+      maximumReferences.value[code] = parameter.max_ref_value || null;
+      notesValues.value[code] =
+        parameter.insertion_notes ||
+        parameter.verification_notes ||
+        parameter.approval_notes ||
+        null;
+      overrides.value[code] = Boolean(parameter.manual_override);
+    });
+
+    if (!selectedParameterCode.value && calculatedParameters.value.length === 1) {
+      selectedParameterCode.value =
+        calculatedParameters.value[0].parameter_id?.code || "";
+      initializeSelectedParameter();
     }
+  },
+  { immediate: true },
+);
 
-    const functionBody = `return ${param.formula.expression}`
-    const safeEval = new Function(...Object.keys(context), functionBody)
-    const numericValue = safeEval(...Object.values(context))
-
-    if (isNaN(numericValue) || !isFinite(numericValue)) {
-      throw new Error('Invalid calculation result')
+watch(
+  calculationInputs,
+  () => {
+    if (selectedParameter.value && !manualOverride.value) {
+      calculateParameter();
     }
+  },
+  { deep: true },
+);
 
-    const decimalPlaces = param.formula.decimal_places || 2
-    singleCalculationResult.value = parseFloat(numericValue).toFixed(decimalPlaces)
-    
-  } catch {
-    singleCalculationError.value = `Não foi possível calcular ${param.parameter_id.code}. Reveja a fórmula e as variáveis de entrada.`
-    singleCalculationResult.value = null
-  } finally {
-    calculationInProgress.value = false
+function hasInputValue(variable) {
+  const value = calculationInputs.value[variable];
+  return value !== undefined && value !== null && value !== "";
+}
+
+function getCalculationRequirements(parameter) {
+  return parameter?.formula?.variables?.map((variable) => variable.name) || [];
+}
+
+function initializeSelectedParameter() {
+  if (!selectedParameter.value) {
+    resetFields(false);
+    return;
+  }
+
+  const parameterCode = selectedParameter.value.parameter_id.code;
+  const nextInputs = {};
+
+  requiredVariables.value.forEach((variable) => {
+    nextInputs[variable] =
+      calculationInputs.value[variable] ?? results.value[variable] ?? "";
+  });
+  calculationInputs.value = nextInputs;
+
+  calculationResult.value = results.value[parameterCode] ?? null;
+  uncertaintyValue.value = uncertaintyValues.value[parameterCode] || "";
+  minimumReference.value = minimumReferences.value[parameterCode] || "";
+  maximumReference.value = maximumReferences.value[parameterCode] || "";
+  notes.value = notesValues.value[parameterCode] || "";
+  manualOverride.value = Boolean(overrides.value[parameterCode]);
+  manualValue.value = manualOverride.value
+    ? results.value[parameterCode] || ""
+    : "";
+  calculationError.value = "";
+
+  if (!missingVariables.value.length && !manualOverride.value) {
+    calculateParameter();
   }
 }
 
-const applySingleCalculation = () => {
-  if (!selectedSingleParameter.value) return
-  
-  const paramCode = selectedSingleParameter.value
-  const paramObj = selectedSingleParameterObj.value
-  
-  // Get the final value
-  const finalValue = singleParameterOverride.value 
-    ? singleCalcManualValue.value 
-    : singleCalculationResult.value
-  
-  // Create metadata for the calculation
+function toggleManualOverride() {
+  if (manualOverride.value) {
+    manualValue.value = results.value[selectedParameterCode.value] || "";
+    return;
+  }
+
+  manualValue.value = "";
+  calculateParameter();
+}
+
+async function calculateParameter() {
+  if (!selectedParameter.value || manualOverride.value) {
+    calculationResult.value = null;
+    calculationError.value = "";
+    return;
+  }
+
+  if (missingVariables.value.length) {
+    calculationResult.value = null;
+    calculationError.value = "";
+    return;
+  }
+
+  calculationInProgress.value = true;
+  calculationError.value = "";
+
+  try {
+    const variables = Object.fromEntries(
+      requiredVariables.value.map((variable) => {
+        const value = Number.parseFloat(calculationInputs.value[variable]);
+        return [variable, Number.isNaN(value) ? 0 : value];
+      }),
+    );
+    const mathContext = {
+      sqrt: Math.sqrt,
+      log: Math.log,
+      log10: Math.log10,
+      exp: Math.exp,
+      abs: Math.abs,
+      round: Math.round,
+      ceil: Math.ceil,
+      floor: Math.floor,
+      max: Math.max,
+      min: Math.min,
+      pow: Math.pow,
+      PI: Math.PI,
+      E: Math.E,
+    };
+    const context = { ...variables, Math: mathContext };
+    const evaluateFormula = new Function(
+      ...Object.keys(context),
+      "return " + selectedParameter.value.formula.expression,
+    );
+    const numericValue = evaluateFormula(...Object.values(context));
+
+    if (Number.isNaN(numericValue) || !Number.isFinite(numericValue)) {
+      throw new Error("Invalid calculation result");
+    }
+
+    const decimalPlaces = selectedParameter.value.formula.decimal_places || 2;
+    calculationResult.value = Number.parseFloat(numericValue).toFixed(decimalPlaces);
+  } catch {
+    calculationError.value =
+      "Não foi possível executar a fórmula. Reveja as variáveis de entrada.";
+    calculationResult.value = null;
+  } finally {
+    calculationInProgress.value = false;
+  }
+}
+
+function applyCalculation() {
+  if (!canApply.value || !selectedParameter.value) {
+    return;
+  }
+
+  const parameterCode = selectedParameterCode.value;
+  const finalValue = manualOverride.value
+    ? manualValue.value
+    : calculationResult.value;
   const metadata = {
-    inputs: {},
+    inputs: Object.fromEntries(
+      requiredVariables.value.map((variable) => [
+        variable,
+        calculationInputs.value[variable],
+      ]),
+    ),
     formula: {
-      id: paramObj.formula?.id,
-      expression: paramObj.formula?.expression,
-      name: paramObj.formula?.name
+      id: selectedParameter.value.formula?.id,
+      expression: selectedParameter.value.formula?.expression,
+      name: selectedParameter.value.formula?.name,
     },
     calculated_at: new Date().toISOString(),
-    calculation_method: singleParameterOverride.value ? 'manual' : 'automated',
-    manual_override: singleParameterOverride.value || false
-  }
-  
-  // Store input values in metadata
-  const required = getCalculationRequirements(paramObj)
-  required.forEach(variable => {
-    metadata.inputs[variable] = singleCalcInputs.value[variable]
-  })
-  
-  // Update the main results object
-  results.value[paramCode] = finalValue
-  
-  // Update input variables in the main results
-  Object.keys(singleCalcInputs.value).forEach(key => {
-    if (singleCalcInputs.value[key] && singleCalcInputs.value[key] !== '') {
-      results.value[key] = singleCalcInputs.value[key]
+    calculation_method: manualOverride.value ? "manual" : "automated",
+    manual_override: manualOverride.value,
+  };
+
+  results.value[parameterCode] = finalValue;
+  Object.entries(calculationInputs.value).forEach(([key, value]) => {
+    if (value !== "") {
+      results.value[key] = value;
     }
-  })
-  
-  // Update additional fields
-  uncertaintyValues.value[paramCode] = singleParameterUncertainty.value || null
-  minRefValues.value[paramCode] = singleParameterMinRef.value || null
-  maxRefValues.value[paramCode] = singleParameterMaxRef.value || null
-  notesValues.value[paramCode] = singleParameterNotes.value || null
-  
-  // Update overrides
-  overrides.value[paramCode] = singleParameterOverride.value
-  
-  // Create comprehensive payload
-  const comprehensivePayload = {
+  });
+
+  uncertaintyValues.value[parameterCode] = uncertaintyValue.value || null;
+  minimumReferences.value[parameterCode] = minimumReference.value || null;
+  maximumReferences.value[parameterCode] = maximumReference.value || null;
+  notesValues.value[parameterCode] = notes.value || null;
+  overrides.value[parameterCode] = manualOverride.value;
+
+  emit("calculatedResults", {
     results: {
-      [paramCode]: finalValue,
-      // Include uncertainty and reference values with specific keys
-      [`${paramCode}_uncertainty_value`]: singleParameterUncertainty.value || null,
-      [`${paramCode}_min_ref_value`]: singleParameterMinRef.value || null,
-      [`${paramCode}_max_ref_value`]: singleParameterMaxRef.value || null,
-      [`${paramCode}_insertion_notes`]: singleParameterNotes.value || null,
-      // Also include input variables
-      ...Object.keys(singleCalcInputs.value).reduce((acc, key) => {
-        if (singleCalcInputs.value[key] && singleCalcInputs.value[key] !== '') {
-          acc[key] = singleCalcInputs.value[key]
-        }
-        return acc
-      }, {})
+      [parameterCode]: finalValue,
+      [parameterCode + "_uncertainty_value"]: uncertaintyValue.value || null,
+      [parameterCode + "_min_ref_value"]: minimumReference.value || null,
+      [parameterCode + "_max_ref_value"]: maximumReference.value || null,
+      [parameterCode + "_insertion_notes"]: notes.value || null,
+      ...Object.fromEntries(
+        Object.entries(calculationInputs.value).filter(([, value]) => value !== ""),
+      ),
     },
     overrides: {
-      [paramCode]: singleParameterOverride.value
+      [parameterCode]: manualOverride.value,
     },
     metadata: {
-      [paramCode]: metadata
-    }
+      [parameterCode]: metadata,
+    },
+  });
+
+  if (nextParameter.value) {
+    selectedParameterCode.value = nextParameter.value.parameter_id?.code || "";
+    initializeSelectedParameter();
+    return;
   }
-  
-  // Emit to parent
-  emit('calculatedResults', comprehensivePayload)
-  
-  // Auto-select next parameter if available
-  if (nextAvailableParameter.value) {
-    setTimeout(() => {
-      selectNextParameter()
-    }, 500)
-  } else {
-    // Close modal after a short delay
-    setTimeout(() => {
-      closeModal()
-    }, 1000)
+
+  emit("close");
+}
+
+function resetFields(clearSelection = true) {
+  if (clearSelection) {
+    selectedParameterCode.value = "";
   }
+  calculationInputs.value = {};
+  calculationResult.value = null;
+  calculationError.value = "";
+  manualOverride.value = false;
+  manualValue.value = "";
+  uncertaintyValue.value = "";
+  minimumReference.value = "";
+  maximumReference.value = "";
+  notes.value = "";
 }
 
-const clearSingleCalculation = () => {
-  resetSingleParameterFields()
-}
-
-const resetSingleParameterFields = () => {
-  selectedSingleParameter.value = ''
-  singleCalcInputs.value = {}
-  singleCalculationResult.value = null
-  singleParameterOverride.value = false
-  singleCalcManualValue.value = ''
-  singleParameterUncertainty.value = ''
-  singleParameterMinRef.value = ''
-  singleParameterMaxRef.value = ''
-  singleParameterNotes.value = ''
-}
-
-const selectNextParameter = () => {
-  if (nextAvailableParameter.value) {
-    selectedSingleParameter.value = nextAvailableParameter.value.parameter_id.code
-    onSingleParameterChange()
+function selectNextParameter() {
+  if (!nextParameter.value) {
+    return;
   }
+
+  selectedParameterCode.value = nextParameter.value.parameter_id?.code || "";
+  initializeSelectedParameter();
 }
-
-const closeModal = () => {
-  emit('close')
-}
-
-// Helper methods
-const getCalculationRequirements = (parameter) => {
-  if (!parameter.formula) return []
-  return parameter.formula.variables?.map(v => v.name) || []
-}
-
-// Initialize with existing data
-watch(() => props.existingResults, (newResults) => {
-  if (newResults) {
-    results.value = { ...newResults }
-    
-    // Initialize additional fields from parameters
-    props.parameters.forEach(param => {
-      const code = param.parameter_id?.code
-      if (code) {
-        uncertaintyValues.value[code] = param.uncertainty_value || null
-        minRefValues.value[code] = param.min_ref_value || null
-        maxRefValues.value[code] = param.max_ref_value || null
-        notesValues.value[code] = param.insertion_notes || null
-        
-        if (param.manual_override) { 
-          overrides.value[code] = true
-        }
-      }
-    })
-  }
-}, { immediate: true })
-
-// Watch for changes in single calculation inputs
-watch(singleCalcInputs, () => {
-  if (selectedSingleParameter.value && !singleParameterOverride.value) {
-    calculateSingleParameter()
-  }
-}, { deep: true })
 </script>
 
-<style scoped>
-.result-entry-modal {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-</style>
+<template>
+  <div class="min-w-0 space-y-6">
+    <section class="ds-command-surface overflow-hidden">
+      <div class="flex flex-col gap-4 border-b border-[var(--ds-border)] p-4 sm:flex-row sm:items-end sm:justify-between">
+        <div class="min-w-0 flex-1">
+          <label class="ds-field-label" for="calculated-parameter">Parâmetro calculado</label>
+          <select
+            id="calculated-parameter"
+            v-model="selectedParameterCode"
+            class="ds-field mt-2"
+            @change="initializeSelectedParameter"
+          >
+            <option value="">Selecione um parâmetro</option>
+            <option
+              v-for="parameter in calculatedParameters"
+              :key="parameter.parameter_id?.code"
+              :value="parameter.parameter_id?.code"
+            >
+              {{ parameter.parameter_id?.code }} - {{ parameter.parameter_id?.name }}
+            </option>
+          </select>
+        </div>
+        <span class="ds-chip">
+          <CalculatorIcon class="h-4 w-4" />
+          {{ filledInputCount }}/{{ requiredVariables.length }} variáveis
+        </span>
+      </div>
+
+      <div v-if="selectedParameter" class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-3">
+        <div class="bg-[var(--ds-panel-raised)] p-4">
+          <p class="ds-table-heading">Código</p>
+          <p class="ds-heading mt-2 font-mono text-sm">{{ selectedParameter.parameter_id?.code }}</p>
+        </div>
+        <div class="bg-[var(--ds-panel-raised)] p-4 sm:col-span-2">
+          <p class="ds-table-heading">Fórmula controlada</p>
+          <code class="mt-2 block break-all font-mono text-xs font-bold text-[var(--ds-text)]">
+            {{ selectedParameter.formula?.expression || "Fórmula não configurada" }}
+          </code>
+        </div>
+      </div>
+    </section>
+
+    <template v-if="selectedParameter">
+      <section class="ds-panel overflow-hidden">
+        <div class="border-b border-[var(--ds-border)] px-5 py-4">
+          <p class="ds-kicker">Variáveis de entrada</p>
+          <h2 class="ds-heading mt-2 text-base">Valores usados no cálculo</h2>
+        </div>
+        <div
+          v-if="requiredVariables.length"
+          class="grid gap-4 p-5 sm:grid-cols-2"
+        >
+          <div v-for="variable in requiredVariables" :key="variable" class="ds-field-group">
+            <label class="ds-field-label" :for="'calc-variable-' + variable">
+              {{ variable }}
+            </label>
+            <div class="relative mt-2">
+              <VariableIcon class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
+              <input
+                :id="'calc-variable-' + variable"
+                v-model="calculationInputs[variable]"
+                class="ds-field pl-9"
+                inputmode="decimal"
+                placeholder="Introduza o valor"
+              />
+              <CheckCircleIcon
+                v-if="hasInputValue(variable)"
+                class="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-[var(--lims-release)]"
+              />
+            </div>
+            <p
+              v-if="results[variable] && calculationInputs[variable] !== results[variable]"
+              class="ds-field-hint"
+            >
+              Valor anterior: {{ results[variable] }}
+            </p>
+          </div>
+        </div>
+        <div v-else class="p-5">
+          <p class="ds-copy text-sm">A fórmula não declara variáveis de entrada.</p>
+        </div>
+      </section>
+
+      <section class="ds-panel overflow-hidden">
+        <div class="border-b border-[var(--ds-border)] px-5 py-4">
+          <p class="ds-kicker">Metadados do resultado</p>
+          <h2 class="ds-heading mt-2 text-base">Incerteza, limites e observações</h2>
+        </div>
+        <div class="grid gap-4 p-5 sm:grid-cols-2">
+          <div class="ds-field-group">
+            <label class="ds-field-label" for="calculation-uncertainty">Incerteza</label>
+            <div class="relative mt-2">
+              <ScaleIcon class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
+              <input
+                id="calculation-uncertainty"
+                v-model="uncertaintyValue"
+                class="ds-field pl-9"
+                inputmode="decimal"
+                placeholder="Ex.: 0.1"
+              />
+            </div>
+          </div>
+          <div class="ds-field-group">
+            <label class="ds-field-label" for="calculation-minimum">Referência mínima</label>
+            <input
+              id="calculation-minimum"
+              v-model="minimumReference"
+              class="ds-field mt-2"
+              inputmode="decimal"
+            />
+          </div>
+          <div class="ds-field-group">
+            <label class="ds-field-label" for="calculation-maximum">Referência máxima</label>
+            <input
+              id="calculation-maximum"
+              v-model="maximumReference"
+              class="ds-field mt-2"
+              inputmode="decimal"
+            />
+          </div>
+          <div class="ds-field-group">
+            <label class="ds-field-label" for="calculation-notes">Observações</label>
+            <textarea
+              id="calculation-notes"
+              v-model="notes"
+              class="ds-field mt-2 min-h-20"
+              placeholder="Documente o contexto do cálculo."
+            />
+          </div>
+        </div>
+      </section>
+
+      <section class="ds-panel overflow-hidden">
+        <div class="flex flex-col gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="ds-kicker">Resultado final</p>
+            <h2 class="ds-heading mt-2 text-base">Revisão antes de aplicar</h2>
+          </div>
+          <label class="flex items-center gap-2 text-xs font-bold text-[var(--ds-text-muted)]">
+            <input
+              v-model="manualOverride"
+              type="checkbox"
+              class="h-4 w-4 rounded border-[var(--ds-border-strong)] text-[rgb(var(--primary-600-rgb))] focus:ring-[rgb(var(--primary-500-rgb))]"
+              @change="toggleManualOverride"
+            />
+            Substituição manual
+          </label>
+        </div>
+
+        <div class="p-5">
+          <div v-if="manualOverride" class="ds-field-group">
+            <label class="ds-field-label" for="manual-calculation-value">Valor manual</label>
+            <input
+              id="manual-calculation-value"
+              v-model="manualValue"
+              class="ds-field mt-2"
+              placeholder="Introduza o valor justificado"
+            />
+          </div>
+
+          <div v-else-if="calculationResult !== null" class="lims-status-strip p-5 text-center">
+            <p class="ds-table-heading">Resultado calculado</p>
+            <p class="ds-heading mt-3 text-3xl">
+              {{ calculationResult }}
+              <span class="text-sm text-[var(--ds-text-muted)]">
+                {{ selectedParameter.formula?.output_unit }}
+              </span>
+            </p>
+            <div class="mt-4 flex flex-wrap justify-center gap-2">
+              <span v-if="uncertaintyValue" class="ds-chip">± {{ uncertaintyValue }}</span>
+              <span
+                v-if="referenceStatus !== null"
+                class="ds-chip"
+              >
+                <span
+                  class="lims-status-dot"
+                  :class="referenceStatus ? 'lims-status-dot-release' : 'lims-status-dot-critical'"
+                />
+                {{ referenceStatus ? "Dentro da referência" : "Fora da referência" }}
+              </span>
+            </div>
+          </div>
+
+          <div v-if="calculationError" class="mt-4 flex items-start gap-3 text-[var(--lims-critical)]">
+            <ExclamationTriangleIcon class="h-5 w-5 shrink-0" />
+            <p class="text-xs font-bold">{{ calculationError }}</p>
+          </div>
+
+          <div
+            v-if="missingVariables.length && !manualOverride"
+            class="mt-4 flex items-start gap-3 text-[var(--lims-hold)]"
+          >
+            <InformationCircleIcon class="h-5 w-5 shrink-0" />
+            <p class="text-xs font-bold">
+              Variáveis em falta: {{ missingVariables.join(", ") }}
+            </p>
+          </div>
+        </div>
+
+        <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:justify-between">
+          <button type="button" class="ds-button ds-button-secondary" @click="resetFields">
+            Limpar
+          </button>
+          <button
+            type="button"
+            class="ds-button ds-button-primary"
+            :disabled="!canApply || calculationInProgress"
+            @click="applyCalculation"
+          >
+            <CheckIcon class="h-4 w-4" />
+            {{ manualOverride ? "Aplicar valor manual" : "Aplicar cálculo" }}
+          </button>
+        </footer>
+      </section>
+
+      <section v-if="nextParameter" class="lims-status-strip p-4">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="ds-table-heading">Próximo parâmetro</p>
+            <p class="ds-copy mt-1 text-xs">
+              {{ nextParameter.parameter_id?.code }} - {{ nextParameter.parameter_id?.name }}
+            </p>
+          </div>
+          <button type="button" class="ds-button ds-button-secondary" @click="selectNextParameter">
+            Continuar
+          </button>
+        </div>
+      </section>
+    </template>
+
+    <footer class="flex justify-end border-t border-[var(--ds-border)] pt-4">
+      <button type="button" class="ds-button ds-button-secondary" @click="emit('close')">
+        <XMarkIcon class="h-4 w-4" />
+        Fechar
+      </button>
+    </footer>
+  </div>
+</template>

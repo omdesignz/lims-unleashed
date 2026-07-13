@@ -37,7 +37,13 @@ test('keeps non-numeric qualitative values unchanged under scientific display mo
     display_format: 'scientific',
   }
 
+  assert.equal(ResultsDataService.getDisplayFormat(result), 'standard')
   assert.equal(ResultsDataService.formatResultValue(result.inserted_value, result), 'Presença')
+
+  ResultsDataService.setDisplayFormat(result, 'scientific')
+
+  assert.equal(result.display_format, 'standard')
+  assert.equal(result.extra_data.display_format, 'standard')
 })
 
 test('treats zero as a valid result value', () => {
@@ -48,5 +54,5 @@ test('treats zero as a valid result value', () => {
   }
 
   assert.equal(ResultsDataService.hasResultValue(result.inserted_value), true)
-  assert.equal(ResultsDataService.formatResultValue(result.inserted_value, result), '0.00 × 10^+0')
+  assert.equal(ResultsDataService.formatResultValue(result.inserted_value, result), '0.00 × 10^0')
 })

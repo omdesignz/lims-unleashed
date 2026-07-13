@@ -18,26 +18,28 @@ class InventoryTransactionResource extends JsonResource
             'id' => $this->id,
             'inventory_id' => $this->inventory_id,
             'user_id' => $this->user_id,
-            'user' => $this->whenLoaded('user')->name,
+            'user' => $this->whenLoaded('user')?->name,
             'warehouse_id' => $this->warehouse_id,
-            'warehouse' => $this->whenLoaded('warehouse')->address,
+            'warehouse' => $this->whenLoaded('warehouse')?->name,
             'item_id' => $this->item_id,
-            'item' => $this->whenLoaded('item')->name,
+            'item' => $this->whenLoaded('item')?->name,
             'type_id' => $this->type_id,
-            'type' => $this->whenLoaded('type')->name,
+            'type' => $this->whenLoaded('type')?->name,
+            'type_code' => $this->whenLoaded('type')?->code,
             'qty' => $this->qty,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'deleted_at' => $this->deleted_at,
+            'deleted' => (bool) $this->deleted_at,
             'links' => [
                 'edit_path' => route('itransactions.edit', $this->id),
                 'delete_path' => route('itransactions.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('itransactions.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

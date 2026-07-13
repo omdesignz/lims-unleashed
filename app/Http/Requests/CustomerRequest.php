@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class CustomerRequest extends FormRequest
 {
@@ -17,36 +20,24 @@ class CustomerRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
-        if ($this->isMethod('post')) {
-            $rules = [
-                'name' => 'required|min:1|unique:customers,name',
-                'description' => 'nullable',
-                'code' => 'nullable|min:1|unique:customers,code',
-                'category_id' => 'required|exists:customer_categories,id',
-            ];
-        } else {
-            $rules = [
-                'name' => 'required|min:1|unique:customers,name,' . request()->customer,
-                'description' => 'nullable',
-                'code' => 'nullable|min:1|unique:customers,code,' . request()->customer,
-                'category_id' => 'required|exists:customer_categories,id',
+        $customerId = $this->route('customer');
 
-            ];
-        }
-
-        return $rules;
+        return [
+            'name' => ['required', 'string', 'min:1', Rule::unique('customers', 'name')->ignore($customerId)],
+            'description' => ['nullable', 'string'],
+            'code' => ['nullable', 'string', 'min:1', Rule::unique('customers', 'code')->ignore($customerId)],
+            'category_id' => ['required', 'integer', Rule::exists('customer_categories', 'id')->whereNull('deleted_at')],
+        ];
     }
 
     /**
      * Get custom attributes for validator errors.
-     *
-     * @return array
      */
-    public function attributes()
+    public function attributes(): array
     {
         return [
             'name' => trans('gestlab.general.labels.customers.name'),
@@ -57,25 +48,26 @@ class CustomerRequest extends FormRequest
     }
 
     /**
- * Get the error messages for the defined validation rules.
- *
- * @return array<string, string>
- */
-public function messages(): array
-{
-    return [];
-}
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [];
+    }
 
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
+     * @param  Validator  $validator
      */
-    public function prepareForValidation()
-    {   
+    protected function prepareForValidation(): void
+    {
+        $category = $this->input('category_id');
+
         $this->merge([
-            'category_id' => !is_null(request()->category_id) ? request()->category_id['value'] : null,
+            'category_id' => is_array($category) ? ($category['value'] ?? null) : $category,
         ]);
     }
 }

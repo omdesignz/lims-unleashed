@@ -1,497 +1,167 @@
-<template>
-  <Modal :show="show" @close="closeModal" max-width="4xl">
-    <form @submit.prevent="restoreRevision" class="iso-revision-restore-modal p-6">
-      <!-- HEADER -->
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <ArrowPathIcon class="h-6 w-6 text-green-600" />
-            {{ $t('gestlab.general.labels.iso_revisions.restore.title') }}
-          </h2>
-          <p class="mt-1 text-sm text-gray-600">
-            {{ $t('gestlab.general.labels.iso_revisions.restore.description') }}
-          </p>
-        </div>
-        <button 
-          @click="closeModal"
-          type="button"
-          class="rounded-full p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-900"
-        >
-          <XMarkIcon class="h-6 w-6" />
-        </button>
-      </div>
-
-      <!-- CURRENT VERSION WARNING -->
-      <div class="mb-6 rounded-lg bg-yellow-50 p-4 border border-yellow-200">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <ExclamationTriangleIcon class="h-5 w-5 text-yellow-600" />
-          </div>
-          <div class="ml-3">
-            <h3 class="text-sm font-medium text-yellow-800">
-              {{ $t('gestlab.general.labels.iso_revisions.restore.warning_title') }}
-            </h3>
-            <div class="mt-2 text-sm text-yellow-700">
-              <p>{{ $t('gestlab.general.labels.iso_revisions.restore.warning_description') }}</p>
-              <ul class="mt-2 list-disc list-inside space-y-1">
-                <li>{{ $t('gestlab.general.labels.iso_revisions.restore.warning_point_1') }}</li>
-                <li>{{ $t('gestlab.general.labels.iso_revisions.restore.warning_point_2') }}</li>
-                <li>{{ $t('gestlab.general.labels.iso_revisions.restore.warning_point_3') }}</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- REVISION INFO CARD -->
-      <div class="mb-6 rounded-xl border border-gray-200 bg-gray-50 p-5">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- SOURCE REVISION -->
-          <div class="space-y-3">
-            <div class="flex items-center gap-2">
-              <div class="flex h-8 w-8 items-center justify-center rounded-full bg-green-600 text-white font-semibold">
-                <ArrowDownIcon class="h-4 w-4" />
-              </div>
-              <div>
-                <h4 class="text-sm font-semibold text-gray-900">
-                  {{ $t('gestlab.general.labels.iso_revisions.restore.source_revision') }}
-                </h4>
-                <p class="text-xs text-gray-500">
-                  {{ $t('gestlab.general.labels.iso_revisions.restore.restoring_from') }}
-                </p>
-              </div>
-            </div>
-            
-            <div class="space-y-2 pl-10">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.version') }}</span>
-                <span class="text-sm font-semibold text-green-600">v{{ revision?.version }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.revision') }}</span>
-                <span class="text-sm font-medium text-gray-900">#{{ revision?.revision_number }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.change_type') }}</span>
-                <span :class="[
-                  'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-                  getChangeTypeClass(revision?.change_type)
-                ]">
-                  {{ $t(`gestlab.general.labels.iso_revisions.change_types.${revision?.change_type}`) }}
-                </span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.effective_date') }}</span>
-                <span class="text-sm text-gray-900">{{ formatDate(revision?.effective_date) }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- CURRENT VERSION -->
-          <div class="space-y-3">
-            <div class="flex items-center gap-2">
-              <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-900 text-white font-semibold">
-                <ArrowUpIcon class="h-4 w-4" />
-              </div>
-              <div>
-                <h4 class="text-sm font-semibold text-gray-900">
-                  {{ $t('gestlab.general.labels.iso_revisions.restore.current_version') }}
-                </h4>
-                <p class="text-xs text-gray-500">
-                  {{ $t('gestlab.general.labels.iso_revisions.restore.replacing') }}
-                </p>
-              </div>
-            </div>
-            
-            <div class="space-y-2 pl-10">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.version') }}</span>
-                <span class="text-sm font-semibold text-blue-900">v{{ certificate?.current_revision?.version || '1.0' }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.revision') }}</span>
-                <span class="text-sm font-medium text-gray-900">#{{ certificate?.current_revision?.revision_number || 1 }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.restore.status.title') }}</span>
-                <span class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                  {{ $t('gestlab.general.labels.iso_revisions.restore.status.active') }}
-                </span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.iso_revisions.effective_date') }}</span>
-                <span class="text-sm text-gray-900">{{ formatDate(certificate?.validated_at) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CHANGE REASON PREVIEW -->
-        <div class="mt-4 pt-4 border-t border-gray-200">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            {{ $t('gestlab.general.labels.iso_revisions.restore.change_reason_preview') }}
-          </label>
-          <div class="bg-white rounded-lg border border-gray-200 p-3">
-            <p class="text-sm text-gray-700 italic">
-              "{{ revision?.change_reason }}"
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- RESTORE FORM -->
-      <div class="space-y-6">
-        <!-- RESTORE REASON -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-            <ChatBubbleLeftRightIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.restore.restore_reason') }}
-            <span class="text-red-500">*</span>
-          </label>
-          <textarea 
-            v-model="form.restore_reason"
-            required
-            rows="3"
-            :placeholder="$t('gestlab.general.labels.iso_revisions.restore.reason_placeholder')"
-            class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-          />
-          <p class="text-xs text-gray-500">
-            {{ $t('gestlab.general.labels.iso_revisions.restore.reason_help') }}
-          </p>
-          <p v-if="form.errors.restore_reason" class="text-xs text-red-600 mt-1">
-            {{ form.errors.restore_reason }}
-          </p>
-        </div>
-
-        <!-- ISO SECTION -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-            <DocumentMagnifyingGlassIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.restore.iso_section') }}
-            <span class="text-red-500">*</span>
-          </label>
-          <div class="flex items-center gap-3">
-            <input 
-              v-model="form.iso_section"
-              required
-              placeholder="e.g., 8.9.1"
-              class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-            />
-            <span class="text-xs text-gray-500 whitespace-nowrap">
-              {{ $t('gestlab.general.labels.iso_revisions.restore.iso_17025') }}
-            </span>
-          </div>
-          <p v-if="form.errors.iso_section" class="text-xs text-red-600 mt-1">
-            {{ form.errors.iso_section }}
-          </p>
-        </div>
-
-        <!-- APPROVER -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-            <UserIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.restore.approver') }}
-            <span class="text-red-500">*</span>
-          </label>
-          <select 
-            v-model="form.approved_by_id"
-            required
-            class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-          >
-            <option value="">{{ $t('gestlab.general.labels.iso_revisions.restore.select_approver') }}</option>
-            <option v-for="approver in approvers" :key="approver.id" :value="approver.id">
-              {{ approver.name }} - {{ approver.role }}
-            </option>
-          </select>
-          <p v-if="form.errors.approved_by_id" class="text-xs text-red-600 mt-1">
-            {{ form.errors.approved_by_id }}
-          </p>
-        </div>
-
-        <!-- RESTORE SCOPE -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700">
-            {{ $t('gestlab.general.labels.iso_revisions.restore.restore_scope') }}
-          </label>
-          <div class="space-y-3">
-            <!-- OPTION 1: FULL RESTORE -->
-            <div class="flex items-start">
-              <input 
-                type="radio" 
-                id="scope-full"
-                v-model="form.restore_scope"
-                value="FULL"
-                class="mt-1 h-4 w-4 border-gray-300 text-blue-900 focus:ring-blue-900"
-              />
-              <div class="ml-3">
-                <label for="scope-full" class="text-sm font-medium text-gray-900">
-                  {{ $t('gestlab.general.labels.iso_revisions.restore.full_restore') }}
-                </label>
-                <p class="text-xs text-gray-500 mt-1">
-                  {{ $t('gestlab.general.labels.iso_revisions.restore.full_restore_description') }}
-                </p>
-              </div>
-            </div>
-
-            <!-- OPTION 2: SELECTIVE RESTORE -->
-            <div class="flex items-start">
-              <input 
-                type="radio" 
-                id="scope-selective"
-                v-model="form.restore_scope"
-                value="SELECTIVE"
-                class="mt-1 h-4 w-4 border-gray-300 text-blue-900 focus:ring-blue-900"
-              />
-              <div class="ml-3">
-                <label for="scope-selective" class="text-sm font-medium text-gray-900">
-                  {{ $t('gestlab.general.labels.iso_revisions.restore.selective_restore') }}
-                </label>
-                <p class="text-xs text-gray-500 mt-1">
-                  {{ $t('gestlab.general.labels.iso_revisions.restore.selective_restore_description') }}
-                </p>
-              </div>
-            </div>
-
-            <!-- SELECTIVE FIELDS -->
-            <div v-if="form.restore_scope === 'SELECTIVE'" class="ml-7 space-y-2">
-              <div v-for="field in restorableFields" :key="field.name" class="flex items-center">
-                <input 
-                  type="checkbox" 
-                  :id="`field-${field.name}`"
-                  v-model="form.selected_fields"
-                  :value="field.name"
-                  class="h-4 w-4 rounded border-gray-300 text-blue-900 focus:ring-blue-900"
-                />
-                <label :for="`field-${field.name}`" class="ml-3 text-sm text-gray-700">
-                  {{ field.label }}
-                  <span class="text-xs text-gray-500 ml-1">
-                    ({{ field.category }})
-                  </span>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CHANGE CATEGORY -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-            <TagIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.restore.change_category') }}
-            <span class="text-red-500">*</span>
-          </label>
-          <select 
-            v-model="form.change_category"
-            required
-            class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-          >
-            <option value="CORRECTION">{{ $t('gestlab.general.labels.iso_revisions.restore.categories.CORRECTION') }}</option>
-            <option value="REISSUE">{{ $t('gestlab.general.labels.iso_revisions.restore.categories.REISSUE') }}</option>
-            <option value="EMERGENCY">{{ $t('gestlab.general.labels.iso_revisions.restore.categories.EMERGENCY') }}</option>
-            <option value="REGULATORY">{{ $t('gestlab.general.labels.iso_revisions.restore.categories.REGULATORY') }}</option>
-          </select>
-        </div>
-
-        <!-- RISK ASSESSMENT -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-            <ExclamationTriangleIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.restore.risk_assessment') }}
-          </label>
-          <select 
-            v-model="form.risk_assessment"
-            class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-          >
-            <option value="LOW">{{ $t('gestlab.general.labels.iso_revisions.risk_levels.LOW') }}</option>
-            <option value="MEDIUM">{{ $t('gestlab.general.labels.iso_revisions.risk_levels.MEDIUM') }}</option>
-            <option value="HIGH">{{ $t('gestlab.general.labels.iso_revisions.risk_levels.HIGH') }}</option>
-          </select>
-        </div>
-
-        <!-- ADDITIONAL NOTES -->
-        <div class="space-y-2">
-          <label class="block text-sm font-medium text-gray-700 flex items-center gap-1">
-            <DocumentTextIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.iso_revisions.restore.additional_notes') }}
-          </label>
-          <textarea 
-            v-model="form.additional_notes"
-            rows="2"
-            :placeholder="$t('gestlab.general.labels.iso_revisions.restore.notes_placeholder')"
-            class="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-900"
-          />
-        </div>
-
-        <!-- CONFIRMATION CHECKBOX -->
-        <div class="rounded-lg bg-red-50 border border-red-200 p-4">
-          <div class="flex items-start">
-            <input 
-              type="checkbox" 
-              id="confirm-restore"
-              v-model="form.confirmed"
-              required
-              class="mt-1 h-4 w-4 rounded border-red-300 text-red-900 focus:ring-red-900"
-            />
-            <div class="ml-3">
-              <label for="confirm-restore" class="text-sm font-medium text-red-900">
-                {{ $t('gestlab.general.labels.iso_revisions.restore.confirmation_label') }}
-              </label>
-              <p class="text-xs text-red-700 mt-1">
-                {{ $t('gestlab.general.labels.iso_revisions.restore.confirmation_description') }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- FOOTER -->
-      <div class="mt-8 flex items-center justify-end gap-4">
-        <button 
-          @click="closeModal"
-          type="button"
-          class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-        >
-          {{ $t('gestlab.general.labels.iso_revisions.cancel') }}
-        </button>
-        <button 
-          type="submit"
-          :disabled="form.processing || !form.confirmed"
-          :class="[
-            'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition-all duration-200',
-            form.processing || !form.confirmed
-              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-green-900 focus:ring-offset-2'
-          ]"
-        >
-          <ArrowPathIcon class="h-4 w-4" />
-          {{ form.processing ? $t('gestlab.general.labels.iso_revisions.restoring') : $t('gestlab.general.labels.iso_revisions.restore_version') }}
-        </button>
-      </div>
-    </form>
-  </Modal>
-</template>
-
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useForm } from '@inertiajs/vue3'
-import Modal from '@/Components/Modal.vue'
+import Modal from "@/Components/Modal.vue";
+import { computed, watch } from "vue";
+import { useForm } from "@inertiajs/vue3";
 import {
   ArrowPathIcon,
-  XMarkIcon,
+  CheckIcon,
   ExclamationTriangleIcon,
-  ArrowDownIcon,
-  ArrowUpIcon,
-  ChatBubbleLeftRightIcon,
-  DocumentMagnifyingGlassIcon,
-  UserIcon,
-  TagIcon,
-  DocumentTextIcon
-} from '@heroicons/vue/24/outline'
+  XMarkIcon,
+} from "@heroicons/vue/24/outline";
 
 const props = defineProps({
   show: Boolean,
-  revision: Object,
-  certificate: Object,
+  revision: {
+    type: Object,
+    default: null,
+  },
+  certificate: {
+    type: Object,
+    default: () => ({}),
+  },
   approvers: {
     type: Array,
-    default: () => []
-  }
-})
+    default: () => [],
+  },
+});
 
-const emit = defineEmits(['close', 'restored'])
+const emit = defineEmits(["close", "restored"]);
 
-// Form
 const form = useForm({
-  restore_reason: '',
-  iso_section: '8.9.1',
-  approved_by_id: '',
-  restore_scope: 'FULL',
+  restore_reason: "",
+  iso_section: "8.9.1",
+  approved_by_id: "",
+  restore_scope: "FULL",
   selected_fields: [],
-  change_category: 'CORRECTION',
-  risk_assessment: 'MEDIUM',
-  additional_notes: '',
-  confirmed: false
-})
+  change_category: "CORRECTION",
+  risk_assessment: "MEDIUM",
+  additional_notes: "",
+  confirmed: false,
+});
 
-// Restorable fields configuration
-const restorableFields = computed(() => [
-  // Certificate fields
-  { name: 'status', label: 'Certificate Status', category: 'CERTIFICATE' },
-  { name: 'obs', label: 'Observations', category: 'CERTIFICATE' },
-  { name: 'validated_by', label: 'Validated By', category: 'CERTIFICATE' },
-  { name: 'validated_at', label: 'Validation Date', category: 'CERTIFICATE' },
-  { name: 'extra_data', label: 'Additional Data', category: 'CERTIFICATE' },
-  
-  // Related data
-  { name: 'collection_data', label: 'Collection Information', category: 'RELATED' },
-  { name: 'product_data', label: 'Product Details', category: 'RELATED' },
-  { name: 'customer_data', label: 'Customer Information', category: 'RELATED' },
-  { name: 'warehouse_data', label: 'Warehouse Details', category: 'RELATED' },
-  
-  // Results data
-  { name: 'test_results', label: 'Test Results', category: 'RESULTS' },
-  { name: 'methodology', label: 'Test Methodology', category: 'RESULTS' },
-  { name: 'equipment', label: 'Equipment Used', category: 'RESULTS' },
-  { name: 'personnel', label: 'Testing Personnel', category: 'RESULTS' }
-])
+const restorableFields = [
+  { name: "status", label: "Estado do certificado" },
+  { name: "obs", label: "Observacoes" },
+  { name: "validated_by", label: "Validado por" },
+  { name: "validated_at", label: "Data de validacao" },
+  { name: "extra_data", label: "Dados adicionais" },
+];
 
-// Watch for revision changes to pre-fill form
-watch(() => props.revision, (revision) => {
-  if (revision) {
-    // Pre-fill form with revision data
-    form.restore_reason = `Restoring to revision v${revision.version} (${revision.change_reason})`
-    
-    // If revision has ISO section metadata, use it
-    if (revision.compliance_metadata?.iso_section) {
-      form.iso_section = revision.compliance_metadata.iso_section
+const sourceDetails = computed(() => [
+  {
+    label: "Versao",
+    value: `v${props.revision?.version || "-"}`,
+  },
+  {
+    label: "Revisao",
+    value: props.revision?.revision_number ?? "-",
+  },
+  {
+    label: "Data efetiva",
+    value: formatDate(props.revision?.effective_date),
+  },
+  {
+    label: "Tipo",
+    value: props.revision?.change_type || "Nao indicado",
+  },
+]);
+
+const currentDetails = computed(() => [
+  {
+    label: "Versao",
+    value: `v${props.certificate?.current_revision?.version || "1.0"}`,
+  },
+  {
+    label: "Revisao",
+    value: props.certificate?.current_revision?.revision_number ?? "-",
+  },
+  {
+    label: "Data efetiva",
+    value: formatDate(
+      props.certificate?.current_revision?.effective_date ||
+      props.certificate?.validated_at,
+    ),
+  },
+  {
+    label: "Estado",
+    value: props.certificate?.status ? "Ativo" : "Inativo",
+  },
+]);
+
+const isReady = computed(() => {
+  const selectiveScopeReady =
+    form.restore_scope === "FULL" || form.selected_fields.length > 0;
+
+  return (
+    form.restore_reason.length >= 20 &&
+    form.iso_section &&
+    form.approved_by_id &&
+    form.change_category &&
+    form.confirmed &&
+    selectiveScopeReady &&
+    !form.processing
+  );
+});
+
+watch(
+  () => props.revision,
+  (revision) => {
+    if (!revision) {
+      return;
     }
-    
-    // If revision has change category, use it
-    if (revision.compliance_metadata?.change_category) {
-      form.change_category = revision.compliance_metadata.change_category
-    }
-  }
-}, { immediate: true })
 
-// Methods
-const closeModal = () => {
-  form.reset()
-  form.confirmed = false
-  form.restore_scope = 'FULL'
-  form.selected_fields = []
-  emit('close')
-}
+    form.restore_reason = `Reposicao controlada da revisao v${revision.version}: ${revision.change_reason || "motivo a documentar"}`;
+    form.iso_section = revision.compliance_metadata?.iso_section || "8.9.1";
+    form.risk_assessment =
+      revision.compliance_metadata?.risk_assessment || "MEDIUM";
+  },
+  { immediate: true },
+);
 
-const getChangeTypeClass = (changeType) => {
-  const classes = {
-    CREATED: 'bg-green-100 text-green-800',
-    UPDATED: 'bg-blue-100 text-blue-800',
-    CORRECTED: 'bg-yellow-100 text-yellow-800',
-    REISSUED: 'bg-purple-100 text-purple-800',
-    WITHDRAWN: 'bg-red-100 text-red-800',
-  }
-  return classes[changeType] || 'bg-gray-100 text-gray-800'
-}
-
-const formatDate = (date) => {
-  if (!date) return 'N/A'
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-const restoreRevision = () => {
-  // Validate selective restore has fields selected
-  if (form.restore_scope === 'SELECTIVE' && form.selected_fields.length === 0) {
-    form.setError('selected_fields', 'Please select at least one field to restore')
-    return
+function formatDate(date) {
+  if (!date) {
+    return "Nao registada";
   }
 
-  // Prepare the approval data
+  return new Date(date).toLocaleString("pt-PT", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function fieldError(field) {
+  return form.errors[field] || form.errors[`approval_data.${field}`];
+}
+
+function toggleSelectedField(fieldName) {
+  const index = form.selected_fields.indexOf(fieldName);
+  if (index >= 0) {
+    form.selected_fields.splice(index, 1);
+    return;
+  }
+
+  form.selected_fields.push(fieldName);
+  form.clearErrors("selected_fields", "approval_data.selected_fields");
+}
+
+function closeModal() {
+  form.reset();
+  form.clearErrors();
+  form.restore_scope = "FULL";
+  form.selected_fields = [];
+  form.confirmed = false;
+  emit("close");
+}
+
+function restoreRevision() {
+  if (form.restore_scope === "SELECTIVE" && !form.selected_fields.length) {
+    form.setError("selected_fields", "Selecione pelo menos um campo para repor.");
+    return;
+  }
+
   const approvalData = {
     approved_by_id: form.approved_by_id,
     iso_section: form.iso_section,
@@ -499,78 +169,304 @@ const restoreRevision = () => {
     risk_assessment: form.risk_assessment,
     additional_notes: form.additional_notes,
     restore_scope: form.restore_scope,
-    selected_fields: form.selected_fields
-  }
+    selected_fields: form.selected_fields,
+  };
 
-  // Submit the restore request
-  form.transform((data) => ({
-    ...data,
-    approval_data: approvalData
-  })).post(route('qualitycertificates.iso-revisions.restore', {
-    certificate: props.certificate.id,
-    revision: props.revision.id
-  }), {
-    preserveScroll: true,
-    onSuccess: () => {
-      closeModal()
-      emit('restored')
-    },
-    onError: (errors) => {
-      console.error('Restore failed:', errors)
-    }
-  })
+  form
+    .transform((data) => ({
+      ...data,
+      approval_data: approvalData,
+    }))
+    .post(
+      route("qualitycertificates.iso-revisions.restore", {
+        certificate: props.certificate.id,
+        revision: props.revision.id,
+      }),
+      {
+        preserveScroll: true,
+        onSuccess: () => {
+          closeModal();
+          emit("restored");
+        },
+      },
+    );
 }
 </script>
 
-<style scoped>
-.iso-revision-restore-modal :deep(.text-blue-900),
-.iso-revision-restore-modal :deep(.text-blue-800) {
-  color: rgb(var(--primary-800-rgb)) !important;
-}
+<template>
+  <Modal :show="show" max-width="4xl" @close="closeModal">
+    <form class="min-w-0" @submit.prevent="restoreRevision">
+      <header class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
+        <div class="flex min-w-0 items-start gap-3">
+          <div class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-200">
+            <ArrowPathIcon class="h-5 w-5" />
+          </div>
+          <div>
+            <p class="ds-kicker">Acao controlada</p>
+            <h2 class="ds-heading mt-2 text-lg">Repor revisao v{{ revision?.version || "-" }}</h2>
+            <p class="ds-copy mt-1 text-xs">
+              A reposicao cria uma nova revisao e preserva todo o historico anterior.
+            </p>
+          </div>
+        </div>
+        <button type="button" class="ds-icon-button" title="Fechar" @click="closeModal">
+          <XMarkIcon class="h-5 w-5" />
+          <span class="sr-only">Fechar</span>
+        </button>
+      </header>
 
-.iso-revision-restore-modal :deep(.bg-blue-900) {
-  background-color: rgb(var(--primary-900-rgb)) !important;
-}
+      <div class="max-h-[75vh] space-y-6 overflow-y-auto px-5 py-5 sm:px-6">
+        <section class="lims-status-strip p-4">
+          <div class="flex items-start gap-3">
+            <ExclamationTriangleIcon class="h-5 w-5 shrink-0 text-[var(--lims-hold)]" />
+            <div>
+              <h3 class="ds-heading text-sm">A versao atual sera substituida</h3>
+              <p class="ds-copy mt-1 text-xs">
+                Confirme o escopo, aprovador, secao ISO e justificacao. Esta
+                acao nao elimina revisoes existentes.
+              </p>
+            </div>
+          </div>
+        </section>
 
-.iso-revision-restore-modal :deep(.bg-blue-50),
-.iso-revision-restore-modal :deep(.bg-blue-100) {
-  background-color: rgb(var(--primary-50-rgb) / 0.82) !important;
-}
+        <div class="grid gap-4 lg:grid-cols-2">
+          <section class="ds-command-surface overflow-hidden">
+            <div class="border-b border-[var(--ds-border)] px-4 py-3">
+              <p class="ds-kicker">Origem</p>
+              <h3 class="ds-heading mt-2 text-sm">Revisao a repor</h3>
+            </div>
+            <dl class="divide-y divide-[var(--ds-border)]">
+              <div
+                v-for="detail in sourceDetails"
+                :key="detail.label"
+                class="flex items-start justify-between gap-4 px-4 py-3"
+              >
+                <dt class="text-xs font-bold text-[var(--ds-text-muted)]">{{ detail.label }}</dt>
+                <dd class="text-right text-xs font-bold text-[var(--ds-text)]">{{ detail.value }}</dd>
+              </div>
+            </dl>
+          </section>
 
-.iso-revision-restore-modal :deep(input),
-.iso-revision-restore-modal :deep(select),
-.iso-revision-restore-modal :deep(textarea) {
-  border-color: #d8cbb8;
-  background: #fffdf7;
-  color: #15231f;
-  border-radius: 0.875rem;
-}
+          <section class="ds-command-surface overflow-hidden">
+            <div class="border-b border-[var(--ds-border)] px-4 py-3">
+              <p class="ds-kicker">Destino</p>
+              <h3 class="ds-heading mt-2 text-sm">Versao atualmente efetiva</h3>
+            </div>
+            <dl class="divide-y divide-[var(--ds-border)]">
+              <div
+                v-for="detail in currentDetails"
+                :key="detail.label"
+                class="flex items-start justify-between gap-4 px-4 py-3"
+              >
+                <dt class="text-xs font-bold text-[var(--ds-text-muted)]">{{ detail.label }}</dt>
+                <dd class="text-right text-xs font-bold text-[var(--ds-text)]">{{ detail.value }}</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
 
-:global(.dark) .iso-revision-restore-modal {
-  background-color: rgb(2 6 23 / 0.92);
-}
+        <div class="ds-command-toolbar p-4">
+          <p class="ds-table-heading">Motivo original da revisao</p>
+          <p class="ds-copy mt-2 text-sm">{{ revision?.change_reason || "Nao registado." }}</p>
+        </div>
 
-:global(.dark) .iso-revision-restore-modal :deep(.bg-white),
-:global(.dark) .iso-revision-restore-modal :deep(.bg-gray-50),
-:global(.dark) .iso-revision-restore-modal :deep(.bg-gray-100),
-:global(.dark) .iso-revision-restore-modal :deep(.bg-blue-50) {
-  background-color: rgb(15 23 42 / 0.86) !important;
-}
+        <section class="ds-panel overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <p class="ds-kicker">Escopo de reposicao</p>
+            <h3 class="ds-heading mt-2 text-base">Definir dados a recuperar</h3>
+          </div>
+          <div class="grid gap-3 px-5 py-5 sm:grid-cols-2">
+            <button
+              type="button"
+              :class="[
+                'ds-command-toolbar p-4 text-left',
+                form.restore_scope === 'FULL' ? 'ring-2 ring-[rgb(var(--primary-500-rgb))]' : '',
+              ]"
+              @click="form.restore_scope = 'FULL'"
+            >
+              <span class="flex items-start gap-3">
+                <span
+                  :class="[
+                    'mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border',
+                    form.restore_scope === 'FULL'
+                      ? 'border-[rgb(var(--primary-700-rgb))] bg-[rgb(var(--primary-700-rgb))] text-white'
+                      : 'border-[var(--ds-border-strong)]',
+                  ]"
+                >
+                  <CheckIcon v-if="form.restore_scope === 'FULL'" class="h-3.5 w-3.5" />
+                </span>
+                <span>
+                  <span class="ds-heading block text-sm">Reposicao completa</span>
+                  <span class="ds-copy mt-1 block text-xs">Recupera todos os campos elegiveis do snapshot.</span>
+                </span>
+              </span>
+            </button>
 
-:global(.dark) .iso-revision-restore-modal :deep(.text-gray-900) {
-  color: #f8fafc !important;
-}
+            <button
+              type="button"
+              :class="[
+                'ds-command-toolbar p-4 text-left',
+                form.restore_scope === 'SELECTIVE' ? 'ring-2 ring-[rgb(var(--primary-500-rgb))]' : '',
+              ]"
+              @click="form.restore_scope = 'SELECTIVE'"
+            >
+              <span class="flex items-start gap-3">
+                <span
+                  :class="[
+                    'mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border',
+                    form.restore_scope === 'SELECTIVE'
+                      ? 'border-[rgb(var(--primary-700-rgb))] bg-[rgb(var(--primary-700-rgb))] text-white'
+                      : 'border-[var(--ds-border-strong)]',
+                  ]"
+                >
+                  <CheckIcon v-if="form.restore_scope === 'SELECTIVE'" class="h-3.5 w-3.5" />
+                </span>
+                <span>
+                  <span class="ds-heading block text-sm">Reposicao seletiva</span>
+                  <span class="ds-copy mt-1 block text-xs">Escolha campos especificos do certificado.</span>
+                </span>
+              </span>
+            </button>
+          </div>
 
-:global(.dark) .iso-revision-restore-modal :deep(.text-gray-700),
-:global(.dark) .iso-revision-restore-modal :deep(.text-gray-600) {
-  color: #cbd5e1 !important;
-}
+          <div
+            v-if="form.restore_scope === 'SELECTIVE'"
+            class="grid border-t border-[var(--ds-border)] sm:grid-cols-2"
+          >
+            <button
+              v-for="field in restorableFields"
+              :key="field.name"
+              type="button"
+              role="checkbox"
+              :aria-checked="form.selected_fields.includes(field.name)"
+              class="flex items-center gap-3 border-b border-[var(--ds-border)] px-5 py-3 text-left hover:bg-[var(--ds-panel-subtle)] sm:odd:border-r"
+              @click="toggleSelectedField(field.name)"
+            >
+              <span
+                :class="[
+                  'grid h-5 w-5 shrink-0 place-items-center rounded border',
+                  form.selected_fields.includes(field.name)
+                    ? 'border-[rgb(var(--primary-700-rgb))] bg-[rgb(var(--primary-700-rgb))] text-white'
+                    : 'border-[var(--ds-border-strong)] bg-[var(--ds-panel-raised)]',
+                ]"
+              >
+                <CheckIcon v-if="form.selected_fields.includes(field.name)" class="h-3.5 w-3.5" />
+              </span>
+              <span class="text-sm font-bold text-[var(--ds-text)]">{{ field.label }}</span>
+            </button>
+          </div>
+          <p v-if="fieldError('selected_fields')" class="ds-field-error px-5 py-3">
+            {{ fieldError("selected_fields") }}
+          </p>
+        </section>
 
-:global(.dark) .iso-revision-restore-modal :deep(input),
-:global(.dark) .iso-revision-restore-modal :deep(select),
-:global(.dark) .iso-revision-restore-modal :deep(textarea) {
-  border-color: #315149;
-  background: #10231f;
-  color: #f7f1e7;
-}
-</style>
+        <section class="grid gap-5 lg:grid-cols-2">
+          <div class="ds-field-group lg:col-span-2">
+            <label class="ds-field-label" for="restore-reason">
+              Justificacao da reposicao <span class="ds-field-required">*</span>
+            </label>
+            <textarea
+              id="restore-reason"
+              v-model="form.restore_reason"
+              class="ds-field min-h-28"
+              :aria-invalid="Boolean(fieldError('restore_reason'))"
+              placeholder="Explique a decisao e o impacto esperado"
+            />
+            <p class="ds-field-hint">Minimo de 20 caracteres.</p>
+            <p v-if="fieldError('restore_reason')" class="ds-field-error">
+              {{ fieldError("restore_reason") }}
+            </p>
+          </div>
+
+          <div class="ds-field-group">
+            <label class="ds-field-label" for="restore-iso-section">
+              Secao ISO <span class="ds-field-required">*</span>
+            </label>
+            <input
+              id="restore-iso-section"
+              v-model="form.iso_section"
+              class="ds-field"
+              :aria-invalid="Boolean(fieldError('iso_section'))"
+            />
+            <p v-if="fieldError('iso_section')" class="ds-field-error">
+              {{ fieldError("iso_section") }}
+            </p>
+          </div>
+
+          <div class="ds-field-group">
+            <label class="ds-field-label" for="restore-approver">
+              Aprovador <span class="ds-field-required">*</span>
+            </label>
+            <select
+              id="restore-approver"
+              v-model="form.approved_by_id"
+              class="ds-field"
+              :aria-invalid="Boolean(fieldError('approved_by_id'))"
+            >
+              <option value="">Selecionar aprovador</option>
+              <option v-for="approver in approvers" :key="approver.id" :value="approver.id">
+                {{ approver.name }}
+              </option>
+            </select>
+            <p v-if="!approvers.length" class="ds-field-hint">
+              Nenhum aprovador elegivel foi fornecido para este fluxo.
+            </p>
+            <p v-if="fieldError('approved_by_id')" class="ds-field-error">
+              {{ fieldError("approved_by_id") }}
+            </p>
+          </div>
+
+          <div class="ds-field-group">
+            <label class="ds-field-label" for="restore-category">
+              Categoria <span class="ds-field-required">*</span>
+            </label>
+            <select id="restore-category" v-model="form.change_category" class="ds-field">
+              <option value="CORRECTION">Correcao</option>
+              <option value="REISSUE">Reemissao</option>
+              <option value="EMERGENCY">Emergencia</option>
+              <option value="REGULATORY">Regulatoria</option>
+            </select>
+          </div>
+
+          <div class="ds-field-group">
+            <label class="ds-field-label" for="restore-risk">Avaliacao de risco</label>
+            <select id="restore-risk" v-model="form.risk_assessment" class="ds-field">
+              <option value="LOW">Baixo</option>
+              <option value="MEDIUM">Medio</option>
+              <option value="HIGH">Alto</option>
+            </select>
+          </div>
+
+          <div class="ds-field-group lg:col-span-2">
+            <label class="ds-field-label" for="restore-notes">Notas adicionais</label>
+            <textarea id="restore-notes" v-model="form.additional_notes" class="ds-field" rows="3" />
+          </div>
+        </section>
+
+        <label class="lims-status-strip flex items-start gap-3 p-4">
+          <input v-model="form.confirmed" type="checkbox" class="ds-checkbox mt-0.5" />
+          <span>
+            <span class="ds-heading block text-sm">Confirmo a reposicao controlada</span>
+            <span class="ds-copy mt-1 block text-xs">
+              Compreendo que uma nova revisao sera criada e passara a representar
+              o estado efetivo do certificado.
+            </span>
+          </span>
+        </label>
+        <p v-if="fieldError('confirmed')" class="ds-field-error">
+          {{ fieldError("confirmed") }}
+        </p>
+      </div>
+
+      <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+        <button type="button" class="ds-button ds-button-secondary" @click="closeModal">
+          Cancelar
+        </button>
+        <button type="submit" class="ds-button ds-button-primary" :disabled="!isReady">
+          <ArrowPathIcon class="h-4 w-4" />
+          {{ form.processing ? "A repor..." : "Repor versao" }}
+        </button>
+      </footer>
+    </form>
+  </Modal>
+</template>

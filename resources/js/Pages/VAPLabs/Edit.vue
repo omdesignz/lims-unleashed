@@ -1,29 +1,17 @@
-<template>
-  <div :class="commercialDocumentThemeClasses">
-  <LabForm 
-    :lab="lab"
-    :labs-count="labsCount"
-    :active-labs-count="activeLabsCount"
-    :supervisors="supervisors"
-    :technical-heads="technicalHeads"
-    :departments="departments"
-    :last-updated="lastUpdated"
-    :is-edit="true"
-  />
-  </div>
-</template>
-
 <script setup>
 import LabForm from '@/Pages/VAPLabs/LabForm.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 
-const props = defineProps({
+defineProps({
   lab: Object,
   labsCount: Number,
   activeLabsCount: Number,
-  supervisors: Array,
-  technicalHeads: Array,
-  departments: Array,
+  supervisors: { type: Array, default: () => [] },
+  technicalHeads: { type: Array, default: () => [] },
+  departments: { type: Array, default: () => [] },
   lastUpdated: String,
 })
 </script>
+
+<template>
+  <LabForm :lab="lab" :labs-count="labsCount" :active-labs-count="activeLabsCount" :supervisors="supervisors" :technical-heads="technicalHeads" :departments="departments" :last-updated="lastUpdated" />
+</template>

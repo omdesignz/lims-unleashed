@@ -1,358 +1,267 @@
+<script setup>
+import { usePermission } from "@/Composables/usePermissions";
+import Layout from "@/Shared/Layouts/Layout.vue";
+import { Link } from "@inertiajs/vue3";
+import {
+  ArrowLeftIcon,
+  BanknotesIcon,
+  BeakerIcon,
+  BuildingOffice2Icon,
+  CheckBadgeIcon,
+  ClipboardDocumentCheckIcon,
+  DocumentDuplicateIcon,
+  ExclamationTriangleIcon,
+  PencilSquareIcon,
+  PlusIcon,
+  ReceiptPercentIcon,
+  RectangleGroupIcon,
+} from "@heroicons/vue/24/outline";
+import { computed } from "vue";
+
+defineOptions({ layout: Layout });
+
+const props = defineProps({
+  record: { type: Object, required: true },
+});
+
+const { hasPermission } = usePermission();
+const matrix = computed(() => props.record?.data ?? props.record ?? {});
+const profiles = computed(() => matrix.value.profiles ?? []);
+const departmentNames = computed(() => [...new Set(profiles.value
+  .map((profile) => profile.category_id?.department)
+  .filter(Boolean))]);
+const parameterCount = computed(() => profiles.value.reduce((total, profile) => total + (profile.parameters?.length || 0), 0));
+const activeParameterCount = computed(() => profiles.value.reduce((total, profile) => {
+  return total + (profile.parameters || []).filter((parameter) => parameter.active !== false).length;
+}, 0));
+const commercialVariance = computed(() => Number(matrix.value.fixed_price || 0) - Number(matrix.value.price || 0));
+
+const metrics = computed(() => [
+  { label: "Perfis", value: profiles.value.length, detail: "escopos analiticos", icon: ClipboardDocumentCheckIcon },
+  { label: "Parametros", value: parameterCount.value, detail: `${activeParameterCount.value} ativos`, icon: BeakerIcon },
+  { label: "Preco composto", value: formatCurrency(matrix.value.price), detail: "soma dos perfis", icon: BanknotesIcon },
+  { label: "Preco fixo", value: formatCurrency(matrix.value.fixed_price), detail: `diferenca ${formatCurrency(commercialVariance.value)}`, icon: ReceiptPercentIcon },
+]);
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat("pt-PT", {
+    style: "currency",
+    currency: "AOA",
+    minimumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
+</script>
+
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <ClipboardDocumentCheckIcon class="h-7 w-7 text-blue-900" />
-            {{ $t('gestlab.general.labels.matrixes.page_show_title') }}
-          </h1>
-          <p class="mt-2 text-gray-600">
-            {{ $t('gestlab.general.labels.matrixes.page_show_description') }}
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <Link 
-            :href="route('matrixes.edit', { matrix: record.data?.id })"
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-          >
-            <PencilIcon class="h-5 w-5" />
-            {{ $t('gestlab.general.labels.matrixes.edit') }}
+  <div class="space-y-6">
+    <section class="ds-panel overflow-hidden">
+      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
+        <nav aria-label="Breadcrumb">
+          <Link :href="route('matrixes.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ds-text-muted)] hover:text-[rgb(var(--primary-700-rgb))]">
+            <ArrowLeftIcon class="h-4 w-4" />
+            Matrizes
           </Link>
-          <Link 
-            :href="route('matrixes.index')"
-            class="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200"
-          >
-            <ArrowLeftIcon class="h-5 w-5" />
-            {{ $t('gestlab.general.labels.matrixes.back') }}
-          </Link>
+        </nav>
+        <div class="mt-5 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div class="flex min-w-0 items-start gap-3">
+            <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+              <RectangleGroupIcon class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+              <p class="ds-kicker">Matriz #{{ matrix.id }}</p>
+              <h1 class="ds-heading mt-1 break-words text-2xl">{{ matrix.code }}</h1>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">Escopo comercial controlado para associacao a produtos, pedidos e amostras.</p>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <span class="ds-chip">{{ profiles.length }} perfil(is)</span>
+                <span v-for="department in departmentNames" :key="department" class="ds-chip">{{ department }}</span>
+                <span class="ds-chip">{{ matrix.charge_tax ? `${matrix.tax_percentage}% imposto` : "Isenta" }}</span>
+                <span v-if="matrix.deleted" class="ds-chip bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20">Arquivada</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2 lg:justify-end">
+            <Link :href="route('matrixes.index')" class="ds-button ds-button-secondary">
+              <ArrowLeftIcon class="h-4 w-4" />
+              Voltar
+            </Link>
+            <Link v-if="hasPermission('add_matrixes')" :href="route('matrixes.create')" class="ds-button ds-button-secondary">
+              <PlusIcon class="h-4 w-4" />
+              Nova matriz
+            </Link>
+            <Link v-if="hasPermission('edit_matrixes')" :href="route('matrixes.edit', { matrix: matrix.id })" class="ds-button ds-button-primary">
+              <PencilSquareIcon class="h-4 w-4" />
+              Editar matriz
+            </Link>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- MAIN CONTENT SECTION -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- LEFT COLUMN (2/3 width) -->
-      <div class="lg:col-span-2 space-y-6">
-        <!-- MATRIX DETAILS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <!-- GRADIENT HEADER -->
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <ClipboardDocumentCheckIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.matrixes.matrix_details') }}
-            </h2>
-          </div>
-          
-          <!-- CARD CONTENT -->
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <!-- CODE FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.matrixes.code') }}
-                </label>
-                <div class="mt-1 text-sm text-gray-900 font-medium bg-gray-50 rounded-lg p-3 border border-gray-200">
-                  {{ record.data?.code }}
-                </div>
-              </div>
-
-              <!-- DESCRIPTION FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.matrixes.description') }}
-                </label>
-                <div class="mt-1 text-sm text-gray-900 font-medium bg-gray-50 rounded-lg p-3 border border-gray-200">
-                  {{ record.data?.description || '-' }}
-                </div>
-              </div>
-
-              <!-- PRICE FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.matrixes.price') }}
-                </label>
-                <div class="mt-1 text-sm text-gray-900 font-medium bg-gray-50 rounded-lg p-3 border border-gray-200">
-                  {{ parseFloat(record.data?.price).toFixed(2) }} AOA
-                </div>
-              </div>
-
-              <!-- FIXED PRICE FIELD -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.matrixes.fixed_price') }}
-                </label>
-                <div class="mt-1 text-sm text-gray-900 font-medium bg-gray-50 rounded-lg p-3 border border-gray-200">
-                  {{ parseFloat(record.data?.fixed_price).toFixed(2) }} AOA
-                </div>
-              </div>
-
-              <!-- TAX STATUS -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.matrixes.tax_status') }}
-                </label>
-                <div class="mt-1">
-                  <span :class="[
-                    'inline-flex items-center rounded-full px-3 py-1 text-sm font-medium',
-                    record.data?.charge_tax ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                  ]">
-                    {{ record.data?.charge_tax 
-                      ? $t('gestlab.general.labels.matrixes.tax_charged') 
-                      : $t('gestlab.general.labels.matrixes.tax_exempt') 
-                    }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- EXEMPTION OR TAX -->
-              <div class="space-y-2" v-if="!record.data?.charge_tax && record.data?.exemption">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.matrixes.exemption_id') }}
-                </label>
-                <div class="mt-1 text-sm text-gray-900 font-medium bg-gray-50 rounded-lg p-3 border border-gray-200">
-                  {{ record.data?.exemption?.code || '-' }}
-                </div>
-              </div>
-
-              <div class="space-y-2" v-if="record.data?.charge_tax && record.data?.tax">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.matrixes.tax_id') }}
-                </label>
-                <div class="mt-1 text-sm text-gray-900 font-medium bg-gray-50 rounded-lg p-3 border border-gray-200">
-                  {{ record.data?.tax?.name || '-' }}
-                </div>
-              </div>
-
-              <!-- WITHHOLD TAX -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  {{ $t('gestlab.general.labels.matrixes.withhold_tax') }}
-                </label>
-                <div class="mt-1">
-                  <span :class="[
-                    'inline-flex items-center rounded-full px-3 py-1 text-sm font-medium',
-                    record.data?.withhold_tax ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                  ]">
-                    {{ record.data?.withhold_tax 
-                      ? $t('gestlab.general.labels.matrixes.withholding_active') 
-                      : $t('gestlab.general.labels.matrixes.withholding_inactive') 
-                    }}
-                  </span>
-                </div>
-              </div>
+      <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
+        <div v-for="metric in metrics" :key="metric.label" class="bg-[var(--ds-panel)] p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ metric.label }}</dt>
+              <dd class="mt-3 break-words text-2xl font-bold text-[var(--ds-text)]">{{ metric.value }}</dd>
+              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ metric.detail }}</p>
             </div>
+            <component :is="metric.icon" class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" />
           </div>
         </div>
+      </dl>
+    </section>
 
-        <!-- PROFILES SECTION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="border-b border-gray-200 px-6 py-4">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <ClipboardDocumentCheckIcon class="h-5 w-5 text-blue-900" />
-                {{ $t('gestlab.general.labels.matrixes.profiles') }}
-                <span class="text-sm font-normal text-gray-500 ml-2">
-                  ({{ record.data?.profiles?.length || 0 }} {{ $t('gestlab.general.labels.matrixes.items') }})
-                </span>
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
+      <div class="min-w-0">
+        <section class="ds-card overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:flex sm:items-start sm:justify-between sm:px-6">
+            <div>
+              <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
+                <ClipboardDocumentCheckIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
+                Perfis analiticos
               </h2>
+              <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Composicao departamental e cobertura de parametros desta matriz.</p>
             </div>
+            <span class="ds-chip mt-3 sm:mt-0">{{ profiles.length }} perfil(is)</span>
           </div>
 
-          <!-- EMPTY STATE -->
-          <div v-if="!record.data?.profiles || record.data?.profiles.length === 0" class="p-12 text-center">
-            <ClipboardDocumentCheckIcon class="mx-auto h-12 w-12 text-gray-300" />
-            <h3 class="mt-4 text-sm font-semibold text-gray-900">
-              {{ $t('gestlab.messages.empty_state.profiles_title') }}
-            </h3>
-            <p class="mt-2 text-sm text-gray-500">
-              {{ $t('gestlab.messages.empty_state.profiles_description') }}
+          <div v-if="profiles.length" class="divide-y divide-[var(--ds-border)]">
+            <article v-for="(profile, index) in profiles" :key="profile.id" class="px-5 py-5 sm:px-6">
+              <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div class="flex min-w-0 items-start gap-3">
+                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-sm font-bold text-[var(--ds-text-muted)] ring-1 ring-[var(--ds-border)]">{{ index + 1 }}</span>
+                  <div>
+                    <div class="flex flex-wrap items-center gap-2">
+                      <h3 class="text-sm font-bold text-[var(--ds-text)]">{{ profile.name }}</h3>
+                      <span v-if="profile.code" class="ds-chip font-mono">{{ profile.code }}</span>
+                    </div>
+                    <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ profile.category || "Sem categoria analitica" }}</p>
+                  </div>
+                </div>
+                <p class="text-sm font-bold text-[var(--ds-text)]">{{ formatCurrency(profile.price) }}</p>
+              </div>
+
+              <dl class="mt-4 grid gap-4 sm:grid-cols-3">
+                <div>
+                  <dt class="ds-field-label">Departamento</dt>
+                  <dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ profile.category_id?.department || "Nao definido" }}</dd>
+                </div>
+                <div>
+                  <dt class="ds-field-label">Parametros</dt>
+                  <dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ profile.parameters?.length || 0 }} configurado(s)</dd>
+                </div>
+                <div>
+                  <dt class="ds-field-label">Cobertura ativa</dt>
+                  <dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ (profile.parameters || []).filter((parameter) => parameter.active !== false).length }} ativo(s)</dd>
+                </div>
+              </dl>
+
+              <div v-if="profile.parameters?.length" class="mt-4 flex flex-wrap gap-2">
+                <span v-for="parameter in profile.parameters" :key="parameter.id" class="ds-chip">
+                  {{ parameter.code || parameter.name }}
+                </span>
+              </div>
+            </article>
+          </div>
+
+          <div v-else class="px-5 py-14 text-center sm:px-6">
+            <ClipboardDocumentCheckIcon class="mx-auto h-9 w-9 text-[var(--ds-text-soft)]" />
+            <h3 class="mt-3 text-sm font-bold text-[var(--ds-text)]">Sem perfis associados</h3>
+            <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">A matriz ainda nao possui um escopo analitico utilizavel.</p>
+          </div>
+        </section>
+      </div>
+
+      <aside class="space-y-6">
+        <section class="ds-card p-5">
+          <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
+            <BuildingOffice2Icon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
+            Identidade e escopo
+          </h2>
+          <dl class="mt-5 grid gap-4 text-sm">
+            <div>
+              <dt class="ds-field-label">Codigo</dt>
+              <dd class="mt-1.5 font-mono font-bold text-[var(--ds-text)]">{{ matrix.code }}</dd>
+            </div>
+            <div>
+              <dt class="ds-field-label">Descricao</dt>
+              <dd class="mt-1.5 whitespace-pre-line font-medium leading-6 text-[var(--ds-text-muted)]">{{ matrix.description || "Sem descricao operacional." }}</dd>
+            </div>
+            <div>
+              <dt class="ds-field-label">Departamento</dt>
+              <dd class="mt-1.5 font-bold text-[var(--ds-text)]">{{ departmentNames.join(", ") || "Nao definido" }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="ds-card p-5">
+          <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
+            <ReceiptPercentIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
+            Regra fiscal
+          </h2>
+          <dl class="mt-5 grid gap-4 text-sm">
+            <div>
+              <dt class="ds-field-label">Tratamento</dt>
+              <dd class="mt-1.5 font-bold text-[var(--ds-text)]">{{ matrix.charge_tax ? "Tributavel" : "Isenta" }}</dd>
+            </div>
+            <div v-if="matrix.charge_tax">
+              <dt class="ds-field-label">Categoria fiscal</dt>
+              <dd class="mt-1.5 font-bold text-[var(--ds-text)]">{{ matrix.tax || matrix.tax_id?.name || "Nao definida" }}</dd>
+              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ matrix.tax_percentage || 0 }}%</p>
+            </div>
+            <div v-else>
+              <dt class="ds-field-label">Isencao</dt>
+              <dd class="mt-1.5 font-bold text-[var(--ds-text)]">{{ matrix.exemption || matrix.exemption_id?.code || "Nao definida" }}</dd>
+            </div>
+            <div>
+              <dt class="ds-field-label">Retencao</dt>
+              <dd class="mt-1.5 font-bold text-[var(--ds-text)]">{{ matrix.withhold_tax ? "Aplicavel" : "Nao aplicavel" }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="ds-card p-5">
+          <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
+            <CheckBadgeIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
+            Controlo do catalogo
+          </h2>
+          <div class="mt-4 grid gap-3">
+            <p class="flex items-start gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
+              <span :class="['lims-status-dot mt-1', profiles.length ? 'lims-status-dot-release' : 'lims-status-dot-critical']" />
+              {{ profiles.length ? "Escopo de perfis definido" : "Escopo em falta" }}
+            </p>
+            <p class="flex items-start gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
+              <span :class="['lims-status-dot mt-1', departmentNames.length === 1 ? 'lims-status-dot-release' : 'lims-status-dot-hold']" />
+              {{ departmentNames.length === 1 ? "Departamento unico confirmado" : "Rever departamentos" }}
+            </p>
+            <p class="flex items-start gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
+              <span :class="['lims-status-dot mt-1', activeParameterCount === parameterCount && parameterCount ? 'lims-status-dot-release' : 'lims-status-dot-hold']" />
+              {{ activeParameterCount }} de {{ parameterCount }} parametros ativos
+            </p>
+            <p v-if="commercialVariance < 0" class="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm font-semibold text-amber-800 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20">
+              <ExclamationTriangleIcon class="mt-0.5 h-4 w-4 shrink-0" />
+              O preco fixo esta abaixo do valor composto dos perfis.
             </p>
           </div>
+        </section>
 
-          <!-- PROFILES GRID -->
-          <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
-            <!-- PROFILE CARD -->
-            <div 
-              v-for="(profile, index) in record.data?.profiles"
-              :key="profile.id"
-              class="group relative bg-white rounded-lg border border-gray-200 hover:border-blue-900 transition-all duration-200 overflow-hidden shadow-sm"
-            >
-              <!-- PROFILE HEADER -->
-              <div class="bg-gradient-to-r from-blue-50 to-white px-4 py-3 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3">
-                    <div class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-900 text-white font-semibold">
-                      {{ index + 1 }}
-                    </div>
-                    <div>
-                      <h3 class="text-sm font-semibold text-gray-900">
-                        {{ profile.name || $t('gestlab.general.labels.matrixes.unnamed_profile') }}
-                      </h3>
-                      <p class="text-xs text-gray-500">
-                        {{ profile.code || 'N/A' }}
-                        <span v-if="profile.price" class="ml-2 font-medium text-blue-900">
-                          {{ parseFloat(profile.price).toFixed(2) }} AOA
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                  <Link 
-                    :href="route('profiles.show', { profile: profile.id })"
-                    class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-900 transition-all duration-200 p-1 rounded-full hover:bg-blue-50"
-                    :title="$t('gestlab.general.labels.matrixes.view_details')"
-                  >
-                    <EyeIcon class="h-5 w-5" />
-                  </Link>
-                </div>
-              </div>
-              
-              <!-- PROFILE CONTENT -->
-              <div class="p-4">
-                <div class="space-y-3">
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">{{ $t('gestlab.general.labels.profiles.description') }}</span>
-                    <span class="text-gray-900 font-medium">{{ profile.description || '-' }}</span>
-                  </div>
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">{{ $t('gestlab.general.labels.profiles.category') }}</span>
-                    <span class="text-gray-900 font-medium">{{ profile.category || '-' }}</span>
-                  </div>
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">{{ $t('gestlab.general.labels.profiles.parameters_count') }}</span>
-                    <span class="font-semibold text-blue-900">{{ profile.parameters?.length || 0 }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- RIGHT COLUMN (1/3 width) -->
-      <div class="space-y-6">
-        <!-- ACTIONS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            {{ $t('gestlab.general.labels.actions') }}
-          </h3>
-          <div class="space-y-3">
-            <Link 
-              :href="route('matrixes.edit', { matrix: record.data?.id })"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200"
-            >
-              <PencilIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.matrixes.edit') }}
+        <section class="ds-command-surface p-5">
+          <h2 class="text-base font-bold text-[var(--ds-text)]">Acoes</h2>
+          <div class="mt-4 grid gap-2">
+            <Link v-if="hasPermission('edit_matrixes')" :href="route('matrixes.edit', { matrix: matrix.id })" class="ds-button ds-button-primary w-full">
+              <PencilSquareIcon class="h-4 w-4" />
+              Editar composicao
             </Link>
-            <Link 
-              :href="route('matrixes.create')"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg bg-white px-4 py-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 transition-colors duration-200"
-            >
-              <PlusCircleIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.matrixes.create_new') }}
+            <Link v-if="hasPermission('add_matrixes')" :href="route('matrixes.create')" class="ds-button ds-button-secondary w-full">
+              <DocumentDuplicateIcon class="h-4 w-4" />
+              Criar nova matriz
             </Link>
-            <Link 
-              :href="route('matrixes.index')"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-900 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200"
-            >
-              <ArrowLeftIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.matrixes.back_to_list') }}
+            <Link :href="route('matrixes.index')" class="ds-button ds-button-secondary w-full">
+              <ArrowLeftIcon class="h-4 w-4" />
+              Voltar ao catalogo
             </Link>
           </div>
-        </div>
-
-        <!-- SUMMARY CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <ClipboardDocumentCheckIcon class="h-5 w-5 text-blue-900" />
-            {{ $t('gestlab.general.labels.summary') }}
-          </h3>
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.matrixes.total_profiles') }}</span>
-              <span class="font-semibold text-blue-900">{{ record.data?.profiles?.length || 0 }}</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.matrixes.total_price') }}</span>
-              <span class="font-semibold text-blue-900">{{ parseFloat(record.data?.price).toFixed(2) }} AOA</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.matrixes.fixed_price') }}</span>
-              <span class="font-semibold text-blue-900">{{ parseFloat(record.data?.fixed_price).toFixed(2) }} AOA</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.matrixes.created_at') }}</span>
-              <span class="text-sm text-gray-500">{{ formatDate(record.data?.created_at) }}</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.matrixes.updated_at') }}</span>
-              <span class="text-sm text-gray-500">{{ formatDate(record.data?.updated_at) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- STATUS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Cog6ToothIcon class="h-5 w-5 text-blue-900" />
-            {{ $t('gestlab.general.labels.status') }}
-          </h3>
-          <div class="space-y-3">
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.matrixes.active') }}</span>
-              <span :class="[
-                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                record.data?.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              ]">
-                {{ record.data?.active ? $t('gestlab.general.status.active') : $t('gestlab.general.status.inactive') }}
-              </span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm text-gray-600">{{ $t('gestlab.general.labels.matrixes.tax_status') }}</span>
-              <span :class="[
-                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                record.data?.charge_tax ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-              ]">
-                {{ record.data?.charge_tax ? $t('gestlab.general.labels.matrixes.tax_charged') : $t('gestlab.general.labels.matrixes.tax_exempt') }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+        </section>
+      </aside>
     </div>
   </div>
 </template>
-
-<script setup>
-import Layout from "@/Shared/Layouts/Layout.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { Link } from "@inertiajs/vue3";
-import {
-  ClipboardDocumentCheckIcon,
-  PencilIcon,
-  ArrowLeftIcon,
-  PlusCircleIcon,
-  EyeIcon,
-  Cog6ToothIcon
-} from "@heroicons/vue/24/outline";
-
-defineOptions({
-  layout: Layout,
-});
-
-const props = defineProps({
-  record: Object
-});
-
-const formatDate = (date) => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-</script>

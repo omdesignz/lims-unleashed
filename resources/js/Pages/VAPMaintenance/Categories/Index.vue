@@ -1,210 +1,257 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <TagIcon class="h-7 w-7 text-blue-900" />
-            Categorias de Manutenção
-          </h1>
-          <p class="mt-2 text-gray-600">
-            Gerencie os tipos de manutenção e calibração disponíveis no sistema
+  <div class="space-y-6" :class="commercialDocumentThemeClasses">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+      <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+        <div class="min-w-0">
+          <p class="text-xs font-black uppercase tracking-[0.18em] text-[var(--ds-text-soft)]">
+            Biblioteca metrologica
           </p>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <span class="grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
+              <TagIcon class="h-5 w-5" />
+            </span>
+            <div class="min-w-0">
+              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">
+                Categorias de manutencao
+              </h1>
+              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
+                Controle os tipos de manutencao, calibracao e verificacao usados nos planos de equipamento.
+              </p>
+            </div>
+          </div>
         </div>
-        <div class="flex items-center gap-3">
-          <button
-            @click="showCreateModal = true"
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
-          >
-            <PlusIcon class="h-5 w-5" />
-            Nova Categoria
-          </button>
-        </div>
-      </div>
-    </div>
 
-    <!-- SEARCH & FILTERS -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div class="flex-1 max-w-lg">
-          <div class="relative">
-            <MagnifyingGlassIcon class="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+        <button
+          type="button"
+          class="ds-button ds-button-primary"
+          @click="showCreateModal = true"
+        >
+          <PlusIcon class="h-4 w-4" />
+          Nova categoria
+        </button>
+      </div>
+
+      <div class="mt-6 grid gap-3 sm:grid-cols-3">
+        <article
+          v-for="stat in statsCards"
+          :key="stat.label"
+          class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4"
+        >
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">
+            {{ stat.label }}
+          </p>
+          <div class="mt-3 flex items-end justify-between gap-3">
+            <p class="text-2xl font-black text-[var(--ds-text)]">
+              {{ stat.value }}
+            </p>
+            <component :is="stat.icon" :class="['h-5 w-5', stat.tone]" />
+          </div>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
+            {{ stat.detail }}
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="ds-command-surface p-5 sm:p-6">
+      <div class="grid gap-4 lg:grid-cols-[minmax(18rem,32rem)_minmax(0,1fr)] lg:items-end">
+        <label class="ds-field-group">
+          <span class="ds-field-label">Pesquisar categoria</span>
+          <span class="relative block">
+            <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
             <input
               v-model="search"
               type="search"
-              placeholder="Pesquisar categorias..."
-              class="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
+              placeholder="Nome, codigo ou descricao"
+              class="ds-field pl-10"
               @input="applySearch"
             />
-          </div>
+          </span>
+        </label>
+
+        <div class="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
+          <span class="rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-muted)]">
+            {{ categoryTotal }} categorias
+          </span>
+          <span
+            v-if="hasSearch"
+            class="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-400/10 dark:text-cyan-100"
+          >
+            Pesquisa ativa
+          </span>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- CATEGORIES GRID -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div
-        v-for="category in categories.data"
+    <section v-if="categoryItems.length > 0" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <article
+        v-for="category in categoryItems"
         :key="category.id"
-        class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
+        class="ds-card group flex min-h-full flex-col overflow-hidden p-5 transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
       >
-        <!-- CATEGORY HEADER -->
-        <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-white">
+        <div class="flex items-start justify-between gap-4">
+          <div class="min-w-0">
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">
+              Tipo de servico
+            </p>
+            <h2 class="mt-2 truncate text-base font-black text-[var(--ds-text)]">
               {{ category.name }}
-            </h3>
-            <div class="flex items-center gap-2">
-              <button
-                @click="editCategory(category)"
-                class="text-white hover:text-blue-200 transition-colors p-1"
-                title="Editar"
-              >
-                <PencilIcon class="h-4 w-4" />
-              </button>
-              <button
-                @click="deleteCategory(category)"
-                class="text-white hover:text-red-200 transition-colors p-1"
-                title="Eliminar"
-              >
-                <TrashIcon class="h-4 w-4" />
-              </button>
-            </div>
+            </h2>
           </div>
+          <span class="rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-2.5 py-1 font-mono text-[0.68rem] font-black uppercase text-[var(--ds-text-muted)]">
+            {{ category.code || 'S/C' }}
+          </span>
         </div>
-        
-        <!-- CATEGORY CONTENT -->
-        <div class="p-6">
-          <div class="space-y-4">
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">
-                Código
-              </label>
-              <div class="text-sm font-medium text-gray-900">
-                {{ category.code || 'Não definido' }}
-              </div>
-            </div>
-            
-            <div>
-              <label class="block text-xs font-medium text-gray-500 mb-1">
-                Descrição
-              </label>
-              <div class="text-sm text-gray-700">
-                {{ category.description || 'Sem descrição' }}
-              </div>
-            </div>
-            
-            <div class="pt-4 border-t border-gray-200">
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-gray-500">Criada em:</span>
-                <span class="font-medium text-gray-900">
-                  {{ formatDate(category.created_at) }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- EMPTY STATE -->
-    <div v-if="categories.data.length === 0" class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-      <TagIcon class="mx-auto h-12 w-12 text-gray-300" />
-      <h3 class="mt-4 text-sm font-semibold text-gray-900">
+        <div class="mt-5 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">
+            Descricao operacional
+          </p>
+          <p class="mt-2 line-clamp-3 min-h-16 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
+            {{ category.description || 'Sem descricao operacional definida.' }}
+          </p>
+        </div>
+
+        <dl class="mt-5 grid grid-cols-2 gap-3 text-sm">
+          <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-3">
+            <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">
+              Criada em
+            </dt>
+            <dd class="mt-1 font-bold text-[var(--ds-text)]">
+              {{ formatDate(category.created_at) || 'Sem data' }}
+            </dd>
+          </div>
+          <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-3">
+            <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">
+              Registo
+            </dt>
+            <dd class="mt-1 font-mono text-xs font-bold text-[var(--ds-text-muted)]">
+              #{{ category.id }}
+            </dd>
+          </div>
+        </dl>
+
+        <div class="mt-auto flex items-center justify-end gap-2 pt-5">
+          <button
+            type="button"
+            class="ds-table-action"
+            title="Editar categoria"
+            @click="editCategory(category)"
+          >
+            <PencilIcon class="h-4 w-4" />
+            <span class="sr-only">Editar categoria</span>
+          </button>
+          <button
+            type="button"
+            class="ds-table-action text-rose-700 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800 dark:text-rose-200 dark:hover:border-rose-400/30 dark:hover:bg-rose-400/10"
+            title="Eliminar categoria"
+            @click="deleteCategory(category)"
+          >
+            <TrashIcon class="h-4 w-4" />
+            <span class="sr-only">Eliminar categoria</span>
+          </button>
+        </div>
+      </article>
+    </section>
+
+    <section v-else class="ds-empty-state p-8 text-center">
+      <TagIcon class="mx-auto h-11 w-11 text-[var(--ds-text-soft)]" />
+      <h2 class="mt-4 text-base font-black text-[var(--ds-text)]">
         Nenhuma categoria encontrada
-      </h3>
-      <p class="mt-2 text-sm text-gray-500">
-        Comece por criar a sua primeira categoria de manutenção
+      </h2>
+      <p class="mx-auto mt-2 max-w-md text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
+        Crie categorias para separar calibracao interna, calibracao externa, manutencao preventiva e verificacoes.
       </p>
       <button
+        type="button"
+        class="ds-button ds-button-primary mt-6"
         @click="showCreateModal = true"
-        class="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
       >
-        <PlusIcon class="h-5 w-5" />
-        Criar Primeira Categoria
+        <PlusIcon class="h-4 w-4" />
+        Criar categoria
       </button>
-    </div>
+    </section>
 
-    <!-- PAGINATION -->
-    <div v-if="categories.data.length > 0" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <section v-if="categoryItems.length > 0" class="ds-table-summary flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-sm font-semibold text-[var(--ds-text-muted)]">
+        Biblioteca de manutencao pronta para planos preventivos e calibracoes.
+      </p>
       <Pagination :links="categories.links" />
-    </div>
+    </section>
 
-    <!-- CREATE/EDIT MODAL -->
-    <Modal :show="showCreateModal || editingCategory" @close="closeModal">
+    <Modal :show="showCreateModal || Boolean(editingCategory)" @close="closeModal">
       <div class="p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-6">
-          {{ editingCategory ? 'Editar Categoria' : 'Nova Categoria de Manutenção' }}
-        </h2>
-        
-        <form @submit.prevent="submitForm">
-          <div class="space-y-6">
-            <!-- NAME -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Nome da Categoria *
-              </label>
-              <input
-                v-model="form.name"
-                type="text"
-                required
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                placeholder="Ex: Calibração Interna"
-              />
-              <p v-if="form.errors.name" class="mt-1 text-xs text-red-600">
-                {{ form.errors.name }}
-              </p>
-            </div>
-            
-            <!-- CODE -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Código
-              </label>
-              <input
-                v-model="form.code"
-                type="text"
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                placeholder="Ex: CAL_INT"
-              />
-              <p class="mt-1 text-xs text-gray-500">
-                Código único para identificar o tipo de manutenção
-              </p>
-              <p v-if="form.errors.code" class="mt-1 text-xs text-red-600">
-                {{ form.errors.code }}
-              </p>
-            </div>
-            
-            <!-- DESCRIPTION -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Descrição
-              </label>
-              <textarea
-                v-model="form.description"
-                rows="3"
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                placeholder="Descreva o propósito desta categoria..."
-              ></textarea>
-            </div>
+        <div class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] pb-4">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.16em] text-[var(--ds-text-soft)]">
+              Biblioteca metrologica
+            </p>
+            <h2 class="mt-2 text-lg font-black text-[var(--ds-text)]">
+              {{ editingCategory ? 'Editar categoria' : 'Nova categoria de manutencao' }}
+            </h2>
           </div>
-          
-          <!-- FORM ACTIONS -->
-          <div class="mt-8 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            class="ds-table-action"
+            title="Fechar"
+            @click="closeModal"
+          >
+            <XMarkIcon class="h-4 w-4" />
+            <span class="sr-only">Fechar</span>
+          </button>
+        </div>
+
+        <form class="mt-6 space-y-5" @submit.prevent="submitForm">
+          <label class="ds-field-group">
+            <span class="ds-field-label">Nome da categoria <span class="ds-field-required">*</span></span>
+            <input
+              v-model="form.name"
+              type="text"
+              required
+              :class="fieldClass('name')"
+              :aria-invalid="Boolean(form.errors.name)"
+              placeholder="Ex: Calibracao interna"
+            />
+            <span v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</span>
+          </label>
+
+          <label class="ds-field-group">
+            <span class="ds-field-label">Codigo</span>
+            <input
+              v-model="form.code"
+              type="text"
+              :class="fieldClass('code')"
+              :aria-invalid="Boolean(form.errors.code)"
+              placeholder="Ex: CAL_INT"
+            />
+            <span v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</span>
+            <span v-else class="ds-field-hint">Use um codigo curto para filtros, relatórios e planos recorrentes.</span>
+          </label>
+
+          <label class="ds-field-group">
+            <span class="ds-field-label">Descricao</span>
+            <textarea
+              v-model="form.description"
+              rows="3"
+              class="ds-field min-h-28"
+              placeholder="Descreva quando esta categoria deve ser usada."
+            />
+          </label>
+
+          <div class="flex flex-col-reverse gap-3 border-t border-[var(--ds-border)] pt-5 sm:flex-row sm:justify-end">
             <button
               type="button"
+              class="ds-button ds-button-secondary"
               @click="closeModal"
-              class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
+              class="ds-button ds-button-primary"
               :disabled="form.processing"
-              class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <CheckIcon class="h-5 w-5" />
+              <CheckIcon class="h-4 w-4" />
               {{ form.processing ? 'A processar...' : (editingCategory ? 'Atualizar' : 'Criar') }}
             </button>
           </div>
@@ -215,27 +262,30 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { Link, router, useForm } from '@inertiajs/vue3'
+import { computed, ref, watch } from 'vue'
+import { router, useForm } from '@inertiajs/vue3'
 import {
-  TagIcon,
-  PlusIcon,
+  CheckIcon,
+  HashtagIcon,
   MagnifyingGlassIcon,
   PencilIcon,
+  PlusIcon,
+  TagIcon,
   TrashIcon,
-  CheckIcon,
+  WrenchScrewdriverIcon,
+  XMarkIcon,
 } from '@heroicons/vue/24/outline'
+import { debounce } from 'lodash'
 import Modal from '@/Components/Modal.vue'
 import Pagination from '@/Components/Pagination.vue'
-import { debounce } from 'lodash'
+import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 
 const props = defineProps({
   categories: Object,
   filters: Object,
 })
 
-const search = ref(props.filters.search || '')
+const search = ref(props.filters?.search || '')
 const showCreateModal = ref(false)
 const editingCategory = ref(null)
 
@@ -245,14 +295,51 @@ const form = useForm({
   description: '',
 })
 
+const categoryItems = computed(() => props.categories?.data ?? [])
+const categoryTotal = computed(() => props.categories?.total ?? categoryItems.value.length)
+const codedCategoryCount = computed(() => categoryItems.value.filter((category) => Boolean(category.code)).length)
+const hasSearch = computed(() => search.value.trim().length > 0)
+
+const statsCards = computed(() => [
+  {
+    label: 'Categorias',
+    value: categoryTotal.value,
+    detail: 'Tipos disponiveis',
+    icon: TagIcon,
+    tone: 'text-cyan-700 dark:text-cyan-200',
+  },
+  {
+    label: 'Com codigo',
+    value: codedCategoryCount.value,
+    detail: 'Prontas para filtros',
+    icon: HashtagIcon,
+    tone: 'text-emerald-700 dark:text-emerald-200',
+  },
+  {
+    label: 'Plano',
+    value: hasSearch.value ? 'Filtro' : 'Ativo',
+    detail: 'Uso em tarefas',
+    icon: WrenchScrewdriverIcon,
+    tone: 'text-amber-700 dark:text-amber-200',
+  },
+])
+
 const formatDate = (dateString) => {
-  if (!dateString) return ''
+  if (!dateString) {
+    return ''
+  }
+
   return new Date(dateString).toLocaleDateString('pt-PT', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   })
 }
+
+const fieldClass = (field) => [
+  'ds-field',
+  form.errors[field] ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/20' : '',
+]
 
 const applySearch = debounce(() => {
   router.get(route('vap-maintenance.categories'), { search: search.value }, {
@@ -269,7 +356,7 @@ const editCategory = (category) => {
 }
 
 const deleteCategory = (category) => {
-  if (confirm('Tem a certeza que deseja eliminar esta categoria? Esta ação não pode ser revertida.')) {
+  if (confirm('Tem a certeza que deseja eliminar esta categoria? Esta acao nao pode ser revertida.')) {
     router.delete(route('vap-maintenance.categories.destroy', category.id))
   }
 }
@@ -279,15 +366,17 @@ const submitForm = () => {
     form.put(route('vap-maintenance.categories.update', editingCategory.value.id), {
       onSuccess: () => {
         closeModal()
-      }
+      },
     })
-  } else {
-    form.post(route('vap-maintenance.categories.store'), {
-      onSuccess: () => {
-        closeModal()
-      }
-    })
+
+    return
   }
+
+  form.post(route('vap-maintenance.categories.store'), {
+    onSuccess: () => {
+      closeModal()
+    },
+  })
 }
 
 const closeModal = () => {
@@ -297,6 +386,5 @@ const closeModal = () => {
   form.clearErrors()
 }
 
-// Watch search
 watch(search, applySearch)
 </script>

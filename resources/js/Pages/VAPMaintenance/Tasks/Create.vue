@@ -1,426 +1,225 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <WrenchScrewdriverIcon class="h-7 w-7 text-blue-900" />
-            Nova Tarefa de Manutenção
-          </h1>
-          <p class="mt-2 text-gray-600">
-            Crie uma nova tarefa de manutenção ou calibração para equipamento
+  <div class="space-y-6" :class="commercialDocumentThemeClasses">
+    <section class="ds-panel overflow-hidden">
+      <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:flex sm:items-start sm:justify-between sm:gap-6 lg:px-6">
+        <div class="min-w-0">
+          <p class="ds-kicker">Metrologia e manutenção</p>
+          <h1 class="ds-heading mt-2 text-2xl">Nova tarefa de manutenção</h1>
+          <p class="ds-copy mt-2 max-w-3xl text-sm">
+            Registe uma atividade de calibração, verificação ou manutenção com equipamento, agenda, fornecedor e custo rastreáveis.
           </p>
         </div>
-        <div class="flex items-center gap-3">
-          <Link
-            :href="route('vap-maintenance.tasks')"
-            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            <ArrowLeftIcon class="h-5 w-5" />
-            Voltar
-          </Link>
-        </div>
-      </div>
-    </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- MAIN FORM (2/3 width) -->
-      <div class="lg:col-span-2 space-y-6">
-        <!-- BASIC INFORMATION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <!-- GRADIENT HEADER -->
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <InformationCircleIcon class="h-5 w-5" />
-              Informação Básica
+        <Link :href="route('vap-maintenance.tasks')" class="ds-button ds-button-secondary mt-4 sm:mt-0">
+          <ArrowLeftIcon class="h-4 w-4" />
+          Voltar
+        </Link>
+      </div>
+    </section>
+
+    <form class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]" @submit.prevent="submit">
+      <div class="space-y-6">
+        <section class="ds-card overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
+              <InformationCircleIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)]" />
+              Informação básica
             </h2>
           </div>
-          
-          <!-- FORM CONTENT -->
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- TASK NAME -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Nome da Tarefa *
-                </label>
-                <input
-                  v-model="form.name"
-                  type="text"
-                  required
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm focus:ring-2 focus:ring-offset-1',
-                    form.errors.name
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900'
-                  ]"
-                  placeholder="Ex: Calibração Anual do Espectrofotómetro"
-                />
-                <p v-if="form.errors.name" class="text-xs text-red-600">
-                  {{ form.errors.name }}
-                </p>
-              </div>
-              
-              <!-- CATEGORY -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Categoria *
-                </label>
-                <select
-                  v-model="form.category_id"
-                  required
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm focus:ring-2 focus:ring-offset-1',
-                    form.errors.category_id
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900'
-                  ]"
-                >
-                  <option value="">Selecione uma categoria</option>
-                  <option v-for="category in categories" :key="category.id" :value="category.id">
-                    {{ category.name }}
-                  </option>
-                </select>
-                <p v-if="form.errors.category_id" class="text-xs text-red-600">
-                  {{ form.errors.category_id }}
-                </p>
-              </div>
-              
-              <!-- EQUIPMENT -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Equipamento *
-                </label>
-                <select
-                  v-model="form.equipment_id"
-                  required
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm focus:ring-2 focus:ring-offset-1',
-                    form.errors.equipment_id
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900'
-                  ]"
-                >
-                  <option value="">Selecione um equipamento</option>
-                  <option v-for="equipment in equipmentList" :key="equipment.id" :value="equipment.id">
-                    {{ equipment.name }} ({{ equipment.internal_code || equipment.code }})
-                  </option>
-                </select>
-                <p v-if="form.errors.equipment_id" class="text-xs text-red-600">
-                  {{ form.errors.equipment_id }}
-                </p>
-              </div>
-              
-              <!-- TASK NUMBER -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Número da Tarefa
-                </label>
-                <input
-                  v-model="form.maintenance_task_no"
-                  type="text"
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm focus:ring-2 focus:ring-offset-1',
-                    form.errors.maintenance_task_no
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900'
-                  ]"
-                  placeholder="Deixe em branco para gerar automaticamente"
-                />
-                <p v-if="form.errors.maintenance_task_no" class="text-xs text-red-600">
-                  {{ form.errors.maintenance_task_no }}
-                </p>
-              </div>
-              
-              <!-- DESCRIPTION -->
-              <div class="md:col-span-2 space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Descrição
-                </label>
-                <textarea
-                  v-model="form.description"
-                  rows="3"
-                  class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                  placeholder="Descreva os detalhes da tarefa de manutenção..."
-                ></textarea>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- SCHEDULING -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <CalendarIcon class="h-5 w-5" />
+          <div class="grid gap-5 p-5 md:grid-cols-2">
+            <label class="ds-field-group">
+              <span class="ds-field-label">Nome da tarefa <span class="ds-field-required">*</span></span>
+              <input
+                v-model="form.name"
+                type="text"
+                required
+                :class="fieldClass('name')"
+                placeholder="Ex: Calibração anual do espectrofotómetro"
+              />
+              <span v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</span>
+            </label>
+
+            <label class="ds-field-group">
+              <span class="ds-field-label">Categoria <span class="ds-field-required">*</span></span>
+              <select v-model="form.category_id" required :class="fieldClass('category_id')">
+                <option value="">Selecione uma categoria</option>
+                <option v-for="category in categories" :key="category.id" :value="category.id">
+                  {{ category.name }}
+                </option>
+              </select>
+              <span v-if="form.errors.category_id" class="ds-field-error">{{ form.errors.category_id }}</span>
+            </label>
+
+            <label class="ds-field-group">
+              <span class="ds-field-label">Equipamento <span class="ds-field-required">*</span></span>
+              <select v-model="form.equipment_id" required :class="fieldClass('equipment_id')">
+                <option value="">Selecione um equipamento</option>
+                <option v-for="equipment in equipmentList" :key="equipment.id" :value="equipment.id">
+                  {{ equipment.name }} ({{ equipment.internal_code || equipment.code || 'N/A' }})
+                </option>
+              </select>
+              <span v-if="form.errors.equipment_id" class="ds-field-error">{{ form.errors.equipment_id }}</span>
+            </label>
+
+            <label class="ds-field-group">
+              <span class="ds-field-label">Número da tarefa</span>
+              <input
+                v-model="form.maintenance_task_no"
+                type="text"
+                :class="fieldClass('maintenance_task_no')"
+                placeholder="Gerado automaticamente se vazio"
+              />
+              <span v-if="form.errors.maintenance_task_no" class="ds-field-error">{{ form.errors.maintenance_task_no }}</span>
+            </label>
+
+            <label class="ds-field-group md:col-span-2">
+              <span class="ds-field-label">Descrição</span>
+              <textarea
+                v-model="form.description"
+                rows="3"
+                class="ds-field min-h-28"
+                placeholder="Detalhes da intervenção, requisitos ou contexto operacional"
+              />
+            </label>
+          </div>
+        </section>
+
+        <section class="ds-card overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
+              <CalendarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)]" />
               Agendamento
             </h2>
           </div>
-          
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- DUE DATE -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Data de Vencimento *
+
+          <div class="grid gap-5 p-5 md:grid-cols-2">
+            <label class="ds-field-group">
+              <span class="ds-field-label">Data de vencimento <span class="ds-field-required">*</span></span>
+              <input v-model="form.due_date" type="date" required :class="fieldClass('due_date')" />
+              <span v-if="form.errors.due_date" class="ds-field-error">{{ form.errors.due_date }}</span>
+            </label>
+
+            <div class="ds-field-group">
+              <span class="ds-field-label">Estado inicial</span>
+              <div class="grid gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
+                <label class="flex items-center gap-3 text-sm font-semibold text-[var(--ds-text-muted)]">
+                  <input v-model="form.is_planned" type="checkbox" class="ds-checkbox" />
+                  Tarefa planeada
                 </label>
-                <input
-                  v-model="form.due_date"
-                  type="date"
-                  required
-                  :class="[
-                    'w-full rounded-lg border px-4 py-2.5 text-sm focus:ring-2 focus:ring-offset-1',
-                    form.errors.due_date
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 focus:border-blue-900 focus:ring-blue-900'
-                  ]"
-                />
-                <p v-if="form.errors.due_date" class="text-xs text-red-600">
-                  {{ form.errors.due_date }}
-                </p>
-              </div>
-              
-              <!-- IS PLANNED -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Estado
+                <label class="flex items-center gap-3 text-sm font-semibold text-[var(--ds-text-muted)]">
+                  <input v-model="form.executed_by_supplier" type="checkbox" class="ds-checkbox" />
+                  Executada por fornecedor
                 </label>
-                <div class="flex items-center gap-4">
-                  <label class="inline-flex items-center">
-                    <input
-                      v-model="form.is_planned"
-                      type="checkbox"
-                      class="rounded border-gray-300 text-blue-900 focus:ring-blue-900"
-                    />
-                    <span class="ml-2 text-sm text-gray-700">Tarefa Planeada</span>
-                  </label>
-                  <label class="inline-flex items-center">
-                    <input
-                      v-model="form.executed_by_supplier"
-                      type="checkbox"
-                      class="rounded border-gray-300 text-blue-900 focus:ring-blue-900"
-                    />
-                    <span class="ml-2 text-sm text-gray-700">Executada por Fornecedor</span>
-                  </label>
-                </div>
-              </div>
-              
-              <!-- PERIODICITY -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Periodicidade
-                </label>
-                <div class="flex items-center gap-3">
-                  <input
-                    v-model="form.periodicity"
-                    type="number"
-                    min="1"
-                    class="w-24 rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                    placeholder="1"
-                  />
-                  <select
-                    v-model="form.periodicity_unit"
-                    class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                  >
-                    <option value="">Selecione unidade</option>
-                    <option value="hours">Horas</option>
-                    <option value="days">Dias</option>
-                    <option value="weeks">Semanas</option>
-                    <option value="months">Meses</option>
-                    <option value="years">Anos</option>
-                  </select>
-                </div>
-                <p class="text-xs text-gray-500">
-                  Definir periodicidade para tarefas recorrentes
-                </p>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- TECHNICAL DETAILS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <Cog6ToothIcon class="h-5 w-5" />
-              Detalhes Técnicos
+            <div class="ds-field-group md:col-span-2">
+              <span class="ds-field-label">Periodicidade</span>
+              <div class="grid gap-3 sm:grid-cols-[8rem_1fr]">
+                <input v-model="form.periodicity" type="number" min="1" class="ds-field" placeholder="1" />
+                <select v-model="form.periodicity_unit" class="ds-field">
+                  <option value="">Selecione unidade</option>
+                  <option value="hours">Horas</option>
+                  <option value="days">Dias</option>
+                  <option value="weeks">Semanas</option>
+                  <option value="months">Meses</option>
+                  <option value="years">Anos</option>
+                </select>
+              </div>
+              <span class="ds-field-hint">Use apenas para tarefas recorrentes.</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="ds-card overflow-hidden">
+          <div class="border-b border-[var(--ds-border)] px-5 py-4">
+            <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
+              <Cog6ToothIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)]" />
+              Detalhes técnicos
             </h2>
           </div>
-          
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- ACCEPTANCE CRITERIA -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Critério de Aceitação
-                </label>
-                <input
-                  v-model="form.acceptance_criteria"
-                  type="text"
-                  class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                  placeholder="Ex: ±0.5% de precisão"
-                />
-              </div>
-              
-              <!-- RANGE -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Gama
-                </label>
-                <input
-                  v-model="form.range"
-                  type="text"
-                  class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                  placeholder="Ex: 0-1000 mg/L"
-                />
-              </div>
-              
-              <!-- CALIBRATION POINTS -->
-              <div class="md:col-span-2 space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Pontos de Calibração
-                </label>
-                <textarea
-                  v-model="form.calibration_points"
-                  rows="2"
-                  class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                  placeholder="Liste os pontos de calibração necessários..."
-                ></textarea>
-              </div>
-              
-              <!-- OBSERVATIONS -->
-              <div class="md:col-span-2 space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Observações
-                </label>
-                <textarea
-                  v-model="form.obs"
-                  rows="2"
-                  class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                  placeholder="Quaisquer observações adicionais..."
-                ></textarea>
-              </div>
-            </div>
+
+          <div class="grid gap-5 p-5 md:grid-cols-2">
+            <label class="ds-field-group">
+              <span class="ds-field-label">Critério de aceitação</span>
+              <input v-model="form.acceptance_criteria" type="text" class="ds-field" placeholder="Ex: +/- 0.5% de precisão" />
+            </label>
+
+            <label class="ds-field-group">
+              <span class="ds-field-label">Gama</span>
+              <input v-model="form.range" type="text" class="ds-field" placeholder="Ex: 0-1000 mg/L" />
+            </label>
+
+            <label class="ds-field-group md:col-span-2">
+              <span class="ds-field-label">Pontos de calibração</span>
+              <textarea v-model="form.calibration_points" rows="2" class="ds-field min-h-24" placeholder="Liste os pontos de calibração necessários" />
+            </label>
+
+            <label class="ds-field-group md:col-span-2">
+              <span class="ds-field-label">Observações</span>
+              <textarea v-model="form.obs" rows="2" class="ds-field min-h-24" placeholder="Observações adicionais" />
+            </label>
           </div>
-        </div>
+        </section>
       </div>
 
-      <!-- RIGHT COLUMN (1/3 width) -->
-      <div class="space-y-6">
-        <!-- SUPPLIER INFORMATION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <TruckIcon class="h-5 w-5 text-blue-900" />
+      <aside class="space-y-6">
+        <section class="ds-card p-5">
+          <h3 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
+            <TruckIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)]" />
             Fornecedor
           </h3>
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Fornecedor
-              </label>
-              <select
-                v-model="form.supplier_id"
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-              >
+          <div class="mt-5 space-y-4">
+            <label class="ds-field-group">
+              <span class="ds-field-label">Fornecedor</span>
+              <select v-model="form.supplier_id" class="ds-field">
                 <option value="">Selecione um fornecedor</option>
                 <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">
                   {{ supplier.name }}
                 </option>
               </select>
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Certificado de Calibração
-              </label>
-              <input
-                v-model="form.calibration_certificate_no"
-                type="text"
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                placeholder="Número do certificado"
-              />
-            </div>
-          </div>
-        </div>
+            </label>
 
-        <!-- COST INFORMATION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <CurrencyEuroIcon class="h-5 w-5 text-blue-900" />
+            <label class="ds-field-group">
+              <span class="ds-field-label">Certificado de calibração</span>
+              <input v-model="form.calibration_certificate_no" type="text" class="ds-field" placeholder="Número do certificado" />
+            </label>
+          </div>
+        </section>
+
+        <section class="ds-card p-5">
+          <h3 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
+            <CurrencyEuroIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)]" />
             Custos
           </h3>
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Custo (AOA)
-              </label>
-              <input
-                v-model="form.cost"
-                type="number"
-                step="0.01"
-                min="0"
-                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-900 focus:ring-blue-900"
-                placeholder="0.00"
-              />
-            </div>
-          </div>
-        </div>
+          <label class="ds-field-group mt-5">
+            <span class="ds-field-label">Custo (AOA)</span>
+            <input v-model="form.cost" type="number" step="0.01" min="0" class="ds-field" placeholder="0.00" />
+          </label>
+        </section>
 
-        <!-- ACTIONS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            Acções
-          </h3>
-          <div class="space-y-4">
-            <button
-              @click="submit"
-              :disabled="form.processing"
-              :class="[
-                'w-full inline-flex justify-center items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
-                form.processing
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-900 to-blue-800 text-white hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2'
-              ]"
-            >
-              <CheckCircleIcon class="h-5 w-5" />
-              {{ form.processing ? 'A processar...' : 'Criar Tarefa' }}
+        <section class="ds-command-surface p-5">
+          <h3 class="text-base font-bold text-[var(--ds-text)]">Ações</h3>
+          <div class="mt-4 space-y-3">
+            <button type="submit" class="ds-button ds-button-primary w-full" :disabled="form.processing">
+              <CheckCircleIcon class="h-4 w-4" />
+              {{ form.processing ? 'A processar...' : 'Criar tarefa' }}
             </button>
-            
-            <Link
-              :href="route('vap-maintenance.tasks')"
-              class="w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              <XMarkIcon class="h-5 w-5" />
+
+            <Link :href="route('vap-maintenance.tasks')" class="ds-button ds-button-secondary w-full">
+              <XMarkIcon class="h-4 w-4" />
               Cancelar
             </Link>
-            
-            <!-- QUICK STATS -->
-            <div class="border-t border-gray-200 pt-4">
-              <h4 class="text-sm font-medium text-gray-900 mb-2">
-                Informação Rápida
-              </h4>
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Total de Tarefas</span>
-                  <span class="font-semibold text-blue-900">{{ stats?.total_tasks || 0 }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Atrasadas</span>
-                  <span class="font-semibold text-red-600">{{ stats?.overdue || 0 }}</span>
-                </div>
-              </div>
-            </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </section>
+      </aside>
+    </form>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import { Link, router, useForm } from '@inertiajs/vue3'
 import {
   WrenchScrewdriverIcon,
@@ -438,10 +237,9 @@ const props = defineProps({
   categories: Array,
   equipment: Array,
   suppliers: Array,
-  stats: Object,
 })
 
-const equipmentList = props.equipment
+const equipmentList = props.equipment ?? []
 
 const form = useForm({
   name: '',
@@ -469,6 +267,11 @@ const form = useForm({
   result: '',
   seq: null,
 })
+
+const fieldClass = (field) => [
+  'ds-field',
+  form.errors[field] ? 'border-rose-500 focus:border-rose-500 focus:shadow-[0_0_0_4px_rgb(244_63_94_/_0.12)]' : '',
+]
 
 const submit = () => {
   form.post(route('vap-maintenance.tasks.store'), {

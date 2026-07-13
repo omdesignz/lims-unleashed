@@ -1,737 +1,355 @@
 <template>
-  <div class="direct-collection-show space-y-8" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.28)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
-      <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <div class="mb-2 flex flex-wrap items-center gap-4">
-            <h1 class="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white">
-              <DocumentTextIcon class="h-7 w-7 text-primary-900 dark:text-primary-300" />
-              {{ collectionTitle }}
-            </h1>
-            <span :class="[
-              'inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold', 
-              getStatusBadgeColor(props.record.data?.sample_status || 'pending')
-            ]">
-              {{ getStatusLabel(props.record.data?.sample_status || 'pending') }}
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
+        <div class="max-w-3xl">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="ds-kicker">Rastreabilidade da colheita</span>
+            <span class="ds-chip">
+              <span class="lims-status-dot" :class="statusDotClass" />
+              {{ getStatusLabel(data.sample_status || 'pending') }}
             </span>
           </div>
-          <p class="text-sm text-slate-600 dark:text-slate-300">
+          <h1 class="ds-heading mt-3 text-2xl">{{ collectionTitle }}</h1>
+          <p class="ds-copy mt-2 text-sm">
             {{ collectionDescription }}
-            <span v-if="props.record.data?.cl" class="font-semibold text-primary-900 dark:text-primary-300">{{ props.record.data.cl }}</span>
+            <span v-if="data.cl" class="font-mono font-bold text-[color:var(--ds-text)]">{{ data.cl }}</span>
           </p>
         </div>
-        <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
-          <Link
-            :href="collectionEditUrl"
-            class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:bg-primary-500 dark:hover:bg-primary-400 sm:w-auto"
-          >
-            <PencilIcon class="h-5 w-5" />
+
+        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Link :href="collectionEditUrl" class="ds-button ds-button-primary">
+            <PencilIcon class="h-4 w-4" />
             {{ $t('gestlab.general.labels.direct_collections.edit') }}
           </Link>
-          <button
-            @click="router.reload" 
-            as="button"
-            class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-900 shadow-sm transition hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/15 sm:w-auto"
-          >
-            <ArrowPathRoundedSquareIcon class="h-5 w-5" />
+          <button type="button" class="ds-button ds-button-secondary" @click="router.reload()">
+            <ArrowPathRoundedSquareIcon class="h-4 w-4" />
             {{ $t('gestlab.general.labels.direct_collections.update_status') }}
           </button>
-          <Link
-            :href="collectionIndexUrl"
-            class="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 sm:w-auto"
-          >
-            <ArrowLeftIcon class="h-5 w-5" />
+          <Link :href="collectionIndexUrl" class="ds-button ds-button-secondary">
+            <ArrowLeftIcon class="h-4 w-4" />
             {{ $t('gestlab.general.labels.direct_collections.back') }}
           </Link>
         </div>
       </div>
-    </div>
 
-    <div class="grid gap-4 lg:grid-cols-[minmax(0,1.45fr),minmax(280px,0.75fr)]">
-      <section class="rounded-[26px] border border-primary-100 bg-gradient-to-br from-white via-primary-50/70 to-white p-5 shadow-[0_18px_50px_-26px_rgba(15,23,42,0.25)] dark:border-primary-500/20 dark:from-slate-950 dark:via-primary-500/10 dark:to-slate-900/80">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] sm:grid-cols-4 sm:divide-y-0">
+        <div class="px-5 py-4">
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Código laboratorial</dt>
+          <dd class="mt-2 truncate font-mono text-sm font-bold text-[color:var(--ds-text)]">{{ data.cl || 'N/D' }}</dd>
+        </div>
+        <div class="px-5 py-4">
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Origem</dt>
+          <dd class="mt-2 truncate text-sm font-bold text-[color:var(--ds-text)]">{{ sampleEntry ? 'Sample Entry' : 'Registo legado' }}</dd>
+        </div>
+        <div class="px-5 py-4">
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Quantidade recolhida</dt>
+          <dd class="mt-2 text-sm font-bold text-[color:var(--ds-text)]">{{ data.collected_qty || 0 }} / {{ data.qty || 0 }}</dd>
+        </div>
+        <div class="px-5 py-4">
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Conclusão</dt>
+          <dd class="mt-2 text-sm font-bold text-[color:var(--ds-text)]">{{ completionPercentage }}%</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="ds-command-surface overflow-hidden">
+      <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
+        <div class="flex items-start gap-3">
+          <CircleStackIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
           <div>
-            <p class="text-xs font-semibold uppercase tracking-[0.22em] text-primary-700 dark:text-primary-300">
-              Entrada canónica do processo
-            </p>
-            <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-white">
-              {{ sampleEntry ? (sampleEntry.code || `Sample Entry #${sampleEntry.id}`) : 'Registo legado de colheita' }}
-            </h2>
-            <p class="mt-1 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
+            <p class="ds-kicker">Entrada canónica do processo</p>
+            <h2 class="ds-heading mt-2 text-base">{{ sampleEntry ? (sampleEntry.code || `Sample Entry #${sampleEntry.id}`) : 'Registo legado de colheita' }}</h2>
+            <p class="ds-copy mt-2 max-w-3xl text-xs">
               {{ sampleEntry
-                ? 'Esta colheita nasceu da receção da amostra; produto, matriz, escopo analítico e códigos laboratoriais ficam rastreáveis a partir da Sample Entry.'
-                : 'Este registo ainda foi criado pela rota antiga de colheitas. Novos fluxos devem começar pela Sample Entry para preservar rastreabilidade ponta a ponta.' }}
+                ? 'Produto, matriz, escopo analítico e códigos laboratoriais permanecem ligados à receção da amostra.'
+                : 'Este registo antecede o fluxo de Sample Entry. Novas colheitas devem iniciar na receção para garantir rastreabilidade ponta a ponta.' }}
             </p>
           </div>
-
-          <Link
-            v-if="sampleEntry"
-            :href="sampleEntry.show_url"
-            class="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400"
-          >
-            <ArrowTopRightOnSquareIcon class="size-4" aria-hidden="true" />
-            Abrir Sample Entry
-          </Link>
         </div>
-      </section>
+        <Link v-if="sampleEntry" :href="sampleEntry.show_url" class="ds-button ds-button-secondary shrink-0">
+          <ArrowTopRightOnSquareIcon class="h-4 w-4" />
+          Abrir Sample Entry
+        </Link>
+      </div>
+    </section>
 
-      <section class="rounded-[26px] border border-slate-200 bg-white/95 p-5 shadow-[0_18px_50px_-26px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
-        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-          Etapa atual
-        </p>
-        <div class="mt-3 flex items-start gap-3">
-          <div class="rounded-2xl bg-primary-50 p-3 text-primary-900 dark:bg-primary-500/10 dark:text-primary-200">
-            <CircleStackIcon class="size-6" aria-hidden="true" />
-          </div>
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
+        <div class="flex items-start gap-3">
+          <ClipboardDocumentCheckIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
           <div>
-            <p class="text-base font-semibold text-slate-900 dark:text-white">{{ collectionTitle }}</p>
-            <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
-              {{ props.record.data?.entry_origin?.label || 'Etapa operacional ligada ao código laboratorial' }}
-            </p>
+            <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.direct_collections.analysis_progress') }}</h2>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Sequência operacional da colheita à aprovação.</p>
           </div>
         </div>
-      </section>
-    </div>
-
-    <!-- ANALYSIS PROGRESS TRACKER -->
-    <div class="overflow-hidden rounded-[26px] border border-slate-200 bg-white/95 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
-      <div class="bg-gradient-to-r from-primary-900 to-primary-700 px-6 py-4 dark:from-slate-950 dark:to-primary-950">
-        <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-          <ClipboardDocumentCheckIcon class="h-5 w-5" />
-          {{ $t('gestlab.general.labels.direct_collections.analysis_progress') }}
-        </h2>
+        <span class="ds-chip">
+          <span class="lims-status-dot lims-status-dot-instrument" />
+          {{ completionPercentage }}% concluído
+        </span>
       </div>
-      
-      <div class="p-6">
-        <!-- ANALYSIS TIMELINE -->
-        <div class="mb-8">
-          <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h3 class="text-sm font-semibold text-slate-900 dark:text-white">{{ $t('gestlab.general.labels.direct_collections.analysis_timeline') }}</h3>
-            <div class="flex flex-wrap items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
-              <div class="flex items-center gap-2">
-                <div class="h-2 w-2 rounded-full bg-primary-800 dark:bg-primary-300"></div>
-                <span>{{ $t('gestlab.general.labels.direct_collections.planned') }}</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <div class="h-2 w-2 rounded-full bg-emerald-500"></div>
-                <span>{{ $t('gestlab.general.labels.direct_collections.completed') }}</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <div class="h-2 w-2 rounded-full bg-amber-500"></div>
-                <span>{{ $t('gestlab.general.labels.direct_collections.in_progress') }}</span>
-              </div>
-            </div>
-          </div>
-          
-          <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <!-- COLLECTION STEP -->
-            <div class="relative">
-              <div class="flex flex-col items-center">
-                <div :class="[
-                  'mb-2 flex h-12 w-12 items-center justify-center rounded-full border-2 shadow-sm',
-                  isStepComplete('collection') ? 'border-green-500 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-500/10 dark:text-green-200' : 'border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-400/40 dark:bg-blue-500/10 dark:text-blue-200'
-                ]">
-                  <CircleStackIcon class="h-6 w-6" />
-                </div>
-                <span class="text-xs font-medium text-slate-900 dark:text-white">{{ $t('gestlab.general.labels.direct_collections.collection') }}</span>
-                <span class="text-xs text-slate-500 dark:text-slate-400">{{ formatDate(props.record.data?.collection_date) }}</span>
-              </div>
-              <div class="absolute left-1/2 top-6 -z-10 h-0.5 w-full -translate-x-1/2 bg-slate-200 dark:bg-slate-800"></div>
-            </div>
 
-            <!-- RECEPTION STEP -->
-            <div class="relative">
-              <div class="flex flex-col items-center">
-                <div :class="[
-                  'mb-2 flex h-12 w-12 items-center justify-center rounded-full border-2 shadow-sm',
-                  isStepComplete('reception') ? 'border-green-500 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-500/10 dark:text-green-200' : 'border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-400/40 dark:bg-blue-500/10 dark:text-blue-200'
-                ]">
-                  <InboxIcon class="h-6 w-6" />
-                </div>
-                <span class="text-xs font-medium text-slate-900 dark:text-white">{{ $t('gestlab.general.labels.direct_collections.reception') }}</span>
-                <span class="text-xs text-slate-500 dark:text-slate-400">{{ formatDate(props.record.data?.created_at) }}</span>
-              </div>
+      <div class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] sm:grid-cols-5 sm:divide-y-0">
+        <div v-for="step in workflowSteps" :key="step.key" class="relative min-w-0 px-4 py-5">
+          <div class="flex items-center gap-3 sm:flex-col sm:items-start">
+            <div
+              class="flex h-9 w-9 shrink-0 items-center justify-center border"
+              :class="step.complete
+                ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300'
+                : step.active
+                  ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300'
+                  : 'border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] text-[color:var(--ds-text-soft)]'"
+            >
+              <component :is="step.icon" class="h-4 w-4" />
             </div>
-
-            <!-- ANALYSIS STEP -->
-            <div class="relative">
-              <div class="flex flex-col items-center">
-                <div :class="[
-                  'mb-2 flex h-12 w-12 items-center justify-center rounded-full border-2 shadow-sm',
-                  isStepComplete('analysis') ? 'border-green-500 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-500/10 dark:text-green-200' :
-                  props.record.data?.placed_analysis ? 'border-yellow-500 bg-yellow-100 text-yellow-700 dark:border-amber-400 dark:bg-amber-500/10 dark:text-amber-200' : 'border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-400/40 dark:bg-blue-500/10 dark:text-blue-200'
-                ]">
-                  <BeakerIcon class="h-6 w-6" />
-                </div>
-                <span class="text-xs font-medium text-slate-900 dark:text-white">{{ $t('gestlab.general.labels.direct_collections.analysis') }}</span>
-                <span v-if="props.record.data?.analysis_start_date" class="text-xs text-slate-500 dark:text-slate-400">
-                  {{ formatDate(props.record.data?.analysis_start_date) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- VERIFICATION STEP -->
-            <div class="relative">
-              <div class="flex flex-col items-center">
-                <div :class="[
-                  'mb-2 flex h-12 w-12 items-center justify-center rounded-full border-2 shadow-sm',
-                  isStepComplete('verification') ? 'border-green-500 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-500/10 dark:text-green-200' : 'border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-400/40 dark:bg-blue-500/10 dark:text-blue-200'
-                ]">
-                  <CheckCircleIcon class="h-6 w-6" />
-                </div>
-                <span class="text-xs font-medium text-slate-900 dark:text-white">{{ $t('gestlab.general.labels.direct_collections.verification') }}</span>
-                <span v-if="props.record.data?.verified_date" class="text-xs text-slate-500 dark:text-slate-400">
-                  {{ formatDate(props.record.data?.verified_date) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- APPROVAL STEP -->
-            <div class="relative">
-              <div class="flex flex-col items-center">
-                <div :class="[
-                  'mb-2 flex h-12 w-12 items-center justify-center rounded-full border-2 shadow-sm',
-                  isStepComplete('approval') ? 'border-green-500 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-500/10 dark:text-green-200' : 'border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-400/40 dark:bg-blue-500/10 dark:text-blue-200'
-                ]">
-                  <DocumentCheckIcon class="h-6 w-6" />
-                </div>
-                <span class="text-xs font-medium text-slate-900 dark:text-white">{{ $t('gestlab.general.labels.direct_collections.approval') }}</span>
-                <span v-if="props.record.data?.approved_date" class="text-xs text-slate-500 dark:text-slate-400">
-                  {{ formatDate(props.record.data?.approved_date) }}
-                </span>
-              </div>
+            <div class="min-w-0">
+              <p class="truncate text-xs font-bold text-[color:var(--ds-text)]">{{ step.label }}</p>
+              <p class="mt-1 truncate text-xs text-[color:var(--ds-text-soft)]">{{ formatDate(step.date) }}</p>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- ANALYSIS SUMMARY -->
-        <div class="rounded-[24px] border border-blue-100 bg-gradient-to-r from-blue-50 to-white p-4 dark:border-blue-500/20 dark:from-blue-500/10 dark:to-slate-950/60">
-          <h4 class="mb-3 text-sm font-semibold text-slate-900 dark:text-white">{{ $t('gestlab.general.labels.direct_collections.analysis_summary') }}</h4>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="text-center">
-              <div class="text-2xl font-bold text-blue-900 dark:text-blue-200">{{ props.record.data?.total_samples || 0 }}</div>
-              <div class="text-xs text-slate-600 dark:text-slate-400">{{ $t('gestlab.general.labels.direct_collections.total_samples') }}</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold text-green-600 dark:text-green-300">{{ props.record.data?.completed_analysis || 0 }}</div>
-              <div class="text-xs text-slate-600 dark:text-slate-400">{{ $t('gestlab.general.labels.direct_collections.completed') }}</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold text-yellow-600 dark:text-amber-300">{{ props.record.data?.in_progress_analysis || 0 }}</div>
-              <div class="text-xs text-slate-600 dark:text-slate-400">{{ $t('gestlab.general.labels.direct_collections.in_progress') }}</div>
-            </div>
-            <div class="text-center">
-              <div class="text-2xl font-bold text-blue-900 dark:text-blue-200">{{ props.record.data?.pending_analysis || 0 }}</div>
-              <div class="text-xs text-slate-600 dark:text-slate-400">{{ $t('gestlab.general.labels.direct_collections.pending') }}</div>
-            </div>
-          </div>
+      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] border-t border-[color:var(--ds-border)] sm:grid-cols-4 sm:divide-y-0">
+        <div v-for="stat in analysisSummary" :key="stat.label" class="px-5 py-4">
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ stat.label }}</dt>
+          <dd class="mt-2 text-2xl font-bold" :class="stat.valueClass">{{ stat.value }}</dd>
         </div>
+      </dl>
 
-        <div
-          v-if="props.record.data?.scope_control?.required_parameter_count || props.record.data?.scope_control?.conditioning_status"
-          class="mt-6 rounded-[24px] border border-amber-200 bg-amber-50/80 p-4 shadow-sm dark:border-amber-400/20 dark:bg-amber-500/10"
-        >
-          <div class="flex flex-wrap items-start justify-between gap-3">
+      <div v-if="hasScopeControl" class="border-t border-[color:var(--ds-border)] p-5">
+        <div class="border-l-4 border-amber-500 bg-amber-50/70 p-4 dark:bg-amber-500/10">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h4 class="text-sm font-semibold text-slate-900 dark:text-white">Escopo controlado da receção</h4>
-              <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                Esta colheita herda o planeamento analítico e o estado de condicionamento definidos no momento da receção.
-              </p>
+              <h3 class="text-sm font-bold text-amber-950 dark:text-amber-100">Escopo controlado da receção</h3>
+              <p class="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">Planeamento analítico e condicionamento herdados da receção.</p>
             </div>
-            <div class="rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200 dark:bg-slate-950/70 dark:text-amber-200 dark:ring-amber-400/30">
-              {{ props.record.data?.scope_control?.required_parameter_count || 0 }} parâmetros previstos
-            </div>
+            <span class="ds-chip shrink-0">{{ scopeControl.required_parameter_count || 0 }} parâmetros previstos</span>
           </div>
 
-          <div class="mt-4 grid gap-4 md:grid-cols-2">
-            <div class="rounded-2xl border border-white/70 bg-white/85 p-3 shadow-sm dark:border-slate-700 dark:bg-slate-950/70">
-              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Condicionamento</p>
-              <p class="mt-2 text-sm font-medium text-slate-900 dark:text-white">
-                {{ getConditioningLabel(props.record.data?.scope_control?.conditioning_status) }}
-              </p>
-              <p v-if="props.record.data?.scope_control?.packaging_condition" class="mt-2 text-xs text-slate-600 dark:text-slate-300">
-                Embalagem: {{ props.record.data.scope_control.packaging_condition }}
-              </p>
-              <p v-if="props.record.data?.scope_control?.temperature_condition" class="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                Temperatura: {{ props.record.data.scope_control.temperature_condition }}
-              </p>
+          <dl class="mt-4 grid gap-3 md:grid-cols-2">
+            <div class="border border-amber-200/80 bg-[color:var(--ds-panel)] p-3 dark:border-amber-500/20">
+              <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Condicionamento</dt>
+              <dd class="mt-2 text-sm font-bold text-[color:var(--ds-text)]">{{ getConditioningLabel(scopeControl.conditioning_status) }}</dd>
+              <p v-if="scopeControl.packaging_condition" class="mt-2 text-xs text-[color:var(--ds-text-soft)]">Embalagem: {{ scopeControl.packaging_condition }}</p>
+              <p v-if="scopeControl.temperature_condition" class="mt-1 text-xs text-[color:var(--ds-text-soft)]">Temperatura: {{ scopeControl.temperature_condition }}</p>
             </div>
-
-            <div class="rounded-2xl border border-white/70 bg-white/85 p-3 shadow-sm dark:border-slate-700 dark:bg-slate-950/70">
-              <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Perfis resolvidos</p>
-              <div v-if="props.record.data?.scope_control?.resolved_profiles?.length" class="mt-2 flex flex-wrap gap-2">
-                <span
-                  v-for="profile in props.record.data.scope_control.resolved_profiles"
-                  :key="profile.id"
-                  class="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-900 dark:bg-blue-500/10 dark:text-blue-200"
-                >
-                  {{ profile.name }}
-                </span>
-              </div>
-              <p v-else class="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                Nenhum perfil resolvido foi registado para esta colheita.
-              </p>
+            <div class="border border-amber-200/80 bg-[color:var(--ds-panel)] p-3 dark:border-amber-500/20">
+              <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Perfis resolvidos</dt>
+              <dd v-if="scopeControl.resolved_profiles?.length" class="mt-2 flex flex-wrap gap-2">
+                <span v-for="profile in scopeControl.resolved_profiles" :key="profile.id" class="ds-chip">{{ profile.name }}</span>
+              </dd>
+              <p v-else class="mt-2 text-xs text-[color:var(--ds-text-soft)]">Nenhum perfil resolvido registado.</p>
             </div>
-          </div>
+          </dl>
 
-          <div v-if="props.record.data?.scope_control?.required_parameters?.length" class="mt-4">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Checklist de parâmetros</p>
+          <div v-if="scopeControl.required_parameters?.length" class="mt-4">
+            <p class="text-xs font-bold uppercase text-amber-900 dark:text-amber-200">Checklist de parâmetros</p>
             <div class="mt-2 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              <div
-                v-for="parameter in props.record.data.scope_control.required_parameters"
-                :key="parameter.id"
-                class="rounded-2xl border border-white/70 bg-white/85 px-3 py-2 shadow-sm dark:border-slate-700 dark:bg-slate-950/70"
-              >
-                <p class="text-sm font-medium text-slate-900 dark:text-white">
-                  {{ parameter.code || 'N/D' }} · {{ parameter.name }}
-                </p>
-                <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">
-                  {{ parameter.profiles?.join(', ') }}
-                </p>
+              <div v-for="parameter in scopeControl.required_parameters" :key="parameter.id" class="border border-amber-200/80 bg-[color:var(--ds-panel)] px-3 py-2 dark:border-amber-500/20">
+                <p class="text-sm font-bold text-[color:var(--ds-text)]">{{ parameter.code || 'N/D' }} · {{ parameter.name }}</p>
+                <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ parameter.profiles?.join(', ') || 'Sem perfil associado' }}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- MAIN CONTENT SECTION -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- LEFT COLUMN (2/3 width) -->
-      <div class="lg:col-span-2 space-y-6">
-        <!-- SAMPLE DETAILS CARD -->
-        <div class="overflow-hidden rounded-[26px] border border-slate-200 bg-white/95 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
-          <div class="bg-gradient-to-r from-primary-900 to-primary-700 px-6 py-4 dark:from-slate-950 dark:to-primary-950">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <DocumentTextIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.direct_collections.sample_details') }}
-            </h2>
+    <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <div class="min-w-0 space-y-4">
+        <section class="ds-panel overflow-hidden">
+          <div class="flex items-start gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-5 py-4">
+            <DocumentTextIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
+            <div>
+              <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.direct_collections.sample_details') }}</h2>
+              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Identificação física e estados do processo.</p>
+            </div>
           </div>
-          
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <!-- QR CODE -->
-              <div class="md:col-span-2 lg:col-span-1 space-y-2">
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {{ $t('gestlab.general.labels.direct_collections.qr_code') }}
-                </label>
-                <div class="flex justify-center rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-white">
-                  <img :src="props.record.data?.qr" alt="QR Code" class="w-32 h-32" />
-                </div>
+
+          <div class="grid gap-5 p-5 md:grid-cols-[9rem_minmax(0,1fr)]">
+            <div>
+              <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ $t('gestlab.general.labels.direct_collections.qr_code') }}</p>
+              <div class="mt-2 flex aspect-square w-32 items-center justify-center border border-[color:var(--ds-border)] bg-white p-2">
+                <img v-if="data.qr" :src="data.qr" alt="QR Code" class="h-full w-full object-contain" />
+                <QrCodeIcon v-else class="h-8 w-8 text-[color:var(--ds-text-soft)]" />
               </div>
+            </div>
 
-              <!-- BASIC INFO -->
-              <div class="md:col-span-2 lg:col-span-2 space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {{ $t('gestlab.general.labels.direct_collections.cl') }}
-                    </label>
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-900/80 dark:text-white">
-                      {{ props.record.data?.cl }}
-                    </div>
-                  </div>
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {{ $t('gestlab.general.labels.direct_collections.type') }}
-                    </label>
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-900/80 dark:text-white">
-                      {{ props.record.data?.type }}
-                    </div>
-                  </div>
+            <div class="min-w-0 space-y-5">
+              <dl class="grid gap-3 sm:grid-cols-2">
+                <div v-for="field in sampleIdentityFields" :key="field.label" class="border-b border-[color:var(--ds-border)] pb-3">
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
+                  <dd class="mt-2 break-words text-sm font-bold text-[color:var(--ds-text)]">{{ field.value || 'N/D' }}</dd>
                 </div>
+              </dl>
 
-                <!-- STATUS INDICATORS -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {{ $t('gestlab.general.labels.direct_collections.placed_analysis') }}
-                    </label>
-                    <div class="flex items-center">
-                      <StatusToggle :value="props.record.data?.placed_analysis" />
-                      <span class="ml-2 text-sm text-slate-600 dark:text-slate-300">
-                        {{ props.record.data?.placed_analysis ? 'Em análise' : 'Aguardando' }}
-                      </span>
-                    </div>
-                  </div>
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {{ $t('gestlab.general.labels.direct_collections.invoiced') }}
-                    </label>
-                    <div class="flex items-center">
-                      <StatusToggle :value="props.record.data?.invoiced" />
-                      <span class="ml-2 text-sm text-slate-600 dark:text-slate-300">
-                        {{ props.record.data?.invoiced ? 'Facturado' : 'Por facturar' }}
-                      </span>
-                    </div>
-                  </div>
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {{ $t('gestlab.general.labels.direct_collections.processed') }}
-                    </label>
-                    <div class="flex items-center">
-                      <StatusToggle :value="props.record.data?.processed" />
-                      <span class="ml-2 text-sm text-slate-600 dark:text-slate-300">
-                        {{ props.record.data?.processed ? 'Processado' : 'Por processar' }}
-                      </span>
-                    </div>
-                  </div>
+              <div class="grid gap-3 sm:grid-cols-3">
+                <div v-for="flag in processFlags" :key="flag.label" class="border-l-4 bg-[color:var(--ds-panel-subtle)] p-3" :class="flag.active ? 'border-emerald-500' : 'border-[color:var(--ds-border-strong)]'">
+                  <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ flag.label }}</p>
+                  <p class="mt-2 text-sm font-bold text-[color:var(--ds-text)]">{{ flag.active ? flag.activeLabel : flag.inactiveLabel }}</p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- COLLECTION DETAILS CARD -->
-        <div class="overflow-hidden rounded-[26px] border border-slate-200 bg-white/95 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
-          <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-            <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-              <CircleStackIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
-              {{ $t('gestlab.general.labels.direct_collections.collection_details') }}
-            </h2>
-          </div>
-          
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <!-- TIMING INFO -->
-              <div class="space-y-4">
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {{ $t('gestlab.general.labels.direct_collections.collection_date') }}
-                  </label>
-                  <div class="flex items-center rounded-2xl border border-blue-200 bg-blue-50 p-3 text-sm font-medium text-slate-900 dark:border-blue-400/30 dark:bg-blue-500/10 dark:text-blue-100">
-                    <CalendarIcon class="mr-2 h-4 w-4 text-blue-900 dark:text-blue-300" />
-                    {{ formatDate(props.record.data?.collection_date) }}
-                  </div>
-                </div>
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {{ $t('gestlab.general.labels.direct_collections.expiry_date') }}
-                  </label>
-                  <div class="flex items-center rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-slate-900 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-100">
-                    <CalendarIcon class="mr-2 h-4 w-4 text-red-600 dark:text-red-300" />
-                    {{ formatDate(props.record.data?.expiry_date) }}
-                  </div>
-                </div>
-              </div>
-
-              <!-- PRODUCT INFO -->
-              <div class="space-y-4">
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {{ $t('gestlab.general.labels.direct_collections.product') }}
-                  </label>
-                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-900/80 dark:text-white">
-                    {{ props.record.data?.product }}
-                  </div>
-                </div>
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {{ $t('gestlab.general.labels.direct_collections.commercial_brand') }}
-                  </label>
-                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-900 dark:border-slate-700 dark:bg-slate-900/80 dark:text-white">
-                    {{ props.record.data?.comercial_brand || '-' }}
-                  </div>
-                </div>
-              </div>
-
-              <!-- QUANTITY INFO -->
-              <div class="space-y-4">
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {{ $t('gestlab.general.labels.direct_collections.qty') }}
-                  </label>
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900/80">
-                      <div class="text-xs text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.direct_collections.qty') }}</div>
-                      <div class="text-sm font-semibold text-slate-900 dark:text-white">{{ props.record.data?.qty || '-' }}</div>
-                    </div>
-                    <div class="rounded-2xl border border-green-200 bg-green-50 p-3 dark:border-green-400/30 dark:bg-green-500/10">
-                      <div class="text-xs text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.direct_collections.collected_qty') }}</div>
-                      <div class="text-sm font-semibold text-green-800 dark:text-green-200">{{ props.record.data?.collected_qty || '-' }}</div>
-                    </div>
-                  </div>
-                </div>
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {{ $t('gestlab.general.labels.direct_collections.temperature_id') }}
-                  </label>
-                  <div class="flex items-center rounded-2xl border border-blue-200 bg-blue-50 p-3 text-sm font-medium text-slate-900 dark:border-blue-400/30 dark:bg-blue-500/10 dark:text-blue-100">
-                    <EyeDropperIcon class="mr-2 h-4 w-4 text-blue-900 dark:text-blue-300" />
-                    {{ props.record.data?.temperature_value || '-' }} {{ props.record.data?.temperature || '°C' }}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- ADDITIONAL DETAILS -->
-            <div class="mt-6 border-t border-slate-200 pt-6 dark:border-slate-800">
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {{ $t('gestlab.general.labels.direct_collections.location') }}
-                  </label>
-                  <div class="text-sm font-medium text-slate-900 dark:text-white">{{ props.record.data?.location || '-' }}</div>
-                </div>
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {{ $t('gestlab.general.labels.direct_collections.vehicle_id') }}
-                  </label>
-                  <div class="text-sm font-medium text-slate-900 dark:text-white">{{ props.record.data?.vehicle || '-' }}</div>
-                </div>
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {{ $t('gestlab.general.labels.direct_collections.pack_id') }}
-                  </label>
-                  <div class="text-sm font-medium text-slate-900 dark:text-white">{{ props.record.data?.pack || '-' }}</div>
-                </div>
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {{ $t('gestlab.general.labels.direct_collections.lot') }}
-                  </label>
-                  <div class="text-sm font-medium text-slate-900 dark:text-white">{{ props.record.data?.lot || '-' }}</div>
-                </div>
-              </div>
+        <section class="ds-panel overflow-hidden">
+          <div class="flex items-start gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
+            <CircleStackIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
+            <div>
+              <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.direct_collections.collection_details') }}</h2>
+              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Condições, produto, quantidade e logística da colheita.</p>
             </div>
           </div>
-        </div>
 
-        <!-- ANALYSIS RESULTS SECTION -->
-        <div v-if="props.record.data?.analysis_results && hasRole('admin')" class="overflow-hidden rounded-[26px] border border-slate-200 bg-white/95 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
-          <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-            <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-              <BeakerIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
-              {{ $t('gestlab.general.labels.direct_collections.analysis_results') }}
-              <span class="ml-2 text-sm font-normal text-slate-500 dark:text-slate-400">
-                ({{ props.record.data?.analysis_results?.length || 0 }} resultados)
-              </span>
-            </h2>
+          <dl class="grid gap-x-5 p-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div v-for="field in collectionDetailFields" :key="field.label" class="border-b border-[color:var(--ds-border)] py-3 first:pt-0">
+              <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
+              <dd class="mt-2 break-words text-sm font-bold text-[color:var(--ds-text)]">{{ field.value || 'N/D' }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section v-if="data.analysis_results && hasRole('admin')" class="ds-panel overflow-hidden">
+          <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-5 py-4">
+            <div class="flex items-start gap-3">
+              <BeakerIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
+              <div>
+                <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.direct_collections.analysis_results') }}</h2>
+                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Resultados e intervalos de referência associados.</p>
+              </div>
+            </div>
+            <span class="ds-chip">{{ data.analysis_results.length }} resultados</span>
           </div>
-          
-          <div class="p-6">
-            <div v-for="(result, index) in props.record.data?.analysis_results" :key="index" class="mb-4 last:mb-0">
-              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/80">
-                <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div class="flex items-center gap-3">
-                    <span class="text-sm font-semibold text-slate-900 dark:text-white">{{ result.parameter_label }}</span>
-                    <span :class="[
-                      'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-                      getResultStatusColor(result.status)
-                    ]">
+
+          <div v-if="data.analysis_results.length" class="divide-y divide-[color:var(--ds-border)]">
+            <article v-for="(result, index) in data.analysis_results" :key="result.id || index" class="p-5">
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="text-sm font-bold text-[color:var(--ds-text)]">{{ result.parameter_label }}</h3>
+                    <span class="ds-chip">
+                      <span class="lims-status-dot" :class="getResultStatusDot(result.status)" />
                       {{ getResultStatusLabel(result.status) }}
                     </span>
                   </div>
-                  <div class="text-sm text-slate-600 dark:text-slate-300">{{ result.unit_label }}</div>
+                  <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ result.unit_label || 'Sem unidade' }}</p>
                 </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div class="space-y-2">
-                    <div class="text-xs text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.direct_collections.result_value') }}</div>
-                    <div class="text-lg font-bold text-blue-900 dark:text-blue-200">{{ result.verified_value || result.inserted_value || '-' }}</div>
-                  </div>
-                  <div class="space-y-2">
-                    <div class="text-xs text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.direct_collections.reference_range') }}</div>
-                    <div class="text-sm font-medium text-slate-900 dark:text-white">
-                      {{ result.min_ref_value || '-' }} - {{ result.max_ref_value || '-' }}
-                    </div>
-                  </div>
-                  <div class="space-y-2">
-                    <div class="text-xs text-slate-500 dark:text-slate-400">{{ $t('gestlab.general.labels.direct_collections.last_update') }}</div>
-                    <div class="text-sm text-slate-600 dark:text-slate-300">{{ formatDate(result.updated_at) }}</div>
-                  </div>
-                </div>
+                <p class="font-mono text-xl font-bold text-primary-800 dark:text-primary-200">{{ result.verified_value || result.inserted_value || 'N/D' }}</p>
               </div>
+              <dl class="ds-command-toolbar mt-4 grid gap-3 p-3 sm:grid-cols-2">
+                <div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Intervalo de referência</dt>
+                  <dd class="mt-1 text-sm font-semibold text-[color:var(--ds-text)]">{{ result.min_ref_value || 'N/D' }} - {{ result.max_ref_value || 'N/D' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Última atualização</dt>
+                  <dd class="mt-1 text-sm font-semibold text-[color:var(--ds-text)]">{{ formatDate(result.updated_at) }}</dd>
+                </div>
+              </dl>
+            </article>
+          </div>
+          <div v-else class="p-5">
+            <div class="ds-empty-state px-5 py-8 text-center">
+              <BeakerIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
+              <p class="ds-copy mt-2 text-xs">Nenhum resultado registado.</p>
             </div>
           </div>
-        </div>
+        </section>
       </div>
 
-      <!-- RIGHT COLUMN (1/3 width) -->
-      <div class="space-y-6">
-        <!-- QUICK ACTIONS CARD -->
-        <div class="rounded-[26px] border border-slate-200 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
-          <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-            {{ $t('gestlab.general.labels.actions') }}
-          </h3>
+      <aside class="space-y-4 xl:sticky xl:top-24 xl:self-start">
+        <section class="ds-command-surface p-5">
+          <p class="ds-kicker">{{ $t('gestlab.general.labels.actions') }}</p>
+          <h2 class="ds-heading mt-2 text-base">Operação analítica</h2>
+          <p class="ds-copy mt-2 text-xs">Aceda aos resultados por departamento sem perder o contexto da colheita.</p>
 
-          <div class="space-y-3 border-b border-slate-200 pb-4 dark:border-slate-800" v-for="sample in props.record.data?.samples || []" :key="sample.id">
-            <h4 class="mb-2 text-sm font-semibold text-slate-900 dark:text-white">Resultados: {{ sample?.analysis?.department?.name }}</h4>
-            <div class="mb-2">
-              <Link
-                :href="route('analysis.edit', sample.analysis.id)" 
-                as="button"
-                class="mb-2 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2 dark:focus:ring-offset-slate-950"
-                
-              >
-                  <CheckCircleIcon class="h-5 w-5" />
-                  <!-- {{ $t('gestlab.general.labels.direct_collections.verify_results') }} -->
-                  Gerir Resultados  
+          <div v-if="data.samples?.length" class="mt-4 divide-y divide-[color:var(--ds-border)] border-y border-[color:var(--ds-border)]">
+            <div v-for="sample in data.samples" :key="sample.id" class="py-3">
+              <p class="truncate text-xs font-bold text-[color:var(--ds-text)]">{{ sample.analysis?.department?.name || 'Análise' }}</p>
+              <Link v-if="sample.analysis?.id" :href="route('analysis.edit', sample.analysis.id)" class="ds-button ds-button-primary mt-2 w-full">
+                <CheckCircleIcon class="h-4 w-4" />
+                Gerir resultados
               </Link>
             </div>
-
           </div>
+          <div v-else class="ds-empty-state mt-4 p-4 text-center">
+            <p class="text-xs text-[color:var(--ds-text-soft)]">Sem análises disponíveis.</p>
+          </div>
+        </section>
 
-        </div>
-
-        <!-- ANALYSIS STATUS CARD -->
-        <div class="rounded-[26px] border border-slate-200 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
-          <h3 class="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-            <ChartBarIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
-            {{ $t('gestlab.general.labels.direct_collections.analysis_status') }}
-          </h3>
-          <div class="space-y-4">
-            <!-- PROGRESS BAR -->
-            <div>
-              <div class="flex justify-between text-sm mb-1">
-                <span class="text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.direct_collections.completion') }}</span>
-                <span class="font-semibold text-blue-900 dark:text-blue-200">{{ getCompletionPercentage() }}%</span>
-              </div>
-              <div class="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                <div 
-                  class="h-full bg-gradient-to-r from-primary-800 to-primary-600 transition-all duration-500"
-                  :style="{ width: getCompletionPercentage() + '%' }"
-                ></div>
-              </div>
+        <section class="ds-card p-5">
+          <div class="flex items-center gap-2">
+            <ChartBarIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+            <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.direct_collections.analysis_status') }}</h2>
+          </div>
+          <div class="mt-4">
+            <div class="flex items-center justify-between gap-3 text-xs">
+              <span class="font-semibold text-[color:var(--ds-text-soft)]">{{ $t('gestlab.general.labels.direct_collections.completion') }}</span>
+              <span class="font-bold text-primary-800 dark:text-primary-200">{{ completionPercentage }}%</span>
             </div>
-
-            <!-- STATUS BREAKDOWN -->
-            <div class="space-y-3">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <div class="h-2 w-2 rounded-full bg-blue-900"></div>
-                  <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.direct_collections.pending') }}</span>
-                </div>
-                <span class="text-sm font-semibold text-blue-900 dark:text-blue-200">{{ props.record.data?.pending_analysis || 0 }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <div class="h-2 w-2 rounded-full bg-yellow-500"></div>
-                  <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.direct_collections.in_progress') }}</span>
-                </div>
-                <span class="text-sm font-semibold text-yellow-600 dark:text-amber-300">{{ props.record.data?.in_progress_analysis || 0 }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <div class="h-2 w-2 rounded-full bg-green-500"></div>
-                  <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.direct_collections.completed') }}</span>
-                </div>
-                <span class="text-sm font-semibold text-green-600 dark:text-green-300">{{ props.record.data?.completed_analysis || 0 }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <div class="h-2 w-2 rounded-full bg-red-500"></div>
-                  <span class="text-sm text-slate-600 dark:text-slate-300">{{ $t('gestlab.general.labels.direct_collections.critical') }}</span>
-                </div>
-                <span class="text-sm font-semibold text-red-600 dark:text-red-300">{{ props.record.data?.critical_analysis || 0 }}</span>
-              </div>
+            <div class="mt-2 h-2 overflow-hidden rounded-full bg-[color:var(--ds-border)]">
+              <div class="h-full bg-primary-600 transition-all duration-500" :style="{ width: completionPercentage + '%' }"></div>
             </div>
           </div>
-        </div>
-
-        <!-- QUALITY CERTIFICATES -->
-        <div v-if="props.record.data?.quality_certificate && hasPermission('view_quality_certificates')" class="rounded-[26px] border border-slate-200 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
-          <h3 class="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-            <DocumentCheckIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
-            {{ $t('gestlab.general.labels.direct_collections.quality_certificate') }}
-          </h3>
-          <div class="space-y-3">
-            <div class="rounded-2xl border border-blue-200 bg-blue-50 p-3 dark:border-blue-400/30 dark:bg-blue-500/10">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-semibold text-blue-900 dark:text-blue-200">{{ props.record.data?.quality_certificate.code }}</span>
-                <span :class="[
-                  'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-                  props.record.data?.quality_certificate.status ? 'bg-green-100 text-green-800 dark:bg-green-500/10 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-amber-500/10 dark:text-amber-200'
-                ]">
-                  {{ props.record.data?.quality_certificate.validated_by_id ? 'Validado' : 'Pendente' }}
-                </span>
-              </div>
-              <div class="text-xs text-slate-600 dark:text-slate-300">
-                {{ $t('gestlab.general.labels.direct_collections.validated_by') }}: {{ props.record.data?.quality_certificate.validated_by || '-' }}
-              </div>
-              <div class="text-xs text-slate-600 dark:text-slate-300">
-                {{ $t('gestlab.general.labels.direct_collections.validated_at') }}: {{ formatDate(props.record.data?.quality_certificate.validated_at) }}
-              </div>
+          <dl class="mt-4 divide-y divide-[color:var(--ds-border)] border-t border-[color:var(--ds-border)]">
+            <div v-for="stat in analysisBreakdown" :key="stat.label" class="flex items-center justify-between gap-3 py-3">
+              <dt class="flex items-center gap-2 text-xs font-semibold text-[color:var(--ds-text-soft)]">
+                <span class="lims-status-dot" :class="stat.dotClass" />
+                {{ stat.label }}
+              </dt>
+              <dd class="text-sm font-bold text-[color:var(--ds-text)]">{{ stat.value }}</dd>
             </div>
-          </div>
-        </div>
+          </dl>
+        </section>
 
-        <!-- DOCUMENTS CARD -->
-        <div class="rounded-[26px] border border-slate-200 bg-white/95 p-6 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.22)] dark:border-slate-800 dark:bg-slate-950/85">
-          <h3 class="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-            <PaperClipIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
-            {{ $t('gestlab.general.labels.direct_collections.documents') }}
-          </h3>
-          <div class="space-y-3">
-            <a 
-              v-if="props.record.data?.links?.pdf_path"
-              :href="props.record.data.links.pdf_path"
-              target="_blank"
-              class="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-3 transition-colors duration-200 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/80 dark:hover:bg-slate-800"
-            >
-              <div class="flex items-center gap-3">
-                <DocumentIcon class="h-5 w-5 text-slate-400 group-hover:text-blue-900 dark:text-slate-500 dark:group-hover:text-blue-300" />
-                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $t('gestlab.general.labels.direct_collections.work_sheet') }}</span>
-              </div>
-              <ArrowTopRightOnSquareIcon class="h-4 w-4 text-slate-400 group-hover:text-blue-900 dark:text-slate-500 dark:group-hover:text-blue-300" />
-            </a>
-            <a 
-              v-if="props.record.data?.links?.pdf_collection_labels"
-              :href="props.record.data.links.pdf_collection_labels"
-              target="_blank"
-              class="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-3 transition-colors duration-200 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/80 dark:hover:bg-slate-800"
-            >
-              <div class="flex items-center gap-3">
-                <TagIcon class="h-5 w-5 text-slate-400 group-hover:text-blue-900 dark:text-slate-500 dark:group-hover:text-blue-300" />
-                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $t('gestlab.general.labels.direct_collections.labels') }}</span>
-              </div>
-              <ArrowTopRightOnSquareIcon class="h-4 w-4 text-slate-400 group-hover:text-blue-900 dark:text-slate-500 dark:group-hover:text-blue-300" />
-            </a>
-            <a 
-              v-if="props.record.data?.links?.pdf_collection_term"
-              :href="props.record.data.links.pdf_collection_term"
-              target="_blank"
-              class="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-3 transition-colors duration-200 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/80 dark:hover:bg-slate-800"
-            >
-              <div class="flex items-center gap-3">
-                <DocumentTextIcon class="h-5 w-5 text-slate-400 group-hover:text-blue-900 dark:text-slate-500 dark:group-hover:text-blue-300" />
-                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $t('gestlab.general.labels.direct_collections.collection_term') }}</span>
-              </div>
-              <ArrowTopRightOnSquareIcon class="h-4 w-4 text-slate-400 group-hover:text-blue-900 dark:text-slate-500 dark:group-hover:text-blue-300" />
-            </a>
-            <a 
-              v-if="props.record.data?.links?.pdf_quality_certificate && hasPermission('view_quality_certificates')"
-              :href="props.record.data.links.pdf_quality_certificate"
-              target="_blank"
-              class="group flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-3 transition-colors duration-200 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900/80 dark:hover:bg-slate-800"
-            >
-              <div class="flex items-center gap-3">
-                <Square2StackIcon class="h-5 w-5 text-slate-400 group-hover:text-blue-900 dark:text-slate-500 dark:group-hover:text-blue-300" />
-                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ $t('gestlab.general.labels.direct_collections.quality_certificate') }}</span>
-              </div>
-              <ArrowTopRightOnSquareIcon class="h-4 w-4 text-slate-400 group-hover:text-blue-900 dark:text-slate-500 dark:group-hover:text-blue-300" />
-            </a>
-
+        <section v-if="data.quality_certificate && hasPermission('view_quality_certificates')" class="ds-card p-5">
+          <div class="flex items-center gap-2">
+            <DocumentCheckIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+            <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.direct_collections.quality_certificate') }}</h2>
           </div>
-        </div>
-      </div>
+          <div class="mt-4 border-l-4 p-3" :class="data.quality_certificate.validated_by_id ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-500/10' : 'border-amber-500 bg-amber-50/70 dark:bg-amber-500/10'">
+            <div class="flex items-center justify-between gap-3">
+              <p class="font-mono text-sm font-bold text-[color:var(--ds-text)]">{{ data.quality_certificate.code }}</p>
+              <span class="ds-chip">{{ data.quality_certificate.validated_by_id ? 'Validado' : 'Pendente' }}</span>
+            </div>
+            <p class="mt-3 text-xs text-[color:var(--ds-text-soft)]">Validado por: {{ data.quality_certificate.validated_by || 'N/D' }}</p>
+            <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">Data: {{ formatDate(data.quality_certificate.validated_at) }}</p>
+          </div>
+        </section>
+
+        <section class="ds-card p-5">
+          <div class="flex items-center gap-2">
+            <PaperClipIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+            <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.direct_collections.documents') }}</h2>
+          </div>
+          <div v-if="documentLinks.length" class="mt-4 space-y-2">
+            <a v-for="document in documentLinks" :key="document.label" :href="document.href" target="_blank" rel="noopener" class="ds-command-palette-item group">
+              <component :is="document.icon" class="h-4 w-4 shrink-0 text-primary-700 dark:text-primary-300" />
+              <span class="min-w-0 flex-1 truncate text-sm font-bold">{{ document.label }}</span>
+              <ArrowTopRightOnSquareIcon class="h-4 w-4 shrink-0 text-[color:var(--ds-text-soft)]" />
+            </a>
+          </div>
+          <div v-else class="ds-empty-state mt-4 p-4 text-center">
+            <p class="text-xs text-[color:var(--ds-text-soft)]">Nenhum documento disponível.</p>
+          </div>
+        </section>
+      </aside>
     </div>
-
   </div>
 </template>
 
 <script setup>
-import Layout from "@/Shared/Layouts/Layout.vue";
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-import { usePermission } from "@/Composables/usePermissions";
-import { Link, router } from "@inertiajs/vue3";
-import { computed } from "vue";
+import Layout from '@/Shared/Layouts/Layout.vue'
+import { usePermission } from '@/Composables/usePermissions'
+import { Link, router } from '@inertiajs/vue3'
+import { computed } from 'vue'
 import {
   ArrowLeftIcon,
   ArrowPathRoundedSquareIcon,
   ArrowTopRightOnSquareIcon,
   BeakerIcon,
-  CalendarIcon,
   ChartBarIcon,
   CheckCircleIcon,
   ClipboardDocumentCheckIcon,
@@ -742,77 +360,150 @@ import {
   InboxIcon,
   PaperClipIcon,
   PencilIcon,
+  QrCodeIcon,
+  Square2StackIcon,
   TagIcon,
-  EyeDropperIcon,
-  Square2StackIcon
-} from "@heroicons/vue/24/outline";
+} from '@heroicons/vue/24/outline'
 
-const { hasRole, hasPermission } = usePermission();
+const { hasRole, hasPermission } = usePermission()
+
 const props = defineProps({
   record: Object,
-  collectionPresentation: { type: Object, default: () => ({}) },
-});
+  collectionPresentation: {
+    type: Object,
+    default: () => ({}),
+  },
+})
 
 defineOptions({
-  layout: Layout
-});
+  layout: Layout,
+})
 
-const presentation = computed(() => props.collectionPresentation || {});
-const sampleEntry = computed(() => props.record?.data?.sample_entry || null);
-const collectionTitle = computed(() => presentation.value.title || 'Colheita direta');
-const collectionDescription = computed(() => presentation.value.description || 'Etapa operacional ligada à Sample Entry e ao lab code.');
-const collectionIndexUrl = computed(() => presentation.value.index_url || route('directcollections.index'));
-const collectionEditUrl = computed(() => presentation.value.edit_url || (props.record?.data?.id ? route('directcollections.edit', { collection: props.record.data.id }) : '#'));
+const data = computed(() => props.record?.data || {})
+const presentation = computed(() => props.collectionPresentation || {})
+const sampleEntry = computed(() => data.value.sample_entry || null)
+const scopeControl = computed(() => data.value.scope_control || {})
+const collectionTitle = computed(() => presentation.value.title || 'Colheita direta')
+const collectionDescription = computed(() => presentation.value.description || 'Etapa operacional ligada à Sample Entry e ao código laboratorial.')
+const collectionIndexUrl = computed(() => presentation.value.index_url || route('directcollections.index'))
+const collectionEditUrl = computed(() => presentation.value.edit_url || (data.value.id ? route('directcollections.edit', { collection: data.value.id }) : '#'))
+const completionPercentage = computed(() => getCompletionPercentage())
+const hasScopeControl = computed(() => Boolean(scopeControl.value.required_parameter_count || scopeControl.value.conditioning_status))
 
-const getStatusBadgeColor = (status) => {
-  const statusColors = {
-    'pending': 'bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200',
-    'in_progress': 'bg-primary-100 text-primary-800 dark:bg-primary-500/10 dark:text-primary-200',
-    'completed': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200',
-    'verified': 'bg-primary-100 text-primary-800 dark:bg-primary-500/10 dark:text-primary-200',
-    'approved': 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200',
-    'rejected': 'bg-rose-100 text-rose-800 dark:bg-rose-500/10 dark:text-rose-200',
-    'cancelled': 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200'
-  };
-  return statusColors[status] || 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200';
-};
+const statusDotClass = computed(() => {
+  const statusClasses = {
+    pending: 'lims-status-dot-hold',
+    in_progress: 'lims-status-dot-instrument',
+    completed: 'lims-status-dot-release',
+    verified: 'lims-status-dot-instrument',
+    approved: 'lims-status-dot-release',
+    rejected: 'lims-status-dot-critical',
+    cancelled: 'lims-status-dot-critical',
+  }
+
+  return statusClasses[data.value.sample_status] || 'lims-status-dot-hold'
+})
+
+const workflowSteps = computed(() => [
+  { key: 'collection', label: 'Colheita', date: data.value.collection_date, icon: CircleStackIcon, complete: isStepComplete('collection'), active: false },
+  { key: 'reception', label: 'Receção', date: data.value.created_at, icon: InboxIcon, complete: isStepComplete('reception'), active: false },
+  { key: 'analysis', label: 'Análise', date: data.value.analysis_start_date, icon: BeakerIcon, complete: isStepComplete('analysis'), active: Boolean(data.value.placed_analysis) },
+  { key: 'verification', label: 'Verificação', date: data.value.verified_date, icon: CheckCircleIcon, complete: isStepComplete('verification'), active: false },
+  { key: 'approval', label: 'Aprovação', date: data.value.approved_date, icon: DocumentCheckIcon, complete: isStepComplete('approval'), active: false },
+])
+
+const analysisSummary = computed(() => [
+  { label: 'Amostras', value: data.value.total_samples || 0, valueClass: 'text-[color:var(--ds-text)]' },
+  { label: 'Concluídas', value: data.value.completed_analysis || 0, valueClass: 'text-emerald-700 dark:text-emerald-300' },
+  { label: 'Em curso', value: data.value.in_progress_analysis || 0, valueClass: 'text-amber-700 dark:text-amber-300' },
+  { label: 'Pendentes', value: data.value.pending_analysis || 0, valueClass: 'text-primary-800 dark:text-primary-200' },
+])
+
+const analysisBreakdown = computed(() => [
+  { label: 'Pendentes', value: data.value.pending_analysis || 0, dotClass: 'lims-status-dot-instrument' },
+  { label: 'Em curso', value: data.value.in_progress_analysis || 0, dotClass: 'lims-status-dot-hold' },
+  { label: 'Concluídas', value: data.value.completed_analysis || 0, dotClass: 'lims-status-dot-release' },
+  { label: 'Críticas', value: data.value.critical_analysis || 0, dotClass: 'lims-status-dot-critical' },
+])
+
+const sampleIdentityFields = computed(() => [
+  { label: 'Código laboratorial', value: data.value.cl },
+  { label: 'Tipo', value: data.value.type },
+])
+
+const processFlags = computed(() => [
+  { label: 'Análise', active: Boolean(data.value.placed_analysis), activeLabel: 'Em análise', inactiveLabel: 'Aguardando' },
+  { label: 'Faturação', active: Boolean(data.value.invoiced), activeLabel: 'Faturado', inactiveLabel: 'Por faturar' },
+  { label: 'Processamento', active: Boolean(data.value.processed), activeLabel: 'Processado', inactiveLabel: 'Por processar' },
+])
+
+const collectionDetailFields = computed(() => [
+  { label: 'Data da colheita', value: formatDate(data.value.collection_date) },
+  { label: 'Data de validade', value: formatDate(data.value.expiry_date) },
+  { label: 'Produto', value: data.value.product },
+  { label: 'Marca comercial', value: data.value.comercial_brand },
+  { label: 'Quantidade prevista', value: data.value.qty },
+  { label: 'Quantidade recolhida', value: data.value.collected_qty },
+  { label: 'Temperatura', value: `${data.value.temperature_value || 'N/D'} ${data.value.temperature || '°C'}` },
+  { label: 'Localização', value: data.value.location },
+  { label: 'Viatura', value: data.value.vehicle },
+  { label: 'Embalagem', value: data.value.pack },
+  { label: 'Lote', value: data.value.lot },
+])
+
+const documentLinks = computed(() => {
+  const links = [
+    { label: 'Folha de trabalho', href: data.value.links?.pdf_path, icon: DocumentIcon },
+    { label: 'Etiquetas', href: data.value.links?.pdf_collection_labels, icon: TagIcon },
+    { label: 'Termo de colheita', href: data.value.links?.pdf_collection_term, icon: DocumentTextIcon },
+  ]
+
+  if (hasPermission('view_quality_certificates')) {
+    links.push({ label: 'Certificado de qualidade', href: data.value.links?.pdf_quality_certificate, icon: Square2StackIcon })
+  }
+
+  return links.filter(link => link.href)
+})
 
 const getStatusLabel = (status) => {
   const statusLabels = {
-    'pending': 'Pendente',
-    'in_progress': 'Em Análise',
-    'completed': 'Completo',
-    'verified': 'Verificado',
-    'approved': 'Aprovado',
-    'rejected': 'Rejeitado',
-    'cancelled': 'Cancelado'
-  };
-  return statusLabels[status] || status;
-};
+    pending: 'Pendente',
+    in_progress: 'Em análise',
+    completed: 'Completo',
+    verified: 'Verificado',
+    approved: 'Aprovado',
+    rejected: 'Rejeitado',
+    cancelled: 'Cancelado',
+  }
 
-const getResultStatusColor = (status) => {
-  const statusColors = {
-    0: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200', // pending
-    1: 'bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200', // in progress
-    2: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200', // completed
-    3: 'bg-primary-100 text-primary-800 dark:bg-primary-500/10 dark:text-primary-200', // verified
-    4: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200', // approved
-    5: 'bg-rose-100 text-rose-800 dark:bg-rose-500/10 dark:text-rose-200' // rejected
-  };
-  return statusColors[status] || 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200';
-};
+  return statusLabels[status] || status
+}
+
+const getResultStatusDot = (status) => {
+  const statusClasses = {
+    0: 'lims-status-dot-instrument',
+    1: 'lims-status-dot-hold',
+    2: 'lims-status-dot-release',
+    3: 'lims-status-dot-instrument',
+    4: 'lims-status-dot-release',
+    5: 'lims-status-dot-critical',
+  }
+
+  return statusClasses[status] || 'lims-status-dot-instrument'
+}
 
 const getResultStatusLabel = (status) => {
   const statusLabels = {
     0: 'Pendente',
-    1: 'Em Progresso',
+    1: 'Em progresso',
     2: 'Completo',
     3: 'Verificado',
     4: 'Aprovado',
-    5: 'Rejeitado'
-  };
-  return statusLabels[status] || 'Desconhecido';
-};
+    5: 'Rejeitado',
+  }
+
+  return statusLabels[status] || 'Desconhecido'
+}
 
 const getConditioningLabel = (status) => {
   const labels = {
@@ -827,134 +518,36 @@ const getConditioningLabel = (status) => {
 const isStepComplete = (step) => {
   switch (step) {
     case 'collection':
-      return !!props.record.data?.collection_date;
+      return Boolean(data.value.collection_date)
     case 'reception':
-      return !!props.record.data?.created_at;
+      return Boolean(data.value.created_at)
     case 'analysis':
-      return props.record.data?.placed_analysis && props.record.data?.analysis_start_date;
+      return Boolean(data.value.placed_analysis && data.value.analysis_start_date)
     case 'verification':
-      return !!props.record.data?.verified_date;
+      return Boolean(data.value.verified_date)
     case 'approval':
-      return !!props.record.data?.approved_date;
+      return Boolean(data.value.approved_date)
     default:
-      return false;
+      return false
   }
-};
+}
 
 const getCompletionPercentage = () => {
-  const steps = ['collection', 'reception', 'analysis', 'verification', 'approval'];
-  const completedSteps = steps.filter(step => isStepComplete(step)).length;
-  return Math.round((completedSteps / steps.length) * 100);
-};
+  const steps = ['collection', 'reception', 'analysis', 'verification', 'approval']
+  const completedSteps = steps.filter(step => isStepComplete(step)).length
+
+  return Math.round((completedSteps / steps.length) * 100)
+}
 
 const formatDate = (date) => {
-  if (!date) return '-';
+  if (!date) {
+    return 'N/D'
+  }
+
   return new Date(date).toLocaleDateString('pt-PT', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
-  });
-};
-
-</script>
-
-<style scoped>
-.direct-collection-show [class~="text-blue-900"],
-.direct-collection-show [class~="text-blue-800"],
-.direct-collection-show [class~="text-blue-700"] {
-  color: #0f766e;
+    day: 'numeric',
+  })
 }
-
-.direct-collection-show [class~="text-green-800"],
-.direct-collection-show [class~="text-green-700"],
-.direct-collection-show [class~="text-green-600"] {
-  color: #047857;
-}
-
-.direct-collection-show [class~="text-yellow-700"],
-.direct-collection-show [class~="text-yellow-600"] {
-  color: #b45309;
-}
-
-.direct-collection-show [class~="text-red-600"],
-.direct-collection-show [class~="text-red-700"] {
-  color: #be123c;
-}
-
-.direct-collection-show [class~="bg-blue-50"],
-.direct-collection-show [class~="bg-blue-100"] {
-  background-color: rgb(240 253 250 / 0.88);
-}
-
-.direct-collection-show [class~="bg-green-50"],
-.direct-collection-show [class~="bg-green-100"] {
-  background-color: rgb(236 253 245 / 0.9);
-}
-
-.direct-collection-show [class~="bg-yellow-100"] {
-  background-color: rgb(254 243 199 / 0.9);
-}
-
-.direct-collection-show [class~="bg-red-50"],
-.direct-collection-show [class~="bg-red-100"] {
-  background-color: rgb(255 241 242 / 0.9);
-}
-
-.direct-collection-show [class~="border-blue-100"],
-.direct-collection-show [class~="border-blue-200"] {
-  border-color: rgb(153 246 228 / 0.86);
-}
-
-.direct-collection-show [class~="border-green-200"] {
-  border-color: rgb(167 243 208 / 0.86);
-}
-
-.direct-collection-show [class~="border-red-200"] {
-  border-color: rgb(254 205 211 / 0.9);
-}
-
-:global(.dark) .direct-collection-show [class~="dark:text-blue-300"],
-:global(.dark) .direct-collection-show [class~="dark:text-blue-200"],
-:global(.dark) .direct-collection-show [class~="dark:text-green-300"],
-:global(.dark) .direct-collection-show [class~="dark:text-green-200"] {
-  color: #99f6e4;
-}
-
-:global(.dark) .direct-collection-show [class~="dark:text-red-300"],
-:global(.dark) .direct-collection-show [class~="dark:text-red-100"] {
-  color: #fecdd3;
-}
-
-:global(.dark) .direct-collection-show [class~="dark:bg-blue-500/10"],
-:global(.dark) .direct-collection-show [class~="dark:bg-green-500/10"] {
-  background-color: rgb(20 184 166 / 0.12);
-}
-
-:global(.dark) .direct-collection-show [class~="dark:bg-red-500/10"] {
-  background-color: rgb(244 63 94 / 0.12);
-}
-</style>
-
-<script>
-// StatusToggle Component
-const StatusToggle = {
-  props: ['value'],
-  template: `
-    <button type="button" class="relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-700 focus:ring-offset-2 dark:focus:ring-primary-300 dark:focus:ring-offset-slate-950" :class="value ? 'bg-primary-800 dark:bg-primary-500' : 'bg-slate-200 dark:bg-slate-700'">
-      <span class="sr-only">Toggle status</span>
-      <span class="translate-x-0 pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" :class="value ? 'translate-x-5' : 'translate-x-0'">
-        <span class="absolute inset-0 flex h-full w-full items-center justify-center transition-opacity" :class="value ? 'opacity-0 duration-100 ease-out' : 'opacity-100 duration-200 ease-in'">
-          <svg class="h-3 w-3 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 12 12">
-            <path d="M4 8l2-2m0 0l2-2M6 6L4 4m2 2l2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </span>
-        <span class="absolute inset-0 flex h-full w-full items-center justify-center transition-opacity" :class="value ? 'opacity-100 duration-200 ease-in' : 'opacity-0 duration-100 ease-out'">
-          <svg class="h-3 w-3 text-primary-900 dark:text-primary-600" fill="currentColor" viewBox="0 0 12 12">
-            <path d="M3.707 5.293a1 1 0 00-1.414 1.414l1.414-1.414zM5 8l-.707.707a1 1 0 001.414 0L5 8zm4.707-3.293a1 1 0 00-1.414-1.414l1.414 1.414zm-7.414 2l2 2 1.414-1.414-2-2-1.414 1.414zm3.414 2l4-4-1.414-1.414-4 4 1.414 1.414z" />
-          </svg>
-        </span>
-      </span>
-    </button>
-  `
-};
 </script>

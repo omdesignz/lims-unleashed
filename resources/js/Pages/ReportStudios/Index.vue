@@ -2,7 +2,6 @@
 import Layout from '@/Shared/Layouts/Layout.vue'
 import reportStudioWorkbench from '@/Components/report-studio/studio-workbench.vue'
 import DialogModal from '@/Components/dialog-modal.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { previewReplacementsByType } from '@/Support/report-studio-preview-html.mjs'
 import { computed, ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
@@ -719,20 +718,15 @@ const onStudioTypeUpdate = (studioType) => {
 </script>
 
 <template>
-  <div class="space-y-8 font-sans" :class="commercialDocumentThemeClasses">
-    <section class="overflow-hidden rounded-[2rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_26px_80px_rgba(20,61,55,0.10)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f] dark:ring-white/10">
-      <div class="relative isolate px-6 py-8 text-[#15231f] dark:text-[#f7f1e7] sm:px-8 lg:px-10">
-        <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgb(var(--primary-200-rgb)/0.42),transparent_32%),radial-gradient(circle_at_88%_0%,rgb(var(--accent-300-rgb)/0.28),transparent_30%),linear-gradient(135deg,rgb(255_253_247/0.98),rgb(244_239_228/0.92))] dark:bg-[radial-gradient(circle_at_top_left,rgb(var(--primary-500-rgb)/0.18),transparent_34%),radial-gradient(circle_at_88%_0%,rgb(var(--accent-300-rgb)/0.13),transparent_30%),linear-gradient(135deg,#07110f,#10231f)]" />
-        <div class="absolute right-0 top-0 -z-10 h-64 w-64 rounded-full bg-[rgb(var(--primary-500-rgb)/0.12)] blur-3xl dark:bg-[rgb(var(--accent-300-rgb)/0.08)]" />
-        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div class="max-w-4xl">
-            <div class="inline-flex rounded-full border border-[rgb(var(--accent-300-rgb)/0.55)] bg-[rgb(var(--accent-50-rgb)/0.82)] px-3 py-1 text-xs font-black uppercase tracking-[0.28em] text-[rgb(var(--primary-900-rgb))] shadow-sm dark:border-[rgb(var(--accent-300-rgb)/0.25)] dark:bg-[rgb(var(--accent-300-rgb)/0.12)] dark:text-[rgb(var(--accent-200-rgb))]">
-              {{ $t('gestlab.general.labels.vap_report_studios.index.hero.badge') }}
-            </div>
-            <h1 class="mt-5 text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden p-5 sm:p-6">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div class="min-w-0 max-w-4xl">
+            <p class="ds-kicker">{{ $t('gestlab.general.labels.vap_report_studios.index.hero.badge') }}</p>
+            <h1 class="ds-heading mt-2 text-2xl">
               {{ $t('gestlab.general.labels.vap_report_studios.index.hero.title') }}
             </h1>
-            <p class="mt-4 max-w-3xl text-sm font-medium leading-6 text-[#475a53] dark:text-[#cbd8cf] sm:text-base">
+            <p class="ds-copy mt-2 max-w-3xl text-sm">
               {{ $t('gestlab.general.labels.vap_report_studios.index.hero.description') }}
             </p>
           </div>
@@ -741,13 +735,13 @@ const onStudioTypeUpdate = (studioType) => {
               v-if="previewPdfHref"
               :href="previewPdfHref"
               target="_blank"
-              class="inline-flex items-center justify-center rounded-2xl border border-[#ded3bf] bg-white/75 px-4 py-3 text-sm font-bold text-[#15231f] shadow-sm transition hover:border-[rgb(var(--primary-300-rgb))] hover:bg-white dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:hover:border-[rgb(var(--primary-400-rgb)/0.55)]"
+              class="ds-button ds-button-secondary"
             >
               {{ $t('gestlab.general.labels.vap_report_studios.index.hero.preview_pdf') }}
             </a>
             <button
               type="button"
-              class="inline-flex items-center justify-center rounded-2xl bg-[rgb(var(--primary-800-rgb))] px-4 py-3 text-sm font-bold text-white shadow-[0_18px_45px_rgb(var(--primary-900-rgb)/0.18)] transition hover:bg-[rgb(var(--primary-700-rgb))] dark:bg-[rgb(var(--accent-300-rgb))] dark:text-[#07110f] dark:hover:bg-[rgb(var(--accent-200-rgb))]"
+              class="ds-button ds-button-primary"
               @click="resetForm"
             >
               {{ $t('gestlab.general.labels.vap_report_studios.index.hero.new_template') }}
@@ -755,63 +749,61 @@ const onStudioTypeUpdate = (studioType) => {
           </div>
         </div>
 
-        <div class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <article
+        <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
+          <div
             v-for="card in studioSummaryCards"
             :key="card.key"
-            class="rounded-3xl border border-[#ded3bf]/70 bg-white/65 p-2 shadow-sm ring-1 ring-white/70 backdrop-blur dark:border-[#25443c] dark:bg-[#10231f]/70 dark:ring-white/10"
+            class="border-b border-[var(--ds-border)] px-4 py-3 sm:[&:nth-child(odd)]:border-r sm:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0"
           >
-            <div class="flex items-center justify-between gap-3 px-4 pb-3 pt-2">
-              <h3 class="text-sm font-bold text-[#15231f] dark:text-[#f7f1e7]">{{ $t(card.labelKey) }}</h3>
-              <span class="h-2 w-2 rounded-full bg-[rgb(var(--accent-300-rgb))] shadow-[0_0_20px_rgb(var(--accent-300-rgb)/0.55)]" />
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ $t(card.labelKey) }}</dt>
+              <span class="h-2 w-2 rounded-full bg-[rgb(var(--primary-600-rgb))]" />
             </div>
-            <div class="rounded-2xl bg-[#fffdf7] p-4 text-[#15231f] shadow-sm dark:bg-[#07110f] dark:text-[#f7f1e7]">
-              <div class="text-3xl font-black">{{ card.value }}</div>
-              <div class="mt-1 text-xs font-semibold text-[#6b7b74] dark:text-[#83978d]">{{ $t(card.hintKey) }}</div>
-            </div>
-          </article>
-        </div>
-      </div>
+            <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ card.value }}</dd>
+            <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ $t(card.hintKey) }}</p>
+          </div>
+        </dl>
 
-      <div class="grid gap-px bg-[#ded3bf]/80 p-px dark:bg-[#25443c] sm:grid-cols-2 lg:grid-cols-5">
+      <div class="mt-5 grid gap-px overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-border)] sm:grid-cols-2 lg:grid-cols-5">
         <article
           v-for="card in documentTypeCards"
           :key="card.key"
-          class="flex items-center justify-between gap-3 bg-[#fffaf0]/88 px-5 py-4 text-sm font-semibold text-[#475a53] dark:bg-[#10231f]/88 dark:text-[#cbd8cf]"
+          class="flex items-center justify-between gap-3 bg-[var(--ds-panel-raised)] px-4 py-3 text-sm font-semibold text-[var(--ds-text-muted)]"
         >
           <span class="inline-flex items-center gap-2">
             <span class="h-2.5 w-2.5 rounded-full" :class="card.accent" />
             {{ $t(card.labelKey) }}
           </span>
-          <span class="font-black text-[#15231f] dark:text-[#f7f1e7]">{{ card.value || 0 }}</span>
+          <span class="font-bold text-[var(--ds-text)]">{{ card.value || 0 }}</span>
         </article>
       </div>
     </section>
 
-    <section class="rounded-[2rem] border border-[#ded3bf] bg-[#f4efe4]/80 p-2 shadow-[0_18px_55px_rgba(20,61,55,0.06)] ring-1 ring-white/70 dark:border-[#25443c] dark:bg-[#07110f]/70 dark:ring-white/10">
-      <div class="flex flex-col gap-3 px-4 pb-4 pt-3 md:flex-row md:items-center md:justify-between">
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-3 border-b border-[var(--ds-border)] px-5 py-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 class="text-lg font-bold text-[#15231f] dark:text-[#f7f1e7]">{{ $t('gestlab.general.labels.vap_report_studios.index.saved.title') }}</h2>
-          <p class="mt-1 text-sm font-medium text-[#475a53] dark:text-[#cbd8cf]">{{ $t('gestlab.general.labels.vap_report_studios.index.saved.description') }}</p>
+          <p class="ds-kicker">Biblioteca controlada</p>
+          <h2 class="ds-heading mt-1 text-base">{{ $t('gestlab.general.labels.vap_report_studios.index.saved.title') }}</h2>
+          <p class="ds-copy mt-1 text-sm">{{ $t('gestlab.general.labels.vap_report_studios.index.saved.description') }}</p>
         </div>
-        <div class="rounded-full border border-[#ded3bf] bg-[#fffdf7] px-3 py-1.5 text-xs font-bold text-[#475a53] shadow-sm dark:border-[#25443c] dark:bg-[#10231f] dark:text-[#cbd8cf]">
+        <div class="ds-badge ds-badge-neutral">
           {{ $t('gestlab.general.labels.vap_report_studios.index.saved.count', { count: templates.length }) }}
         </div>
       </div>
 
-      <div v-if="templates.length" class="space-y-3 rounded-[1.45rem] bg-[#fffdf7] p-4 shadow-sm shadow-primary-950/5 dark:bg-[#07110f] dark:shadow-none">
-        <article v-for="template in templates" :key="template.id" class="group rounded-2xl border border-[#ded3bf]/80 bg-[#fffdf7] p-4 transition hover:-translate-y-0.5 hover:border-[rgb(var(--primary-300-rgb))] hover:shadow-[0_20px_50px_rgb(var(--primary-900-rgb)/0.10)] dark:border-[#25443c] dark:bg-[#10231f]/70 dark:hover:border-[rgb(var(--primary-400-rgb)/0.55)]">
+      <div v-if="templates.length" class="divide-y divide-[var(--ds-border)]">
+        <article v-for="template in templates" :key="template.id" class="px-5 py-4 transition hover:bg-[var(--ds-panel-subtle)]">
           <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div class="space-y-2">
               <div class="flex flex-wrap items-center gap-2">
-                <span class="rounded-full bg-[#f4efe4] px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-[#475a53] dark:bg-[#07110f] dark:text-[#cbd8cf]">{{ template.studio_type }}</span>
-                <span class="rounded-full bg-[rgb(var(--primary-50-rgb))] px-2.5 py-1 text-xs font-bold text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-500-rgb)/0.14)] dark:text-[rgb(var(--primary-100-rgb))]">{{ rendererLabel(template.renderer) }}</span>
-                <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">{{ template.status }}</span>
-                <span v-if="template.is_default" class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">{{ $t('gestlab.general.labels.vap_report_studios.index.saved.default_badge') }}</span>
+                <span class="ds-badge ds-badge-neutral">{{ template.studio_type }}</span>
+                <span class="ds-badge ds-badge-info">{{ rendererLabel(template.renderer) }}</span>
+                <span class="ds-badge ds-badge-success">{{ template.status }}</span>
+                <span v-if="template.is_default" class="ds-badge ds-badge-warning">{{ $t('gestlab.general.labels.vap_report_studios.index.saved.default_badge') }}</span>
               </div>
-              <h3 class="text-lg font-bold text-[#15231f] transition group-hover:text-[rgb(var(--primary-800-rgb))] dark:text-[#f7f1e7] dark:group-hover:text-[rgb(var(--primary-200-rgb))]">{{ template.name }}</h3>
-              <p class="text-sm leading-6 text-[#475a53] dark:text-[#cbd8cf]">{{ template.description || $t('gestlab.general.labels.vap_report_studios.index.saved.no_description') }}</p>
-              <div class="text-xs font-medium text-[#84958d] dark:text-[#83978d]">
+              <h3 class="text-base font-bold text-[var(--ds-text)]">{{ template.name }}</h3>
+              <p class="ds-copy text-sm">{{ template.description || $t('gestlab.general.labels.vap_report_studios.index.saved.no_description') }}</p>
+              <div class="text-xs font-semibold text-[var(--ds-text-soft)]">
                 {{ $t('gestlab.general.labels.vap_report_studios.index.saved.updated_at', { date: formatDate(template.updated_at) }) }}<span v-if="template.updated_by"> · {{ template.updated_by }}</span>
               </div>
             </div>
@@ -819,21 +811,21 @@ const onStudioTypeUpdate = (studioType) => {
               <a
                 :href="template.preview_pdf_path"
                 target="_blank"
-                class="rounded-xl border border-[rgb(var(--primary-200-rgb))] bg-[rgb(var(--primary-50-rgb))] px-3 py-2 text-sm font-bold text-[rgb(var(--primary-800-rgb))] hover:bg-[rgb(var(--primary-100-rgb))] dark:border-[rgb(var(--primary-400-rgb)/0.25)] dark:bg-[rgb(var(--primary-500-rgb)/0.12)] dark:text-[rgb(var(--primary-100-rgb))] dark:hover:bg-[rgb(var(--primary-500-rgb)/0.20)]"
+                class="ds-button ds-button-secondary"
               >
                 {{ $t('gestlab.general.labels.vap_report_studios.index.saved.preview_pdf') }}
               </a>
-              <button type="button" class="rounded-xl border border-[#ded3bf] bg-[#fffdf7] px-3 py-2 text-sm font-bold text-[#475a53] hover:border-[rgb(var(--primary-300-rgb))] hover:bg-[#f8f4ea] dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#cbd8cf] dark:hover:bg-[#10231f]" @click="editTemplate(template)">
+              <button type="button" class="ds-button ds-button-secondary" @click="editTemplate(template)">
                 {{ $t('gestlab.general.labels.vap_report_studios.index.saved.edit') }}
               </button>
-              <button type="button" class="rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 dark:border-rose-500/30 dark:bg-slate-950 dark:text-rose-300 dark:hover:bg-rose-500/10" @click="destroyTemplate(template)">
+              <button type="button" class="ds-button ds-button-danger" @click="destroyTemplate(template)">
                 {{ $t('gestlab.general.labels.vap_report_studios.index.saved.archive') }}
               </button>
             </div>
           </div>
         </article>
       </div>
-      <div v-else class="rounded-[1.45rem] border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
+      <div v-else class="ds-empty-state m-5 p-8 text-center text-sm">
         {{ $t('gestlab.general.labels.vap_report_studios.index.saved.empty') }}
       </div>
     </section>
@@ -869,7 +861,7 @@ const onStudioTypeUpdate = (studioType) => {
           <p>
             {{ $t('gestlab.general.labels.vap_report_studios.index.archive.message', { name: archiveTemplate?.name || '' }) }}
           </p>
-          <p class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100">
+          <p class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-100">
             {{ $t('gestlab.general.labels.vap_report_studios.index.archive.warning') }}
           </p>
         </div>
@@ -878,7 +870,7 @@ const onStudioTypeUpdate = (studioType) => {
       <template #footer>
         <button
           type="button"
-          class="rounded-xl border border-[#ded3bf] bg-[#fffdf7] px-4 py-2.5 text-sm font-bold text-[#475a53] transition hover:border-[rgb(var(--primary-300-rgb))] hover:bg-[#f8f4ea] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#cbd8cf] dark:hover:bg-[#10231f]"
+          class="ds-button ds-button-secondary"
           :disabled="form.processing"
           @click="cancelArchiveTemplate"
         >
@@ -886,7 +878,7 @@ const onStudioTypeUpdate = (studioType) => {
         </button>
         <button
           type="button"
-          class="rounded-xl bg-rose-700 px-4 py-2.5 text-sm font-black text-white shadow-[0_16px_35px_rgba(190,18,60,0.24)] transition hover:bg-rose-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-rose-500 dark:text-white dark:hover:bg-rose-400"
+          class="ds-button ds-button-danger"
           :disabled="form.processing"
           @click="confirmArchiveTemplate"
         >

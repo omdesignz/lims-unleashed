@@ -1,196 +1,241 @@
 <template>
-  <div class="needs-show-shell space-y-8" :class="commercialDocumentThemeClasses">
-    <ModuleHero
-      eyebrow="Procurement evidence"
-      :title="needTitle"
-      :description="need.justification || 'Sem justificação adicional.'"
-    >
-      <template #actions>
-        <div class="flex flex-col gap-2 sm:flex-row">
-          <Link :href="route('vap-inventory.needs.index')" class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white/70 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200 dark:hover:bg-slate-800">
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
+        <div class="max-w-3xl">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="ds-kicker">Procurement evidence</span>
+            <span class="ds-chip">
+              <span class="lims-status-dot" :class="statusDotClass" />
+              {{ statusLabel }}
+            </span>
+            <span class="ds-chip">{{ need.reference }}</span>
+          </div>
+          <h1 class="ds-heading mt-3 text-2xl">{{ needTitle }}</h1>
+          <p class="ds-copy mt-2 text-sm">{{ need.justification || 'Sem justificação adicional.' }}</p>
+        </div>
+
+        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+          <Link :href="route('vap-inventory.needs.index')" class="ds-button ds-button-secondary">
             Voltar
           </Link>
-          <a
-            :href="route('vap-inventory.needs.pdf', need.id)"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white/70 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
+          <a :href="route('vap-inventory.needs.pdf', need.id)" target="_blank" rel="noopener noreferrer" class="ds-button ds-button-secondary">
             Exportar PDF
           </a>
-          <button v-if="canApprove" type="button" class="rounded-2xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800 dark:bg-emerald-500 dark:hover:bg-emerald-400" @click="approve">
+          <button v-if="canApprove" type="button" class="ds-button ds-button-primary" :disabled="actionForm.processing" @click="approve">
             Aprovar
           </button>
-          <button v-if="canApprove" type="button" class="rounded-2xl border border-rose-200 bg-white/70 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200 dark:hover:bg-rose-500/20" @click="reject">
+          <button v-if="canApprove" type="button" class="ds-button ds-button-danger" :disabled="actionForm.processing" @click="reject">
             Rejeitar
           </button>
-          <button v-if="canConvertToOrder" type="button" class="rounded-2xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-600/20 transition hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400" @click="convertToOrder">
+          <button v-if="canConvertToOrder" type="button" class="ds-button ds-button-primary" :disabled="conversionForm.processing" @click="convertToOrder">
             Converter em pedido
           </button>
         </div>
-      </template>
-
-      <div class="mt-6 flex flex-wrap items-center gap-2">
-        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:bg-slate-900 dark:text-slate-300">{{ need.reference }}</span>
-        <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="statusClass">{{ statusLabel }}</span>
       </div>
-    </ModuleHero>
 
-    <section class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-      <ModuleCard>
-        <div class="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Escopo quantitativo</h2>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Quantidade solicitada, aprovada e ainda pendente na necessidade.
-            </p>
-          </div>
-          <div class="rounded-2xl bg-slate-50 px-4 py-3 text-right dark:bg-slate-950/50">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Unidades monitorizadas</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ quantityScopeTotal }}</p>
-          </div>
+      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] md:grid-cols-4 xl:grid-cols-6 xl:divide-y-0">
+        <div v-for="metric in summaryCards" :key="metric.label" class="px-5 py-4">
+          <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">
+            <span class="lims-status-dot" :class="metric.dotClass" />
+            {{ metric.label }}
+          </dt>
+          <dd class="mt-2 text-xl font-bold" :class="metric.valueClass">{{ metric.value }}</dd>
+          <p class="mt-1 truncate text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ metric.caption }}</p>
         </div>
+      </dl>
+    </section>
 
-        <div class="mt-6">
+    <section class="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <article class="ds-panel overflow-hidden">
+        <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
+          <div>
+            <h2 class="ds-heading text-base">Escopo quantitativo</h2>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Quantidade solicitada, aprovada e pendente.</p>
+          </div>
+          <span class="ds-chip">{{ formatQuantity(quantityScopeTotal) }} unidades</span>
+        </div>
+        <div class="p-4">
           <apexchart type="bar" height="300" :options="quantityScopeChartOptions" :series="quantityScopeChartSeries" />
         </div>
-      </ModuleCard>
+      </article>
 
-      <div class="grid gap-6">
-        <ModuleCard>
-          <div class="flex items-start justify-between gap-4">
+      <div class="grid gap-4">
+        <article class="ds-panel overflow-hidden">
+          <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
             <div>
-              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Mix de valor</h2>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Distribuição do valor estimado pelos itens da necessidade.</p>
+              <h2 class="ds-heading text-base">Mix de valor</h2>
+              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Distribuição do valor estimado por item.</p>
             </div>
-            <span class="inline-flex items-center rounded-full bg-cyan-50 px-3 py-1 text-sm font-medium text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-200">
-              {{ itemValueMixTotal }} AOA
-            </span>
+            <span class="ds-chip">{{ itemValueMixTotal }}</span>
           </div>
-
-          <div class="mt-6">
+          <div class="p-4">
             <apexchart type="donut" height="300" :options="itemValueMixChartOptions" :series="itemValueMixChartSeries" />
           </div>
-        </ModuleCard>
+        </article>
 
-        <ModuleCard>
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Pulso de governação</h2>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Itens, prazo, estado de conversão e valor financeiro estimado.</p>
-            </div>
+        <article class="ds-panel overflow-hidden">
+          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
+            <h2 class="ds-heading text-base">Pulso de governação</h2>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Itens, prazo, conversão e valor financeiro estimado.</p>
           </div>
-
-          <div class="mt-6">
+          <div class="p-4">
             <apexchart type="bar" height="250" :options="governancePulseChartOptions" :series="governancePulseChartSeries" />
           </div>
-        </ModuleCard>
+        </article>
       </div>
     </section>
 
-    <section class="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-      <ModuleCard title="Itens aprovados para aquisição">
-        <div class="mt-6 space-y-4">
-          <article v-for="item in need.items" :key="item.id" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/45">
-            <div class="grid gap-4 md:grid-cols-4">
-              <div class="md:col-span-2">
-                <div class="text-sm font-semibold text-slate-900 dark:text-white">{{ item.inventory_item?.name }}</div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">{{ item.inventory_item?.code || 'Sem código' }}</div>
+    <section class="grid gap-4 xl:grid-cols-[1fr_22rem]">
+      <div class="space-y-4">
+        <article class="ds-panel overflow-hidden">
+          <div class="ds-table-summary px-5 py-4">
+            <div class="flex items-start gap-3">
+              <div>
+                <h2 class="ds-heading text-base">Itens aprovados para aquisição</h2>
+                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Materiais, quantidade, armazém e preço estimado.</p>
               </div>
-              <div class="text-sm text-slate-600 dark:text-slate-300">
-                <div>Solicitado: <span class="font-semibold text-slate-900 dark:text-white">{{ item.quantity_requested }}</span></div>
-                <div>Aprovado: <span class="font-semibold text-slate-900 dark:text-white">{{ item.quantity_approved || '—' }}</span></div>
-              </div>
-              <div class="text-sm text-slate-600 dark:text-slate-300">
-                <div>Armazém: <span class="font-semibold text-slate-900 dark:text-white">{{ item.warehouse?.name || 'A definir' }}</span></div>
-                <div>Preço estimado: <span class="font-semibold text-slate-900 dark:text-white">{{ formatMoney(item.estimated_unit_price) }}</span></div>
-              </div>
-            </div>
-            <p v-if="item.notes" class="mt-3 text-sm text-slate-500 dark:text-slate-400">{{ item.notes }}</p>
-          </article>
-        </div>
-      </ModuleCard>
-
-      <div class="space-y-6">
-        <ModuleCard title="Rastreabilidade">
-          <dl class="mt-4 space-y-3 text-sm">
-            <div class="flex justify-between gap-4">
-              <dt class="text-slate-500 dark:text-slate-400">Solicitante</dt>
-              <dd class="font-medium text-slate-900 dark:text-white">{{ need.requested_by?.name || '—' }}</dd>
-            </div>
-            <div class="flex justify-between gap-4">
-              <dt class="text-slate-500 dark:text-slate-400">Aprovador</dt>
-              <dd class="font-medium text-slate-900 dark:text-white">{{ need.approved_by?.name || '—' }}</dd>
-            </div>
-            <div class="flex justify-between gap-4">
-              <dt class="text-slate-500 dark:text-slate-400">Submetida em</dt>
-              <dd class="font-medium text-slate-900 dark:text-white">{{ formatDateTime(need.submitted_at) }}</dd>
-            </div>
-            <div class="flex justify-between gap-4">
-              <dt class="text-slate-500 dark:text-slate-400">Aprovada em</dt>
-              <dd class="font-medium text-slate-900 dark:text-white">{{ formatDateTime(need.approved_at) }}</dd>
-            </div>
-            <div class="flex justify-between gap-4">
-              <dt class="text-slate-500 dark:text-slate-400">Pedido criado</dt>
-              <dd class="font-medium text-slate-900 dark:text-white">{{ need.inventory_order?.reference || '—' }}</dd>
-            </div>
-          </dl>
-        </ModuleCard>
-
-        <ModuleCard v-if="canApprove || canConvertToOrder" title="Ação de gestão">
-          <BaseTextarea v-model="actionForm.approval_notes" rows="4" placeholder="Notas de aprovação, rejeição ou instruções para a compra." />
-
-          <div v-if="canApprove" class="mt-4 space-y-3">
-            <div v-for="item in actionForm.items" :key="item.id" class="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
-              <div class="text-sm text-slate-600 dark:text-slate-300">{{ item.name }}</div>
-              <BaseInput v-model="item.quantity_approved" type="number" min="1" />
             </div>
           </div>
 
-          <div v-if="canConvertToOrder" class="mt-4 space-y-3">
-            <comboboxEnhanced
-              v-model="selectedSupplierOption"
-              :has-error="conversionForm.errors.supplier_id"
-              :options="supplierOptions"
-              placeholder="Pesquisar fornecedor aprovado"
-            />
-            <p v-if="conversionForm.errors.supplier_id" class="text-xs text-rose-600 dark:text-rose-300">
-              {{ conversionForm.errors.supplier_id }}
-            </p>
-            <div
-              v-if="selectedSupplierAssessment"
-              class="rounded-2xl border px-4 py-4 text-sm"
-              :class="supplierAssessmentPanelClass"
-            >
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div class="font-semibold">Avaliação do fornecedor</div>
-                  <div class="mt-1 text-xs opacity-80">
-                    Estado {{ supplierAssessmentStatus }} · Risco {{ supplierAssessmentRisk }}
+          <div v-if="itemRows.length" class="ds-table-shell overflow-x-auto">
+            <table class="min-w-[58rem]">
+              <thead class="ds-table-head">
+                <tr>
+                  <th class="ds-table-cell text-left">Item</th>
+                  <th class="ds-table-cell text-left">Quantidade</th>
+                  <th class="ds-table-cell text-left">Armazém</th>
+                  <th class="ds-table-cell text-left">Preço estimado</th>
+                  <th class="ds-table-cell text-left">Notas</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in itemRows" :key="item.id" class="ds-table-row">
+                  <td class="ds-table-cell align-top">
+                    <p class="text-sm font-bold text-[color:var(--ds-text)]">{{ item.inventory_item?.name || 'Item N/A' }}</p>
+                    <p class="mt-1 font-mono text-xs text-[color:var(--ds-text-soft)]">{{ item.inventory_item?.code || 'Sem código' }}</p>
+                  </td>
+                  <td class="ds-table-cell align-top text-sm text-[color:var(--ds-text)]">
+                    <div>Solicitado: <span class="font-bold">{{ formatQuantity(item.quantity_requested) }}</span></div>
+                    <div>Aprovado: <span class="font-bold">{{ item.quantity_approved ? formatQuantity(item.quantity_approved) : '—' }}</span></div>
+                  </td>
+                  <td class="ds-table-cell align-top text-sm font-semibold text-[color:var(--ds-text)]">{{ item.warehouse?.name || 'A definir' }}</td>
+                  <td class="ds-table-cell align-top text-sm font-semibold text-[color:var(--ds-text)]">{{ formatMoney(item.estimated_unit_price) }}</td>
+                  <td class="ds-table-cell max-w-xs align-top text-sm text-[color:var(--ds-text-muted)]">
+                    <span class="line-clamp-2">{{ item.notes || '—' }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div v-else class="p-5">
+            <div class="ds-empty-state p-6 text-center">
+              <p class="text-sm font-semibold text-[color:var(--ds-text-soft)]">Sem itens registados nesta necessidade.</p>
+            </div>
+          </div>
+        </article>
+
+        <article v-if="managementActionAvailable" class="ds-command-surface overflow-hidden">
+          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
+            <h2 class="ds-heading text-base">Ação de gestão</h2>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Aprovação, rejeição ou conversão para pedido de compra.</p>
+          </div>
+
+          <div class="space-y-4 p-5">
+            <BaseTextarea v-model="actionForm.approval_notes" rows="4" label="Notas" placeholder="Notas de aprovação, rejeição ou instruções para a compra." />
+
+            <div v-if="canApprove" class="ds-table-shell overflow-x-auto">
+              <table class="min-w-[36rem]">
+                <thead class="ds-table-head">
+                  <tr>
+                    <th class="ds-table-cell text-left">Item</th>
+                    <th class="ds-table-cell text-left">Quantidade aprovada</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="item in actionForm.items" :key="item.id" class="ds-table-row">
+                    <td class="ds-table-cell text-sm font-semibold text-[color:var(--ds-text)]">{{ item.name }}</td>
+                    <td class="ds-table-cell">
+                      <BaseInput v-model="item.quantity_approved" type="number" min="1" />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div v-if="canConvertToOrder" class="space-y-4">
+              <comboboxEnhanced
+                v-model="selectedSupplierOption"
+                :has-error="Boolean(conversionForm.errors.supplier_id)"
+                :options="supplierOptions"
+                placeholder="Pesquisar fornecedor aprovado"
+              />
+              <p v-if="conversionForm.errors.supplier_id" class="ds-field-error">{{ conversionForm.errors.supplier_id }}</p>
+
+              <div v-if="selectedSupplierAssessment" class="ds-card border-l-4 p-4" :class="supplierAssessmentPanelClass">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div class="text-sm font-bold text-[color:var(--ds-text)]">Avaliação do fornecedor</div>
+                    <div class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
+                      Estado {{ supplierAssessmentStatus }} · Risco {{ supplierAssessmentRisk }}
+                    </div>
+                  </div>
+                  <div class="text-right text-xs font-semibold text-[color:var(--ds-text-soft)]">
+                    <div>Score {{ selectedSupplierAssessment.total_score ?? '—' }}</div>
+                    <div>Próxima revisão {{ supplierAssessmentReviewLabel }}</div>
                   </div>
                 </div>
-                <div class="text-right text-xs opacity-80">
-                  <div>Score {{ selectedSupplierAssessment.total_score ?? '—' }}</div>
-                  <div>Próxima revisão {{ supplierAssessmentReviewLabel }}</div>
-                </div>
+                <p v-if="!selectedSupplierAssessment.approved_supplier" class="mt-3 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                  Este fornecedor não está marcado como aprovado. Reveja a avaliação antes de concluir a conversão.
+                </p>
               </div>
-              <p v-if="!selectedSupplierAssessment.approved_supplier" class="mt-3 text-xs font-medium">
-                Este fornecedor não está marcado como aprovado. Reveja a avaliação antes de concluir a conversão.
-              </p>
-            </div>
-            <div
-              v-else-if="selectedSupplier"
-              class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"
-            >
-              Este fornecedor ainda não tem avaliação registada. Recomenda-se revisão antes de concluir a compra.
-            </div>
-            <div class="grid gap-3 md:grid-cols-2">
-              <BaseInput v-model="conversionForm.date" type="date" />
-              <BaseInput v-model="conversionForm.expected_date" type="date" />
+
+              <div v-else-if="selectedSupplier" class="ds-card border-l-4 border-amber-500 p-4">
+                <p class="text-sm font-semibold text-[color:var(--ds-text)]">
+                  Este fornecedor ainda não tem avaliação registada. Recomenda-se revisão antes de concluir a compra.
+                </p>
+              </div>
+
+              <div class="grid gap-3 md:grid-cols-2">
+                <BaseInput v-model="conversionForm.date" type="date" label="Data do pedido" />
+                <BaseInput v-model="conversionForm.expected_date" type="date" label="Data esperada" />
+              </div>
             </div>
           </div>
-        </ModuleCard>
+        </article>
       </div>
+
+      <aside class="space-y-4">
+        <article class="ds-panel overflow-hidden">
+          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
+            <h2 class="ds-heading text-base">Rastreabilidade</h2>
+          </div>
+          <dl class="divide-y divide-[color:var(--ds-border)]">
+            <div v-for="field in traceabilityFields" :key="field.label" class="flex items-start justify-between gap-4 px-5 py-3 text-sm">
+              <dt class="font-semibold text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
+              <dd class="text-right font-bold text-[color:var(--ds-text)]">{{ field.value }}</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article class="ds-panel overflow-hidden">
+          <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
+            <h2 class="ds-heading text-base">Fluxo</h2>
+          </div>
+          <ol class="space-y-4 p-5">
+            <li v-for="step in workflowSteps" :key="step.label" class="flex gap-3">
+              <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[color:var(--ds-panel-subtle)]">
+                <span class="lims-status-dot" :class="step.dotClass" />
+              </span>
+              <div>
+                <p class="text-sm font-bold text-[color:var(--ds-text)]">{{ step.label }}</p>
+                <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ step.caption }}</p>
+              </div>
+            </li>
+          </ol>
+        </article>
+      </aside>
     </section>
   </div>
 </template>
@@ -198,24 +243,33 @@
 <script setup>
 import BaseInput from '@/Components/base/BaseInput.vue'
 import BaseTextarea from '@/Components/base/BaseTextarea.vue'
-import Layout from '@/Shared/Layouts/Layout.vue'
-import ModuleCard from '@/Components/base/ModuleCard.vue'
-import ModuleHero from '@/Components/base/ModuleHero.vue'
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import Layout from '@/Shared/Layouts/Layout.vue'
 import { Link, useForm } from '@inertiajs/vue3'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 defineOptions({ layout: Layout })
 
 const props = defineProps({
-  need: Object,
-  canApprove: Boolean,
-  canConvertToOrder: Boolean,
-  suppliers: Array,
+  need: {
+    type: Object,
+    required: true,
+  },
+  canApprove: {
+    type: Boolean,
+    default: false,
+  },
+  canConvertToOrder: {
+    type: Boolean,
+    default: false,
+  },
+  suppliers: {
+    type: Array,
+    default: () => [],
+  },
   charts: {
     type: Object,
-    default: () => ({})
+    default: () => ({}),
   },
 })
 
@@ -223,9 +277,9 @@ const isDarkMode = ref(false)
 const selectedSupplierOption = ref(null)
 let themeObserver
 
-const chartTextColor = computed(() => isDarkMode.value ? '#cbd5e1' : '#475569')
-const chartGridColor = computed(() => isDarkMode.value ? '#1e293b' : '#e2e8f0')
-const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
+const chartTextColor = computed(() => (isDarkMode.value ? '#cbd5e1' : '#475569'))
+const chartGridColor = computed(() => (isDarkMode.value ? '#1e293b' : '#e2e8f0'))
+const chartTooltipTheme = computed(() => (isDarkMode.value ? 'dark' : 'light'))
 
 const syncDarkMode = () => {
   if (typeof document === 'undefined') {
@@ -238,25 +292,27 @@ const syncDarkMode = () => {
 const quantityScopeChartSeries = computed(() => [
   {
     name: 'Quantidade',
-    data: props.charts?.quantity_scope?.series || []
-  }
+    data: props.charts?.quantity_scope?.series || [],
+  },
 ])
 
-const quantityScopeTotal = computed(() =>
-  (props.charts?.quantity_scope?.series || []).reduce((sum, value) => sum + Number(value || 0), 0)
-)
+const quantityScopeTotal = computed(() => (
+  props.charts?.quantity_scope?.series || []
+).reduce((sum, value) => sum + Number(value || 0), 0))
 
 const itemValueMixChartSeries = computed(() => props.charts?.item_value_mix?.series || [])
 
-const itemValueMixTotal = computed(() =>
-  itemValueMixChartSeries.value.reduce((sum, value) => sum + Number(value || 0), 0).toLocaleString('pt-PT')
-)
+const itemValueMixRawTotal = computed(() => (
+  itemValueMixChartSeries.value.reduce((sum, value) => sum + Number(value || 0), 0)
+))
+
+const itemValueMixTotal = computed(() => formatMoney(itemValueMixRawTotal.value))
 
 const governancePulseChartSeries = computed(() => [
   {
     name: 'Indicador',
-    data: props.charts?.governance_pulse?.series || []
-  }
+    data: props.charts?.governance_pulse?.series || [],
+  },
 ])
 
 const needTitle = computed(() => {
@@ -269,6 +325,17 @@ const needTitle = computed(() => {
   return `${department} · ${props.need.lab.name}`
 })
 
+const itemRows = computed(() => props.need.items || [])
+
+const totalRequestedQuantity = computed(() => itemRows.value.reduce((sum, item) => sum + Number(item.quantity_requested || 0), 0))
+const totalApprovedQuantity = computed(() => itemRows.value.reduce((sum, item) => sum + Number(item.quantity_approved || 0), 0))
+const estimatedNeedValue = computed(() => itemRows.value.reduce((sum, item) => {
+  const quantity = Number(item.quantity_approved || item.quantity_requested || 0)
+  const unitPrice = Number(item.estimated_unit_price || 0)
+
+  return sum + (quantity * unitPrice)
+}, 0))
+
 const quantityScopeChartOptions = computed(() => ({
   chart: {
     toolbar: { show: false },
@@ -279,10 +346,10 @@ const quantityScopeChartOptions = computed(() => ({
   foreColor: chartTextColor.value,
   plotOptions: {
     bar: {
-      borderRadius: 10,
+      borderRadius: 6,
       distributed: true,
-      columnWidth: '48%'
-    }
+      columnWidth: '48%',
+    },
   },
   colors: ['#0f172a', '#16a34a', '#f59e0b'],
   dataLabels: { enabled: false },
@@ -290,20 +357,20 @@ const quantityScopeChartOptions = computed(() => ({
     categories: props.charts?.quantity_scope?.labels || [],
     axisBorder: { color: chartGridColor.value },
     axisTicks: { color: chartGridColor.value },
-    labels: { style: { colors: chartTextColor.value, fontSize: '12px' } }
+    labels: { style: { colors: chartTextColor.value, fontSize: '12px' } },
   },
   yaxis: {
     labels: {
       formatter: (value) => Number(value || 0).toFixed(0),
       style: { colors: chartTextColor.value },
-    }
+    },
   },
   grid: {
     borderColor: chartGridColor.value,
-    strokeDashArray: 4
+    strokeDashArray: 4,
   },
   tooltip: { theme: chartTooltipTheme.value },
-  legend: { show: false }
+  legend: { show: false },
 }))
 
 const itemValueMixChartOptions = computed(() => ({
@@ -318,14 +385,14 @@ const itemValueMixChartOptions = computed(() => ({
   colors: ['#0891b2', '#0f766e', '#4f46e5', '#f59e0b', '#dc2626', '#334155'],
   dataLabels: {
     enabled: true,
-    formatter: (value) => `${Math.round(value)}%`
+    formatter: (value) => `${Math.round(value)}%`,
   },
   legend: {
     position: 'bottom',
     labels: { colors: chartTextColor.value },
   },
   stroke: {
-    colors: [isDarkMode.value ? '#020617' : '#ffffff']
+    colors: [isDarkMode.value ? '#020617' : '#ffffff'],
   },
   tooltip: { theme: chartTooltipTheme.value },
 }))
@@ -340,10 +407,10 @@ const governancePulseChartOptions = computed(() => ({
   foreColor: chartTextColor.value,
   plotOptions: {
     bar: {
-      borderRadius: 10,
+      borderRadius: 6,
       distributed: true,
-      columnWidth: '52%'
-    }
+      columnWidth: '52%',
+    },
   },
   colors: ['#334155', '#f59e0b', '#0891b2', '#16a34a'],
   dataLabels: { enabled: false },
@@ -351,25 +418,25 @@ const governancePulseChartOptions = computed(() => ({
     categories: props.charts?.governance_pulse?.labels || [],
     axisBorder: { color: chartGridColor.value },
     axisTicks: { color: chartGridColor.value },
-    labels: { style: { colors: chartTextColor.value, fontSize: '12px' } }
+    labels: { style: { colors: chartTextColor.value, fontSize: '12px' } },
   },
   yaxis: {
     labels: {
       formatter: (value) => Number(value || 0).toFixed(0),
       style: { colors: chartTextColor.value },
-    }
+    },
   },
   grid: {
     borderColor: chartGridColor.value,
-    strokeDashArray: 4
+    strokeDashArray: 4,
   },
   tooltip: { theme: chartTooltipTheme.value },
-  legend: { show: false }
+  legend: { show: false },
 }))
 
 const actionForm = useForm({
   approval_notes: props.need.approval_notes || '',
-  items: props.need.items.map((item) => ({
+  items: itemRows.value.map((item) => ({
     id: item.id,
     name: item.inventory_item?.name || 'Item',
     quantity_approved: item.quantity_approved || item.quantity_requested,
@@ -394,7 +461,6 @@ watch(selectedSupplierOption, (supplier) => {
 })
 
 const selectedSupplier = computed(() => props.suppliers.find((supplier) => String(supplier.id) === String(conversionForm.supplier_id)) ?? null)
-
 const selectedSupplierAssessment = computed(() => selectedSupplier.value?.latest_assessment ?? null)
 
 const statusLabel = computed(() => ({
@@ -406,13 +472,87 @@ const statusLabel = computed(() => ({
   fulfilled: 'Satisfeita',
 }[props.need.status] ?? props.need.status))
 
-const statusClass = computed(() => ({
-  'bg-amber-50 text-amber-700': props.need.status === 'submitted',
-  'bg-emerald-50 text-emerald-700': props.need.status === 'approved' || props.need.status === 'fulfilled',
-  'bg-rose-50 text-rose-700': props.need.status === 'rejected',
-  'bg-cyan-50 text-cyan-700': props.need.status === 'ordered' || props.need.status === 'partially_fulfilled',
-  'bg-slate-100 text-slate-600': !['submitted', 'approved', 'rejected', 'ordered', 'partially_fulfilled', 'fulfilled'].includes(props.need.status),
-}))
+const statusDotClass = computed(() => ({
+  submitted: 'lims-status-dot-hold',
+  approved: 'lims-status-dot-release',
+  fulfilled: 'lims-status-dot-release',
+  rejected: 'lims-status-dot-critical',
+  ordered: 'lims-status-dot-instrument',
+  partially_fulfilled: 'lims-status-dot-instrument',
+}[props.need.status] ?? 'lims-status-dot-instrument'))
+
+const summaryCards = computed(() => [
+  {
+    label: 'Itens',
+    value: formatQuantity(itemRows.value.length),
+    caption: 'Linhas da necessidade',
+    dotClass: 'lims-status-dot-instrument',
+    valueClass: 'text-[color:var(--ds-text)]',
+  },
+  {
+    label: 'Solicitado',
+    value: formatQuantity(totalRequestedQuantity.value),
+    caption: 'Unidades pedidas',
+    dotClass: 'lims-status-dot-hold',
+    valueClass: 'text-[color:var(--ds-text)]',
+  },
+  {
+    label: 'Aprovado',
+    value: formatQuantity(totalApprovedQuantity.value),
+    caption: 'Unidades aprovadas',
+    dotClass: totalApprovedQuantity.value ? 'lims-status-dot-release' : 'lims-status-dot-hold',
+    valueClass: 'text-[color:var(--ds-text)]',
+  },
+  {
+    label: 'Valor',
+    value: formatMoney(estimatedNeedValue.value),
+    caption: 'Estimativa financeira',
+    dotClass: 'lims-status-dot-instrument',
+    valueClass: 'text-[color:var(--ds-text)]',
+  },
+  {
+    label: 'Prazo',
+    value: formatDate(props.need.needed_by_date),
+    caption: 'Necessário até',
+    dotClass: 'lims-status-dot-hold',
+    valueClass: 'text-[color:var(--ds-text)]',
+  },
+  {
+    label: 'Pedido',
+    value: props.need.inventory_order?.reference || '—',
+    caption: props.need.inventory_order ? 'Convertido' : 'Sem pedido',
+    dotClass: props.need.inventory_order ? 'lims-status-dot-release' : 'lims-status-dot-hold',
+    valueClass: 'text-[color:var(--ds-text)]',
+  },
+])
+
+const traceabilityFields = computed(() => [
+  ['Solicitante', props.need.requested_by?.name || '—'],
+  ['Aprovador', props.need.approved_by?.name || '—'],
+  ['Submetida em', formatDateTime(props.need.submitted_at)],
+  ['Aprovada em', formatDateTime(props.need.approved_at)],
+  ['Pedido criado', props.need.inventory_order?.reference || '—'],
+].map(([label, value]) => ({ label, value })))
+
+const workflowSteps = computed(() => [
+  {
+    label: 'Submissão',
+    caption: formatDateTime(props.need.submitted_at),
+    dotClass: props.need.submitted_at ? 'lims-status-dot-release' : 'lims-status-dot-hold',
+  },
+  {
+    label: 'Aprovação',
+    caption: formatDateTime(props.need.approved_at),
+    dotClass: props.need.approved_at ? 'lims-status-dot-release' : 'lims-status-dot-hold',
+  },
+  {
+    label: 'Conversão',
+    caption: props.need.inventory_order?.reference || 'A aguardar pedido',
+    dotClass: props.need.inventory_order ? 'lims-status-dot-release' : 'lims-status-dot-hold',
+  },
+])
+
+const managementActionAvailable = computed(() => props.canApprove || props.canConvertToOrder)
 
 const supplierAssessmentStatus = computed(() => ({
   approved: 'Aprovado',
@@ -432,18 +572,18 @@ const supplierAssessmentReviewLabel = computed(() => formatDate(selectedSupplier
 
 const supplierAssessmentPanelClass = computed(() => {
   if (!selectedSupplierAssessment.value) {
-    return 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200'
+    return 'border-[color:var(--ds-border-strong)]'
   }
 
   if (['suspended', 'rejected'].includes(selectedSupplierAssessment.value.status) || selectedSupplierAssessment.value.risk_level === 'critical') {
-    return 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100'
+    return 'border-rose-500'
   }
 
   if (selectedSupplierAssessment.value.status === 'conditional' || selectedSupplierAssessment.value.risk_level === 'high') {
-    return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100'
+    return 'border-amber-500'
   }
 
-  return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100'
+  return 'border-emerald-500'
 })
 
 const approve = () => {
@@ -458,9 +598,28 @@ const convertToOrder = () => {
   conversionForm.post(route('vap-inventory.needs.convert-to-order', props.need.id))
 }
 
-const formatMoney = (value) => value ? new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'AOA' }).format(value) : '—'
-const formatDateTime = (value) => value ? new Date(value).toLocaleString('pt-PT') : '—'
-const formatDate = (value) => value ? new Date(value).toLocaleDateString('pt-PT') : '—'
+function formatQuantity(value) {
+  const numericValue = Number(value ?? 0)
+
+  if (!Number.isFinite(numericValue)) {
+    return '0'
+  }
+
+  return new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 2 }).format(numericValue)
+}
+
+function formatMoney(value) {
+  const numericValue = Number(value ?? 0)
+
+  if (!Number.isFinite(numericValue) || numericValue === 0) {
+    return '—'
+  }
+
+  return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'AOA' }).format(numericValue)
+}
+
+const formatDateTime = (value) => (value ? new Date(value).toLocaleString('pt-PT') : '—')
+const formatDate = (value) => (value ? new Date(value).toLocaleDateString('pt-PT') : '—')
 
 onMounted(() => {
   syncDarkMode()
@@ -478,20 +637,3 @@ onBeforeUnmount(() => {
   themeObserver?.disconnect()
 })
 </script>
-
-<style scoped>
-.needs-show-shell :deep(input[type='date']) {
-  color-scheme: light;
-}
-
-:global(.dark) .needs-show-shell :deep(input[type='date']) {
-  color-scheme: dark;
-}
-
-.needs-show-shell :deep(.apexcharts-tooltip),
-.needs-show-shell :deep(.apexcharts-menu) {
-  border-radius: 0.875rem;
-  border-color: rgb(226 232 240);
-  box-shadow: 0 20px 45px rgb(15 23 42 / 0.14);
-}
-</style>

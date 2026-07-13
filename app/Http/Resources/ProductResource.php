@@ -19,6 +19,7 @@ class ProductResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'charge_tax' => $this->charge_tax,
+            'tax_status' => $this->charge_tax ? 'Tributado' : 'Isento',
             'matrix_id' => $this->matrix_id,
             'matrix' => MatrixResource::make($this->matrix)?->description ?? null,
             'exemption_code' => $this->exemption_code,
@@ -35,12 +36,12 @@ class ProductResource extends JsonResource
             'links' => [
                 'edit_path' => route('products.edit', $this->id),
                 'delete_path' => route('products.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('products.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

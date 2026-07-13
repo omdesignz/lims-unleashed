@@ -1,92 +1,40 @@
+<script setup>
+import PortalLayout from "@/Shared/Layouts/PortalLayout.vue";
+import { Link } from "@inertiajs/vue3";
+import { ArrowRightIcon, BanknotesIcon, BeakerIcon, DocumentTextIcon, ShieldExclamationIcon, TruckIcon, WrenchScrewdriverIcon } from "@heroicons/vue/24/outline";
+
+defineOptions({ layout: PortalLayout });
+
+defineProps({ services: { type: Array, default: () => [] }, warehouse: Object });
+
+function serviceIcon(service) {
+  return { beaker: BeakerIcon, truck: TruckIcon, certificate: DocumentTextIcon, document: DocumentTextIcon, currency: BanknotesIcon, shield: ShieldExclamationIcon, support: WrenchScrewdriverIcon }[service.icon] || WrenchScrewdriverIcon;
+}
+</script>
+
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div class="max-w-3xl space-y-3">
-        <div class="inline-flex rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700">
-          Catálogo de serviços
-        </div>
-        <h1 class="text-3xl font-semibold tracking-tight text-slate-900">Serviços disponíveis no portal</h1>
-        <p class="text-sm leading-6 text-slate-600">
-          Este portal foi melhorado para permitir pedidos estruturados de análises, colheitas, documentos e apoio administrativo. Cada serviço abre um formulário próprio e fica registado com referência rastreável.
-        </p>
-      </div>
+  <div class="space-y-6">
+    <section class="ds-panel p-5 sm:p-6">
+      <div class="flex min-w-0 items-start gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><WrenchScrewdriverIcon class="h-5 w-5" /></span><div><p class="ds-kicker">Catalogo do portal</p><h1 class="ds-heading mt-1 text-2xl">Servicos disponiveis</h1><p class="ds-copy mt-1 max-w-3xl text-sm">Escolha o fluxo certo para garantir uma triagem rapida e toda a informacao necessaria.</p></div></div>
     </section>
 
-    <section class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-      <article v-for="service in services" :key="service.type" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <h2 class="text-lg font-semibold text-slate-900">{{ service.title }}</h2>
-            <p class="mt-2 text-sm leading-6 text-slate-600">{{ service.description }}</p>
-          </div>
-          <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-700">
-            {{ labelFor(service.type) }}
-          </span>
-        </div>
-
-        <div class="mt-6 space-y-3 text-sm text-slate-500">
-          <p v-if="service.type === 'analysis_request'">Inclui seleção de perfis analíticos, matriz/produto e indicação de recolha.</p>
-          <p v-else-if="service.type === 'collection_request'">Inclui local, endereço, contacto no local, janela horária e lista de itens a recolher.</p>
-          <p v-else-if="service.type === 'document_request'">Útil para pedir segundas vias, comprovativos ou documentação contratual.</p>
-          <p v-else-if="service.type === 'billing_support'">Centraliza temas de faturação, pagamentos, recibos e notas de crédito.</p>
-          <p v-else-if="service.type === 'certificate_support'">Permite solicitar apoio, revisão ou reemissão de certificados.</p>
-          <p v-else>Abra um pedido operacional mais geral para situações não cobertas pelos serviços acima.</p>
-        </div>
-
-        <div class="mt-6">
-          <Link
-            :href="route('portal.requests.index', { request_type: service.type, new: 1, title: service.title })"
-            class="inline-flex rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            Abrir pedido
-          </Link>
-        </div>
-      </article>
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <Link v-for="service in services" :key="service.type" :href="route('portal.requests.index', { request_type: service.type, new: 1, title: service.title })" class="ds-card group flex flex-col p-5 transition hover:border-[rgb(var(--primary-300-rgb))]">
+        <div class="flex items-start justify-between gap-3"><span class="grid h-10 w-10 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))] ring-1 ring-[var(--ds-border)]"><component :is="serviceIcon(service)" class="h-5 w-5" /></span><ArrowRightIcon class="h-4 w-4 text-[var(--ds-text-soft)] transition group-hover:translate-x-0.5" /></div>
+        <h2 class="mt-5 text-base font-bold text-[var(--ds-text)]">{{ service.title }}</h2>
+        <p class="ds-copy mt-2 flex-1 text-sm">{{ service.description }}</p>
+        <span class="mt-5 text-xs font-bold text-[rgb(var(--primary-700-rgb))]">Abrir solicitacao</span>
+      </Link>
     </section>
 
-    <section class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 class="text-lg font-semibold text-slate-900">Outros recursos do portal</h2>
-      <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Link :href="route('portal.collections')" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 hover:border-slate-300">
-          Consultar histórico de colheitas
-        </Link>
-        <Link :href="route('portal.qualitycertificates')" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 hover:border-slate-300">
-          Ver certificados disponíveis
-        </Link>
-        <Link :href="route('portal.invoices')" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 hover:border-slate-300">
-          Acompanhar faturação
-        </Link>
-        <Link :href="route('portal.faqs')" class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 hover:border-slate-300">
-          Consultar perguntas frequentes
-        </Link>
-      </div>
+    <section class="ds-card overflow-hidden">
+      <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6"><h2 class="text-base font-bold text-[var(--ds-text)]">Recursos da conta</h2><p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Acesso direto aos registos e documentos ja disponiveis.</p></header>
+      <nav class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
+        <Link :href="route('portal.collections')" class="bg-[var(--ds-panel)] px-5 py-4 text-sm font-bold text-[var(--ds-text)] hover:bg-[var(--ds-panel-subtle)]">Historico de colheitas</Link>
+        <Link :href="route('portal.qualitycertificates')" class="bg-[var(--ds-panel)] px-5 py-4 text-sm font-bold text-[var(--ds-text)] hover:bg-[var(--ds-panel-subtle)]">Certificados disponiveis</Link>
+        <Link :href="route('portal.invoices')" class="bg-[var(--ds-panel)] px-5 py-4 text-sm font-bold text-[var(--ds-text)] hover:bg-[var(--ds-panel-subtle)]">Conta corrente</Link>
+        <Link :href="route('portal.faqs')" class="bg-[var(--ds-panel)] px-5 py-4 text-sm font-bold text-[var(--ds-text)] hover:bg-[var(--ds-panel-subtle)]">Perguntas frequentes</Link>
+      </nav>
     </section>
   </div>
 </template>
-
-<script setup>
-import { Link } from '@inertiajs/vue3'
-import Layout from '@/Shared/Layouts/PortalLayout.vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
-
-defineOptions({
-  layout: Layout,
-})
-
-defineProps({
-  services: {
-    type: Array,
-    default: () => [],
-  },
-  warehouse: Object,
-})
-
-const labelFor = (type) => ({
-  analysis_request: 'Análise',
-  collection_request: 'Colheita',
-  certificate_support: 'Certificados',
-  document_request: 'Documentos',
-  billing_support: 'Faturação',
-  general_support: 'Suporte',
-}[type] || 'Serviço')
-</script>

@@ -1,763 +1,460 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
-    <!-- HEADER CARD -->
-    <div class="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 p-6 text-white shadow-xl dark:border-white/10">
-      <div class="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-blue-400/20 blur-3xl"></div>
-      <div class="absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl"></div>
-      <div class="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <span class="inline-flex items-center rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-100 ring-1 ring-white/10">
-            Item controlado
-          </span>
-          <h1 class="mt-4 flex items-center gap-3 text-3xl font-bold tracking-tight">
-            <CubeIcon class="h-8 w-8 text-blue-200" />
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <section class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
+        <div class="max-w-3xl">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="ds-kicker">Item controlado</span>
+            <span :class="getStatusClasses(item.status)">{{ item.status?.name || 'Estado por definir' }}</span>
+          </div>
+          <h1 class="ds-heading mt-3 flex items-center gap-3 text-2xl">
+            <CubeIcon class="h-7 w-7 text-primary-700 dark:text-primary-300" />
             {{ item.name }}
           </h1>
-          <p class="mt-3 max-w-3xl text-sm leading-6 text-blue-100/90">
-            {{ item.description || 'Sem descrição disponível' }}
-            <span v-if="item.code" class="ml-2 font-semibold text-white">
-              ({{ item.code }})
-            </span>
+          <p class="ds-copy mt-2 text-sm">
+            {{ item.description || 'Sem descrição disponível.' }}
           </p>
+          <div class="mt-3 flex flex-wrap gap-x-5 gap-y-2 font-mono text-xs font-semibold text-[color:var(--ds-text-soft)]">
+            <span>Código: {{ item.code || 'N/A' }}</span>
+            <span>Interno: {{ item.internal_code || 'N/A' }}</span>
+            <span v-if="item.barcode">Barcode: {{ item.barcode }}</span>
+          </div>
         </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <Link
-            :href="route('vap-inventory.items.edit', item.id)"
-            class="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
-          >
-            <PencilSquareIcon class="h-4 w-4" />
-            Modificar Item
-          </Link>
-          <Link
-            :href="route('vap-inventory.items.index')"
-            class="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-semibold text-blue-950 shadow-sm transition hover:bg-blue-50"
-          >
+
+        <div class="flex flex-wrap items-center gap-2">
+          <Link :href="route('vap-inventory.items.index')" class="ds-button ds-button-secondary">
             <ArrowLeftIcon class="h-4 w-4" />
-            Voltar para Itens
+            Itens
+          </Link>
+          <Link :href="route('vap-inventory.items.edit', item.id)" class="ds-button ds-button-primary">
+            <PencilSquareIcon class="h-4 w-4" />
+            Modificar
           </Link>
         </div>
       </div>
-    </div>
 
-    <section class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-      <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <div class="flex flex-wrap items-start justify-between gap-4">
+      <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] sm:grid-cols-4 sm:divide-y-0">
+        <div class="px-5 py-4">
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Stock total</dt>
+          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ totalStock || 0 }}</dd>
+          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ item.unit?.code || 'unidades' }}</p>
+        </div>
+        <div class="px-5 py-4">
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Armazéns</dt>
+          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ inventory.length }}</dd>
+          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">localizações ativas</p>
+        </div>
+        <div class="px-5 py-4">
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Reabastecimento</dt>
+          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ item.reorder_qty || 0 }}</dd>
+          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ item.unit?.code || 'unidades' }}</p>
+        </div>
+        <div class="px-5 py-4">
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Atividade recente</dt>
+          <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ recentTransactions.length }}</dd>
+          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">transações</p>
+        </div>
+      </dl>
+    </section>
+
+    <section class="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
+      <article class="ds-card p-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Distribuição de stock</h2>
-            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Leitura imediata do saldo por armazém antes de ajustar ou transferir.
-            </p>
+            <p class="ds-kicker">Disponibilidade</p>
+            <h2 class="ds-heading mt-2 text-base">Distribuição de stock</h2>
+            <p class="ds-copy mt-1 text-xs">Saldo disponível por armazém.</p>
           </div>
-          <div class="rounded-2xl bg-slate-50 px-4 py-3 text-right dark:bg-white/5">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Unidades monitorizadas</p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">{{ stockDistributionTotal }}</p>
-          </div>
+          <span class="ds-chip">{{ stockDistributionTotal }} monitorizadas</span>
         </div>
-
-        <div class="mt-6">
-          <apexchart type="bar" height="300" :options="stockDistributionChartOptions" :series="stockDistributionChartSeries" />
-        </div>
+        <apexchart class="mt-3" type="bar" height="260" :options="stockDistributionChartOptions" :series="stockDistributionChartSeries" />
       </article>
 
-      <div class="grid gap-6">
-        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div class="flex items-start justify-between gap-4">
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+        <article class="ds-card p-5">
+          <div class="flex items-start justify-between gap-3">
             <div>
-              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Mix operacional</h2>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Transações, pedidos, transferências e consumo recente.</p>
+              <p class="ds-kicker">Movimento</p>
+              <h2 class="ds-heading mt-2 text-base">Mix operacional</h2>
             </div>
-            <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-800 dark:bg-blue-500/10 dark:text-blue-200">
-              {{ activityMixTotal }} registos
-            </span>
+            <span class="ds-chip">{{ activityMixTotal }} registos</span>
           </div>
-
-          <div class="mt-6">
-            <apexchart type="donut" height="300" :options="activityMixChartOptions" :series="activityMixChartSeries" />
-          </div>
+          <apexchart class="mt-2" type="donut" height="205" :options="activityMixChartOptions" :series="activityMixChartSeries" />
         </article>
 
-        <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Pulso de conformidade</h2>
-              <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Sinal rápido sobre caducidade, criticidade de stock e prontidão técnica.</p>
-            </div>
+        <article class="ds-card p-5">
+          <div>
+            <p class="ds-kicker">Conformidade</p>
+            <h2 class="ds-heading mt-2 text-base">Pulso técnico</h2>
+            <p class="ds-copy mt-1 text-xs">Caducidade, criticidade e prontidão.</p>
           </div>
-
-          <div class="mt-6">
-            <apexchart type="bar" height="250" :options="compliancePulseChartOptions" :series="compliancePulseChartSeries" />
-          </div>
+          <apexchart class="mt-2" type="bar" height="185" :options="compliancePulseChartOptions" :series="compliancePulseChartSeries" />
         </article>
       </div>
     </section>
 
-    <!-- MAIN CONTENT -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- LEFT COLUMN -->
-      <div class="lg:col-span-2 space-y-6">
-        <!-- ITEM DETAILS -->
-        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <InformationCircleIcon class="h-5 w-5" />
-              Detalhes do Item
-            </h2>
+    <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <div class="space-y-4">
+        <section class="ds-panel overflow-hidden">
+          <div class="flex items-center gap-2 border-b border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-5 py-4">
+            <InformationCircleIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+            <div>
+              <h2 class="ds-heading text-base">Dossier do item</h2>
+              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Classificação, identificação e condições técnicas.</p>
+            </div>
           </div>
-          <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Categoria</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.category?.name || 'N/A' }}</div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Tipo</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.type?.name || 'N/A' }}</div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Unidade</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.unit?.code || 'N/A' }}</div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Estado</label>
-                  <div class="mt-1">
-                    <span :class="getStatusClasses(item.status)">
-                      {{ item.status?.name || 'N/A' }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Fornecedor</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.supplier?.name || 'N/A' }}</div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Quantidade de Reabastecimento</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.reorder_qty }} {{ item.unit?.code || 'unidades' }}</div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Documentação de Segurança</label>
-                  <div class="mt-1">
-                    <span :class="item.has_safety_documentation ? 'text-green-900 dark:text-emerald-300' : 'text-slate-900 dark:text-slate-300'">
-                      {{ item.has_safety_documentation ? 'Disponível' : 'Não Disponível' }}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Refrigerado</label>
-                  <div class="mt-1">
-                    <span :class="item.refrigerated ? 'text-blue-900 dark:text-blue-300' : 'text-slate-900 dark:text-slate-300'">
-                      {{ item.refrigerated ? 'Sim' : 'Não' }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <!-- IDENTIFICATION -->
-            <div class="mt-8 border-t border-slate-200 pt-8 dark:border-slate-800">
-              <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Identificação</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Código de Barras</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.barcode || 'N/A' }}</div>
-                </div>
-                <div v-if="isEquipment">
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Número de Série</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.serial_number || 'N/A' }}</div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Código Interno</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.internal_code || 'N/A' }}</div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Marca</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.brand || 'N/A' }}</div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Modelo</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.model || 'N/A' }}</div>
-                </div>
-                
-                <div v-if="isReagent">
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Lote</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.lot || 'N/A' }}</div>
-                </div>
+          <div class="divide-y divide-[color:var(--ds-border)]">
+            <section class="grid gap-5 p-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
+              <div>
+                <h3 class="ds-heading text-sm">Classificação</h3>
+                <p class="ds-copy mt-1 text-xs">Propriedade, fornecimento e operação corrente.</p>
               </div>
-            </div>
+              <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div v-for="field in overviewFields" :key="field.label">
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
+                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ field.value }}</dd>
+                </div>
+              </dl>
+            </section>
 
-            <!-- ITEM PRICES -->
-            <div class="mt-8 border-t border-slate-200 pt-8 dark:border-slate-800">
-              <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Custos de Compra</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Preço Padrão</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
-                    {{ item.standard_cost }}
-                  </div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Último Preço de Compra</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.last_purchase_price }}</div>
-                </div>
-                <!-- <div>
-                  <label class="block text-sm font-medium text-gray-700">Dias para Caducidade</label>
-                  <div class="mt-1">
-                    <span :class="getDaysColor(daysToExpiry)">
-                      {{ daysToExpiry.toFixed(0) || 'N/A' }}
-                    </span>
-                  </div>
-                </div> -->
+            <section class="grid gap-5 p-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
+              <div>
+                <h3 class="ds-heading text-sm">Identificação</h3>
+                <p class="ds-copy mt-1 text-xs">Códigos, fabricante e rastreabilidade física.</p>
               </div>
-            </div>
+              <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div v-for="field in identificationFields" :key="field.label">
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
+                  <dd class="mt-1 break-words text-sm font-bold text-[color:var(--ds-text)]">{{ field.value }}</dd>
+                </div>
+              </dl>
+            </section>
 
-            <!-- TECHNICAL SPECIFICATIONS -->
-            <div v-if="hasTechnicalSpecs" class="mt-8 border-t border-slate-200 pt-8 dark:border-slate-800">
-              <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Especificações Técnicas</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div v-if="item.resolution">
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Resolução</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.resolution }}</div>
-                </div>
-                <div v-if="item.precision">
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Precisão</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.precision }}</div>
-                </div>
-                <div v-if="item.range">
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Alcance / Gama</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.range }}</div>
-                </div>
-                <div v-if="item.firmware">
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Firmware</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.firmware }}</div>
-                </div>
-                <div v-if="item.software">
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Software</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.software }}</div>
-                </div>
-                <div v-if="item.metrological_uncertainty_value">
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Incerteza Metrológica</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
-                    {{ item.metrological_uncertainty_value }} {{ item.metrological_uncertainty_unit || '' }}
-                  </div>
-                </div>
-                <div v-if="item.metrological_traceability_reference">
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Rastreabilidade Metrológica</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.metrological_traceability_reference }}</div>
-                </div>
+            <section class="grid gap-5 p-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
+              <div>
+                <h3 class="ds-heading text-sm">Custos e controlo</h3>
+                <p class="ds-copy mt-1 text-xs">Valores de compra e requisitos de conservação.</p>
               </div>
-            </div>
+              <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Custo padrão</dt>
+                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ item.standard_cost || 'N/A' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Último preço</dt>
+                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ item.last_purchase_price || 'N/A' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Documentação de segurança</dt>
+                  <dd class="mt-1">
+                    <span :class="['ds-chip', item.has_safety_documentation ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200' : 'border-zinc-300 bg-zinc-50 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200']">
+                      {{ item.has_safety_documentation ? 'Disponível' : 'Não disponível' }}
+                    </span>
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Refrigeração</dt>
+                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ item.refrigerated ? 'Obrigatória' : 'Não aplicável' }}</dd>
+                </div>
+              </dl>
+            </section>
 
-            <!-- REAGENT SPECIFIC -->
-            <div v-if="item.is_reagent" class="mt-8 border-t border-slate-200 pt-8 dark:border-slate-800">
-              <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Informação do Reagente</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Data de Validade</label>
-                  <div class="mt-1">
-                    <span :class="getExpiryDateColor(item)">
-                      {{ formatDate(item.reagent_expiry_date) || 'N/A' }}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Data de Abertura</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ formatDate(item.reagent_open_date) || 'Não Aberto' }}</div>
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Dias para Caducidade</label>
-                  <div class="mt-1">
-                    <span :class="getDaysColor(daysToExpiry)">
-                      {{ daysToExpiry.toFixed(0) || 'N/A' }}
-                    </span>
-                  </div>
-                </div>
+            <section v-if="hasTechnicalSpecs" class="grid gap-5 p-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
+              <div>
+                <h3 class="ds-heading text-sm">Especificações técnicas</h3>
+                <p class="ds-copy mt-1 text-xs">Capacidade, software e rastreabilidade metrológica.</p>
               </div>
-            </div>
+              <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div v-for="field in technicalSpecFields" :key="field.label">
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ field.label }}</dt>
+                  <dd class="mt-1 break-words text-sm font-bold text-[color:var(--ds-text)]">{{ field.value }}</dd>
+                </div>
+              </dl>
+            </section>
 
-            <!-- CALIBRATION INFO -->
-            <div v-if="item.next_calibration_date" class="mt-8 border-t border-slate-200 pt-8 dark:border-slate-800">
-              <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Informação de Calibração</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <section v-if="isReagent" class="grid gap-5 p-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
+              <div>
+                <h3 class="ds-heading text-sm">Reagente e validade</h3>
+                <p class="ds-copy mt-1 text-xs">Lote, abertura e janela de utilização.</p>
+              </div>
+              <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Última Calibração</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ formatDate(item.last_calibration_date) || 'Nunca' }}</div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Data de validade</dt>
+                  <dd class="mt-1 text-sm font-bold" :class="getExpiryDateColor(item)">{{ formatDate(item.reagent_expiry_date) || 'N/A' }}</dd>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Próxima Calibração</label>
-                  <div class="mt-1">
-                    <span :class="getCalibrationDateColor(item)">
-                      {{ formatDate(item.next_calibration_date) }}
-                    </span>
-                  </div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Data de abertura</dt>
+                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ formatDate(item.reagent_open_date) || 'Não aberto' }}</dd>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Estado de Calibração</label>
-                  <div class="mt-1">
-                    <span :class="getCalibrationStatusClasses(item)">
-                      {{ getCalibrationStatusText(item) }}
-                    </span>
-                  </div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Dias para caducidade</dt>
+                  <dd class="mt-1 text-sm font-bold" :class="getDaysColor(daysToExpiry)">{{ Number(daysToExpiry || 0).toFixed(0) }}</dd>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Estado Metrológico</label>
-                  <div class="mt-1">
-                    <span :class="getMetrologyStatusClasses(item.metrology_status)">
-                      {{ getMetrologyStatusText(item.metrology_status) }}
-                    </span>
-                  </div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Estado de validade</dt>
+                  <dd class="mt-1"><span :class="getExpiryStatusClasses(item)">{{ getExpiryStatusText(item) }}</span></dd>
+                </div>
+              </dl>
+            </section>
+
+            <section v-if="item.next_calibration_date" class="grid gap-5 p-5 lg:grid-cols-[13rem_minmax(0,1fr)]">
+              <div>
+                <h3 class="ds-heading text-sm">Calibração e metrologia</h3>
+                <p class="ds-copy mt-1 text-xs">Prontidão técnica e próxima revisão.</p>
+              </div>
+              <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Última calibração</dt>
+                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ formatDate(item.last_calibration_date) || 'Nunca' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Próxima calibração</dt>
+                  <dd class="mt-1 text-sm font-bold" :class="getCalibrationDateColor(item)">{{ formatDate(item.next_calibration_date) }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Estado de calibração</dt>
+                  <dd class="mt-1"><span :class="getCalibrationStatusClasses(item)">{{ getCalibrationStatusText(item) }}</span></dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Estado metrológico</dt>
+                  <dd class="mt-1"><span :class="getMetrologyStatusClasses(item.metrology_status)">{{ getMetrologyStatusText(item.metrology_status) }}</span></dd>
                 </div>
                 <div v-if="item.metrology_review_due_at">
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Próxima Revisão Metrológica</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ formatDate(item.metrology_review_due_at) }}</div>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Próxima revisão</dt>
+                  <dd class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ formatDate(item.metrology_review_due_at) }}</dd>
                 </div>
-                <div v-if="item.metrology_notes" class="md:col-span-2 lg:col-span-3">
-                  <label class="block text-sm font-medium text-slate-600 dark:text-slate-400">Notas Metrológicas</label>
-                  <div class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.metrology_notes }}</div>
+                <div v-if="item.metrology_notes" class="sm:col-span-2 lg:col-span-3">
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Notas metrológicas</dt>
+                  <dd class="mt-1 text-sm font-semibold leading-6 text-[color:var(--ds-text-muted)]">{{ item.metrology_notes }}</dd>
                 </div>
-              </div>
+              </dl>
+            </section>
+          </div>
+        </section>
+
+        <section class="ds-table-shell">
+          <div class="ds-table-summary px-5 py-4">
+            <div>
+              <h2 class="ds-heading text-base">Stock por armazém</h2>
+              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ inventory.length }} localizações com registo.</p>
+            </div>
+            <BuildingLibraryIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+          </div>
+
+          <div v-if="inventory.length === 0" class="p-5">
+            <div class="ds-empty-state px-5 py-10 text-center">
+              <BuildingLibraryIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
+              <h3 class="ds-heading mt-3 text-sm">Sem stock disponível</h3>
+              <p class="ds-copy mt-1 text-xs">Este item ainda não está associado a um armazém.</p>
             </div>
           </div>
-        </div>
 
-        <!-- STOCK ACROSS WAREHOUSES -->
-        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <BuildingLibraryIcon class="h-5 w-5" />
-              Estoque em Armazéns
-            </h2>
-          </div>
-          <div class="p-6">
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-                <thead class="bg-slate-50 dark:bg-slate-900/80">
-                  <tr>
-                    <th :class="tableHeadClass">
-                      Armazém
-                    </th>
-                    <th :class="tableHeadClass">
-                      Estoque Disponível
-                    </th>
-                    <th :class="tableHeadClass">
-                      Nível Mínimo de Estoque
-                    </th>
-                    <th :class="tableHeadClass">
-                      Ponto de Reabastecimento
-                    </th>
-                    <th :class="tableHeadClass">
-                      Estado de Estoque
-                    </th>
-                    <th :class="tableHeadClass">
-                      Acções
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
-                  <tr
-                    v-for="inv in inventory"
-                    :key="inv?.id"
-                    class="hover:bg-blue-50/60 dark:hover:bg-blue-950/20"
-                  >
-                    <td class="px-6 py-4">
-                      <div class="text-sm font-medium text-slate-900 dark:text-white">{{ inv?.warehouse?.name }}</div>
-                      <div class="text-sm text-slate-500 dark:text-slate-400">{{ inv?.warehouse?.location?.name || 'Sem localização' }}</div>
-                      <div v-if="inv?.warehouse?.is_refrigerated" class="mt-1">
-                        <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-500/10 dark:text-blue-200">
-                          <SunIcon class="mr-1 h-3 w-3" />
-                          Refrigerado
-                        </span>
-                      </div>
-                    </td>
-                    <td class="px-6 py-4">
-                      <div class="text-2xl font-bold text-blue-900 dark:text-blue-300">{{ inv.qty_available }}</div>
-                      <div class="text-xs text-slate-500 dark:text-slate-400">{{ item.unit?.code || 'unidades' }}</div>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">{{ inv.min_stock_level }}</td>
-                    <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">{{ inv.reorder_point }}</td>
-                    <td class="px-6 py-4">
-                      <span :class="getStockStatusClasses(inv)">
-                        {{ inv.stock_status_label }}
-                      </span>
-                    </td>
-                    <td class="px-6 py-4">
-                      <div class="flex items-center gap-2">
-                        <button
-                          @click="adjustStock(inv)"
-                          class="inline-flex items-center rounded-xl bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-900 transition hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-200 dark:hover:bg-blue-500/20"
-                        >
-                          <ArrowsUpDownIcon class="h-4 w-4 mr-1" />
-                          Ajustar
-                        </button>
-                        <button
-                          @click="transferStock(inv)"
-                          class="inline-flex items-center rounded-xl bg-green-50 px-3 py-1.5 text-sm font-semibold text-green-900 transition hover:bg-green-100 dark:bg-emerald-500/10 dark:text-emerald-200 dark:hover:bg-emerald-500/20"
-                        >
-                          <ArrowsRightLeftIcon class="h-4 w-4 mr-1" />
+          <div v-else class="overflow-x-auto">
+            <table class="min-w-full align-middle">
+              <thead class="ds-table-head">
+                <tr>
+                  <th class="ds-table-heading px-5 py-3 text-left">Armazém</th>
+                  <th class="ds-table-heading px-5 py-3 text-left">Disponível</th>
+                  <th class="ds-table-heading px-5 py-3 text-left">Mínimo</th>
+                  <th class="ds-table-heading px-5 py-3 text-left">Reabastecimento</th>
+                  <th class="ds-table-heading px-5 py-3 text-left">Estado</th>
+                  <th class="ds-table-heading px-5 py-3 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody class="ds-table-body divide-y divide-[color:var(--ds-border)]">
+                <tr v-for="inv in inventory" :key="inv?.id" class="ds-table-row">
+                  <td class="px-5 py-3">
+                    <span class="block text-sm font-bold text-[color:var(--ds-text)]">{{ inv?.warehouse?.name || 'Armazém' }}</span>
+                    <span class="mt-0.5 block text-xs text-[color:var(--ds-text-soft)]">{{ inv?.warehouse?.location?.name || 'Sem localização' }}</span>
+                    <span v-if="inv?.warehouse?.is_refrigerated" class="ds-chip mt-2 border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-400/30 dark:bg-blue-500/10 dark:text-blue-200">Refrigerado</span>
+                  </td>
+                  <td class="px-5 py-3">
+                    <span class="block text-xl font-bold text-[color:var(--ds-text)]">{{ inv.qty_available }}</span>
+                    <span class="text-xs text-[color:var(--ds-text-soft)]">{{ item.unit?.code || 'unidades' }}</span>
+                  </td>
+                  <td class="ds-table-cell px-5 py-3">{{ inv.min_stock_level }}</td>
+                  <td class="ds-table-cell px-5 py-3">{{ inv.reorder_point }}</td>
+                  <td class="px-5 py-3"><span :class="getStockStatusClasses(inv)">{{ inv.stock_status_label }}</span></td>
+                  <td class="px-5 py-3">
+                    <div class="flex items-center justify-end gap-1">
+                      <button type="button" class="ds-table-action" @click="adjustStock(inv)">
+                        <ArrowsUpDownIcon class="h-4 w-4" />
+                        Ajustar
+                      </button>
+                      <button type="button" class="ds-table-action" @click="transferStock(inv)">
+                        <ArrowsRightLeftIcon class="h-4 w-4" />
                         Transferir
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div v-if="inventory.length === 0" class="text-center py-8">
-              <BuildingLibraryIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
-              <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">Não há Estoque Disponível</h3>
-              <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Este item não está disponível em nenhum armazém</p>
-            </div>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        </div>
+        </section>
 
-        <!-- RECENT TRANSACTIONS -->
-        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
-              <ClockIcon class="h-5 w-5" />
-              Transações Recentes
-            </h2>
-          </div>
-          <div class="p-6">
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-                <thead class="bg-slate-50 dark:bg-slate-900/80">
-                  <tr>
-                    <th :class="tableHeadClass">
-                      Data
-                    </th>
-                    <th :class="tableHeadClass">
-                      Tipo
-                    </th>
-                    <th :class="tableHeadClass">
-                      Quantidade
-                    </th>
-                    <th :class="tableHeadClass">
-                      Armazém
-                    </th>
-                    <th :class="tableHeadClass">
-                      Usuário
-                    </th>
-                    <th :class="tableHeadClass">
-                      Motivo
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
-                  <tr
-                    v-for="transaction in recentTransactions"
-                    :key="transaction.id"
-                    class="hover:bg-blue-50/60 dark:hover:bg-blue-950/20"
-                  >
-                    <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                      {{ formatDateTime(transaction.created_at) }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <span :class="getTransactionTypeClasses(transaction)">
-                        {{ transaction.type?.name }}
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <span :class="transaction.is_addition ? 'text-green-900 dark:text-emerald-300' : 'text-red-900 dark:text-red-300'">
-                        {{ transaction.is_addition ? '+' : '-' }}{{ transaction.qty }}
-                      </span>
-                    </td>
-                    <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                      {{ transaction.warehouse?.name }}
-                    </td>
-                    <td class="whitespace-nowrap px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                      {{ transaction.user?.name }}
-                    </td>
-                    <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">
-                      {{ transaction.reason }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+        <section class="ds-table-shell">
+          <div class="ds-table-summary px-5 py-4">
+            <div>
+              <h2 class="ds-heading text-base">Transações recentes</h2>
+              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ recentTransactions.length }} movimentos registados.</p>
             </div>
-            <div v-if="recentTransactions.length === 0" class="text-center py-8">
-              <ClockIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
-              <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">Nenhuma Transação Recente</h3>
-              <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Nenhuma transação registrada para este item ainda</p>
-            </div>
+            <ClockIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
           </div>
-        </div>
 
-        <!-- LIST DOCUMENTS -->
-
-        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-            <div class="flex items-center justify-between">
-              <h2 class="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-                <DocumentTextIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
-                Documentos
-              </h2>
+          <div v-if="recentTransactions.length === 0" class="p-5">
+            <div class="ds-empty-state px-5 py-10 text-center">
+              <ClockIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
+              <h3 class="ds-heading mt-3 text-sm">Sem transações recentes</h3>
+              <p class="ds-copy mt-1 text-xs">Os movimentos deste item aparecerão aqui.</p>
             </div>
           </div>
 
-          <!-- EMPTY STATE -->
-          <div v-if="documents.length === 0" class="p-12 text-center">
-            <DocumentTextIcon class="mx-auto h-12 w-12 text-slate-300 dark:text-slate-700" />
-            <h3 class="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
-              Nenhum documento adicionado
-            </h3>
-            <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              Adicione um documento para o item
-            </p>
+          <div v-else class="overflow-x-auto">
+            <table class="min-w-full align-middle">
+              <thead class="ds-table-head">
+                <tr>
+                  <th class="ds-table-heading px-5 py-3 text-left">Data</th>
+                  <th class="ds-table-heading px-5 py-3 text-left">Tipo</th>
+                  <th class="ds-table-heading px-5 py-3 text-left">Quantidade</th>
+                  <th class="ds-table-heading px-5 py-3 text-left">Armazém</th>
+                  <th class="ds-table-heading px-5 py-3 text-left">Utilizador</th>
+                  <th class="ds-table-heading px-5 py-3 text-left">Motivo</th>
+                </tr>
+              </thead>
+              <tbody class="ds-table-body divide-y divide-[color:var(--ds-border)]">
+                <tr v-for="transaction in recentTransactions" :key="transaction.id" class="ds-table-row">
+                  <td class="ds-table-cell whitespace-nowrap px-5 py-3">{{ formatDateTime(transaction.created_at) }}</td>
+                  <td class="px-5 py-3"><span :class="getTransactionTypeClasses(transaction)">{{ transaction.type?.name || 'Movimento' }}</span></td>
+                  <td class="px-5 py-3">
+                    <span :class="transaction.is_addition ? 'font-bold text-emerald-700 dark:text-emerald-300' : 'font-bold text-rose-700 dark:text-rose-300'">
+                      {{ transaction.is_addition ? '+' : '-' }}{{ transaction.qty }}
+                    </span>
+                  </td>
+                  <td class="ds-table-cell px-5 py-3">{{ transaction.warehouse?.name || 'N/A' }}</td>
+                  <td class="ds-table-cell px-5 py-3">{{ transaction.user?.name || 'N/A' }}</td>
+                  <td class="ds-table-cell min-w-60 px-5 py-3">{{ transaction.reason || 'Sem motivo registado' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="ds-panel overflow-hidden">
+          <div class="flex items-center justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
+            <div>
+              <h2 class="ds-heading text-base">Documentos</h2>
+              <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ documents.length }} ficheiros associados.</p>
+            </div>
+            <DocumentTextIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
           </div>
 
-          <!-- DOCUMENTS GRID -->
-          <div v-else class="space-y-4">
-            <div
-              v-for="(document, index) in documents"
-              :key="document.name"
-              class="group relative m-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:border-blue-900 dark:border-slate-800 dark:bg-slate-900/70 dark:hover:border-blue-400"
-              v-motion
-              :initial="{ opacity: 0, y: 20 }"
-              :enter="{ opacity: 1, y: 0 }"
-              :delay="index * 50"
-            >
-              <!-- Document Header -->
-              <div class="border-b border-slate-200 bg-gradient-to-r from-blue-50 to-white px-4 py-3 dark:border-slate-800 dark:from-blue-500/10 dark:to-slate-900">
-                <div class="flex items-center justify-between gap-3">
-                  <div>
-                    <h3 class="text-sm font-semibold text-slate-900 dark:text-white">
-                      {{ document.name }}
-                    </h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">
-                      {{ document.extension || document.name.split('.').pop() }}
-                    </p>
-                  </div>
-                  
-                  <!-- Download File -->
-                  <div class="flex items-center gap-1">
-                    <button
-                      @click="downloadAttachment(document)"
-                      type="button"
-                      class="rounded-full p-2 text-slate-400 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-700 dark:text-slate-500 dark:hover:bg-blue-500/10 dark:hover:text-blue-200"
-                      :title="'Download'"
-                    >
-                      <CloudArrowDownIcon class="h-5 w-5" />
-                    </button>
-                  <button
-                    @click="deleteAttachment(item.id, document.id, index)"
-                    type="button"
-                    class="rounded-full p-2 text-slate-400 transition-colors duration-200 hover:bg-red-50 hover:text-red-600 dark:text-slate-500 dark:hover:bg-red-500/10 dark:hover:text-red-200"
-                    :title="'Remover documento'"
-                  >
-                    <TrashIcon class="h-5 w-5" />
-                  </button>
-                  </div>
+          <div v-if="documents.length === 0" class="p-5">
+            <div class="ds-empty-state px-5 py-10 text-center">
+              <DocumentTextIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
+              <h3 class="ds-heading mt-3 text-sm">Nenhum documento associado</h3>
+              <p class="ds-copy mt-1 text-xs">Adicione certificados, fichas de segurança ou evidência técnica no editor do item.</p>
+            </div>
+          </div>
+
+          <div v-else class="divide-y divide-[color:var(--ds-border)]">
+            <article v-for="document in documents" :key="document.id || document.name" class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div class="flex min-w-0 items-center gap-3">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)]">
+                  <DocumentTextIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+                </div>
+                <div class="min-w-0">
+                  <h3 class="truncate text-sm font-bold text-[color:var(--ds-text)]">{{ document.name }}</h3>
+                  <p class="mt-0.5 text-xs text-[color:var(--ds-text-soft)]">{{ (document.extension || document.name.split('.').pop() || 'ficheiro').toUpperCase() }} · {{ readableFileSize(document.size) }}</p>
                 </div>
               </div>
-
-              <!-- Document Content -->
-              <div class="p-4">
-                <div class="space-y-2">
-                 
-                  <div class="flex items-center gap-3">
-                    <div class="flex-shrink-0">
-                      <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-500/10">
-                        <DocumentTextIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
-                      </div>
-                    </div>
-                    <div>
-                      <div class="text-sm font-semibold text-slate-900 dark:text-white">
-                        {{ document.extension || document.name.split('.').pop() }}
-                      </div>
-                      <div class="text-xs text-slate-500 dark:text-slate-400">
-                        {{ readableFileSize(document.size) }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div class="flex items-center gap-1">
+                <button type="button" class="ds-table-action" title="Descarregar" @click="downloadAttachment(document)">
+                  <CloudArrowDownIcon class="h-4 w-4" />
+                  Descarregar
+                </button>
+                <button type="button" class="ds-table-action ds-table-action-danger" title="Remover documento" @click="deleteAttachment(item.id, document.id)">
+                  <TrashIcon class="h-4 w-4" />
+                  Remover
+                </button>
               </div>
-            </div>
+            </article>
           </div>
-        </div>
-
+        </section>
       </div>
 
-      <!-- RIGHT COLUMN -->
-      <div class="space-y-6">
-        <!-- QUICK STATS -->
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <h3 class="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-white">
-            <ChartBarIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
-            Estatísticas Rápidas
-          </h3>
-          <div class="space-y-4">
-            <div class="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-white p-4 dark:border-blue-500/20 dark:from-blue-500/10 dark:to-slate-900/60">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Estoque Total</p>
-                  <p class="text-2xl font-bold text-blue-900 dark:text-blue-300">{{ totalStock }}</p>
-                </div>
-                <CubeIcon class="h-8 w-8 text-blue-900/20 dark:text-blue-300/30" />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div class="rounded-2xl border border-green-100 bg-gradient-to-r from-green-50 to-white p-4 dark:border-emerald-500/20 dark:from-emerald-500/10 dark:to-slate-900/60">
-                <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Armazéns</p>
-                <p class="text-xl font-bold text-green-900 dark:text-emerald-300">{{ inventory.length }}</p>
-              </div>
-              <div class="rounded-2xl border border-yellow-100 bg-gradient-to-r from-yellow-50 to-white p-4 dark:border-amber-500/20 dark:from-amber-500/10 dark:to-slate-900/60">
-                <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Usos Recentes</p>
-                <p class="text-xl font-bold text-yellow-900 dark:text-amber-300">{{ recentTransactions.length }}</p>
-              </div>
-            </div>
-
-            <div class="space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-400">Estado</span>
-                <span :class="getStatusClasses(item.status)">
-                  {{ item.status?.name || 'N/A' }}
-                </span>
-              </div>
-              <div v-if="item.is_reagent" class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-400">Estado de Validade</span>
-                <span :class="getExpiryStatusClasses(item)">
-                  {{ getExpiryStatusText(item) }}
-                </span>
-              </div>
-              <div v-if="item.next_calibration_date" class="flex items-center justify-between">
-                <span class="text-sm text-slate-600 dark:text-slate-400">Calibração</span>
-                <span :class="getCalibrationStatusClasses(item)">
-                  {{ getCalibrationStatusText(item) }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- QUICK ACTIONS -->
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-            Acções Rápidas
-          </h3>
-          <div class="space-y-3">
-            <button
-              @click="adjustStockModal = true"
-              class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-blue-300 hover:bg-blue-50/60 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-blue-500/40 dark:hover:bg-blue-500/10"
-            >
-              <div class="flex items-center gap-3">
-                <div class="rounded-xl bg-blue-100 p-2 dark:bg-blue-500/10">
-                  <ArrowsUpDownIcon class="h-5 w-5 text-blue-900 dark:text-blue-300" />
-                </div>
-                <div>
-                  <div class="font-medium text-slate-900 dark:text-white">Ajustar Estoque</div>
-                  <div class="text-sm text-slate-500 dark:text-slate-400">Adicione ou remova estoque</div>
-                </div>
-              </div>
-              <ChevronRightIcon class="h-5 w-5 text-slate-400 dark:text-slate-500" />
+      <aside class="space-y-4">
+        <section class="ds-command-surface p-5">
+          <p class="ds-kicker">Comandos de stock</p>
+          <h2 class="ds-heading mt-2 text-base">Ações rápidas</h2>
+          <div class="mt-4 grid gap-2">
+            <button type="button" class="ds-button ds-button-primary w-full" @click="adjustStockModal = true">
+              <ArrowsUpDownIcon class="h-4 w-4" />
+              Ajustar stock
             </button>
-
-            <button
-              @click="transferStockModal = true"
-              class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-green-300 hover:bg-green-50/60 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-emerald-500/40 dark:hover:bg-emerald-500/10"
-            >
-              <div class="flex items-center gap-3">
-                <div class="rounded-xl bg-green-100 p-2 dark:bg-emerald-500/10">
-                  <ArrowsRightLeftIcon class="h-5 w-5 text-green-900 dark:text-emerald-300" />
-                </div>
-                <div>
-                  <div class="font-medium text-slate-900 dark:text-white">Transferir Estoque</div>
-                  <div class="text-sm text-slate-500 dark:text-slate-400">Mover entre armazéns</div>
-                </div>
-              </div>
-              <ChevronRightIcon class="h-5 w-5 text-slate-400 dark:text-slate-500" />
+            <button type="button" class="ds-button ds-button-secondary w-full" @click="transferStockModal = true">
+              <ArrowsRightLeftIcon class="h-4 w-4" />
+              Transferir stock
             </button>
-
-            <button
-              v-if="item.is_reagent"
-              @click="consumeReagentModal = true"
-              class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-red-300 hover:bg-red-50/60 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-red-500/40 dark:hover:bg-red-500/10"
-            >
-              <div class="flex items-center gap-3">
-                <div class="rounded-xl bg-red-100 p-2 dark:bg-red-500/10">
-                  <BeakerIcon class="h-5 w-5 text-red-900 dark:text-red-300" />
-                </div>
-                <div>
-                  <div class="font-medium text-slate-900 dark:text-white">Registrar Consumo</div>
-                  <div class="text-sm text-slate-500 dark:text-slate-400">Registrar uso de reagente</div>
-                </div>
-              </div>
-              <ChevronRightIcon class="h-5 w-5 text-slate-400 dark:text-slate-500" />
+            <button v-if="item.is_reagent || isReagent" type="button" class="ds-button ds-button-secondary w-full" @click="consumeReagentModal = true">
+              <BeakerIcon class="h-4 w-4" />
+              Registar consumo
             </button>
-
-            <button
-              v-if="item.next_calibration_date"
-              @click="recordCalibrationModal = true"
-              class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-indigo-300 hover:bg-indigo-50/60 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-indigo-500/40 dark:hover:bg-indigo-500/10"
-            >
-              <div class="flex items-center gap-3">
-                <div class="rounded-xl bg-indigo-100 p-2 dark:bg-indigo-500/10">
-                  <WrenchScrewdriverIcon class="h-5 w-5 text-indigo-900 dark:text-indigo-300" />
-                </div>
-                <div>
-                  <div class="font-medium text-slate-900 dark:text-white">Registrar Calibração</div>
-                  <div class="text-sm text-slate-500 dark:text-slate-400">Atualizar status de calibração</div>
-                </div>
-              </div>
-              <ChevronRightIcon class="h-5 w-5 text-slate-400 dark:text-slate-500" />
+            <button v-if="item.next_calibration_date" type="button" class="ds-button ds-button-secondary w-full" @click="recordCalibrationModal = true">
+              <WrenchScrewdriverIcon class="h-4 w-4" />
+              Registar calibração
             </button>
-
-            <Link
-              :href="route('vap-inventory.orders.create', { item_id: item.id })"
-              class="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 transition-colors hover:border-amber-300 hover:bg-amber-50/60 dark:border-slate-800 dark:bg-slate-950/50 dark:hover:border-amber-500/40 dark:hover:bg-amber-500/10"
-            >
-              <div class="flex items-center gap-3">
-                <div class="rounded-xl bg-yellow-100 p-2 dark:bg-amber-500/10">
-                  <ShoppingCartIcon class="h-5 w-5 text-yellow-900 dark:text-amber-300" />
-                </div>
-                <div>
-                  <div class="font-medium text-slate-900 dark:text-white">Criar Pedido</div>
-                  <div class="text-sm text-slate-500 dark:text-slate-400">Pedir em mais de um fornecedor</div>
-                </div>
-              </div>
-              <ChevronRightIcon class="h-5 w-5 text-slate-400 dark:text-slate-500" />
+            <Link :href="route('vap-inventory.orders.create', { item_id: item.id })" class="ds-button ds-button-secondary w-full">
+              <ShoppingCartIcon class="h-4 w-4" />
+              Criar pedido
             </Link>
           </div>
-        </div>
+        </section>
 
-        <!-- RECENT ACTIVITY -->
-        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">
-            Atividade Recente
-          </h3>
-          <div class="space-y-4">
-            <div
-              v-for="activity in recentActivity"
-              :key="activity.id"
-              class="flex items-start gap-3"
-            >
-              <div :class="[
-                'flex h-8 w-8 items-center justify-center rounded-full',
-                getActivityColor(activity.type)
-              ]">
-                <component
-                  :is="getActivityIcon(activity.type)"
-                  class="h-4 w-4 text-white"
-                />
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-slate-900 dark:text-white">
-                  {{ activity.description }}
-                </p>
-                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  {{ formatTimeAgo(activity.timestamp) }}
-                </p>
-              </div>
-            </div>
+        <section class="ds-card p-5">
+          <div class="flex items-center gap-2">
+            <ChartBarIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
+            <h2 class="ds-heading text-base">Estado operacional</h2>
           </div>
-        </div>
-      </div>
-    </div>
+          <dl class="mt-4 divide-y divide-[color:var(--ds-border)]">
+            <div class="flex items-center justify-between gap-3 py-3">
+              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Item</dt>
+              <dd><span :class="getStatusClasses(item.status)">{{ item.status?.name || 'N/A' }}</span></dd>
+            </div>
+            <div v-if="isReagent" class="flex items-center justify-between gap-3 py-3">
+              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Validade</dt>
+              <dd><span :class="getExpiryStatusClasses(item)">{{ getExpiryStatusText(item) }}</span></dd>
+            </div>
+            <div v-if="item.next_calibration_date" class="flex items-center justify-between gap-3 py-3">
+              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Calibração</dt>
+              <dd><span :class="getCalibrationStatusClasses(item)">{{ getCalibrationStatusText(item) }}</span></dd>
+            </div>
+            <div v-if="item.metrology_status" class="flex items-center justify-between gap-3 py-3">
+              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Metrologia</dt>
+              <dd><span :class="getMetrologyStatusClasses(item.metrology_status)">{{ getMetrologyStatusText(item.metrology_status) }}</span></dd>
+            </div>
+          </dl>
+        </section>
 
-    <!-- MODALS -->
-    <!-- Adjust Stock Modal -->
+        <section class="ds-card p-5">
+          <h2 class="ds-heading text-base">Atividade recente</h2>
+          <div v-if="recentActivity.length" class="mt-4 space-y-4">
+            <article v-for="activity in recentActivity" :key="activity.type + '-' + activity.id" class="flex items-start gap-3">
+              <span :class="['mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', getActivityColor(activity.type)]">
+                <component :is="getActivityIcon(activity.type)" class="h-4 w-4 text-white" />
+              </span>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold leading-5 text-[color:var(--ds-text)]">{{ activity.description }}</p>
+                <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">{{ formatTimeAgo(activity.timestamp) }}</p>
+              </div>
+            </article>
+          </div>
+          <div v-else class="ds-empty-state mt-4 px-4 py-6 text-center text-xs font-semibold text-[color:var(--ds-text-soft)]">Sem atividade recente.</div>
+        </section>
+      </aside>
+    </section>
+
     <AdjustStockModal
       :show="adjustStockModal"
       :item="item"
@@ -766,7 +463,6 @@
       @success="handleStockAdjusted"
     />
 
-    <!-- Transfer Stock Modal -->
     <TransferStockModal
       :show="transferStockModal"
       :item="item"
@@ -775,9 +471,8 @@
       @success="handleTransferCreated"
     />
 
-    <!-- Consume Reagent Modal -->
     <ConsumeReagentModal
-      v-if="item.is_reagent" 
+      v-if="item.is_reagent || isReagent"
       :show="consumeReagentModal"
       :item="item"
       :inventory="inventory"
@@ -785,7 +480,6 @@
       @success="handleConsumptionRecorded"
     />
 
-    <!-- Record Calibration Modal -->
     <RecordCalibrationModal
       v-if="item.next_calibration_date"
       :show="recordCalibrationModal"
@@ -795,10 +489,8 @@
     />
   </div>
 </template>
-
 <script setup>
 import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { Link, useForm } from '@inertiajs/vue3'
 import {
   CubeIcon,
@@ -813,12 +505,6 @@ import {
   BeakerIcon,
   WrenchScrewdriverIcon,
   ShoppingCartIcon,
-  ChevronRightIcon,
-  SunIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  ArrowDownTrayIcon,
-  ArrowUpTrayIcon,
   DocumentTextIcon,
   TrashIcon,
   CloudArrowDownIcon,
@@ -860,7 +546,6 @@ const adjustStockModal = ref(false)
 const transferStockModal = ref(false)
 const consumeReagentModal = ref(false)
 const recordCalibrationModal = ref(false)
-const tableHeadClass = 'px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300'
 const isDarkMode = ref(false)
 let themeObserver
 
@@ -881,6 +566,48 @@ const hasTechnicalSpecs = computed(() => {
          props.item.firmware || props.item.software ||
          props.item.metrological_uncertainty_value || props.item.metrological_traceability_reference
 })
+
+const overviewFields = computed(() => [
+  { label: 'Categoria', value: props.item.category?.name || 'N/A' },
+  { label: 'Tipo', value: props.item.type?.name || 'N/A' },
+  { label: 'Unidade', value: props.item.unit?.code || 'N/A' },
+  { label: 'Fornecedor', value: props.item.supplier?.name || 'N/A' },
+  { label: 'Marca', value: props.item.brand || 'N/A' },
+  { label: 'Modelo', value: props.item.model || 'N/A' },
+])
+
+const identificationFields = computed(() => [
+  { label: 'Código principal', value: props.item.code || 'N/A' },
+  { label: 'Código interno', value: props.item.internal_code || 'N/A' },
+  { label: 'Código de barras', value: props.item.barcode || 'N/A' },
+  isEquipment.value ? { label: 'Número de série', value: props.item.serial_number || 'N/A' } : null,
+  isReagent.value ? { label: 'Lote', value: props.item.lot || 'N/A' } : null,
+].filter(Boolean))
+
+const technicalSpecFields = computed(() => [
+  props.item.resolution ? { label: 'Resolução', value: props.item.resolution } : null,
+  props.item.precision ? { label: 'Precisão', value: props.item.precision } : null,
+  props.item.range ? { label: 'Alcance / gama', value: props.item.range } : null,
+  props.item.firmware ? { label: 'Firmware', value: props.item.firmware } : null,
+  props.item.software ? { label: 'Software', value: props.item.software } : null,
+  props.item.metrological_uncertainty_value
+    ? {
+        label: 'Incerteza metrológica',
+        value: `${props.item.metrological_uncertainty_value} ${props.item.metrological_uncertainty_unit || ''}`.trim(),
+      }
+    : null,
+  props.item.metrological_traceability_reference
+    ? { label: 'Rastreabilidade metrológica', value: props.item.metrological_traceability_reference }
+    : null,
+].filter(Boolean))
+
+const statusChipClasses = {
+  neutral: 'ds-chip border-zinc-300 bg-zinc-50 text-zinc-800 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200',
+  success: 'ds-chip border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200',
+  danger: 'ds-chip border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-200',
+  warning: 'ds-chip border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200',
+  info: 'ds-chip border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-400/30 dark:bg-blue-500/10 dark:text-blue-200',
+}
 
 const stockDistributionChartSeries = computed(() => [
   {
@@ -1083,17 +810,17 @@ const formatTimeAgo = (timestamp) => {
 }
 
 const getStatusClasses = (status) => {
-  if (!status) return 'inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-200'
+  if (!status) return statusChipClasses.neutral
   
   const statusName = status.name.toLowerCase()
-  if (statusName.includes('active')) {
-    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200'
-  } else if (statusName.includes('inactive') || statusName.includes('out')) {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
+  if (statusName.includes('active') || statusName.includes('ativo')) {
+    return statusChipClasses.success
+  } else if (statusName.includes('inactive') || statusName.includes('inativo') || statusName.includes('out')) {
+    return statusChipClasses.danger
   } else if (statusName.includes('maintenance') || statusName.includes('calibration')) {
-    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 dark:bg-amber-500/10 dark:text-amber-200'
+    return statusChipClasses.warning
   } else {
-    return 'inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-200'
+    return statusChipClasses.neutral
   }
 }
 
@@ -1113,13 +840,13 @@ const getDaysColor = (days) => {
 
 const getExpiryStatusClasses = (item) => {
   if (item.is_expired) {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
+    return statusChipClasses.danger
   } else if (item.days_to_expiry <= 30) {
-    return 'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-200'
+    return statusChipClasses.danger
   } else if (item.days_to_expiry <= 60) {
-    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 dark:bg-amber-500/10 dark:text-amber-200'
+    return statusChipClasses.warning
   } else {
-    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200'
+    return statusChipClasses.success
   }
 }
 
@@ -1139,13 +866,13 @@ const getCalibrationDateColor = (item) => {
 
 const getCalibrationStatusClasses = (item) => {
   if (item.needs_calibration) {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
+    return statusChipClasses.danger
   } else if (item.days_to_calibration <= 30) {
-    return 'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-200'
+    return statusChipClasses.danger
   } else if (item.days_to_calibration <= 90) {
-    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 dark:bg-amber-500/10 dark:text-amber-200'
+    return statusChipClasses.warning
   } else {
-    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200'
+    return statusChipClasses.success
   }
 }
 
@@ -1157,11 +884,11 @@ const getCalibrationStatusText = (item) => {
 }
 
 const getMetrologyStatusClasses = (status) => {
-  if (status === 'hold') return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
-  if (status === 'incomplete') return 'inline-flex items-center rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-200'
-  if (status === 'review_due') return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 dark:bg-amber-500/10 dark:text-amber-200'
-  if (status === 'validated') return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200'
-  return 'inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-200'
+  if (status === 'hold') return statusChipClasses.danger
+  if (status === 'incomplete') return statusChipClasses.danger
+  if (status === 'review_due') return statusChipClasses.warning
+  if (status === 'validated') return statusChipClasses.success
+  return statusChipClasses.neutral
 }
 
 const getMetrologyStatusText = (status) => {
@@ -1175,26 +902,26 @@ const getMetrologyStatusText = (status) => {
 const getStockStatusClasses = (inventory) => {
   const status = inventory.stock_status
   if (status === 'out_of_stock') {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
+    return statusChipClasses.danger
   } else if (status === 'critical_stock') {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
+    return statusChipClasses.danger
   } else if (status === 'low_stock') {
-    return 'inline-flex items-center rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 dark:bg-amber-500/10 dark:text-amber-200'
+    return statusChipClasses.warning
   } else {
-    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200'
+    return statusChipClasses.success
   }
 }
 
 const getTransactionTypeClasses = (transaction) => {
   const type = transaction.type?.code
   if (type === 'stock_in' || type === 'stock_adjustment_add') {
-    return 'inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800 dark:bg-emerald-500/10 dark:text-emerald-200'
+    return statusChipClasses.success
   } else if (type === 'stock_out' || type === 'consumption') {
-    return 'inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800 dark:bg-red-500/10 dark:text-red-200'
+    return statusChipClasses.danger
   } else if (type === 'stock_transfer') {
-    return 'inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800 dark:bg-blue-500/10 dark:text-blue-200'
+    return statusChipClasses.info
   } else {
-    return 'inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-200'
+    return statusChipClasses.neutral
   }
 }
 
@@ -1205,7 +932,7 @@ const getActivityColor = (type) => {
     transfer: 'bg-green-900',
     calibration: 'bg-indigo-900 dark:bg-indigo-500',
   }
-  return colors[type] || 'bg-slate-900 dark:bg-slate-600'
+  return colors[type] || 'bg-zinc-700 dark:bg-zinc-600'
 }
 
 const getActivityIcon = (type) => {
@@ -1276,7 +1003,7 @@ function deleteAttachment(model_id, id, index) {
 }
 
 function downloadAttachment(file) {
-    window.open(route('vap-inventory.items.attachments.download-single', { model_id: file.id }), '_blank');
+    window.location.assign(route('vap-inventory.items.attachments.download-single', { model_id: file.id }));
 }
 
 onMounted(() => {

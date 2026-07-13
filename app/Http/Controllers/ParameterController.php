@@ -22,6 +22,7 @@ class ParameterController extends Controller
         return Inertia::render('Parameters/Index', [
             'record' => ParameterResource::collection(
                 Parameter::query()
+                    ->with(['exemption', 'tax_category', 'formula'])
                     ->when(request()->input('search'), function ($query, $search) {
                         $query->where('name', 'like', "%{$search}%");
                     })
@@ -115,11 +116,14 @@ class ParameterController extends Controller
         abort_if(! auth()->user()->can('edit_parameters'), 403, '');
 
         // Find the record
-        $record = Parameter::findOrFail($id);
+        $record = Parameter::query()
+            ->with(['exemption', 'tax_category', 'formula'])
+            ->findOrFail($id);
 
         // Return Inertia View with record data
         return Inertia::render('Parameters/Edit', [
             'record' => ParameterResource::make($record),
+            'formulas' => Formula::active()->get(),
         ]);
     }
 
