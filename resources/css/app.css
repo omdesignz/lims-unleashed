@@ -1,9 +1,9 @@
-@import url('https://fonts.bunny.net/css?family=inter:400,500,600,700,800&family=ibm-plex-mono:400,500,600,700&display=swap');
+@import url('https://fonts.bunny.net/css?family=ibm-plex-sans:400,500,600,700&family=ibm-plex-mono:400,500,600,700&display=swap');
 @import "tailwindcss";
 @config "../../tailwind.config.js";
 
 /* ============================================================
-   LIMS Unleashed — Design System Foundation
+   LIMS Design System Foundation
    ============================================================ */
 
 /* ============================================================
@@ -100,7 +100,7 @@
   --color-text-inverse: #ffffff;
 
   /* --- Typography --- */
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* --- Spacing Scale --- */
@@ -177,19 +177,11 @@ html {
 
 body {
   color: var(--color-text-primary);
-  background:
-    linear-gradient(rgb(15 23 42 / 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(15 23 42 / 0.045) 1px, transparent 1px),
-    var(--color-surface-dim);
-  background-size: 28px 28px, 28px 28px, auto;
+  background: var(--color-surface-dim);
 }
 
 .dark body {
-  background:
-    linear-gradient(rgb(148 163 184 / 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(148 163 184 / 0.055) 1px, transparent 1px),
-    var(--color-surface-dim);
-  background-size: 28px 28px, 28px 28px, auto;
+  background: var(--color-surface-dim);
 }
 
 ::selection {

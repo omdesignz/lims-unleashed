@@ -1,453 +1,192 @@
-<template>
-  <Head title="Login" />
-  <div class="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100" :class="commercialDocumentThemeClasses">
-    <div class="pointer-events-none absolute inset-0">
-      <div class="absolute inset-0 bg-[linear-gradient(rgb(148_163_184/0.08)_1px,transparent_1px),linear-gradient(90deg,rgb(148_163_184/0.08)_1px,transparent_1px)] bg-[length:32px_32px]"></div>
-      <div class="absolute inset-x-0 top-0 h-24 border-b border-cyan-300/10 bg-slate-900/75"></div>
-    </div>
+<script setup>
+import AuthExperienceShell from '@/Components/auth/AuthExperienceShell.vue'
+import EmptyLayout from '../../Shared/EmptyLayout.vue'
+import { startAuthentication } from '@simplewebauthn/browser'
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
+import {
+  ArrowRightStartOnRectangleIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  FingerPrintIcon,
+  LockClosedIcon,
+} from '@heroicons/vue/24/outline'
+import { computed, ref } from 'vue'
 
-    <div class="relative flex min-h-screen items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
-      <div class="mx-auto w-full max-w-6xl">
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.8fr)] lg:gap-14">
-          <div class="hidden flex-col justify-center lg:flex">
-            <section class="mx-auto max-w-xl rounded-xl border border-white/10 bg-slate-900/85 p-7 shadow-2xl shadow-slate-950/40 backdrop-blur-xl lg:mx-0 lg:p-8">
-              <div class="mb-8 flex items-center gap-4">
-                <img
-                  v-if="brandLogoUrl"
-                  class="max-h-16 max-w-56 object-contain"
-                  :src="brandLogoUrl"
-                  :alt="brandAppName"
-                />
-                <img
-                  v-else
-                  class="max-h-16 max-w-56 object-contain"
-                  src="../../../images/sncqa_logo.svg"
-                  :alt="brandAppName"
-                />
-                <div class="hidden h-10 w-px bg-white/10 xl:block"></div>
-                <div class="hidden xl:block">
-                  <p class="text-xs font-black uppercase tracking-[0.2em] text-cyan-100">LIMS</p>
-                  <p class="mt-1 text-sm font-medium text-slate-400">ISO 17025 workspace</p>
-                </div>
-              </div>
+defineOptions({ layout: EmptyLayout })
+defineProps({ status: String })
 
-              <div class="mb-10">
-                <p class="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.2em] text-cyan-100">
-                  <span class="lims-status-dot lims-status-dot-release"></span>
-                  {{ $t('gestlab.pages.login.internal_area') }}
-                </p>
-                <h2 class="mb-4 text-4xl font-black tracking-tight text-white lg:text-5xl">
-                  {{ brandLoginHeadline }}
-                </h2>
-                <p class="text-lg leading-8 text-slate-300">
-                  {{ brandLoginSubheadline }}
-                </p>
-              </div>
+const page = usePage()
+const brandSettings = computed(() => page.props.settings ?? {})
+const brandLoginHeadline = computed(() => brandSettings.value.login_headline || 'Bem-vindo de volta')
+const brandLoginSubheadline = computed(() => brandSettings.value.login_subheadline || 'Aceda a operacao e mantenha a rastreabilidade do laboratorio sob controlo.')
+const socialProviders = computed(() => page.props.socialAuth?.providers ?? [])
+const portalEnabled = computed(() => brandSettings.value.portal_enabled !== false)
 
-              <div class="space-y-4">
-                <div class="rounded-lg border border-white/10 bg-slate-950/45 p-4">
-                  <div class="flex items-start gap-4">
-                    <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-cyan-300/10 text-cyan-100">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    </div>
-                    <div>
-                      <h3 class="mb-1 text-base font-semibold text-white">
-                        {{ $t('gestlab.pages.login.feature1_title') }}
-                      </h3>
-                      <p class="text-sm leading-6 text-slate-300">
-                        {{ $t('gestlab.pages.login.feature1_description') }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+const showPassword = ref(false)
+const passkeyProcessing = ref(false)
+const passkeyResponse = ref('')
+const passkeyLoginForm = ref(null)
+const csrfToken = typeof document === 'undefined'
+  ? ''
+  : document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
 
-                <div class="rounded-lg border border-white/10 bg-slate-950/45 p-4">
-                  <div class="flex items-start gap-4">
-                    <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-amber-300/10 text-amber-100">
-                      <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 class="mb-1 text-base font-semibold text-white">
-                        {{ $t('gestlab.pages.login.feature2_title') }}
-                      </h3>
-                      <p class="text-sm leading-6 text-slate-300">
-                        {{ $t('gestlab.pages.login.feature2_description') }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+const form = useForm({
+  email: '',
+  password: '',
+  remember: false,
+})
 
-                <div class="rounded-lg border border-white/10 bg-slate-950/45 p-4">
-                  <div class="flex items-start gap-4">
-                    <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-300/10 text-emerald-100">
-                      <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 class="mb-1 text-base font-semibold text-white">
-                        {{ $t('gestlab.pages.login.feature3_title') }}
-                      </h3>
-                      <p class="text-sm leading-6 text-slate-300">
-                        {{ $t('gestlab.pages.login.feature3_description') }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </div>
+const submit = () => {
+  form
+    .transform((data) => ({
+      ...data,
+      remember: data.remember ? 'on' : '',
+    }))
+    .post('/login', {
+      onFinish: () => form.reset('password'),
+    })
+}
 
-          <div class="flex items-center justify-center">
-            <div class="w-full max-w-md">
-              <div class="mb-5 flex items-center justify-between gap-4 px-1 lg:hidden">
-                <img
-                  v-if="brandLogoUrl"
-                  class="h-10 max-w-44 object-contain"
-                  :src="brandLogoUrl"
-                  :alt="brandAppName"
-                />
-                <img
-                  v-else
-                  class="h-10 w-auto"
-                  src="../../../images/sncqa_logo.svg"
-                  :alt="brandAppName"
-                />
-                <span class="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-100">
-                  {{ $t('gestlab.pages.login.internal_area') }}
-                </span>
-              </div>
+const loginWithPasskey = async () => {
+  passkeyProcessing.value = true
+  form.clearErrors()
 
-              <div class="ds-panel bg-white p-5 shadow-2xl shadow-slate-950/30 backdrop-blur-xl dark:bg-slate-900/95 sm:p-8">
-                <div class="mb-8 text-center">
-                  <p class="ds-kicker mb-2">
-                    {{ $t('gestlab.pages.login.internal_area') }}
-                  </p>
-                  <h2 class="mb-2 text-2xl font-extrabold text-slate-950 dark:text-slate-50">
-                    {{ $t('gestlab.pages.login.sign_in') }}
-                  </h2>
-                  <p class="text-sm font-medium text-slate-600 dark:text-slate-300">
-                    {{ $t('gestlab.pages.login.sign_in_description') }}
-                  </p>
-                </div>
+  try {
+    const response = await fetch(route('passkeys.authentication_options'), {
+      headers: { Accept: 'application/json' },
+    })
 
-                <form @submit.prevent="submit" class="space-y-6">
-                  <div
-                    class="hidden"
-                    :data-passkey-authentication-options-url="route('passkeys.authentication_options')"
-                    :data-passkey-login-url="route('passkeys.login')"
-                  ></div>
+    if (!response.ok) {
+      throw new Error('Nao foi possivel iniciar a autenticacao com passkey.')
+    }
 
-                  <!-- Email Input -->
-                  <div class="space-y-2">
-                    <label for="email" class="ds-field-label block">
-                      {{ $t('gestlab.pages.login.email_input_title') }}
-                    </label>
-                    <div class="relative">
-                      <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <input
-                        v-model="form.email"
-                        id="email"
-                        name="email"
-                        type="email"
-                        autocomplete="email"
-                        :class="[
-                        'ds-field pl-10',
-                          form.errors.email ? 'border-red-300 focus:border-red-300 focus:ring-2 focus:ring-red-500/20' : ''
-                        ]"
-                        :placeholder="$t('gestlab.pages.login.email_placeholder')"
-                      />
-                    </div>
-                    <p v-if="form.errors.email" class="text-xs text-red-600">
-                      {{ form.errors.email }}
-                    </p>
-                  </div>
+    const options = await response.json()
+    const assertion = await startAuthentication({ optionsJSON: options })
 
-                  <!-- Password Input -->
-                  <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                      <label for="password" class="ds-field-label block">
-                        {{ $t('gestlab.pages.login.password_input_title') }}
-                      </label>
-                      <Link 
-                        :href="route('password.request')" 
-                        class="text-xs font-bold text-cyan-700 transition-colors duration-200 hover:text-cyan-600 dark:text-cyan-200"
-                      >
-                        {{ $t('gestlab.pages.login.forgot_password') }}
-                      </Link>
-                    </div>
-                    <div class="relative">
-                      <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                      </div>
-                      <input
-                        v-model="form.password"
-                        :type="showPassword ? 'text' : 'password'"
-                        id="password"
-                        name="password"
-                        autocomplete="current-password"
-                        :class="[
-                        'ds-field pl-10 pr-12',
-                          form.errors.password ? 'border-red-300 focus:border-red-300 focus:ring-2 focus:ring-red-500/20' : ''
-                        ]"
-                        :placeholder="$t('gestlab.pages.login.password_placeholder')"
-                      />
-                      <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                        <button
-                          type="button"
-                          @click="togglePasswordVisibility"
-                          class="rounded-lg p-1 text-slate-400 transition-colors duration-200 hover:bg-slate-100 hover:text-cyan-700 dark:text-cyan-200 dark:hover:bg-slate-800"
-                          :title="showPassword ? $t('gestlab.pages.login.hide_password') : $t('gestlab.pages.login.show_password')"
-                        >
-                          <svg v-if="showPassword" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          <svg v-else class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    <p v-if="form.errors.password" class="text-xs text-red-600">
-                      {{ form.errors.password }}
-                    </p>
-                  </div>
-
-                  <!-- Remember Me -->
-                  <div class="flex items-center">
-                    <input
-                      v-model="form.remember"
-                      id="remember-me"
-                      name="remember-me"
-                      type="checkbox"
-                      class="ds-checkbox"
-                    />
-                    <label for="remember-me" class="ml-3 text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {{ $t('gestlab.pages.login.remember_input_title') }}
-                    </label>
-                  </div>
-
-                  <!-- Error Messages -->
-                  <div v-if="form.hasErrors" class="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900/60 dark:bg-red-950/30">
-                    <div class="flex items-center gap-3">
-                      <svg class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.998-.833-2.732 0L4.346 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                      </svg>
-                      <div>
-                        <p class="text-sm font-medium text-red-800">
-                          {{ $t('gestlab.pages.login.invalid_credentials_title') }}
-                        </p>
-                        <p class="text-xs text-red-700 mt-1">
-                          {{ $t('gestlab.pages.login.invalid_credentials_description') }}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Login Button -->
-                  <button
-                    type="submit"
-                    :disabled="form.processing"
-                    :class="[
-                      'ds-button ds-button-primary w-full py-3.5',
-                      form.processing ? 'cursor-not-allowed opacity-60' : ''
-                    ]"
-                  >
-                    <svg v-if="form.processing" class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <svg v-else class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                    </svg>
-                    {{ form.processing ? $t('gestlab.pages.login.processing') : $t('gestlab.pages.login.login_button_title') }}
-                  </button>
-
-                  <button
-                    type="button"
-                    @click="loginWithPasskey"
-                    :disabled="passkeyProcessing"
-                    class="ds-button ds-button-secondary w-full py-3.5 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <svg v-if="passkeyProcessing" class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                    </svg>
-                    <svg v-else class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12.75 11.25 15 15 9.75M4.5 9.75V7.5A2.25 2.25 0 0 1 6.75 5.25h10.5A2.25 2.25 0 0 1 19.5 7.5v9A2.25 2.25 0 0 1 17.25 18.75H6.75A2.25 2.25 0 0 1 4.5 16.5v-6.75Z" />
-                    </svg>
-                    <span>{{ passkeyProcessing ? $t('gestlab.pages.login.passkey_processing') : $t('gestlab.pages.login.passkey_button') }}</span>
-                  </button>
-
-                  <p v-if="$page.props.errors?.social" class="text-sm text-red-600">
-                    {{ $page.props.errors.social }}
-                  </p>
-                </form>
-
-                <form ref="passkeyLoginForm" :action="route('passkeys.login')" method="post" class="hidden">
-                  <input type="hidden" name="_token" :value="csrfToken" />
-                  <input type="hidden" name="remember" :value="form.remember ? 'on' : ''" />
-                  <input type="hidden" name="start_authentication_response" :value="passkeyResponse" />
-                </form>
-
-                <div v-if="socialProviders.length" class="mt-6 space-y-3">
-                  <div class="flex items-center gap-3">
-                    <div class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></div>
-                    <span class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">SSO</span>
-                    <div class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></div>
-                  </div>
-                  <div class="grid gap-3">
-                    <a
-                      v-for="provider in socialProviders"
-                      :key="provider.service"
-                      :href="route('auth.redirect', provider.service)"
-                      class="ds-button ds-button-secondary w-full py-3"
-                    >
-                      <span>Entrar com {{ provider.label }}</span>
-                    </a>
-                  </div>
-                </div>
-
-                <!-- Divider -->
-                <div class="relative my-8">
-                  <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                    <div class="w-full border-t border-slate-200 dark:border-slate-800" />
-                  </div>
-                  <div class="relative flex justify-center text-sm">
-                    <span class="bg-white px-4 font-semibold text-slate-500 dark:bg-slate-900 dark:text-slate-400">
-                      {{ $t('gestlab.pages.login.or') }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Client Portal Button -->
-                <Link 
-                  :href="route('portal.login')"
-                  :class="[
-                    'ds-button ds-button-secondary w-full py-3.5'
-                  ]"
-                >
-                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                  {{ $t('gestlab.pages.login.access_client_portal') }}
-                </Link>
-
-                <!-- Footer -->
-                <div class="mt-8 border-t border-slate-200 pt-6 dark:border-slate-800">
-                  <div class="text-center">
-                    <p class="mb-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                      {{ $t('gestlab.pages.login.need_help') }}
-                      <Link href="/help" class="font-bold text-cyan-700 transition-colors duration-200 hover:text-cyan-600 dark:text-cyan-200">
-                        {{ $t('gestlab.pages.login.contact_support') }}
-                      </Link>
-                    </p>
-                    <p class="text-xs font-medium text-slate-400">
-                      {{ $t('gestlab.pages.login.copyright', { year: currentYear }) }} •
-                      {{ $t('gestlab.pages.login.version') }}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Security Badge -->
-              <div class="mt-6 flex items-center justify-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                <svg class="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                <span>
-                  {{ $t('gestlab.pages.login.secure_connection') }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
-<script>
-import EmptyLayout from "../../Shared/EmptyLayout.vue";
-
-export default {
-    layout: EmptyLayout
+    passkeyResponse.value = JSON.stringify(assertion)
+    passkeyLoginForm.value?.submit()
+  } catch (error) {
+    passkeyProcessing.value = false
+    form.setError('email', error?.message || 'Nao foi possivel autenticar com passkey.')
+  }
 }
 </script>
 
-<script setup>
-import { startAuthentication } from '@simplewebauthn/browser';
-import { computed, ref } from 'vue';
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+<template>
+  <Head title="Login" />
+  <AuthExperienceShell
+    :title="brandLoginHeadline"
+    eyebrow="Area interna"
+    :description="brandLoginSubheadline"
+    context-title="Sessao protegida"
+    context-description="A identificacao do utilizador mantem operacoes, revisoes e documentos associados ao responsavel correto."
+  >
+    <div>
+      <p class="ds-kicker">Autenticacao</p>
+      <h2 class="ds-heading mt-2 text-2xl">Iniciar sessao</h2>
+      <p class="ds-copy mt-2 text-sm leading-6">Use as credenciais da sua conta interna.</p>
 
-const showPassword = ref(false);
-const passkeyProcessing = ref(false);
-const passkeyResponse = ref('');
-const passkeyLoginForm = ref(null);
-const currentYear = new Date().getFullYear();
-const page = usePage();
-const socialProviders = page.props.socialAuth?.providers ?? [];
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
-const brandSettings = computed(() => page.props.settings ?? {});
-const brandLogoUrl = computed(() => brandSettings.value.logo_url ?? null);
-const brandAppName = computed(() => brandSettings.value.app_name ?? 'LIMS Unleashed');
-const brandLoginHeadline = computed(() => brandSettings.value.login_headline ?? 'Bem-vindo de volta');
-const brandLoginSubheadline = computed(() => brandSettings.value.login_subheadline ?? 'Aceda à operação, acompanhe a rastreabilidade e mantenha o laboratório sob controlo.');
+      <div
+        v-if="status"
+        class="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
+      >
+        {{ status }}
+      </div>
 
-const form = useForm({
-    email: '',
-    password: '',
-    remember: false,
-});
+      <form class="mt-7 space-y-5" @submit.prevent="submit">
+        <div class="ds-field-group">
+          <label for="email" class="ds-field-label">{{ $t('gestlab.pages.login.email_input_title') }}</label>
+          <input
+            id="email"
+            v-model="form.email"
+            name="email"
+            type="text"
+            autocomplete="username"
+            autofocus
+            required
+            class="ds-field"
+            :placeholder="$t('gestlab.pages.login.email_placeholder')"
+            :aria-invalid="Boolean(form.errors.email)"
+          />
+          <p v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</p>
+        </div>
 
-const togglePasswordVisibility = () => {
-    showPassword.value = !showPassword.value;
-};
+        <div class="ds-field-group">
+          <div class="flex items-center justify-between gap-4">
+            <label for="password" class="ds-field-label">{{ $t('gestlab.pages.login.password_input_title') }}</label>
+            <Link :href="route('password.request')" class="text-xs font-semibold text-[rgb(var(--primary-700-rgb))] hover:underline dark:text-[rgb(var(--primary-200-rgb))]">
+              {{ $t('gestlab.pages.login.forgot_password') }}
+            </Link>
+          </div>
+          <div class="relative">
+            <input
+              id="password"
+              v-model="form.password"
+              name="password"
+              :type="showPassword ? 'text' : 'password'"
+              autocomplete="current-password"
+              required
+              class="ds-field pr-11"
+              :placeholder="$t('gestlab.pages.login.password_placeholder')"
+              :aria-invalid="Boolean(form.errors.password)"
+            />
+            <button
+              type="button"
+              class="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-[var(--ds-text-soft)] transition hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]"
+              :title="showPassword ? $t('gestlab.pages.login.hide_password') : $t('gestlab.pages.login.show_password')"
+              @click="showPassword = !showPassword"
+            >
+              <EyeSlashIcon v-if="showPassword" class="h-4 w-4" aria-hidden="true" />
+              <EyeIcon v-else class="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+          <p v-if="form.errors.password" class="ds-field-error">{{ form.errors.password }}</p>
+        </div>
 
-const submit = () => {
-    form.transform(data => ({
-        ...data,
-        remember: form.remember ? 'on' : ''
-    }))
-    .post('/login', {
-        onFinish: () => form.reset('password'),
-    });
-};
+        <label class="flex items-center gap-3 text-sm font-medium text-[var(--ds-text-muted)]">
+          <input v-model="form.remember" name="remember" type="checkbox" class="ds-checkbox" />
+          <span>{{ $t('gestlab.pages.login.remember_input_title') }}</span>
+        </label>
 
-const loginWithPasskey = async () => {
-    passkeyProcessing.value = true;
+        <p v-if="$page.props.errors?.social" class="ds-field-error">{{ $page.props.errors.social }}</p>
 
-    try {
-        const response = await fetch(route('passkeys.authentication_options'), {
-            headers: {
-                Accept: 'application/json',
-            },
-        });
+        <button type="submit" class="ds-button ds-button-primary w-full" :disabled="form.processing || passkeyProcessing">
+          <ArrowRightStartOnRectangleIcon class="h-4 w-4" aria-hidden="true" />
+          {{ form.processing ? $t('gestlab.pages.login.processing') : $t('gestlab.pages.login.login_button_title') }}
+        </button>
 
-        if (!response.ok) {
-            throw new Error('Não foi possível iniciar a autenticação com passkey.');
-        }
+        <button type="button" class="ds-button ds-button-secondary w-full" :disabled="passkeyProcessing || form.processing" @click="loginWithPasskey">
+          <FingerPrintIcon class="h-4 w-4" aria-hidden="true" />
+          {{ passkeyProcessing ? $t('gestlab.pages.login.passkey_processing') : $t('gestlab.pages.login.passkey_button') }}
+        </button>
+      </form>
 
-        const options = await response.json();
-        const assertion = await startAuthentication({ optionsJSON: options });
+      <form ref="passkeyLoginForm" :action="route('passkeys.login')" method="post" class="hidden">
+        <input type="hidden" name="_token" :value="csrfToken" />
+        <input type="hidden" name="remember" :value="form.remember ? 'on' : ''" />
+        <input type="hidden" name="start_authentication_response" :value="passkeyResponse" />
+      </form>
 
-        passkeyResponse.value = JSON.stringify(assertion);
-        passkeyLoginForm.value?.submit();
-    } catch (error) {
-        passkeyProcessing.value = false;
-        form.setError('email', error?.message || 'Não foi possível autenticar com passkey.');
-    }
-};
-</script>
+      <div v-if="socialProviders.length" class="mt-6 border-t border-[var(--ds-border)] pt-5">
+        <p class="mb-3 text-center font-mono text-[0.68rem] font-semibold uppercase text-[var(--ds-text-soft)]">Single sign-on</p>
+        <div class="grid gap-2">
+          <a
+            v-for="provider in socialProviders"
+            :key="provider.service"
+            :href="route('auth.redirect', provider.service)"
+            class="ds-button ds-button-secondary w-full"
+          >
+            Entrar com {{ provider.label }}
+          </a>
+        </div>
+      </div>
+
+      <div v-if="portalEnabled" class="mt-6 border-t border-[var(--ds-border)] pt-5">
+        <Link :href="route('portal.login')" class="ds-button ds-button-ghost w-full">
+          <LockClosedIcon class="h-4 w-4" aria-hidden="true" />
+          {{ $t('gestlab.pages.login.access_client_portal') }}
+        </Link>
+      </div>
+    </div>
+  </AuthExperienceShell>
+</template>

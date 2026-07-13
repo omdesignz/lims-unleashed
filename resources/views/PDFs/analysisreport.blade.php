@@ -38,7 +38,7 @@
             /* background-repeat: no-repeat 0 0; */
             header: page-header;
             footer: page-footer;
-            @if($model->collection->result_id == 4 || 3)
+            @if(in_array((int) $model->collection->result_id, [3, 4], true))
               margin-top: 135mm;
               margin-bottom: 130mm;
             @endif

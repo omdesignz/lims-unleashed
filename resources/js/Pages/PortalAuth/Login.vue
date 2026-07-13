@@ -1,28 +1,23 @@
 <script setup>
+import AuthExperienceShell from '@/Components/auth/AuthExperienceShell.vue'
 import EmptyLayout from '@/Shared/EmptyLayout.vue'
+import { startAuthentication } from '@simplewebauthn/browser'
+import { Head, Link, useForm } from '@inertiajs/vue3'
 import {
   ArrowRightIcon,
-  BuildingOffice2Icon,
-  CheckCircleIcon,
-  EnvelopeIcon,
+  ArrowRightStartOnRectangleIcon,
   EyeIcon,
   EyeSlashIcon,
   FingerPrintIcon,
-  KeyIcon,
-  LockClosedIcon,
-  ShieldCheckIcon,
 } from '@heroicons/vue/24/outline'
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3'
-import { startAuthentication } from '@simplewebauthn/browser'
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 
 defineOptions({ layout: EmptyLayout })
+defineProps({ status: String })
 
-const page = usePage()
-const brandSettings = computed(() => page.props.settings ?? {})
-const brandLogoUrl = computed(() => brandSettings.value.logo_url ?? null)
-const brandAppName = computed(() => brandSettings.value.app_name ?? 'LIMS Unleashed')
-const csrfToken = typeof document === 'undefined' ? '' : document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
+const csrfToken = typeof document === 'undefined'
+  ? ''
+  : document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
 const passkeyProcessing = ref(false)
 const passkeyResponse = ref('')
 const passkeyLoginForm = ref(null)
@@ -34,16 +29,18 @@ const form = useForm({
   remember: false,
 })
 
-function submit() {
-  form.transform((data) => ({
-    ...data,
-    remember: form.remember ? 'on' : '',
-  })).post(route('portal.login.store'), {
-    onFinish: () => form.reset('password'),
-  })
+const submit = () => {
+  form
+    .transform((data) => ({
+      ...data,
+      remember: data.remember ? 'on' : '',
+    }))
+    .post(route('portal.login.store'), {
+      onFinish: () => form.reset('password'),
+    })
 }
 
-async function loginWithPasskey() {
+const loginWithPasskey = async () => {
   passkeyProcessing.value = true
   form.clearErrors()
 
@@ -59,6 +56,7 @@ async function loginWithPasskey() {
 
     const options = await response.json()
     const assertion = await startAuthentication({ optionsJSON: options })
+
     passkeyResponse.value = JSON.stringify(assertion)
     passkeyLoginForm.value?.submit()
   } catch (error) {
@@ -71,77 +69,103 @@ async function loginWithPasskey() {
 <template>
   <Head title="Portal do cliente" />
 
-  <div class="ds-app-canvas min-h-screen text-[var(--ds-text)]">
-    <header class="border-b border-[var(--ds-border)] bg-[var(--ds-panel)]">
-      <div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <div class="flex min-w-0 items-center gap-3">
-          <img v-if="brandLogoUrl" class="h-10 max-w-40 object-contain" :src="brandLogoUrl" :alt="brandAppName" />
-          <span v-else class="lims-brand-mark h-10 w-10"><BuildingOffice2Icon class="h-5 w-5" /></span>
-          <div class="min-w-0"><p class="truncate text-sm font-bold text-[var(--ds-text)]">{{ brandAppName }}</p><p class="ds-kicker mt-0.5">Portal do cliente</p></div>
-        </div>
-        <Link :href="route('login')" class="ds-button ds-button-secondary"><span class="hidden sm:inline">Area interna</span><ArrowRightIcon class="h-4 w-4" /></Link>
+  <AuthExperienceShell
+    title="Acompanhe o trabalho do seu laboratorio"
+    eyebrow="Portal do cliente"
+    description="Consulte solicitacoes, colheitas, resultados, certificados e documentos comerciais num unico local."
+    context-title="Acesso associado a sua organizacao"
+    context-description="Os registos apresentados respeitam o cliente e o local operacional vinculados a sua conta."
+    mode="portal"
+  >
+    <div>
+      <p class="ds-kicker">Portal do cliente</p>
+      <h2 class="ds-heading mt-2 text-2xl">Iniciar sessao</h2>
+      <p class="ds-copy mt-2 text-sm leading-6">Use o email ou NIF atribuido pelo laboratorio.</p>
+
+      <div
+        v-if="status"
+        class="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
+      >
+        {{ status }}
       </div>
-    </header>
 
-    <main class="mx-auto grid min-h-[calc(100vh-73px)] w-full max-w-6xl items-center gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:px-8 lg:py-12">
-      <section class="mx-auto w-full max-w-lg lg:mx-0">
-        <div class="mb-6">
-          <p class="ds-kicker">Acesso seguro</p>
-          <h1 class="ds-heading mt-2 text-3xl sm:text-4xl">Entre no portal da sua conta</h1>
-          <p class="ds-copy mt-3 max-w-xl text-sm">Consulte pedidos, documentos e certificados associados ao seu local operacional.</p>
+      <form class="mt-7 space-y-5" @submit.prevent="submit">
+        <div class="ds-field-group">
+          <label for="portal-email" class="ds-field-label">Email ou NIF</label>
+          <input
+            id="portal-email"
+            v-model="form.email"
+            name="email"
+            type="text"
+            autocomplete="username"
+            autofocus
+            required
+            class="ds-field"
+            placeholder="cliente@empresa.co.ao"
+            :aria-invalid="Boolean(form.errors.email)"
+          />
+          <p v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</p>
         </div>
 
-        <div class="ds-panel overflow-hidden">
-          <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
-            <div class="flex items-center gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))]"><LockClosedIcon class="h-4 w-4" /></span><div><h2 class="text-base font-bold text-[var(--ds-text)]">Credenciais do cliente</h2><p class="ds-copy mt-0.5 text-xs">Use o email ou NIF atribuido pelo laboratorio.</p></div></div>
+        <div class="ds-field-group">
+          <div class="flex items-center justify-between gap-4">
+            <label for="portal-password" class="ds-field-label">Palavra-passe</label>
+            <Link :href="route('portal.password.request')" class="text-xs font-semibold text-[rgb(var(--primary-700-rgb))] hover:underline dark:text-[rgb(var(--primary-200-rgb))]">
+              Recuperar acesso
+            </Link>
           </div>
-
-          <form class="space-y-5 p-5 sm:p-6" @submit.prevent="submit">
-            <div v-if="form.hasErrors" class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-200" role="alert">
-              Verifique as credenciais e tente novamente.
-            </div>
-
-            <div class="ds-field-group">
-              <label for="portal-email" class="ds-field-label">Email ou NIF</label>
-              <div class="relative"><EnvelopeIcon class="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[var(--ds-text-soft)]" /><input id="portal-email" v-model="form.email" name="email" type="text" autocomplete="username" class="ds-field pl-10" placeholder="cliente@empresa.co.ao" :aria-invalid="Boolean(form.errors.email)" required /></div>
-              <p v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</p>
-            </div>
-
-            <div class="ds-field-group">
-              <div class="flex items-center justify-between gap-3"><label for="portal-password" class="ds-field-label">Palavra-passe</label><Link :href="route('portal.password.request')" class="text-xs font-bold text-[rgb(var(--primary-700-rgb))] hover:text-[rgb(var(--primary-600-rgb))]">Recuperar acesso</Link></div>
-              <div class="relative"><KeyIcon class="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[var(--ds-text-soft)]" /><input id="portal-password" v-model="form.password" name="password" :type="showPassword ? 'text' : 'password'" autocomplete="current-password" class="ds-field pl-10 pr-11" :aria-invalid="Boolean(form.errors.password)" required /><button type="button" class="ds-icon-button absolute right-1.5 top-1.5" :title="showPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'" @click="showPassword = !showPassword"><EyeSlashIcon v-if="showPassword" class="h-4 w-4" /><EyeIcon v-else class="h-4 w-4" /></button></div>
-              <p v-if="form.errors.password" class="ds-field-error">{{ form.errors.password }}</p>
-            </div>
-
-            <label class="flex items-start gap-3"><input v-model="form.remember" name="remember" type="checkbox" class="ds-checkbox mt-0.5" /><span><span class="block text-sm font-bold text-[var(--ds-text)]">Manter sessao iniciada</span><span class="ds-copy mt-0.5 block text-xs">Use apenas num dispositivo de confianca.</span></span></label>
-
-            <button type="submit" class="ds-button ds-button-primary w-full" :disabled="form.processing"><ArrowRightIcon class="h-4 w-4" />{{ form.processing ? 'A iniciar sessao...' : 'Entrar no portal' }}</button>
-
-            <div class="flex items-center gap-3"><span class="h-px flex-1 bg-[var(--ds-border)]" /><span class="ds-field-label">ou</span><span class="h-px flex-1 bg-[var(--ds-border)]" /></div>
-
-            <button type="button" class="ds-button ds-button-secondary w-full" :disabled="passkeyProcessing" @click="loginWithPasskey"><FingerPrintIcon class="h-4 w-4" />{{ passkeyProcessing ? 'A preparar passkey...' : 'Entrar com passkey' }}</button>
-          </form>
-
-          <footer class="border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 text-center sm:px-6"><p class="ds-copy text-xs">Precisa de ajuda? <Link href="/help" class="font-bold text-[rgb(var(--primary-700-rgb))]">Contacte o suporte</Link>.</p></footer>
+          <div class="relative">
+            <input
+              id="portal-password"
+              v-model="form.password"
+              name="password"
+              :type="showPassword ? 'text' : 'password'"
+              autocomplete="current-password"
+              required
+              class="ds-field pr-11"
+              :aria-invalid="Boolean(form.errors.password)"
+            />
+            <button
+              type="button"
+              class="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-[var(--ds-text-soft)] transition hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]"
+              :title="showPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'"
+              @click="showPassword = !showPassword"
+            >
+              <EyeSlashIcon v-if="showPassword" class="h-4 w-4" aria-hidden="true" />
+              <EyeIcon v-else class="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+          <p v-if="form.errors.password" class="ds-field-error">{{ form.errors.password }}</p>
         </div>
-      </section>
 
-      <aside class="order-last self-center lg:order-none">
-        <div class="ds-card overflow-hidden">
-          <header class="border-b border-[var(--ds-border)] px-5 py-4"><h2 class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]"><ShieldCheckIcon class="h-4 w-4 text-[rgb(var(--primary-700-rgb))]" />Antes de entrar</h2></header>
-          <ul class="divide-y divide-[var(--ds-border)]">
-            <li class="flex items-start gap-3 px-5 py-4"><CheckCircleIcon class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-300" /><div><p class="text-sm font-bold text-[var(--ds-text)]">Confirme o endereco</p><p class="ds-copy mt-1 text-xs">Use apenas o dominio oficial do laboratorio.</p></div></li>
-            <li class="flex items-start gap-3 px-5 py-4"><CheckCircleIcon class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-300" /><div><p class="text-sm font-bold text-[var(--ds-text)]">Proteja as credenciais</p><p class="ds-copy mt-1 text-xs">Nao partilhe palavras-passe nem codigos temporarios.</p></div></li>
-            <li class="flex items-start gap-3 px-5 py-4"><CheckCircleIcon class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-300" /><div><p class="text-sm font-bold text-[var(--ds-text)]">Termine sessoes publicas</p><p class="ds-copy mt-1 text-xs">Saia da conta em equipamentos partilhados.</p></div></li>
-          </ul>
-        </div>
-      </aside>
-    </main>
+        <label class="flex items-center gap-3 text-sm font-medium text-[var(--ds-text-muted)]">
+          <input v-model="form.remember" name="remember" type="checkbox" class="ds-checkbox" />
+          <span>Manter sessao iniciada</span>
+        </label>
 
-    <form ref="passkeyLoginForm" :action="route('portal.passkeys.login')" method="post" class="hidden">
-      <input type="hidden" name="_token" :value="csrfToken" />
-      <input type="hidden" name="remember" :value="form.remember ? '1' : ''" />
-      <input type="hidden" name="start_authentication_response" :value="passkeyResponse" />
-    </form>
-  </div>
+        <button type="submit" class="ds-button ds-button-primary w-full" :disabled="form.processing || passkeyProcessing">
+          <ArrowRightStartOnRectangleIcon class="h-4 w-4" aria-hidden="true" />
+          {{ form.processing ? 'A iniciar sessao...' : 'Entrar no portal' }}
+        </button>
+
+        <button type="button" class="ds-button ds-button-secondary w-full" :disabled="passkeyProcessing || form.processing" @click="loginWithPasskey">
+          <FingerPrintIcon class="h-4 w-4" aria-hidden="true" />
+          {{ passkeyProcessing ? 'A preparar passkey...' : 'Entrar com passkey' }}
+        </button>
+      </form>
+
+      <form ref="passkeyLoginForm" :action="route('portal.passkeys.login')" method="post" class="hidden">
+        <input type="hidden" name="_token" :value="csrfToken" />
+        <input type="hidden" name="remember" :value="form.remember ? '1' : ''" />
+        <input type="hidden" name="start_authentication_response" :value="passkeyResponse" />
+      </form>
+
+      <div class="mt-6 border-t border-[var(--ds-border)] pt-5">
+        <Link :href="route('login')" class="ds-button ds-button-ghost w-full">
+          Area interna
+          <ArrowRightIcon class="h-4 w-4" aria-hidden="true" />
+        </Link>
+      </div>
+    </div>
+  </AuthExperienceShell>
 </template>

@@ -4,6 +4,7 @@ import test from 'node:test'
 
 const appCss = readFileSync(new URL('../../resources/css/app.css', import.meta.url), 'utf8')
 const appBladeSource = readFileSync(new URL('../../resources/views/app.blade.php', import.meta.url), 'utf8')
+const appBootstrapSource = readFileSync(new URL('../../resources/js/app.js', import.meta.url), 'utf8')
 const publicLandingSource = readFileSync(new URL('../../resources/js/Pages/Public/Landing.vue', import.meta.url), 'utf8')
 const sharedDatePickerSource = readFileSync(new URL('../../resources/js/Shared/date-picker.vue', import.meta.url), 'utf8')
 const layoutSource = readFileSync(new URL('../../resources/js/Shared/Layouts/Layout.vue', import.meta.url), 'utf8')
@@ -46,6 +47,11 @@ const selectSource = readFileSync(new URL('../../resources/js/Components/base/Ba
 const textareaSource = readFileSync(new URL('../../resources/js/Components/base/BaseTextarea.vue', import.meta.url), 'utf8')
 const moduleHeroSource = readFileSync(new URL('../../resources/js/Components/base/ModuleHero.vue', import.meta.url), 'utf8')
 const sideNavSource = readFileSync(new URL('../../resources/js/Shared/Navigation/side-nav.vue', import.meta.url), 'utf8')
+const premiumDocumentStyleSource = readFileSync(new URL('../../resources/views/PDFs/partials/premium-document-style.blade.php', import.meta.url), 'utf8')
+const documentLetterheadSource = readFileSync(new URL('../../resources/views/PDFs/partials/document-letterhead.blade.php', import.meta.url), 'utf8')
+const documentBrandLogoSource = readFileSync(new URL('../../resources/views/PDFs/partials/brand-logo.blade.php', import.meta.url), 'utf8')
+const legacyAnalysisReportSource = readFileSync(new URL('../../resources/views/PDFs/analysisreport.blade.php', import.meta.url), 'utf8')
+const legacyAnalysisReportNewModelSource = readFileSync(new URL('../../resources/views/PDFs/analysisreport_new_model.blade.php', import.meta.url), 'utf8')
 const legacySharedLayoutSource = readFileSync(new URL('../../resources/js/Shared/Layout.vue', import.meta.url), 'utf8')
 const navItemSource = readFileSync(new URL('../../resources/js/Shared/Navigation/nav-item.vue', import.meta.url), 'utf8')
 const mainMenuSource = readFileSync(new URL('../../resources/js/Shared/Navigation/main-menu.vue', import.meta.url), 'utf8')
@@ -390,8 +396,8 @@ test('defines a semantic product design contract for shared application surfaces
     assert.match(appCss, new RegExp(className.replace('.', '\\.')))
   }
 
-  assert.match(appCss, /family=inter:400,500,600,700,800/)
-  assert.match(appCss, /--font-sans: 'Inter'/)
+  assert.match(appCss, /family=ibm-plex-sans:400,500,600,700/)
+  assert.match(appCss, /--font-sans: 'IBM Plex Sans'/)
   assert.doesNotMatch(appCss, /Manrope/)
   assert.doesNotMatch(appCss, /#143d37|#d9b05f|#fffaf0|#ded3bf|#1f7a68/)
   assert.doesNotMatch(appCss, /radial-gradient\(circle/)
@@ -410,8 +416,8 @@ test('semantic badges expose consistent operational states', () => {
 })
 
 test('shared shell and primitives consume semantic design classes', () => {
-  assert.match(layoutSource, /class="lims-app-shell ds-app-canvas"/)
-  assert.match(layoutSource, /class="ds-sidebar-panel/)
+  assert.match(layoutSource, /class="lims-app-shell min-h-dvh/)
+  assert.match(layoutSource, /class="fixed inset-y-0 left-0 z-40 hidden flex-col/)
   assert.match(layoutSource, /class="ds-command-palette/)
   assert.match(layoutSource, /@click="openCommandPalette"/)
   assert.match(layoutSource, /@keydown\.enter\.prevent="activateFirstCommandPaletteResult"/)
@@ -420,9 +426,13 @@ test('shared shell and primitives consume semantic design classes', () => {
   assert.match(layoutSource, /gestlab\.menu\.quality_compliance/)
   assert.match(layoutSource, /gestlab\.menu\.lab_operations/)
   assert.match(layoutSource, /gestlab\.menu\.inventory_analytics/)
-  assert.match(layoutSource, /class="lims-brand-mark"/)
-  assert.match(layoutSource, /class="lims-status-strip/)
-  assert.match(layoutSource, /class="flex min-w-0 flex-1 gap-x-4 self-stretch lg:gap-x-5"/)
+  assert.match(layoutSource, /:collapsed="!desktopSidebarOpen"/)
+  assert.match(layoutSource, /@open-command-palette="openCommandPaletteFromMobile"/)
+  assert.doesNotMatch(layoutSource, /items\.slice\(0, 8\)|\.slice\(0, 8\)/)
+  assert.match(layoutSource, /const normalizeSearchValue = \(value\)/)
+  assert.match(layoutSource, /\.normalize\('NFD'\)/)
+  assert.doesNotMatch(layoutSource, /clockTime|operationalStatus|lims-status-strip/)
+  assert.match(sideNavSource, /path: '\/qualitycertificates'/)
   assert.doesNotMatch(layoutSource, /bg-gradient-to-b from-primary-500\/12 to-transparent/)
   assert.match(inputSource, /class="ds-field/)
   assert.match(inputSource, /aria-describedby/)
@@ -432,8 +442,9 @@ test('shared shell and primitives consume semantic design classes', () => {
   assert.match(selectSource, /`field-\$\{generatedId\}`/)
   assert.match(textareaSource, /`field-\$\{generatedId\}`/)
   assert.match(moduleHeroSource, /class="ds-panel/)
-  assert.match(sideNavSource, /class="ds-nav-shell"/)
-  assert.match(sideNavSource, /'ds-nav-item group'/)
+  assert.match(sideNavSource, /defineEmits\(\['open-command-palette', 'navigate'\]\)/)
+  assert.match(sideNavSource, /props\.collapsed \? 'justify-center px-2'/)
+  assert.match(sideNavSource, /emit\('open-command-palette'\)/)
 })
 
 test('legacy shared navigation and select primitives use the LIMS application contract', () => {
@@ -1311,28 +1322,29 @@ test('validation and process progress components follow the shared contract', ()
 })
 
 test('authentication keeps the login action above marketing content on mobile', () => {
-  assert.match(staffLoginSource, /class="hidden flex-col justify-center lg:flex"/)
-  assert.match(staffLoginSource, /gestlab\.pages\.login\.internal_area/)
-  assert.match(staffLoginSource, /ds-field pl-10/)
+  assert.match(staffLoginSource, /<AuthExperienceShell/)
+  assert.match(staffLoginSource, /eyebrow="Area interna"/)
+  assert.match(staffLoginSource, /class="ds-field"/)
   assert.match(staffLoginSource, /ds-button ds-button-primary/)
-  assert.match(staffLoginSource, /lims-status-dot lims-status-dot-release/)
-  assert.match(staffLoginSource, /copyright', \{ year: currentYear \}/)
+  assert.match(staffLoginSource, /brandLoginHeadline/)
+  assert.match(staffLoginSource, /route\('passkeys\.login'\)/)
   assert.doesNotMatch(staffLoginSource, legacyWarmPalettePattern)
   assert.doesNotMatch(staffLoginSource, /<style scoped>|rounded-\[2rem\]/)
 
-  assert.match(portalLoginSource, /class="ds-app-canvas min-h-screen/)
-  assert.match(portalLoginSource, /Entre no portal da sua conta/)
-  assert.match(portalLoginSource, /class="space-y-5 p-5 sm:p-6"/)
-  assert.match(portalLoginSource, /class="ds-field pl-10"/)
+  assert.match(portalLoginSource, /<AuthExperienceShell/)
+  assert.match(portalLoginSource, /mode="portal"/)
+  assert.match(portalLoginSource, /class="mt-7 space-y-5"/)
+  assert.match(portalLoginSource, /class="ds-field"/)
   assert.match(portalLoginSource, /ds-button ds-button-primary/)
   assert.match(portalLoginSource, /startAuthentication/)
   assert.match(portalLoginSource, /Portal do cliente/)
   assert.doesNotMatch(portalLoginSource, /gestlab\.pages\.portal_login|commercialDocumentThemeClasses/)
-  assert.doesNotMatch(portalLoginSource, /bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|bg-white|bg-slate|border-slate|text-slate|shadow-sm/)
+  assert.doesNotMatch(portalLoginSource, /bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|bg-slate|border-slate|text-slate|shadow-sm/)
   assert.doesNotMatch(portalLoginSource, legacyWarmPalettePattern)
 
-  assert.match(authExperienceShellSource, /class="ds-app-canvas min-h-screen/)
-  assert.match(authExperienceShellSource, /Laboratory Information Management System/)
+  assert.match(authExperienceShellSource, /class="min-h-dvh bg-\[var\(--ds-panel\)\]/)
+  assert.match(authExperienceShellSource, /buildBrandingCssVariables/)
+  assert.match(authExperienceShellSource, /brandInitials/)
   assert.doesNotMatch(authExperienceShellSource, legacyWarmPalettePattern)
   assert.doesNotMatch(authExperienceShellSource, /rounded-\[2rem\]|radial-gradient/)
 })
@@ -2532,10 +2544,11 @@ test('Fortify authentication flows share a focused application shell', () => {
 
   for (const source of authenticationSources) {
     assert.match(source, /ds-/)
-    assert.doesNotMatch(source, /commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|bg-white|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log/)
+    assert.doesNotMatch(source, /commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log/)
   }
 
-  assert.match(authExperienceShellSource, /Laboratory Information Management System/)
+  assert.match(authExperienceShellSource, /buildBrandingCssVariables/)
+  assert.match(authExperienceShellSource, /brandLabName/)
   assert.match(authRegisterSource, /form\.post\('\/register'/)
   assert.match(authForgotPasswordSource, /form\.post\('\/forgot-password'/)
   assert.match(authResetPasswordSource, /form\.post\('\/reset-password'/)
@@ -2546,15 +2559,17 @@ test('Fortify authentication flows share a focused application shell', () => {
 })
 
 test('portal authentication flows preserve the portal guard and shared auth language', () => {
-  const portalAuthenticationSources = [portalRegisterSource, portalForgotPasswordSource, portalResetPasswordSource, portalVerifyEmailSource, portalConfirmPasswordSource, portalTwoFactorChallengeSource]
+  const portalAuthenticationSources = [portalLoginSource, portalRegisterSource, portalForgotPasswordSource, portalResetPasswordSource, portalVerifyEmailSource, portalConfirmPasswordSource, portalTwoFactorChallengeSource]
 
   for (const source of portalAuthenticationSources) {
-    assert.match(source, /<AuthExperienceShell mode="portal"/)
+    assert.match(source, /<AuthExperienceShell[\s\S]*mode="portal"/)
     assert.match(source, /ds-/)
-    assert.doesNotMatch(source, /commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|bg-white|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log/)
+    assert.doesNotMatch(source, /commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log/)
   }
 
   assert.match(portalForgotPasswordSource, /route\('portal\.password\.email'/)
+  assert.match(portalLoginSource, /route\('portal\.login\.store'/)
+  assert.match(portalLoginSource, /route\('portal\.passkeys\.login'/)
   assert.match(portalResetPasswordSource, /route\('portal\.password\.update'/)
   assert.match(portalVerifyEmailSource, /route\('portal\.verification\.send'/)
   assert.match(portalVerifyEmailSource, /route\('portal\.logout'/)
@@ -2712,11 +2727,31 @@ test('account settings use the Tailwind Plus divided settings-screen structure',
   assert.doesNotMatch(appBladeSource, /family=manrope/)
 })
 
-test('application UI consistently inherits the Tailwind Plus Inter typeface', () => {
-  assert.match(appCss, /--font-sans: 'Inter'/)
+test('application UI consistently inherits the laboratory workspace typeface', () => {
+  assert.match(appCss, /--font-sans: 'IBM Plex Sans'/)
   assert.doesNotMatch(appBladeSource, /family=manrope/)
   assert.match(publicLandingSource, /font-family: var\(--font-sans\)/)
   assert.doesNotMatch(publicLandingSource, /fonts\.bunny\.net\/css\?family=manrope|font-family: "Manrope"/)
   assert.match(sharedDatePickerSource, /--dp-font-family: var\(--font-sans\)/)
   assert.doesNotMatch(sharedDatePickerSource, /font-family: "Manrope"/)
+})
+
+test('white-label fallbacks remain neutral across the application and generated documents', () => {
+  assert.doesNotMatch(appBladeSource, /sncqa_logo/)
+  assert.doesNotMatch(appBootstrapSource, /Gestlab V3/)
+  assert.doesNotMatch(portalLayoutSource, /sncqa_logo/)
+  assert.doesNotMatch(documentBrandLogoSource, /sncqa_logo/)
+  assert.match(documentBrandLogoSource, /brandLogoInitials/)
+
+  assert.match(premiumDocumentStyleSource, /app_primary_color/)
+  assert.match(premiumDocumentStyleSource, /app_secondary_color/)
+  assert.match(premiumDocumentStyleSource, /app_accent_color/)
+  assert.match(documentLetterheadSource, /app_client_lab_name/)
+  assert.match(documentLetterheadSource, /PDFs\.partials\.brand-logo/)
+
+  assert.doesNotMatch(legacyAnalysisReportSource, /result_id == 4 \|\| 3/)
+  assert.doesNotMatch(legacyAnalysisReportNewModelSource, /result_id == 4 \|\| 3/)
+  assert.doesNotMatch(legacyAnalysisReportNewModelSource, /sncqa|ao_crest|governo_novo|LABORATÓRIO CENTRAL/)
+  assert.match(legacyAnalysisReportNewModelSource, /PDFs\.partials\.document-letterhead/)
+  assert.match(legacyAnalysisReportSource, /in_array\(\(int\) \$model->collection->result_id, \[3, 4\], true\)/)
 })

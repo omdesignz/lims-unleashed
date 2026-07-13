@@ -17,7 +17,7 @@ import { i18nVue } from "laravel-vue-i18n";
 import { register } from "swiper/element/bundle";
 
 const appName =
-  window.document.getElementsByTagName("title")[0]?.innerText || "Gestlab V3";
+  window.document.getElementsByTagName("title")[0]?.innerText || "Laboratory workspace";
 
 const ApexChart = defineAsyncComponent(async () => (await import("vue3-apexcharts")).default);
 

@@ -1,96 +1,43 @@
 <template>
-  <div class="lims-app-shell ds-app-canvas" :style="brandingCssVariables" :data-theme-preset="themePreset">
+  <div class="lims-app-shell min-h-dvh bg-[var(--ds-canvas)]" :style="brandingCssVariables" :data-theme-preset="themePreset">
     <backend-modal />
     <ToastList />
 
-    <!-- Impersonation banner -->
-    <div
-      v-if="impersonation"
-      class="ds-impersonation-banner relative isolate flex items-center gap-x-6 px-6 py-2.5 sm:px-3.5 sm:before:flex-1"
-    >
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <p class="text-sm font-medium leading-6">
-          <strong class="font-semibold">{{ trans('gestlab.general.labels.impersonation.title') }}</strong>
-          <svg viewBox="0 0 2 2" class="mx-2 inline h-0.5 w-0.5 fill-current" aria-hidden="true">
-            <circle cx="1" cy="1" r="1" />
-          </svg>
-          {{ trans('gestlab.general.labels.impersonation.description') }} {{ auth?.user?.name }}.
-        </p>
-        <Link
-          as="button"
-          @click="router.get(route('users.stopimpersonating'), {}, { preserveState: false, replace: true })"
-          class="ds-button ds-button-primary min-h-0 flex-none rounded-full px-3.5 py-1.5"
-        >
-          {{ trans('gestlab.general.buttons.leave_impersonation') }}
-          <span aria-hidden="true">&rarr;</span>
-        </Link>
-      </div>
+    <div v-if="impersonation" class="ds-impersonation-banner relative z-[60] flex flex-wrap items-center justify-center gap-3 px-4 py-2.5 text-sm font-medium">
+      <span><strong>{{ trans('gestlab.general.labels.impersonation.title') }}</strong> {{ trans('gestlab.general.labels.impersonation.description') }} {{ auth?.user?.name }}.</span>
+      <button type="button" class="rounded-md bg-white/15 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/25" @click="router.get(route('users.stopimpersonating'), {}, { preserveState: false, replace: true })">
+        {{ trans('gestlab.general.buttons.leave_impersonation') }}
+      </button>
     </div>
 
-    <!-- Mobile sidebar -->
     <TransitionRoot as="template" :show="sidebarOpen">
       <Dialog as="div" class="relative z-50 lg:hidden" @close="sidebarOpen = false">
-        <TransitionChild
-          as="template"
-          enter="transition-opacity ease-linear duration-300"
-          enter-from="opacity-0"
-          enter-to="opacity-100"
-          leave="transition-opacity ease-linear duration-300"
-          leave-from="opacity-100"
-          leave-to="opacity-0"
-        >
-          <div class="fixed inset-0 bg-gray-900/80" />
+        <TransitionChild as="template" enter="transition-opacity ease-linear duration-200" enter-from="opacity-0" enter-to="opacity-100" leave="transition-opacity ease-linear duration-150" leave-from="opacity-100" leave-to="opacity-0">
+          <div class="fixed inset-0 bg-slate-950/55" />
         </TransitionChild>
-
         <div class="fixed inset-0 flex">
-          <TransitionChild
-            as="template"
-            enter="transition ease-in-out duration-300 transform"
-            enter-from="-translate-x-full"
-            enter-to="translate-x-0"
-            leave="transition ease-in-out duration-300 transform"
-            leave-from="translate-x-0"
-            leave-to="-translate-x-full"
-          >
-            <DialogPanel class="relative mr-16 flex w-full max-w-xs flex-1">
-              <TransitionChild
-                as="template"
-                enter="ease-in-out duration-300"
-                enter-from="opacity-0"
-                enter-to="opacity-100"
-                leave="ease-in-out duration-300"
-                leave-from="opacity-100"
-                leave-to="opacity-0"
-              >
-                <div class="absolute left-full top-0 flex w-16 justify-center pt-5">
-                  <button type="button" class="-m-2.5 p-2.5" @click="sidebarOpen = false">
-                    <span class="sr-only">Fechar menu lateral</span>
-                    <XMarkIcon class="h-6 w-6 text-white" aria-hidden="true" />
-                  </button>
+          <TransitionChild as="template" enter="transition ease-out duration-200 transform" enter-from="-translate-x-full" enter-to="translate-x-0" leave="transition ease-in duration-150 transform" leave-from="translate-x-0" leave-to="-translate-x-full">
+            <DialogPanel class="flex w-full max-w-72 flex-col border-r border-[var(--ds-border)] bg-[var(--ds-panel)] shadow-xl">
+              <div class="flex h-16 shrink-0 items-center gap-3 border-b border-[var(--ds-border)] px-4">
+                <Link :href="route('dashboard')" class="flex min-w-0 flex-1 items-center gap-3" @click="sidebarOpen = false">
+                  <span v-if="!settings?.logo_url" class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--brand-secondary)] text-xs font-bold text-white">{{ brandInitials }}</span>
+                  <img v-else class="max-h-9 max-w-32 object-contain" :src="settings.logo_url" :alt="settings?.app_name || ''" />
+                  <span class="min-w-0">
+                    <span class="block truncate text-sm font-semibold text-[var(--ds-text)]">{{ settings?.app_name }}</span>
+                    <span class="block truncate text-xs text-[var(--ds-text-soft)]">{{ settings?.lab_name }}</span>
+                  </span>
+                </Link>
+                <button type="button" class="grid h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]" @click="sidebarOpen = false">
+                  <span class="sr-only">Fechar navegacao</span>
+                  <XMarkIcon class="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
+              <side-nav class="py-5" @navigate="sidebarOpen = false" @open-command-palette="openCommandPaletteFromMobile" />
+              <div class="mt-auto border-t border-[var(--ds-border)] p-3">
+                <div class="flex items-center gap-3 rounded-lg px-2 py-2">
+                  <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[rgb(var(--primary-100-rgb))] text-sm font-semibold text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.14)] dark:text-white">{{ auth?.user?.name?.charAt(0) }}</span>
+                  <span class="min-w-0"><span class="block truncate text-sm font-semibold text-[var(--ds-text)]">{{ auth?.user?.name }}</span><span class="block truncate text-xs text-[var(--ds-text-soft)]">{{ auth?.user?.email }}</span></span>
                 </div>
-              </TransitionChild>
-
-              <div
-                class="ds-sidebar-panel flex grow flex-col gap-y-5 overflow-y-auto rounded-none border-l-0 border-y-0 px-4 pb-4 scrollbar-thin"
-              >
-                <div class="flex h-16 shrink-0 items-center">
-                  <Link :href="route('dashboard')" class="flex min-w-0 items-center gap-3">
-                    <span v-if="!$page.props.settings?.logo_url" class="lims-brand-mark">
-                      {{ settings?.app_name?.slice(0, 2).toUpperCase() || 'LU' }}
-                    </span>
-                    <img
-                      v-else
-                      class="max-h-9 max-w-36 rounded bg-white/95 object-contain px-2 py-1"
-                      :src="$page.props.settings.logo_url"
-                      :alt="$page.props.settings?.app_name ?? ''"
-                    />
-                    <span class="min-w-0">
-                      <span class="block truncate text-sm font-semibold text-white">{{ settings?.app_name || 'LIMS Unleashed' }}</span>
-                      <span class="block truncate font-mono text-[0.65rem] uppercase text-slate-400">ISO 17025 workspace</span>
-                    </span>
-                  </Link>
-                </div>
-                <side-nav class="relative" />
               </div>
             </DialogPanel>
           </TransitionChild>
@@ -98,337 +45,94 @@
       </Dialog>
     </TransitionRoot>
 
-    <!-- Desktop sidebar -->
-    <div
-      :class="[
-        desktopSidebarOpen ? 'translate-x-0 opacity-100' : '-translate-x-[110%] opacity-0 pointer-events-none',
-      'hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-80 lg:flex-col lg:px-4 lg:py-4 lg:transition-all lg:duration-300',
-      ]"
-    >
-      <div
-        class="ds-sidebar-panel relative flex grow flex-col gap-y-4 overflow-y-auto px-4 pb-4 pt-2 scrollbar-thin"
-      >
-        <div class="flex h-16 shrink-0 items-center px-2">
-          <Link :href="route('dashboard')" class="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-90">
-            <span v-if="!$page.props.settings?.logo_url" class="lims-brand-mark">
-              {{ settings?.app_name?.slice(0, 2).toUpperCase() || 'LU' }}
-            </span>
-            <img
-              v-else
-              class="max-h-9 max-w-36 rounded bg-white/95 object-contain px-2 py-1"
-              :src="$page.props.settings.logo_url"
-              :alt="$page.props.settings?.app_name ?? ''"
-            />
-            <span class="min-w-0">
-              <span class="block truncate text-sm font-semibold text-white">{{ settings?.app_name || 'LIMS Unleashed' }}</span>
-              <span class="block truncate font-mono text-[0.65rem] uppercase text-slate-400">ISO 17025 workspace</span>
-            </span>
-          </Link>
-        </div>
-        <div class="lims-sidebar-meta mx-2 grid grid-cols-2 gap-2 p-3 text-xs">
-          <div>
-            <p class="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-slate-500">Scope</p>
-            <p class="mt-1 truncate font-semibold text-slate-200">{{ moduleFamilyLabel }}</p>
-          </div>
-          <div>
-            <p class="font-mono text-[0.62rem] uppercase tracking-[0.12em] text-slate-500">Session</p>
-            <p class="mt-1 font-semibold text-slate-200">{{ formattedTime }}</p>
-          </div>
-        </div>
-        <side-nav class="relative" />
+    <aside :class="desktopSidebarOpen ? 'lg:w-64' : 'lg:w-[4.5rem]'" class="fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-[var(--ds-border)] bg-[var(--ds-panel)] transition-[width] duration-200 lg:flex">
+      <div class="flex h-16 shrink-0 items-center border-b border-[var(--ds-border)]" :class="desktopSidebarOpen ? 'px-4' : 'justify-center px-2'">
+        <Link :href="route('dashboard')" class="flex min-w-0 items-center gap-3" :title="!desktopSidebarOpen ? settings?.app_name : undefined">
+          <span v-if="!settings?.logo_url" class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--brand-secondary)] text-xs font-bold text-white">{{ brandInitials }}</span>
+          <span v-else class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--ds-border)] bg-white p-1.5"><img class="max-h-full max-w-full object-contain" :src="settings.logo_url" :alt="settings?.app_name || ''" /></span>
+          <span v-if="desktopSidebarOpen" class="min-w-0">
+            <span class="block truncate text-sm font-semibold text-[var(--ds-text)]">{{ settings?.app_name }}</span>
+            <span class="block truncate text-xs text-[var(--ds-text-soft)]">{{ settings?.lab_name }}</span>
+          </span>
+        </Link>
       </div>
-    </div>
+      <side-nav :collapsed="!desktopSidebarOpen" class="py-5" @open-command-palette="openCommandPalette" />
+      <div class="mt-auto border-t border-[var(--ds-border)] p-2">
+        <div :class="desktopSidebarOpen ? 'gap-3 px-2' : 'justify-center px-1'" class="flex min-h-12 items-center rounded-lg">
+          <img v-if="auth?.user?.profile_photo_url" :src="auth.user.profile_photo_url" alt="" class="h-9 w-9 shrink-0 rounded-lg object-cover" />
+          <span v-else class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[rgb(var(--primary-100-rgb))] text-sm font-semibold text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.14)] dark:text-white">{{ auth?.user?.name?.charAt(0) }}</span>
+          <span v-if="desktopSidebarOpen" class="min-w-0"><span class="block truncate text-sm font-semibold text-[var(--ds-text)]">{{ auth?.user?.name }}</span><span class="block truncate text-xs text-[var(--ds-text-soft)]">{{ auth?.user?.email }}</span></span>
+        </div>
+      </div>
+    </aside>
 
-    <!-- Main content area -->
-    <div :class="desktopSidebarOpen ? 'lg:pl-80' : 'lg:pl-0'" class="min-h-screen transition-all duration-300">
-      <!-- Topbar -->
-      <div
-        class="ds-topbar sticky top-0 z-40 mx-0 flex min-h-16 shrink-0 items-center gap-x-4 border-b px-4 py-2 sm:gap-x-6 sm:px-6 lg:top-3 lg:mx-4 lg:rounded-[0.75rem] lg:border lg:px-4"
-      >
-        <button type="button" class="-m-2.5 p-2.5 text-gray-400 lg:hidden" @click="sidebarOpen = true">
-          <span class="sr-only">Abrir menu lateral</span>
-          <Bars3Icon class="h-6 w-6" aria-hidden="true" />
+    <div :class="desktopSidebarOpen ? 'lg:pl-64' : 'lg:pl-[4.5rem]'" class="min-h-dvh transition-[padding] duration-200">
+      <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-[var(--ds-border)] bg-[var(--ds-panel)] px-4 sm:px-6 lg:px-5">
+        <button type="button" class="grid h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)] lg:hidden" @click="sidebarOpen = true">
+          <span class="sr-only">Abrir navegacao</span><Bars3Icon class="h-5 w-5" aria-hidden="true" />
+        </button>
+        <button type="button" class="hidden h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)] lg:grid" :title="desktopSidebarOpen ? 'Recolher navegacao' : 'Expandir navegacao'" @click="toggleDesktopSidebar">
+          <Bars3Icon class="h-5 w-5" aria-hidden="true" />
         </button>
 
-        <div class="h-6 w-px bg-gray-200/80 lg:hidden dark:bg-gray-600" aria-hidden="true" />
-
-        <div class="flex min-w-0 flex-1 gap-x-4 self-stretch lg:gap-x-5">
-          <div class="relative flex min-w-0 flex-1 items-center gap-3">
-            <button
-              type="button"
-              class="ds-button ds-button-secondary hidden min-h-0 px-2.5 py-1.5 text-xs lg:inline-flex"
-              :title="desktopSidebarOpen ? 'Ocultar menu lateral' : 'Mostrar menu lateral'"
-              @click="toggleDesktopSidebar"
-            >
-              <Bars3Icon class="h-4 w-4" aria-hidden="true" />
-            </button>
-
-            <button
-              type="button"
-              class="hidden min-w-0 flex-1 items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-3 py-2 text-left shadow-[var(--ds-shadow-control)] transition hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-panel-subtle)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--ds-focus)] xl:flex"
-              @click="openCommandPalette"
-            >
-              <MagnifyingGlassIcon class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)]" aria-hidden="true" />
-              <span class="truncate text-sm font-medium text-[var(--ds-text-muted)]">
-                Buscar amostras, certificados, instrumentos ou clientes
-              </span>
-              <span class="ml-auto rounded border border-[var(--ds-border)] px-1.5 py-0.5 font-mono text-[0.63rem] font-semibold uppercase text-[var(--ds-text-soft)]">
-                cmd k
-              </span>
-            </button>
-
-            <span class="lims-module-chip hidden md:inline-flex">
-              <span class="lims-status-dot lims-status-dot-instrument" aria-hidden="true" />
-              {{ moduleFamilyLabel }}
-            </span>
-
-            <!-- Clock -->
-            <div class="hidden lg:block">
-              <div
-                class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-2.5 py-1.5 font-mono text-xs font-semibold leading-4 text-[var(--ds-text-muted)]"
-              >
-                <p class="text-xs">{{ clockTime }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-x-4 lg:gap-x-6">
-            <!-- Session timer -->
-            <div class="hidden lg:block">
-              <div
-                v-if="!showSessionModal"
-                class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-2.5 py-1.5 font-mono text-xs font-semibold leading-4 text-[var(--ds-text-muted)]"
-              >
-                <p class="text-xs">{{ formattedTime }}</p>
-              </div>
-            </div>
-
-            <!-- Notifications -->
-            <Link
-              prefetch
-              :href="route('notifications.index')"
-              class="relative rounded-lg p-2.5 text-[var(--ds-text-soft)] transition hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]"
-            >
-              <span class="sr-only">Ver notificações</span>
-              <BellIcon class="h-6 w-6" aria-hidden="true" />
-              <span
-                v-if="auth?.user?.unread_notifications?.length"
-                class="absolute top-0 right-0 flex h-3 w-3"
-              >
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red opacity-75" />
-                <span class="relative inline-flex rounded-full h-3 w-3 bg-red" />
-              </span>
-            </Link>
-
-            <!-- Theme toggle -->
-            <button
-              type="button"
-              class="rounded-lg p-2.5 text-[var(--ds-text-soft)] transition-colors duration-150 hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]"
-              :title="isDark ? 'Mudar para modo claro' : 'Mudar para modo escuro'"
-              @click="toggleTheme"
-            >
-              <span class="sr-only">{{ isDark ? 'Mudar para modo claro' : 'Mudar para modo escuro' }}</span>
-              <MoonIcon v-if="isDark" class="h-6 w-6" aria-hidden="true" />
-              <SunIcon v-else class="h-6 w-6" aria-hidden="true" />
-            </button>
-
-            <!-- Language switcher -->
-            <Dropdown>
-              <template #icon>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="h-6 w-6 text-[var(--ds-text-soft)]"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="m10.5 21 5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 0 1 6-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 0 1-3.827-5.802"
-                  />
-                </svg>
-              </template>
-              <template #options>
-                <MenuItem
-                  v-for="language in $page.props.languages.data"
-                  :key="language.value"
-                  v-slot="{ active }"
-                  as="a"
-                >
-                  <button
-                    type="button"
-                    @click="switchLanguage(language.value)"
-                    :class="[
-                      language.value === $page.props.language
-                        ? 'bg-[rgb(var(--primary-700-rgb))] text-white dark:bg-[rgb(var(--primary-400-rgb)/0.18)] dark:text-white'
-                        : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]',
-                      'block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold transition',
-                    ]"
-                  >
-                    {{ language.label }}
-                  </button>
-                </MenuItem>
-              </template>
-            </Dropdown>
-
-            <div class="hidden lg:block lg:h-6 lg:w-px lg:bg-[var(--ds-border)]" aria-hidden="true" />
-
-            <!-- Profile dropdown -->
-            <Menu as="div" class="relative">
-              <MenuButton class="-m-1.5 flex items-center p-1.5">
-                <span class="sr-only">Abrir menu do utilizador</span>
-                <img
-                  v-if="auth?.user?.profile_photo_url"
-                  :src="auth?.user?.profile_photo_url"
-                  alt=""
-                  class="h-8 w-8 rounded-full bg-primary-800"
-                />
-                <span
-                  v-else
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[rgb(var(--primary-800-rgb))] ring-2 ring-white/80 dark:bg-[rgb(var(--primary-400-rgb)/0.18)] dark:ring-[var(--ds-border)]"
-                >
-                  <span class="text-sm font-semibold leading-none text-white">
-                    {{ auth?.user?.name?.charAt(0) }}
-                  </span>
-                </span>
-                <span class="hidden lg:flex lg:items-center">
-                  <span
-                    class="ml-4 text-sm font-bold leading-6 text-[var(--ds-text)]"
-                    aria-hidden="true"
-                  >
-                    {{ auth?.user?.name }}
-                  </span>
-                  <ChevronDownIcon class="ml-2 h-5 w-5 text-gray-400" aria-hidden="true" />
-                </span>
-              </MenuButton>
-              <transition
-                enter-active-class="transition ease-out duration-100"
-                enter-from-class="transform opacity-0 scale-95"
-                enter-to-class="transform opacity-100 scale-100"
-                leave-active-class="transition ease-in duration-75"
-                leave-from-class="transform opacity-100 scale-100"
-                leave-to-class="transform opacity-0 scale-95"
-              >
-                <MenuItems
-                  class="ds-floating-panel absolute right-0 z-10 mt-2.5 w-48 origin-top-right p-1.5 focus:outline-none"
-                >
-                  <MenuItem
-                    v-for="item in userNavigation"
-                    :key="item.name"
-                    v-slot="{ active }"
-                  >
-                    <Link
-                      :href="item.href"
-                      as="button"
-                      :class="[
-                        active
-                          ? 'bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.14)] dark:text-white'
-                          : 'text-[var(--ds-text-muted)]',
-                        'block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors duration-150',
-                      ]"
-                      :method="item.method"
-                    >
-                      {{ item.label || $t(item.name) }}
-                    </Link>
-                  </MenuItem>
-                </MenuItems>
-              </transition>
-            </Menu>
-          </div>
+        <div class="min-w-0">
+          <p class="truncate text-sm font-semibold text-[var(--ds-text)]">{{ moduleFamilyLabel }}</p>
+          <p class="hidden truncate text-xs text-[var(--ds-text-soft)] sm:block">{{ settings?.lab_name }}</p>
         </div>
-      </div>
+
+        <button type="button" class="ml-auto hidden h-9 min-w-64 max-w-xl flex-1 items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 text-left text-sm text-[var(--ds-text-muted)] transition hover:border-[var(--ds-border-strong)] md:flex" @click="openCommandPalette">
+          <MagnifyingGlassIcon class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)]" aria-hidden="true" />
+          <span class="truncate">Pesquisar amostras, documentos e modulos</span>
+          <kbd class="ml-auto rounded border border-[var(--ds-border)] bg-[var(--ds-panel)] px-1.5 py-0.5 font-mono text-[0.62rem] text-[var(--ds-text-soft)]">⌘K</kbd>
+        </button>
+        <button type="button" class="grid h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)] md:hidden" @click="openCommandPalette"><span class="sr-only">Pesquisar</span><MagnifyingGlassIcon class="h-5 w-5" aria-hidden="true" /></button>
+
+        <Link prefetch :href="route('notifications.index')" class="relative grid h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]">
+          <span class="sr-only">Ver notificacoes</span><BellIcon class="h-5 w-5" aria-hidden="true" />
+          <span v-if="auth?.user?.unread_notifications?.length" class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-[var(--ds-panel)]" />
+        </Link>
+
+        <Menu as="div" class="relative">
+          <MenuButton class="flex h-9 items-center gap-2 rounded-lg p-1 text-[var(--ds-text)] hover:bg-[var(--ds-panel-subtle)] sm:pr-2">
+            <img v-if="auth?.user?.profile_photo_url" :src="auth.user.profile_photo_url" alt="" class="h-7 w-7 rounded-md object-cover" />
+            <span v-else class="grid h-7 w-7 place-items-center rounded-md bg-[var(--brand-secondary)] text-xs font-semibold text-white">{{ auth?.user?.name?.charAt(0) }}</span>
+            <span class="hidden max-w-28 truncate text-sm font-semibold xl:block">{{ auth?.user?.name }}</span>
+            <ChevronDownIcon class="hidden h-4 w-4 text-[var(--ds-text-soft)] sm:block" aria-hidden="true" />
+          </MenuButton>
+          <transition enter-active-class="transition ease-out duration-100" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
+            <MenuItems class="ds-floating-panel absolute right-0 z-20 mt-2 w-64 origin-top-right p-2 focus:outline-none">
+              <div class="border-b border-[var(--ds-border)] px-3 py-2">
+                <p class="truncate text-sm font-semibold text-[var(--ds-text)]">{{ auth?.user?.name }}</p><p class="truncate text-xs text-[var(--ds-text-soft)]">{{ auth?.user?.email }}</p>
+              </div>
+              <div class="space-y-1 py-2">
+                <MenuItem v-slot="{ active }"><Link :href="profileHref" :class="[active ? 'bg-[var(--ds-panel-subtle)] text-[var(--ds-text)]' : 'text-[var(--ds-text-muted)]', 'block rounded-lg px-3 py-2 text-sm font-semibold']">Perfil e seguranca</Link></MenuItem>
+                <MenuItem v-slot="{ active }"><Link :href="route('users.help')" :class="[active ? 'bg-[var(--ds-panel-subtle)] text-[var(--ds-text)]' : 'text-[var(--ds-text-muted)]', 'block rounded-lg px-3 py-2 text-sm font-semibold']">Manual do utilizador</Link></MenuItem>
+                <MenuItem v-slot="{ active }"><button type="button" :class="[active ? 'bg-[var(--ds-panel-subtle)] text-[var(--ds-text)]' : 'text-[var(--ds-text-muted)]', 'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-semibold']" @click="toggleTheme"><span>{{ isDark ? 'Modo claro' : 'Modo escuro' }}</span><SunIcon v-if="isDark" class="h-4 w-4" /><MoonIcon v-else class="h-4 w-4" /></button></MenuItem>
+              </div>
+              <div v-if="$page.props.languages?.data?.length > 1" class="border-y border-[var(--ds-border)] py-2">
+                <button v-for="language in $page.props.languages.data" :key="language.value" type="button" :class="[language.value === $page.props.language ? 'bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-white' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-panel-subtle)]', 'block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold']" @click="switchLanguage(language.value)">{{ language.label }}</button>
+              </div>
+              <div class="pt-2"><Link :href="route('logout')" method="post" as="button" class="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10">Terminar sessao</Link></div>
+            </MenuItems>
+          </transition>
+        </Menu>
+      </header>
 
       <TransitionRoot as="template" :show="commandPaletteOpen">
         <Dialog as="div" class="relative z-[70]" @close="commandPaletteOpen = false">
-          <TransitionChild
-            as="template"
-            enter="ease-out duration-200"
-            enter-from="opacity-0"
-            enter-to="opacity-100"
-            leave="ease-in duration-150"
-            leave-from="opacity-100"
-            leave-to="opacity-0"
-          >
-            <div class="fixed inset-0 bg-slate-950/55 backdrop-blur-sm" />
-          </TransitionChild>
-
-          <div class="fixed inset-0 z-[70] overflow-y-auto p-4 sm:p-6 md:p-20">
-            <TransitionChild
-              as="template"
-              enter="ease-out duration-200"
-              enter-from="opacity-0 scale-95"
-              enter-to="opacity-100 scale-100"
-              leave="ease-in duration-150"
-              leave-from="opacity-100 scale-100"
-              leave-to="opacity-0 scale-95"
-            >
+          <TransitionChild as="template" enter="ease-out duration-150" enter-from="opacity-0" enter-to="opacity-100" leave="ease-in duration-100" leave-from="opacity-100" leave-to="opacity-0"><div class="fixed inset-0 bg-slate-950/50" /></TransitionChild>
+          <div class="fixed inset-0 z-[70] overflow-y-auto p-4 sm:p-8 md:p-20">
+            <TransitionChild as="template" enter="ease-out duration-150" enter-from="opacity-0 scale-95" enter-to="opacity-100 scale-100" leave="ease-in duration-100" leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
               <DialogPanel class="ds-command-palette mx-auto max-w-2xl overflow-hidden">
-                <div class="flex items-center gap-3 border-b border-[var(--ds-border)] px-4">
-                  <MagnifyingGlassIcon class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" aria-hidden="true" />
-                  <input
-                    ref="commandPaletteInput"
-                    v-model="commandPaletteQuery"
-                    type="search"
-                    class="h-14 min-w-0 flex-1 border-0 bg-transparent text-sm font-semibold text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-soft)] focus:ring-0"
-                    placeholder="Buscar amostras, boletins, instrumentos, clientes..."
-                    @keydown.enter.prevent="activateFirstCommandPaletteResult"
-                  />
-                  <kbd class="hidden rounded border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-2 py-1 font-mono text-[0.65rem] font-semibold uppercase text-[var(--ds-text-soft)] sm:inline-flex">
-                    esc
-                  </kbd>
-                </div>
-
+                <div class="flex items-center gap-3 border-b border-[var(--ds-border)] px-4"><MagnifyingGlassIcon class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" /><input ref="commandPaletteInput" v-model="commandPaletteQuery" type="search" class="h-14 min-w-0 flex-1 border-0 bg-transparent text-sm font-semibold text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-soft)] focus:ring-0" placeholder="Pesquisar modulos e registos..." @keydown.enter.prevent="activateFirstCommandPaletteResult" /><kbd class="rounded border border-[var(--ds-border)] px-2 py-1 font-mono text-[0.65rem] text-[var(--ds-text-soft)]">ESC</kbd></div>
                 <div class="max-h-[70vh] overflow-y-auto p-2 sm:max-h-[32rem]">
                   <div v-if="filteredCommandGroups.length" class="space-y-3">
                     <section v-for="group in filteredCommandGroups" :key="group.label">
-                      <div class="flex items-center justify-between px-3 py-2">
-                        <p class="font-mono text-[0.68rem] font-bold uppercase text-[var(--ds-text-soft)]">
-                          {{ group.label }}
-                        </p>
-                        <span class="rounded-full bg-[var(--ds-panel-muted)] px-2 py-0.5 font-mono text-[0.62rem] font-semibold text-[var(--ds-text-soft)]">
-                          {{ group.items.length }}
-                        </span>
-                      </div>
-                      <button
-                        v-for="command in group.items"
-                        :key="`${group.label}-${command.href}-${command.label}`"
-                        type="button"
-                        class="ds-command-palette-item group"
-                        @click="visitCommand(command)"
-                      >
-                        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text-soft)] group-hover:border-[rgb(var(--primary-300-rgb))] group-hover:text-[rgb(var(--primary-700-rgb))] dark:group-hover:border-[rgb(var(--primary-400-rgb)/0.35)] dark:group-hover:text-[rgb(var(--primary-200-rgb))]">
-                          <component :is="command.icon" class="h-4 w-4" aria-hidden="true" />
-                        </span>
-                        <span class="min-w-0 flex-1 text-left">
-                          <span class="block truncate text-sm font-semibold text-[var(--ds-text)]">
-                            {{ command.label }}
-                          </span>
-                          <span class="block truncate font-mono text-[0.68rem] uppercase text-[var(--ds-text-soft)]">
-                            {{ command.path }}
-                          </span>
-                        </span>
-                        <ChevronRightIcon class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)] transition group-hover:translate-x-0.5 group-hover:text-[var(--ds-text-muted)]" aria-hidden="true" />
-                      </button>
+                      <p class="px-3 py-2 font-mono text-[0.68rem] font-semibold uppercase text-[var(--ds-text-soft)]">{{ group.label }}</p>
+                      <button v-for="command in group.items" :key="`${group.label}-${command.href}-${command.label}`" type="button" class="ds-command-palette-item group" @click="visitCommand(command)"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text-soft)]"><component :is="command.icon" class="h-4 w-4" /></span><span class="min-w-0 flex-1 text-left"><span class="block truncate text-sm font-semibold text-[var(--ds-text)]">{{ command.label }}</span><span class="block truncate font-mono text-[0.68rem] uppercase text-[var(--ds-text-soft)]">{{ command.path }}</span></span><ChevronRightIcon class="h-4 w-4 shrink-0 text-[var(--ds-text-soft)]" /></button>
                     </section>
                   </div>
-
-                  <div v-else class="px-6 py-14 text-center">
-                    <div class="mx-auto grid h-11 w-11 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
-                      <MagnifyingGlassIcon class="h-5 w-5 text-[var(--ds-text-soft)]" aria-hidden="true" />
-                    </div>
-                    <p class="mt-4 text-sm font-semibold text-[var(--ds-text)]">Nenhum módulo encontrado</p>
-                    <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">
-                      Tente pesquisar por amostras, inventário, boletins, clientes ou qualidade.
-                    </p>
-                  </div>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3 font-mono text-[0.68rem] font-semibold uppercase text-[var(--ds-text-soft)]">
-                  <span class="lims-status-dot lims-status-dot-instrument" aria-hidden="true" />
-                  {{ filteredCommandGroups.length }} grupos disponíveis
-                  <span class="ml-auto hidden sm:inline">Enter para abrir</span>
+                  <div v-else class="px-6 py-14 text-center"><MagnifyingGlassIcon class="mx-auto h-5 w-5 text-[var(--ds-text-soft)]" /><p class="mt-4 text-sm font-semibold text-[var(--ds-text)]">Nenhum modulo encontrado</p></div>
                 </div>
               </DialogPanel>
             </TransitionChild>
@@ -436,56 +140,12 @@
         </Dialog>
       </TransitionRoot>
 
-<!-- Page content -->
-  <main class="min-h-[calc(100vh-4rem)] py-5 animate-fade-in lg:py-7">
-        <div v-if="route().current('dashboard')" class="px-4 pb-4 sm:px-6 lg:px-8">
-          <div class="lims-status-strip grid gap-3 px-4 py-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div
-              v-for="status in operationalStatus"
-              :key="status.label"
-              class="flex items-center gap-3"
-            >
-              <span :class="['lims-status-dot', status.dot]" aria-hidden="true" />
-              <span class="min-w-0">
-                <span class="block truncate text-sm font-semibold text-[var(--ds-text)]">{{ status.label }}</span>
-                <span class="block truncate font-mono text-[0.68rem] uppercase text-[var(--ds-text-soft)]">{{ status.caption }}</span>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="px-4 sm:px-6 lg:px-8 lims-backoffice-content"
-          :data-module-family="moduleFamily"
-        >
-          <breadcrumbs
-            v-if="$page.props.breadcrumbs?.length"
-            :pages="$page.props.breadcrumbs"
-            class="mb-4"
-          />
-          <!-- Session expiry modal -->
-          <confirm-dialog
-            v-if="showSessionModal"
-            :open="showSessionModal"
-            :title="$t('Session Expiring Soon')"
-            :description="$t('You will be logged out due to inactivity')"
-            variant="warning"
-            :hide-buttons="true"
-            size="sm:max-w-xl"
-            @canceled="showSessionModal = false"
-          >
-            <div class="mt-4">
-              <div
-                class="font-semibold inline-flex px-2 py-1 leading-4 text-xs rounded-full text-gray-700 sm:text-xs dark:bg-gray-700 dark:text-gray-400"
-              >
-                <p class="text-sm">
-                  {{ $t('For your security, this session will end in :seconds seconds.', { seconds: remainingTime }) }}
-                  {{ $t('Move your mouse or press any key to continue working.') }}
-                </p>
-              </div>
-            </div>
+      <main class="min-h-[calc(100vh-4rem)] py-5 lg:py-6">
+        <div class="lims-backoffice-content px-4 sm:px-6 lg:px-8" :data-module-family="moduleFamily">
+          <breadcrumbs v-if="$page.props.breadcrumbs?.length" :pages="$page.props.breadcrumbs" class="mb-4" />
+          <confirm-dialog v-if="showSessionModal" :open="showSessionModal" :title="$t('Session Expiring Soon')" :description="$t('You will be logged out due to inactivity')" variant="warning" :hide-buttons="true" size="sm:max-w-xl" @canceled="showSessionModal = false">
+            <p class="mt-4 text-sm font-semibold text-[var(--ds-text-muted)]">{{ $t('For your security, this session will end in :seconds seconds.', { seconds: remainingTime }) }} {{ $t('Move your mouse or press any key to continue working.') }}</p>
           </confirm-dialog>
-
           <slot />
         </div>
       </main>
@@ -495,13 +155,10 @@
 
 <script setup>
 import { computed, nextTick, ref, watch, onMounted, onUnmounted } from 'vue'
-import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
-import { useDateFormat, useTimestamp, useIdle, useCounter } from '@vueuse/core'
+import { useIdle, useCounter } from '@vueuse/core'
 import sideNav from '../Navigation/side-nav.vue'
-import toast from '@/Stores/toast'
 import ToastList from '@/Components/toast-list.vue'
 import confirmDialog from '@/Components/confirm-dialog.vue'
-import Dropdown from '@/Components/dropdown.vue'
 import breadcrumbs from '@/Components/breadcrumbs.vue'
 import {
   Dialog,
@@ -520,7 +177,6 @@ import {
   ShieldCheckIcon,
   MegaphoneIcon,
   UsersIcon,
-  PowerIcon,
   FolderOpenIcon,
   BanknotesIcon,
   Square3Stack3DIcon,
@@ -539,6 +195,7 @@ import {
   BeakerIcon,
   ChevronRightIcon,
   MagnifyingGlassIcon,
+  XMarkIcon,
 } from '@heroicons/vue/24/outline'
 import { ChevronDownIcon } from '@heroicons/vue/20/solid'
 import { SunIcon, MoonIcon } from '@heroicons/vue/24/outline'
@@ -562,6 +219,16 @@ const page = usePage()
 const settings = computed(() => page.props?.settings ?? {})
 const brandingCssVariables = computed(() => buildBrandingCssVariables(settings.value))
 const themePreset = computed(() => settings.value.theme_preset || 'corporate')
+const brandInitials = computed(() => String(settings.value.app_name || settings.value.lab_name || 'Laboratory workspace')
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((word) => word.charAt(0))
+  .join('')
+  .toUpperCase())
+const profileHref = computed(() => props.auth?.user?.id
+  ? route('users.edit', props.auth.user.id)
+  : route('dashboard'))
 const moduleFamily = computed(() => {
   const url = page.url || ''
 
@@ -672,29 +339,6 @@ const moduleFamilyLabels = {
 
 const moduleFamilyLabel = computed(() => moduleFamilyLabels[moduleFamily.value] || moduleFamilyLabels.general)
 
-const operationalStatus = computed(() => [
-  {
-    label: 'Sample intake',
-    caption: moduleFamily.value === 'sample-lifecycle' ? 'active queue' : 'ready',
-    dot: moduleFamily.value === 'sample-lifecycle' ? 'lims-status-dot-release' : 'lims-status-dot-instrument',
-  },
-  {
-    label: 'Result review',
-    caption: 'verification track',
-    dot: 'lims-status-dot-instrument',
-  },
-  {
-    label: 'Document control',
-    caption: moduleFamily.value === 'admin' ? 'audit mode' : 'released',
-    dot: moduleFamily.value === 'admin' ? 'lims-status-dot-hold' : 'lims-status-dot-release',
-  },
-  {
-    label: 'QMS watch',
-    caption: 'deviation monitor',
-    dot: 'lims-status-dot-critical',
-  },
-])
-
 // --- Session timeout ---
 const timerDuration = 1500
 const { count: countdown, dec, reset } = useCounter(timerDuration, { step: -1 })
@@ -703,13 +347,6 @@ const showSessionModal = ref(false)
 const remainingTime = ref(0)
 let countdownInterval = null
 const lastActive = ref(Date.now())
-
-const formattedTime = computed(() => {
-  const h = String(Math.floor(countdown.value / 3600)).padStart(2, '0')
-  const m = String(Math.floor((countdown.value % 3600) / 60)).padStart(2, '0')
-  const s = String(countdown.value % 60).padStart(2, '0')
-  return `${h}:${m}:${s}`
-})
 
 const startCountdown = () => {
   reset()
@@ -733,11 +370,6 @@ const resetTimerOnActivity = () => {
   lastActive.value = Date.now()
 }
 
-// --- Clock ---
-const clockTime = useDateFormat(useTimestamp({ interval: 1000 }), 'HH:mm:ss', {
-  locales: 'pt-Pt',
-})
-
 // --- Language ---
 const switchLanguage = async (language) => {
   await loadLanguageAsync(language)
@@ -745,11 +377,6 @@ const switchLanguage = async (language) => {
 }
 
 // --- Navigation (shared with side-nav) ---
-const hasActiveChild = (item) => {
-  if (!item.children) return false
-  return item.children.some((child) => page.url === child.name || page.url.startsWith(child.name + '/'))
-}
-
 const navigation = [
   { title: 'gestlab.menu.dashboard', name: '/dashboard', href: route('dashboard'), icon: HomeIcon, show: true },
   { title: 'gestlab.menu.notifications', name: '/notifications', href: route('notifications.index'), icon: BellIcon, show: true },
@@ -833,7 +460,7 @@ const navigation = [
   {
     title: 'gestlab.menu.analysis_reports', name: 'Boletins', icon: DocumentTextIcon, show: true,
     children: [
-      { title: 'gestlab.menu.quality_certificates', name: '/quality-certificates', href: route('qualitycertificates.index'), show: hasPermission('view_quality_certificates') },
+      { title: 'gestlab.menu.quality_certificates', name: '/qualitycertificates', href: route('qualitycertificates.index'), show: hasPermission('view_quality_certificates') },
       { title: 'gestlab.menu.import_certificates', name: '/import-certificates', href: route('importcertificates.index'), show: hasPermission('view_import_certificates') },
       { title: 'gestlab.menu.export_certificates', name: '/export-certificates', href: route('exportcertificates.index'), show: hasPermission('view_export_certificates') },
       { title: 'gestlab.menu.report_studios', name: '/report-studios', href: route('report-studios.index'), show: hasPermission('view_quality_certificates') || hasPermission('view_proposal_templates') || hasPermission('view_settings') },
@@ -910,11 +537,6 @@ const navigation = [
   { title: 'gestlab.menu.backups', name: '/system-backups/backups', href: route('systembackups.backups'), icon: ServerIcon, show: hasPermission('view_backups') },
 ]
 
-const userNavigation = [
-  { label: 'Manual do utilizador', name: 'users.help', href: route('users.help') },
-  { name: 'gestlab.menu.logout', href: route('logout'), method: 'POST' },
-]
-
 const sidebarOpen = ref(false)
 const desktopSidebarOpen = ref(true)
 const commandPaletteOpen = ref(false)
@@ -954,8 +576,13 @@ const commandGroups = computed(() => navigation
   })
   .filter((group) => group.items.length > 0))
 
+const normalizeSearchValue = (value) => String(value || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase()
+
 const filteredCommandGroups = computed(() => {
-  const query = commandPaletteQuery.value.trim().toLowerCase()
+  const query = normalizeSearchValue(commandPaletteQuery.value.trim())
 
   return commandGroups.value
     .map((group) => {
@@ -964,16 +591,15 @@ const filteredCommandGroups = computed(() => {
           command.label,
           command.path,
           group.label,
-        ].some((value) => String(value || '').toLowerCase().includes(query)))
+        ].some((value) => normalizeSearchValue(value).includes(query)))
         : group.items
 
       return {
         ...group,
-        items: items.slice(0, 8),
+        items,
       }
     })
     .filter((group) => group.items.length > 0)
-    .slice(0, 8)
 })
 
 const firstCommandPaletteResult = computed(() => filteredCommandGroups.value[0]?.items?.[0] ?? null)
@@ -985,6 +611,11 @@ const openCommandPalette = () => {
   nextTick(() => {
     commandPaletteInput.value?.focus()
   })
+}
+
+const openCommandPaletteFromMobile = () => {
+  sidebarOpen.value = false
+  nextTick(openCommandPalette)
 }
 
 const visitCommand = (command) => {

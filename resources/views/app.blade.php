@@ -2,11 +2,11 @@
     try {
         $whiteLabelSettings = app(\App\Settings\GeneralSettings::class);
         $whiteLabelAppName = $whiteLabelSettings->app_name ?: config('app.name', 'LIMS Unleashed');
-        $whiteLabelLogoUrl = $whiteLabelSettings->app_logo_url ?: '/images/SVG/sncqa_logo.png';
+        $whiteLabelLogoUrl = $whiteLabelSettings->app_logo_url ?: null;
         $whiteLabelPrimaryColor = $whiteLabelSettings->app_primary_color ?: '#143d37';
-    } catch (Throwable) {
+    } catch (\Throwable) {
         $whiteLabelAppName = config('app.name', 'LIMS Unleashed');
-        $whiteLabelLogoUrl = '/images/SVG/sncqa_logo.png';
+        $whiteLabelLogoUrl = null;
         $whiteLabelPrimaryColor = '#143d37';
     }
 @endphp
@@ -21,7 +21,9 @@
     <meta name="passkeys-authentication-options-url" content="{{ route('passkeys.authentication_options') }}">
     <meta name="passkeys-login-url" content="{{ route('passkeys.login') }}">
     <title>{{ $whiteLabelAppName }}</title>
-    <link rel="icon" type="image/png" href="{{ $whiteLabelLogoUrl }}">
+    @if($whiteLabelLogoUrl)
+        <link rel="icon" href="{{ $whiteLabelLogoUrl }}">
+    @endif
     <link rel="preconnect" href="https://fonts.bunny.net">
     <script>
         (function () {

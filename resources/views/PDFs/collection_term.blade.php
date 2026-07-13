@@ -3,12 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     @include('PDFs.partials.premium-document-style')
     
     /* Base Styles - Aligned with Visual System */
     body {
-        font-family: 'Inter', Arial, sans-serif;
+        font-family: DejaVu Sans, Arial, sans-serif;
         font-size: 11px;
         margin: 0;
         padding: 0;
@@ -26,8 +25,6 @@
         footer: page-footer;
         margin-header: 10mm;
         margin-footer: 10mm;
-        background-image: url("{!! public_path() . '/images/oficio_template.svg'!!}") no-repeat 0 0;
-        background-image-resize: 6;
     }
     
     /* Visual System Classes */
@@ -289,7 +286,7 @@
             </td>
             <td style="border-right: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb; border-left: 1px solid #e5e7eb; padding: 8px; width: 33%;">
                 <div class="h3" style="color: #1e3a8a; font-weight: 700;">
-                    <b>SERVIÇO NACIONAL DE CONTROLO DE QUALIDADE DE ALIMENTOS </b>
+                    <b>{{ mb_strtoupper(($settings ?? null)?->app_name ?: config('app.name', 'Laboratory workspace')) }}</b>
                 </div>
             </td>
             <td rowspan="3" style="border-right: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb; padding: 8px; text-align: left; width: 33%;">
@@ -314,7 +311,7 @@
         <tr>
             <td style="border-bottom: 1px solid #e5e7eb; text-align: center; padding: 8px;">
                 <div class="h3" style="color: #111827;">
-                    <b>LABORATÓRIO CENTRAL AGRO-ALIMENTAR DE LUANDA </b>
+                    <b>{{ mb_strtoupper(($settings ?? null)?->app_client_lab_name ?: ($settings ?? null)?->app_name ?: config('app.name', 'Laboratory workspace')) }}</b>
                 </div>
             </td>
             <td style="border: 1.5px solid #111827; padding: 8px; font-size: 12px; text-align: center; font-weight: 600; color: #1e3a8a;">

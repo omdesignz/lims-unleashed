@@ -301,13 +301,7 @@
         </tr>
     </table> --}}
 
-    <div style="text-align: center; border-bottom:0.3mm solid black;padding-bottom: 0px" width="100%" >
-        <center><img src="{!! public_path() . '/images/ao_crest.svg'!!}" width="8%"></center>
-        <h6>REPÚBLICA DE ANGOLA</h6>
-        <h6>MINISTÉRIO DA AGRICULTURA E FLORESTAS</h6>
-        <h6>SERVIÇO NACIONAL DE CONTROLO DA QUALIDADE DOS ALIMENTOS</h6>
-        <h6>LABORATÓRIO CENTRAL AGRO-ALIMENTAR DE LUANDA</h6>
-    </div><br>
+    @include('PDFs.partials.document-letterhead', ['settings' => $settings])
     
     <!-- Main Header -->
     <table width="100%" cellpadding="0" cellspacing="0" style="background: #1e3a8a; color: white; border-radius: 8px; margin-bottom: 15px;">

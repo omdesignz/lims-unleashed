@@ -17,12 +17,7 @@
               :src="brandLogoUrl"
               :alt="brandAppName"
             >
-            <img
-              v-else
-              class="h-10 w-auto max-w-40 object-contain"
-              src="../../../images/sncqa_logo.svg"
-              :alt="brandAppName"
-            >
+            <span v-else class="grid h-10 w-10 place-items-center rounded-lg bg-[var(--brand-secondary)] text-xs font-bold text-white">{{ brandInitials }}</span>
             <div>
               <div class="text-sm font-extrabold uppercase tracking-[0.2em] text-primary-700 dark:text-accent-200">{{ brandAppName }}</div>
               <div class="text-sm text-slate-500 dark:text-slate-400">{{ labels.portalArea }}</div>
@@ -249,7 +244,13 @@ const settings = computed(() => page.props?.settings ?? {})
 const brandingCssVariables = computed(() => buildBrandingCssVariables(settings.value))
 const themePreset = computed(() => settings.value.theme_preset || settings.value.app_theme_preset || 'corporate')
 const brandLogoUrl = computed(() => settings.value.logo_url || settings.value.app_logo_url || null)
-const brandAppName = computed(() => settings.value.app_name || 'LIMS Unleashed')
+const brandAppName = computed(() => settings.value.app_name || 'Laboratory workspace')
+const brandInitials = computed(() => brandAppName.value
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((word) => word.charAt(0).toUpperCase())
+  .join('') || 'LW')
 const activeLanguageLabel = computed(() => {
   const active = page.props?.languages?.data?.find((item) => item.value === page.props?.language)
 

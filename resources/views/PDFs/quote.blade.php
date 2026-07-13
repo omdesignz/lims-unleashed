@@ -58,7 +58,7 @@
                     </tr>
                     <tr>
                         <td align="center">
-                            <div style="font-size: 16px; font-weight: 700; color: #111827;">{!! mb_strtoupper($settings->app_client_lab_name) ?? 'LABORATÓRIO CENTRAL AGRO-ALIMENTAR DE LUANDA' !!}</div>
+                            <div style="font-size: 16px; font-weight: 700; color: #111827;">{!! mb_strtoupper($settings->app_client_lab_name ?: $settings->app_name) !!}</div>
                         </td>
                     </tr>
                 </table>
@@ -66,13 +66,7 @@
         </tr>
     </table> --}}
 
-    <div style="text-align: center; border-bottom:0.3mm solid black;padding-bottom: 0px" width="100%" >
-        <center><img src="{!! public_path() . '/images/ao_crest.svg'!!}" width="8%"></center>
-        <h6>REPÚBLICA DE ANGOLA</h6>
-        <h6>MINISTÉRIO DA AGRICULTURA E FLORESTAS</h6>
-        <h6>SERVIÇO NACIONAL DE CONTROLO DA QUALIDADE DOS ALIMENTOS</h6>
-        <h6>LABORATÓRIO CENTRAL AGRO-ALIMENTAR DE LUANDA</h6>
-    </div><br>
+    @include('PDFs.partials.document-letterhead', ['settings' => $settings])
 
     <!-- Main Header Card -->
     <table width="100%" cellpadding="0" cellspacing="0" style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">

@@ -1,6 +1,24 @@
+@php
+    try {
+        $documentBrandSettings = $settings ?? app(\App\Settings\GeneralSettings::class);
+    } catch (\Throwable) {
+        $documentBrandSettings = null;
+    }
+
+    $resolveDocumentColor = static function (?string $color, string $fallback): string {
+        return is_string($color) && preg_match('/^#[0-9a-fA-F]{6}$/', $color) === 1
+            ? $color
+            : $fallback;
+    };
+
+    $documentPrimaryColor = $resolveDocumentColor($documentBrandSettings?->app_primary_color, '#143d37');
+    $documentSecondaryColor = $resolveDocumentColor($documentBrandSettings?->app_secondary_color, '#07110f');
+    $documentAccentColor = $resolveDocumentColor($documentBrandSettings?->app_accent_color, '#d9b05f');
+@endphp
+
 body.pdf-document {
     font-family: DejaVu Sans, Arial, sans-serif;
-    color: #15231f;
+    color: {{ $documentSecondaryColor }};
     background: #ffffff;
     font-size: 9pt;
     line-height: 1.45;
@@ -34,7 +52,7 @@ body.pdf-document {
 .pdf-document h4,
 .pdf-document h5,
 .pdf-document h6 {
-    color: #143d37;
+    color: {{ $documentPrimaryColor }};
 }
 
 .pdf-document h1 {
@@ -75,7 +93,7 @@ body.pdf-document {
 .pdf-document .document-hero {
     border: 0.28mm solid #d8cbb8;
     border-radius: 7mm;
-    background: #143d37;
+    background: {{ $documentPrimaryColor }};
     color: #fffdf7;
     padding: 10mm;
 }
@@ -96,7 +114,7 @@ body.pdf-document {
 .pdf-document .document-kicker,
 .pdf-document .manual-eyebrow,
 .pdf-document .studio-kicker {
-    color: #c79431;
+    color: {{ $documentAccentColor }};
     font-size: 7.5pt;
     font-weight: 900;
     letter-spacing: 0.16em;
@@ -135,7 +153,7 @@ body.pdf-document {
 .pdf-document .section-header,
 .pdf-document .pdf-band,
 .pdf-document .report-band {
-    background: #143d37;
+    background: {{ $documentPrimaryColor }};
     color: #ffffff;
     font-weight: 800;
     letter-spacing: 0.06em;
@@ -143,7 +161,7 @@ body.pdf-document {
 
 .pdf-document .section-title,
 .pdf-document .document-title {
-    color: #143d37;
+    color: {{ $documentPrimaryColor }};
     font-weight: 900;
     letter-spacing: -0.01em;
 }
@@ -157,7 +175,7 @@ body.pdf-document {
 
 .pdf-document .value,
 .pdf-document .highlight-value {
-    color: #143d37;
+    color: {{ $documentPrimaryColor }};
     font-weight: 800;
     overflow-wrap: anywhere;
 }
@@ -261,9 +279,9 @@ body.pdf-document {
 .pdf-document .worksheet-table th,
 .pdf-document .report-table th,
 .pdf-document .tg thead th {
-    background: #143d37 !important;
+    background: {{ $documentPrimaryColor }} !important;
     color: #ffffff !important;
-    border: 0.2mm solid #143d37 !important;
+    border: 0.2mm solid {{ $documentPrimaryColor }} !important;
     padding: 2.5mm 2.2mm !important;
     font-size: 8.2pt !important;
     font-weight: 900 !important;
@@ -326,7 +344,7 @@ body.pdf-document {
 }
 
 .pdf-document .document-callout {
-    border-left: 1.3mm solid #d9b05f;
+    border-left: 1.3mm solid {{ $documentAccentColor }};
     padding: 4mm 5mm;
     color: #475a53;
 }

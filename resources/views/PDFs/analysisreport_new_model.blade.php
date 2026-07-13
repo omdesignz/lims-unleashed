@@ -31,14 +31,9 @@
         }
 
         @page {
-            background-image: url("{!! public_path() . '/images/oficio_template.svg'!!}") no-repeat 0 0;
-            background-image-resize: 6;
-
-            /* background-repeat: no-repeat 0 0; */
-            
             header: other-pages-header;
             footer: page-footer;
-            @if($model->collection->result_id == 4 || 3)
+            @if(in_array((int) $model->collection->result_id, [3, 4], true))
               margin-top: 30mm;
               margin-bottom: 130mm;
             @endif
@@ -53,7 +48,7 @@
             header: page-header;
             footer: page-footer;
 
-            @if($model->collection->result_id == 4 || 3)
+            @if(in_array((int) $model->collection->result_id, [3, 4], true))
               margin-top: 200mm;
               margin-bottom: 90mm;
             @endif
@@ -71,15 +66,7 @@
 <sethtmlpageheader name="page-header" value="on" show-this-page="1" />
 
 <htmlpageheader name="page-header">
-    {{-- @include("PDFs.includes.analysisreport.templates_new_model.{$model->collection['result_id']}_header") --}}
-    {{-- <hr style="border-bottom:0.3mm solid black;padding-bottom: 0px"> --}}
-    <div style="text-align: center; border-bottom:0.3mm solid black;padding-bottom: 0px" width="100%" >
-        <center><img src="{!! public_path() . '/images/ao_crest.svg'!!}" width="8%"></center>
-        <h4>REPÚBLICA DE ANGOLA</h4>
-        <h4>MINISTÉRIO DA AGRICULTURA E FLORESTAS</h4>
-        <h4>SERVIÇO NACIONAL DE CONTROLO DA QUALIDADE DOS ALIMENTOS</h4>
-        <h4>LABORATÓRIO CENTRAL AGRO-ALIMENTAR DE LUANDA</h4>
-    </div><br>
+    @include('PDFs.partials.document-letterhead', ['settings' => $settings ?? null])
     
     {!! $header !!}
     <div class="obs">
@@ -112,7 +99,7 @@
             <div style="padding-bottom: 0px; margin-bottom: 0px;">
                 <img src="{{ asset('/images/stamp_wgaspar.svg') }}" alt="" width="15%">
             </div>
-                <small><b>Dra. Wladimira Gaspar</b></small><br>
+                <small><b>{{ ($settings ?? null)?->app_client_lab_director ?: 'Direcao tecnica' }}</b></small><br>
                 <small><b>Autorizado Por</b></small><br>
             </div>
             </td>
@@ -131,24 +118,7 @@
     <hr style="height: 1px; color:black">
 
 
-    <table class="tg" width="100%">
-        <tr>
-            <td style="text-align: left">
-            <small style="text-align:left;font-size: 7pt;">
-                <b>LABORATÓRIO CENTRAL AGRO-ALIMENTAR DE LUANDA </b> <br>
-                AV. Deolinda Rodrigues – Estrada de Catete, KM 6 <br>
-                Rua dos Comandos, junto a entrada da Filda <br>
-                Município do Cazenga - Luanda - Angola <br>
-                Telefone: (+244) 949 574584 / 949574497 / 949 574587 <br>
-                E-mail:  apoiocliente@sncqa.co.ao / info@sncqa.co.ao / apoiocliente1@sncqa.co.ao
-
-            </small>
-            </td>
-            <td style="text-align: right; padding-top: 2mm; vertical-align:middle">
-                <img src="{!! public_path() . '/images/governo_novo.png'!!}" width="10%">
-            </td>
-        </tr>
-    </table>
+    @include('PDFs.partials.document-letterhead', ['settings' => $settings ?? null])
     <small style="text-align:left;font-size: 7pt;">
         <b>Nota 1</b> - “Ensaios realizados nas instalações permanentes do Laboratório”
         <b>Nota 2</b> – “Os resultados do presente relatório referem-se aos itens ensaiados”
