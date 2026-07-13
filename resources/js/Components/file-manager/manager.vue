@@ -47,8 +47,8 @@
                     <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center">
                       <MagnifyingGlassIcon class="h-5 w-5 flex-shrink-0" aria-hidden="true" />
                     </div>
-                    <input name="mobile-search-field" id="mobile-search-field" class="h-full w-full border-0 py-2 pl-8 pr-3 text-base text-gray-900 focus:outline-none focus:ring-0 focus:placeholder:text-gray-400 sm:hidden" placeholder="Search" type="search" />
-                    <input name="desktop-search-field" id="desktop-search-field" class="hidden h-full w-full border-0 py-2 pl-8 pr-3 text-sm text-gray-900 focus:outline-none focus:ring-0 focus:placeholder:text-gray-400 sm:block" placeholder="Search all files" type="search" />
+                    <BaseInput name="mobile-search-field" id="mobile-search-field" class="h-full w-full border-0 py-2 pl-8 pr-3 text-base text-gray-900 focus:outline-none focus:ring-0 focus:placeholder:text-gray-400 sm:hidden" placeholder="Search" type="search" />
+                    <BaseInput name="desktop-search-field" id="desktop-search-field" class="hidden h-full w-full border-0 py-2 pl-8 pr-3 text-sm text-gray-900 focus:outline-none focus:ring-0 focus:placeholder:text-gray-400 sm:block" placeholder="Search all files" type="search" />
                   </div>
                 </form>
               </div>
@@ -97,11 +97,11 @@
                 <div class="sm:hidden">
                   <label for="tabs" class="sr-only">Select a tab</label>
                   <!-- Use an "onChange" listener to redirect the user to the selected tab URL. -->
-                  <select id="tabs" name="tabs" class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
+                  <BaseSelect id="tabs" name="tabs" class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
                     <option selected="">Recently Viewed</option>
                     <option>Recently Added</option>
                     <option>Favorited</option>
-                  </select>
+                  </BaseSelect>
                 </div>
                 <div class="hidden sm:block">
                   <div class="flex items-center border-b border-gray-200 justify-end">

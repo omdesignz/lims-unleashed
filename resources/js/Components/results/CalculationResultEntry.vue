@@ -367,7 +367,7 @@ function selectNextParameter() {
       <div class="flex flex-col gap-4 border-b border-[var(--ds-border)] p-4 sm:flex-row sm:items-end sm:justify-between">
         <div class="min-w-0 flex-1">
           <label class="ds-field-label" for="calculated-parameter">Parâmetro calculado</label>
-          <select
+          <BaseSelect
             id="calculated-parameter"
             v-model="selectedParameterCode"
             class="ds-field mt-2"
@@ -381,7 +381,7 @@ function selectNextParameter() {
             >
               {{ parameter.parameter_id?.code }} - {{ parameter.parameter_id?.name }}
             </option>
-          </select>
+          </BaseSelect>
         </div>
         <span class="ds-chip">
           <CalculatorIcon class="h-4 w-4" />
@@ -419,7 +419,7 @@ function selectNextParameter() {
             </label>
             <div class="relative mt-2">
               <VariableIcon class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-              <input
+              <BaseInput
                 :id="'calc-variable-' + variable"
                 v-model="calculationInputs[variable]"
                 class="ds-field pl-9"
@@ -454,7 +454,7 @@ function selectNextParameter() {
             <label class="ds-field-label" for="calculation-uncertainty">Incerteza</label>
             <div class="relative mt-2">
               <ScaleIcon class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-              <input
+              <BaseInput
                 id="calculation-uncertainty"
                 v-model="uncertaintyValue"
                 class="ds-field pl-9"
@@ -465,7 +465,7 @@ function selectNextParameter() {
           </div>
           <div class="ds-field-group">
             <label class="ds-field-label" for="calculation-minimum">Referência mínima</label>
-            <input
+            <BaseInput
               id="calculation-minimum"
               v-model="minimumReference"
               class="ds-field mt-2"
@@ -474,7 +474,7 @@ function selectNextParameter() {
           </div>
           <div class="ds-field-group">
             <label class="ds-field-label" for="calculation-maximum">Referência máxima</label>
-            <input
+            <BaseInput
               id="calculation-maximum"
               v-model="maximumReference"
               class="ds-field mt-2"
@@ -500,7 +500,7 @@ function selectNextParameter() {
             <h2 class="ds-heading mt-2 text-base">Revisão antes de aplicar</h2>
           </div>
           <label class="flex items-center gap-2 text-xs font-bold text-[var(--ds-text-muted)]">
-            <input
+            <CheckboxInput
               v-model="manualOverride"
               type="checkbox"
               class="h-4 w-4 rounded border-[var(--ds-border-strong)] text-[rgb(var(--primary-600-rgb))] focus:ring-[rgb(var(--primary-500-rgb))]"
@@ -513,7 +513,7 @@ function selectNextParameter() {
         <div class="p-5">
           <div v-if="manualOverride" class="ds-field-group">
             <label class="ds-field-label" for="manual-calculation-value">Valor manual</label>
-            <input
+            <BaseInput
               id="manual-calculation-value"
               v-model="manualValue"
               class="ds-field mt-2"

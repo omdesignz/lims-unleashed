@@ -13,7 +13,7 @@
         </p>
       </div>
 
-      <select
+      <BaseSelect
         :value="task.status"
         class="rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         @change="handleStatusChange"
@@ -22,7 +22,7 @@
         <option value="in_progress">{{ trans('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.task_statuses.in_progress') }}</option>
         <option value="completed">{{ trans('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.task_statuses.completed') }}</option>
         <option value="rejected">{{ trans('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.task_statuses.rejected') }}</option>
-      </select>
+      </BaseSelect>
     </div>
 
     <dl class="mt-4 grid gap-3 sm:grid-cols-3">
@@ -52,7 +52,7 @@
     </div>
 
     <div class="mt-4 flex gap-2">
-      <input
+      <BaseInput
         type="text"
         v-model="newComment"
         :placeholder="$t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.add_comment_placeholder')"

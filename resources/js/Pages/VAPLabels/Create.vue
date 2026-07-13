@@ -248,7 +248,7 @@
                 {{ colorControl.label }}
               </label>
               <div class="mt-2 flex items-center gap-3">
-                <input
+                <ColorInput
                   v-model="form[colorControl.field]"
                   type="color"
                   class="h-12 w-16 cursor-pointer rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel)] p-1"
@@ -265,7 +265,7 @@
               <label class="ds-field-label">
                 {{ $t('gestlab.general.labels.vap_labels.font_size') }}
               </label>
-              <input
+              <RangeInput
                 v-model="form.font_size"
                 type="range"
                 min="6"
@@ -289,7 +289,7 @@
               <label class="ds-field-label">
                 {{ $t('gestlab.general.labels.vap_labels.border_width') }}
               </label>
-              <input
+              <RangeInput
                 v-model="form.border_width"
                 type="range"
                 min="0"

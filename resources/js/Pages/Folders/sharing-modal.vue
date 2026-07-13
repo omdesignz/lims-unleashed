@@ -3,7 +3,7 @@
       <button @click="shareFolder">Share</button>
       <div v-if="showModal">
         <form @submit.prevent="share">
-          <input v-model="email" placeholder="Enter user's email" />
+          <BaseInput v-model="email" placeholder="Enter user's email" />
           <button type="submit">Share</button>
         </form>
       </div>

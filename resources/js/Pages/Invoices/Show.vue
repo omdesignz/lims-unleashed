@@ -218,7 +218,7 @@
 
           <!-- INVOICE ITEMS TABLE -->
           <div v-else class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-300">
+            <DataTable class="min-w-full divide-y divide-gray-300">
               <thead class="bg-gray-50">
                 <tr>
                   <th scope="col" class="py-3.5 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
@@ -401,7 +401,7 @@
                   </td>
                 </tr>
               </tfoot>
-            </table>
+            </DataTable>
           </div>
         </div>
 

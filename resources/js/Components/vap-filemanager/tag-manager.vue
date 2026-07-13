@@ -49,7 +49,7 @@
       </p>
       <div class="mt-4 flex flex-col gap-3 sm:flex-row">
         <div class="relative flex-1">
-          <input
+          <BaseInput
             v-model="newTag"
             type="text"
             @keydown.enter.prevent="addTag"

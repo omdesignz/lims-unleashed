@@ -203,22 +203,22 @@ watch(() => filterForm.status, applyFilters);
 
         <div class="space-y-6 px-5 py-5 sm:px-6">
           <div class="grid gap-4 sm:grid-cols-2">
-            <div><label for="condition_area" class="ds-field-label mb-2 block">Área</label><input id="condition_area" v-model="form.area" type="text" class="ds-field"><p v-if="form.errors.area" class="ds-field-error mt-2">{{ form.errors.area }}</p></div>
-            <div><label for="condition_location" class="ds-field-label mb-2 block">Localização</label><input id="condition_location" v-model="form.location" type="text" class="ds-field"><p v-if="form.errors.location" class="ds-field-error mt-2">{{ form.errors.location }}</p></div>
-            <div class="sm:col-span-2"><label for="recorded_at" class="ds-field-label mb-2 block">Data e hora</label><input id="recorded_at" v-model="form.recorded_at" type="datetime-local" class="ds-field"><p v-if="form.errors.recorded_at" class="ds-field-error mt-2">{{ form.errors.recorded_at }}</p></div>
+            <div><label for="condition_area" class="ds-field-label mb-2 block">Área</label><BaseInput id="condition_area" v-model="form.area" type="text" class="ds-field" /><p v-if="form.errors.area" class="ds-field-error mt-2">{{ form.errors.area }}</p></div>
+            <div><label for="condition_location" class="ds-field-label mb-2 block">Localização</label><BaseInput id="condition_location" v-model="form.location" type="text" class="ds-field" /><p v-if="form.errors.location" class="ds-field-error mt-2">{{ form.errors.location }}</p></div>
+            <div class="sm:col-span-2"><label for="recorded_at" class="ds-field-label mb-2 block">Data e hora</label><DateTimePicker id="recorded_at" v-model="form.recorded_at" type="datetime-local" class="ds-field" /><p v-if="form.errors.recorded_at" class="ds-field-error mt-2">{{ form.errors.recorded_at }}</p></div>
           </div>
 
           <fieldset>
             <legend class="ds-field-label">Leituras</legend>
             <div class="mt-3 grid gap-4 sm:grid-cols-2">
-              <div v-for="field in measurementFields" :key="field.key"><label :for="field.key" class="ds-field-label mb-2 block">{{ field.label }} ({{ field.unit }})</label><input :id="field.key" v-model.number="form[field.key]" type="number" step="0.01" class="ds-field"><p v-if="form.errors[field.key]" class="ds-field-error mt-2">{{ form.errors[field.key] }}</p></div>
+              <div v-for="field in measurementFields" :key="field.key"><label :for="field.key" class="ds-field-label mb-2 block">{{ field.label }} ({{ field.unit }})</label><BaseInput :id="field.key" v-model.number="form[field.key]" type="number" step="0.01" class="ds-field" /><p v-if="form.errors[field.key]" class="ds-field-error mt-2">{{ form.errors[field.key] }}</p></div>
             </div>
           </fieldset>
 
           <fieldset>
             <legend class="ds-field-label">Limites de controlo</legend>
             <div class="mt-3 grid gap-4 sm:grid-cols-2">
-              <div v-for="field in limitFields" :key="field.key"><label :for="field.key" class="ds-field-label mb-2 block">{{ field.label }} ({{ field.unit }})</label><input :id="field.key" v-model.number="form[field.key]" type="number" step="0.01" class="ds-field"><p v-if="form.errors[field.key]" class="ds-field-error mt-2">{{ form.errors[field.key] }}</p></div>
+              <div v-for="field in limitFields" :key="field.key"><label :for="field.key" class="ds-field-label mb-2 block">{{ field.label }} ({{ field.unit }})</label><BaseInput :id="field.key" v-model.number="form[field.key]" type="number" step="0.01" class="ds-field" /><p v-if="form.errors[field.key]" class="ds-field-error mt-2">{{ form.errors[field.key] }}</p></div>
             </div>
           </fieldset>
 
@@ -234,8 +234,8 @@ watch(() => filterForm.status, applyFilters);
       <div class="space-y-5" :class="{ 'xl:col-span-2': !canEditForm }">
         <section class="ds-command-surface px-5 py-4 sm:px-6">
           <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_14rem_auto] md:items-end">
-            <div><label for="condition_search" class="ds-field-label mb-2 block">Pesquisar</label><div class="relative"><MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--ds-text-soft)]" /><input id="condition_search" v-model="filterForm.search" type="search" class="ds-field pl-10" placeholder="Área, localização ou notas" @keyup.enter="applyFilters"></div></div>
-            <div><label for="condition_status" class="ds-field-label mb-2 block">Estado</label><select id="condition_status" v-model="filterForm.status" class="ds-field"><option value="">Todos</option><option value="within_limits">Dentro dos limites</option><option value="critical">Fora dos limites</option><option value="pending">Pendente</option></select></div>
+            <div><label for="condition_search" class="ds-field-label mb-2 block">Pesquisar</label><div class="relative"><MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--ds-text-soft)]" /><BaseInput id="condition_search" v-model="filterForm.search" type="search" class="ds-field pl-10" placeholder="Área, localização ou notas" @keyup.enter="applyFilters" /></div></div>
+            <div><label for="condition_status" class="ds-field-label mb-2 block">Estado</label><BaseSelect id="condition_status" v-model="filterForm.status" class="ds-field"><option value="">Todos</option><option value="within_limits">Dentro dos limites</option><option value="critical">Fora dos limites</option><option value="pending">Pendente</option></BaseSelect></div>
             <button type="button" class="ds-button ds-button-secondary" @click="applyFilters">Aplicar</button>
           </div>
         </section>

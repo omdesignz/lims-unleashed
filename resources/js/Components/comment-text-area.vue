@@ -36,7 +36,7 @@
                     <div class="mt-4 flex text-xs leading-6 text-gray-600 dark:text-slate-400">
                       <label for="files" class="relative cursor-pointer rounded-full bg-orange font-semibold text-black focus-within:outline-none focus-within:ring-2 focus-within:ring-orange focus-within:ring-offset-2 hover:text-white hover:bg-orange-600 px-2">
                         <span @click="files.click()">{{ $t('gestlab.general.labels.files.upload_file') }}</span>
-                        <input ref="files" @input="onSelectedFiles" type="file" name="files" multiple class="sr-only" />
+                        <FileInput ref="files" @input="onSelectedFiles" type="file" name="files" multiple class="sr-only" />
                       </label>
                       <p class="pl-1">{{ $t('gestlab.general.labels.files.or') }} {{ $t('gestlab.general.labels.files.drag_file') }}</p>
                     </div>

@@ -88,7 +88,7 @@
                     </dd>
                     <dd v-if="editPersonalInformation">
                       <div class="mt-1">
-                      <input v-model="PersonalDetailsForm.username" id="username" name="username" type="text" autocomplete="username" :class="[PersonalDetailsForm.errors.username ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
+                      <BaseInput v-model="PersonalDetailsForm.username" id="username" name="username" type="text" autocomplete="username" :class="[PersonalDetailsForm.errors.username ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
                       <p v-if="PersonalDetailsForm.errors.username" class="mt-2 text-sm text-red-600" id="username-error">{{ PersonalDetailsForm.errors.username }}</p>
                       </div>
                     </dd>
@@ -102,7 +102,7 @@
                     </dd>
                     <dd v-if="editPersonalInformation">
                       <div class="mt-1">
-                      <input v-model="PersonalDetailsForm.name" id="name" name="name" type="text" autocomplete="name" :class="[PersonalDetailsForm.errors.name ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
+                      <BaseInput v-model="PersonalDetailsForm.name" id="name" name="name" type="text" autocomplete="name" :class="[PersonalDetailsForm.errors.name ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
                       <p v-if="PersonalDetailsForm.errors.name" class="mt-2 text-sm text-red-600" id="name-error">{{ PersonalDetailsForm.errors.name }}</p>
                       </div>
                     </dd>
@@ -134,7 +134,7 @@
                     </dd>
                     <dd v-if="editPersonalInformation">
                       <div class="mt-1">
-                      <input v-model="PersonalDetailsForm.email" id="email" name="email" type="text" autocomplete="email" :class="[PersonalDetailsForm.errors.email ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
+                      <BaseInput v-model="PersonalDetailsForm.email" id="email" name="email" type="text" autocomplete="email" :class="[PersonalDetailsForm.errors.email ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
                       <p v-if="PersonalDetailsForm.errors.email" class="mt-2 text-sm text-red-600" id="email-error">{{ PersonalDetailsForm.errors.email }}</p>
                       </div>
                     </dd>
@@ -148,7 +148,7 @@
                     </dd>
                     <dd v-if="editPersonalInformation">
                       <div class="mt-1">
-                      <input v-model="PersonalDetailsForm.id_number" id="id_number" name="id_number" type="text" autocomplete="id_number" :class="[PersonalDetailsForm.errors.id_number ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
+                      <BaseInput v-model="PersonalDetailsForm.id_number" id="id_number" name="id_number" type="text" autocomplete="id_number" :class="[PersonalDetailsForm.errors.id_number ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
                       <p v-if="PersonalDetailsForm.errors.id_number" class="mt-2 text-sm text-red-600" id="id_number-error">{{ PersonalDetailsForm.errors.id_number }}</p>
                       </div>
                     </dd>
@@ -162,7 +162,7 @@
                     </dd>
                     <dd v-if="editPersonalInformation">
                       <div class="mt-1">
-                      <input v-model="PersonalDetailsForm.phone" id="phone" name="phone" type="text" autocomplete="phone" :class="[PersonalDetailsForm.errors.phone ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
+                      <BaseInput v-model="PersonalDetailsForm.phone" id="phone" name="phone" type="text" autocomplete="phone" :class="[PersonalDetailsForm.errors.phone ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
                       <p v-if="PersonalDetailsForm.errors.phone" class="mt-2 text-sm text-red-600" id="phone-error">{{ PersonalDetailsForm.errors.phone }}</p>
                       </div>
                     </dd>
@@ -176,7 +176,7 @@
                     </dd>
                     <dd v-if="editPersonalInformation">
                       <div class="mt-1">
-                      <input v-model="PersonalDetailsForm.alternate_phone" id="alternate_phone" name="alternate_phone" type="text" autocomplete="alternate_phone" :class="[PersonalDetailsForm.errors.alternate_phone ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
+                      <BaseInput v-model="PersonalDetailsForm.alternate_phone" id="alternate_phone" name="alternate_phone" type="text" autocomplete="alternate_phone" :class="[PersonalDetailsForm.errors.alternate_phone ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
                       <p v-if="PersonalDetailsForm.errors.alternate_phone" class="mt-2 text-sm text-red-600" id="alternate_phone-error">{{ PersonalDetailsForm.errors.alternate_phone }}</p>
                       </div>
                     </dd>

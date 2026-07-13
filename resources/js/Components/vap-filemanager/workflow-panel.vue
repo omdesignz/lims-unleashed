@@ -40,14 +40,14 @@
           <div class="grid gap-4 p-4">
             <label class="block text-sm">
               <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Etapa</span>
-              <select
+              <BaseSelect
                 v-model="newTask.type"
                 class="block w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
               >
                 <option value="review">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.review') }}</option>
                 <option value="approve">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.approve') }}</option>
                 <option value="publish">{{ $t('gestlab.general.labels.vap_filemanager.labels.workflow_tasks.publish') }}</option>
-              </select>
+              </BaseSelect>
             </label>
 
             <label class="block text-sm">
@@ -57,11 +57,10 @@
 
             <label class="block text-sm">
               <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Prazo</span>
-              <input
+              <DateTimePicker
                 type="date"
                 v-model="newTask.dueDate"
-                class="block w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-              />
+                class="block w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
             </label>
 
             <button

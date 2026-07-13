@@ -96,7 +96,7 @@ const loginWithPasskey = async () => {
       <form class="mt-7 space-y-5" @submit.prevent="submit">
         <div class="ds-field-group">
           <label for="email" class="ds-field-label">{{ $t('gestlab.pages.login.email_input_title') }}</label>
-          <input
+          <BaseInput
             id="email"
             v-model="form.email"
             name="email"
@@ -119,7 +119,7 @@ const loginWithPasskey = async () => {
             </Link>
           </div>
           <div class="relative">
-            <input
+            <BaseInput
               id="password"
               v-model="form.password"
               name="password"
@@ -144,7 +144,7 @@ const loginWithPasskey = async () => {
         </div>
 
         <label class="flex items-center gap-3 text-sm font-medium text-[var(--ds-text-muted)]">
-          <input v-model="form.remember" name="remember" type="checkbox" class="ds-checkbox" />
+          <CheckboxInput v-model="form.remember" name="remember" type="checkbox" class="ds-checkbox" />
           <span>{{ $t('gestlab.pages.login.remember_input_title') }}</span>
         </label>
 

@@ -99,7 +99,7 @@
           </div>
 
           <div v-if="itemRows.length" class="ds-table-shell overflow-x-auto">
-            <table class="min-w-[58rem]">
+            <DataTable class="min-w-[58rem]">
               <thead class="ds-table-head">
                 <tr>
                   <th class="ds-table-cell text-left">Item</th>
@@ -126,7 +126,7 @@
                   </td>
                 </tr>
               </tbody>
-            </table>
+            </DataTable>
           </div>
 
           <div v-else class="p-5">
@@ -146,7 +146,7 @@
             <BaseTextarea v-model="actionForm.approval_notes" rows="4" label="Notas" placeholder="Notas de aprovação, rejeição ou instruções para a compra." />
 
             <div v-if="canApprove" class="ds-table-shell overflow-x-auto">
-              <table class="min-w-[36rem]">
+              <DataTable class="min-w-[36rem]">
                 <thead class="ds-table-head">
                   <tr>
                     <th class="ds-table-cell text-left">Item</th>
@@ -161,7 +161,7 @@
                     </td>
                   </tr>
                 </tbody>
-              </table>
+              </DataTable>
             </div>
 
             <div v-if="canConvertToOrder" class="space-y-4">

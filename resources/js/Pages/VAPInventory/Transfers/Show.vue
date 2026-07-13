@@ -234,12 +234,12 @@
                     <div class="grid gap-4 sm:grid-cols-2">
                       <label class="ds-field-group">
                         <span class="ds-field-label">Data de receção <span class="ds-field-required">*</span></span>
-                        <input v-model="receiveForm.received_date" type="date" :max="maxDate" class="ds-field" required />
+                        <DateTimePicker v-model="receiveForm.received_date" type="date" :max="maxDate" class="ds-field" required />
                         <span v-if="receiveForm.errors.received_date" class="ds-field-error">{{ receiveForm.errors.received_date }}</span>
                       </label>
                       <label class="ds-field-group">
                         <span class="ds-field-label">Quantidade recebida <span class="ds-field-required">*</span></span>
-                        <input v-model="receiveForm.actual_qty" type="number" min="1" :max="transfer.qty" class="ds-field" required />
+                        <BaseInput v-model="receiveForm.actual_qty" type="number" min="1" :max="transfer.qty" class="ds-field" required />
                         <span class="ds-field-hint">Máximo previsto: {{ transfer.qty }}</span>
                         <span v-if="receiveForm.errors.actual_qty" class="ds-field-error">{{ receiveForm.errors.actual_qty }}</span>
                       </label>

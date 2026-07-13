@@ -6,7 +6,7 @@
         Equipment Maintenance History
       </h3>
       <div class="flex items-center gap-3">
-        <select
+        <BaseSelect
           v-model="timeRange"
           @change="onTimeRangeChange"
           class="text-sm rounded-lg border border-gray-300 px-3 py-1.5 focus:border-blue-900 focus:ring-blue-900"
@@ -15,7 +15,7 @@
           <option value="1year">Last Year</option>
           <option value="2years">Last 2 Years</option>
           <option value="all">All Time</option>
-        </select>
+        </BaseSelect>
       </div>
     </div>
     

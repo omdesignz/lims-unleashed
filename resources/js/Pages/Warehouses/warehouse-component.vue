@@ -162,34 +162,34 @@ function makePrimary() {
         <div class="grid gap-4 sm:grid-cols-2">
           <div class="ds-field-group">
             <label class="ds-field-label">Nome do local</label>
-            <input v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" />
+            <BaseInput v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" />
             <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
           </div>
           <div class="ds-field-group">
             <label class="ds-field-label">Codigo</label>
-            <input v-model="form.code" type="text" class="ds-field font-mono uppercase" :aria-invalid="Boolean(form.errors.code)" />
+            <BaseInput v-model="form.code" type="text" class="ds-field font-mono uppercase" :aria-invalid="Boolean(form.errors.code)" />
             <p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p>
           </div>
           <div class="ds-field-group sm:col-span-2">
             <label class="ds-field-label">Endereco <span class="ds-field-required">*</span></label>
-            <input v-model="form.address" type="text" class="ds-field" autocomplete="street-address" :aria-invalid="Boolean(form.errors.address)" />
+            <BaseInput v-model="form.address" type="text" class="ds-field" autocomplete="street-address" :aria-invalid="Boolean(form.errors.address)" />
             <p v-if="form.errors.address" class="ds-field-error">{{ form.errors.address }}</p>
           </div>
           <div class="ds-field-group">
             <label class="ds-field-label">Municipio</label>
-            <input v-model="form.municipality" type="text" class="ds-field" />
+            <BaseInput v-model="form.municipality" type="text" class="ds-field" />
           </div>
           <div class="ds-field-group">
             <label class="ds-field-label">Provincia</label>
-            <input v-model="form.province" type="text" class="ds-field" />
+            <BaseInput v-model="form.province" type="text" class="ds-field" />
           </div>
           <div class="ds-field-group">
             <label class="ds-field-label">NIF</label>
-            <input v-model="form.nif" type="text" class="ds-field font-mono" />
+            <BaseInput v-model="form.nif" type="text" class="ds-field font-mono" />
           </div>
           <div class="ds-field-group">
             <label class="ds-field-label">Descricao</label>
-            <input v-model="form.description" type="text" class="ds-field" />
+            <BaseInput v-model="form.description" type="text" class="ds-field" />
           </div>
         </div>
       </section>
@@ -205,24 +205,24 @@ function makePrimary() {
         <div class="grid gap-4 sm:grid-cols-2">
           <div class="ds-field-group">
             <label class="ds-field-label">Email operacional <span class="ds-field-required">*</span></label>
-            <input v-model="form.email" type="email" class="ds-field" autocomplete="email" :aria-invalid="Boolean(form.errors.email)" />
+            <BaseInput v-model="form.email" type="email" class="ds-field" autocomplete="email" :aria-invalid="Boolean(form.errors.email)" />
             <p v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</p>
           </div>
           <div class="ds-field-group">
             <label class="ds-field-label">Email de faturacao</label>
-            <input v-model="form.invoicing_email" type="email" class="ds-field" :aria-invalid="Boolean(form.errors.invoicing_email)" />
+            <BaseInput v-model="form.invoicing_email" type="email" class="ds-field" :aria-invalid="Boolean(form.errors.invoicing_email)" />
             <p v-if="form.errors.invoicing_email" class="ds-field-error">{{ form.errors.invoicing_email }}</p>
           </div>
           <div class="ds-field-group">
             <label class="ds-field-label">Telefone principal</label>
             <div class="relative">
               <PhoneIcon class="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--ds-text-soft)]" />
-              <input v-model="form.primary_phone" type="tel" class="ds-field pl-10" autocomplete="tel" />
+              <BaseInput v-model="form.primary_phone" type="tel" class="ds-field pl-10" autocomplete="tel" />
             </div>
           </div>
           <div class="ds-field-group">
             <label class="ds-field-label">Telefone alternativo</label>
-            <input v-model="form.alternative_phone" type="tel" class="ds-field" />
+            <BaseInput v-model="form.alternative_phone" type="tel" class="ds-field" />
           </div>
         </div>
       </section>
@@ -238,16 +238,16 @@ function makePrimary() {
         <div class="grid gap-4 sm:grid-cols-3">
           <div class="ds-field-group">
             <label class="ds-field-label">Nome</label>
-            <input v-model="form.focal_point" type="text" class="ds-field" />
+            <BaseInput v-model="form.focal_point" type="text" class="ds-field" />
           </div>
           <div class="ds-field-group">
             <label class="ds-field-label">Email</label>
-            <input v-model="form.focal_point_email" type="email" class="ds-field" :aria-invalid="Boolean(form.errors.focal_point_email)" />
+            <BaseInput v-model="form.focal_point_email" type="email" class="ds-field" :aria-invalid="Boolean(form.errors.focal_point_email)" />
             <p v-if="form.errors.focal_point_email" class="ds-field-error">{{ form.errors.focal_point_email }}</p>
           </div>
           <div class="ds-field-group">
             <label class="ds-field-label">Telefone</label>
-            <input v-model="form.focal_point_contact" type="tel" class="ds-field" />
+            <BaseInput v-model="form.focal_point_contact" type="tel" class="ds-field" />
           </div>
         </div>
       </section>

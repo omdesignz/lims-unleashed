@@ -123,7 +123,7 @@ function uploadFiles(files) {
                 <div class="mt-4 flex text-sm leading-6 text-gray-600">
                   <label for="files" class="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500">
                     <span @click="files.click()">{{ $t('gestlab.general.labels.files.upload_file') }}</span>
-                    <input ref="files" @input="onSelectedFiles" type="file" name="files" multiple class="sr-only" />
+                    <FileInput ref="files" @input="onSelectedFiles" type="file" name="files" multiple class="sr-only" />
                   </label>
                   <p class="pl-1">{{ $t('gestlab.general.labels.files.or') }} {{ $t('gestlab.general.labels.files.drag_file') }}</p>
                 </div>

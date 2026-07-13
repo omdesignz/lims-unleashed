@@ -336,6 +336,7 @@ function handleBulkAction(event) {
               v-model="department"
               :options="departments"
               :selected="department"
+              placeholder="Todos os departamentos"
               class="mt-1 w-full"
               @update:model-value="changeAnalysisDepartment"
             />

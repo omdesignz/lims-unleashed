@@ -283,7 +283,7 @@
         </div>
 
         <div v-if="samples.data.length" class="ds-table-shell overflow-x-auto">
-          <table class="min-w-[48rem]">
+          <DataTable class="min-w-[48rem]">
             <thead class="ds-table-head">
               <tr>
                 <th class="ds-table-cell text-left">Amostra</th>
@@ -320,7 +320,7 @@
                 <td class="ds-table-cell align-top text-xs text-[color:var(--ds-text)]">{{ formatDateTime(sample.received_at) }}</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
         <div v-else class="p-5">
           <div class="ds-empty-state p-6 text-center">
@@ -348,7 +348,7 @@
         </div>
 
         <div v-if="discards.data.length" class="ds-table-shell overflow-x-auto">
-          <table class="min-w-[42rem]">
+          <DataTable class="min-w-[42rem]">
             <thead class="ds-table-head">
               <tr>
                 <th class="ds-table-cell text-left">Amostra</th>
@@ -374,7 +374,7 @@
                 <td class="ds-table-cell align-top text-xs text-[color:var(--ds-text)]">{{ formatDateTime(discard.discarded_at) }}</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
         <div v-else class="p-5">
           <div class="ds-empty-state p-6 text-center">

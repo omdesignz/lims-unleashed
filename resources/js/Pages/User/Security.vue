@@ -59,7 +59,7 @@
                     Senha Actual
                     </label>
                     <div class="mt-1">
-                    <input v-model="UpdatePasswordForm.current_password" id="current_password" name="current_password" type="password" autocomplete="current_password" :class="[UpdatePasswordForm.errors.current_password ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
+                    <BaseInput v-model="UpdatePasswordForm.current_password" id="current_password" name="current_password" type="password" autocomplete="current_password" :class="[UpdatePasswordForm.errors.current_password ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
                     <p v-if="UpdatePasswordForm.errors.current_password" class="mt-2 text-sm text-red-600" id="email-error">{{ UpdatePasswordForm.errors.current_password }}</p>
                     </div>
                 </div>
@@ -69,7 +69,7 @@
                     Nova Senha
                     </label>
                     <div class="mt-1">
-                    <input v-model="UpdatePasswordForm.password" id="password" name="password" type="password" autocomplete="password" :class="[UpdatePasswordForm.errors.password ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
+                    <BaseInput v-model="UpdatePasswordForm.password" id="password" name="password" type="password" autocomplete="password" :class="[UpdatePasswordForm.errors.password ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
                     <p v-if="UpdatePasswordForm.errors.password" class="mt-2 text-sm text-red-600" id="email-error">{{ UpdatePasswordForm.errors.password }}</p>
                     </div>
                 </div>
@@ -79,7 +79,7 @@
                     Confirmar Senha
                     </label>
                     <div class="mt-1">
-                    <input v-model="UpdatePasswordForm.password_confirmation" id="password_confirmation" name="password_confirmation" type="password" autocomplete="password_confirmation" :class="[UpdatePasswordForm.errors.password_confirmation ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
+                    <BaseInput v-model="UpdatePasswordForm.password_confirmation" id="password_confirmation" name="password_confirmation" type="password" autocomplete="password_confirmation" :class="[UpdatePasswordForm.errors.password_confirmation ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
                     <p v-if="UpdatePasswordForm.errors.password_confirmation" class="mt-2 text-sm text-red-600" id="email-error">{{ UpdatePasswordForm.errors.password_confirmation }}</p>
                     </div>
                 </div>

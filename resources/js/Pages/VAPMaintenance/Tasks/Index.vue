@@ -54,12 +54,12 @@
             <TagIcon class="mr-1 inline h-4 w-4" />
             Categoria
           </span>
-          <select v-model="filters.category_id" class="ds-field" @change="applyFilters">
+          <BaseSelect v-model="filters.category_id" class="ds-field" @change="applyFilters">
             <option value="">Todas as categorias</option>
             <option v-for="category in categories" :key="category.id" :value="category.id">
               {{ category.name }}
             </option>
-          </select>
+          </BaseSelect>
         </label>
 
         <label class="ds-field-group">
@@ -67,12 +67,12 @@
             <CogIcon class="mr-1 inline h-4 w-4" />
             Equipamento
           </span>
-          <select v-model="filters.equipment_id" class="ds-field" @change="applyFilters">
+          <BaseSelect v-model="filters.equipment_id" class="ds-field" @change="applyFilters">
             <option value="">Todos os equipamentos</option>
             <option v-for="equipmentItem in equipment" :key="equipmentItem.id" :value="equipmentItem.id">
               {{ equipmentItem.name }} ({{ equipmentItem.internal_code || 'N/A' }})
             </option>
-          </select>
+          </BaseSelect>
         </label>
 
         <label class="ds-field-group">
@@ -80,12 +80,12 @@
             <CheckCircleIcon class="mr-1 inline h-4 w-4" />
             Estado
           </span>
-          <select v-model="filters.status" class="ds-field" @change="applyFilters">
+          <BaseSelect v-model="filters.status" class="ds-field" @change="applyFilters">
             <option value="">Todos os estados</option>
             <option value="overdue">Atrasadas</option>
             <option value="executed">Executadas</option>
             <option value="planned">Planeadas</option>
-          </select>
+          </BaseSelect>
         </label>
 
         <div class="ds-field-group">
@@ -94,20 +94,18 @@
             Período
           </span>
           <div class="grid grid-cols-2 gap-2">
-            <input
+            <DateTimePicker
               v-model="filters.date_from"
               type="date"
               class="ds-field"
               placeholder="De"
-              @change="applyFilters"
-            />
-            <input
+              @change="applyFilters" />
+            <DateTimePicker
               v-model="filters.date_to"
               type="date"
               class="ds-field"
               placeholder="Até"
-              @change="applyFilters"
-            />
+              @change="applyFilters" />
           </div>
         </div>
       </div>
@@ -139,12 +137,12 @@
               <TruckIcon class="mr-1 inline h-4 w-4" />
               Fornecedor
             </span>
-            <select v-model="filters.supplier_id" class="ds-field" @change="applyFilters">
+            <BaseSelect v-model="filters.supplier_id" class="ds-field" @change="applyFilters">
               <option value="">Todos os fornecedores</option>
               <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">
                 {{ supplier.name }}
               </option>
-            </select>
+            </BaseSelect>
           </label>
 
           <div class="ds-field-group">
@@ -153,7 +151,7 @@
               Custo
             </span>
             <div class="grid grid-cols-2 gap-2">
-              <input
+              <BaseInput
                 v-model="filters.cost_min"
                 type="number"
                 step="0.01"
@@ -162,7 +160,7 @@
                 placeholder="Mín"
                 @change="applyFilters"
               />
-              <input
+              <BaseInput
                 v-model="filters.cost_max"
                 type="number"
                 step="0.01"
@@ -179,12 +177,12 @@
               <ArrowsUpDownIcon class="mr-1 inline h-4 w-4" />
               Ordenar por
             </span>
-            <select v-model="filters.sort_by" class="ds-field" @change="applyFilters">
+            <BaseSelect v-model="filters.sort_by" class="ds-field" @change="applyFilters">
               <option value="due_date">Data de vencimento</option>
               <option value="created_at">Data de criação</option>
               <option value="name">Nome da tarefa</option>
               <option value="cost">Custo</option>
-            </select>
+            </BaseSelect>
           </label>
         </div>
       </div>
@@ -203,12 +201,12 @@
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <select v-model="bulkAction" class="ds-field min-w-60">
+          <BaseSelect v-model="bulkAction" class="ds-field min-w-60">
             <option value="">Seleccionar acção</option>
             <option value="mark_executed">Marcar como executadas</option>
             <option value="reschedule">Reagendar</option>
             <option value="delete">Eliminar</option>
-          </select>
+          </BaseSelect>
           <button type="button" class="ds-button ds-button-primary" :disabled="!bulkAction" @click="executeBulkAction">
             <PlayIcon class="h-4 w-4" />
             Aplicar
@@ -249,7 +247,7 @@
         >
           <div class="flex items-start justify-between gap-3">
             <label class="flex min-w-0 items-start gap-3">
-              <input
+              <CheckboxInput
                 type="checkbox"
                 :checked="selectedTaskIds.includes(task.id)"
                 class="ds-checkbox mt-1 shrink-0"
@@ -302,11 +300,11 @@
       </div>
 
       <div v-if="taskItems.length > 0" class="hidden overflow-x-auto md:block">
-        <table class="min-w-full align-middle text-sm">
+        <DataTable class="min-w-full align-middle text-sm">
           <thead class="ds-table-head">
             <tr>
               <th class="w-12 px-5 py-3">
-                <input
+                <CheckboxInput
                   type="checkbox"
                   :checked="allTasksSelected"
                   class="ds-checkbox"
@@ -331,7 +329,7 @@
               ]"
             >
               <td class="px-5 py-4">
-                <input
+                <CheckboxInput
                   type="checkbox"
                   :checked="selectedTaskIds.includes(task.id)"
                   class="ds-checkbox"
@@ -438,7 +436,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div v-if="taskItems.length === 0" class="p-6">
@@ -551,24 +549,24 @@
             <span class="ds-field-label">Campos incluídos</span>
             <div class="space-y-3">
               <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
-                <input v-model="exportFields" type="checkbox" value="all" class="ds-checkbox" />
+                <CheckboxInput v-model="exportFields" type="checkbox" value="all" class="ds-checkbox" />
                 Todos os campos
               </label>
               <div class="grid gap-2 sm:grid-cols-2">
                 <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
-                  <input v-model="exportFields" type="checkbox" value="equipment" class="ds-checkbox" />
+                  <CheckboxInput v-model="exportFields" type="checkbox" value="equipment" class="ds-checkbox" />
                   Equipamento
                 </label>
                 <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
-                  <input v-model="exportFields" type="checkbox" value="dates" class="ds-checkbox" />
+                  <CheckboxInput v-model="exportFields" type="checkbox" value="dates" class="ds-checkbox" />
                   Datas
                 </label>
                 <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
-                  <input v-model="exportFields" type="checkbox" value="cost" class="ds-checkbox" />
+                  <CheckboxInput v-model="exportFields" type="checkbox" value="cost" class="ds-checkbox" />
                   Custo
                 </label>
                 <label class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
-                  <input v-model="exportFields" type="checkbox" value="supplier" class="ds-checkbox" />
+                  <CheckboxInput v-model="exportFields" type="checkbox" value="supplier" class="ds-checkbox" />
                   Fornecedor
                 </label>
               </div>
@@ -599,17 +597,16 @@
         <div class="mt-6 space-y-6">
           <label class="ds-field-group">
             <span class="ds-field-label">Nova data de vencimento</span>
-            <input
+            <DateTimePicker
               v-model="rescheduleDate"
               type="date"
               :min="new Date().toISOString().split('T')[0]"
-              class="ds-field"
-            />
+              class="ds-field" />
           </label>
 
           <div class="ds-command-toolbar p-4">
             <label class="flex items-start gap-3">
-              <input v-model="sendRescheduleNotification" type="checkbox" class="ds-checkbox mt-1" />
+              <CheckboxInput v-model="sendRescheduleNotification" type="checkbox" class="ds-checkbox mt-1" />
               <span>
                 <span class="block text-sm font-bold text-[var(--ds-text)]">Enviar notificação aos responsáveis</span>
                 <span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">

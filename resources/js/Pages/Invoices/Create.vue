@@ -6,9 +6,9 @@ import { ref, computed, reactive, watch } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue';
 import {throttle} from "lodash";
-import { 
-  TrashIcon, 
-  PlusCircleIcon, 
+import {
+  TrashIcon,
+  PlusCircleIcon,
   ClipboardDocumentCheckIcon,
   ChevronUpIcon,
   CurrencyEuroIcon,
@@ -60,7 +60,7 @@ const form = useForm({
 
 watch(() => [form.customer_id.value], (currentValue, oldValue) => {
     if (!form.customer_id?.value) return;
-    
+
     loadingWarehouses.value = true;
     fetch('/warehouses/getWarehouse?q=' + '&customer_id=' + form.customer_id?.value)
     .then(response => response.json())
@@ -144,7 +144,7 @@ function loadCustomers(query, setOptions) {
         }))
         );
     });
-} 
+}
 
 let loadWarehouses = (query, setOptions) => {
     fetch('/warehouses/getWarehouse?q=' + query + '&customer_id=' + form.customer_id?.value)
@@ -249,7 +249,7 @@ function loadLabCodes(query, setOptions) {
 }
 
 function loadParametersBasedOnLabCode(code_id) {
-    fetch('/labcodes/getCodeParameters?code_id=' + code_id + '&use_matrix_price=' + form.use_matrix_price) 
+    fetch('/labcodes/getCodeParameters?code_id=' + code_id + '&use_matrix_price=' + form.use_matrix_price)
     .then(response => response.json())
     .then(results => {
         form.items = results;
@@ -443,9 +443,9 @@ const onSelectedItem = (item) => {
                         <label class="ds-field-label">
                             {{ $t('gestlab.general.labels.invoices.type_id') }}
                         </label>
-                        <comboboxEnhanced 
-                            :hasError="form.errors.type_id" 
-                            v-model="form.type_id" 
+                        <comboboxEnhanced
+                            :hasError="form.errors.type_id"
+                            v-model="form.type_id"
                             :load-options="loadInvoiceCategories"
                             :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_type')"
                         />
@@ -460,9 +460,9 @@ const onSelectedItem = (item) => {
                             <UserIcon class="h-4 w-4" />
                             {{ $t('gestlab.general.labels.invoices.customer_id') }}
                         </label>
-                        <comboboxEnhanced 
-                            :hasError="form.errors.customer_id" 
-                            v-model="form.customer_id" 
+                        <comboboxEnhanced
+                            :hasError="form.errors.customer_id"
+                            v-model="form.customer_id"
                             :load-options="loadCustomers"
                             :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_customer')"
                         />
@@ -477,11 +477,11 @@ const onSelectedItem = (item) => {
                             <BuildingOfficeIcon class="h-4 w-4" />
                             {{ $t('gestlab.general.labels.invoices.warehouse_id') }}
                         </label>
-                        <comboboxEnhanced 
+                        <comboboxEnhanced
                             :disableInput="!form.customer_id || loadingWarehouses"
                             :loading="loadingWarehouses"
-                            :hasError="form.errors.warehouse_id" 
-                            v-model="form.warehouse_id" 
+                            :hasError="form.errors.warehouse_id"
+                            v-model="form.warehouse_id"
                             :load-options="loadWarehouses"
                             :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_warehouse')"
                         />
@@ -495,9 +495,9 @@ const onSelectedItem = (item) => {
                         <label class="ds-field-label">
                             {{ $t('gestlab.general.labels.invoices.internal_ref') }}
                         </label>
-                        <input 
-                            v-model="form.internal_ref" 
-                            type="text" 
+                        <BaseInput
+                            v-model="form.internal_ref"
+                            type="text"
                             class="ds-field"
                             :placeholder="$t('gestlab.general.labels.invoices.placeholders.enter_reference')"
                         />
@@ -514,10 +514,10 @@ const onSelectedItem = (item) => {
                             <label class="ds-field-label">
                                 {{ $t('gestlab.general.labels.invoices.labcode_id') }}
                             </label>
-                            <comboboxEnhanced 
-                                :hasError="form.errors.labcode_id" 
-                                v-model="labcode_id" 
-                                :load-options="loadLabCodes" 
+                            <comboboxEnhanced
+                                :hasError="form.errors.labcode_id"
+                                v-model="labcode_id"
+                                :load-options="loadLabCodes"
                                 @update:model-value="(e) => form.labcode_id = e.value"
                                 :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_lab_code')"
                             />
@@ -532,8 +532,8 @@ const onSelectedItem = (item) => {
                                     <span class="text-sm font-medium text-gray-700">
                                         {{ $t('gestlab.general.labels.invoices.assign_to_collection') }}
                                     </span>
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         @click="form.assign_lab_code = !form.assign_lab_code"
                                         :class="[
                                         'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)]',
@@ -543,7 +543,7 @@ const onSelectedItem = (item) => {
                                         role="switch"
                                     >
                                         <span class="sr-only">{{ $t('gestlab.general.labels.invoices.assign_to_collection') }}</span>
-                                        <span 
+                                        <span
                                             :class="[
                                                 'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
                                                 form.assign_lab_code ? 'translate-x-5' : 'translate-x-0'
@@ -551,22 +551,22 @@ const onSelectedItem = (item) => {
                                         />
                                     </button>
                                 </div>
-                                
-                                <button 
-                                    v-if="labcode_id && !form.items.length" 
+
+                                <button
+                                    v-if="labcode_id && !form.items.length"
                                     @click="loadProductsBasedOnLabCode(labcode_id?.value)"
                                     class="ds-button ds-button-primary px-4 py-2 text-sm"
                                 >
                                     <BeakerIcon class="h-4 w-4" />
                                     {{ $t('gestlab.general.labels.invoices.assign_lab_code') }}
                                 </button>
-                                
+
                             </div>
                         </div>
 
                         <div class="md:colspan-2">
-                            <button 
-                                    v-if="form.warehouse_id && !form.items.length" 
+                            <button
+                                    v-if="form.warehouse_id && !form.items.length"
                                     @click="loadUninvoiceProductsByWarehouse(form.warehouse_id?.value)"
                                     class="ds-button ds-button-primary px-4 py-2 text-sm"
                                 >
@@ -591,8 +591,8 @@ const onSelectedItem = (item) => {
                                 </p>
                             </div>
                         </div>
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             @click="form.use_matrix_price = !form.use_matrix_price"
                             :class="[
                                 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)]',
@@ -602,7 +602,7 @@ const onSelectedItem = (item) => {
                             role="switch"
                         >
                             <span class="sr-only">{{ $t('gestlab.general.labels.invoices.invoice_by_matrix') }}</span>
-                            <span 
+                            <span
                                 :class="[
                                     'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
                                     form.use_matrix_price ? 'translate-x-5' : 'translate-x-0'
@@ -625,8 +625,8 @@ const onSelectedItem = (item) => {
                             ({{ form.items.length }} {{ $t('gestlab.general.labels.invoices.items') }})
                         </span>
                     </h2>
-                    <button 
-                        @click="addItem" 
+                    <button
+                        @click="addItem"
                         type="button"
                         class="ds-button ds-button-primary px-4 py-2.5 text-sm"
                     >
@@ -647,8 +647,8 @@ const onSelectedItem = (item) => {
                 <p class="mt-2 text-sm text-gray-500">
                     {{ $t('gestlab.general.buttons.add_first_item') }}
                 </p>
-                <button 
-                    @click="addItem" 
+                <button
+                    @click="addItem"
                     type="button"
                     class="ds-button ds-button-primary mt-6 px-4 py-2.5 text-sm"
                 >
@@ -659,7 +659,7 @@ const onSelectedItem = (item) => {
 
             <!-- Invoice Items Table -->
             <div v-else class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-300">
+                <DataTable class="min-w-full divide-y divide-gray-300">
                     <thead class="bg-gray-50">
                         <tr>
                             <th scope="col" class="py-3.5 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
@@ -691,34 +691,34 @@ const onSelectedItem = (item) => {
                             <!-- Item Selection -->
                             <td class="whitespace-nowrap py-4 pl-6 pr-3 text-sm">
                                 <div class="space-y-2">
-                                    <!-- <comboboxEnhanced 
-                                        v-if="form?.use_matrix_price" 
-                                        v-model="item.item.item_id" 
-                                        :load-options="loadMatrixes" 
+                                    <!-- <comboboxEnhanced
+                                        v-if="form?.use_matrix_price"
+                                        v-model="item.item.item_id"
+                                        :load-options="loadMatrixes"
                                         @update:model-value="onSelectedItem(item)"
                                         :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_matrix')"
                                         class="min-w-[250px]"
                                     /> -->
 
-                                    <comboboxEnhanced  
-                                        v-model="item.item.item_id" 
-                                        :load-options="loadProducts" 
+                                    <comboboxEnhanced
+                                        v-model="item.item.item_id"
+                                        :load-options="loadProducts"
                                         @update:model-value="onSelectedItem(item)"
                                         :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_product')"
                                         class="min-w-[250px]"
                                     />
 
-                                    <!-- <comboboxEnhanced 
-                                        v-else 
-                                        v-model="item.item.item_id" 
-                                        :load-options="loadParameters" 
+                                    <!-- <comboboxEnhanced
+                                        v-else
+                                        v-model="item.item.item_id"
+                                        :load-options="loadParameters"
                                         @update:model-value="onSelectedItem(item)"
                                         :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_parameter')"
                                         class="min-w-[250px]"
                                     /> -->
-                                    <textarea 
-                                        v-model="item.item.obs" 
-                                        :placeholder="$t('gestlab.general.labels.invoices.obs')" 
+                                    <textarea
+                                        v-model="item.item.obs"
+                                        :placeholder="$t('gestlab.general.labels.invoices.obs')"
                                         rows="1"
                                         class="ds-field min-h-16 resize-none py-2 text-sm"
                                     />
@@ -728,15 +728,15 @@ const onSelectedItem = (item) => {
                             <!-- Quantity & Unit -->
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                 <div class="space-y-2">
-                                    <input 
-                                        v-model="item.item.qty" 
-                                        type="number" 
+                                    <BaseInput
+                                        v-model="item.item.qty"
+                                        type="number"
                                         step="1"
                                         min="0"
                                         class="ds-field w-20 text-center"
                                     />
-                                    <comboboxEnhanced 
-                                        v-model="item.item.unit_id" 
+                                    <comboboxEnhanced
+                                        v-model="item.item.unit_id"
                                         :load-options="loadUnits"
                                         :placeholder="$t('gestlab.general.labels.invoices.placeholders.unit')"
                                         class="w-32"
@@ -750,9 +750,9 @@ const onSelectedItem = (item) => {
                                     <!-- <CurrencyEuroIcon class="h-4 w-4 text-gray-400" /> -->
                                     <p class="text-gray-400 mr-2">AOA</p>
 
-                                    <input 
-                                        v-model="item.unit_price" 
-                                        type="number" 
+                                    <BaseInput
+                                        v-model="item.unit_price"
+                                        type="number"
                                         step="0.01"
                                         min="0"
                                         class="ds-field w-32 text-right"
@@ -763,24 +763,24 @@ const onSelectedItem = (item) => {
                             <!-- Discount -->
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900 text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    <input 
-                                        v-model="item.item.discount_amount" 
+                                    <BaseInput
+                                        v-model="item.item.discount_amount"
                                         type="number"
                                         min="0"
                                         class="ds-field w-24 text-right"
                                     />
-                                    <select 
-                                        v-model="item.item.discount_id" 
+                                    <BaseSelect
+                                        v-model="item.item.discount_id"
                                         class="ds-field px-2 py-1.5 text-sm"
                                     >
-                                        <option 
-                                            v-for="(type, typeIndex) in props.discount_categories" 
-                                            :key="typeIndex" 
+                                        <option
+                                            v-for="(type, typeIndex) in props.discount_categories"
+                                            :key="typeIndex"
                                             :value="type.value"
                                         >
                                             {{ type.label }}
                                         </option>
-                                    </select>
+                                    </BaseSelect>
                                 </div>
                             </td>
 
@@ -795,7 +795,7 @@ const onSelectedItem = (item) => {
 
                             <!-- Actions -->
                             <td class="whitespace-nowrap py-4 pl-3 pr-6 text-right text-sm font-medium">
-                                <button 
+                                <button
                                     @click="removeItem(index)"
                                     type="button"
                                     class="ds-table-action-danger"
@@ -862,7 +862,7 @@ const onSelectedItem = (item) => {
                             <td></td>
                         </tr>
                     </tfoot>
-                </table>
+                </DataTable>
             </div>
         </div>
 
@@ -873,8 +873,8 @@ const onSelectedItem = (item) => {
                     <InformationCircleIcon class="h-4 w-4" />
                     {{ $t('gestlab.general.labels.invoices.obs') }}
                 </label>
-                <textarea 
-                    v-model="form.obs" 
+                <textarea
+                    v-model="form.obs"
                     rows="3"
                     class="ds-field min-h-28 py-3"
                     :placeholder="$t('gestlab.general.labels.invoices.placeholders.observations')"
@@ -901,8 +901,8 @@ const onSelectedItem = (item) => {
                 </div>
             </div>
             <div class="flex items-center gap-4">
-                <button 
-                    type="button" 
+                <button
+                    type="button"
                     @click="showDeleteConfirmation = true"
                     :disabled="form.processing || form.items.length === 0"
                     :class="[
@@ -920,15 +920,15 @@ const onSelectedItem = (item) => {
     </div>
 
     <!-- Confirmation Dialog -->
-    <confirm-dialog 
-        size="sm:max-w-2xl" 
-        alignment="sm:items-start" 
-        @canceled="showDeleteConfirmation=false" 
-        @close="showDeleteConfirmation=false" 
-        @confirmed="submit" 
-        v-if="showDeleteConfirmation" 
-        :title="$t('gestlab.actions.confirmation_dialog_title.default')" 
-        :description="$t('gestlab.actions.confirmation_dialog_description.default')" 
+    <confirm-dialog
+        size="sm:max-w-2xl"
+        alignment="sm:items-start"
+        @canceled="showDeleteConfirmation=false"
+        @close="showDeleteConfirmation=false"
+        @confirmed="submit"
+        v-if="showDeleteConfirmation"
+        :title="$t('gestlab.actions.confirmation_dialog_title.default')"
+        :description="$t('gestlab.actions.confirmation_dialog_description.default')"
         :confirm="$t('gestlab.general.buttons.yes')"
         :cancel="$t('gestlab.general.buttons.no')"
     >
@@ -937,7 +937,7 @@ const onSelectedItem = (item) => {
                 <InformationCircleIcon class="h-3 w-3" />
                 {{ $t('gestlab.general.labels.summary') }}
             </div>
-            
+
             <div class="mt-4">
       <div class="font-semibold inline-flex px-2 py-1 leading-4 text-xs rounded-full text-white bg-blue-900 sm:text-xs mb-2"><p class="text-xs">{{ $t('gestlab.general.labels.summary') }}</p></div>
       <div>
@@ -960,7 +960,7 @@ const onSelectedItem = (item) => {
                 <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">{{ form.internal_ref }}</dd>
                 </div>
                 <div class="px-4 py-6 sm:grid sm:grid-cols-1 sm:gap-4 sm:px-0">
-                
+
                 <div class="w-full pt-2">
                     <div class="mx-auto w-full rounded-2xl bg-white">
                     <Disclosure v-slot="{ open }" v-for="(product, index) in itemsWithSubTotal" :key="index" v-if="itemsWithSubTotal.length">

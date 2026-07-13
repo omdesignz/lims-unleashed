@@ -62,37 +62,37 @@
       <div class="grid gap-x-6 gap-y-5 px-5 py-5 sm:grid-cols-2 sm:px-6 xl:grid-cols-3">
         <div class="ds-field-group">
           <label for="user-username" class="ds-field-label">Nome de utilizador</label>
-          <input v-if="editUserInfo" id="user-username" v-model="form.username" type="text" class="ds-field" autocomplete="username" :aria-invalid="Boolean(form.errors.username)">
+          <BaseInput v-if="editUserInfo" id="user-username" v-model="form.username" type="text" class="ds-field" autocomplete="username" :aria-invalid="Boolean(form.errors.username)" />
           <p v-else class="min-h-10 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm font-semibold text-[var(--ds-text)]">{{ displayValue(form.username) }}</p>
           <p v-if="form.errors.username" class="ds-field-error">{{ form.errors.username }}</p>
         </div>
 
         <div class="ds-field-group">
           <label for="user-name" class="ds-field-label">Nome completo</label>
-          <input v-if="editUserInfo" id="user-name" v-model="form.name" type="text" class="ds-field" autocomplete="name" :aria-invalid="Boolean(form.errors.name)">
+          <BaseInput v-if="editUserInfo" id="user-name" v-model="form.name" type="text" class="ds-field" autocomplete="name" :aria-invalid="Boolean(form.errors.name)" />
           <p v-else class="min-h-10 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm font-semibold text-[var(--ds-text)]">{{ displayValue(form.name) }}</p>
           <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
         </div>
 
         <div class="ds-field-group">
           <label for="user-gender" class="ds-field-label">Género</label>
-          <select v-if="editUserInfo" id="user-gender" v-model="form.gender" class="ds-field" :aria-invalid="Boolean(form.errors.gender)">
+          <BaseSelect v-if="editUserInfo" id="user-gender" v-model="form.gender" class="ds-field" :aria-invalid="Boolean(form.errors.gender)">
             <option v-for="option in genderOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-          </select>
+          </BaseSelect>
           <p v-else class="min-h-10 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm font-semibold text-[var(--ds-text)]">{{ genderLabel }}</p>
           <p v-if="form.errors.gender" class="ds-field-error">{{ form.errors.gender }}</p>
         </div>
 
         <div class="ds-field-group">
           <label for="user-email" class="ds-field-label">Email</label>
-          <input v-if="editUserInfo" id="user-email" v-model="form.email" type="email" class="ds-field" autocomplete="email" :aria-invalid="Boolean(form.errors.email)">
+          <BaseInput v-if="editUserInfo" id="user-email" v-model="form.email" type="email" class="ds-field" autocomplete="email" :aria-invalid="Boolean(form.errors.email)" />
           <p v-else class="min-h-10 break-all rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm font-semibold text-[var(--ds-text)]">{{ displayValue(form.email) }}</p>
           <p v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</p>
         </div>
 
         <div class="ds-field-group">
           <label for="user-id-number" class="ds-field-label">Documento de identificação</label>
-          <input v-if="editUserInfo" id="user-id-number" v-model="form.id_number" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.id_number)">
+          <BaseInput v-if="editUserInfo" id="user-id-number" v-model="form.id_number" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.id_number)" />
           <p v-else class="min-h-10 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 font-mono text-sm font-semibold text-[var(--ds-text)]">{{ displayValue(form.id_number) }}</p>
           <p v-if="form.errors.id_number" class="ds-field-error">{{ form.errors.id_number }}</p>
         </div>
@@ -106,14 +106,14 @@
 
         <div class="ds-field-group">
           <label for="user-primary-phone" class="ds-field-label">Telefone principal</label>
-          <input v-if="editUserInfo" id="user-primary-phone" v-model="form.primary_phone" type="tel" class="ds-field" autocomplete="tel" :aria-invalid="Boolean(form.errors.primary_phone)">
+          <BaseInput v-if="editUserInfo" id="user-primary-phone" v-model="form.primary_phone" type="tel" class="ds-field" autocomplete="tel" :aria-invalid="Boolean(form.errors.primary_phone)" />
           <p v-else class="min-h-10 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm font-semibold text-[var(--ds-text)]">{{ displayValue(form.primary_phone) }}</p>
           <p v-if="form.errors.primary_phone" class="ds-field-error">{{ form.errors.primary_phone }}</p>
         </div>
 
         <div class="ds-field-group">
           <label for="user-secondary-phone" class="ds-field-label">Telefone alternativo</label>
-          <input v-if="editUserInfo" id="user-secondary-phone" v-model="form.secondary_phone" type="tel" class="ds-field" :aria-invalid="Boolean(form.errors.secondary_phone)">
+          <BaseInput v-if="editUserInfo" id="user-secondary-phone" v-model="form.secondary_phone" type="tel" class="ds-field" :aria-invalid="Boolean(form.errors.secondary_phone)" />
           <p v-else class="min-h-10 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm font-semibold text-[var(--ds-text)]">{{ displayValue(form.secondary_phone) }}</p>
           <p v-if="form.errors.secondary_phone" class="ds-field-error">{{ form.errors.secondary_phone }}</p>
         </div>
@@ -173,7 +173,7 @@
             <label class="relative block">
               <span class="sr-only">Pesquisar permissões</span>
               <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-              <input v-model="permissionQuery" type="search" class="ds-field pl-9" placeholder="Pesquisar permissões">
+              <BaseInput v-model="permissionQuery" type="search" class="ds-field pl-9" placeholder="Pesquisar permissões" />
             </label>
 
             <div v-if="filteredPermissions.length" class="mt-3 grid max-h-80 overflow-y-auto rounded-lg border border-[var(--ds-border)] sm:grid-cols-2">
@@ -182,7 +182,7 @@
                 :key="permission.value"
                 class="flex cursor-pointer items-start gap-3 border-b border-[var(--ds-border)] px-3 py-3 transition-colors hover:bg-[var(--ds-panel-subtle)] sm:[&:nth-child(odd)]:border-r"
               >
-                <input type="checkbox" class="ds-checkbox mt-0.5" :checked="isPermissionSelected(permission)" @change="togglePermission(permission)">
+                <CheckboxInput type="checkbox" class="ds-checkbox mt-0.5" :checked="isPermissionSelected(permission)" @change="togglePermission(permission)" />
                 <span class="min-w-0 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ permission.label }}</span>
               </label>
             </div>
@@ -257,7 +257,7 @@
           <div v-if="editUserInfo" class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <div class="ds-field-group">
               <label :for="`qualification-capability-${index}`" class="ds-field-label">Capacidade ou ensaio <span class="ds-field-required">*</span></label>
-              <input :id="`qualification-capability-${index}`" v-model="qualification.capability" type="text" class="ds-field" placeholder="Ex.: Verificação de resultados">
+              <BaseInput :id="`qualification-capability-${index}`" v-model="qualification.capability" type="text" class="ds-field" placeholder="Ex.: Verificação de resultados" />
               <p v-if="form.errors[`personnel_qualifications.${qualificationIndex(qualification)}.capability`]" class="ds-field-error">{{ form.errors[`personnel_qualifications.${qualificationIndex(qualification)}.capability`] }}</p>
             </div>
             <div class="ds-field-group">
@@ -266,20 +266,20 @@
             </div>
             <div class="ds-field-group">
               <label :for="`qualification-reference-${index}`" class="ds-field-label">Referência da formação ou certificado</label>
-              <input :id="`qualification-reference-${index}`" v-model="qualification.training_reference" type="text" class="ds-field" placeholder="Ex.: CERT-2026-014">
+              <BaseInput :id="`qualification-reference-${index}`" v-model="qualification.training_reference" type="text" class="ds-field" placeholder="Ex.: CERT-2026-014" />
             </div>
             <div class="ds-field-group">
               <label :for="`qualification-from-${index}`" class="ds-field-label">Autorizada desde</label>
-              <input :id="`qualification-from-${index}`" v-model="qualification.authorized_from" type="date" class="ds-field">
+              <DateTimePicker :id="`qualification-from-${index}`" v-model="qualification.authorized_from" type="date" class="ds-field" />
             </div>
             <div class="ds-field-group">
               <label :for="`qualification-until-${index}`" class="ds-field-label">Autorizada até</label>
-              <input :id="`qualification-until-${index}`" v-model="qualification.authorized_until" type="date" class="ds-field">
+              <DateTimePicker :id="`qualification-until-${index}`" v-model="qualification.authorized_until" type="date" class="ds-field" />
               <p v-if="form.errors[`personnel_qualifications.${qualificationIndex(qualification)}.authorized_until`]" class="ds-field-error">{{ form.errors[`personnel_qualifications.${qualificationIndex(qualification)}.authorized_until`] }}</p>
             </div>
             <div class="ds-field-group">
               <label :for="`qualification-training-${index}`" class="ds-field-label">Formação concluída em</label>
-              <input :id="`qualification-training-${index}`" v-model="qualification.training_completed_at" type="date" class="ds-field">
+              <DateTimePicker :id="`qualification-training-${index}`" v-model="qualification.training_completed_at" type="date" class="ds-field" />
             </div>
             <ToggleField
               :id="`qualification-active-${index}`"
@@ -320,12 +320,12 @@
       <div class="grid gap-5 px-5 py-5 sm:grid-cols-2 sm:px-6">
         <div class="ds-field-group">
           <label for="user-password" class="ds-field-label">Nova palavra-passe</label>
-          <input id="user-password" v-model="passwordForm.password" type="password" class="ds-field" autocomplete="new-password" :aria-invalid="Boolean(passwordForm.errors.password)">
+          <BaseInput id="user-password" v-model="passwordForm.password" type="password" class="ds-field" autocomplete="new-password" :aria-invalid="Boolean(passwordForm.errors.password)" />
           <p v-if="passwordForm.errors.password" class="ds-field-error">{{ passwordForm.errors.password }}</p>
         </div>
         <div class="ds-field-group">
           <label for="user-password-confirmation" class="ds-field-label">Confirmar palavra-passe</label>
-          <input id="user-password-confirmation" v-model="passwordForm.password_confirmation" type="password" class="ds-field" autocomplete="new-password" :aria-invalid="Boolean(passwordForm.errors.password_confirmation)">
+          <BaseInput id="user-password-confirmation" v-model="passwordForm.password_confirmation" type="password" class="ds-field" autocomplete="new-password" :aria-invalid="Boolean(passwordForm.errors.password_confirmation)" />
           <p v-if="passwordForm.errors.password_confirmation" class="ds-field-error">{{ passwordForm.errors.password_confirmation }}</p>
         </div>
       </div>

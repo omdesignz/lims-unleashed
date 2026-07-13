@@ -8,6 +8,15 @@ import 'vue-toastification/dist/index.css'
 import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import { route, ZiggyVue } from 'ziggy-js'
 import Layout from "./Shared/Layouts/Layout.vue";
+import DateTimePicker from "./Components/base/DateTimePicker.vue";
+import BaseSelect from "./Components/base/BaseSelect.vue";
+import BaseInput from "./Components/base/BaseInput.vue";
+import CheckboxInput from "./Components/base/CheckboxInput.vue";
+import ColorInput from "./Components/base/ColorInput.vue";
+import FileInput from "./Components/base/FileInput.vue";
+import RadioInput from "./Components/base/RadioInput.vue";
+import RangeInput from "./Components/base/RangeInput.vue";
+import DataTable from "./Components/tables/DataTable.vue";
 import { createInertiaApp, Link, Head } from "@inertiajs/vue3";
 import { usePopstate } from "./Composables/usePopstate";
 import Vue3ColorPicker from "vue3-colorpicker";
@@ -121,6 +130,15 @@ createInertiaApp({
       .use(createPinia())
       .component("Link", Link)
       .component("Head", Head)
+      .component("DateTimePicker", DateTimePicker)
+      .component("BaseSelect", BaseSelect)
+      .component("BaseInput", BaseInput)
+      .component("CheckboxInput", CheckboxInput)
+      .component("ColorInput", ColorInput)
+      .component("FileInput", FileInput)
+      .component("RadioInput", RadioInput)
+      .component("RangeInput", RangeInput)
+      .component("DataTable", DataTable)
       .component('apexchart', ApexChart)
       .mixin({
         methods: {

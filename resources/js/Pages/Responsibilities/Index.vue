@@ -25,18 +25,18 @@
         <div class="grid gap-4 md:grid-cols-2">
           <comboboxEnhanced v-model="selectedDepartment" title-label="Departamento" placeholder="Seleccione um departamento" :options="departmentOptions" />
           <comboboxEnhanced v-model="selectedLab" title-label="Laboratório" placeholder="Seleccione um laboratório" :options="labOptions" />
-          <input v-model="form.process_area" type="text" placeholder="Área de processo" class="ds-field">
-          <input v-model="form.activity" type="text" placeholder="Atividade" class="ds-field">
+          <BaseInput v-model="form.process_area" type="text" placeholder="Área de processo" class="ds-field" />
+          <BaseInput v-model="form.activity" type="text" placeholder="Atividade" class="ds-field" />
           <comboboxEnhanced v-model="selectedResponsibleUser" title-label="Responsável" placeholder="Seleccione o responsável" :options="userOptions" />
           <comboboxEnhanced v-model="selectedAccountableUser" title-label="Aprovador / accountable" placeholder="Seleccione o aprovador" :options="userOptions" />
-          <input v-model="form.consulted_roles" type="text" placeholder="Funções consultadas" class="ds-field">
-          <input v-model="form.informed_roles" type="text" placeholder="Funções informadas" class="ds-field">
-          <input v-model="form.effective_from" type="date" class="ds-field">
-          <input v-model="form.effective_until" type="date" class="ds-field">
+          <BaseInput v-model="form.consulted_roles" type="text" placeholder="Funções consultadas" class="ds-field" />
+          <BaseInput v-model="form.informed_roles" type="text" placeholder="Funções informadas" class="ds-field" />
+          <DateTimePicker v-model="form.effective_from" type="date" class="ds-field" />
+          <DateTimePicker v-model="form.effective_until" type="date" class="ds-field" />
         </div>
         <textarea v-model="form.evidence_requirement" rows="4" class="ds-field" placeholder="Evidência esperada para demonstrar execução e controlo."></textarea>
         <label class="inline-flex items-center gap-3 text-sm font-semibold text-[var(--ds-text-muted)]">
-          <input v-model="form.is_active" type="checkbox" class="ds-checkbox">
+          <CheckboxInput v-model="form.is_active" type="checkbox" class="ds-checkbox" />
           Entrada ativa
         </label>
         <div class="flex flex-wrap gap-3">

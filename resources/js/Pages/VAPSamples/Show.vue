@@ -235,7 +235,7 @@
             <span class="ds-chip">{{ analyses.length }} registos</span>
           </div>
           <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-[var(--ds-border)]">
+            <DataTable class="min-w-full divide-y divide-[var(--ds-border)]">
               <thead class="ds-table-head">
                 <tr>
                   <th class="px-4 py-3 text-left ds-table-heading">Analise</th>
@@ -289,7 +289,7 @@
                   </td>
                 </tr>
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </section>
 
@@ -357,11 +357,11 @@
               <div class="mt-4 grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
                 <label class="ds-field-group">
                   <span class="ds-field-label">Decisao final</span>
-                  <select v-model="qcDecisionForm.decision" class="ds-field">
+                  <BaseSelect v-model="qcDecisionForm.decision" class="ds-field">
                     <option v-for="option in releaseDecisionOptions" :key="option.value" :value="option.value">
                       {{ option.label }}
                     </option>
-                  </select>
+                  </BaseSelect>
                   <span v-if="qcDecisionForm.errors.decision" class="ds-field-error">{{ qcDecisionForm.errors.decision }}</span>
                   <span v-else-if="releaseDecisionBlocked" class="ds-field-error">
                     A liberacao fica bloqueada ate os resultados estarem aprovados e sem revisao pendente.

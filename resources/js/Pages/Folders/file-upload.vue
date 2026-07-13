@@ -1,6 +1,6 @@
 <template>
     <div>
-      <input type="file" @change="uploadFile" />
+      <FileInput type="file" @change="uploadFile" />
     </div>
   </template>
   

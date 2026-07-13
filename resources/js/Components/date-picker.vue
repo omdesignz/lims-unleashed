@@ -7,7 +7,7 @@
           <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
             <CalendarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" aria-hidden="true" />
           </div>
-          <input
+          <BaseInput
             ref="startInput"
             :value="inputValue.start"
             v-on="inputEvents.start"
@@ -20,7 +20,7 @@
           <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
             <CalendarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" aria-hidden="true" />
           </div>
-          <input
+          <BaseInput
             ref="endInput"
             :value="inputValue.end"
             v-on="inputEvents.end"
@@ -51,7 +51,7 @@
         <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
           <CalendarIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" aria-hidden="true" />
         </div>
-        <input
+        <BaseInput
           :value="inputValue"
           v-on="inputEvents"
           class="ds-field pl-10"

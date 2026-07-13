@@ -143,7 +143,7 @@ function formatMoney(value) {
       <div class="grid gap-5 px-5 py-5 sm:grid-cols-2 sm:px-6">
         <div>
           <label for="product-name" class="ds-field-label mb-2 block">Designação do produto</label>
-          <input id="product-name" v-model="form.name" type="text" class="ds-field" autofocus>
+          <BaseInput id="product-name" v-model="form.name" type="text" class="ds-field" autofocus />
           <p v-if="form.errors.name" class="ds-field-error mt-2">{{ form.errors.name }}</p>
         </div>
 
@@ -177,12 +177,12 @@ function formatMoney(value) {
         <div class="grid gap-5 px-5 py-5 sm:grid-cols-2 sm:px-6">
           <div>
             <label for="product-price" class="ds-field-label mb-2 block">Preço calculado (AOA)</label>
-            <input id="product-price" v-model.number="form.price" type="number" min="0" step="0.01" class="ds-field">
+            <BaseInput id="product-price" v-model.number="form.price" type="number" min="0" step="0.01" class="ds-field" />
             <p v-if="form.errors.price" class="ds-field-error mt-2">{{ form.errors.price }}</p>
           </div>
           <div>
             <label for="product-fixed-price" class="ds-field-label mb-2 block">Preço fixo (AOA)</label>
-            <input id="product-fixed-price" v-model.number="form.fixed_price" type="number" min="0" step="0.01" class="ds-field">
+            <BaseInput id="product-fixed-price" v-model.number="form.fixed_price" type="number" min="0" step="0.01" class="ds-field" />
             <p v-if="form.errors.fixed_price" class="ds-field-error mt-2">{{ form.errors.fixed_price }}</p>
           </div>
         </div>
@@ -214,7 +214,7 @@ function formatMoney(value) {
             </div>
             <div>
               <label for="product-tax-percentage" class="ds-field-label mb-2 block">Taxa (%)</label>
-              <input id="product-tax-percentage" v-model.number="form.tax_percentage" type="number" min="0" step="0.01" class="ds-field">
+              <BaseInput id="product-tax-percentage" v-model.number="form.tax_percentage" type="number" min="0" step="0.01" class="ds-field" />
               <p v-if="form.errors.tax_percentage" class="ds-field-error mt-2">{{ form.errors.tax_percentage }}</p>
             </div>
           </div>

@@ -490,7 +490,7 @@ const handleConfirmSubmit = () => {
                       <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <CurrencyEuroIcon class="h-4 w-4 text-gray-400" />
                       </div>
-                      <input
+                      <BaseInput
                         v-model="item.item.paid_amount"
                         type="number"
                         step="0.01"

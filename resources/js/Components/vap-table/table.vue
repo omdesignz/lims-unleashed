@@ -17,7 +17,7 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-2 xl:justify-end">
-            <span class="inline-flex items-center rounded-full border border-[#ded3bf] bg-white px-3 py-1.5 text-xs font-bold text-[#5f6f68] dark:border-[#315149] dark:bg-[#07110f] dark:text-[#a9bbb4]">
+            <span class="ds-badge ds-badge-neutral">
               {{ resultSummary }}
             </span>
 
@@ -37,9 +37,9 @@
           <div class="grid gap-2 xl:grid-cols-[minmax(18rem,1fr)_auto] xl:items-center">
           <div class="relative min-w-0">
             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-              <MagnifyingGlassIcon class="h-5 w-5 text-[#8d9b94] dark:text-[#657970]" />
+              <MagnifyingGlassIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
             </div>
-            <input
+            <BaseInput
               v-model="filters.globalFilter"
               type="search"
               :placeholder="$t('gestlab.general.search_input_placeholder')"
@@ -51,10 +51,10 @@
           <div class="flex flex-wrap items-center gap-2 xl:justify-end">
             <button
               type="button"
-              class="inline-flex h-12 items-center justify-center gap-2 rounded-[1.35rem] border px-4 text-sm font-black transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.24)] focus:ring-offset-2 focus:ring-offset-[#fffdf7] dark:focus:ring-offset-[#07110f]"
+              class="ds-button h-12"
               :class="showFilterPanel
-                ? 'border-[rgb(var(--primary-800-rgb))] bg-[rgb(var(--primary-800-rgb))] text-white shadow-[0_14px_34px_rgb(var(--primary-900-rgb)/0.16)] dark:border-[rgb(var(--primary-500-rgb))] dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f]'
-                : 'border-transparent bg-[#f7f1e7] text-[#31413b] hover:bg-[#fffdf7] hover:text-[#143d37] dark:bg-[#07110f] dark:text-[#d7e2dd] dark:hover:bg-[#152f29]'"
+                ? 'ds-button-primary'
+                : 'ds-button-secondary'"
               :aria-expanded="showFilterPanel"
               @click="showFilterPanel = !showFilterPanel"
             >
@@ -62,7 +62,7 @@
               {{ $t('gestlab.filter.filters') }}
               <span
                 v-if="activeFilterCount"
-                class="inline-flex min-w-6 items-center justify-center rounded-full bg-[#f1d78b] px-2 py-0.5 text-[11px] font-black text-[#07110f]"
+                class="inline-flex min-w-6 items-center justify-center rounded-full bg-white/90 px-2 py-0.5 text-[11px] font-black text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-950-rgb)/0.8)] dark:text-white"
               >
                 {{ activeFilterCount }}
               </span>
@@ -75,16 +75,17 @@
             />
 
             <div class="relative">
-              <select
+              <BaseSelect
                 v-model="perPage"
                 @change="changePerPage"
-                class="block h-12 rounded-[1.35rem] border border-transparent bg-[#f7f1e7] py-0 pl-3 pr-9 text-sm font-bold text-[#31413b] transition-colors duration-200 hover:bg-[#fffdf7] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.18)] dark:bg-[#07110f] dark:text-[#d7e2dd] dark:hover:bg-[#152f29]"
+                class="ds-field h-12 min-w-28 py-0"
+                aria-label="Registos por página"
               >
                 <option value="10" :selected="props.pagination.per_page == 10">10 / {{ $t('gestlab.general.labels.per_page_short') }}</option>
                 <option value="25" :selected="props.pagination.per_page == 25">25 / {{ $t('gestlab.general.labels.per_page_short') }}</option>
                 <option value="50" :selected="props.pagination.per_page == 50">50 / {{ $t('gestlab.general.labels.per_page_short') }}</option>
                 <option value="100" :selected="props.pagination.per_page == 100">100 / {{ $t('gestlab.general.labels.per_page_short') }}</option>
-              </select>
+              </BaseSelect>
             </div>
           </div>
           </div>
@@ -98,12 +99,12 @@
             class="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--primary-200-rgb)/0.75)] bg-[rgb(var(--primary-50-rgb)/0.75)] px-3 py-1.5 text-xs dark:border-[rgb(var(--primary-300-rgb)/0.2)] dark:bg-[rgb(var(--primary-500-rgb)/0.12)]"
           >
             <span class="font-semibold text-[rgb(var(--primary-900-rgb))] dark:text-[rgb(var(--primary-100-rgb))]">{{ $t(column.label) }}:</span>
-            <span class="font-medium text-[#5f6f68] dark:text-[#a9bbb4]">
+            <span class="font-medium text-[var(--ds-text-muted)]">
               {{ formatFilterValue(column, filters[column.filter_field]) }}
             </span>
             <button
               @click="removeFilter(column.filter_field)"
-              class="rounded-full p-0.5 text-[rgb(var(--primary-700-rgb))] hover:text-[rgb(var(--primary-900-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.24)] focus:ring-offset-1 focus:ring-offset-[#fffdf7] dark:text-[rgb(var(--primary-200-rgb))] dark:hover:text-[rgb(var(--primary-50-rgb))] dark:focus:ring-offset-[#07110f]"
+              class="rounded-full p-0.5 text-[rgb(var(--primary-700-rgb))] hover:text-[rgb(var(--primary-900-rgb))] focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)] dark:text-[rgb(var(--primary-200-rgb))]"
               :title="$t('gestlab.general.buttons.clear')"
             >
               <XMarkIcon class="h-3 w-3" />
@@ -113,7 +114,7 @@
           <button
             type="button"
             @click="clearActiveFilters"
-            class="inline-flex items-center gap-1.5 rounded-full border border-[#ded3bf] bg-white px-3 py-1.5 text-xs font-semibold text-[#5f6f68] transition hover:border-[rgb(var(--primary-500-rgb))] hover:text-[#15231f] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#a9bbb4] dark:hover:bg-[#152f29] dark:hover:text-[#f7f1e7]"
+            class="ds-badge ds-badge-neutral gap-1.5 transition hover:border-[rgb(var(--primary-400-rgb))] hover:text-[var(--ds-text)]"
           >
             <XMarkIcon class="h-3 w-3" />
             {{ $t('gestlab.general.buttons.clear') }}
@@ -130,14 +131,14 @@
         >
           <div
             v-show="showFilterPanel"
-            class="mt-4 rounded-[1.8rem] border border-[#ded3bf] bg-[#f7f1e7]/70 p-4 dark:border-[#25443c] dark:bg-[#10231f]/70 sm:p-5"
+            class="mt-4 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 sm:p-5"
           >
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p class="text-xs font-black uppercase tracking-[0.2em] text-[#6b7b74] dark:text-[#83978d]">
+                <p class="ds-table-heading">
                   {{ $t('gestlab.filter.available_filters') }}
                 </p>
-                <p class="mt-1 text-sm font-medium text-[#475a53] dark:text-[#cbd8cf]">
+                <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">
                   {{ visibleFilterableColumns.length }} {{ $t('gestlab.filter.filters') }}
                 </p>
               </div>
@@ -145,7 +146,7 @@
               <button
                 v-if="hasActiveFilters"
                 type="button"
-                class="inline-flex items-center justify-center gap-2 rounded-full border border-[#ded3bf] bg-white px-3 py-2 text-xs font-bold text-[#5f6f68] transition hover:text-[#143d37] dark:border-[#315149] dark:bg-[#07110f] dark:text-[#a9bbb4] dark:hover:text-[#f7f1e7]"
+                class="ds-button ds-button-secondary min-h-9 rounded-full px-3 py-2 text-xs"
                 @click="clearActiveFilters"
               >
                 <XMarkIcon class="h-3.5 w-3.5" />
@@ -159,10 +160,10 @@
                 :key="column.field"
                 @click="toggleFilter(column.filter_field)"
                 :class="[
-                  'inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.26)] focus:ring-offset-2 focus:ring-offset-[#fffdf7] dark:focus:ring-offset-[#07110f]',
+                  'inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)]',
                   isFilterActive(column.filter_field)
-                    ? 'border-[rgb(var(--primary-800-rgb))] bg-[rgb(var(--primary-800-rgb))] text-white dark:border-[rgb(var(--primary-500-rgb))] dark:bg-[rgb(var(--primary-500-rgb))] dark:text-[#07110f]'
-                    : 'border-[#ded3bf] bg-[#fffdf7] text-[#5f6f68] hover:bg-white hover:text-[#15231f] dark:border-[#315149] dark:bg-[#07110f] dark:text-[#a9bbb4] dark:hover:bg-[#152f29] dark:hover:text-[#f7f1e7]'
+                    ? 'border-[rgb(var(--primary-700-rgb))] bg-[rgb(var(--primary-700-rgb))] text-white dark:border-[rgb(var(--primary-400-rgb))] dark:bg-[rgb(var(--primary-400-rgb))] dark:text-[rgb(var(--primary-950-rgb))]'
+                    : 'border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'
                 ]"
               >
                 <FunnelIcon class="h-3 w-3" />
@@ -173,10 +174,10 @@
                 v-if="props.trashedFilter"
                 @click="toggleTrashedFilter"
                 :class="[
-                  'inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-rose-500/25 focus:ring-offset-2 focus:ring-offset-[#fffdf7] dark:focus:ring-offset-[#07110f]',
+                  'inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-rose-500/25',
                   filters.trashed
                     ? 'border-rose-600 bg-rose-600 text-white'
-                    : 'border-[#ded3bf] bg-[#fffdf7] text-[#5f6f68] hover:bg-white hover:text-[#15231f] dark:border-[#315149] dark:bg-[#07110f] dark:text-[#a9bbb4] dark:hover:bg-[#152f29] dark:hover:text-[#f7f1e7]'
+                    : 'border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'
                 ]"
               >
                 <TrashIcon class="h-3 w-3" />
@@ -184,7 +185,7 @@
               </button>
             </div>
 
-            <div v-if="hasActiveFilters" class="mt-5 border-t border-[#ded3bf] pt-5 dark:border-[#25443c]">
+            <div v-if="hasActiveFilters" class="mt-5 border-t border-[var(--ds-border)] pt-5">
               <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <!-- Dynamic Filters -->
                 <div
@@ -196,13 +197,13 @@
                     column.type === 'remote_select_multiple' ? 'md:col-span-2 lg:col-span-3' : ''
                   ]"
                 >
-                  <label :for="column.field" class="block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
+                  <label :for="column.field" class="ds-field-label block">
                     {{ $t(column.label) }}
                     <span v-if="column.required" class="text-red-500 ml-0.5">*</span>
                   </label>
 
                   <!-- String Filter -->
-                  <input
+                  <BaseInput
                     v-if="column.type === 'string'"
                     v-model="filters[column.filter_field]"
                     :id="column.field"
@@ -210,7 +211,7 @@
                     type="text"
                     @input="updateQuery"
                     :placeholder="$t('gestlab.general.search_input_placeholder')"
-                    class="block w-full rounded-2xl border border-[#d8cbb8] bg-white px-3 py-3 text-sm font-medium text-[#15231f] placeholder:text-[#8d9b94] shadow-sm transition-colors duration-200 focus:border-[rgb(var(--primary-500-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.22)] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:placeholder:text-[#657970]"
+                    class="ds-field"
                   />
 
                   <!-- Date Filter -->
@@ -229,13 +230,13 @@
                   >
                     <template #default="{ togglePopover }">
                       <div class="relative">
-                        <input
+                        <BaseInput
                           :value="formatDateRange(column)"
                           type="text"
                           readonly
                           @click="togglePopover"
                           :placeholder="$t('gestlab.general.calendar_input_placeholder')"
-                          class="block w-full cursor-pointer rounded-2xl border border-[#d8cbb8] bg-white py-3 pl-3.5 pr-11 text-sm font-medium text-[#15231f] shadow-sm transition-all duration-200 placeholder:text-[#8d9b94] focus:border-[rgb(var(--primary-500-rgb))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.22)] dark:border-[#315149] dark:bg-[#10231f] dark:text-[#f7f1e7] dark:placeholder:text-[#657970]"
+                          class="ds-field cursor-pointer pr-11"
                         />
                         <CalendarIcon class="absolute right-3 top-3 h-5 w-5 text-[rgb(var(--primary-800-rgb))] dark:text-[rgb(var(--primary-200-rgb))]" />
                       </div>
@@ -247,10 +248,10 @@
                     <button
                       @click="toggleBooleanFilter(column.filter_field)"
                       :class="[
-                        'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.28)] focus:ring-offset-2 focus:ring-offset-[#fffdf7] dark:focus:ring-offset-[#07110f]',
+                        'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)]',
                         filters[column.filter_field]
                           ? 'bg-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-500-rgb))]'
-                          : 'bg-[#d8cbb8] dark:bg-[#315149]'
+                          : 'bg-[var(--ds-border-strong)]'
                       ]"
                     >
                       <span
@@ -261,7 +262,7 @@
                       />
                       <span class="sr-only">{{ column.label }}</span>
                     </button>
-                    <span class="ml-3 text-sm font-medium text-[#5f6f68] dark:text-[#a9bbb4]">
+                    <span class="ml-3 text-sm font-medium text-[var(--ds-text-muted)]">
                       {{ filters[column.filter_field] ? 'Activo' : 'Inactivo' }}
                     </span>
                   </div>
@@ -302,7 +303,7 @@
 
                 <!-- Trashed Filter -->
                 <div v-if="props.trashedFilter && isFilterActive('trashed')" class="space-y-2">
-                  <label for="trashed" class="block text-sm font-semibold text-[#31413b] dark:text-[#d7e2dd]">
+                  <label for="trashed" class="ds-field-label block">
                     {{ $t('gestlab.general.labels.trashed') }}
                   </label>
                   <combobox
@@ -327,14 +328,14 @@
     </section>
 
     <!-- DATA TABLE CARD -->
-    <div class="ds-card overflow-hidden">
+    <DataTableShell :show-summary="Boolean(props.actions?.length && (allSelected || selectedRows.length))">
       <!-- Table Header -->
-      <div v-if="props.actions?.length && (allSelected || selectedRows.length)" class="border-b border-[#ded3bf] bg-[#f7f1e7] px-5 py-4 dark:border-[#25443c] dark:bg-[#10231f] sm:px-7">
+      <template #summary>
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h2 class="flex items-center gap-2 text-sm font-semibold text-[#15231f] dark:text-[#f7f1e7]">
+          <h2 class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text)]">
             <TableCellsIcon class="h-5 w-5" />
             {{ $t('gestlab.general.labels.selected_records') }}
-            <span class="rounded-full border border-[#ded3bf] bg-white px-3 py-1 text-xs font-bold text-[#5f6f68] dark:border-[#315149] dark:bg-[#07110f] dark:text-[#a9bbb4]">
+            <span class="ds-badge ds-badge-neutral">
               {{ selectedRows.length }} de {{ props.data.length }}
             </span>
           </h2>
@@ -344,31 +345,31 @@
             class="text-sm self-start sm:self-auto"
           />
         </div>
-      </div>
+      </template>
 
       <!-- Table Content -->
       <div class="md:hidden" v-if="props.data.length && visibleColumns.length">
-        <div class="divide-y divide-[#ded3bf] dark:divide-[#25443c]">
+        <div class="divide-y divide-[var(--ds-border)]">
           <article
             v-for="row in props.data"
             :key="row.id"
             class="space-y-4 px-5 py-5 transition-colors duration-150"
-            :class="isRowSelected(row.id) ? 'bg-[rgb(var(--primary-50-rgb)/0.6)] dark:bg-[rgb(var(--primary-500-rgb)/0.12)]' : 'bg-[#fffdf7] dark:bg-[#07110f]'"
+            :class="isRowSelected(row.id) ? 'bg-[rgb(var(--primary-50-rgb)/0.6)] dark:bg-[rgb(var(--primary-500-rgb)/0.12)]' : 'bg-[var(--ds-panel)]'"
           >
             <div class="flex items-start justify-between gap-3">
               <label class="flex items-center gap-3">
-                <input
+                <CheckboxInput
                   type="checkbox"
                   :value="row.id"
                   :checked="isRowSelected(row.id)"
-                  class="h-4 w-4 rounded border-[#d8cbb8] text-[rgb(var(--primary-700-rgb))] focus:ring-2 focus:ring-[rgb(var(--primary-500-rgb)/0.24)] dark:border-[#315149] dark:bg-[#07110f] dark:text-[rgb(var(--primary-300-rgb))]"
+                  class="ds-checkbox"
                   @change="toggleSelectRow"
                 />
                 <div>
-                  <p class="text-sm font-semibold text-[#15231f] dark:text-[#f7f1e7]">
+                  <p class="text-sm font-semibold text-[var(--ds-text)]">
                     {{ row[visibleColumns[0]?.field] ?? `#${row.id}` }}
                   </p>
-                  <p class="text-xs font-medium text-[#5f6f68] dark:text-[#a9bbb4]">ID {{ row.id }}</p>
+                  <p class="text-xs font-medium text-[var(--ds-text-soft)]">ID {{ row.id }}</p>
                 </div>
               </label>
             </div>
@@ -377,12 +378,12 @@
               <div
                 v-for="column in visibleColumns"
                 :key="`${row.id}-${column.field}`"
-                class="rounded-2xl border border-[#e8ddcd] bg-[#f7f1e7]/70 px-3 py-2 dark:border-[#25443c] dark:bg-[#10231f]/70"
+                class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2"
               >
-                <dt class="text-[11px] font-semibold uppercase tracking-wide text-[#73827b] dark:text-[#8ea49b]">
+                <dt class="ds-table-heading">
                   {{ column.label }}
                 </dt>
-                <dd class="mt-1 break-words text-sm font-medium text-[#15231f] dark:text-[#f7f1e7]">
+                <dd class="mt-1 break-words text-sm font-medium text-[var(--ds-text)]">
                   <slot :name="`column-${column.field}`" :row="row">
                     {{ row[column.field] }}
                   </slot>
@@ -394,17 +395,17 @@
       </div>
 
       <div v-if="!props.data.length" class="p-10 text-center md:hidden">
-        <TableCellsIcon class="mx-auto h-11 w-11 text-[#8d9b94] dark:text-[#657970]" />
-        <h3 class="mt-4 text-sm font-semibold text-[#15231f] dark:text-[#f7f1e7]">
+        <TableCellsIcon class="mx-auto h-11 w-11 text-[var(--ds-text-soft)]" />
+        <h3 class="mt-4 text-sm font-semibold text-[var(--ds-text)]">
           {{ $t('gestlab.general.titles.no_records') }}
         </h3>
-        <p class="mt-2 text-sm font-medium text-[#5f6f68] dark:text-[#a9bbb4]">
+        <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">
           {{ $t('gestlab.general.titles.start_creating') }}
         </p>
       </div>
 
       <div class="hidden overflow-x-auto md:block">
-        <table class="min-w-full divide-y divide-[#ded3bf] dark:divide-[#25443c]" v-if="props.data.length && visibleColumns.length">
+        <DataTable class="min-w-full divide-y divide-[var(--ds-border)]" v-if="props.data.length && visibleColumns.length">
           <TableHeader
             :columns="visibleColumns"
             :sortField="sortField"
@@ -426,15 +427,15 @@
               </slot>
             </template>
           </TableBody>
-        </table>
+        </DataTable>
         
         <!-- Empty State -->
         <div v-if="!props.data.length" class="p-12 text-center">
-          <TableCellsIcon class="mx-auto h-12 w-12 text-[#8d9b94] dark:text-[#657970]" />
-          <h3 class="mt-4 text-sm font-semibold text-[#15231f] dark:text-[#f7f1e7]">
+          <TableCellsIcon class="mx-auto h-12 w-12 text-[var(--ds-text-soft)]" />
+          <h3 class="mt-4 text-sm font-semibold text-[var(--ds-text)]">
             {{ $t('gestlab.general.titles.no_records') }}
           </h3>
-          <p class="mt-2 text-sm font-medium text-[#5f6f68] dark:text-[#a9bbb4]">
+          <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">
             {{ $t('gestlab.general.titles.start_creating') }}
           </p>
           <button
@@ -450,7 +451,7 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="props.data.length" class="border-t border-[#ded3bf] px-6 py-5 dark:border-[#25443c]">
+      <div v-if="props.data.length" class="border-t border-[var(--ds-border)] px-6 py-5">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <Pagination
             :links="props.pagination.links"
@@ -462,7 +463,7 @@
           />
         </div>
       </div>
-    </div>
+    </DataTableShell>
   </div>
 </template>
 
@@ -482,6 +483,7 @@ import { usePage, router } from "@inertiajs/vue3";
 
 import ColumnVisibilityToggle from "@/Components/vap-table/column-visibility-toggle.vue";
 import BulkActions from "@/Components/vap-table/bulk-actions.vue";
+import DataTableShell from "@/Components/tables/DataTableShell.vue";
 import TableHeader from "@/Components/vap-table/table-header.vue";
 import TableBody from "@/Components/vap-table/table-body.vue";
 import Pagination from "@/Components/pagination.vue";
@@ -839,12 +841,12 @@ div.overflow-x-auto::-webkit-scrollbar {
 }
 
 div.overflow-x-auto::-webkit-scrollbar-track {
-  background: #f7f1e7;
+  background: var(--ds-panel-subtle);
   border-radius: 3px;
 }
 
 div.overflow-x-auto::-webkit-scrollbar-thumb {
-  background: #d8cbb8;
+  background: var(--ds-border-strong);
   border-radius: 3px;
 }
 
@@ -859,14 +861,14 @@ button, input, select {
 
 /* Date picker popover styling */
 :deep(.vc-popover-content) {
-  border-radius: 1.25rem !important;
-  border: 1px solid #ded3bf !important;
-  background: #fffdf7 !important;
-  box-shadow: 0 22px 70px rgb(20 61 55 / 0.16) !important;
+  border-radius: var(--ds-radius-card) !important;
+  border: 1px solid var(--ds-border) !important;
+  background: var(--ds-panel-raised) !important;
+  box-shadow: var(--ds-shadow-panel) !important;
 }
 
 :global(.dark) :deep(.vc-popover-content) {
-  border-color: #25443c !important;
-  background: #07110f !important;
+  border-color: var(--ds-border) !important;
+  background: var(--ds-panel-raised) !important;
 }
 </style>

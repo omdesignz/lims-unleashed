@@ -23,7 +23,7 @@
         </div>
         <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div class="relative min-w-0 flex-1 sm:min-w-[18rem]">
-            <input
+            <BaseInput
               type="text"
               v-model="searchQuery"
               @input="debouncedSearch(searchQuery)"
@@ -231,7 +231,7 @@
       >
         <div class="flex items-start justify-between gap-3">
           <div class="flex min-w-0 items-center gap-3">
-            <input
+            <CheckboxInput
               type="checkbox"
               class="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-900 focus:ring-blue-900"
               :checked="fileStore.selectedItems.has(file.id)"
@@ -395,11 +395,11 @@
 
     <!-- File Table -->
     <div class="hidden overflow-x-auto md:block">
-      <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+      <DataTable class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
         <thead class="bg-slate-50 dark:bg-slate-900">
           <tr>
             <th scope="col" class="w-12 px-4 py-3">
-              <input
+              <CheckboxInput
                 type="checkbox"
                 class="h-4 w-4 rounded border-slate-300 text-blue-900 focus:ring-blue-900"
                 :checked="allVisibleSelected"
@@ -469,7 +469,7 @@
             @drop.prevent="handleDrop($event, file.id)"
             >
             <td class="px-4 py-4 whitespace-nowrap">
-              <input
+              <CheckboxInput
                 type="checkbox"
                 class="h-4 w-4 rounded border-slate-300 text-blue-900 focus:ring-blue-900"
                 :checked="fileStore.selectedItems.has(file.id)"
@@ -651,7 +651,7 @@
             </td>
           </tr>
         </tbody>
-      </table>
+      </DataTable>
     </div>
 
     <!-- Loading Overlay -->
@@ -684,14 +684,14 @@
     </div>
 
     <!-- Hidden Inputs -->
-    <input
+    <FileInput
       ref="fileInput"
       type="file"
       multiple
       class="hidden"
       @change="handleFileUpload"
     />
-    <input
+    <FileInput
       ref="folderInput"
       type="file"
       webkitdirectory
@@ -793,7 +793,7 @@
               <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">{{ $t('gestlab.general.labels.vap_filemanager.filter_type') }}</label>
               <div class="space-x-2">
                 <label class="inline-flex items-center text-sm text-slate-700 dark:text-slate-200">
-                  <input
+                  <CheckboxInput
                     type="checkbox"
                     v-model="filterType"
                     value="file"
@@ -802,7 +802,7 @@
                   <span class="ml-2">{{ $t('gestlab.general.labels.vap_filemanager.files') }}</span>
                 </label>
                 <label class="inline-flex items-center text-sm text-slate-700 dark:text-slate-200">
-                  <input
+                  <CheckboxInput
                     type="checkbox"
                     v-model="filterType"
                     value="folder"
@@ -815,7 +815,7 @@
 
             <div>
               <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">{{ $t('gestlab.general.labels.vap_filemanager.filter_date_range') }}</label>
-              <select
+              <BaseSelect
                 v-model="filterDateRange"
                 class="w-full rounded-md border-gray-300 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
               >
@@ -823,12 +823,12 @@
                 <option value="7days">{{ $t('gestlab.general.labels.vap_filemanager.filter_date_ranges.7days') }}</option>
                 <option value="30days">{{ $t('gestlab.general.labels.vap_filemanager.filter_date_ranges.30days') }}</option>
                 <option value="custom">{{ $t('gestlab.general.labels.vap_filemanager.filter_date_ranges.custom') }}</option>
-              </select>
+              </BaseSelect>
             </div>
 
             <div>
               <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">{{ $t('gestlab.general.labels.vap_filemanager.filter_size') }}</label>
-              <select
+              <BaseSelect
                 v-model="filterSize"
                 class="w-full rounded-md border-gray-300 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
               >
@@ -836,7 +836,7 @@
                 <option value="small">{{ $t('gestlab.general.labels.vap_filemanager.filter_sizes.small') }}</option>
                 <option value="medium">{{ $t('gestlab.general.labels.vap_filemanager.filter_sizes.medium') }}</option>
                 <option value="large">{{ $t('gestlab.general.labels.vap_filemanager.filter_sizes.large') }}</option>
-              </select>
+              </BaseSelect>
             </div>
           </div>
 
@@ -878,7 +878,7 @@
           <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Use nomes claros para manter a recuperação e a trilha de auditoria limpas.</p>
           </div>
           <div class="p-6">
-          <input
+          <BaseInput
             type="text"
             v-model="newItemName"
             class="mb-6 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400"
@@ -930,14 +930,14 @@
               <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-slate-200">
                 {{ $t('gestlab.general.labels.vap_filemanager.permissions') }}
               </label>
-              <select
+              <BaseSelect
                 v-model="shareAccess"
                 class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-slate-900 focus:border-blue-900 focus:ring-2 focus:ring-blue-900/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
               >
                 <option value="read">{{ $t('gestlab.general.labels.vap_filemanager.read') }}</option>
                 <option value="write">{{ $t('gestlab.general.labels.vap_filemanager.write') }}</option>
                 <option value="admin">{{ $t('gestlab.general.labels.vap_filemanager.admin') }}</option>
-              </select>
+              </BaseSelect>
             </div>
           </div>
           <div class="mt-6 flex justify-end gap-3">
@@ -1010,7 +1010,7 @@
           <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Crie uma pasta bem identificada para agrupar procedimentos e registos de forma lógica.</p>
           </div>
           <div class="p-6">
-          <input
+          <BaseInput
             v-model="newFolderName"
             type="text"
             :placeholder="$t('gestlab.general.labels.vap_filemanager.create_folder_name')"

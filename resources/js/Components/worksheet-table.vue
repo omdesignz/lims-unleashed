@@ -9,7 +9,7 @@
     </div>
 
     <!-- Display the table when data exists -->
-    <table v-else class="table-auto border-collapse border border-gray-300">
+    <DataTable v-else class="table-auto border-collapse border border-gray-300">
       <thead>
         <tr>
           <th v-for="(col, colIndex) in columnCount" :key="colIndex" class="border border-gray-300 px-4 py-2 bg-gray-100">
@@ -21,7 +21,7 @@
         <tr v-for="(row, rowIndex) in rowCount" :key="rowIndex">
           <td v-for="colIndex in columnCount" :key="colIndex" class="border border-gray-300 px-4 py-2">
             <!-- Input for raw data -->
-            <input
+            <BaseInput
               type="text"
               class="w-full px-2 py-1 border border-gray-300 rounded"
               :value="worksheets[activeSheetIndex]?.data[rowIndex]?.[colIndex - 1] || ''"
@@ -34,7 +34,7 @@
           </td>
         </tr>
       </tbody>
-    </table>
+    </DataTable>
   </div>
   </template>
   

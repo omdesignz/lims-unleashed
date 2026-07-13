@@ -216,21 +216,21 @@ function executeBulkAction() {
 
           <div>
             <label for="role-name" class="ds-field-label">Nome técnico</label>
-            <input id="role-name" v-model="form.name" type="text" autocomplete="off" class="ds-field mt-2 font-mono" required />
+            <BaseInput id="role-name" v-model="form.name" type="text" autocomplete="off" class="ds-field mt-2 font-mono" required />
             <p class="ds-field-hint mt-2">Use um identificador curto e estável, por exemplo: quality_manager.</p>
             <p v-if="form.errors.name" class="ds-field-error mt-2">{{ form.errors.name }}</p>
           </div>
 
           <div>
             <label for="role-label" class="ds-field-label">Etiqueta</label>
-            <input id="role-label" v-model="form.label" type="text" class="ds-field mt-2" required />
+            <BaseInput id="role-label" v-model="form.label" type="text" class="ds-field mt-2" required />
             <p class="ds-field-hint mt-2">Nome legível apresentado na gestão de utilizadores e acessos.</p>
             <p v-if="form.errors.label" class="ds-field-error mt-2">{{ form.errors.label }}</p>
           </div>
 
           <div>
             <label for="role-guard" class="ds-field-label">Guard</label>
-            <input id="role-guard" v-model="form.guard_name" type="text" autocomplete="off" class="ds-field mt-2 font-mono" required />
+            <BaseInput id="role-guard" v-model="form.guard_name" type="text" autocomplete="off" class="ds-field mt-2 font-mono" required />
             <p class="ds-field-hint mt-2">Use web para a sessão normal do backoffice.</p>
             <p v-if="form.errors.guard_name" class="ds-field-error mt-2">{{ form.errors.guard_name }}</p>
           </div>

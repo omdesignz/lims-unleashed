@@ -183,7 +183,7 @@
                   {{ $t('gestlab.general.labels.vap_proposals.create.service_location') }}
                   <span class="text-red-500">*</span>
                 </label>
-                <input
+                <BaseInput
                   v-model="form.service_location"
                   type="text"
                   class="ds-field"
@@ -202,7 +202,7 @@
                   {{ $t('gestlab.general.labels.vap_proposals.create.tolerance_days') }}
                   <span class="text-red-500">*</span>
                 </label>
-                <input
+                <BaseInput
                   v-model="form.tolerance_days"
                   type="number"
                   min="1"
@@ -218,7 +218,7 @@
 
               <!-- USE MATRIX PRICE TOGGLE -->
               <div class="flex items-center space-x-2 col-span-1 md:col-span-2 lg:col-span-1">
-                <input
+                <CheckboxInput
                   v-model="form.use_matrix_price"
                   type="checkbox"
                   id="use_matrix_price"
@@ -231,7 +231,7 @@
 
               <!-- WITHHOLD TAX -->
               <div class="flex items-center space-x-2">
-                <input
+                <CheckboxInput
                   v-model="form.withhold_tax"
                   type="checkbox"
                   id="withhold_tax"
@@ -394,7 +394,7 @@
                       {{ $t('gestlab.general.labels.vap_proposals.create.items.item_description') }}
                       <span class="text-red-500">*</span>
                     </label>
-                    <input
+                    <BaseInput
                       v-model="item.item_description"
                       type="text"
                       class="ds-field"
@@ -438,7 +438,7 @@
                       {{ $t('gestlab.general.labels.vap_proposals.create.items.quantity') }}
                       <span class="text-red-500">*</span>
                     </label>
-                    <input
+                    <BaseInput
                       v-model="item.qty"
                       type="number"
                       min="0.01"
@@ -456,7 +456,7 @@
                     </label>
                     <div class="relative">
                       <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--ds-text-soft)]">AOA</span>
-                      <input
+                      <BaseInput
                         v-model="item.unit_price"
                         type="number"
                         min="0"
@@ -473,7 +473,7 @@
                       {{ $t('gestlab.general.labels.vap_proposals.create.items.discount') }}
                     </label>
                     <div class="flex gap-2">
-                      <select 
+                      <BaseSelect
                         v-model="item.discount_id"
                         class="ds-field min-w-24"
                         @change="calculateItemTotal(index)"
@@ -481,9 +481,9 @@
                         <option v-for="type in discount_categories" :key="type.value" :value="type.value">
                           {{ type.label }}
                         </option>
-                      </select>
+                      </BaseSelect>
                       <div class="relative flex-1">
-                        <input
+                        <BaseInput
                           v-model="item.discount_amount"
                           v-if="item.discount_id == 2"
                           type="number"
@@ -492,7 +492,7 @@
                           class="ds-field"
                           @input="calculateItemTotal(index)"
                         />
-                        <input
+                        <BaseInput
                           v-model="item.discount_percentage"
                           v-else
                           type="number"
@@ -515,7 +515,7 @@
                       {{ $t('gestlab.general.labels.vap_proposals.create.items.tax') }}
                     </label>
                     <div class="relative">
-                      <input
+                      <BaseInput
                         v-model="item.tax_percentage"
                         type="number"
                         min="0"
@@ -530,7 +530,7 @@
 
                   <!-- CHARGE TAX CHECKBOX -->
                   <div class="flex items-center space-x-2">
-                    <input
+                    <CheckboxInput
                       v-model="item.charge_tax"
                       type="checkbox"
                       :id="`charge_tax_${index}`"

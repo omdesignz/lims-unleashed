@@ -117,7 +117,7 @@ async function loadItems(query, setOptions) {
       <div class="grid gap-5 px-5 py-5 sm:grid-cols-2 sm:px-6">
         <div>
           <label for="delivery-sales-date" class="ds-field-label mb-2 block">Data de entrega</label>
-          <input id="delivery-sales-date" v-model="form.sales_date" type="date" class="ds-field">
+          <DateTimePicker id="delivery-sales-date" v-model="form.sales_date" type="date" class="ds-field" />
           <p v-if="form.errors.sales_date" class="ds-field-error mt-2">{{ form.errors.sales_date }}</p>
         </div>
 
@@ -176,7 +176,7 @@ async function loadItems(query, setOptions) {
 
             <div class="lg:col-span-2">
               <label :for="`delivery-quantity-${index}`" class="ds-field-label mb-2 block">Quantidade</label>
-              <input :id="`delivery-quantity-${index}`" v-model.number="item.qty" type="number" min="1" step="1" class="ds-field">
+              <BaseInput :id="`delivery-quantity-${index}`" v-model.number="item.qty" type="number" min="1" step="1" class="ds-field" />
               <p v-if="form.errors[`items.${index}.qty`]" class="ds-field-error mt-2">{{ form.errors[`items.${index}.qty`] }}</p>
             </div>
 
@@ -195,12 +195,12 @@ async function loadItems(query, setOptions) {
               <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                 <div>
                   <label :for="`delivery-expected-date-${index}`" class="ds-field-label mb-2 block">Data prevista</label>
-                  <input :id="`delivery-expected-date-${index}`" v-model="item.expected_date" type="date" class="ds-field">
+                  <DateTimePicker :id="`delivery-expected-date-${index}`" v-model="item.expected_date" type="date" class="ds-field" />
                   <p v-if="form.errors[`items.${index}.expected_date`]" class="ds-field-error mt-2">{{ form.errors[`items.${index}.expected_date`] }}</p>
                 </div>
                 <div>
                   <label :for="`delivery-actual-date-${index}`" class="ds-field-label mb-2 block">Data efetiva</label>
-                  <input :id="`delivery-actual-date-${index}`" v-model="item.actual_date" type="date" class="ds-field">
+                  <DateTimePicker :id="`delivery-actual-date-${index}`" v-model="item.actual_date" type="date" class="ds-field" />
                   <p v-if="form.errors[`items.${index}.actual_date`]" class="ds-field-error mt-2">{{ form.errors[`items.${index}.actual_date`] }}</p>
                 </div>
               </div>

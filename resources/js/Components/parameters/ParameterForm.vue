@@ -209,13 +209,13 @@ function updateTaxType(taxType) {
       <div class="grid gap-5 lg:grid-cols-2">
         <div class="ds-field-group">
           <label for="parameter-name" class="ds-field-label">{{ $t('gestlab.general.labels.parameters.name') }} <span class="ds-field-required">*</span></label>
-          <input id="parameter-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" placeholder="Nome analitico completo" />
+          <BaseInput id="parameter-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" placeholder="Nome analitico completo" />
           <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
         </div>
 
         <div class="ds-field-group">
           <label for="parameter-code" class="ds-field-label">{{ $t('gestlab.general.labels.parameters.code') }}</label>
-          <input id="parameter-code" v-model="form.code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.code)" placeholder="Abreviacao controlada" />
+          <BaseInput id="parameter-code" v-model="form.code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.code)" placeholder="Abreviacao controlada" />
           <p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p>
         </div>
 
@@ -245,13 +245,13 @@ function updateTaxType(taxType) {
       <div class="grid gap-5 lg:grid-cols-2">
         <div class="ds-field-group">
           <label for="parameter-time" class="ds-field-label">{{ $t('gestlab.general.labels.parameters.optimal_analysis_time') }}</label>
-          <input id="parameter-time" v-model="form.optimal_analysis_time" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.optimal_analysis_time)" placeholder="Ex.: 24h ou 3 dias uteis" />
+          <BaseInput id="parameter-time" v-model="form.optimal_analysis_time" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.optimal_analysis_time)" placeholder="Ex.: 24h ou 3 dias uteis" />
           <p v-if="form.errors.optimal_analysis_time" class="ds-field-error">{{ form.errors.optimal_analysis_time }}</p>
         </div>
 
         <div class="ds-field-group">
           <label for="parameter-price" class="ds-field-label">{{ $t('gestlab.general.labels.parameters.price') }} <span class="ds-field-required">*</span></label>
-          <input id="parameter-price" v-model.number="form.price" type="number" min="0" step="0.01" class="ds-field" :aria-invalid="Boolean(form.errors.price)" />
+          <BaseInput id="parameter-price" v-model.number="form.price" type="number" min="0" step="0.01" class="ds-field" :aria-invalid="Boolean(form.errors.price)" />
           <p v-if="form.errors.price" class="ds-field-error">{{ form.errors.price }}</p>
         </div>
       </div>
@@ -348,7 +348,7 @@ function updateTaxType(taxType) {
 
         <div class="ds-field-group">
           <label for="parameter-decimals" class="ds-field-label">{{ $t('gestlab.general.labels.parameters.decimal_places') }}</label>
-          <input id="parameter-decimals" v-model.number="form.decimal_places" type="number" min="0" max="8" class="ds-field" :aria-invalid="Boolean(form.errors.decimal_places)" />
+          <BaseInput id="parameter-decimals" v-model.number="form.decimal_places" type="number" min="0" max="8" class="ds-field" :aria-invalid="Boolean(form.errors.decimal_places)" />
           <p v-if="form.errors.decimal_places" class="ds-field-error">{{ form.errors.decimal_places }}</p>
         </div>
       </div>

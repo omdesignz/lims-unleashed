@@ -72,14 +72,14 @@
               {{ $t('gestlab.general.labels.vap_proposals.chart.title') }}
             </h2>
           </div>
-          <select
+          <BaseSelect
             v-model="period"
             class="rounded-[18px] border border-[#ded2bb] bg-[#fbfaf6] px-4 py-3 text-sm font-black text-[#143d37] outline-none transition focus:border-[#c79a43] focus:ring-2 focus:ring-[#c79a43]/30 dark:border-white/10 dark:bg-white/5 dark:text-emerald-100"
           >
             <option value="7">{{ $t('gestlab.general.labels.vap_proposals.chart.last_7_days') }}</option>
             <option value="30">{{ $t('gestlab.general.labels.vap_proposals.chart.last_30_days') }}</option>
             <option value="90">{{ $t('gestlab.general.labels.vap_proposals.chart.last_90_days') }}</option>
-          </select>
+          </BaseSelect>
         </div>
 
         <div class="mt-7 h-80 rounded-[26px] border border-[#ded2bb] bg-[#fbfaf6] p-4 dark:border-white/10 dark:bg-white/5">
@@ -112,7 +112,7 @@
             <span class="text-xs font-black uppercase tracking-[0.18em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.filters.search') }}</span>
             <span class="relative mt-2 block">
               <MagnifyingGlassIcon class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#9aa59d] dark:text-slate-500" />
-              <input
+              <BaseInput
                 v-model="search"
                 type="search"
                 :placeholder="$t('gestlab.general.labels.vap_proposals.filters.search_placeholder')"
@@ -124,7 +124,7 @@
 
           <label class="block">
             <span class="text-xs font-black uppercase tracking-[0.18em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.filters.status') }}</span>
-            <select
+            <BaseSelect
               v-model="statusFilter"
               class="mt-2 w-full rounded-[20px] border border-[#ded2bb] bg-[#fbfaf6] px-4 py-3 text-sm font-black text-[#143d37] outline-none transition focus:border-[#c79a43] focus:ring-2 focus:ring-[#c79a43]/30 dark:border-white/10 dark:bg-white/5 dark:text-emerald-100"
             >
@@ -136,7 +136,7 @@
               <option value="REJECTED">{{ $t('gestlab.general.labels.vap_proposals.status.rejected') }}</option>
               <option value="REVISED">{{ $t('gestlab.general.labels.vap_proposals.status.revised') }}</option>
               <option value="EXPIRED">{{ $t('gestlab.general.labels.vap_proposals.status.expired') }}</option>
-            </select>
+            </BaseSelect>
           </label>
 
           <div v-if="selectedTemplate" class="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-300/20 dark:bg-emerald-400/10">
@@ -198,7 +198,7 @@
       </div>
 
       <div v-else class="overflow-x-auto">
-        <table class="min-w-[1040px] w-full">
+        <DataTable class="min-w-[1040px] w-full">
           <thead>
             <tr class="border-b border-[#ded2bb] bg-[#f7f1e6] text-left dark:border-white/10 dark:bg-white/5">
               <th class="px-6 py-4 text-xs font-black uppercase tracking-[0.24em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.table.proposal_no') }}</th>
@@ -290,7 +290,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div v-if="proposals.data.length > 0" class="border-t border-[#ded2bb] px-6 py-5 dark:border-white/10 sm:px-8">

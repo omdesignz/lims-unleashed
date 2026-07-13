@@ -511,7 +511,7 @@ const removeEntry = (index) => {
                     <label for="quantity_used" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.reagent_consumption.quantity_used') }}</label>
                   </div>
                   <div class="sm:col-span-2">
-                    <input v-model="form.quantity_used" type="number" name="quantity_used" id="quantity_used" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.quantity_used ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
+                    <BaseInput v-model="form.quantity_used" type="number" name="quantity_used" id="quantity_used" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" :class="[form.errors.quantity_used ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" />
                     <p v-if="form.errors.quantity_used" class="mt-2 text-sm text-red-600" id="quantity_used-error">{{ form.errors.quantity_used }}</p>
                   </div>
                 </div>

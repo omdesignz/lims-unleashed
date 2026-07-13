@@ -278,12 +278,12 @@ function resolveActivityIcon(icon) {
             <div class="grid gap-5 p-5 sm:p-6 md:grid-cols-2">
               <div class="ds-field-group">
                 <label for="site-password" class="ds-field-label">Nova palavra-passe</label>
-                <div class="relative"><input id="site-password" v-model="passwordForm.password" :type="showNewPassword ? 'text' : 'password'" class="ds-field pr-11" autocomplete="new-password" /><button type="button" class="ds-icon-button absolute right-1.5 top-1.5" :title="showNewPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'" @click="showNewPassword = !showNewPassword"><EyeIcon v-if="showNewPassword" class="h-4 w-4" /><EyeSlashIcon v-else class="h-4 w-4" /></button></div>
+                <div class="relative"><BaseInput id="site-password" v-model="passwordForm.password" :type="showNewPassword ? 'text' : 'password'" class="ds-field pr-11" autocomplete="new-password" /><button type="button" class="ds-icon-button absolute right-1.5 top-1.5" :title="showNewPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'" @click="showNewPassword = !showNewPassword"><EyeIcon v-if="showNewPassword" class="h-4 w-4" /><EyeSlashIcon v-else class="h-4 w-4" /></button></div>
                 <p v-if="passwordForm.errors.password" class="ds-field-error">{{ passwordForm.errors.password }}</p>
               </div>
               <div class="ds-field-group">
                 <label for="site-password-confirmation" class="ds-field-label">Confirmar palavra-passe</label>
-                <div class="relative"><input id="site-password-confirmation" v-model="passwordForm.password_confirmation" :type="showConfirmPassword ? 'text' : 'password'" class="ds-field pr-11" autocomplete="new-password" /><button type="button" class="ds-icon-button absolute right-1.5 top-1.5" :title="showConfirmPassword ? 'Ocultar confirmacao' : 'Mostrar confirmacao'" @click="showConfirmPassword = !showConfirmPassword"><EyeIcon v-if="showConfirmPassword" class="h-4 w-4" /><EyeSlashIcon v-else class="h-4 w-4" /></button></div>
+                <div class="relative"><BaseInput id="site-password-confirmation" v-model="passwordForm.password_confirmation" :type="showConfirmPassword ? 'text' : 'password'" class="ds-field pr-11" autocomplete="new-password" /><button type="button" class="ds-icon-button absolute right-1.5 top-1.5" :title="showConfirmPassword ? 'Ocultar confirmacao' : 'Mostrar confirmacao'" @click="showConfirmPassword = !showConfirmPassword"><EyeIcon v-if="showConfirmPassword" class="h-4 w-4" /><EyeSlashIcon v-else class="h-4 w-4" /></button></div>
                 <p v-if="passwordForm.errors.password_confirmation" class="ds-field-error">{{ passwordForm.errors.password_confirmation }}</p>
               </div>
 

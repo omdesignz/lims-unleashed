@@ -12,11 +12,11 @@
     </div>
 
     <div class="overflow-x-auto">
-      <table class="min-w-[48rem] text-left">
+      <DataTable class="min-w-[48rem] text-left">
         <thead class="ds-table-head">
           <tr>
             <th class="ds-table-cell w-10">
-              <input v-model="selectAll" type="checkbox" class="ds-checkbox" />
+              <CheckboxInput v-model="selectAll" type="checkbox" class="ds-checkbox" />
             </th>
             <th class="ds-table-cell">Item / Nome</th>
             <th class="ds-table-cell">Número do lote</th>
@@ -28,7 +28,7 @@
         <tbody>
           <tr v-for="batch in batches" :key="batch.id" class="ds-table-row">
             <td class="ds-table-cell">
-              <input v-model="selectedIds" type="checkbox" :value="batch.id" class="ds-checkbox" />
+              <CheckboxInput v-model="selectedIds" type="checkbox" :value="batch.id" class="ds-checkbox" />
             </td>
             <td class="ds-table-cell">
               <div class="font-bold text-[var(--ds-text)]">{{ batch.item_name }}</div>
@@ -44,7 +44,7 @@
             </td>
           </tr>
         </tbody>
-      </table>
+      </DataTable>
     </div>
   </section>
 </template>

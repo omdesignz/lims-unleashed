@@ -100,53 +100,53 @@
       <div class="grid gap-4 md:grid-cols-2">
         <label class="block text-sm">
           <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Número do documento</span>
-          <input v-model="form.document_number" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
+          <BaseInput v-model="form.document_number" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
         </label>
 
         <label class="block text-sm">
           <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Tipo documental</span>
-          <input v-model="form.document_type" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400" :placeholder="$t('gestlab.general.labels.vap_filemanager.document_type_placeholder')" />
+          <BaseInput v-model="form.document_type" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-400" :placeholder="$t('gestlab.general.labels.vap_filemanager.document_type_placeholder')" />
         </label>
 
         <label class="block text-sm">
           <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Categoria</span>
-          <input v-model="form.category" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
+          <BaseInput v-model="form.category" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
         </label>
 
         <label class="block text-sm">
           <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Confidencialidade</span>
-          <select v-model="form.confidentiality_level" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+          <BaseSelect v-model="form.confidentiality_level" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
             <option value="public">Público</option>
             <option value="internal">Interno</option>
             <option value="confidential">Confidencial</option>
             <option value="restricted">Restrito</option>
-          </select>
+          </BaseSelect>
         </label>
 
         <label class="block text-sm">
           <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Retenção (dias)</span>
-          <input v-model="form.retention_period_days" type="number" min="1" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
+          <BaseInput v-model="form.retention_period_days" type="number" min="1" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
         </label>
 
         <label class="block text-sm">
           <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Próxima revisão</span>
-          <input v-model="form.review_due_at" type="date" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
+          <DateTimePicker v-model="form.review_due_at" type="date" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
         </label>
 
         <label class="block text-sm md:col-span-2">
           <span class="mb-1.5 block font-medium text-slate-700 dark:text-slate-200">Data de entrada em vigor</span>
-          <input v-model="form.effective_at" type="date" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
+          <DateTimePicker v-model="form.effective_at" type="date" class="w-full rounded-xl border-slate-300 bg-white text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" />
         </label>
       </div>
 
       <div class="grid gap-3 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70">
         <label class="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
-          <input v-model="form.is_controlled" type="checkbox" class="rounded border-slate-300 dark:border-slate-600 dark:bg-slate-900" />
+          <CheckboxInput v-model="form.is_controlled" type="checkbox" class="rounded border-slate-300 dark:border-slate-600 dark:bg-slate-900" />
           Documento controlado
         </label>
 
         <label class="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
-          <input v-model="form.requires_periodic_review" type="checkbox" class="rounded border-slate-300 dark:border-slate-600 dark:bg-slate-900" />
+          <CheckboxInput v-model="form.requires_periodic_review" type="checkbox" class="rounded border-slate-300 dark:border-slate-600 dark:bg-slate-900" />
           Exige revisão periódica
         </label>
       </div>

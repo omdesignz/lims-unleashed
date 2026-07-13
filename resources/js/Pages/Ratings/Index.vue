@@ -54,7 +54,7 @@
         <h2 class="text-base font-semibold text-slate-950 dark:text-white">Registos recentes</h2>
       </div>
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+        <DataTable class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead class="bg-slate-50 dark:bg-slate-950/60">
             <tr>
               <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Tipo</th>
@@ -73,7 +73,7 @@
               <td class="px-6 py-4 text-slate-500">{{ formatDate(rating.created_at) }}</td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
       <div v-if="ratings.links" class="border-t border-slate-200 px-6 py-4 dark:border-slate-800">
         <Pagination :links="ratings.links" />

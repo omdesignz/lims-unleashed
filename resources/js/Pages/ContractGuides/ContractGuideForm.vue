@@ -178,13 +178,13 @@ function loadWarehouses(query, setOptions) {
 
           <div>
             <label for="contract-guide-reference" class="ds-field-label">Referência externa <span class="text-red-600">*</span></label>
-            <input id="contract-guide-reference" v-model="form.ref_no" type="text" class="ds-field mt-2" placeholder="Referência do cliente ou despacho" />
+            <BaseInput id="contract-guide-reference" v-model="form.ref_no" type="text" class="ds-field mt-2" placeholder="Referência do cliente ou despacho" />
             <p v-if="form.errors.ref_no" class="ds-field-error mt-2">{{ form.errors.ref_no }}</p>
           </div>
 
           <div>
             <label for="contract-guide-date" class="ds-field-label">Data documental</label>
-            <input id="contract-guide-date" v-model="form.date" type="date" class="ds-field mt-2" />
+            <DateTimePicker id="contract-guide-date" v-model="form.date" type="date" class="ds-field mt-2" />
             <p v-if="form.errors.date" class="ds-field-error mt-2">{{ form.errors.date }}</p>
           </div>
 
@@ -208,37 +208,37 @@ function loadWarehouses(query, setOptions) {
         <div class="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           <div>
             <label for="contract-guide-collection-point" class="ds-field-label">Ponto de recolha</label>
-            <input id="contract-guide-collection-point" v-model="form.collection_point" type="text" class="ds-field mt-2" />
+            <BaseInput id="contract-guide-collection-point" v-model="form.collection_point" type="text" class="ds-field mt-2" />
             <p v-if="form.errors.collection_point" class="ds-field-error mt-2">{{ form.errors.collection_point }}</p>
           </div>
           <div class="lg:col-span-2">
             <label for="contract-guide-entry-point" class="ds-field-label">Ponto de entrada</label>
-            <input id="contract-guide-entry-point" v-model="form.entry_point" type="text" class="ds-field mt-2" />
+            <BaseInput id="contract-guide-entry-point" v-model="form.entry_point" type="text" class="ds-field mt-2" />
             <p v-if="form.errors.entry_point" class="ds-field-error mt-2">{{ form.errors.entry_point }}</p>
           </div>
           <div>
             <label for="contract-guide-du" class="ds-field-label">Declaração única</label>
-            <input id="contract-guide-du" v-model="form.du_no" type="text" class="ds-field mt-2" />
+            <BaseInput id="contract-guide-du" v-model="form.du_no" type="text" class="ds-field mt-2" />
             <p v-if="form.errors.du_no" class="ds-field-error mt-2">{{ form.errors.du_no }}</p>
           </div>
           <div>
             <label for="contract-guide-bl" class="ds-field-label">Conhecimento de embarque</label>
-            <input id="contract-guide-bl" v-model="form.bl" type="text" class="ds-field mt-2" />
+            <BaseInput id="contract-guide-bl" v-model="form.bl" type="text" class="ds-field mt-2" />
             <p v-if="form.errors.bl" class="ds-field-error mt-2">{{ form.errors.bl }}</p>
           </div>
           <div>
             <label for="contract-guide-nif" class="ds-field-label">NIF</label>
-            <input id="contract-guide-nif" v-model="form.nif" type="text" class="ds-field mt-2" />
+            <BaseInput id="contract-guide-nif" v-model="form.nif" type="text" class="ds-field mt-2" />
             <p v-if="form.errors.nif" class="ds-field-error mt-2">{{ form.errors.nif }}</p>
           </div>
           <div>
             <label for="contract-guide-contact" class="ds-field-label">Contacto</label>
-            <input id="contract-guide-contact" v-model="form.contact" type="text" class="ds-field mt-2" />
+            <BaseInput id="contract-guide-contact" v-model="form.contact" type="text" class="ds-field mt-2" />
             <p v-if="form.errors.contact" class="ds-field-error mt-2">{{ form.errors.contact }}</p>
           </div>
           <div class="md:col-span-2">
             <label for="contract-guide-email" class="ds-field-label">Email</label>
-            <input id="contract-guide-email" v-model="form.email" type="email" class="ds-field mt-2" />
+            <BaseInput id="contract-guide-email" v-model="form.email" type="email" class="ds-field mt-2" />
             <p v-if="form.errors.email" class="ds-field-error mt-2">{{ form.errors.email }}</p>
           </div>
         </div>
@@ -297,30 +297,30 @@ function loadWarehouses(query, setOptions) {
               </div>
               <div>
                 <label :for="'contract-guide-manufacturer-' + index" class="ds-field-label">Fabricante <span class="text-red-600">*</span></label>
-                <input :id="'contract-guide-manufacturer-' + index" v-model="item.manufacturer" type="text" class="ds-field mt-2" />
+                <BaseInput :id="'contract-guide-manufacturer-' + index" v-model="item.manufacturer" type="text" class="ds-field mt-2" />
                 <p v-if="form.errors['items.' + index + '.manufacturer']" class="ds-field-error mt-2">{{ form.errors["items." + index + ".manufacturer"] }}</p>
               </div>
               <div>
                 <label :for="'contract-guide-brand-' + index" class="ds-field-label">Marca <span class="text-red-600">*</span></label>
-                <input :id="'contract-guide-brand-' + index" v-model="item.brand" type="text" class="ds-field mt-2" />
+                <BaseInput :id="'contract-guide-brand-' + index" v-model="item.brand" type="text" class="ds-field mt-2" />
                 <p v-if="form.errors['items.' + index + '.brand']" class="ds-field-error mt-2">{{ form.errors["items." + index + ".brand"] }}</p>
               </div>
               <div>
                 <label :for="'contract-guide-lot-' + index" class="ds-field-label">Lote</label>
-                <input :id="'contract-guide-lot-' + index" v-model="item.lot" type="text" class="ds-field mt-2" />
+                <BaseInput :id="'contract-guide-lot-' + index" v-model="item.lot" type="text" class="ds-field mt-2" />
               </div>
               <div>
                 <label :for="'contract-guide-item-date-' + index" class="ds-field-label">Data do produto</label>
-                <input :id="'contract-guide-item-date-' + index" v-model="item.date" type="date" class="ds-field mt-2" />
+                <DateTimePicker :id="'contract-guide-item-date-' + index" v-model="item.date" type="date" class="ds-field mt-2" />
                 <p v-if="form.errors['items.' + index + '.date']" class="ds-field-error mt-2">{{ form.errors["items." + index + ".date"] }}</p>
               </div>
               <div>
                 <label :for="'contract-guide-item-bl-' + index" class="ds-field-label">Conhecimento de embarque</label>
-                <input :id="'contract-guide-item-bl-' + index" v-model="item.bl" type="text" class="ds-field mt-2" />
+                <BaseInput :id="'contract-guide-item-bl-' + index" v-model="item.bl" type="text" class="ds-field mt-2" />
               </div>
               <div>
                 <label :for="'contract-guide-item-du-' + index" class="ds-field-label">Declaração única</label>
-                <input :id="'contract-guide-item-du-' + index" v-model="item.du_no" type="text" class="ds-field mt-2" />
+                <BaseInput :id="'contract-guide-item-du-' + index" v-model="item.du_no" type="text" class="ds-field mt-2" />
               </div>
               <div class="md:col-span-2 lg:col-span-3">
                 <label :for="'contract-guide-item-obs-' + index" class="ds-field-label">Observações do produto</label>

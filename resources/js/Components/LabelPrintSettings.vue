@@ -16,7 +16,7 @@
           </p>
         </div>
         <div class="flex items-center">
-          <input
+          <CheckboxInput
             v-model="settings.include_cutouts"
             type="checkbox"
             class="ds-checkbox"
@@ -29,7 +29,7 @@
         <label class="ds-field-label block">
           {{ $t('gestlab.general.labels.vap_labels.labels_per_page') }}
         </label>
-        <input
+        <RangeInput
           v-model="settings.labels_per_page"
           type="range"
           min="1"
@@ -49,7 +49,7 @@
           {{ $t('gestlab.general.labels.vap_labels.margin') }}
         </label>
         <div class="flex items-center gap-2">
-          <input
+          <RangeInput
             v-model="settings.margin"
             type="range"
             min="0"
@@ -72,7 +72,7 @@
           <label class="ds-field-label block">
             {{ $t('gestlab.general.labels.vap_labels.columns') }}
           </label>
-          <input
+          <BaseInput
             v-model="settings.columns"
             type="number"
             min="1"
@@ -84,7 +84,7 @@
           <label class="ds-field-label block">
             {{ $t('gestlab.general.labels.vap_labels.rows') }}
           </label>
-          <input
+          <BaseInput
             v-model="settings.rows"
             type="number"
             min="1"
@@ -100,7 +100,7 @@
           {{ $t('gestlab.general.labels.vap_labels.spacing') }}
         </label>
         <div class="flex items-center gap-2">
-          <input
+          <RangeInput
             v-model="settings.spacing"
             type="range"
             min="0"
@@ -119,7 +119,7 @@
         <label class="ds-field-label block">
           {{ $t('gestlab.general.labels.vap_labels.page_size') }}
         </label>
-        <select
+        <BaseSelect
           v-model="settings.page_size"
           class="ds-field"
         >
@@ -127,7 +127,7 @@
           <option value="A3">A3</option>
           <option value="Letter">Letter</option>
           <option value="Legal">Legal</option>
-        </select>
+        </BaseSelect>
       </div>
       
       <!-- Orientation -->

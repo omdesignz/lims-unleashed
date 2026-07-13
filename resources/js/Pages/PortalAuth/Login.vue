@@ -92,7 +92,7 @@ const loginWithPasskey = async () => {
       <form class="mt-7 space-y-5" @submit.prevent="submit">
         <div class="ds-field-group">
           <label for="portal-email" class="ds-field-label">Email ou NIF</label>
-          <input
+          <BaseInput
             id="portal-email"
             v-model="form.email"
             name="email"
@@ -115,7 +115,7 @@ const loginWithPasskey = async () => {
             </Link>
           </div>
           <div class="relative">
-            <input
+            <BaseInput
               id="portal-password"
               v-model="form.password"
               name="password"
@@ -139,7 +139,7 @@ const loginWithPasskey = async () => {
         </div>
 
         <label class="flex items-center gap-3 text-sm font-medium text-[var(--ds-text-muted)]">
-          <input v-model="form.remember" name="remember" type="checkbox" class="ds-checkbox" />
+          <CheckboxInput v-model="form.remember" name="remember" type="checkbox" class="ds-checkbox" />
           <span>Manter sessao iniciada</span>
         </label>
 

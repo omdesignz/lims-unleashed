@@ -382,7 +382,7 @@ function restoreRevision() {
             <label class="ds-field-label" for="restore-iso-section">
               Secao ISO <span class="ds-field-required">*</span>
             </label>
-            <input
+            <BaseInput
               id="restore-iso-section"
               v-model="form.iso_section"
               class="ds-field"
@@ -397,7 +397,7 @@ function restoreRevision() {
             <label class="ds-field-label" for="restore-approver">
               Aprovador <span class="ds-field-required">*</span>
             </label>
-            <select
+            <BaseSelect
               id="restore-approver"
               v-model="form.approved_by_id"
               class="ds-field"
@@ -407,7 +407,7 @@ function restoreRevision() {
               <option v-for="approver in approvers" :key="approver.id" :value="approver.id">
                 {{ approver.name }}
               </option>
-            </select>
+            </BaseSelect>
             <p v-if="!approvers.length" class="ds-field-hint">
               Nenhum aprovador elegivel foi fornecido para este fluxo.
             </p>
@@ -420,21 +420,21 @@ function restoreRevision() {
             <label class="ds-field-label" for="restore-category">
               Categoria <span class="ds-field-required">*</span>
             </label>
-            <select id="restore-category" v-model="form.change_category" class="ds-field">
+            <BaseSelect id="restore-category" v-model="form.change_category" class="ds-field">
               <option value="CORRECTION">Correcao</option>
               <option value="REISSUE">Reemissao</option>
               <option value="EMERGENCY">Emergencia</option>
               <option value="REGULATORY">Regulatoria</option>
-            </select>
+            </BaseSelect>
           </div>
 
           <div class="ds-field-group">
             <label class="ds-field-label" for="restore-risk">Avaliacao de risco</label>
-            <select id="restore-risk" v-model="form.risk_assessment" class="ds-field">
+            <BaseSelect id="restore-risk" v-model="form.risk_assessment" class="ds-field">
               <option value="LOW">Baixo</option>
               <option value="MEDIUM">Medio</option>
               <option value="HIGH">Alto</option>
-            </select>
+            </BaseSelect>
           </div>
 
           <div class="ds-field-group lg:col-span-2">
@@ -444,7 +444,7 @@ function restoreRevision() {
         </section>
 
         <label class="lims-status-strip flex items-start gap-3 p-4">
-          <input v-model="form.confirmed" type="checkbox" class="ds-checkbox mt-0.5" />
+          <CheckboxInput v-model="form.confirmed" type="checkbox" class="ds-checkbox mt-0.5" />
           <span>
             <span class="ds-heading block text-sm">Confirmo a reposicao controlada</span>
             <span class="ds-copy mt-1 block text-xs">

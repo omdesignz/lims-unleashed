@@ -20,7 +20,7 @@
 
     <!-- Status Table -->
     <div class="overflow-x-auto">
-      <table class="min-w-full">
+      <DataTable class="min-w-full">
         <thead class="ds-table-head">
           <tr>
             <th scope="col" class="ds-table-heading px-6 py-3.5 text-left">
@@ -202,7 +202,7 @@
             </td>
           </tr>
         </tbody>
-      </table>
+      </DataTable>
     </div>
 
     <!-- Summary Footer -->

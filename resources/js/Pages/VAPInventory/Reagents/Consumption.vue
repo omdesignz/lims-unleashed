@@ -182,7 +182,7 @@
       </div>
 
       <div v-else-if="consumptions.data?.length" class="ds-table-shell overflow-x-auto">
-        <table class="min-w-[74rem]">
+        <DataTable class="min-w-[74rem]">
           <thead class="ds-table-head">
             <tr>
               <th class="ds-table-cell text-left">Data</th>
@@ -244,7 +244,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div v-else class="p-5">
@@ -285,7 +285,7 @@
         </div>
 
         <div class="ds-table-shell overflow-x-auto">
-          <table class="min-w-[38rem]">
+          <DataTable class="min-w-[38rem]">
             <thead class="ds-table-head">
               <tr>
                 <th class="ds-table-cell text-left">Reagente</th>
@@ -302,7 +302,7 @@
                 <td class="ds-table-cell text-sm text-[color:var(--ds-text-muted)]">{{ formatQuantity(item.avg_per_use) }}</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </article>
 
@@ -318,7 +318,7 @@
         </div>
 
         <div class="ds-table-shell overflow-x-auto">
-          <table class="min-w-[32rem]">
+          <DataTable class="min-w-[32rem]">
             <thead class="ds-table-head">
               <tr>
                 <th class="ds-table-cell text-left">Utilizador</th>
@@ -333,7 +333,7 @@
                 <td class="ds-table-cell text-sm text-[color:var(--ds-text)]">{{ formatQuantity(user.usage_count) }}</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </article>
     </section>

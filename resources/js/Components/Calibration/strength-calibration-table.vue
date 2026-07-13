@@ -1,37 +1,37 @@
 <template>
     <div>
-      <table>
+      <DataTable>
         <tr>
           <th>Input Values</th>
           <th>Calculated Values</th>
         </tr>
         <tr>
-          <td>Nr1: <input v-model.number="Nr1" type="number" /></td>
+          <td>Nr1: <BaseInput v-model.number="Nr1" type="number" /></td>
           <td>FM: {{ FM }}</td>
         </tr>
         <tr>
-          <td>Nr2: <input v-model.number="Nr2" type="number" /></td>
+          <td>Nr2: <BaseInput v-model.number="Nr2" type="number" /></td>
           <td>F1p: {{ F1p }}</td>
         </tr>
         <tr>
-          <td>Nr3: <input v-model.number="Nr3" type="number" /></td>
+          <td>Nr3: <BaseInput v-model.number="Nr3" type="number" /></td>
           <td>F2p: {{ F2p }}</td>
         </tr>
         <tr>
-          <td>F1i: <input v-model.number="F1i" type="number" /></td>
+          <td>F1i: <BaseInput v-model.number="F1i" type="number" /></td>
           <td>F3p: {{ F3p }}</td>
         </tr>
         <tr>
-          <td>F2i: <input v-model.number="F2i" type="number" /></td>
+          <td>F2i: <BaseInput v-model.number="F2i" type="number" /></td>
           <td>Fmaxp: {{ Fmaxp }}</td>
         </tr>
         <tr>
-          <td>F3i: <input v-model.number="F3i" type="number" /></td>
+          <td>F3i: <BaseInput v-model.number="F3i" type="number" /></td>
           <td>FminP: {{ FminP }}</td>
         </tr>
         <!-- Add more rows as needed for each input and calculated value -->
         <tr>
-          <td>ResP: <input v-model.number="ResP" type="number" /></td>
+          <td>ResP: <BaseInput v-model.number="ResP" type="number" /></td>
           <td>UComb: {{ UComb }}</td>
         </tr>
         <tr>
@@ -95,14 +95,14 @@
             <td>URev: {{ URevSquared }}</td>
         </tr>
         <tr>
-          <td>ResI: <input v-model.number="ResI" type="number" /></td>
+          <td>ResI: <BaseInput v-model.number="ResI" type="number" /></td>
           <td>Veff: {{ Veff }}</td>
         </tr>
         <tr>
-          <td>Fzero: <input v-model.number="Fzero" type="number" /></td>
+          <td>Fzero: <BaseInput v-model.number="Fzero" type="number" /></td>
           <td>Iexp: {{ Iexp }}</td>
         </tr>
-      </table>
+      </DataTable>
     </div>
   </template>
   

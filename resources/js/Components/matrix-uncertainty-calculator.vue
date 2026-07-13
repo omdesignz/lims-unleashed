@@ -2,34 +2,34 @@
     <div>
       <h2>Uncertainty Calculator with Matrix Uncertainty</h2>
       <div v-for="(value, index) in data" :key="index">
-        <input
+        <BaseInput
           type="number"
           v-model.number="data[index]"
           @input="updateMeasurement(index, data[index])"
         />
       </div>
       <button @click="addMeasurement">Add Measurement</button>
-      <input
+      <BaseInput
         type="number"
         v-model.number="distributionalUncertainty"
         placeholder="Distributional Uncertainty"
       />
-      <input
+      <BaseInput
         type="number"
         v-model.number="technicalUncertainty"
         placeholder="Technical Uncertainty"
       />
-      <input
+      <BaseInput
         type="number"
         v-model.number="confirmationUncertainty"
         placeholder="Confirmation Uncertainty"
       />
-      <input
+      <BaseInput
         type="number"
         v-model.number="environmentalUncertainty"
         placeholder="Environmental Uncertainty"
       />
-      <input
+      <BaseInput
         type="number"
         v-model.number="matrixUncertainty"
         placeholder="Matrix Uncertainty"

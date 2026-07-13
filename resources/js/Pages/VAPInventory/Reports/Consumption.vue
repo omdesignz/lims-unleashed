@@ -207,7 +207,7 @@
         </div>
 
         <div v-if="!loading && consumptionRows.length" class="hidden overflow-x-auto lg:block">
-          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
             <thead class="bg-[var(--ds-panel-subtle)]">
               <tr>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Data</th>
@@ -232,7 +232,7 @@
                 <td class="max-w-xs px-5 py-4 align-top text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ event.remarks || 'Sem observações.' }}</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
 
         <Pagination
@@ -309,7 +309,7 @@
           <BeakerIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
         </div>
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
             <thead class="bg-[var(--ds-panel-subtle)]">
               <tr>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Reagente</th>
@@ -324,7 +324,7 @@
                 <td class="px-5 py-3 text-right font-black tabular-nums text-rose-700 dark:text-rose-300">{{ formatQuantity(item.total_consumption) }}</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </div>
 
@@ -337,7 +337,7 @@
           <UsersIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
         </div>
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
             <thead class="bg-[var(--ds-panel-subtle)]">
               <tr>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Utilizador</th>
@@ -352,7 +352,7 @@
                 <td class="px-5 py-3 text-right font-black tabular-nums text-[var(--ds-text)]">{{ formatQuantity(user.total_consumption) }}</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </div>
     </section>

@@ -8,7 +8,7 @@
 
       <div v-if="showRenameFolderForm">
         <form @submit.prevent="renameFolder">
-            <input v-model="renameFolderName" placeholder="New Folder Name" />
+            <BaseInput v-model="renameFolderName" placeholder="New Folder Name" />
             <button type="submit">Rename</button>
             <button @click="toggleRenameFolderForm">Cancel</button>
         </form>
@@ -16,7 +16,7 @@
 
       <div v-if="showNewFolderForm">
         <form @submit.prevent="createFolder">
-            <input v-model="newFolderName" placeholder="Folder Name" />
+            <BaseInput v-model="newFolderName" placeholder="Folder Name" />
             <button type="submit">Create</button>
             <button @click="toggleNewFolderForm">Cancel</button>
         </form>
@@ -39,7 +39,7 @@
 
         <div v-if="showRenameFileForm && renamingFileId === file.id">
             <form @submit.prevent="renameFile(file)">
-            <input v-model="renameFileName" :placeholder="file.name" />
+            <BaseInput v-model="renameFileName" :placeholder="file.name" />
             <button type="submit">Rename</button>
             <button @click="toggleRenameFileForm(file)">Cancel</button>
             </form>
@@ -60,12 +60,12 @@
 
         <div v-if="showMoveFileForm && movingFileId === file.id">
           <form @submit.prevent="moveFile(file)">
-            <select v-model="destinationFolderId">
+            <BaseSelect v-model="destinationFolderId">
               <option value="" disabled>Select Destination Folder</option>
               <option v-for="folder in availableFolders" :key="folder.id" :value="folder.id">
                 {{ folder.name }}
               </option>
-            </select>
+            </BaseSelect>
             <button type="submit">Move</button>
             <button @click="toggleMoveFileForm(file)">Cancel</button>
           </form>

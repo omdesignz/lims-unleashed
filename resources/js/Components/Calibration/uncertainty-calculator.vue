@@ -5,13 +5,13 @@
   
       <!-- Input Fields with v-model bindings -->
       <label for="nominalValue">Nominal Value (e.g., 10 kg, 5 g):</label>
-      <input v-model="nominalValue" type="text" placeholder="Enter nominal value" />
+      <BaseInput v-model="nominalValue" type="text" placeholder="Enter nominal value" />
   
       <label for="conversion">Conversion (e.g., +2900 mg, -1950 mg):</label>
-      <input v-model="conversion" type="text" placeholder="Enter conversion value" />
+      <BaseInput v-model="conversion" type="text" placeholder="Enter conversion value" />
   
       <label for="uncertainty">Uncertainty (e.g., ±166.67 mg):</label>
-      <input v-model="uncertainty" type="text" placeholder="Enter uncertainty" />
+      <BaseInput v-model="uncertainty" type="text" placeholder="Enter uncertainty" />
   
       <br><br>
   

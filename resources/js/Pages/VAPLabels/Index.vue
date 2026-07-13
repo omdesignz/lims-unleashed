@@ -261,7 +261,7 @@
         </div>
 
         <div class="hidden overflow-x-auto lg:block">
-          <table class="min-w-full divide-y divide-[var(--ds-border)]">
+          <DataTable class="min-w-full divide-y divide-[var(--ds-border)]">
             <thead class="ds-table-head">
               <tr>
                 <th scope="col" class="px-6 py-4 text-left ds-table-heading">
@@ -357,7 +357,7 @@
                 </td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
 
         <div

@@ -150,21 +150,21 @@ function clear() {
       as="div"
     >
       <ComboboxLabel v-if="props.titleLabel" class="ds-field-label mb-2 block">{{ props.titleLabel }}</ComboboxLabel>
-      <div class="relative mt-1">
+      <div class="relative" :class="props.titleLabel ? 'mt-1.5' : ''">
         <div
           class="ds-combobox-control cursor-default text-left"
           :data-invalid="props.hasError"
           :data-disabled="props.disableInput"
         >
           <ComboboxInput
-            class="w-full border-0 bg-transparent py-3 pl-4 pr-14 text-sm font-semibold text-[var(--ds-text)] placeholder:text-[var(--ds-text-soft)] focus:ring-0"
+            class="w-full border-0 bg-transparent py-3 pl-3.5 pr-20 text-sm font-semibold text-[var(--ds-text)] placeholder:text-[var(--ds-text-soft)] focus:ring-0"
             :displayValue="option => option?.label"
             @change="query = $event.target.value"
             :placeholder="props.placeholder"
             :disabled="props.disableInput"
           />
           <ComboboxButton
-            class="absolute inset-y-0 right-0 flex items-center gap-1 rounded-r-2xl px-3 focus:outline-none"
+            class="absolute inset-y-0 right-0 flex items-center gap-1 px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ds-focus)]"
           >
             <XMarkIcon
               v-if="props.modelValue"
@@ -178,7 +178,7 @@ function clear() {
             />
           </ComboboxButton>
           <!-- Loading indicator -->
-          <div v-if="props.loading" class="absolute inset-y-0 right-8 flex items-center pr-2 pointer-events-none">
+          <div v-if="props.loading || isLoading" class="pointer-events-none absolute inset-y-0 right-9 flex items-center pr-2">
             <svg class="h-4 w-4 animate-spin text-primary-700 dark:text-primary-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -200,7 +200,6 @@ function clear() {
                 filteredOptions.length === 0 &&
                 !isLoading &&
                 !props.loading &&
-                !queryOption &&
                 !props.createOption
               "
               class="relative cursor-default select-none rounded-xl px-4 py-3 text-sm font-semibold text-[var(--ds-text-muted)]"
@@ -230,7 +229,7 @@ function clear() {
               >
                 <li
                   class="ds-option"
-                  :class="{ 'ds-option-active': active }"
+                  :class="{ 'ds-option-active': active, 'bg-[var(--ds-panel-subtle)]': selected && !active }"
                 >
                   {{ $t('gestlab.general.buttons.create') }} "{{ queryOption.label }}"
                 </li>

@@ -175,7 +175,7 @@
                     />
                   </svg>
                 </div>
-                <input
+                <BaseInput
                   type="text"
                   id="search"
                   name="search"

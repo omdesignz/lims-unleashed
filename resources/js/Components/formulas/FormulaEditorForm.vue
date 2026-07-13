@@ -81,22 +81,22 @@
         <div class="grid gap-5 px-5 py-5 sm:grid-cols-2 sm:px-6">
           <div class="ds-field-group sm:col-span-2">
             <label for="formula-name" class="ds-field-label">Nome <span class="ds-field-required">*</span></label>
-            <input id="formula-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" placeholder="Ex.: Teor de humidade">
+            <BaseInput id="formula-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" placeholder="Ex.: Teor de humidade" />
             <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
           </div>
           <div class="ds-field-group">
             <label for="formula-code" class="ds-field-label">Código <span class="ds-field-required">*</span></label>
-            <input id="formula-code" v-model="form.code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.code)" placeholder="teor_humidade">
+            <BaseInput id="formula-code" v-model="form.code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.code)" placeholder="teor_humidade" />
             <p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p>
           </div>
           <div class="ds-field-group">
             <label for="formula-category" class="ds-field-label">Categoria <span class="ds-field-required">*</span></label>
-            <select id="formula-category" v-model="form.category" class="ds-field" :aria-invalid="Boolean(form.errors.category)">
+            <BaseSelect id="formula-category" v-model="form.category" class="ds-field" :aria-invalid="Boolean(form.errors.category)">
               <option value="general">Geral</option>
               <option value="microbiology">Microbiologia</option>
               <option value="physicochemical">Físico-química</option>
               <option value="custom">Personalizada</option>
-            </select>
+            </BaseSelect>
             <p v-if="form.errors.category" class="ds-field-error">{{ form.errors.category }}</p>
           </div>
           <div class="ds-field-group sm:col-span-2">
@@ -115,12 +115,12 @@
         <div class="grid gap-5 px-5 py-5 sm:grid-cols-2 xl:grid-cols-1 sm:px-6">
           <div class="ds-field-group">
             <label for="formula-output-unit" class="ds-field-label">Unidade do resultado <span class="ds-field-required">*</span></label>
-            <input id="formula-output-unit" v-model="form.output_unit" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.output_unit)" placeholder="%, UFC/g, mg/L">
+            <BaseInput id="formula-output-unit" v-model="form.output_unit" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.output_unit)" placeholder="%, UFC/g, mg/L" />
             <p v-if="form.errors.output_unit" class="ds-field-error">{{ form.errors.output_unit }}</p>
           </div>
           <div class="ds-field-group">
             <label for="formula-decimal-places" class="ds-field-label">Casas decimais <span class="ds-field-required">*</span></label>
-            <input id="formula-decimal-places" v-model.number="form.decimal_places" type="number" min="0" max="8" step="1" class="ds-field" :aria-invalid="Boolean(form.errors.decimal_places)">
+            <BaseInput id="formula-decimal-places" v-model.number="form.decimal_places" type="number" min="0" max="8" step="1" class="ds-field" :aria-invalid="Boolean(form.errors.decimal_places)" />
             <p v-if="form.errors.decimal_places" class="ds-field-error">{{ form.errors.decimal_places }}</p>
           </div>
         </div>
@@ -157,14 +157,13 @@
         <div class="px-5 py-5 sm:px-6">
           <div class="ds-field-group">
             <label for="formula-expression" class="ds-field-label">Expressão <span class="ds-field-required">*</span></label>
-            <input
+            <BaseInput
               id="formula-expression"
               v-model="form.expression"
               type="text"
               class="ds-field font-mono"
               :aria-invalid="Boolean(form.errors.expression || form.errors.formula_expression)"
-              placeholder="((massa_inicial - massa_final) * 100) / massa_inicial"
-            >
+              placeholder="((massa_inicial - massa_final) * 100) / massa_inicial" />
             <p class="ds-field-help">Operadores: +, -, *, /, %, parênteses; funções: sqrt, log, log10, exp, abs, round, ceil, floor, max, min, avg e sum.</p>
             <p v-if="form.errors.expression" class="ds-field-error">{{ form.errors.expression }}</p>
             <p v-if="form.errors.formula_expression" class="ds-field-error">{{ form.errors.formula_expression }}</p>
@@ -206,7 +205,7 @@
       </div>
 
       <div v-if="form.variables.length" class="overflow-x-auto">
-        <table class="min-w-[66rem] divide-y divide-[var(--ds-border)]">
+        <DataTable class="min-w-[66rem] divide-y divide-[var(--ds-border)]">
           <thead class="ds-table-head">
             <tr>
               <th class="ds-table-heading w-44 px-4 py-3 text-left sm:pl-6">Nome</th>
@@ -220,25 +219,25 @@
           <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
             <tr v-for="(variable, index) in form.variables" :key="`${index}-${variable.name}`" class="ds-table-row align-top">
               <td class="ds-table-cell px-4 py-3 sm:pl-6">
-                <input v-model="variable.name" type="text" class="ds-field font-mono" :aria-invalid="Boolean(variableError(index, 'name'))" placeholder="massa_inicial">
+                <BaseInput v-model="variable.name" type="text" class="ds-field font-mono" :aria-invalid="Boolean(variableError(index, 'name'))" placeholder="massa_inicial" />
                 <p v-if="variableError(index, 'name')" class="ds-field-error">{{ variableError(index, 'name') }}</p>
               </td>
               <td class="ds-table-cell px-4 py-3">
-                <input v-model="variable.label" type="text" class="ds-field" :aria-invalid="Boolean(variableError(index, 'label'))" placeholder="Massa inicial">
+                <BaseInput v-model="variable.label" type="text" class="ds-field" :aria-invalid="Boolean(variableError(index, 'label'))" placeholder="Massa inicial" />
                 <p v-if="variableError(index, 'label')" class="ds-field-error">{{ variableError(index, 'label') }}</p>
               </td>
               <td class="ds-table-cell px-4 py-3">
-                <select v-model="variable.type" class="ds-field">
+                <BaseSelect v-model="variable.type" class="ds-field">
                   <option value="number">Número</option>
                   <option value="integer">Inteiro</option>
                   <option value="decimal">Decimal</option>
-                </select>
+                </BaseSelect>
               </td>
               <td class="ds-table-cell px-4 py-3">
-                <input v-model="variable.unit" type="text" class="ds-field" placeholder="g, mL, °C">
+                <BaseInput v-model="variable.unit" type="text" class="ds-field" placeholder="g, mL, °C" />
               </td>
               <td class="ds-table-cell px-4 py-3">
-                <input v-model="variable.value" type="number" :step="variable.type === 'integer' ? 1 : 'any'" class="ds-field tabular-nums" placeholder="0">
+                <BaseInput v-model="variable.value" type="number" :step="variable.type === 'integer' ? 1 : 'any'" class="ds-field tabular-nums" placeholder="0" />
               </td>
               <td class="ds-table-cell px-4 py-3 text-right sm:pr-6">
                 <button type="button" class="ds-icon-button hover:!text-red-600" title="Remover variável" @click="removeVariable(index)">
@@ -247,7 +246,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div v-else class="p-5 sm:p-8">

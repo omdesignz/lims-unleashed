@@ -191,7 +191,7 @@ async function loadUsers(query, setOptions) {
                         />
 
                         <label class="flex cursor-pointer items-center gap-2 text-xs font-bold text-[var(--ds-text-muted)]">
-                          <input v-model="member.is_responsible" type="checkbox" class="h-4 w-4 rounded border-[var(--ds-border-strong)] text-[rgb(var(--primary-700-rgb))] focus:ring-[var(--ds-focus)]" />
+                          <CheckboxInput v-model="member.is_responsible" type="checkbox" class="ds-checkbox" />
                           {{ $t('gestlab.general.labels.kanban.cards.responsible') }}
                         </label>
 

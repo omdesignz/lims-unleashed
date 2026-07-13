@@ -43,7 +43,7 @@
 
       <!-- Page input -->
       <div class="flex items-center gap-1.5 rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-1.5 py-1">
-        <input
+        <BaseInput
           type="number"
           min="1"
           :max="last_page"

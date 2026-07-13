@@ -265,7 +265,7 @@ function handleParameterSelect(selected) {
           </div>
 
           <div v-else class="mt-2 flex gap-2">
-            <input
+            <BaseInput
               v-model="result.inserted_value"
               class="ds-field"
               :class="{ 'border-red-400 text-red-800 dark:text-red-200': isOutOfRange }"
@@ -320,7 +320,7 @@ function handleParameterSelect(selected) {
         <label class="ds-field-label" :for="'item-' + index + '-uncertainty'">
           Incerteza
         </label>
-        <input
+        <BaseInput
           :id="'item-' + index + '-uncertainty'"
           v-model="result.uncertainty_value"
           class="ds-field mt-2"

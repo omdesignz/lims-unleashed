@@ -369,38 +369,38 @@ function resetFilters() {
       <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <div class="ds-field-group">
           <label class="ds-field-label" for="audit-date-from">Desde</label>
-          <input id="audit-date-from" v-model="localFilters.date_from" type="date" class="ds-field" />
+          <DateTimePicker id="audit-date-from" v-model="localFilters.date_from" type="date" class="ds-field" />
         </div>
         <div class="ds-field-group">
           <label class="ds-field-label" for="audit-date-to">Ate</label>
-          <input id="audit-date-to" v-model="localFilters.date_to" type="date" class="ds-field" />
+          <DateTimePicker id="audit-date-to" v-model="localFilters.date_to" type="date" class="ds-field" />
         </div>
         <div class="ds-field-group">
           <label class="ds-field-label" for="audit-user">Utilizador</label>
-          <select id="audit-user" v-model="localFilters.causer_id" class="ds-field">
+          <BaseSelect id="audit-user" v-model="localFilters.causer_id" class="ds-field">
             <option value="">Todos</option>
             <option v-for="user in uniqueUsers" :key="user.id" :value="user.id">
               {{ user.name }}
             </option>
-          </select>
+          </BaseSelect>
         </div>
         <div class="ds-field-group">
           <label class="ds-field-label" for="audit-action">Acao</label>
-          <select id="audit-action" v-model="localFilters.change_type" class="ds-field">
+          <BaseSelect id="audit-action" v-model="localFilters.change_type" class="ds-field">
             <option value="">Todas</option>
             <option v-for="action in uniqueActions" :key="action" :value="action">
               {{ actionLabel(action) }}
             </option>
-          </select>
+          </BaseSelect>
         </div>
         <div class="ds-field-group">
           <label class="ds-field-label" for="audit-entity">Entidade</label>
-          <select id="audit-entity" v-model="localFilters.entity_type" class="ds-field">
+          <BaseSelect id="audit-entity" v-model="localFilters.entity_type" class="ds-field">
             <option value="">Todas</option>
             <option v-for="entity in uniqueEntityTypes" :key="entity" :value="entity">
               {{ entityLabel(entity) }}
             </option>
-          </select>
+          </BaseSelect>
         </div>
       </div>
     </section>
@@ -479,7 +479,7 @@ function resetFilters() {
         </div>
 
         <div class="hidden overflow-x-auto lg:block">
-          <table class="min-w-full">
+          <DataTable class="min-w-full">
             <thead class="ds-table-head">
               <tr>
                 <th class="ds-table-heading px-5 py-4 text-left">Evento</th>
@@ -551,7 +551,7 @@ function resetFilters() {
                 </tr>
               </template>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </div>
 

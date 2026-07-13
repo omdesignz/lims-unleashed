@@ -64,21 +64,20 @@
 
             <div>
               <label for="orderDate" class="ds-field-label">Data do pedido <span class="text-rose-600">*</span></label>
-              <input
+              <DateTimePicker
                 id="orderDate"
                 v-model="form.date"
                 type="date"
                 :max="maxDate"
                 class="ds-field"
                 :aria-invalid="Boolean(form.errors.date)"
-                required
-              />
+                required />
               <p v-if="form.errors.date" class="ds-field-error mt-1">{{ form.errors.date }}</p>
             </div>
 
             <div>
               <label for="reference" class="ds-field-label">Número de referência</label>
-              <input
+              <BaseInput
                 id="reference"
                 v-model="form.reference"
                 type="text"
@@ -194,7 +193,7 @@
 
                   <div>
                     <label class="ds-field-label">Quantidade <span class="text-rose-600">*</span></label>
-                    <input
+                    <BaseInput
                       v-model.number="item.qty"
                       type="number"
                       :min="Math.max(1, Number(item.received_qty || 0))"
@@ -208,7 +207,7 @@
 
                   <div>
                     <label class="ds-field-label">Preço un. <span class="text-rose-600">*</span></label>
-                    <input
+                    <BaseInput
                       v-model.number="item.unit_price"
                       type="number"
                       min="0"
@@ -235,13 +234,12 @@
 
                   <div>
                     <label class="ds-field-label">Data prevista</label>
-                    <input
+                    <DateTimePicker
                       v-model="item.expected_date"
                       type="date"
                       :min="form.date || minDate"
                       class="ds-field"
-                      :disabled="!canEditItems"
-                    />
+                      :disabled="!canEditItems" />
                     <p v-if="itemErrors[index]?.expected_date" class="ds-field-error mt-1">{{ itemErrors[index].expected_date }}</p>
                   </div>
                 </div>

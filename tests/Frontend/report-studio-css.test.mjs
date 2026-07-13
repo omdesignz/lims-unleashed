@@ -321,9 +321,9 @@ test('report studio media picker uses the product shell and keeps manual urls ad
     reportStudioWorkbenchSource.indexOf('<div v-else class="mt-5 rounded-3xl border border-dashed', reportStudioWorkbenchSource.indexOf('<div v-if="mediaPickerOpen"')),
   )
 
-  assert.match(mediaPickerSource, /bg-\[#06100e\]\/80/)
+  assert.match(mediaPickerSource, /bg-slate-950\/75/)
   assert.match(mediaPickerSource, /max-w-6xl/)
-  assert.match(mediaPickerSource, /border-\[#ded3bf\]/)
+  assert.match(mediaPickerSource, /border-\[var\(--ds-border\)\]/)
   assert.match(mediaPickerSource, /studioCopy\('media_picker\.eyebrow'\)/)
   assert.match(mediaPickerSource, /studioCopy\('media_picker\.manual_advanced'\)/)
   assert.match(mediaPickerSource, /<details class="mt-3/)

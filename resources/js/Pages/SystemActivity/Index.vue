@@ -467,27 +467,27 @@ function confirmDelete() {
         </div>
         <div>
           <label for="activity-description" class="ds-field-label">Descrição</label>
-          <input id="activity-description" v-model="filters.description" type="search" class="ds-field mt-2" placeholder="Pesquisar texto do evento" />
+          <BaseInput id="activity-description" v-model="filters.description" type="search" class="ds-field mt-2" placeholder="Pesquisar texto do evento" />
         </div>
         <div>
           <label for="activity-start-date" class="ds-field-label">Data inicial</label>
-          <input id="activity-start-date" v-model="filters.start_date" type="date" class="ds-field mt-2" />
+          <DateTimePicker id="activity-start-date" v-model="filters.start_date" type="date" class="ds-field mt-2" />
         </div>
         <div>
           <label for="activity-end-date" class="ds-field-label">Data final</label>
-          <input id="activity-end-date" v-model="filters.end_date" type="date" class="ds-field mt-2" />
+          <DateTimePicker id="activity-end-date" v-model="filters.end_date" type="date" class="ds-field mt-2" />
         </div>
         <div class="md:col-span-2">
           <label for="activity-batch" class="ds-field-label">UUID do lote</label>
-          <input id="activity-batch" v-model="filters.batch_uuid" type="text" class="ds-field mt-2 font-mono" placeholder="Identificador exato do lote" />
+          <BaseInput id="activity-batch" v-model="filters.batch_uuid" type="text" class="ds-field mt-2 font-mono" placeholder="Identificador exato do lote" />
         </div>
         <div>
           <label for="activity-page-size" class="ds-field-label">Registos por página</label>
-          <select id="activity-page-size" v-model.number="filters.per_page" class="ds-field mt-2">
+          <BaseSelect id="activity-page-size" v-model.number="filters.per_page" class="ds-field mt-2">
             <option :value="25">25</option>
             <option :value="50">50</option>
             <option :value="100">100</option>
-          </select>
+          </BaseSelect>
         </div>
       </div>
 
@@ -514,7 +514,7 @@ function confirmDelete() {
       </div>
 
       <div class="overflow-x-auto">
-        <table class="min-w-full">
+        <DataTable class="min-w-full">
           <thead class="ds-table-head">
             <tr>
               <th class="ds-table-heading px-5 py-3 text-left">Evento</th>
@@ -566,7 +566,7 @@ function confirmDelete() {
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div v-if="props.record.links?.length > 3" class="flex flex-col gap-3 border-t border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">

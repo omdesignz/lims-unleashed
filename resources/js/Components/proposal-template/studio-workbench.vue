@@ -568,14 +568,14 @@ const basePreviewReplacementMap = {
   expiry_date: '03/06/2026',
   issue_date: '04/05/2026',
   items_list: 'Ensaios laboratoriais',
-  items_table: '<table style="width:100%; border-collapse:collapse;"><tr><th style="border:1px solid #cbd5e1; padding:6px;">Serviço</th><th style="border:1px solid #cbd5e1; padding:6px;">Valor</th></tr><tr><td style="border:1px solid #cbd5e1; padding:6px;">Ensaios laboratoriais</td><td style="border:1px solid #cbd5e1; padding:6px;">AOA 25.000,00</td></tr></table>',
+  items_table: '<DataTable style="width:100%; border-collapse:collapse;"><tr><th style="border:1px solid #cbd5e1; padding:6px;">Serviço</th><th style="border:1px solid #cbd5e1; padding:6px;">Valor</th></tr><tr><td style="border:1px solid #cbd5e1; padding:6px;">Ensaios laboratoriais</td><td style="border:1px solid #cbd5e1; padding:6px;">AOA 25.000,00</td></tr></DataTable>',
   lab_details: '<strong>Laboratório Central</strong><br />Luanda · laboratório de ensaios',
   lab_name: 'Laboratório Central',
   observations: 'Condições comerciais e técnicas acordadas com o cliente.',
   proposal_number: 'PR-2026-001',
   service_location: 'Luanda',
   signature_block: '<div style="margin-top:24px; border-top:1px solid #143d37; padding-top:10px;"><strong>Direcção comercial</strong><br />Validação da proposta</div>',
-  summary_table: '<table style="width:100%; border-collapse:collapse;"><tr><td style="border:1px solid #cbd5e1; padding:6px;">Subtotal</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right;">AOA 25.000,00</td></tr><tr><td style="border:1px solid #cbd5e1; padding:6px;">Total</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right; font-weight:700;">AOA 25.000,00</td></tr></table>',
+  summary_table: '<DataTable style="width:100%; border-collapse:collapse;"><tr><td style="border:1px solid #cbd5e1; padding:6px;">Subtotal</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right;">AOA 25.000,00</td></tr><tr><td style="border:1px solid #cbd5e1; padding:6px;">Total</td><td style="border:1px solid #cbd5e1; padding:6px; text-align:right; font-weight:700;">AOA 25.000,00</td></tr></DataTable>',
 }
 
 const previewThemeColorReplacements = computed(() => studioThemeColorReplacements(page.props?.settings || {}))
@@ -2297,25 +2297,25 @@ function submit() {
           <div class="grid gap-5 md:grid-cols-2">
             <div>
               <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Nome do modelo</label>
-              <input v-model="props.form.name" type="text" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+              <BaseInput v-model="props.form.name" type="text" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
               <p v-if="props.form.errors.name" class="mt-2 text-xs text-red-600 dark:text-red-400">{{ props.form.errors.name }}</p>
             </div>
 
             <div>
               <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Categoria</label>
-              <input v-model="props.form.category" type="text" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+              <BaseInput v-model="props.form.category" type="text" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
             </div>
 
             <div>
               <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Tema visual</label>
-              <select v-model="props.form.theme_preset" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+              <BaseSelect v-model="props.form.theme_preset" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                 <option v-for="option in themePresetOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-              </select>
+              </BaseSelect>
             </div>
 
             <div class="flex items-end">
               <label class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300">
-                <input v-model="props.form.is_active" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
+                <CheckboxInput v-model="props.form.is_active" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
                 Modelo activo para novas propostas
               </label>
             </div>
@@ -2390,9 +2390,9 @@ function submit() {
             </div>
             <div class="lg:w-72">
               <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Superfície alvo</label>
-              <select v-model="snippetTarget" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+              <BaseSelect v-model="snippetTarget" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                 <option v-for="option in snippetTargetOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-              </select>
+              </BaseSelect>
             </div>
           </div>
 
@@ -2510,20 +2510,20 @@ function submit() {
           <div class="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
             <div>
               <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Imagem do layout</label>
-              <input
+              <BaseInput
                 v-model="mediaAssetUrl"
                 type="text"
                 placeholder="/storage/proposals/backgrounds/proposta-hero.png"
                 class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               />
-              <select
+              <BaseSelect
                 v-if="assetLibraryItems.length"
                 class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 @change="mediaAssetUrl = $event.target.value"
               >
                 <option value="">Selecionar da galeria ou assinaturas</option>
                 <option v-for="asset in assetLibraryItems" :key="asset.id" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
-              </select>
+              </BaseSelect>
               <button
                 type="button"
                 @click="openMediaPicker('asset-url')"
@@ -2744,145 +2744,145 @@ function submit() {
 
                 <div class="mt-4 grid gap-4 sm:grid-cols-2">
                   <label class="text-sm text-slate-700 dark:text-slate-300">Título
-                    <input v-model="selectedCanvasBlock.title" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.title" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Tipo de bloco
-                    <select v-model="selectedCanvasBlock.block_kind" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <BaseSelect v-model="selectedCanvasBlock.block_kind" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option value="rich_text">Conteúdo livre</option>
                       <option value="image">Imagem</option>
                       <option value="stamp">Carimbo / selo</option>
                       <option value="signature">Assinatura</option>
                       <option value="qr_code">QR code</option>
                       <option value="chart_snapshot">Gráfico / captura</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Superfície
-                    <select v-model="selectedCanvasBlock.surface" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <BaseSelect v-model="selectedCanvasBlock.surface" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option v-for="option in canvasSurfaceOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Posição X (%)
-                    <input v-model="selectedCanvasBlock.x" type="number" min="0" max="100" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.x" type="number" min="0" max="100" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Posição Y (%)
-                    <input v-model="selectedCanvasBlock.y" type="number" min="0" max="100" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.y" type="number" min="0" max="100" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Largura (%)
-                    <input v-model="selectedCanvasBlock.width" type="number" min="1" max="100" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.width" type="number" min="1" max="100" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Altura mínima (px)
-                    <input v-model="selectedCanvasBlock.min_height" type="number" min="0" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.min_height" type="number" min="0" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Padding (px)
-                    <input v-model="selectedCanvasBlock.padding" type="number" min="0" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.padding" type="number" min="0" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Raio (px)
-                    <input v-model="selectedCanvasBlock.border_radius" type="number" min="0" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.border_radius" type="number" min="0" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Cor de fundo
                     <div class="mt-2 flex gap-2">
-                      <input :value="colorInputValue(selectedCanvasBlock.background_color, '#ffffff')" type="color" @input="setSelectedBlockColor('background_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                      <input v-model="selectedCanvasBlock.background_color" type="text" placeholder="#ffffff ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="colorInputValue(selectedCanvasBlock.background_color, '#ffffff')" type="color" @input="setSelectedBlockColor('background_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <BaseInput v-model="selectedCanvasBlock.background_color" type="text" placeholder="#ffffff ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Imagem de fundo do bloco
-                    <input v-model="selectedCanvasBlock.background_image" type="text" placeholder="/storage/proposals/blocks/hero-cover.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    <select v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'background_image')">
+                    <BaseInput v-model="selectedCanvasBlock.background_image" type="text" placeholder="/storage/proposals/blocks/hero-cover.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseSelect v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'background_image')">
                       <option value="">Aplicar imagem como fundo do bloco</option>
                       <option v-for="asset in assetLibraryItems" :key="`bg-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
-                    </select>
+                    </BaseSelect>
                     <button type="button" @click="openMediaPicker('selected-block', 'background_image')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Galeria / upload</button>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Ajuste da imagem
-                    <select v-model="selectedCanvasBlock.background_image_fit" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <BaseSelect v-model="selectedCanvasBlock.background_image_fit" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option value="cover">Cobrir</option>
                       <option value="contain">Conter</option>
                       <option value="auto">Original</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Posição da imagem
-                    <select v-model="selectedCanvasBlock.background_image_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <BaseSelect v-model="selectedCanvasBlock.background_image_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option value="center center">Centro</option>
                       <option value="top center">Topo ao centro</option>
                       <option value="top left">Topo à esquerda</option>
                       <option value="top right">Topo à direita</option>
                       <option value="bottom center">Base ao centro</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Cor do overlay
                     <div class="mt-2 flex gap-2">
-                      <input :value="colorInputValue(selectedCanvasBlock.overlay_color, '#0f172a')" type="color" @input="setSelectedBlockColor('overlay_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                      <input v-model="selectedCanvasBlock.overlay_color" type="text" placeholder="#0f172a ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="colorInputValue(selectedCanvasBlock.overlay_color, '#0f172a')" type="color" @input="setSelectedBlockColor('overlay_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <BaseInput v-model="selectedCanvasBlock.overlay_color" type="text" placeholder="#0f172a ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Opacidade do overlay
-                    <input v-model="selectedCanvasBlock.overlay_opacity" type="number" min="0" max="1" step="0.05" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.overlay_opacity" type="number" min="0" max="1" step="0.05" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Cor do texto
                     <div class="mt-2 flex gap-2">
-                      <input :value="colorInputValue(selectedCanvasBlock.text_color, '#0f172a')" type="color" @input="setSelectedBlockColor('text_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                      <input v-model="selectedCanvasBlock.text_color" type="text" placeholder="#0f172a" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="colorInputValue(selectedCanvasBlock.text_color, '#0f172a')" type="color" @input="setSelectedBlockColor('text_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <BaseInput v-model="selectedCanvasBlock.text_color" type="text" placeholder="#0f172a" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Espessura da borda (px)
-                    <input v-model="selectedCanvasBlock.border_width" type="number" min="0" max="40" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.border_width" type="number" min="0" max="40" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Cor da borda
                     <div class="mt-2 flex gap-2">
-                      <input :value="colorInputValue(selectedCanvasBlock.border_color, '#94a3b8')" type="color" @input="setSelectedBlockColor('border_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                      <input v-model="selectedCanvasBlock.border_color" type="text" placeholder="#94a3b8 ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="colorInputValue(selectedCanvasBlock.border_color, '#94a3b8')" type="color" @input="setSelectedBlockColor('border_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <BaseInput v-model="selectedCanvasBlock.border_color" type="text" placeholder="#94a3b8 ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Ordem visual
-                    <input v-model="selectedCanvasBlock.z_index" type="number" min="0" max="999" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.z_index" type="number" min="0" max="999" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Opacidade
-                    <input v-model="selectedCanvasBlock.opacity" type="number" min="0.05" max="1" step="0.05" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.opacity" type="number" min="0.05" max="1" step="0.05" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Alinhamento do texto
-                    <select v-model="selectedCanvasBlock.text_align" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <BaseSelect v-model="selectedCanvasBlock.text_align" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option value="left">Esquerda</option>
                       <option value="center">Centro</option>
                       <option value="right">Direita</option>
                       <option value="justify">Justificado</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Tamanho do texto (px)
-                    <input v-model="selectedCanvasBlock.font_size" type="number" min="8" max="72" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.font_size" type="number" min="8" max="72" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Entrelinha
-                    <input v-model="selectedCanvasBlock.line_height" type="number" min="0.8" max="3" step="0.1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.line_height" type="number" min="0.8" max="3" step="0.1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300">
-                    <input v-model="selectedCanvasBlock.is_locked" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
+                    <CheckboxInput v-model="selectedCanvasBlock.is_locked" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
                     Bloco bloqueado para mover e redimensionar
                   </label>
                   <label v-if="selectedCanvasBlock.surface === 'content'" class="text-sm text-slate-700 dark:text-slate-300">Âmbito no PDF
-                    <select v-model="selectedCanvasBlock.page_scope" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <BaseSelect v-model="selectedCanvasBlock.page_scope" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option v-for="option in canvasContentScopeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label v-if="selectedCanvasBlock.surface === 'content' && selectedCanvasBlock.page_scope === 'specific'" class="text-sm text-slate-700 dark:text-slate-300">Página específica
-                    <input v-model="selectedCanvasBlock.page_number" type="number" min="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.page_number" type="number" min="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                 </div>
 
                 <div v-if="selectedCanvasBlock.block_kind === 'signature'" class="mt-4 grid gap-4 sm:grid-cols-2">
                   <label class="text-sm text-slate-700 dark:text-slate-300">Etiqueta
-                    <input v-model="selectedCanvasBlock.signature_label" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.signature_label" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Nome / placeholder
-                    <input v-model="selectedCanvasBlock.signature_name" type="text" placeholder="{{customer_name}}" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.signature_name" type="text" placeholder="{{customer_name}}" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Função / cargo
-                    <input v-model="selectedCanvasBlock.signature_title" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.signature_title" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Imagem da assinatura
-                    <input v-model="selectedCanvasBlock.signature_image" type="text" placeholder="/storage/signatures/director.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    <select v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'signature_image')">
+                    <BaseInput v-model="selectedCanvasBlock.signature_image" type="text" placeholder="/storage/signatures/director.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseSelect v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'signature_image')">
                       <option value="">Usar assinatura/imagem guardada</option>
                       <option v-for="asset in assetLibraryItems" :key="`sig-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
-                    </select>
+                    </BaseSelect>
                     <button type="button" @click="openMediaPicker('selected-block', 'signature_image')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Galeria / upload</button>
                   </label>
                   <div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/70 sm:col-span-2">
@@ -2907,68 +2907,68 @@ function submit() {
                     </div>
                     <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                       <label class="text-sm text-slate-700 dark:text-slate-300">Ajuste
-                        <select v-model="selectedCanvasBlock.signature_image_fit" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                        <BaseSelect v-model="selectedCanvasBlock.signature_image_fit" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                           <option v-for="option in backgroundFitOptions" :key="`signature-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
-                        </select>
+                        </BaseSelect>
                       </label>
                       <label class="text-sm text-slate-700 dark:text-slate-300">Foco
-                        <select v-model="selectedCanvasBlock.signature_image_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                        <BaseSelect v-model="selectedCanvasBlock.signature_image_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                           <option v-for="option in imagePositionOptions" :key="`signature-position-${option.value}`" :value="option.value">{{ option.label }}</option>
-                        </select>
+                        </BaseSelect>
                       </label>
                       <label class="text-sm text-slate-700 dark:text-slate-300">Largura
-                        <input v-model.number="selectedCanvasBlock.signature_image_width" type="number" min="24" max="360" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        <BaseInput v-model.number="selectedCanvasBlock.signature_image_width" type="number" min="24" max="360" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                       </label>
                       <label class="text-sm text-slate-700 dark:text-slate-300">Altura
-                        <input v-model.number="selectedCanvasBlock.signature_image_height" type="number" min="16" max="240" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        <BaseInput v-model.number="selectedCanvasBlock.signature_image_height" type="number" min="16" max="240" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                       </label>
                     </div>
                   </div>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Estilo da linha
-                    <select v-model="selectedCanvasBlock.signature_line_style" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <BaseSelect v-model="selectedCanvasBlock.signature_line_style" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option value="solid">Contínua</option>
                       <option value="dashed">Tracejada</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Alinhamento da assinatura
-                    <select v-model="selectedCanvasBlock.signature_align" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <BaseSelect v-model="selectedCanvasBlock.signature_align" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option value="left">Esquerda</option>
                       <option value="center">Centro</option>
                       <option value="right">Direita</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300">
-                    <input v-model="selectedCanvasBlock.signature_show_date" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
+                    <CheckboxInput v-model="selectedCanvasBlock.signature_show_date" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
                     Mostrar campo de data
                   </label>
                   <label v-if="selectedCanvasBlock.signature_show_date" class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Texto do campo de data
-                    <input v-model="selectedCanvasBlock.signature_date_label" type="text" placeholder="Data: ____ / ____ / ______" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.signature_date_label" type="text" placeholder="Data: ____ / ____ / ______" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                 </div>
 
                 <div v-if="['image', 'stamp'].includes(selectedCanvasBlock.block_kind)" class="mt-4 grid gap-4 sm:grid-cols-2">
                   <label class="text-sm text-slate-700 dark:text-slate-300">Imagem / carimbo
-                    <input v-model="selectedCanvasBlock.image_url" type="text" placeholder="/storage/media/stamp.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    <select v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'image_url')">
+                    <BaseInput v-model="selectedCanvasBlock.image_url" type="text" placeholder="/storage/media/stamp.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseSelect v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'image_url')">
                       <option value="">Selecionar da galeria/assinaturas</option>
                       <option v-for="asset in assetLibraryItems" :key="`image-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
-                    </select>
+                    </BaseSelect>
                     <button type="button" @click="openMediaPicker('selected-block', 'image_url')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Galeria / upload</button>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Texto alternativo
-                    <input v-model="selectedCanvasBlock.image_alt" type="text" placeholder="Carimbo de aprovação" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.image_alt" type="text" placeholder="Carimbo de aprovação" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Ajuste
-                    <select v-model="selectedCanvasBlock.image_fit" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <BaseSelect v-model="selectedCanvasBlock.image_fit" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option value="contain">Conter</option>
                       <option value="cover">Cobrir</option>
                       <option value="auto">Original</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Foco / recorte
-                    <select v-model="selectedCanvasBlock.image_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <BaseSelect v-model="selectedCanvasBlock.image_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option v-for="option in imagePositionOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <div v-if="selectedCanvasBlock.image_url || selectedCanvasBlock.background_image" class="sm:col-span-2 rounded-[1.6rem] border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/40">
                     <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
@@ -2996,14 +2996,14 @@ function submit() {
                             <span>Eixo X</span>
                             <span>{{ imagePositionCoordinates(selectedCanvasBlock.image_position).x }}%</span>
                           </div>
-                          <input :value="imagePositionCoordinates(selectedCanvasBlock.image_position).x" type="range" min="0" max="100" step="1" class="mt-2 w-full accent-primary-700" @input="setSelectedImageFocalCoordinate('x', $event.target.value)" />
+                          <RangeInput :value="imagePositionCoordinates(selectedCanvasBlock.image_position).x" type="range" min="0" max="100" step="1" class="mt-2 w-full accent-primary-700" @input="setSelectedImageFocalCoordinate('x', $event.target.value)" />
                         </div>
                         <div>
                           <div class="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300">
                             <span>Eixo Y</span>
                             <span>{{ imagePositionCoordinates(selectedCanvasBlock.image_position).y }}%</span>
                           </div>
-                          <input :value="imagePositionCoordinates(selectedCanvasBlock.image_position).y" type="range" min="0" max="100" step="1" class="mt-2 w-full accent-primary-700" @input="setSelectedImageFocalCoordinate('y', $event.target.value)" />
+                          <RangeInput :value="imagePositionCoordinates(selectedCanvasBlock.image_position).y" type="range" min="0" max="100" step="1" class="mt-2 w-full accent-primary-700" @input="setSelectedImageFocalCoordinate('y', $event.target.value)" />
                         </div>
                         <p class="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
                           Arraste o ponto sobre a imagem para definir o recorte exacto que será usado no PDF.
@@ -3018,45 +3018,45 @@ function submit() {
 
                 <div v-if="selectedCanvasBlock.block_kind === 'qr_code'" class="mt-4 grid gap-4 sm:grid-cols-2">
                   <label class="text-sm text-slate-700 dark:text-slate-300">Conteúdo do QR
-                    <input v-model="selectedCanvasBlock.qr_content" type="text" placeholder="{proposal_number} · {customer_name} · {issue_date}" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.qr_content" type="text" placeholder="{proposal_number} · {customer_name} · {issue_date}" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Legenda do QR
-                    <input v-model="selectedCanvasBlock.qr_label" type="text" placeholder="Verificação digital" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.qr_label" type="text" placeholder="Verificação digital" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Cor do QR
                     <div class="mt-2 flex gap-2">
-                      <input :value="selectedCanvasBlock.qr_foreground_color || '#0f172a'" type="color" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" @input="selectedCanvasBlock.qr_foreground_color = $event.target.value" />
-                      <input v-model="selectedCanvasBlock.qr_foreground_color" type="text" placeholder="#0f172a" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="selectedCanvasBlock.qr_foreground_color || '#0f172a'" type="color" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" @input="selectedCanvasBlock.qr_foreground_color = $event.target.value" />
+                      <BaseInput v-model="selectedCanvasBlock.qr_foreground_color" type="text" placeholder="#0f172a" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Fundo do QR
                     <div class="mt-2 flex gap-2">
-                      <input :value="selectedCanvasBlock.qr_background_color || '#ffffff'" type="color" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" @input="selectedCanvasBlock.qr_background_color = $event.target.value" />
-                      <input v-model="selectedCanvasBlock.qr_background_color" type="text" placeholder="#ffffff" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="selectedCanvasBlock.qr_background_color || '#ffffff'" type="color" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" @input="selectedCanvasBlock.qr_background_color = $event.target.value" />
+                      <BaseInput v-model="selectedCanvasBlock.qr_background_color" type="text" placeholder="#ffffff" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Tolerância de leitura
-                    <select v-model="selectedCanvasBlock.qr_error_correction" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <BaseSelect v-model="selectedCanvasBlock.qr_error_correction" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option value="low">Baixa · mais compacto</option>
                       <option value="medium">Média</option>
                       <option value="quartile">Reforçada</option>
                       <option value="high">Alta · maior resiliência</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Margem de segurança
-                    <input v-model.number="selectedCanvasBlock.qr_margin" type="number" min="0" max="32" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model.number="selectedCanvasBlock.qr_margin" type="number" min="0" max="32" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <p class="text-xs leading-relaxed text-slate-500 dark:text-slate-400 sm:col-span-2">O preview usa o mesmo conteúdo, cores, margem e tolerância de leitura aplicados ao PDF final.</p>
                 </div>
 
                 <div v-if="selectedCanvasBlock.block_kind === 'chart_snapshot'" class="mt-4 grid gap-4 sm:grid-cols-2">
                   <label class="text-sm text-slate-700 dark:text-slate-300">Título do gráfico
-                    <input v-model="selectedCanvasBlock.chart_title" type="text" placeholder="Resumo visual da proposta" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.chart_title" type="text" placeholder="Resumo visual da proposta" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Tipo
-                    <select v-model="selectedCanvasBlock.chart_type" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <BaseSelect v-model="selectedCanvasBlock.chart_type" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                       <option v-for="option in chartTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Etiquetas
                     <textarea v-model="selectedCanvasBlock.chart_labels" rows="4" placeholder="Âmbito, Amostras, Serviços" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
@@ -3065,34 +3065,34 @@ function submit() {
                     <textarea v-model="selectedCanvasBlock.chart_values" rows="4" placeholder="3, 5, 8" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Paleta
-                    <input v-model="selectedCanvasBlock.chart_colors" type="text" placeholder="#143d37, #d9b05f, #0f766e" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.chart_colors" type="text" placeholder="#143d37, #d9b05f, #0f766e" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Cor principal
                     <div class="mt-2 flex gap-2">
-                      <input :value="colorInputValue(selectedCanvasBlock.chart_primary_color, '#143d37')" type="color" @input="setSelectedBlockColor('chart_primary_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                      <input v-model="selectedCanvasBlock.chart_primary_color" type="text" placeholder="#143d37" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="colorInputValue(selectedCanvasBlock.chart_primary_color, '#143d37')" type="color" @input="setSelectedBlockColor('chart_primary_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <BaseInput v-model="selectedCanvasBlock.chart_primary_color" type="text" placeholder="#143d37" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Fundo do gráfico
                     <div class="mt-2 flex gap-2">
-                      <input :value="colorInputValue(selectedCanvasBlock.chart_background_color, '#f8f4ea')" type="color" @input="setSelectedBlockColor('chart_background_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                      <input v-model="selectedCanvasBlock.chart_background_color" type="text" placeholder="#f8f4ea" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="colorInputValue(selectedCanvasBlock.chart_background_color, '#f8f4ea')" type="color" @input="setSelectedBlockColor('chart_background_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <BaseInput v-model="selectedCanvasBlock.chart_background_color" type="text" placeholder="#f8f4ea" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300">
-                    <input v-model="selectedCanvasBlock.chart_show_values" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
+                    <CheckboxInput v-model="selectedCanvasBlock.chart_show_values" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
                     Mostrar valores no gráfico
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Imagem do gráfico
-                    <input v-model="selectedCanvasBlock.chart_image_url" type="text" placeholder="/storage/proposals/charts/scope.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    <select v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'chart_image_url')">
+                    <BaseInput v-model="selectedCanvasBlock.chart_image_url" type="text" placeholder="/storage/proposals/charts/scope.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseSelect v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'chart_image_url')">
                       <option value="">Selecionar captura da galeria</option>
                       <option v-for="asset in assetLibraryItems" :key="`chart-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
-                    </select>
+                    </BaseSelect>
                     <button type="button" @click="openMediaPicker('selected-block', 'chart_image_url')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Escolher no media picker</button>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Legenda
-                    <input v-model="selectedCanvasBlock.chart_caption" type="text" placeholder="Inclui somente itens acordados nesta proposta." class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.chart_caption" type="text" placeholder="Inclui somente itens acordados nesta proposta." class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">SVG exportado
                     <textarea v-model="selectedCanvasBlock.chart_svg" rows="7" placeholder="<svg ...> exportado do ApexCharts</svg>" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 font-mono text-xs text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
@@ -3114,9 +3114,9 @@ function submit() {
           <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Layout multi-página</h2>
           <div class="mt-4 space-y-4">
             <label class="block text-sm text-slate-700 dark:text-slate-300">Fonte do documento
-              <select v-model="props.layoutSchema.document_font_family" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+              <BaseSelect v-model="props.layoutSchema.document_font_family" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                 <option v-for="option in documentFontOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-              </select>
+              </BaseSelect>
             </label>
             <div>
               <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Cabeçalho da primeira página</label>
@@ -3133,12 +3133,12 @@ function submit() {
             <div class="grid gap-4 sm:grid-cols-2">
               <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Cor da página
                 <div class="mt-2 flex gap-2">
-                  <input :value="colorInputValue(props.layoutSchema.page_background_color, '#fffdf7')" type="color" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" @input="props.layoutSchema.page_background_color = $event.target.value" />
-                  <input v-model="props.layoutSchema.page_background_color" type="text" placeholder="#fffdf7" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                  <ColorInput :value="colorInputValue(props.layoutSchema.page_background_color, '#fffdf7')" type="color" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" @input="props.layoutSchema.page_background_color = $event.target.value" />
+                  <BaseInput v-model="props.layoutSchema.page_background_color" type="text" placeholder="#fffdf7" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                 </div>
               </label>
               <label class="text-sm text-slate-700 dark:text-slate-300">Fundo
-                <input v-model="props.layoutSchema.background_image_path" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                <BaseInput v-model="props.layoutSchema.background_image_path" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
               </label>
               <div class="flex items-end gap-2">
                 <button
@@ -3157,19 +3157,19 @@ function submit() {
                 </button>
               </div>
               <label class="text-sm text-slate-700 dark:text-slate-300">Ajuste do fundo
-                <select v-model="props.layoutSchema.background_size" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                <BaseSelect v-model="props.layoutSchema.background_size" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                   <option v-for="option in backgroundFitOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                </select>
+                </BaseSelect>
               </label>
               <label class="text-sm text-slate-700 dark:text-slate-300">Posição
-                <select v-model="props.layoutSchema.background_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                <BaseSelect v-model="props.layoutSchema.background_position" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                   <option v-for="option in backgroundPositionOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                </select>
+                </BaseSelect>
               </label>
               <label class="text-sm text-slate-700 dark:text-slate-300">Repetição
-                <select v-model="props.layoutSchema.background_repeat" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                <BaseSelect v-model="props.layoutSchema.background_repeat" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                   <option v-for="option in backgroundRepeatOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                </select>
+                </BaseSelect>
               </label>
             </div>
             <div>
@@ -3188,19 +3188,19 @@ function submit() {
               </div>
               <div class="mt-4 grid gap-3 sm:grid-cols-2">
                 <label class="text-xs font-medium text-slate-600 dark:text-slate-300">Fundo do cabeçalho
-                  <input v-model="props.layoutSchema.table_header_background" type="color" class="mt-2 h-11 w-full rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                  <ColorInput v-model="props.layoutSchema.table_header_background" type="color" class="mt-2 h-11 w-full rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
                 </label>
                 <label class="text-xs font-medium text-slate-600 dark:text-slate-300">Texto do cabeçalho
-                  <input v-model="props.layoutSchema.table_header_text_color" type="color" class="mt-2 h-11 w-full rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                  <ColorInput v-model="props.layoutSchema.table_header_text_color" type="color" class="mt-2 h-11 w-full rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
                 </label>
                 <label class="text-xs font-medium text-slate-600 dark:text-slate-300">Cor das bordas
-                  <input v-model="props.layoutSchema.table_border_color" type="color" class="mt-2 h-11 w-full rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                  <ColorInput v-model="props.layoutSchema.table_border_color" type="color" class="mt-2 h-11 w-full rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
                 </label>
                 <label class="text-xs font-medium text-slate-600 dark:text-slate-300">Tamanho do texto
-                  <input v-model="props.layoutSchema.table_font_size" type="number" min="8" max="16" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                  <BaseInput v-model="props.layoutSchema.table_font_size" type="number" min="8" max="16" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                 </label>
                 <label class="text-xs font-medium text-slate-600 dark:text-slate-300 sm:col-span-2">Espaçamento interno
-                  <input v-model="props.layoutSchema.table_cell_padding" type="number" min="2" max="24" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                  <BaseInput v-model="props.layoutSchema.table_cell_padding" type="number" min="2" max="24" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                 </label>
               </div>
             </div>
@@ -3211,35 +3211,35 @@ function submit() {
           <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Exportação</h2>
           <div class="mt-4 grid gap-4 sm:grid-cols-2">
             <label class="text-sm text-slate-700 dark:text-slate-300">Formato
-              <select v-model="props.exportSettings.paper_size" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+              <BaseSelect v-model="props.exportSettings.paper_size" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                 <option v-for="option in pageFormatOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-              </select>
+              </BaseSelect>
             </label>
             <label v-if="props.exportSettings.paper_size === 'custom'" class="text-sm text-slate-700 dark:text-slate-300">Largura (mm)
-              <input v-model.number="props.exportSettings.custom_page_width" type="number" min="50" max="2000" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+              <BaseInput v-model.number="props.exportSettings.custom_page_width" type="number" min="50" max="2000" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
             </label>
             <label v-if="props.exportSettings.paper_size === 'custom'" class="text-sm text-slate-700 dark:text-slate-300">Altura (mm)
-              <input v-model.number="props.exportSettings.custom_page_height" type="number" min="50" max="2000" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+              <BaseInput v-model.number="props.exportSettings.custom_page_height" type="number" min="50" max="2000" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
             </label>
             <label class="text-sm text-slate-700 dark:text-slate-300">Orientação
-              <select v-model="props.exportSettings.orientation" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+              <BaseSelect v-model="props.exportSettings.orientation" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                 <option v-for="option in orientationOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-              </select>
+              </BaseSelect>
             </label>
             <label class="text-sm text-slate-700 dark:text-slate-300">Margem superior
-              <input v-model="props.exportSettings.margin_top" type="number" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+              <BaseInput v-model="props.exportSettings.margin_top" type="number" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
             </label>
             <label class="text-sm text-slate-700 dark:text-slate-300">Margem direita
-              <input v-model="props.exportSettings.margin_right" type="number" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+              <BaseInput v-model="props.exportSettings.margin_right" type="number" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
             </label>
             <label class="text-sm text-slate-700 dark:text-slate-300">Margem inferior
-              <input v-model="props.exportSettings.margin_bottom" type="number" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+              <BaseInput v-model="props.exportSettings.margin_bottom" type="number" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
             </label>
             <label class="text-sm text-slate-700 dark:text-slate-300">Margem esquerda
-              <input v-model="props.exportSettings.margin_left" type="number" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+              <BaseInput v-model="props.exportSettings.margin_left" type="number" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
             </label>
             <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Margem superior da primeira página
-              <input v-model="props.exportSettings.first_page_margin_top" type="number" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+              <BaseInput v-model="props.exportSettings.first_page_margin_top" type="number" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
             </label>
           </div>
           <div class="mt-5 rounded-2xl border border-[#ded2bb] bg-[#fbfaf6] p-4 dark:border-white/10 dark:bg-white/5">
@@ -3381,20 +3381,20 @@ function submit() {
 
         <div class="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/40 sm:grid-cols-2 2xl:grid-cols-1">
           <label class="inline-flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
-            <input v-model="showCanvasGrid" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
+            <CheckboxInput v-model="showCanvasGrid" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
             Mostrar grelha
           </label>
           <label class="inline-flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
-            <input v-model="showSafeArea" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
+            <CheckboxInput v-model="showSafeArea" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
             Mostrar safe area
           </label>
           <label class="inline-flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
-            <input v-model="snapToGrid" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
+            <CheckboxInput v-model="snapToGrid" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
             Snap activo
           </label>
           <label class="text-sm text-slate-700 dark:text-slate-300">
             Grelha (%)
-            <input v-model="gridSize" type="number" min="1" max="20" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+            <BaseInput v-model="gridSize" type="number" min="1" max="20" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
           </label>
         </div>
       </div>
@@ -3541,7 +3541,7 @@ function submit() {
           </button>
         </div>
         <div class="max-h-[70vh] overflow-y-auto p-6">
-          <input
+          <FileInput
             ref="mediaPickerUploadInput"
             type="file"
             accept=".svg,image/svg+xml,image/png,image/jpeg,image/webp,image/gif,image/avif"
@@ -3587,7 +3587,7 @@ function submit() {
           </button>
 
           <div class="rounded-[2rem] border border-[#ded3bf] bg-white/75 p-4 shadow-sm dark:border-[#29483f] dark:bg-[#0d1d19]/80">
-            <input
+            <BaseInput
               v-model="mediaPickerSearch"
               type="search"
               :placeholder="trans('gestlab.general.labels.vap_proposal_templates.studio.media_picker.search_placeholder')"

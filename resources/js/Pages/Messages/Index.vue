@@ -38,13 +38,13 @@ const clearSearch = () => { search.value = ''; applySearch() }
 
     <section class="ds-panel overflow-hidden">
       <form class="flex flex-col gap-3 border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 sm:flex-row sm:items-center" @submit.prevent="applySearch">
-        <div class="relative min-w-0 flex-1"><MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" /><input v-model="search" type="search" class="ds-field pl-9" placeholder="Pesquisar no conteudo das mensagens" /></div>
+        <div class="relative min-w-0 flex-1"><MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" /><BaseInput v-model="search" type="search" class="ds-field pl-9" placeholder="Pesquisar no conteudo das mensagens" /></div>
         <button v-if="search" type="button" class="ds-button ds-button-ghost" @click="clearSearch"><XMarkIcon class="h-4 w-4" />Limpar</button>
         <button type="submit" class="ds-button ds-button-secondary"><MagnifyingGlassIcon class="h-4 w-4" />Pesquisar</button>
       </form>
 
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-[var(--ds-border)] text-left">
+        <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left">
           <thead class="bg-[var(--ds-panel-subtle)]"><tr><th class="px-5 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Fluxo</th><th class="px-4 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Mensagem</th><th class="px-4 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Anexos</th><th class="px-5 py-3 text-right text-xs font-bold uppercase text-[var(--ds-text-soft)]">Acao</th></tr></thead>
           <tbody v-if="record.data.length" class="divide-y divide-[var(--ds-border)]">
             <tr v-for="message in record.data" :key="message.id" class="hover:bg-[var(--ds-panel-subtle)]">
@@ -54,7 +54,7 @@ const clearSearch = () => { search.value = ''; applySearch() }
               <td class="px-5 py-4 text-right"><Link :href="route('messages.edit', message.id)" class="ds-icon-button" title="Abrir mensagem"><EyeIcon class="h-4 w-4" /></Link></td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
       <div v-if="!record.data.length" class="px-5 py-14 text-center"><ChatBubbleLeftRightIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" /><p class="mt-3 text-sm font-bold text-[var(--ds-text)]">Sem mensagens internas</p><p class="ds-copy mt-1 text-sm">As instrucoes trocadas pela equipa serao apresentadas aqui.</p></div>
       <div v-if="record.data.length && record.meta" class="border-t border-[var(--ds-border)]"><Pagination v-bind="record.meta" /></div>

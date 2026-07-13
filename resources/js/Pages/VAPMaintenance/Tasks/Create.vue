@@ -30,7 +30,7 @@
           <div class="grid gap-5 p-5 md:grid-cols-2">
             <label class="ds-field-group">
               <span class="ds-field-label">Nome da tarefa <span class="ds-field-required">*</span></span>
-              <input
+              <BaseInput
                 v-model="form.name"
                 type="text"
                 required
@@ -42,29 +42,29 @@
 
             <label class="ds-field-group">
               <span class="ds-field-label">Categoria <span class="ds-field-required">*</span></span>
-              <select v-model="form.category_id" required :class="fieldClass('category_id')">
+              <BaseSelect v-model="form.category_id" required :class="fieldClass('category_id')">
                 <option value="">Selecione uma categoria</option>
                 <option v-for="category in categories" :key="category.id" :value="category.id">
                   {{ category.name }}
                 </option>
-              </select>
+              </BaseSelect>
               <span v-if="form.errors.category_id" class="ds-field-error">{{ form.errors.category_id }}</span>
             </label>
 
             <label class="ds-field-group">
               <span class="ds-field-label">Equipamento <span class="ds-field-required">*</span></span>
-              <select v-model="form.equipment_id" required :class="fieldClass('equipment_id')">
+              <BaseSelect v-model="form.equipment_id" required :class="fieldClass('equipment_id')">
                 <option value="">Selecione um equipamento</option>
                 <option v-for="equipment in equipmentList" :key="equipment.id" :value="equipment.id">
                   {{ equipment.name }} ({{ equipment.internal_code || equipment.code || 'N/A' }})
                 </option>
-              </select>
+              </BaseSelect>
               <span v-if="form.errors.equipment_id" class="ds-field-error">{{ form.errors.equipment_id }}</span>
             </label>
 
             <label class="ds-field-group">
               <span class="ds-field-label">Número da tarefa</span>
-              <input
+              <BaseInput
                 v-model="form.maintenance_task_no"
                 type="text"
                 :class="fieldClass('maintenance_task_no')"
@@ -96,7 +96,7 @@
           <div class="grid gap-5 p-5 md:grid-cols-2">
             <label class="ds-field-group">
               <span class="ds-field-label">Data de vencimento <span class="ds-field-required">*</span></span>
-              <input v-model="form.due_date" type="date" required :class="fieldClass('due_date')" />
+              <DateTimePicker v-model="form.due_date" type="date" required :class="fieldClass('due_date')" />
               <span v-if="form.errors.due_date" class="ds-field-error">{{ form.errors.due_date }}</span>
             </label>
 
@@ -104,11 +104,11 @@
               <span class="ds-field-label">Estado inicial</span>
               <div class="grid gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
                 <label class="flex items-center gap-3 text-sm font-semibold text-[var(--ds-text-muted)]">
-                  <input v-model="form.is_planned" type="checkbox" class="ds-checkbox" />
+                  <CheckboxInput v-model="form.is_planned" type="checkbox" class="ds-checkbox" />
                   Tarefa planeada
                 </label>
                 <label class="flex items-center gap-3 text-sm font-semibold text-[var(--ds-text-muted)]">
-                  <input v-model="form.executed_by_supplier" type="checkbox" class="ds-checkbox" />
+                  <CheckboxInput v-model="form.executed_by_supplier" type="checkbox" class="ds-checkbox" />
                   Executada por fornecedor
                 </label>
               </div>
@@ -117,15 +117,15 @@
             <div class="ds-field-group md:col-span-2">
               <span class="ds-field-label">Periodicidade</span>
               <div class="grid gap-3 sm:grid-cols-[8rem_1fr]">
-                <input v-model="form.periodicity" type="number" min="1" class="ds-field" placeholder="1" />
-                <select v-model="form.periodicity_unit" class="ds-field">
+                <BaseInput v-model="form.periodicity" type="number" min="1" class="ds-field" placeholder="1" />
+                <BaseSelect v-model="form.periodicity_unit" class="ds-field">
                   <option value="">Selecione unidade</option>
                   <option value="hours">Horas</option>
                   <option value="days">Dias</option>
                   <option value="weeks">Semanas</option>
                   <option value="months">Meses</option>
                   <option value="years">Anos</option>
-                </select>
+                </BaseSelect>
               </div>
               <span class="ds-field-hint">Use apenas para tarefas recorrentes.</span>
             </div>
@@ -143,12 +143,12 @@
           <div class="grid gap-5 p-5 md:grid-cols-2">
             <label class="ds-field-group">
               <span class="ds-field-label">Critério de aceitação</span>
-              <input v-model="form.acceptance_criteria" type="text" class="ds-field" placeholder="Ex: +/- 0.5% de precisão" />
+              <BaseInput v-model="form.acceptance_criteria" type="text" class="ds-field" placeholder="Ex: +/- 0.5% de precisão" />
             </label>
 
             <label class="ds-field-group">
               <span class="ds-field-label">Gama</span>
-              <input v-model="form.range" type="text" class="ds-field" placeholder="Ex: 0-1000 mg/L" />
+              <BaseInput v-model="form.range" type="text" class="ds-field" placeholder="Ex: 0-1000 mg/L" />
             </label>
 
             <label class="ds-field-group md:col-span-2">
@@ -173,17 +173,17 @@
           <div class="mt-5 space-y-4">
             <label class="ds-field-group">
               <span class="ds-field-label">Fornecedor</span>
-              <select v-model="form.supplier_id" class="ds-field">
+              <BaseSelect v-model="form.supplier_id" class="ds-field">
                 <option value="">Selecione um fornecedor</option>
                 <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">
                   {{ supplier.name }}
                 </option>
-              </select>
+              </BaseSelect>
             </label>
 
             <label class="ds-field-group">
               <span class="ds-field-label">Certificado de calibração</span>
-              <input v-model="form.calibration_certificate_no" type="text" class="ds-field" placeholder="Número do certificado" />
+              <BaseInput v-model="form.calibration_certificate_no" type="text" class="ds-field" placeholder="Número do certificado" />
             </label>
           </div>
         </section>
@@ -195,7 +195,7 @@
           </h3>
           <label class="ds-field-group mt-5">
             <span class="ds-field-label">Custo (AOA)</span>
-            <input v-model="form.cost" type="number" step="0.01" min="0" class="ds-field" placeholder="0.00" />
+            <BaseInput v-model="form.cost" type="number" step="0.01" min="0" class="ds-field" placeholder="0.00" />
           </label>
         </section>
 

@@ -183,7 +183,7 @@
           </div>
 
           <div v-else class="ds-table-shell overflow-x-auto">
-            <table class="min-w-[72rem]">
+            <DataTable class="min-w-[72rem]">
               <thead class="ds-table-head">
                 <tr>
                   <th class="ds-table-cell text-left">Item</th>
@@ -231,7 +231,7 @@
                   </td>
                 </tr>
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </article>
 
@@ -396,7 +396,7 @@
                           <p class="truncate text-sm font-bold text-[color:var(--ds-text)]">{{ item.item?.name || 'Item sem nome' }}</p>
                           <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">Pendente: {{ formatQuantity(item.qty - (item.received_qty || 0)) }} de {{ formatQuantity(item.qty) }}</p>
                         </div>
-                        <input
+                        <BaseInput
                           v-model.number="receivingQuantities[item.id]"
                           type="number"
                           :min="1"
@@ -410,7 +410,7 @@
                     <div class="grid gap-4 sm:grid-cols-2">
                       <div v-if="isReceivingSingleItem && receivingItem">
                         <label for="quantity" class="ds-field-label">Quantidade a receber</label>
-                        <input
+                        <BaseInput
                           id="quantity"
                           v-model.number="receivingQuantity"
                           type="number"
@@ -426,18 +426,18 @@
 
                       <div>
                         <label for="receiveDate" class="ds-field-label">Data de recebimento</label>
-                        <input id="receiveDate" v-model="receiveDate" type="date" required class="ds-field" />
+                        <DateTimePicker id="receiveDate" v-model="receiveDate" type="date" required class="ds-field" />
                       </div>
 
                       <div v-if="isReceivingSingleItem && receivingItem">
                         <label for="unitPrice" class="ds-field-label">Preço unitário</label>
-                        <input id="unitPrice" v-model.number="receivingUnitPrice" type="number" step="0.01" min="0" class="ds-field" />
+                        <BaseInput id="unitPrice" v-model.number="receivingUnitPrice" type="number" step="0.01" min="0" class="ds-field" />
                         <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">Preço original: {{ formatCurrency(receivingItem.unit_price || 0) }}</p>
                       </div>
 
                       <div>
                         <label for="reason" class="ds-field-label">Motivo</label>
-                        <input id="reason" v-model="receivingReason" type="text" class="ds-field" placeholder="Ex: Recebimento normal" />
+                        <BaseInput id="reason" v-model="receivingReason" type="text" class="ds-field" placeholder="Ex: Recebimento normal" />
                       </div>
                     </div>
 
@@ -448,7 +448,7 @@
 
                     <div class="ds-card border-l-4 border-l-[color:var(--lims-hold)] p-4">
                       <div class="flex items-start gap-3">
-                        <input id="registerNonConformity" v-model="registerNonConformity" type="checkbox" class="ds-checkbox mt-1" />
+                        <CheckboxInput id="registerNonConformity" v-model="registerNonConformity" type="checkbox" class="ds-checkbox mt-1" />
                         <div class="flex-1">
                           <label for="registerNonConformity" class="text-sm font-bold text-[color:var(--ds-text)]">Registar não conformidade de recepção</label>
                           <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">
@@ -460,16 +460,16 @@
                       <div v-if="registerNonConformity" class="mt-4 grid gap-4">
                         <div>
                           <label for="ncTitle" class="ds-field-label">Título da não conformidade</label>
-                          <input id="ncTitle" v-model="nonConformityTitle" type="text" class="ds-field" placeholder="Ex: Divergência na recepção do fornecedor" />
+                          <BaseInput id="ncTitle" v-model="nonConformityTitle" type="text" class="ds-field" placeholder="Ex: Divergência na recepção do fornecedor" />
                         </div>
                         <div>
                           <label for="ncSeverity" class="ds-field-label">Severidade</label>
-                          <select id="ncSeverity" v-model="nonConformitySeverity" class="ds-field">
+                          <BaseSelect id="ncSeverity" v-model="nonConformitySeverity" class="ds-field">
                             <option value="low">Baixa</option>
                             <option value="medium">Média</option>
                             <option value="high">Alta</option>
                             <option value="critical">Crítica</option>
-                          </select>
+                          </BaseSelect>
                         </div>
                         <div>
                           <label for="ncDescription" class="ds-field-label">Descrição do desvio</label>

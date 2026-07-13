@@ -83,9 +83,9 @@ const updatePeriod = () => {
         </div>
         <div class="flex items-center gap-2">
           <label for="analytics-period" class="sr-only">Periodo</label>
-          <select id="analytics-period" v-model="selectedPeriod" class="ds-field min-w-48" @change="updatePeriod">
+          <BaseSelect id="analytics-period" v-model="selectedPeriod" class="ds-field min-w-48" @change="updatePeriod">
             <option v-for="option in periodOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-          </select>
+          </BaseSelect>
         </div>
       </div>
 
@@ -154,7 +154,7 @@ const updatePeriod = () => {
         <h2 class="ds-heading mt-1 text-base">Utilizadores com maior volume</h2>
       </header>
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-[var(--ds-border)] text-left">
+        <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left">
           <thead class="bg-[var(--ds-panel-subtle)]"><tr><th class="px-5 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Utilizador</th><th class="px-4 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Recebidas</th><th class="px-4 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Lidas</th><th class="px-5 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Taxa</th></tr></thead>
           <tbody v-if="stats.top_users?.length" class="divide-y divide-[var(--ds-border)]">
             <tr v-for="user in stats.top_users" :key="user.user_id" class="hover:bg-[var(--ds-panel-subtle)]">
@@ -164,7 +164,7 @@ const updatePeriod = () => {
               <td class="px-5 py-4"><div class="flex min-w-32 items-center gap-3"><div class="h-2 flex-1 rounded-full bg-[var(--ds-panel-muted)]"><div class="h-full rounded-full bg-emerald-500" :style="{ width: `${user.read_rate}%` }" /></div><span class="w-12 text-right text-xs font-black tabular-nums text-[var(--ds-text)]">{{ user.read_rate }}%</span></div></td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
       <p v-if="!stats.top_users?.length" class="px-5 py-12 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem utilizadores no periodo selecionado.</p>
     </section>

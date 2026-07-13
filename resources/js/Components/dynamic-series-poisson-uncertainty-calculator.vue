@@ -5,7 +5,7 @@
         <h3>Series {{ seriesIndex + 1 }}</h3>
         <div>
           <label>
-            <input
+            <CheckboxInput
               type="checkbox"
               v-model="seriesData.isPoisson"
             />
@@ -13,7 +13,7 @@
           </label>
         </div>
         <div v-for="(value, dataIndex) in seriesData.data" :key="dataIndex">
-          <input
+          <BaseInput
             type="number"
             v-model.number="seriesData.data[dataIndex]"
             @input="updateMeasurement(seriesIndex, dataIndex, seriesData.data[dataIndex])"
@@ -23,22 +23,22 @@
         <button @click="addMeasurementToSeries(seriesIndex)">Add Measurement</button>
   
         <!-- Uncertainty Inputs for the Series -->
-        <input
+        <BaseInput
           type="number"
           v-model.number="seriesData.technicalUncertainty"
           placeholder="Technical Uncertainty"
         />
-        <input
+        <BaseInput
           type="number"
           v-model.number="seriesData.confirmationUncertainty"
           placeholder="Confirmation Uncertainty"
         />
-        <input
+        <BaseInput
           type="number"
           v-model.number="seriesData.environmentalUncertainty"
           placeholder="Environmental Uncertainty"
         />
-        <input
+        <BaseInput
           type="number"
           v-model.number="seriesData.matrixUncertainty"
           placeholder="Matrix Uncertainty"

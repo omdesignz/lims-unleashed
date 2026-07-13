@@ -43,16 +43,16 @@
         <label class="relative block">
           <span class="sr-only">Pesquisar fórmulas</span>
           <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-          <input v-model="query.search" type="search" class="ds-field pl-9" placeholder="Nome, código ou categoria">
+          <BaseInput v-model="query.search" type="search" class="ds-field pl-9" placeholder="Nome, código ou categoria" />
         </label>
-        <select v-model="query.filter" class="ds-field" aria-label="Estado das fórmulas">
+        <BaseSelect v-model="query.filter" class="ds-field" aria-label="Estado das fórmulas">
           <option value="">Fórmulas ativas</option>
           <option value="trashed">Incluir arquivadas</option>
-        </select>
+        </BaseSelect>
       </div>
 
       <div v-if="records.length" class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-[var(--ds-border)]">
+        <DataTable class="min-w-full divide-y divide-[var(--ds-border)]">
           <thead class="ds-table-head">
             <tr>
               <th class="ds-table-heading px-4 py-3 text-left sm:px-5">Fórmula</th>
@@ -116,7 +116,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div v-else class="p-5 sm:p-8">

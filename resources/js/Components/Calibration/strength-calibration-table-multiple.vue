@@ -1,7 +1,7 @@
 <template>
     <div>
       <button @click="addRow">Add Row</button>
-      <table>
+      <DataTable>
         <thead>
           <tr>
             <th></th>
@@ -47,27 +47,27 @@
         <tbody>
           <tr v-for="(row, index) in rows" :key="index">
             <td><button @click="removeRow(index)">Remove</button></td>
-            <td><input v-model.number="row.Nr1" type="number" /></td>
-            <td><input v-model.number="row.Nr2" type="number" /></td>
-            <td><input v-model.number="row.Nr3" type="number" /></td>
+            <td><BaseInput v-model.number="row.Nr1" type="number" /></td>
+            <td><BaseInput v-model.number="row.Nr2" type="number" /></td>
+            <td><BaseInput v-model.number="row.Nr3" type="number" /></td>
             <td>{{ row.FM }}</td>
             <td>{{ row.F1p }}</td>
             <td>{{ row.F2p }}</td>
             <td>{{ row.F3p }}</td>
-            <td><input v-model.number="row.F1i" type="number" /></td>
-            <td><input v-model.number="row.F2i" type="number" /></td>
-            <td><input v-model.number="row.F3i" type="number" /></td>
+            <td><BaseInput v-model.number="row.F1i" type="number" /></td>
+            <td><BaseInput v-model.number="row.F2i" type="number" /></td>
+            <td><BaseInput v-model.number="row.F3i" type="number" /></td>
             <td>{{ row.Fmaxp }}</td>
             <td>{{ row.FminP }}</td>
             <td>{{ row.Fmaxi }}</td>
             <td>{{ row.Fmini }}</td>
             <td>{{ row.FmedP }}</td>
             <td>{{ row.FmedI }}</td>
-            <td><input v-model.number="row.ResP" type="number" /></td>
-            <td><input v-model.number="row.ResI" type="number" /></td>
+            <td><BaseInput v-model.number="row.ResP" type="number" /></td>
+            <td><BaseInput v-model.number="row.ResI" type="number" /></td>
             <td>{{ row.A }}</td>
             <td>{{ row.UresSquared }}</td>
-            <td><input v-model.number="row.Fzero" type="number" /></td>
+            <td><BaseInput v-model.number="row.Fzero" type="number" /></td>
             <td>{{ row.B }}</td>
             <td>{{ row.UzeroSquared }}</td>
             <td>{{ row.C }}</td>
@@ -81,12 +81,12 @@
             <td>{{ row.URevSquared }}</td>
             <td>{{ row.UComb }}</td>
             <td>{{ row.Veff }}</td>
-            <td><input v-model.number="row.Fca" type="number" /></td>
-            <td><input v-model.number="row.Fda" type="number" /></td>
+            <td><BaseInput v-model.number="row.Fca" type="number" /></td>
+            <td><BaseInput v-model.number="row.Fda" type="number" /></td>
             <td>{{ row.Iexp }}</td>
           </tr>
         </tbody>
-      </table>
+      </DataTable>
     </div>
   </template>
   

@@ -161,12 +161,12 @@ function formatCurrency(value) {
       <div class="grid gap-5 lg:grid-cols-2">
         <div class="ds-field-group">
           <label for="matrix-code" class="ds-field-label">Codigo <span class="ds-field-required">*</span></label>
-          <input id="matrix-code" v-model="form.code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.code)" placeholder="Ex.: MAT-AGUA" />
+          <BaseInput id="matrix-code" v-model="form.code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.code)" placeholder="Ex.: MAT-AGUA" />
           <p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p>
         </div>
         <div class="ds-field-group">
           <label for="matrix-fixed-price" class="ds-field-label">Preco fixo <span class="ds-field-required">*</span></label>
-          <input id="matrix-fixed-price" v-model.number="form.fixed_price" type="number" min="0" step="0.01" class="ds-field" :aria-invalid="Boolean(form.errors.fixed_price)" />
+          <BaseInput id="matrix-fixed-price" v-model.number="form.fixed_price" type="number" min="0" step="0.01" class="ds-field" :aria-invalid="Boolean(form.errors.fixed_price)" />
           <p v-if="form.errors.fixed_price" class="ds-field-error">{{ form.errors.fixed_price }}</p>
         </div>
         <div class="ds-field-group lg:col-span-2">
@@ -215,7 +215,7 @@ function formatCurrency(value) {
         </div>
         <div v-if="form.charge_tax" class="ds-field-group">
           <label for="matrix-tax-percentage" class="ds-field-label">Percentagem</label>
-          <input id="matrix-tax-percentage" :value="form.tax_percentage" type="text" class="ds-field" readonly />
+          <BaseInput id="matrix-tax-percentage" :value="form.tax_percentage" type="text" class="ds-field" readonly />
         </div>
         <div v-else class="ds-field-group lg:col-span-2">
           <label class="ds-field-label">Motivo de isencao <span class="ds-field-required">*</span></label>

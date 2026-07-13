@@ -595,7 +595,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.name"
               type="text"
               name="name"
@@ -629,7 +629,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.brand"
               type="text"
               name="brand"
@@ -664,7 +664,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.location"
               type="text"
               name="location"
@@ -725,7 +725,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.model"
               type="text"
               name="model"
@@ -759,7 +759,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.software"
               type="text"
               name="software"
@@ -793,7 +793,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.firmware"
               type="text"
               name="firmware"
@@ -827,7 +827,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               disabled
               v-model="form.internal_code"
               type="text"
@@ -862,7 +862,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.range"
               type="text"
               name="range"
@@ -896,7 +896,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.precision"
               type="text"
               name="precision"
@@ -930,7 +930,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.resolution"
               type="text"
               name="resolution"
@@ -964,7 +964,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.code"
               type="text"
               name="code"
@@ -998,7 +998,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.barcode"
               type="text"
               name="barcode"
@@ -1032,7 +1032,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.serial_number"
               type="text"
               name="serial_number"
@@ -1252,7 +1252,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.lot"
               type="text"
               name="lot"
@@ -1285,7 +1285,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.acceptance_criteria"
               type="text"
               name="acceptance_criteria"
@@ -1436,7 +1436,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <CheckboxInput
               v-model="form.refrigerated"
               type="checkbox"
               name="refrigerated"
@@ -1473,9 +1473,9 @@ const downloadAttachment = (file) => {
             <!-- <combobox :hasError="form.errors.status_id" v-model="form.status_id" :options="statusOptions"/> -->
           
           <div class="mt-2 grid grid-cols-1">
-            <select id="status_id" name="status_id" v-model="form.status_id" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6">
+            <BaseSelect id="status_id" name="status_id" v-model="form.status_id" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6">
               <option v-for="option in statusOptions" :key="option.value" :value="option">{{ option.label }}</option>
-            </select>
+            </BaseSelect>
           </div>
   
            
@@ -1501,7 +1501,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-full">
-            <input
+            <CheckboxInput
               v-model="form.has_safety_documentation"
               type="checkbox"
               name="has_safety_documentation"
@@ -1539,7 +1539,7 @@ const downloadAttachment = (file) => {
                     <div class="mt-4 flex text-xs leading-6 text-gray-600">
                       <label for="files" class="relative cursor-pointer rounded-full bg-orange font-semibold text-black focus-within:outline-none focus-within:ring-2 focus-within:ring-orange focus-within:ring-offset-2 hover:text-white hover:bg-orange-600 px-2">
                         <span @click="files.click()">{{ $t('gestlab.general.labels.files.upload_file') }}</span>
-                        <input ref="files" @input="onSelectedFiles" type="file" name="files" multiple class="sr-only" />
+                        <FileInput ref="files" @input="onSelectedFiles" type="file" name="files" multiple class="sr-only" />
                       </label>
                       <p class="pl-1">{{ $t('gestlab.general.labels.files.or') }} {{ $t('gestlab.general.labels.files.drag_file') }}</p>
                     </div>
@@ -1648,7 +1648,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.reorder_qty"
               type="number"
               name="reorder_qty"
@@ -1682,7 +1682,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.packed_weight"
               type="number"
               name="packed_weight"
@@ -1716,7 +1716,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.packed_weight_unit"
               type="text"
               name="packed_weight_unit"
@@ -1744,7 +1744,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.packed_height"
               type="number"
               name="packed_height"
@@ -1778,7 +1778,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.packed_height_unit"
               type="number"
               name="packed_height_unit"
@@ -1806,7 +1806,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.packed_width"
               type="number"
               name="packed_width"
@@ -1840,7 +1840,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.packed_width_unit"
               type="number"
               name="packed_width_unit"
@@ -1868,7 +1868,7 @@ const downloadAttachment = (file) => {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.packed_depth"
               type="number"
               name="packed_depth"
@@ -1891,7 +1891,7 @@ const downloadAttachment = (file) => {
 
           <!-- Packed Depth Unit -->
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.packed_depth_unit"
               type="number"
               name="packed_depth_unit"

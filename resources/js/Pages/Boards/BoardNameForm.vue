@@ -48,7 +48,7 @@ function submit() {
 
     <form v-else class="flex max-w-xl items-start gap-2" @submit.prevent="submit">
       <div class="min-w-0 flex-1">
-        <input ref="input" v-model="form.name" type="text" class="ds-field min-h-10 py-2 text-base font-bold" :aria-invalid="Boolean(form.errors.name)" />
+        <BaseInput ref="input" v-model="form.name" type="text" class="ds-field min-h-10 py-2 text-base font-bold" :aria-invalid="Boolean(form.errors.name)" />
         <p v-if="form.errors.name" class="ds-field-error mt-1">{{ form.errors.name }}</p>
       </div>
       <button type="submit" class="ds-icon-button border border-[var(--ds-border)]" :title="$t('gestlab.general.buttons.update')" :disabled="form.processing">

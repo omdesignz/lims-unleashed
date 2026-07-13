@@ -163,7 +163,7 @@ function formatDate(date) {
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div class="relative min-w-0 sm:w-72">
             <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-            <input
+            <BaseInput
               v-model="searchTerm"
               type="search"
               class="ds-field min-h-10 pl-9"
@@ -190,7 +190,7 @@ function formatDate(date) {
       </div>
 
       <div v-if="filteredWorksheets.length" class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-[var(--ds-border)]">
+        <DataTable class="min-w-full divide-y divide-[var(--ds-border)]">
           <thead class="ds-table-head">
             <tr>
               <th class="ds-table-heading px-4 py-3 text-left">Worksheet</th>
@@ -237,7 +237,7 @@ function formatDate(date) {
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div v-else class="ds-empty-state m-4 px-6 py-12 text-center">

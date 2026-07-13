@@ -406,7 +406,7 @@ function printComparison() {
 
           <div v-if="expandedGroups[group.category]" class="border-t border-[var(--ds-border)]">
             <div class="hidden overflow-x-auto md:block">
-              <table class="min-w-full">
+              <DataTable class="min-w-full">
                 <thead class="ds-table-head">
                   <tr>
                     <th class="ds-table-heading px-5 py-3 text-left">Campo</th>
@@ -433,7 +433,7 @@ function printComparison() {
                     </td>
                   </tr>
                 </tbody>
-              </table>
+              </DataTable>
             </div>
 
             <div class="divide-y divide-[var(--ds-border)] md:hidden">

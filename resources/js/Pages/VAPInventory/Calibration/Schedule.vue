@@ -197,7 +197,7 @@
         </div>
 
         <div v-if="itemRows.length" class="hidden overflow-x-auto lg:block">
-          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
             <thead class="bg-[var(--ds-panel-subtle)]">
               <tr>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Equipamento</th>
@@ -265,7 +265,7 @@
                 </td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
 
         <Pagination

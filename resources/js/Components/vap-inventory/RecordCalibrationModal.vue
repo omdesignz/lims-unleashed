@@ -44,7 +44,7 @@
               Data de Calibração
               <span class="text-red-500">*</span>
             </label>
-            <input
+            <DateTimePicker
               v-model="form.calibration_date"
               type="date"
               :max="new Date().toISOString().split('T')[0]"
@@ -52,8 +52,7 @@
               :class="[
                 'ds-field',
                 form.errors.calibration_date ? 'border-[var(--color-danger-500)]' : 'border-[var(--ds-border)]'
-              ]"
-            />
+              ]" />
             <p v-if="form.errors.calibration_date" class="text-xs text-red-600">
               {{ form.errors.calibration_date }}
             </p>
@@ -64,7 +63,7 @@
               Data de Próxima Calibração
               <span class="text-red-500">*</span>
             </label>
-            <input
+            <DateTimePicker
               v-model="form.next_calibration_date"
               type="date"
               :min="form.calibration_date || new Date().toISOString().split('T')[0]"
@@ -72,8 +71,7 @@
               :class="[
                 'ds-field',
                 form.errors.next_calibration_date ? 'border-[var(--color-danger-500)]' : 'border-[var(--ds-border)]'
-              ]"
-            />
+              ]" />
             <p v-if="form.errors.next_calibration_date" class="text-xs text-red-600">
               {{ form.errors.next_calibration_date }}
             </p>
@@ -117,7 +115,7 @@
               Realizado Por
               <span class="text-red-500">*</span>
             </label>
-            <input
+            <BaseInput
               v-model="form.performed_by"
               type="text"
               required
@@ -136,7 +134,7 @@
             <label class="block text-sm font-medium text-gray-700">
               Empresa / Fornecedor de Serviço
             </label>
-            <input
+            <BaseInput
               v-model="form.service_provider"
               type="text"
               class="ds-field"
@@ -183,7 +181,7 @@
               <label class="block text-sm font-medium text-gray-700">
                 Antes da Calibração
               </label>
-              <input
+              <BaseInput
                 v-model="form.measurement_before"
                 type="text"
                 class="ds-field"
@@ -194,7 +192,7 @@
               <label class="block text-sm font-medium text-gray-700">
                 Depois da Calibração
               </label>
-              <input
+              <BaseInput
                 v-model="form.measurement_after"
                 type="text"
                 class="ds-field"
@@ -205,7 +203,7 @@
               <label class="block text-sm font-medium text-gray-700">
                 Tolerância
               </label>
-              <input
+              <BaseInput
                 v-model="form.tolerance"
                 type="text"
                 class="ds-field"
@@ -220,7 +218,7 @@
           <label class="block text-sm font-medium text-gray-700">
             Normativas Usadas
           </label>
-          <input
+          <BaseInput
             v-model="form.standards_used"
             type="text"
             class="ds-field"
@@ -234,7 +232,7 @@
             <label class="block text-sm font-medium text-gray-700">
               Número do Certificado
             </label>
-            <input
+            <BaseInput
               v-model="form.certificate_number"
               type="text"
               class="ds-field"
@@ -245,11 +243,10 @@
             <label class="block text-sm font-medium text-gray-700">
               Data do Certificado
             </label>
-            <input
+            <DateTimePicker
               v-model="form.certificate_date"
               type="date"
-              class="ds-field"
-            />
+              class="ds-field" />
           </div>
         </div>
 

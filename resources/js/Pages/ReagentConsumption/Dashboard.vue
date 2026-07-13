@@ -11,14 +11,14 @@
         <div>
           <div class="text-gray-900 text-sm font-medium leading-6">
                 <label class="mr-2 text-white">Sensibilidade de Alerta (%):</label>
-                <input class="text-gray-900 rounded-lg border border-gray-200 py-1 pr-3 pl-3 focus:border-blue-900 focus:ring-3 focus:ring-blue-900/50 dark:border-gray-700 dark:bg-gray-800 dark:focus:border-blue-900 text-sm font-medium leading-6" type="number" v-model="alertSensitivity" min="1" max="100" @change="fetchChartData" />
+                <BaseInput class="text-gray-900 rounded-lg border border-gray-200 py-1 pr-3 pl-3 focus:border-blue-900 focus:ring-3 focus:ring-blue-900/50 dark:border-gray-700 dark:bg-gray-800 dark:focus:border-blue-900 text-sm font-medium leading-6" type="number" v-model="alertSensitivity" min="1" max="100" @change="fetchChartData" />
         
                 <label class="mr-2 ml-4 text-white">Duração da Média (Dias):</label>
-                <input class="text-gray-900 rounded-lg border border-gray-200 py-1 pr-3 pl-3 focus:border-blue-900 focus:ring-3 focus:ring-blue-900/50 dark:border-gray-700 dark:bg-gray-800 dark:focus:border-blue-900 text-sm font-medium leading-6" type="number" v-model="movingAverageLength" min="1" max="30" @change="fetchChartData" />
+                <BaseInput class="text-gray-900 rounded-lg border border-gray-200 py-1 pr-3 pl-3 focus:border-blue-900 focus:ring-3 focus:ring-blue-900/50 dark:border-gray-700 dark:bg-gray-800 dark:focus:border-blue-900 text-sm font-medium leading-6" type="number" v-model="movingAverageLength" min="1" max="30" @change="fetchChartData" />
             </div>
         </div>
         <div class="sm:w-48">
-          <select
+          <BaseSelect
             v-model="selectedFilter" @change="fetchChartData"
             id="date"
             name="date"
@@ -28,9 +28,9 @@
           <option value="30_days">Últimos 30 Dias vs. Próximos 30 Dias</option>
           <option value="this_month">Este Mês vs. Último Mês</option>
           <option value="custom">Personalizado</option>
-          </select>
+          </BaseSelect>
 
-        <!-- <input v-if="selectedFilter === 'custom'" type="date" v-model="customStartDate" @change="fetchChartData" /> -->
+        <!-- <DateTimePicker v-if="selectedFilter === 'custom'" type="date" v-model="customStartDate" @change="fetchChartData" /> -->
         <div class="mt-2">
             <date-picker v-if="selectedFilter === 'custom'" class="py-1 text-sm font-medium leading-6 text-gray-900" v-model.string="customStartDate" locale="pt" color="blue" mode="date" :input-debounce="500" @update:model-value="updateDate" :masks="masks" />
         </div>

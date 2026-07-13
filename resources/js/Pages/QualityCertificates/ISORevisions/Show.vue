@@ -411,7 +411,7 @@ function handleRevisionRestored() {
             </div>
 
             <div v-if="activeTab === 'results'" class="ds-table-shell overflow-x-auto">
-              <table class="min-w-full">
+              <DataTable class="min-w-full">
                 <thead class="ds-table-head">
                   <tr>
                     <th class="ds-table-heading px-4 py-3 text-left">Parametro</th>
@@ -432,7 +432,7 @@ function handleRevisionRestored() {
                     <td class="ds-table-cell px-4 py-3">{{ result.type_label || "-" }}</td>
                   </tr>
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           </div>
 

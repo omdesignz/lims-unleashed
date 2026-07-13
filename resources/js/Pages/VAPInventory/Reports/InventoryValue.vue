@@ -188,7 +188,7 @@
         </div>
 
         <div v-if="!loading && inventoryRows.length" class="hidden overflow-x-auto lg:block">
-          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
             <thead class="bg-[var(--ds-panel-subtle)]">
               <tr>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Item</th>
@@ -223,7 +223,7 @@
                 </td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
 
         <Pagination
@@ -300,7 +300,7 @@
           <RectangleStackIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
         </div>
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
             <thead class="bg-[var(--ds-panel-subtle)]">
               <tr>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Categoria</th>
@@ -315,7 +315,7 @@
                 <td class="px-5 py-3 text-right font-black tabular-nums text-[var(--ds-text)]">{{ formatCurrency(category.total_value) }}</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </div>
 
@@ -328,7 +328,7 @@
           <BuildingStorefrontIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
         </div>
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
             <thead class="bg-[var(--ds-panel-subtle)]">
               <tr>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
@@ -343,7 +343,7 @@
                 <td class="px-5 py-3 text-right font-black tabular-nums text-[var(--ds-text)]">{{ formatCurrency(warehouse.total_value) }}</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </div>
     </section>

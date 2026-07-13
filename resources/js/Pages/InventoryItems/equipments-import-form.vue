@@ -7,7 +7,7 @@
                 <h3 class="text-base font-semibold text-gray-900">Carregar Dados de Equipamentos (CSV)</h3>
                 <div class="mt-2 max-w-xl text-sm text-gray-500">
                   <!-- <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Recusandae voluptatibus corrupti atque repudiandae nam.</p> -->
-                  <input
+                  <FileInput
                     type="file"
                     ref="fileInput"
                     accept=".csv"

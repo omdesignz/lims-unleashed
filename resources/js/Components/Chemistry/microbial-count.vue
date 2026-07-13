@@ -38,7 +38,7 @@ const removeSample = (index) => {
   <div class="container">
     <h2 class="title">Microbial Count Calculator</h2>
 
-    <table>
+    <DataTable>
       <thead>
         <tr>
           <th>D1</th>
@@ -52,10 +52,10 @@ const removeSample = (index) => {
       </thead>
       <tbody>
         <tr v-for="(sample, index) in cfuResults" :key="index">
-          <td><input type="number" v-model="sample.d1" step="any" /></td>
-          <td><input type="number" v-model="sample.ufc1" /></td>
-          <td><input type="number" v-model="sample.d2" step="any" /></td>
-          <td><input type="number" v-model="sample.ufc2" /></td>
+          <td><BaseInput type="number" v-model="sample.d1" step="any" /></td>
+          <td><BaseInput type="number" v-model="sample.ufc1" /></td>
+          <td><BaseInput type="number" v-model="sample.d2" step="any" /></td>
+          <td><BaseInput type="number" v-model="sample.ufc2" /></td>
           <td>{{ sample.ufc1 + sample.ufc2 }}</td>
           <td class="result">{{ sample.cfu }}</td>
           <td>
@@ -63,7 +63,7 @@ const removeSample = (index) => {
           </td>
         </tr>
       </tbody>
-    </table>
+    </DataTable>
 
     <button class="add-btn" @click="addSample">➕ Add Sample</button>
   </div>

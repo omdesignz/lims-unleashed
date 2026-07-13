@@ -252,7 +252,7 @@ function openInvoice() {
           </header>
 
           <div v-if="items.length" class="overflow-x-auto">
-            <table class="ds-table min-w-full">
+            <DataTable class="ds-table min-w-full">
               <thead class="ds-table-head">
                 <tr>
                   <th class="ds-table-header px-5 py-3 text-left sm:px-6">Produto</th>
@@ -284,7 +284,7 @@ function openInvoice() {
                   <td v-if="isImport" colspan="4"></td>
                 </tr>
               </tfoot>
-            </table>
+            </DataTable>
           </div>
           <div v-else class="px-5 py-10 text-center sm:px-6">
             <CubeIcon class="mx-auto h-7 w-7 text-[var(--ds-text-soft)]" />

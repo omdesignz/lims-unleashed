@@ -376,7 +376,7 @@ let submitResults = () => {
                 <div class="sm:col-span-full">
                   <label for="inserted_value" class="block text-sm font-medium leading-6 text-gray-900">Resultado</label>
                   <div class="mt-2">
-                    <input v-model="result.inserted_value" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-xl border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 dark:bg-slate-800 dark:text-gray-100 dark:ring-slate-600 dark:placeholder:text-slate-400 sm:text-sm sm:leading-6" />
+                    <BaseInput v-model="result.inserted_value" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-xl border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 dark:bg-slate-800 dark:text-gray-100 dark:ring-slate-600 dark:placeholder:text-slate-400 sm:text-sm sm:leading-6" />
                   </div>
                   <p v-if="form.errors[`results.${index}.inserted_value`]" class="mt-2 text-xs text-red-600" :id="`item-${index}-error`">{{ form.errors[`results.${index}.inserted_value`] }}</p>
                 </div>
@@ -388,7 +388,7 @@ let submitResults = () => {
                 <div class="sm:col-span-full">
                   <label for="verified_value" class="block text-sm font-medium leading-6 text-gray-900">Resultado</label>
                   <div class="mt-2">
-                    <input v-model="result.verified_value" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-xl border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 dark:bg-slate-800 dark:text-gray-100 dark:ring-slate-600 dark:placeholder:text-slate-400 sm:text-sm sm:leading-6" />
+                    <BaseInput v-model="result.verified_value" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-xl border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 dark:bg-slate-800 dark:text-gray-100 dark:ring-slate-600 dark:placeholder:text-slate-400 sm:text-sm sm:leading-6" />
                   </div>
                   <p v-if="form.errors[`results.${index}.verified_value`]" class="mt-2 text-xs text-red-600" :id="`item-${index}-error`">{{ form.errors[`results.${index}.verified_value`] }}</p>
                 </div>
@@ -400,7 +400,7 @@ let submitResults = () => {
                 <div class="sm:col-span-full">
                   <label for="approved_value" class="block text-sm font-medium leading-6 text-gray-900">Resultado</label>
                   <div class="mt-2">
-                    <input v-model="result.approved_value" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-xl border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 dark:bg-slate-800 dark:text-gray-100 dark:ring-slate-600 dark:placeholder:text-slate-400 sm:text-sm sm:leading-6" />
+                    <BaseInput v-model="result.approved_value" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-xl border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 dark:bg-slate-800 dark:text-gray-100 dark:ring-slate-600 dark:placeholder:text-slate-400 sm:text-sm sm:leading-6" />
                   </div>
                   <p v-if="form.errors[`results.${index}.approved_value`]" class="mt-2 text-xs text-red-600" :id="`item-${index}-error`">{{ form.errors[`results.${index}.approved_value`] }}</p>
                 </div>
@@ -460,7 +460,7 @@ let submitResults = () => {
                 <div class="sm:col-span-full">
                   <label for="min_ref_value" class="block text-sm font-medium leading-6 text-gray-900">Valor Mínimo de Referência</label>
                   <div class="mt-2">
-                    <input v-model="result.min_ref_value" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-xl border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 dark:bg-slate-800 dark:text-gray-100 dark:ring-slate-600 dark:placeholder:text-slate-400 sm:text-sm sm:leading-6" />
+                    <BaseInput v-model="result.min_ref_value" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-xl border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 dark:bg-slate-800 dark:text-gray-100 dark:ring-slate-600 dark:placeholder:text-slate-400 sm:text-sm sm:leading-6" />
                   </div>
                   <p v-if="form.errors[`results.${index}.min_ref_value`]" class="mt-2 text-xs text-red-600" :id="`item-${index}-error`">{{ form.errors[`results.${index}.min_ref_value`] }}</p>
                 </div>
@@ -472,7 +472,7 @@ let submitResults = () => {
                 <div class="sm:col-span-full">
                   <label for="max_ref_value" class="block text-sm font-medium leading-6 text-gray-900">Valor Máximo de Referência</label>
                   <div class="mt-2">
-                    <input v-model="result.max_ref_value" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-xl border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 dark:bg-slate-800 dark:text-gray-100 dark:ring-slate-600 dark:placeholder:text-slate-400 sm:text-sm sm:leading-6" />
+                    <BaseInput v-model="result.max_ref_value" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-xl border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 dark:bg-slate-800 dark:text-gray-100 dark:ring-slate-600 dark:placeholder:text-slate-400 sm:text-sm sm:leading-6" />
                   </div>
                   <p v-if="form.errors[`results.${index}.max_ref_value`]" class="mt-2 text-xs text-red-600" :id="`item-${index}-error`">{{ form.errors[`results.${index}.max_ref_value`] }}</p>
                 </div>

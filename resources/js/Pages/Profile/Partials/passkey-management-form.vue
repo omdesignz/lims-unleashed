@@ -131,7 +131,7 @@ async function removePasskey() {
 <template>
   <div class="space-y-5">
     <form class="grid gap-4 border-b border-[var(--ds-border)] pb-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end" @submit.prevent="registerPasskey">
-      <div class="ds-field-group"><label class="ds-field-label">Nome da passkey</label><input v-model="passkeyName" type="text" maxlength="255" class="ds-field" placeholder="Ex.: MacBook do laboratorio" /><p class="ds-field-hint">Use um nome que identifique claramente o dispositivo.</p></div>
+      <div class="ds-field-group"><label class="ds-field-label">Nome da passkey</label><BaseInput v-model="passkeyName" type="text" maxlength="255" class="ds-field" placeholder="Ex.: MacBook do laboratorio" /><p class="ds-field-hint">Use um nome que identifique claramente o dispositivo.</p></div>
       <button type="submit" class="ds-button ds-button-primary" :disabled="isRegistering"><ArrowPathIcon v-if="isRegistering" class="h-4 w-4 animate-spin" /><FingerPrintIcon v-else class="h-4 w-4" />{{ isRegistering ? "A registar..." : "Registar passkey" }}</button>
     </form>
 

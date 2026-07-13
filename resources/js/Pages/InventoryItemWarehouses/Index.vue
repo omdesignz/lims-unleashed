@@ -197,7 +197,7 @@ function confirmAction() {
 
           <div>
             <label for="warehouse-name" class="ds-field-label mb-2 block">Nome do armazém</label>
-            <input id="warehouse-name" v-model="form.name" type="text" class="ds-field" autofocus placeholder="Ex.: Câmara fria de reagentes">
+            <BaseInput id="warehouse-name" v-model="form.name" type="text" class="ds-field" autofocus placeholder="Ex.: Câmara fria de reagentes" />
             <p v-if="form.errors.name" class="ds-field-error mt-2">{{ form.errors.name }}</p>
           </div>
 
@@ -205,7 +205,7 @@ function confirmAction() {
             <legend class="ds-field-label">Condições ambientais disponíveis</legend>
             <div class="mt-3 divide-y divide-[var(--ds-border)] overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)]">
               <label v-for="condition in storageConditions" :key="condition.key" class="flex cursor-pointer items-start gap-3 px-4 py-4">
-                <input v-model="form[condition.key]" type="checkbox" class="ds-checkbox mt-0.5">
+                <CheckboxInput v-model="form[condition.key]" type="checkbox" class="ds-checkbox mt-0.5" />
                 <component :is="condition.icon" class="h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" aria-hidden="true" />
                 <span class="min-w-0 flex-1">
                   <span class="block text-sm font-semibold text-[var(--ds-text)]">{{ condition.label }}</span>

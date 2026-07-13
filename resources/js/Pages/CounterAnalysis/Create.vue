@@ -315,7 +315,7 @@ if(!form.id) {
                 <div class="sm:col-span-full">
                   <label for="comercial_brand" class="block text-sm font-medium leading-6 text-gray-900">Marca Comercial</label>
                   <div class="mt-2">
-                    <input v-model="product.comercial_brand" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
+                    <BaseInput v-model="product.comercial_brand" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
                   </div>
                   <p v-if="form.errors[`products.${index}.comercial_brand`]" class="mt-2 text-xs text-red-600" :id="`item-${index}-error`">{{ form.errors[`products.${index}.comercial_brand`] }}</p>
                 </div>
@@ -339,7 +339,7 @@ if(!form.id) {
                 <div class="sm:col-span-full">
                   <label for="qty" class="block text-sm font-medium leading-6 text-gray-900">Quantidade</label>
                   <div class="mt-2">
-                    <input v-model="product.qty" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
+                    <BaseInput v-model="product.qty" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
                   </div>
                   <p v-if="form.errors[`products.${index}.qty`]" class="mt-2 text-xs text-red-600" :id="`item-${index}-error`">{{ form.errors[`products.${index}.qty`] }}</p>
                 </div>
@@ -351,7 +351,7 @@ if(!form.id) {
                 <div class="sm:col-span-full">
                   <label for="collected_qty" class="block text-sm font-medium leading-6 text-gray-900">Quantidade Colhida</label>
                   <div class="mt-2">
-                    <input v-model="product.collected_qty" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
+                    <BaseInput v-model="product.collected_qty" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
                   </div>
                   <p v-if="form.errors[`products.${index}.collected_qty`]" class="mt-2 text-xs text-red-600" :id="`item-${index}-error`">{{ form.errors[`products.${index}.collected_qty`] }}</p>
                 </div>
@@ -363,7 +363,7 @@ if(!form.id) {
                 <div class="sm:col-span-full">
                   <label for="lot" class="block text-sm font-medium leading-6 text-gray-900">Lote</label>
                   <div class="mt-2">
-                    <input v-model="product.lot" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
+                    <BaseInput v-model="product.lot" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
                   </div>
                   <p v-if="form.errors[`products.${index}.lot`]" class="mt-2 text-xs text-red-600" :id="`item-${index}-error`">{{ form.errors[`products.${index}.lot`] }}</p>
                 </div>
@@ -375,7 +375,7 @@ if(!form.id) {
                 <div class="sm:col-span-full">
                   <label for="bl" class="block text-sm font-medium leading-6 text-gray-900">BL</label>
                   <div class="mt-2">
-                    <input v-model="product.bl" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
+                    <BaseInput v-model="product.bl" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
                   </div>
                   <p v-if="form.errors[`products.${index}.bl`]" class="mt-2 text-xs text-red-600" :id="`item-${index}-error`">{{ form.errors[`products.${index}.bl`] }}</p>
                 </div>
@@ -387,7 +387,7 @@ if(!form.id) {
                 <div class="sm:col-span-full">
                   <label for="du_no" class="block text-sm font-medium leading-6 text-gray-900">Nº DU</label>
                   <div class="mt-2">
-                    <input v-model="product.du_no" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
+                    <BaseInput v-model="product.du_no" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
                   </div>
                   <p v-if="form.errors[`products.${index}.du_no`]" class="mt-2 text-xs text-red-600" :id="`item-${index}-error`">{{ form.errors[`products.${index}.du_no`] }}</p>
                 </div>
@@ -399,7 +399,7 @@ if(!form.id) {
                 <div class="sm:col-span-full">
                   <label for="term_no" class="block text-sm font-medium leading-6 text-gray-900">Nº Termo</label>
                   <div class="mt-2">
-                    <input v-model="product.term_no" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
+                    <BaseInput v-model="product.term_no" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
                   </div>
                   <p v-if="form.errors[`products.${index}.term_no`]" class="mt-2 text-xs text-red-600" :id="`item-${index}-error`">{{ form.errors[`products.${index}.term_no`] }}</p>
                 </div>
@@ -411,7 +411,7 @@ if(!form.id) {
                 <div class="sm:col-span-full">
                   <label for="container_no" class="block text-sm font-medium leading-6 text-gray-900">Nº Contentor</label>
                   <div class="mt-2">
-                    <input v-model="product.container_no" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
+                    <BaseInput v-model="product.container_no" type="text" :name="`item-${index}-error`" :id="`item-${index}-error`" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
                   </div>
                   <p v-if="form.errors[`products.${index}.container_no`]" class="mt-2 text-xs text-red-600" :id="`item-${index}-error`">{{ form.errors[`products.${index}.container_no`] }}</p>
                 </div>

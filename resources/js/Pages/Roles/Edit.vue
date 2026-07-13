@@ -160,7 +160,7 @@ function submit() {
                 <p class="ds-field-hint mt-1">Identificador usado pelas políticas.</p>
               </div>
               <div>
-                <input id="role-name" v-model="form.name" type="text" autocomplete="off" class="ds-field font-mono" required />
+                <BaseInput id="role-name" v-model="form.name" type="text" autocomplete="off" class="ds-field font-mono" required />
                 <p v-if="form.errors.name" class="ds-field-error mt-2">{{ form.errors.name }}</p>
               </div>
             </div>
@@ -172,7 +172,7 @@ function submit() {
                   <p class="ds-field-hint mt-1">Nome apresentado aos administradores.</p>
                 </div>
                 <div>
-                  <input id="role-label" v-model="form.label" type="text" class="ds-field" required />
+                  <BaseInput id="role-label" v-model="form.label" type="text" class="ds-field" required />
                   <p v-if="form.errors.label" class="ds-field-error mt-2">{{ form.errors.label }}</p>
                 </div>
               </div>
@@ -185,7 +185,7 @@ function submit() {
                   <p class="ds-field-hint mt-1">Contexto de autenticação protegido.</p>
                 </div>
                 <div>
-                  <input id="role-guard" v-model="form.guard_name" type="text" autocomplete="off" class="ds-field font-mono" required />
+                  <BaseInput id="role-guard" v-model="form.guard_name" type="text" autocomplete="off" class="ds-field font-mono" required />
                   <p v-if="form.errors.guard_name" class="ds-field-error mt-2">{{ form.errors.guard_name }}</p>
                 </div>
               </div>
@@ -213,7 +213,7 @@ function submit() {
 
             <div class="relative mt-5">
               <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-              <input
+              <BaseInput
                 id="permission-search"
                 v-model="permissionSearch"
                 type="search"
@@ -245,7 +245,7 @@ function submit() {
               :key="permission.value"
               class="flex cursor-pointer items-start gap-3 px-5 py-4 transition-colors hover:bg-[var(--ds-panel-subtle)] sm:px-6"
             >
-              <input
+              <CheckboxInput
                 type="checkbox"
                 class="mt-0.5 h-4 w-4 rounded border-[var(--ds-border-strong)] text-[rgb(var(--primary-700-rgb))] focus:ring-[rgb(var(--primary-600-rgb))]"
                 :checked="selectedPermissionIds.has(permission.value)"

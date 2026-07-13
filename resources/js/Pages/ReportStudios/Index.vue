@@ -406,7 +406,7 @@ const studioPresets = [
     description: 'Proposta multipágina com escopo técnico, condições comerciais, aceite do cliente e assinatura.',
     layout_schema: studioPresetLayout('proposal'),
     export_settings: studioPresetExportSettings(),
-    body_html: '<section style="padding:30px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:22px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.78;">Proposta técnica-comercial</div><h1 style="margin:12px 0 0; font-size:28px;">{proposal_number}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">{customer_name} · {service_location} · válida até {expiry_date}</p></section><section style="margin:18px 0;">{proposal_content}</section><section style="margin:20px 0;">{items_table}</section><section style="margin:20px 0;">{summary_table}</section><section style="margin-top:20px;">{banking_details}</section><section style="margin-top:20px;"><table class="document-summary-table studio-avoid-break"><tr><td class="document-summary-cell" style="width:50%; vertical-align:top;">{proposal_acceptance_evidence}</td><td class="document-summary-cell" style="width:50%; vertical-align:top;">{proposal_authenticity}</td></tr></table></section><section style="margin-top:18px;">{document_keywords}</section><section style="margin-top:24px;">{signature_block}</section>',
+    body_html: '<section style="padding:30px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:22px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.78;">Proposta técnica-comercial</div><h1 style="margin:12px 0 0; font-size:28px;">{proposal_number}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">{customer_name} · {service_location} · válida até {expiry_date}</p></section><section style="margin:18px 0;">{proposal_content}</section><section style="margin:20px 0;">{items_table}</section><section style="margin:20px 0;">{summary_table}</section><section style="margin-top:20px;">{banking_details}</section><section style="margin-top:20px;"><DataTable class="document-summary-table studio-avoid-break"><tr><td class="document-summary-cell" style="width:50%; vertical-align:top;">{proposal_acceptance_evidence}</td><td class="document-summary-cell" style="width:50%; vertical-align:top;">{proposal_authenticity}</td></tr></DataTable></section><section style="margin-top:18px;">{document_keywords}</section><section style="margin-top:24px;">{signature_block}</section>',
   },
   {
     slug: 'export-certificate',
@@ -779,24 +779,24 @@ const onStudioTypeUpdate = (studioType) => {
         </div>
       </dl>
 
-      <nav class="flex overflow-x-auto px-5 sm:px-6" aria-label="Áreas do estúdio documental">
+      <nav class="grid grid-cols-2 px-3 sm:flex sm:px-6" aria-label="Áreas do estúdio documental">
         <button
           type="button"
-          class="-mb-px inline-flex min-h-12 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-bold transition"
+          class="-mb-px inline-flex min-h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary-500-rgb))] focus-visible:ring-inset sm:shrink-0 sm:px-4 sm:text-sm"
           :class="studioWorkspaceView === 'library' ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
           @click="studioWorkspaceView = 'library'"
         >
-          <FolderOpenIcon class="h-4 w-4" />
+          <FolderOpenIcon class="hidden h-4 w-4 sm:block" />
           Biblioteca de modelos
           <span class="ds-badge ds-badge-neutral">{{ templates.length }}</span>
         </button>
         <button
           type="button"
-          class="-mb-px inline-flex min-h-12 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-bold transition"
+          class="-mb-px inline-flex min-h-12 min-w-0 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary-500-rgb))] focus-visible:ring-inset sm:shrink-0 sm:px-4 sm:text-sm"
           :class="studioWorkspaceView === 'editor' ? 'border-[rgb(var(--primary-700-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--accent-200-rgb))] dark:text-[rgb(var(--accent-100-rgb))]' : 'border-transparent text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)]'"
           @click="studioWorkspaceView = 'editor'"
         >
-          <DocumentPlusIcon class="h-4 w-4" />
+          <DocumentPlusIcon class="hidden h-4 w-4 sm:block" />
           {{ editingTemplate ? 'Editar modelo' : 'Novo modelo' }}
         </button>
       </nav>
@@ -812,17 +812,17 @@ const onStudioTypeUpdate = (studioType) => {
           <label class="relative block">
             <span class="sr-only">Pesquisar modelos</span>
             <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-            <input v-model="templateSearch" type="search" class="ds-field pl-9" placeholder="Pesquisar modelos" />
+            <BaseInput v-model="templateSearch" type="search" class="ds-field pl-9" placeholder="Pesquisar modelos" />
           </label>
-          <select v-model="templateTypeFilter" class="ds-field">
+          <BaseSelect v-model="templateTypeFilter" class="ds-field">
             <option value="">Todos os tipos</option>
             <option v-for="type in templateTypeOptions" :key="type.key" :value="type.key">{{ $t(type.labelKey) }}</option>
-          </select>
+          </BaseSelect>
         </div>
       </div>
 
       <div v-if="filteredTemplates.length" class="hidden overflow-x-auto lg:block">
-        <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+        <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
           <thead class="ds-table-head">
             <tr>
               <th class="px-5 py-3 ds-table-heading">Modelo</th>
@@ -858,7 +858,7 @@ const onStudioTypeUpdate = (studioType) => {
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div v-if="filteredTemplates.length" class="divide-y divide-[var(--ds-border)] lg:hidden">

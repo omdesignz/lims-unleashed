@@ -134,13 +134,13 @@ const loadFormulas = (query, setOptions) => loadSelectOptions("/formulas/getForm
       <div class="grid gap-5 lg:grid-cols-2">
         <div class="ds-field-group">
           <label for="profile-name" class="ds-field-label">{{ $t('gestlab.general.labels.profiles.name') }} <span class="ds-field-required">*</span></label>
-          <input id="profile-name" v-model="form.name" class="ds-field" type="text" :aria-invalid="Boolean(form.errors.name)" placeholder="Nome do pacote analitico" />
+          <BaseInput id="profile-name" v-model="form.name" class="ds-field" type="text" :aria-invalid="Boolean(form.errors.name)" placeholder="Nome do pacote analitico" />
           <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
         </div>
 
         <div class="ds-field-group">
           <label for="profile-code" class="ds-field-label">{{ $t('gestlab.general.labels.profiles.code') }}</label>
-          <input id="profile-code" v-model="form.code" class="ds-field font-mono" type="text" :aria-invalid="Boolean(form.errors.code)" placeholder="Codigo controlado" />
+          <BaseInput id="profile-code" v-model="form.code" class="ds-field font-mono" type="text" :aria-invalid="Boolean(form.errors.code)" placeholder="Codigo controlado" />
           <p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p>
         </div>
 
@@ -238,7 +238,7 @@ const loadFormulas = (query, setOptions) => loadSelectOptions("/formulas/getForm
             </div>
             <div class="ds-field-group lg:col-span-2">
               <label class="ds-field-label"><ClockIcon class="inline h-4 w-4" /> Prazo otimo</label>
-              <input v-model="parameter.optimal_analysis_time" class="ds-field" type="text" readonly placeholder="Definido no parametro" />
+              <BaseInput v-model="parameter.optimal_analysis_time" class="ds-field" type="text" readonly placeholder="Definido no parametro" />
             </div>
 
             <div class="ds-field-group lg:col-span-2">
@@ -261,17 +261,17 @@ const loadFormulas = (query, setOptions) => loadSelectOptions("/formulas/getForm
               <div class="grid gap-5 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 lg:grid-cols-3">
                 <div class="ds-field-group">
                   <label class="ds-field-label">Limite minimo <span class="ds-field-required">*</span></label>
-                  <input v-model="parameter.min_ref_value" class="ds-field" type="number" step="any" :aria-invalid="Boolean(form.errors[`parameters.${index}.min_ref_value`])" />
+                  <BaseInput v-model="parameter.min_ref_value" class="ds-field" type="number" step="any" :aria-invalid="Boolean(form.errors[`parameters.${index}.min_ref_value`])" />
                   <p v-if="form.errors[`parameters.${index}.min_ref_value`]" class="ds-field-error">{{ form.errors[`parameters.${index}.min_ref_value`] }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label">Limite maximo</label>
-                  <input v-model="parameter.max_ref_value" class="ds-field" type="number" step="any" :aria-invalid="Boolean(form.errors[`parameters.${index}.max_ref_value`])" />
+                  <BaseInput v-model="parameter.max_ref_value" class="ds-field" type="number" step="any" :aria-invalid="Boolean(form.errors[`parameters.${index}.max_ref_value`])" />
                   <p v-if="form.errors[`parameters.${index}.max_ref_value`]" class="ds-field-error">{{ form.errors[`parameters.${index}.max_ref_value`] }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label"><ScaleIcon class="inline h-4 w-4" /> Origem da referencia</label>
-                  <input v-model="parameter.ref_val_origin" class="ds-field" type="text" placeholder="Norma, metodo ou populacao" />
+                  <BaseInput v-model="parameter.ref_val_origin" class="ds-field" type="text" placeholder="Norma, metodo ou populacao" />
                   <p v-if="form.errors[`parameters.${index}.ref_val_origin`]" class="ds-field-error">{{ form.errors[`parameters.${index}.ref_val_origin`] }}</p>
                 </div>
               </div>
@@ -292,7 +292,7 @@ const loadFormulas = (query, setOptions) => loadSelectOptions("/formulas/getForm
 
             <div class="ds-field-group lg:col-span-6">
               <label class="ds-field-label">{{ form.category_id?.value === 1 ? 'Analitos' : $t('gestlab.general.labels.profiles.dilutions') }}</label>
-              <input v-model="parameter.dilutions" class="ds-field" type="text" :placeholder="form.category_id?.value === 1 ? 'Lista de analitos' : 'Plano geral de diluicao'" />
+              <BaseInput v-model="parameter.dilutions" class="ds-field" type="text" :placeholder="form.category_id?.value === 1 ? 'Lista de analitos' : 'Plano geral de diluicao'" />
             </div>
 
             <div v-if="form.category_id?.value === 2" class="lg:col-span-6">
@@ -308,8 +308,8 @@ const loadFormulas = (query, setOptions) => loadSelectOptions("/formulas/getForm
               </div>
               <div v-if="parameter.extra_data?.dilutions?.length" class="mt-3 overflow-hidden rounded-lg border border-[var(--ds-border)]">
                 <div v-for="(dilution, dilutionIndex) in parameter.extra_data.dilutions" :key="dilutionIndex" class="grid gap-3 border-b border-[var(--ds-border)] p-3 last:border-b-0 sm:grid-cols-[1fr_1fr_auto]">
-                  <input v-model="dilution.quantity" class="ds-field" type="text" placeholder="Quantidade" />
-                  <input v-model="dilution.ratio" class="ds-field" type="text" placeholder="Proporcao" />
+                  <BaseInput v-model="dilution.quantity" class="ds-field" type="text" placeholder="Quantidade" />
+                  <BaseInput v-model="dilution.ratio" class="ds-field" type="text" placeholder="Proporcao" />
                   <button type="button" class="ds-table-action ds-table-action-danger" title="Remover etapa" @click="parameter.extra_data.dilutions.splice(dilutionIndex, 1)">
                     <TrashIcon class="h-4 w-4" />
                     <span class="sr-only">Remover etapa</span>

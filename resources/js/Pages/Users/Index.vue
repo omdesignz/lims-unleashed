@@ -321,19 +321,19 @@ function executeAction() {
             <div class="grid gap-5 sm:grid-cols-2">
               <div class="sm:col-span-2">
                 <label for="user-name" class="ds-field-label">Nome completo</label>
-                <input id="user-name" v-model="form.name" type="text" autocomplete="name" class="ds-field mt-2" required />
+                <BaseInput id="user-name" v-model="form.name" type="text" autocomplete="name" class="ds-field mt-2" required />
                 <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
               </div>
 
               <div>
                 <label for="user-email" class="ds-field-label">Email</label>
-                <input id="user-email" v-model="form.email" type="email" autocomplete="email" class="ds-field mt-2" required />
+                <BaseInput id="user-email" v-model="form.email" type="email" autocomplete="email" class="ds-field mt-2" required />
                 <p v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</p>
               </div>
 
               <div>
                 <label for="user-username" class="ds-field-label">Nome de utilizador</label>
-                <input id="user-username" v-model="form.username" type="text" autocomplete="username" class="ds-field mt-2" />
+                <BaseInput id="user-username" v-model="form.username" type="text" autocomplete="username" class="ds-field mt-2" />
                 <p v-if="form.errors.username" class="ds-field-error">{{ form.errors.username }}</p>
               </div>
             </div>
@@ -366,7 +366,7 @@ function executeAction() {
                   :key="option.value"
                   class="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2.5 text-sm font-semibold text-[var(--ds-text-muted)] transition hover:border-[rgb(var(--primary-300-rgb))] hover:text-[var(--ds-text)]"
                 >
-                  <input v-model="form.gender" type="radio" class="ds-radio" :value="option.value" required />
+                  <RadioInput v-model="form.gender" type="radio" class="ds-radio" :value="option.value" required />
                   {{ option.label }}
                 </label>
               </div>

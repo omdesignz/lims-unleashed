@@ -90,7 +90,7 @@
               <ArrowUpTrayIcon class="h-4 w-4" />
               Importar resultados
             </button>
-            <input ref="importInput" type="file" accept=".xlsx,.xls,.csv,.txt" class="hidden" @change="importResults" />
+            <FileInput ref="importInput" type="file" accept=".xlsx,.xls,.csv,.txt" class="hidden" @change="importResults" />
             <button type="button" class="ds-button ds-button-secondary" @click="addParticipant">Adicionar participante</button>
             <button type="button" class="ds-button ds-button-secondary" @click="addParameter">Adicionar parâmetro</button>
             <button type="button" class="ds-button ds-button-primary" @click="ensureResultRows">Sincronizar matriz</button>
@@ -101,12 +101,12 @@
           <div class="space-y-3">
             <p class="ds-kicker">Participantes</p>
             <div v-for="(participant, index) in form.participants" :key="`participant-${index}`" class="ds-card grid gap-2 p-3 sm:grid-cols-[0.8fr,1.2fr,0.9fr,1fr,auto]">
-              <input v-model="participant.code" class="ds-field" placeholder="Código" @blur="ensureResultRows" />
-              <input v-model="participant.name" class="ds-field" placeholder="Laboratório / participante" @blur="ensureResultRows" />
-              <select v-model="participant.status" class="ds-field">
+              <BaseInput v-model="participant.code" class="ds-field" placeholder="Código" @blur="ensureResultRows" />
+              <BaseInput v-model="participant.name" class="ds-field" placeholder="Laboratório / participante" @blur="ensureResultRows" />
+              <BaseSelect v-model="participant.status" class="ds-field">
                 <option v-for="option in participantStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-              </select>
-              <input v-model="participant.contact" class="ds-field" placeholder="Contacto" />
+              </BaseSelect>
+              <BaseInput v-model="participant.contact" class="ds-field" placeholder="Contacto" />
               <button type="button" class="ds-table-action ds-table-action-danger" @click="removeParticipant(index)">Remover</button>
             </div>
           </div>
@@ -114,10 +114,10 @@
           <div class="space-y-3">
             <p class="ds-kicker">Parâmetros</p>
             <div v-for="(parameter, index) in form.parameters" :key="`parameter-${index}`" class="ds-card grid gap-2 p-3 sm:grid-cols-[0.8fr,1.2fr,0.7fr,0.9fr,auto]">
-              <input v-model="parameter.code" class="ds-field" placeholder="Código" @blur="ensureResultRows" />
-              <input v-model="parameter.name" class="ds-field" placeholder="Parâmetro" @blur="ensureResultRows" />
-              <input v-model="parameter.unit" class="ds-field" placeholder="Unidade" />
-              <input v-model="parameter.assigned_value" type="number" step="0.0001" class="ds-field" placeholder="Valor alvo" />
+              <BaseInput v-model="parameter.code" class="ds-field" placeholder="Código" @blur="ensureResultRows" />
+              <BaseInput v-model="parameter.name" class="ds-field" placeholder="Parâmetro" @blur="ensureResultRows" />
+              <BaseInput v-model="parameter.unit" class="ds-field" placeholder="Unidade" />
+              <BaseInput v-model="parameter.assigned_value" type="number" step="0.0001" class="ds-field" placeholder="Valor alvo" />
               <button type="button" class="ds-table-action ds-table-action-danger" @click="removeParameter(index)">Remover</button>
             </div>
           </div>
@@ -146,7 +146,7 @@
             </div>
 
             <div class="ds-table-shell mt-4 overflow-x-auto">
-              <table class="min-w-full divide-y divide-[var(--ds-border)]">
+              <DataTable class="min-w-full divide-y divide-[var(--ds-border)]">
                 <thead class="ds-table-head">
                   <tr>
                     <th class="ds-table-heading px-4 py-3 text-left">Parâmetro</th>
@@ -164,22 +164,22 @@
                       <p class="font-bold text-[var(--ds-text)]">{{ result.parameter || result.parameter_code || 'Parâmetro' }}</p>
                       <p class="text-xs text-[var(--ds-text-soft)]">{{ result.parameter_code || 'Sem código' }}</p>
                     </td>
-                    <td class="ds-table-cell min-w-36 px-4 py-3"><input v-model="result.value" class="ds-field" placeholder="0.00" /></td>
-                    <td class="ds-table-cell min-w-28 px-4 py-3"><input v-model="result.unit" class="ds-field" placeholder="Un." /></td>
-                    <td class="ds-table-cell min-w-36 px-4 py-3"><input v-model="result.assigned_value" type="number" step="0.0001" class="ds-field" placeholder="0.00" /></td>
-                    <td class="ds-table-cell min-w-32 px-4 py-3"><input v-model="result.z_score" type="number" step="0.01" class="ds-field" placeholder="0.00" /></td>
+                    <td class="ds-table-cell min-w-36 px-4 py-3"><BaseInput v-model="result.value" class="ds-field" placeholder="0.00" /></td>
+                    <td class="ds-table-cell min-w-28 px-4 py-3"><BaseInput v-model="result.unit" class="ds-field" placeholder="Un." /></td>
+                    <td class="ds-table-cell min-w-36 px-4 py-3"><BaseInput v-model="result.assigned_value" type="number" step="0.0001" class="ds-field" placeholder="0.00" /></td>
+                    <td class="ds-table-cell min-w-32 px-4 py-3"><BaseInput v-model="result.z_score" type="number" step="0.01" class="ds-field" placeholder="0.00" /></td>
                     <td class="ds-table-cell min-w-44 px-4 py-3">
-                      <select v-model="result.outcome" class="ds-field">
+                      <BaseSelect v-model="result.outcome" class="ds-field">
                         <option value="pending">Pendente</option>
                         <option value="satisfactory">Satisfatório</option>
                         <option value="questionable">Questionável</option>
                         <option value="unsatisfactory">Insatisfatório</option>
-                      </select>
+                      </BaseSelect>
                     </td>
-                    <td class="ds-table-cell min-w-64 px-4 py-3"><input v-model="result.notes" class="ds-field" placeholder="Observações / evidência" /></td>
+                    <td class="ds-table-cell min-w-64 px-4 py-3"><BaseInput v-model="result.notes" class="ds-field" placeholder="Observações / evidência" /></td>
                   </tr>
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           </article>
         </div>
@@ -200,7 +200,7 @@
         />
         <div class="space-y-2">
           <label class="ds-field-label">z-score global</label>
-          <input v-model="form.z_score" type="number" step="0.01" class="ds-field" />
+          <BaseInput v-model="form.z_score" type="number" step="0.01" class="ds-field" />
           <p v-if="form.errors.z_score" class="ds-field-error">{{ form.errors.z_score }}</p>
         </div>
         <BaseTextarea v-model="form.corrective_actions" label="Ações corretivas" :rows="4" :error="form.errors.corrective_actions" />

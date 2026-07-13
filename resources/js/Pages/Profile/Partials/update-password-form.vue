@@ -61,15 +61,14 @@ function updatePassword() {
     <label class="ds-field-group">
       <span class="ds-field-label">Palavra-passe actual <span class="ds-field-required">*</span></span>
       <span class="relative block">
-        <input
+        <BaseInput
           ref="currentPasswordInput"
           v-model="form.current_password"
           :type="showCurrentPassword ? 'text' : 'password'"
           autocomplete="current-password"
           class="ds-field pr-11"
           :aria-invalid="Boolean(form.errors.current_password)"
-          required
-        >
+          required />
         <button
           type="button"
           class="ds-icon-button absolute right-1 top-1/2 -translate-y-1/2"
@@ -88,15 +87,14 @@ function updatePassword() {
       <label class="ds-field-group">
         <span class="ds-field-label">Nova palavra-passe <span class="ds-field-required">*</span></span>
         <span class="relative block">
-          <input
+          <BaseInput
             ref="passwordInput"
             v-model="form.password"
             :type="showNewPassword ? 'text' : 'password'"
             autocomplete="new-password"
             class="ds-field pr-11"
             :aria-invalid="Boolean(form.errors.password)"
-            required
-          >
+            required />
           <button
             type="button"
             class="ds-icon-button absolute right-1 top-1/2 -translate-y-1/2"
@@ -119,14 +117,13 @@ function updatePassword() {
           </span>
         </span>
         <span class="relative block">
-          <input
+          <BaseInput
             v-model="form.password_confirmation"
             :type="showConfirmation ? 'text' : 'password'"
             autocomplete="new-password"
             class="ds-field pr-11"
             :aria-invalid="Boolean(form.errors.password_confirmation) || (Boolean(form.password_confirmation) && !passwordsMatch)"
-            required
-          >
+            required />
           <button
             type="button"
             class="ds-icon-button absolute right-1 top-1/2 -translate-y-1/2"

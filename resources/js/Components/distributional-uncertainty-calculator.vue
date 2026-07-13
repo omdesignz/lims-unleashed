@@ -2,14 +2,14 @@
     <div>
       <h2>Uncertainty Calculator with Distributional Uncertainty</h2>
       <div v-for="(value, index) in data" :key="index">
-        <input
+        <BaseInput
           type="number"
           v-model.number="data[index]"
           @input="updateMeasurement(index, data[index])"
         />
       </div>
       <button @click="addMeasurement">Add Measurement</button>
-      <input
+      <BaseInput
         type="number"
         v-model.number="distributionalUncertainty"
         placeholder="Distributional Uncertainty"

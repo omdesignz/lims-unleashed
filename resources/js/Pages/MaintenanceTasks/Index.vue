@@ -364,7 +364,7 @@ function loadEquipment(query, setOptions) {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.name"
               type="text"
               name="name"
@@ -459,7 +459,7 @@ function loadEquipment(query, setOptions) {
               >
             </div>
             <div class="sm:col-span-2">
-              <input
+              <BaseInput
                 v-model="form.range"
                 type="text"
                 name="range"
@@ -494,7 +494,7 @@ function loadEquipment(query, setOptions) {
               >
             </div>
             <div class="sm:col-span-2">
-              <input
+              <BaseInput
                 v-model="form.calibration_points"
                 type="text"
                 name="calibration_points"
@@ -529,7 +529,7 @@ function loadEquipment(query, setOptions) {
               >
             </div>
             <div class="sm:col-span-2">
-              <input
+              <BaseInput
                 v-model="form.calibration_status"
                 type="text"
                 name="calibration_status"
@@ -564,7 +564,7 @@ function loadEquipment(query, setOptions) {
               >
             </div>
             <div class="sm:col-span-2">
-              <input
+              <BaseInput
                 v-model="form.calibration_certificate_no"
                 type="text"
                 name="calibration_certificate_no"
@@ -727,7 +727,7 @@ function loadEquipment(query, setOptions) {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.acceptance_criteria"
               type="text"
               name="acceptance_criteria"
@@ -761,7 +761,7 @@ function loadEquipment(query, setOptions) {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.periodicity"
               type="number"
               name="periodicity"
@@ -822,7 +822,7 @@ function loadEquipment(query, setOptions) {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <CheckboxInput
               v-model="form.executed_by_supplier"
               type="checkbox"
               name="executed_by_supplier"
@@ -844,7 +844,7 @@ function loadEquipment(query, setOptions) {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <CheckboxInput
               v-model="form.is_planned"
               type="checkbox"
               name="is_planned"
@@ -866,7 +866,7 @@ function loadEquipment(query, setOptions) {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <BaseInput
               v-model="form.cost"
               type="text"
               name="cost"
@@ -900,7 +900,7 @@ function loadEquipment(query, setOptions) {
             >
           </div>
           <div class="sm:col-span-2">
-            <input
+            <CheckboxInput
               v-model="form.is_executed"
               type="checkbox"
               name="is_executed"

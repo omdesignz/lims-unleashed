@@ -57,7 +57,7 @@ const loadCategories = (query, setOptions) => loadOptions("/occurrencecategories
         <div class="mt-6 grid gap-6 sm:grid-cols-2">
           <div>
             <label for="occurrence-date-reported" class="ds-field-label">Data do registo</label>
-            <input id="occurrence-date-reported" v-model="form.date_reported" type="date" class="ds-field mt-2" required />
+            <DateTimePicker id="occurrence-date-reported" v-model="form.date_reported" type="date" class="ds-field mt-2" required />
             <p v-if="form.errors.date_reported" class="ds-field-error mt-2">{{ form.errors.date_reported }}</p>
           </div>
 
@@ -115,7 +115,7 @@ const loadCategories = (query, setOptions) => loadOptions("/occurrencecategories
 
           <div>
             <label for="occurrence-responsible-name" class="ds-field-label">Outro responsável</label>
-            <input id="occurrence-responsible-name" v-model="form.responsible_name" type="text" class="ds-field mt-2" />
+            <BaseInput id="occurrence-responsible-name" v-model="form.responsible_name" type="text" class="ds-field mt-2" />
             <p class="ds-field-hint mt-2">Use quando a responsabilidade não corresponde a um utilizador do sistema.</p>
             <p v-if="form.errors.responsible_name" class="ds-field-error mt-2">{{ form.errors.responsible_name }}</p>
           </div>
@@ -184,16 +184,16 @@ const loadCategories = (query, setOptions) => loadOptions("/occurrencecategories
           </div>
           <div>
             <label for="occurrence-implementation-date" class="ds-field-label">Prazo de implementação</label>
-            <input id="occurrence-implementation-date" v-model="form.implementation_date" type="date" class="ds-field mt-2" />
+            <DateTimePicker id="occurrence-implementation-date" v-model="form.implementation_date" type="date" class="ds-field mt-2" />
             <p v-if="form.errors.implementation_date" class="ds-field-error mt-2">{{ form.errors.implementation_date }}</p>
           </div>
           <div>
             <label for="occurrence-effectiveness" class="ds-field-label">Resultado da eficácia</label>
-            <select id="occurrence-effectiveness" v-model="form.was_effective" class="ds-field mt-2">
+            <BaseSelect id="occurrence-effectiveness" v-model="form.was_effective" class="ds-field mt-2">
               <option :value="null">Por verificar</option>
               <option :value="true">Eficaz</option>
               <option :value="false">Não eficaz</option>
-            </select>
+            </BaseSelect>
             <p v-if="form.errors.was_effective" class="ds-field-error mt-2">{{ form.errors.was_effective }}</p>
           </div>
         </div>
@@ -212,21 +212,21 @@ const loadCategories = (query, setOptions) => loadOptions("/occurrencecategories
         <div class="mt-6 grid gap-6 sm:grid-cols-2">
           <div>
             <label for="occurrence-client-open" class="ds-field-label">Notificação de abertura</label>
-            <input id="occurrence-client-open" v-model="form.client_process_open_notification_date" type="date" class="ds-field mt-2" />
+            <DateTimePicker id="occurrence-client-open" v-model="form.client_process_open_notification_date" type="date" class="ds-field mt-2" />
             <p v-if="form.errors.client_process_open_notification_date" class="ds-field-error mt-2">{{ form.errors.client_process_open_notification_date }}</p>
           </div>
           <div>
             <label for="occurrence-client-close" class="ds-field-label">Notificação de fecho</label>
-            <input id="occurrence-client-close" v-model="form.client_process_close_notification_date" type="date" class="ds-field mt-2" />
+            <DateTimePicker id="occurrence-client-close" v-model="form.client_process_close_notification_date" type="date" class="ds-field mt-2" />
             <p v-if="form.errors.client_process_close_notification_date" class="ds-field-error mt-2">{{ form.errors.client_process_close_notification_date }}</p>
           </div>
           <div>
             <label for="occurrence-client-acceptance" class="ds-field-label">Aceitação do cliente</label>
-            <select id="occurrence-client-acceptance" v-model="form.client_acceptance" class="ds-field mt-2">
+            <BaseSelect id="occurrence-client-acceptance" v-model="form.client_acceptance" class="ds-field mt-2">
               <option :value="null">Não registada</option>
               <option :value="true">Aceite</option>
               <option :value="false">Rejeitada</option>
-            </select>
+            </BaseSelect>
             <p v-if="form.errors.client_acceptance" class="ds-field-error mt-2">{{ form.errors.client_acceptance }}</p>
           </div>
           <div>
@@ -263,17 +263,17 @@ const loadCategories = (query, setOptions) => loadOptions("/occurrencecategories
           </div>
           <div>
             <label for="occurrence-notification-date" class="ds-field-label">Notificação interna</label>
-            <input id="occurrence-notification-date" v-model="form.notification_date" type="date" class="ds-field mt-2" />
+            <DateTimePicker id="occurrence-notification-date" v-model="form.notification_date" type="date" class="ds-field mt-2" />
             <p v-if="form.errors.notification_date" class="ds-field-error mt-2">{{ form.errors.notification_date }}</p>
           </div>
           <div>
             <label for="occurrence-resolved-date" class="ds-field-label">Data de resolução</label>
-            <input id="occurrence-resolved-date" v-model="form.date_resolved" type="date" class="ds-field mt-2" />
+            <DateTimePicker id="occurrence-resolved-date" v-model="form.date_resolved" type="date" class="ds-field mt-2" />
             <p v-if="form.errors.date_resolved" class="ds-field-error mt-2">{{ form.errors.date_resolved }}</p>
           </div>
           <div>
             <label for="occurrence-closed-date" class="ds-field-label">Data de encerramento</label>
-            <input id="occurrence-closed-date" v-model="form.date_closed" type="date" class="ds-field mt-2" />
+            <DateTimePicker id="occurrence-closed-date" v-model="form.date_closed" type="date" class="ds-field mt-2" />
             <p v-if="form.errors.date_closed" class="ds-field-error mt-2">{{ form.errors.date_closed }}</p>
           </div>
         </div>

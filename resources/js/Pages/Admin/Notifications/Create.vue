@@ -134,7 +134,7 @@ const submit = () => {
           <div class="space-y-5 p-5 sm:p-6">
             <div class="ds-field-group">
               <label for="notification-title" class="ds-field-label">Titulo <span class="ds-field-required">*</span></label>
-              <input id="notification-title" v-model="form.title" type="text" maxlength="255" class="ds-field" :aria-invalid="Boolean(form.errors.title || (showValidation && !form.title.trim()))" placeholder="Ex.: Resultado do ensaio disponivel" />
+              <BaseInput id="notification-title" v-model="form.title" type="text" maxlength="255" class="ds-field" :aria-invalid="Boolean(form.errors.title || (showValidation && !form.title.trim()))" placeholder="Ex.: Resultado do ensaio disponivel" />
               <div class="flex justify-between gap-3"><p v-if="form.errors.title || (showValidation && !form.title.trim())" class="ds-field-error">{{ form.errors.title || 'Indique um titulo.' }}</p><p class="ml-auto text-xs font-semibold text-[var(--ds-text-soft)]">{{ form.title.length }}/255</p></div>
             </div>
 
@@ -147,21 +147,21 @@ const submit = () => {
             <div class="grid gap-4 sm:grid-cols-2">
               <div class="ds-field-group">
                 <label for="notification-type" class="ds-field-label">Tipo</label>
-                <select id="notification-type" v-model="form.type" class="ds-field">
+                <BaseSelect id="notification-type" v-model="form.type" class="ds-field">
                   <option v-for="(type, key) in notificationTypes" :key="key" :value="key">{{ type.label }}</option>
-                </select>
+                </BaseSelect>
                 <p v-if="form.errors.type" class="ds-field-error">{{ form.errors.type }}</p>
               </div>
               <div class="ds-field-group">
                 <label for="notification-priority" class="ds-field-label">Prioridade</label>
-                <select id="notification-priority" v-model="form.priority" class="ds-field">
+                <BaseSelect id="notification-priority" v-model="form.priority" class="ds-field">
                   <option value="low">Baixa</option><option value="normal">Normal</option><option value="high">Alta</option><option value="urgent">Urgente</option>
-                </select>
+                </BaseSelect>
                 <p v-if="form.errors.priority" class="ds-field-error">{{ form.errors.priority }}</p>
               </div>
               <div class="ds-field-group sm:col-span-2">
                 <label for="notification-expiry" class="ds-field-label">Expira em <span class="font-normal text-[var(--ds-text-soft)]">(opcional)</span></label>
-                <input id="notification-expiry" v-model="form.expires_at" type="datetime-local" class="ds-field" />
+                <DateTimePicker id="notification-expiry" v-model="form.expires_at" type="datetime-local" class="ds-field" />
                 <p class="ds-field-help">A mensagem deixa de ser relevante depois desta data.</p>
                 <p v-if="form.errors.expires_at" class="ds-field-error">{{ form.errors.expires_at }}</p>
               </div>
@@ -177,7 +177,7 @@ const submit = () => {
           <div class="space-y-5 p-5 sm:p-6">
             <div class="grid gap-3 sm:grid-cols-3">
               <label v-for="option in recipientOptions" :key="option.value" class="cursor-pointer rounded-lg border p-4 transition" :class="form.recipient_type === option.value ? 'border-[rgb(var(--primary-500-rgb))] bg-[rgb(var(--primary-50-rgb))] ring-1 ring-[rgb(var(--primary-500-rgb))] dark:bg-[rgb(var(--primary-950-rgb)/0.25)]' : 'border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] hover:border-[rgb(var(--primary-300-rgb))]'">
-                <input v-model="form.recipient_type" type="radio" :value="option.value" class="sr-only" />
+                <RadioInput v-model="form.recipient_type" type="radio" :value="option.value" class="sr-only" />
                 <component :is="option.icon" class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
                 <span class="mt-3 block text-sm font-bold text-[var(--ds-text)]">{{ option.label }}</span>
                 <span class="mt-1 block text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ option.description }}</span>
@@ -186,9 +186,9 @@ const submit = () => {
 
             <div v-if="form.recipient_type === 'group'" class="ds-field-group">
               <label for="notification-group" class="ds-field-label">Grupo de utilizadores</label>
-              <select id="notification-group" v-model="form.group" class="ds-field">
+              <BaseSelect id="notification-group" v-model="form.group" class="ds-field">
                 <option v-for="group in userGroups" :key="group.id" :value="group.id">{{ group.name }} ({{ group.count }})</option>
-              </select>
+              </BaseSelect>
               <p class="ds-field-help">{{ selectedGroup?.description }}</p>
             </div>
 
@@ -196,13 +196,13 @@ const submit = () => {
               <div class="flex flex-col gap-3 border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="relative min-w-0 flex-1">
                   <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-                  <input v-model="userSearch" type="search" class="ds-field pl-9" placeholder="Pesquisar utilizador" />
+                  <BaseInput v-model="userSearch" type="search" class="ds-field pl-9" placeholder="Pesquisar utilizador" />
                 </div>
                 <button type="button" class="ds-button ds-button-ghost" @click="toggleSelectAll">{{ isAllSelected ? 'Desmarcar todos' : 'Selecionar todos' }}</button>
               </div>
               <div class="max-h-80 divide-y divide-[var(--ds-border)] overflow-y-auto">
                 <label v-for="user in filteredUsers" :key="user.id" class="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-[var(--ds-panel-subtle)]">
-                  <input v-model="form.recipients" type="checkbox" :value="user.id" class="ds-checkbox" />
+                  <CheckboxInput v-model="form.recipients" type="checkbox" :value="user.id" class="ds-checkbox" />
                   <span class="min-w-0 flex-1"><span class="block truncate text-sm font-bold text-[var(--ds-text)]">{{ user.name }}</span><span class="block truncate text-xs font-semibold text-[var(--ds-text-muted)]">{{ user.email }}</span></span>
                   <span class="text-xs font-bold tabular-nums text-[var(--ds-text-soft)]">{{ user.unread_count }} por ler</span>
                 </label>

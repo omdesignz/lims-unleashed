@@ -105,7 +105,7 @@
               <label class="ds-field-group">
                 <span class="ds-field-label">Quantidade <span class="ds-field-required">*</span></span>
                 <span class="relative block">
-                  <input
+                  <BaseInput
                     v-model="form.qty"
                     type="number"
                     min="1"
@@ -130,13 +130,13 @@
 
               <label class="ds-field-group">
                 <span class="ds-field-label">Data de envio</span>
-                <input v-model="form.sent_date" type="date" :min="minDate" class="ds-field" :aria-invalid="Boolean(form.errors.sent_date)" />
+                <DateTimePicker v-model="form.sent_date" type="date" :min="minDate" class="ds-field" :aria-invalid="Boolean(form.errors.sent_date)" />
                 <span v-if="form.errors.sent_date" class="ds-field-error">{{ form.errors.sent_date }}</span>
               </label>
 
               <label class="ds-field-group">
                 <span class="ds-field-label">Receção esperada</span>
-                <input v-model="form.expected_date" type="date" :min="form.sent_date || minDate" class="ds-field" :aria-invalid="Boolean(form.errors.expected_date)" />
+                <DateTimePicker v-model="form.expected_date" type="date" :min="form.sent_date || minDate" class="ds-field" :aria-invalid="Boolean(form.errors.expected_date)" />
                 <span v-if="form.errors.expected_date" class="ds-field-error">{{ form.errors.expected_date }}</span>
               </label>
 
@@ -168,7 +168,7 @@
           </div>
 
           <div v-if="selectedItem" class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+            <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
               <thead class="bg-[var(--ds-panel-subtle)]">
                 <tr>
                   <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
@@ -193,7 +193,7 @@
                   </td>
                 </tr>
               </tbody>
-            </table>
+            </DataTable>
           </div>
 
           <div v-else class="ds-empty-state p-8 text-center">

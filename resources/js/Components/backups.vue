@@ -17,7 +17,7 @@
           </div>
         </div>
         
-        <select
+        <BaseSelect
           v-model="selectedDisk"
           class="ds-field min-w-52"
         >
@@ -28,7 +28,7 @@
           >
             {{ disk }}
           </option>
-        </select>
+        </BaseSelect>
       </div>
     </div>
 
@@ -49,7 +49,7 @@
 
       <!-- Table -->
       <div class="overflow-x-auto">
-        <table class="min-w-full">
+        <DataTable class="min-w-full">
           <thead class="ds-table-head">
             <tr>
               <th scope="col" class="ds-table-heading px-6 py-3.5 text-left">
@@ -103,7 +103,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <!-- Table Footer -->

@@ -2,11 +2,10 @@
 
   <div v-if="editor" class="ml-auto flex items-center space-x-5 w-auto">
     <!-- <div class="flex items-center">
-        <input
+        <ColorInput
           type="color"
           @input="editor.chain().focus().setColor($event.target.value).run()"
-          :value="editor.getAttributes('textStyle').color"
-        >
+          :value="editor.getAttributes('textStyle').color" />
         <button @click="editor.chain().focus().setColor('#958DF1').run()" :class="{ 'is-active': editor.isActive('textStyle', { color: '#958DF1' })}">
           Purple
         </button>

@@ -234,7 +234,7 @@ function downloadRecoveryCodes() {
           <form class="space-y-3" @submit.prevent="confirmTwoFactorAuthentication">
             <label class="ds-field-group">
               <span class="ds-field-label">Código de verificação</span>
-              <input
+              <BaseInput
                 v-model="confirmationForm.code"
                 type="text"
                 inputmode="numeric"
@@ -242,8 +242,7 @@ function downloadRecoveryCodes() {
                 maxlength="6"
                 class="ds-field max-w-48 text-center font-mono text-lg tracking-[0.3em]"
                 :aria-invalid="Boolean(confirmationForm.errors.code)"
-                placeholder="000000"
-              >
+                placeholder="000000" />
               <span v-if="confirmationForm.errors.code" class="ds-field-error">{{ confirmationForm.errors.code }}</span>
             </label>
             <button type="submit" class="ds-button ds-button-primary" :disabled="confirmationForm.processing || confirmationForm.code.length !== 6">

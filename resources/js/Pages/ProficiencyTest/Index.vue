@@ -38,7 +38,7 @@
       <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr),16rem,16rem,auto]">
         <div class="relative">
           <MagnifyingGlassIcon class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-          <input
+          <BaseInput
             v-model="filters.search"
             type="search"
             placeholder="Pesquisar por programa, provedor ou ronda"
@@ -97,7 +97,7 @@
 
       <div v-if="records.length">
         <div class="hidden overflow-x-auto lg:block">
-          <table class="min-w-full divide-y divide-[var(--ds-border)]">
+          <DataTable class="min-w-full divide-y divide-[var(--ds-border)]">
             <thead class="ds-table-head">
               <tr>
                 <th class="ds-table-heading px-5 py-3 text-left">Programa</th>
@@ -163,7 +163,7 @@
                 </td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
 
         <div class="divide-y divide-[var(--ds-border)] lg:hidden">
@@ -257,12 +257,12 @@
                 <div class="grid gap-5 md:grid-cols-2">
                   <div class="space-y-2">
                     <label class="ds-field-label">Nome</label>
-                    <input v-model="form.name" type="text" class="ds-field" />
+                    <BaseInput v-model="form.name" type="text" class="ds-field" />
                     <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
                   </div>
                   <div class="space-y-2">
                     <label class="ds-field-label">Provedor</label>
-                    <input v-model="form.provider_name" type="text" class="ds-field" />
+                    <BaseInput v-model="form.provider_name" type="text" class="ds-field" />
                     <p v-if="form.errors.provider_name" class="ds-field-error">{{ form.errors.provider_name }}</p>
                   </div>
                   <ComboboxEnhanced
@@ -281,7 +281,7 @@
                   />
                   <div class="space-y-2">
                     <label class="ds-field-label">Ronda / referência</label>
-                    <input v-model="form.round_reference" type="text" class="ds-field" />
+                    <BaseInput v-model="form.round_reference" type="text" class="ds-field" />
                     <p v-if="form.errors.round_reference" class="ds-field-error">{{ form.errors.round_reference }}</p>
                   </div>
                   <ComboboxEnhanced
@@ -336,7 +336,7 @@
                   />
                   <div class="space-y-2">
                     <label class="ds-field-label">z-score</label>
-                    <input v-model="form.z_score" type="number" step="0.01" class="ds-field" />
+                    <BaseInput v-model="form.z_score" type="number" step="0.01" class="ds-field" />
                     <p v-if="form.errors.z_score" class="ds-field-error">{{ form.errors.z_score }}</p>
                   </div>
                 </div>
@@ -355,7 +355,7 @@
 
                   <div class="mt-5 space-y-2">
                     <label class="ds-field-label">Organizador responsável</label>
-                    <input v-model="form.organizer_name" type="text" class="ds-field" placeholder="Nome da unidade, laboratório ou coordenação organizadora" />
+                    <BaseInput v-model="form.organizer_name" type="text" class="ds-field" placeholder="Nome da unidade, laboratório ou coordenação organizadora" />
                     <p v-if="form.errors.organizer_name" class="ds-field-error">{{ form.errors.organizer_name }}</p>
                   </div>
 
@@ -363,20 +363,20 @@
                     <div class="space-y-3">
                       <p class="ds-kicker">Participantes</p>
                       <div v-for="(participant, index) in form.participants" :key="`participant-${index}`" class="ds-card grid gap-2 p-3 sm:grid-cols-[0.9fr,1.4fr,1fr,auto]">
-                        <input v-model="participant.code" class="ds-field" placeholder="Código" />
-                        <input v-model="participant.name" class="ds-field" placeholder="Laboratório / participante" />
-                        <select v-model="participant.status" class="ds-field">
+                        <BaseInput v-model="participant.code" class="ds-field" placeholder="Código" />
+                        <BaseInput v-model="participant.name" class="ds-field" placeholder="Laboratório / participante" />
+                        <BaseSelect v-model="participant.status" class="ds-field">
                           <option v-for="option in participantStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                        </select>
+                        </BaseSelect>
                         <button type="button" class="ds-table-action ds-table-action-danger" @click="removeParticipant(index)">Remover</button>
                       </div>
                     </div>
                     <div class="space-y-3">
                       <p class="ds-kicker">Parâmetros</p>
                       <div v-for="(parameter, index) in form.parameters" :key="`parameter-${index}`" class="ds-card grid gap-2 p-3 sm:grid-cols-[1fr,1.4fr,0.8fr,auto]">
-                        <input v-model="parameter.code" class="ds-field" placeholder="Código" />
-                        <input v-model="parameter.name" class="ds-field" placeholder="Parâmetro" />
-                        <input v-model="parameter.unit" class="ds-field" placeholder="Unidade" />
+                        <BaseInput v-model="parameter.code" class="ds-field" placeholder="Código" />
+                        <BaseInput v-model="parameter.name" class="ds-field" placeholder="Parâmetro" />
+                        <BaseInput v-model="parameter.unit" class="ds-field" placeholder="Unidade" />
                         <button type="button" class="ds-table-action ds-table-action-danger" @click="removeParameter(index)">Remover</button>
                       </div>
                     </div>

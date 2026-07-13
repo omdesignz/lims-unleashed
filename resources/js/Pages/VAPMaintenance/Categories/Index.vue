@@ -59,7 +59,7 @@
           <span class="ds-field-label">Pesquisar categoria</span>
           <span class="relative block">
             <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-            <input
+            <BaseInput
               v-model="search"
               type="search"
               placeholder="Nome, codigo ou descricao"
@@ -204,7 +204,7 @@
         <form class="mt-6 space-y-5" @submit.prevent="submitForm">
           <label class="ds-field-group">
             <span class="ds-field-label">Nome da categoria <span class="ds-field-required">*</span></span>
-            <input
+            <BaseInput
               v-model="form.name"
               type="text"
               required
@@ -217,7 +217,7 @@
 
           <label class="ds-field-group">
             <span class="ds-field-label">Codigo</span>
-            <input
+            <BaseInput
               v-model="form.code"
               type="text"
               :class="fieldClass('code')"

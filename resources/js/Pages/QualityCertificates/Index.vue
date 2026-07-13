@@ -373,7 +373,7 @@ function loadLabCodes(query, setOptions) {
                   Disponivel para operacoes de emissao.
                 </span>
               </span>
-              <input
+              <CheckboxInput
                 v-model="form.status"
                 type="checkbox"
                 class="ds-checkbox"

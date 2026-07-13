@@ -14,7 +14,7 @@
       @input="emit('update:modelValue', $event.target.value)"
     ></textarea>
 
-    <input
+    <BaseInput
       v-else-if="editing"
       :id="fieldId"
       :value="modelValue"

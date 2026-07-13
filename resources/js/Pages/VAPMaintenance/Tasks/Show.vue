@@ -385,17 +385,17 @@
 
           <label v-if="isCalibrationTask" class="ds-field-group">
             <span class="ds-field-label">Estado da calibração</span>
-            <select v-model="resultForm.calibration_status" class="ds-field">
+            <BaseSelect v-model="resultForm.calibration_status" class="ds-field">
               <option value="">Selecione um estado</option>
               <option value="approved">Aprovado</option>
               <option value="rejected">Rejeitado</option>
               <option value="pending">Pendente</option>
-            </select>
+            </BaseSelect>
           </label>
 
           <label class="ds-field-group">
             <span class="ds-field-label">Próxima manutenção</span>
-            <input v-model="resultForm.next_date" type="date" class="ds-field" />
+            <DateTimePicker v-model="resultForm.next_date" type="date" class="ds-field" />
             <span class="ds-field-hint">Deixe em branco para calcular automaticamente com base na periodicidade.</span>
           </label>
 

@@ -134,7 +134,7 @@
         </div>
 
         <div v-else-if="orderRows.length" class="ds-table-shell overflow-x-auto">
-          <table class="min-w-[76rem]">
+          <DataTable class="min-w-[76rem]">
             <thead class="ds-table-head">
               <tr>
                 <th class="ds-table-cell text-left">Pedido</th>
@@ -221,7 +221,7 @@
                 </td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
 
         <div v-else class="p-5">

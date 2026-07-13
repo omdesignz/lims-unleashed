@@ -23,7 +23,7 @@ const allCalculatedParameters = computed(() => props.parameters.filter(p => p.pa
 // Get ALL unique variable names needed for ALL calculations
 const allRequiredVariables = computed(() => {
   const variables = new Set()
-  
+
   allCalculatedParameters.value.forEach(parameter => {
     if (parameter.formula?.variables) {
       parameter.formula.variables.forEach(variable => {
@@ -31,7 +31,7 @@ const allRequiredVariables = computed(() => {
       })
     }
   })
-  
+
   return Array.from(variables)
 })
 
@@ -39,7 +39,7 @@ const allRequiredVariables = computed(() => {
 
 // Track calculation status
 const isCalculated = (parameterCode) => {
-  return results.value[parameterCode] !== undefined && 
+  return results.value[parameterCode] !== undefined &&
          results.value[parameterCode] !== null &&
          !isNaN(results.value[parameterCode])
 }
@@ -51,14 +51,14 @@ const calculatedCount = computed(() =>
 // Check if a parameter can be calculated
 const canCalculateParameter = (parameter) => {
   if (!parameter.formula) return false
-  
+
   const requiredInputs = getCalculationRequirements(parameter)
-  const availableInputs = requiredInputs.filter(input => 
-    results.value[input] !== undefined && 
+  const availableInputs = requiredInputs.filter(input =>
+    results.value[input] !== undefined &&
     results.value[input] !== null &&
     results.value[input] !== ''
   )
-  
+
   return availableInputs.length === requiredInputs.length
 }
 
@@ -71,16 +71,16 @@ const getCalculationRequirements = (parameter) => {
 // Get missing inputs for a parameter (returns variable names)
 const getMissingInputs = (parameter) => {
   if (!parameter || !parameter.formula) return []
-  
+
   const required = getCalculationRequirements(parameter)
-  const missing = required.filter(input => 
-    results.value[input] === undefined || 
+  const missing = required.filter(input =>
+    results.value[input] === undefined ||
     results.value[input] === null ||
     results.value[input] === ''
   )
-  
-  // Note: We cannot easily map the variable name back to a human-readable parameter name 
-  // because the input parameter object itself is not in props.parameters. 
+
+  // Note: We cannot easily map the variable name back to a human-readable parameter name
+  // because the input parameter object itself is not in props.parameters.
   // We return the raw variable name.
   return missing
 }
@@ -88,7 +88,7 @@ const getMissingInputs = (parameter) => {
 // Check if all variables for a calculation are available
 const getCalculationStatus = (parameter) => {
   const missing = getMissingInputs(parameter)
-  
+
   return {
     complete: missing.length === 0,
     missing: missing
@@ -97,7 +97,7 @@ const getCalculationStatus = (parameter) => {
 
 // Get the count of ready calculations
 const readyCalculations = computed(() => {
-  return allCalculatedParameters.value.filter(param => 
+  return allCalculatedParameters.value.filter(param =>
     getCalculationStatus(param).complete
   ).length
 })
@@ -105,8 +105,8 @@ const readyCalculations = computed(() => {
 const canSave = computed(() => {
   const totalParameters = allCalculatedParameters.value.length
   // Check if ALL calculated parameters have a result (calculated or overridden)
-  const enteredResults = Object.keys(results.value).filter(key => 
-    results.value[key] !== undefined && 
+  const enteredResults = Object.keys(results.value).filter(key =>
+    results.value[key] !== undefined &&
     results.value[key] !== null &&
     results.value[key] !== '' &&
     // Only count if it's actually one of the calculated parameters
@@ -121,10 +121,10 @@ const canSave = computed(() => {
 // and recalculates dependent calculated parameters.
 const onInputChange = async (inputName) => {
   // Find calculated parameters that depend on this input variable name
-  const dependentParams = allCalculatedParameters.value.filter(p => 
+  const dependentParams = allCalculatedParameters.value.filter(p =>
     p.formula && getCalculationRequirements(p).includes(inputName)
   )
-  
+
   // Recalculate dependent parameters
   for (const depParam of dependentParams) {
     await calculateParameter(depParam)
@@ -187,9 +187,9 @@ const calculateParameter = async (parameter) => {
 
     const decimalPlaces = parameter.formula.decimal_places || 2
     results.value[parameter.parameter_id.code] = parseFloat(numericValue).toFixed(decimalPlaces)
-    
+
     console.log(`✅ Calculated ${parameter.parameter_id.code}:`, results.value[parameter.parameter_id.code])
-    
+
   } catch (error) {
     console.error(`❌ Error calculating ${parameter.parameter_id.code}:`, error)
     results.value[parameter.parameter_id.code] = null
@@ -212,11 +212,11 @@ const calculateAll = async () => {
 // Format result for display
 const formatResult = (parameter, value) => {
   if (value === null || value === undefined || value === '') return '-'
-  
+
   const decimalPlaces = parameter.formula?.decimal_places || 2
   const formattedValue = parseFloat(value).toFixed(decimalPlaces)
   const unit = parameter.formula?.output_unit || parameter.unit_label || ''
-  
+
   return unit ? `${formattedValue} ${unit}` : formattedValue
 }
 
@@ -231,7 +231,7 @@ const getFormulaExpression = (parameter) => {
 watch(() => props.existingResults, (newResults) => {
   if (newResults) {
     results.value = { ...newResults }
-    
+
     // Recalculate any formulas that have all required inputs
     setTimeout(() => {
       allCalculatedParameters.value.forEach(parameter => {
@@ -246,10 +246,10 @@ watch(() => props.existingResults, (newResults) => {
 // Watch for changes in ANY result entry (input or calculated) and trigger dependency checks
 watch(results, (newResults, oldResults) => {
   // Check if any REQUIRED input variable values changed
-  const changedInputs = allRequiredVariables.value.filter(key => 
+  const changedInputs = allRequiredVariables.value.filter(key =>
     newResults[key] !== oldResults[key]
   )
-  
+
   if (changedInputs.length > 0) {
     changedInputs.forEach(inputName => {
       onInputChange(inputName)
@@ -263,12 +263,12 @@ const generateCalculationMetadata = () => {
 
     allCalculatedParameters.value.forEach(param => {
         const paramCode = param.parameter_id.code;
-        
+
         // Only generate metadata if it's calculated OR manually overridden
         if (isCalculated(paramCode) || overrides.value[paramCode]) {
-            
+
             const inputValues = {}
-            
+
             // Get required variables from the formula definition
             const requiredVariables = param.formula?.variables?.map(v => v.name) || [];
 
@@ -276,9 +276,9 @@ const generateCalculationMetadata = () => {
                 // Pull the input value from the results store (the input fields)
                 inputValues[variableName] = results.value[variableName]
             })
-            
+
             metadata[paramCode] = {
-                inputs: inputValues, 
+                inputs: inputValues,
                 formula: {
                     id: param.formula?.id,
                     expression: param.formula?.expression,
@@ -323,11 +323,11 @@ const saveResults = () => {
   // Prepare the comprehensive payload
   const comprehensivePayload = {
       // 1. All results (calculated outputs and input variables)
-      results: results.value, 
+      results: results.value,
       // 2. The overrides status
-      overrides: overrides.value, 
+      overrides: overrides.value,
       // 3. The generated metadata (using the logic fixed in the previous step)
-      metadata: calculationMetadata, 
+      metadata: calculationMetadata,
   };
 
   emit('calculatedResults', comprehensivePayload);
@@ -370,7 +370,7 @@ const saveDraft = () => {
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      
+
       <div class="space-y-4">
         <div class="bg-white p-6 rounded-lg shadow">
           <h3 class="text-lg font-medium text-gray-900 mb-4">
@@ -379,18 +379,18 @@ const saveDraft = () => {
               ({{ allRequiredVariables.length }} variáveis)
             </span>
           </h3>
-          
+
           <div v-for="variableName in allRequiredVariables" :key="variableName"
               class="mb-4 p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
-            
+
             <label class="block text-sm font-medium text-gray-700 mb-2">
               {{ variableName }}
               <span class="text-gray-500">(Variável de Fórmula)</span>
             </label>
-            
-            <input
-              v-model="results[variableName]" 
-              type="number" 
+
+            <BaseInput
+              v-model="results[variableName]"
+              type="number"
               step="0.0001"
               @input="onInputChange(variableName)"
               class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -400,10 +400,10 @@ const saveDraft = () => {
               }"
               placeholder="Insira o valor..."
             />
-            
+
             </div>
 
-          <div v-if="allRequiredVariables.length === 0" 
+          <div v-if="allRequiredVariables.length === 0"
               class="text-center py-8 text-gray-500">
             Nenhuma variável de entrada é necessária para estes parâmetros calculados.
           </div>
@@ -414,7 +414,7 @@ const saveDraft = () => {
       <div class="space-y-4">
         <div class="bg-white p-6 rounded-lg shadow">
           <h3 class="text-lg font-medium text-gray-900 mb-4">Parâmetros Calculados</h3>
-          
+
           <div v-for="parameter in allCalculatedParameters" :key="parameter.parameter_id.code"
                class="mb-4 p-4 border rounded-lg transition-colors"
                :class="{
@@ -422,7 +422,7 @@ const saveDraft = () => {
                  'border-yellow-200 bg-yellow-50': !isCalculated(parameter.parameter_id.code),
                  'border-blue-200 bg-blue-50': overrides[parameter.parameter_id.code]
                }">
-            
+
             <div class="flex justify-between items-start mb-2">
               <div class="flex-1">
                 <label class="block text-sm font-medium text-gray-700">
@@ -435,21 +435,21 @@ const saveDraft = () => {
                   Fórmula: {{ parameter.formula.name }}
                 </div>
               </div>
-              
+
               <span class="text-xs px-2 py-1 rounded whitespace-nowrap"
                     :class="{
                       'bg-green-100 text-green-800': isCalculated(parameter.parameter_id.code) && !overrides[parameter.parameter_id.code],
                       'bg-yellow-100 text-yellow-800': !isCalculated(parameter.parameter_id.code),
                       'bg-blue-100 text-blue-800': overrides[parameter.parameter_id.code]
                     }">
-                {{ 
-                  overrides[parameter.parameter_id.code] ? 'Manual' : 
+                {{
+                  overrides[parameter.parameter_id.code] ? 'Manual' :
                   isCalculated(parameter.parameter_id.code) ? 'Calculado' : 'Pendente'
                 }}
               </span>
             </div>
 
-            <div v-if="isCalculated(parameter.parameter_id.code)" 
+            <div v-if="isCalculated(parameter.parameter_id.code)"
                  class="text-lg font-bold mb-2"
                  :class="overrides[parameter.parameter_id.code] ? 'text-blue-600' : 'text-green-600'">
               {{ formatResult(parameter, results[parameter.parameter_id.code]) }}
@@ -457,28 +457,27 @@ const saveDraft = () => {
 
             <div class="mt-2 flex items-center">
               <label class="flex items-center text-sm text-gray-600">
-                <input 
-                  v-model="overrides[parameter.parameter_id.code]" 
-                  type="checkbox" 
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                >
+                <CheckboxInput
+                  v-model="overrides[parameter.parameter_id.code]"
+                  type="checkbox"
+                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                 <span class="ml-2">Sobrescrever valor calculado</span>
               </label>
             </div>
 
-            <input v-if="overrides[parameter.parameter_id.code]"
+            <BaseInput v-if="overrides[parameter.parameter_id.code]"
                    v-model="results[parameter.parameter_id.code]"
                    type="number"
                    :step="parameter.formula?.decimal_places > 0 ? 0.0001 : 1"
                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm mt-2"
-                   placeholder="Insira valor manual">
+                   placeholder="Insira valor manual" />
 
             <div class="mt-3 text-xs text-gray-500 space-y-1">
               <div class="font-mono bg-gray-100 p-2 rounded border">
                 {{ getFormulaExpression(parameter) }}
               </div>
-              
-              <div v-if="!getCalculationStatus(parameter).complete && !overrides[parameter.parameter_id.code]" 
+
+              <div v-if="!getCalculationStatus(parameter).complete && !overrides[parameter.parameter_id.code]"
                    class="text-orange-600 flex items-center mt-2">
                 <span class="w-2 h-2 bg-orange-600 rounded-full mr-2"></span>
                 Aguardando: {{ getMissingInputs(parameter).join(', ') }}
@@ -495,23 +494,23 @@ const saveDraft = () => {
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
               <div class="text-sm text-blue-700">
-                <span class="font-medium">{{ readyCalculations }}</span> de 
+                <span class="font-medium">{{ readyCalculations }}</span> de
                 <span class="font-medium">{{ allCalculatedParameters.length }}</span> cálculos prontos
               </div>
-              
+
               <div v-if="calculationInProgress" class="flex items-center text-blue-600">
                 <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
                 Calculando...
               </div>
             </div>
-            
-            <button @click="calculateAll" 
+
+            <button @click="calculateAll"
                     :disabled="readyCalculations === 0 || calculationInProgress"
                     class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium">
               Calcular Tudo ({{ readyCalculations }})
             </button>
           </div>
-          
+
           <div v-if="allCalculatedParameters.length > 0" class="mt-3 space-y-2">
             <div v-for="param in allCalculatedParameters" :key="param.parameter_id.code" class="text-xs">
               <div class="flex items-center justify-between">
@@ -533,12 +532,12 @@ const saveDraft = () => {
     </div>
 
     <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-      <!-- <button @click="saveDraft" 
+      <!-- <button @click="saveDraft"
               class="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 font-medium">
         Guardar Rascunho
       </button> -->
-      
-      <button @click="saveResults" 
+
+      <button @click="saveResults"
               :disabled="!canSave"
               class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium">
         {{ canSave ? 'Guardar Resultados' : 'Preencha todos os parâmetros' }}

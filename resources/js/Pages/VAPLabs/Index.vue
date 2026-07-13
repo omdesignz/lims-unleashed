@@ -77,13 +77,13 @@ function deleteLab() {
       <header class="flex flex-col gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div><p class="ds-kicker">{{ $t('gestlab.general.labels.vap_labs.list_title') }}</p><h2 class="ds-heading mt-1 text-base">{{ labs.total }} {{ $t('gestlab.general.labels.vap_labs.items') }}</h2></div>
         <div class="flex w-full gap-2 sm:w-auto">
-          <div class="relative min-w-0 flex-1 sm:w-72"><MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" /><input v-model="search" type="search" class="ds-field min-h-10 py-2 pl-9" :placeholder="$t('gestlab.general.labels.vap_labs.search.placeholder')" @input="searchLabs" /></div>
+          <div class="relative min-w-0 flex-1 sm:w-72"><MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" /><BaseInput v-model="search" type="search" class="ds-field min-h-10 py-2 pl-9" :placeholder="$t('gestlab.general.labels.vap_labs.search.placeholder')" @input="searchLabs" /></div>
           <button v-if="search" type="button" class="ds-button ds-button-secondary" @click="resetSearch">{{ $t('gestlab.general.labels.vap_labs.buttons.reset') }}</button>
         </div>
       </header>
 
       <div v-if="labs.data.length" class="overflow-x-auto">
-        <table class="min-w-full">
+        <DataTable class="min-w-full">
           <thead class="ds-table-head"><tr><th class="ds-table-heading">{{ $t('gestlab.general.labels.vap_labs.table.name') }}</th><th class="ds-table-heading">{{ $t('gestlab.general.labels.vap_labs.table.code') }}</th><th class="ds-table-heading">{{ $t('gestlab.general.labels.vap_labs.table.location') }}</th><th class="ds-table-heading">{{ $t('gestlab.general.labels.vap_labs.table.supervisor') }}</th><th class="ds-table-heading"><span class="sr-only">{{ $t('gestlab.general.labels.vap_labs.table.actions') }}</span></th></tr></thead>
           <tbody class="ds-table-body">
             <tr v-for="lab in labs.data" :key="lab.id" class="ds-table-row">
@@ -94,7 +94,7 @@ function deleteLab() {
               <td class="ds-table-cell"><div class="flex justify-end gap-1"><Link :href="route('vap-labs.labs.show', lab.id)" class="ds-icon-button" :title="$t('gestlab.general.labels.vap_labs.buttons.view')"><EyeIcon class="h-4 w-4" /></Link><Link :href="route('vap-labs.labs.edit', lab.id)" class="ds-icon-button" :title="$t('gestlab.general.labels.vap_labs.buttons.edit')"><PencilSquareIcon class="h-4 w-4" /></Link><button type="button" class="ds-icon-button hover:!text-red-600" :title="$t('gestlab.general.labels.vap_labs.buttons.delete')" @click="labPendingDeletion = lab"><TrashIcon class="h-4 w-4" /></button></div></td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
       <div v-else class="px-5 py-14 text-center"><BuildingLibraryIcon class="mx-auto h-9 w-9 text-[var(--ds-text-soft)]" /><h3 class="ds-heading mt-3 text-sm">{{ $t('gestlab.general.labels.vap_labs.messages.empty_labs.title') }}</h3><p class="ds-copy mt-1 text-sm">{{ $t('gestlab.general.labels.vap_labs.messages.empty_labs.description') }}</p></div>
       <Pagination v-if="labs.data.length" v-bind="labs" />

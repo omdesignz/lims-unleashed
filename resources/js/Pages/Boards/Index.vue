@@ -166,7 +166,7 @@ function deleteBoard() {
           <label for="board-search" class="sr-only">{{ $t('gestlab.general.search_input_placeholder') }}</label>
           <div class="relative">
             <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-            <input
+            <BaseInput
               id="board-search"
               v-model="query.search"
               type="search"
@@ -230,10 +230,10 @@ function deleteBoard() {
 
     <slide-over v-if="isDrawerOpen" :title="drawerTitle" :description="drawerDescription" @close="closeDrawer">
       <template #content>
-        <form id="board-form" class="space-y-6 py-6" @submit.prevent="submit">
+        <form id="board-form" class="mx-auto w-full max-w-3xl space-y-6 px-6 py-6 sm:px-8" @submit.prevent="submit">
           <div class="ds-field-group">
             <label for="board-name" class="ds-field-label">{{ $t('gestlab.general.labels.kanban.name') }} <span class="ds-field-required">*</span></label>
-            <input id="board-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" />
+            <BaseInput id="board-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" />
             <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
           </div>
 
@@ -252,14 +252,14 @@ function deleteBoard() {
               <label class="ds-field-group">
                 <span class="ds-field-label">{{ $t('gestlab.general.labels.kanban.bgcolor') }}</span>
                 <span class="flex items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-2">
-                  <input v-model="form.bgcolor" type="color" class="h-8 w-10 cursor-pointer border-0 bg-transparent p-0" />
+                  <ColorInput v-model="form.bgcolor" type="color" class="h-8 w-10 cursor-pointer border-0 bg-transparent p-0" />
                   <span class="font-mono text-xs font-bold uppercase text-[var(--ds-text-muted)]">{{ form.bgcolor }}</span>
                 </span>
               </label>
               <label class="ds-field-group">
                 <span class="ds-field-label">{{ $t('gestlab.general.labels.kanban.iconcolor') }}</span>
                 <span class="flex items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-2">
-                  <input v-model="form.iconcolor" type="color" class="h-8 w-10 cursor-pointer border-0 bg-transparent p-0" />
+                  <ColorInput v-model="form.iconcolor" type="color" class="h-8 w-10 cursor-pointer border-0 bg-transparent p-0" />
                   <span class="font-mono text-xs font-bold uppercase text-[var(--ds-text-muted)]">{{ form.iconcolor }}</span>
                 </span>
               </label>
@@ -274,12 +274,18 @@ function deleteBoard() {
               </span>
               <span class="min-w-0">
                 <span class="block text-sm font-bold text-[var(--ds-text)]">{{ form.icon }}</span>
-              <span class="block text-xs font-semibold text-[var(--ds-text-muted)]">{{ $t('gestlab.general.labels.kanban.select_icon') }}</span>
+                <span class="block text-xs font-semibold text-[var(--ds-text-muted)]">{{ $t('gestlab.general.labels.kanban.select_icon') }}</span>
               </span>
             </button>
             <p v-if="form.errors.icon" class="ds-field-error">{{ form.errors.icon }}</p>
           </div>
         </form>
+
+        <IconPicker
+          v-if="isIconPickerOpen"
+          v-model="form.icon"
+          @picker-closed="isIconPickerOpen = false"
+        />
       </template>
 
       <template #action_buttons>
@@ -291,13 +297,6 @@ function deleteBoard() {
         </div>
       </template>
     </slide-over>
-
-    <IconPicker
-      v-if="isIconPickerOpen"
-      v-model="form.icon"
-      @picker-closed="isIconPickerOpen = false"
-      @icon-selected="(icon) => form.icon = icon"
-    />
 
     <confirm-dialog
       v-if="boardPendingDeletion"

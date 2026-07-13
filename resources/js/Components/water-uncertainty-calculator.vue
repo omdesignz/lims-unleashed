@@ -9,14 +9,14 @@
         <div class="sm:col-span-2 sm:col-start-1">
           <label for="constantDvar" class="block text-sm font-medium leading-6 text-gray-900">Constante para dvar</label>
           <div class="mt-2">
-            <input v-model.number="constantDvar" type="number" name="constantDvar" id="constantDvar" autocomplete="constantDvar" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
+            <BaseInput v-model.number="constantDvar" type="number" name="constantDvar" id="constantDvar" autocomplete="constantDvar" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
           </div>
         </div>
 
         <div class="sm:col-span-4">
           <label for="constantUncertainty" class="block text-sm font-medium leading-6 text-gray-900">Constante para Incerteza Operacional Estimada</label>
           <div class="mt-2">
-            <input v-model="constantUncertainty" type="text" name="constantUncertainty" id="constantUncertainty" autocomplete="constantUncertainty" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
+            <BaseInput v-model="constantUncertainty" type="text" name="constantUncertainty" id="constantUncertainty" autocomplete="constantUncertainty" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
           </div>
         </div>
 
@@ -51,7 +51,7 @@
         <h3>1ª Série</h3>
         <div class="mt-2 flex rounded-md shadow-sm" v-for="(value, index) in series1" :key="'series1-' + index">
         <div class="relative flex flex-grow items-stretch focus-within:z-10">
-            <input v-model.number="series1[index]" type="number" class="block w-full rounded-none rounded-l-md border-0 py-1.5 pl-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="John Smith" />
+            <BaseInput v-model.number="series1[index]" type="number" class="block w-full rounded-none rounded-l-md border-0 py-1.5 pl-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="John Smith" />
         </div>
         <button @click="removeSeries1Value(index)" type="button" class="relative -ml-px inline-flex items-center gap-x-1.5 rounded-r-md px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
             <TrashIcon class="-ml-0.5 h-5 w-5 text-red-500" aria-hidden="true" />
@@ -63,7 +63,7 @@
         <h3>2ª Série</h3>
         <div class="mt-2 flex rounded-md shadow-sm" v-for="(value, index) in series2" :key="'series2-' + index">
         <div class="relative flex flex-grow items-stretch focus-within:z-10">
-            <input v-model.number="series2[index]" type="number" class="block w-full rounded-none rounded-l-md border-0 py-1.5 pl-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="John Smith" />
+            <BaseInput v-model.number="series2[index]" type="number" class="block w-full rounded-none rounded-l-md border-0 py-1.5 pl-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="John Smith" />
         </div>
         <button @click="removeSeries2Value(index)" type="button" class="relative -ml-px inline-flex items-center gap-x-1.5 rounded-r-md px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
             <TrashIcon class="-ml-0.5 h-5 w-5 text-red-500" aria-hidden="true" />

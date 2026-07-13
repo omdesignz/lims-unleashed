@@ -239,21 +239,21 @@ function executeBulkAction() {
 
           <div>
             <label for="permission-name" class="ds-field-label">Chave técnica</label>
-            <input id="permission-name" v-model="form.name" type="text" autocomplete="off" class="ds-field mt-2 font-mono" required />
+            <BaseInput id="permission-name" v-model="form.name" type="text" autocomplete="off" class="ds-field mt-2 font-mono" required />
             <p class="ds-field-hint mt-2">Exemplo: approve_quality_certificates</p>
             <p v-if="form.errors.name" class="ds-field-error mt-2">{{ form.errors.name }}</p>
           </div>
 
           <div>
             <label for="permission-label" class="ds-field-label">Etiqueta</label>
-            <input id="permission-label" v-model="form.label" type="text" class="ds-field mt-2" />
+            <BaseInput id="permission-label" v-model="form.label" type="text" class="ds-field mt-2" />
             <p class="ds-field-hint mt-2">Texto apresentado a administradores na configuração de funções.</p>
             <p v-if="form.errors.label" class="ds-field-error mt-2">{{ form.errors.label }}</p>
           </div>
 
           <div>
             <label for="permission-guard" class="ds-field-label">Guard</label>
-            <input id="permission-guard" v-model="form.guard_name" type="text" autocomplete="off" class="ds-field mt-2 font-mono" />
+            <BaseInput id="permission-guard" v-model="form.guard_name" type="text" autocomplete="off" class="ds-field mt-2 font-mono" />
             <p class="ds-field-hint mt-2">Use web para a sessão normal do backoffice.</p>
             <p v-if="form.errors.guard_name" class="ds-field-error mt-2">{{ form.errors.guard_name }}</p>
           </div>

@@ -30,8 +30,6 @@
   import { ref, onMounted } from 'vue';
   import { router } from '@inertiajs/vue3';
   import axios from 'axios';
-//   import FolderItem from './folder-item.vue';
-//   import Filemanager from './dd-filemanager.vue';
 import Filemanager from "@/Components/file-manager/manager.vue";
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 

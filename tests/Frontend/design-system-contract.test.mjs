@@ -1,12 +1,11 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import test from 'node:test'
 
 const appCss = readFileSync(new URL('../../resources/css/app.css', import.meta.url), 'utf8')
 const appBladeSource = readFileSync(new URL('../../resources/views/app.blade.php', import.meta.url), 'utf8')
 const appBootstrapSource = readFileSync(new URL('../../resources/js/app.js', import.meta.url), 'utf8')
 const publicLandingSource = readFileSync(new URL('../../resources/js/Pages/Public/Landing.vue', import.meta.url), 'utf8')
-const sharedDatePickerSource = readFileSync(new URL('../../resources/js/Shared/date-picker.vue', import.meta.url), 'utf8')
 const layoutSource = readFileSync(new URL('../../resources/js/Shared/Layouts/Layout.vue', import.meta.url), 'utf8')
 const portalLayoutSource = readFileSync(new URL('../../resources/js/Shared/Layouts/PortalLayout.vue', import.meta.url), 'utf8')
 const portalDashboardSource = readFileSync(new URL('../../resources/js/Pages/ClientPortal/Dashboard.vue', import.meta.url), 'utf8')
@@ -43,7 +42,9 @@ const authVerifyEmailSource = readFileSync(new URL('../../resources/js/Pages/Aut
 const authConfirmPasswordSource = readFileSync(new URL('../../resources/js/Pages/Auth/ConfirmPassword.vue', import.meta.url), 'utf8')
 const authTwoFactorChallengeSource = readFileSync(new URL('../../resources/js/Pages/Auth/TwoFactorChallenge.vue', import.meta.url), 'utf8')
 const inputSource = readFileSync(new URL('../../resources/js/Components/base/BaseInput.vue', import.meta.url), 'utf8')
+const dateTimePickerSource = readFileSync(new URL('../../resources/js/Components/base/DateTimePicker.vue', import.meta.url), 'utf8')
 const selectSource = readFileSync(new URL('../../resources/js/Components/base/BaseSelect.vue', import.meta.url), 'utf8')
+const componentSelectInputSource = readFileSync(new URL('../../resources/js/Components/select-input.vue', import.meta.url), 'utf8')
 const textareaSource = readFileSync(new URL('../../resources/js/Components/base/BaseTextarea.vue', import.meta.url), 'utf8')
 const moduleHeroSource = readFileSync(new URL('../../resources/js/Components/base/ModuleHero.vue', import.meta.url), 'utf8')
 const sideNavSource = readFileSync(new URL('../../resources/js/Shared/Navigation/side-nav.vue', import.meta.url), 'utf8')
@@ -57,9 +58,6 @@ const navItemSource = readFileSync(new URL('../../resources/js/Shared/Navigation
 const mainMenuSource = readFileSync(new URL('../../resources/js/Shared/Navigation/main-menu.vue', import.meta.url), 'utf8')
 const profileDropdownSource = readFileSync(new URL('../../resources/js/Shared/Navigation/profile-dropdown.vue', import.meta.url), 'utf8')
 const slideOverMenuSource = readFileSync(new URL('../../resources/js/Shared/Navigation/slide-over-menu.vue', import.meta.url), 'utf8')
-const sharedComboBoxSource = readFileSync(new URL('../../resources/js/Shared/combo-box.vue', import.meta.url), 'utf8')
-const sharedMultipleSelectSource = readFileSync(new URL('../../resources/js/Shared/multiple-select-input.vue', import.meta.url), 'utf8')
-const sharedSelectInputSource = readFileSync(new URL('../../resources/js/Shared/select-input.vue', import.meta.url), 'utf8')
 const componentMenuItemSource = readFileSync(new URL('../../resources/js/Components/menu-item.vue', import.meta.url), 'utf8')
 const quickStatsSource = readFileSync(new URL('../../resources/js/Components/quick-stats.vue', import.meta.url), 'utf8')
 const quickMenuSource = readFileSync(new URL('../../resources/js/Components/quick-menu.vue', import.meta.url), 'utf8')
@@ -101,6 +99,7 @@ const phytosanitaryProductsIndexSource = readFileSync(new URL('../../resources/j
 const proficiencyTestsIndexSource = readFileSync(new URL('../../resources/js/Pages/ProficiencyTest/Index.vue', import.meta.url), 'utf8')
 const proficiencyTestsShowSource = readFileSync(new URL('../../resources/js/Pages/ProficiencyTest/Show.vue', import.meta.url), 'utf8')
 const reportStudiosIndexSource = readFileSync(new URL('../../resources/js/Pages/ReportStudios/Index.vue', import.meta.url), 'utf8')
+const reportStudioWorkbenchSource = readFileSync(new URL('../../resources/js/Components/report-studio/studio-workbench.vue', import.meta.url), 'utf8')
 const fileManagerIndexSource = readFileSync(new URL('../../resources/js/Pages/VAPFileManager/Index.vue', import.meta.url), 'utf8')
 const importCertificatesIndexSource = readFileSync(new URL('../../resources/js/Pages/ImportCertificates/Index.vue', import.meta.url), 'utf8')
 const exportCertificatesIndexSource = readFileSync(new URL('../../resources/js/Pages/ExportCertificates/Index.vue', import.meta.url), 'utf8')
@@ -242,11 +241,14 @@ const matrixFormSource = readFileSync(new URL('../../resources/js/Components/mat
 const matrixFormDataSource = readFileSync(new URL('../../resources/js/Components/matrixes/matrixFormData.js', import.meta.url), 'utf8')
 const toggleFieldSource = readFileSync(new URL('../../resources/js/Components/base/ToggleField.vue', import.meta.url), 'utf8')
 const recordsTableSource = readFileSync(new URL('../../resources/js/Components/records-table.vue', import.meta.url), 'utf8')
-const tanstackTableSource = readFileSync(new URL('../../resources/js/Components/tanstack-table.vue', import.meta.url), 'utf8')
+const vapTableSource = readFileSync(new URL('../../resources/js/Components/vap-table/table.vue', import.meta.url), 'utf8')
+const vapTableHeaderSource = readFileSync(new URL('../../resources/js/Components/vap-table/table-header.vue', import.meta.url), 'utf8')
+const vapTableBodySource = readFileSync(new URL('../../resources/js/Components/vap-table/table-body.vue', import.meta.url), 'utf8')
+const dataTableShellSource = readFileSync(new URL('../../resources/js/Components/tables/DataTableShell.vue', import.meta.url), 'utf8')
+const dataTableSource = readFileSync(new URL('../../resources/js/Components/tables/DataTable.vue', import.meta.url), 'utf8')
 const comboboxSource = readFileSync(new URL('../../resources/js/Components/combobox-enhanced.vue', import.meta.url), 'utf8')
 const multipleComboboxSource = readFileSync(new URL('../../resources/js/Components/combobox-multiple.vue', import.meta.url), 'utf8')
 const tableMultipleComboboxSource = readFileSync(new URL('../../resources/js/Components/vap-table/combobox-multiple.vue', import.meta.url), 'utf8')
-const simpleSelectSource = readFileSync(new URL('../../resources/js/Components/simple-select.vue', import.meta.url), 'utf8')
 const breadcrumbsSource = readFileSync(new URL('../../resources/js/Components/breadcrumbs.vue', import.meta.url), 'utf8')
 const datePickerSource = readFileSync(new URL('../../resources/js/Components/date-picker-enhanced.vue', import.meta.url), 'utf8')
 const chartWrapperSource = readFileSync(new URL('../../resources/js/Components/apex-chart/ChartWrapper.vue', import.meta.url), 'utf8')
@@ -346,6 +348,7 @@ const portalVerifyEmailSource = readFileSync(new URL('../../resources/js/Pages/P
 const portalConfirmPasswordSource = readFileSync(new URL('../../resources/js/Pages/PortalAuth/ConfirmPassword.vue', import.meta.url), 'utf8')
 const portalTwoFactorChallengeSource = readFileSync(new URL('../../resources/js/Pages/PortalAuth/TwoFactorChallenge.vue', import.meta.url), 'utf8')
 const boardsIndexSource = readFileSync(new URL('../../resources/js/Pages/Boards/Index.vue', import.meta.url), 'utf8')
+const iconPickerSource = readFileSync(new URL('../../resources/js/Components/icon-picker.vue', import.meta.url), 'utf8')
 const boardsShowSource = readFileSync(new URL('../../resources/js/Pages/Boards/Show.vue', import.meta.url), 'utf8')
 const boardNameFormSource = readFileSync(new URL('../../resources/js/Pages/Boards/BoardNameForm.vue', import.meta.url), 'utf8')
 const cardListSource = readFileSync(new URL('../../resources/js/Pages/Boards/CardList.vue', import.meta.url), 'utf8')
@@ -356,6 +359,16 @@ const cardListItemModalSource = readFileSync(new URL('../../resources/js/Pages/B
 
 const legacyWarmPalettePattern = /#143d37|#d9b05f|#fffaf0|#ded3bf|#1f7a68|#07110f|#25443c|#15231f|#f7f1e7|bg-gradient-to-r/
 const legacyExpressiveSurfacePattern = /#143d37|#d9b05f|#fffaf0|#ded3bf|#1f7a68|#07110f|#25443c|#15231f|#f7f1e7|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[/
+
+function collectFiles(directoryUrl) {
+  return readdirSync(directoryUrl, { withFileTypes: true }).flatMap((entry) => {
+    const entryUrl = new URL(entry.name + (entry.isDirectory() ? '/' : ''), directoryUrl)
+
+    return entry.isDirectory() ? collectFiles(entryUrl) : [entryUrl]
+  })
+}
+
+const vueFiles = collectFiles(new URL('../../resources/js/', import.meta.url)).filter((file) => file.pathname.endsWith('.vue'))
 
 test('defines a semantic product design contract for shared application surfaces', () => {
   for (const token of [
@@ -416,6 +429,93 @@ test('semantic badges expose consistent operational states', () => {
   }
 })
 
+test('shared form controls expose explicit selection and picker states', () => {
+  assert.match(appCss, /\.ds-checkbox:checked/)
+  assert.match(appCss, /\.ds-checkbox:indeterminate/)
+  assert.match(appCss, /background-image: url\("data:image\/svg\+xml/)
+  assert.match(appCss, /input\[type="checkbox"\]:not\(\.peer\):not\(\.sr-only\):checked/)
+
+  assert.match(dateTimePickerSource, /DatePicker as VDatePicker/)
+  assert.match(dateTimePickerSource, /\['date', 'datetime-local', 'time'\]/)
+  assert.match(dateTimePickerSource, /:is24hr="true"/)
+  assert.match(dateTimePickerSource, /return props\.type === 'datetime-local' \? `\$\{date\}T\$\{time\}` : date/)
+  assert.match(inputSource, /const isDateTimeField = computed/)
+  assert.match(inputSource, /<DateTimePicker/)
+  assert.match(appBootstrapSource, /\.component\("DateTimePicker", DateTimePicker\)/)
+
+  assert.match(componentSelectInputSource, /ds-combobox-control/)
+  assert.match(componentSelectInputSource, /ds-floating-panel/)
+  assert.match(componentSelectInputSource, /aria-describedby/)
+  assert.match(selectSource, /<Listbox/)
+  assert.match(selectSource, /extractOptions\(slots\.default/)
+  assert.match(selectSource, /:multiple="multiple"/)
+  assert.match(appBootstrapSource, /\.component\("BaseSelect", BaseSelect\)/)
+
+  for (const componentName of ['BaseInput', 'CheckboxInput', 'ColorInput', 'FileInput', 'RadioInput', 'RangeInput']) {
+    assert.match(appBootstrapSource, new RegExp(`\\.component\\("${componentName}", ${componentName}\\)`))
+  }
+
+  const nativeInputPrimitivePaths = [
+    '/Components/base/BaseInput.vue',
+    '/Components/base/BaseSelect.vue',
+    '/Components/base/CheckboxInput.vue',
+    '/Components/base/DateTimePicker.vue',
+    '/Components/base/FileInput.vue',
+    '/Components/base/RadioInput.vue',
+    '/Components/base/RangeInput.vue',
+    '/Components/base/ToggleField.vue',
+  ]
+
+  for (const file of vueFiles) {
+    const source = readFileSync(file, 'utf8')
+
+    assert.doesNotMatch(source, /<select(?=[\s>])/i, `Native select remains in ${file.pathname}`)
+
+    if (!nativeInputPrimitivePaths.some((path) => file.pathname.endsWith(path))) {
+      for (const match of source.matchAll(/<input\b[^>]*>/gi)) {
+        assert.match(match[0], /\btype=["']hidden["']/i, `Native user-facing input remains in ${file.pathname}`)
+      }
+    }
+  }
+})
+
+test('analysis tables use semantic selection and data-density controls', () => {
+  for (const source of [vapTableSource, vapTableHeaderSource, vapTableBodySource]) {
+    assert.match(source, /ds-/)
+    assert.doesNotMatch(source, /#ded3bf|#d8cbb8|#25443c|#315149|#fffdf7|#f7f1e7|#07110f|#10231f|#15231f|#143d37|rounded-\[/)
+  }
+
+  assert.match(dataTableShellSource, /class="ds-table-shell"/)
+  assert.match(dataTableSource, /<table class="ds-data-table">/)
+  assert.match(appBootstrapSource, /\.component\("DataTable", DataTable\)/)
+  assert.match(vapTableSource, /<DataTableShell/)
+  assert.match(recordsTableSource, /<DataTableShell/)
+  assert.match(vapTableHeaderSource, /class="ds-checkbox"/)
+  assert.match(vapTableBodySource, /class="ds-checkbox"/)
+  assert.match(analysisIndexSource, /<VapTable/)
+
+  for (const file of vueFiles) {
+    if (file.pathname.endsWith('/Components/tables/DataTable.vue')) {
+      continue
+    }
+
+    assert.doesNotMatch(readFileSync(file, 'utf8'), /<table(?=[\s>])/i, `Raw table remains in ${file.pathname}`)
+  }
+})
+
+test('report studio editor chrome no longer uses the legacy warm workspace palette', () => {
+  const editorTemplate = reportStudioWorkbenchSource.split('<template>')[1]?.split('<style>')[0] ?? ''
+  const editorCss = reportStudioWorkbenchSource.split('<style>')[1] ?? ''
+
+  assert.match(editorCss, /--studio-border: var\(--ds-border\)/)
+  assert.match(editorCss, /--studio-surface: var\(--ds-panel-raised\)/)
+  assert.doesNotMatch(editorCss, /#ded3bf|#eadfca|#d8cbb8|#25443c|#29483f|#315149|#15231f|#475a53|#6b7b74|#f8f4ea|#f7f1e7|#fffdf7|#fffaf0|#07110f|#10231f|#143d37|#d9b05f|#b98a34|#9a6e23|#efc76f|#f1d89e|#e9e0d1|#e7dece/)
+  assert.doesNotMatch(editorTemplate, /(?:text|bg|border|ring|shadow)-\[?#(?:ded3bf|eadfca|25443c|29483f|15231f|475a53|6b7b74|f7f1e7|fffdf7|fffaf0|07110f|10231f|143d37|d9b05f)/)
+  assert.match(reportStudioWorkbenchSource, /v-model="props\.form\.is_default" type="checkbox" class="ds-checkbox"/)
+  assert.match(reportStudiosIndexSource, /focus-visible:ring-\[rgb\(var\(--primary-500-rgb\)\)\]/)
+  assert.match(reportStudiosIndexSource, /<nav class="grid grid-cols-2 px-3 sm:flex sm:px-6" aria-label="Áreas do estúdio documental">/)
+})
+
 test('shared shell and primitives consume semantic design classes', () => {
   assert.match(layoutSource, /class="lims-app-shell min-h-dvh/)
   assert.match(layoutSource, /class="fixed inset-y-0 left-0 z-40 hidden flex-col/)
@@ -448,7 +548,7 @@ test('shared shell and primitives consume semantic design classes', () => {
   assert.match(sideNavSource, /emit\('open-command-palette'\)/)
 })
 
-test('legacy shared navigation and select primitives use the LIMS application contract', () => {
+test('shared navigation uses the LIMS application contract', () => {
   assert.match(legacySharedLayoutSource, /<AppLayout :auth="page\.props\.auth"/)
   assert.match(legacySharedLayoutSource, /import AppLayout from '@\/Shared\/Layouts\/Layout\.vue'/)
   assert.doesNotMatch(legacySharedLayoutSource, /Popover|radial-gradient|linear-gradient/)
@@ -458,9 +558,6 @@ test('legacy shared navigation and select primitives use the LIMS application co
     mainMenuSource,
     profileDropdownSource,
     slideOverMenuSource,
-    sharedComboBoxSource,
-    sharedMultipleSelectSource,
-    sharedSelectInputSource,
     componentMenuItemSource,
   ]) {
     assert.match(source, /ds-/)
@@ -471,9 +568,6 @@ test('legacy shared navigation and select primitives use the LIMS application co
   assert.match(mainMenuSource, /class="ds-command-palette overflow-hidden p-2"/)
   assert.match(profileDropdownSource, /class="ds-floating-panel/)
   assert.match(slideOverMenuSource, /class="ds-sidebar-panel/)
-  assert.match(sharedComboBoxSource, /class="ds-field pr-11"/)
-  assert.match(sharedMultipleSelectSource, /class="ds-floating-panel/)
-  assert.match(sharedSelectInputSource, /container: 'ds-combobox-control/)
   assert.match(componentMenuItemSource, /class="ds-command-palette-item"/)
 })
 
@@ -485,21 +579,15 @@ test('calendar and reduced-motion behavior are part of the visual contract', () 
 
 test('high-frequency data controls use the shared visual language', () => {
   assert.match(recordsTableSource, /class="ds-command-surface"/)
-  assert.match(recordsTableSource, /class="ds-table-shell"/)
+  assert.match(recordsTableSource, /<DataTableShell>/)
   assert.match(recordsTableSource, /class="ds-field pl-10"/)
   assert.doesNotMatch(recordsTableSource, /color="blue"/)
-
-  assert.match(tanstackTableSource, /class="ds-command-surface/)
-  assert.match(tanstackTableSource, /class="ds-table-shell/)
-  assert.match(tanstackTableSource, /router\.get\(page\.url/)
 
   assert.match(comboboxSource, /class="ds-combobox-control/)
   assert.match(comboboxSource, /class="ds-floating-panel/)
   assert.match(multipleComboboxSource, /class="ds-chip"/)
   assert.match(multipleComboboxSource, /class="ds-floating-panel/)
   assert.match(tableMultipleComboboxSource, /class="ds-combobox-control/)
-  assert.match(simpleSelectSource, /class="ds-combobox-control/)
-  assert.match(simpleSelectSource, /class="ds-option ds-option-compact/)
   assert.match(breadcrumbsSource, /gestlab\.general\.navigation\.breadcrumb/)
   assert.doesNotMatch(breadcrumbsSource, /<span class="sr-only">Home<\/span>/)
   assert.match(datePickerSource, /'ds-field pl-10 pr-10'/)
@@ -1690,7 +1778,7 @@ test('worksheet queue and editor use dense operational application UI patterns',
   assert.match(worksheetsIndexSource, /const searchTerm = ref\(""\)/)
   assert.match(worksheetsIndexSource, /const statusFilter = ref\("all"\)/)
   assert.match(worksheetsIndexSource, /const filteredWorksheets = computed/)
-  assert.match(worksheetsIndexSource, /<table class="min-w-full/)
+  assert.match(worksheetsIndexSource, /<DataTable class="min-w-full/)
   assert.match(worksheetsIndexSource, /class="ds-empty-state/)
 
   assert.match(worksheetsEditSource, /<Link :href="route\('worksheets\.index'\)"/)
@@ -2641,18 +2729,53 @@ test('boards use a compact operational work-management surface', () => {
 
   for (const source of boardSources) {
     assert.match(source, /ds-/)
-    assert.doesNotMatch(source, /commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|bg-white|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log/)
+    assert.doesNotMatch(source, /commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|bg-white|bg-slate|border-slate|text-slate|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log/)
   }
 
   assert.match(boardsIndexSource, /router\.get\(route\('boards\.destroy'/)
   assert.match(boardsIndexSource, /<confirm-dialog/)
+  assert.match(boardsIndexSource, /id="board-form" class="mx-auto w-full max-w-3xl space-y-6 px-6 py-6 sm:px-8"/)
+  assert.match(boardsIndexSource, /<IconPicker[\s\S]*v-model="form\.icon"[\s\S]*@picker-closed="isIconPickerOpen = false"/)
+  assert.match(iconPickerSource, /emit\('update:modelValue', iconName\)/)
+  assert.match(iconPickerSource, /@close="closePicker"/)
+  assert.match(iconPickerSource, /role="listbox"/)
+  assert.doesNotMatch(iconPickerSource, /props\.open|open = false/)
   assert.match(boardsShowSource, /class="ds-command-surface overflow-hidden"/)
-  assert.match(boardsShowSource, /<CardList v-for="list in board\.lists"/)
+  assert.match(boardsShowSource, /<CardList\s+v-for="list in board\.lists"/)
+  assert.match(boardsShowSource, /w-\[20\.5rem\]/)
   assert.match(cardListSource, /<VueDraggableNext/)
+  assert.match(cardListSource, /handle="\.kanban-card-handle"/)
+  assert.match(cardListSource, /ghost-class="opacity-30"/)
   assert.match(cardListSource, /route\('cards\.move'/)
+  assert.match(cardListItemSource, /members\.slice\(0, 4\)/)
+  assert.match(cardListItemSource, /UserGroupIcon/)
+  assert.doesNotMatch(cardListSource, /rotate/)
   assert.match(cardListItemModalSource, /<combobox/)
+  assert.match(cardListItemModalSource, /class="ds-checkbox"/)
   assert.match(cardListItemModalSource, /router\.delete\(route\('cards\.destroy'/)
   assert.match(cardListItemModalSource, /<confirm-dialog/)
+})
+
+test('legacy source variants and playground artifacts cannot return', () => {
+  const legacyFilePattern = /(?:^|[ _-])(?:old|oldest|original|simplified|copy)(?:[ ._-]|$)|(?:Index22|Index_2|Create_|ProposalShow_)\.vue$/i
+
+  for (const directory of ['resources/js/', 'resources/images/', 'resources/views/']) {
+    for (const file of collectFiles(new URL(`../../${directory}`, import.meta.url))) {
+      const fileName = decodeURIComponent(file.pathname.split('/').at(-1))
+
+      assert.doesNotMatch(fileName, legacyFilePattern, `Legacy source file remains: ${fileName}`)
+    }
+  }
+
+  assert.equal(existsSync(new URL('../../config/backup_old.php', import.meta.url)), false)
+  assert.equal(existsSync(new URL('../../resources/js/Components/tanstack-table.vue', import.meta.url)), false)
+  assert.equal(existsSync(new URL('../../resources/js/Components/text-input.vue', import.meta.url)), false)
+  assert.equal(existsSync(new URL('../../resources/js/Components/simple-select.vue', import.meta.url)), false)
+  assert.equal(existsSync(new URL('../../resources/js/Shared/select-input.vue', import.meta.url)), false)
+  assert.equal(existsSync(new URL('../../resources/js/Shared/combo-box.vue', import.meta.url)), false)
+  assert.equal(existsSync(new URL('../../resources/js/Shared/multiple-select-input.vue', import.meta.url)), false)
+  assert.equal(existsSync(new URL('../../resources/js/Shared/date-picker.vue', import.meta.url)), false)
+  assert.equal(existsSync(new URL('../../resources/js/Pages/Welcome.vue', import.meta.url)), false)
 })
 
 test('operational reference registries share the governed catalog manager', () => {
@@ -2751,8 +2874,7 @@ test('application UI consistently inherits the laboratory workspace typeface', (
   assert.doesNotMatch(appBladeSource, /family=manrope/)
   assert.match(publicLandingSource, /font-family: var\(--font-sans\)/)
   assert.doesNotMatch(publicLandingSource, /fonts\.bunny\.net\/css\?family=manrope|font-family: "Manrope"/)
-  assert.match(sharedDatePickerSource, /--dp-font-family: var\(--font-sans\)/)
-  assert.doesNotMatch(sharedDatePickerSource, /font-family: "Manrope"/)
+  assert.match(appCss, /\.vc-container,[\s\S]*font-family: var\(--font-sans\)/)
 })
 
 test('white-label fallbacks remain neutral across the application and generated documents', () => {

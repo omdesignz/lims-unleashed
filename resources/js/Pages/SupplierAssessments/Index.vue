@@ -213,10 +213,10 @@ function riskTone(value) {
               <ComboboxEnhanced v-model="selectedDepartment" title-label="Departamento" placeholder="Selecione um departamento" :options="departmentOptions" />
               <p v-if="form.errors.department_id" class="ds-field-error mt-2">{{ form.errors.department_id }}</p>
             </div>
-            <div><label for="assessment_date" class="ds-field-label mb-2 block">Data da avaliação</label><input id="assessment_date" v-model="form.assessment_date" type="date" class="ds-field"></div>
-            <div><label for="next_review_at" class="ds-field-label mb-2 block">Próxima revisão</label><input id="next_review_at" v-model="form.next_review_at" type="date" class="ds-field"></div>
-            <div><label for="assessment_status" class="ds-field-label mb-2 block">Decisão</label><select id="assessment_status" v-model="form.status" class="ds-field"><option value="approved">Aprovado</option><option value="conditional">Condicional</option><option value="suspended">Suspenso</option><option value="rejected">Rejeitado</option></select></div>
-            <div><label for="risk_level" class="ds-field-label mb-2 block">Nível de risco</label><select id="risk_level" v-model="form.risk_level" class="ds-field"><option value="low">Baixo</option><option value="medium">Médio</option><option value="high">Elevado</option><option value="critical">Crítico</option></select></div>
+            <div><label for="assessment_date" class="ds-field-label mb-2 block">Data da avaliação</label><DateTimePicker id="assessment_date" v-model="form.assessment_date" type="date" class="ds-field" /></div>
+            <div><label for="next_review_at" class="ds-field-label mb-2 block">Próxima revisão</label><DateTimePicker id="next_review_at" v-model="form.next_review_at" type="date" class="ds-field" /></div>
+            <div><label for="assessment_status" class="ds-field-label mb-2 block">Decisão</label><BaseSelect id="assessment_status" v-model="form.status" class="ds-field"><option value="approved">Aprovado</option><option value="conditional">Condicional</option><option value="suspended">Suspenso</option><option value="rejected">Rejeitado</option></BaseSelect></div>
+            <div><label for="risk_level" class="ds-field-label mb-2 block">Nível de risco</label><BaseSelect id="risk_level" v-model="form.risk_level" class="ds-field"><option value="low">Baixo</option><option value="medium">Médio</option><option value="high">Elevado</option><option value="critical">Crítico</option></BaseSelect></div>
           </div>
 
           <fieldset>
@@ -224,13 +224,13 @@ function riskTone(value) {
             <div class="mt-3 grid gap-4 sm:grid-cols-2">
               <div v-for="field in scoreFields" :key="field.key">
                 <label :for="field.key" class="ds-field-label mb-2 block">{{ field.label }}</label>
-                <input :id="field.key" v-model.number="form[field.key]" type="number" min="1" max="5" class="ds-field">
+                <BaseInput :id="field.key" v-model.number="form[field.key]" type="number" min="1" max="5" class="ds-field" />
                 <p v-if="form.errors[field.key]" class="ds-field-error mt-2">{{ form.errors[field.key] }}</p>
               </div>
             </div>
           </fieldset>
 
-          <div><label for="evidence_reference" class="ds-field-label mb-2 block">Referência de evidência</label><input id="evidence_reference" v-model="form.evidence_reference" type="text" class="ds-field" placeholder="Relatório, auditoria ou registo associado"></div>
+          <div><label for="evidence_reference" class="ds-field-label mb-2 block">Referência de evidência</label><BaseInput id="evidence_reference" v-model="form.evidence_reference" type="text" class="ds-field" placeholder="Relatório, auditoria ou registo associado" /></div>
           <div><label for="strengths" class="ds-field-label mb-2 block">Pontos fortes</label><textarea id="strengths" v-model="form.strengths" rows="3" class="ds-field min-h-24 resize-y"></textarea></div>
           <div><label for="gaps" class="ds-field-label mb-2 block">Lacunas e riscos</label><textarea id="gaps" v-model="form.gaps" rows="3" class="ds-field min-h-24 resize-y"></textarea></div>
           <div><label for="corrective_actions" class="ds-field-label mb-2 block">Ações corretivas</label><textarea id="corrective_actions" v-model="form.corrective_actions" rows="3" class="ds-field min-h-24 resize-y"></textarea></div>
@@ -238,8 +238,8 @@ function riskTone(value) {
           <div><label for="assessment_notes" class="ds-field-label mb-2 block">Observações</label><textarea id="assessment_notes" v-model="form.notes" rows="3" class="ds-field min-h-24 resize-y"></textarea></div>
 
           <div class="grid gap-3 sm:grid-cols-2">
-            <label class="flex items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3 text-sm font-semibold text-[var(--ds-text-muted)]"><input v-model="form.approved_supplier" type="checkbox" class="ds-checkbox"> Fornecedor aprovado</label>
-            <label class="flex items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3 text-sm font-semibold text-[var(--ds-text-muted)]"><input v-model="form.is_active" type="checkbox" class="ds-checkbox"> Avaliação ativa</label>
+            <label class="flex items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3 text-sm font-semibold text-[var(--ds-text-muted)]"><CheckboxInput v-model="form.approved_supplier" type="checkbox" class="ds-checkbox" /> Fornecedor aprovado</label>
+            <label class="flex items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3 text-sm font-semibold text-[var(--ds-text-muted)]"><CheckboxInput v-model="form.is_active" type="checkbox" class="ds-checkbox" /> Avaliação ativa</label>
           </div>
         </div>
 

@@ -277,18 +277,18 @@ function executeBulkAction() {
             </div>
             <div>
               <label for="qty_available" class="ds-field-label mb-2 block">Quantidade disponível</label>
-              <input id="qty_available" v-model.number="form.qty_available" type="number" min="0" class="ds-field">
+              <BaseInput id="qty_available" v-model.number="form.qty_available" type="number" min="0" class="ds-field" />
               <p v-if="form.errors.qty_available" class="ds-field-error mt-2">{{ form.errors.qty_available }}</p>
             </div>
             <div v-if="tracksThresholds" class="grid gap-4 sm:grid-cols-2">
               <div>
                 <label for="min_stock_level" class="ds-field-label mb-2 block">Nível mínimo</label>
-                <input id="min_stock_level" v-model.number="form.min_stock_level" type="number" min="0" class="ds-field">
+                <BaseInput id="min_stock_level" v-model.number="form.min_stock_level" type="number" min="0" class="ds-field" />
                 <p v-if="form.errors.min_stock_level" class="ds-field-error mt-2">{{ form.errors.min_stock_level }}</p>
               </div>
               <div>
                 <label for="reorder_point" class="ds-field-label mb-2 block">Ponto de reposição</label>
-                <input id="reorder_point" v-model.number="form.reorder_point" type="number" min="0" class="ds-field">
+                <BaseInput id="reorder_point" v-model.number="form.reorder_point" type="number" min="0" class="ds-field" />
                 <p v-if="form.errors.reorder_point" class="ds-field-error mt-2">{{ form.errors.reorder_point }}</p>
               </div>
             </div>

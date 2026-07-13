@@ -284,7 +284,7 @@ function submit() {
       <div class="grid gap-4 px-5 py-5 sm:grid-cols-2 sm:px-6 xl:grid-cols-4">
         <div class="ds-field-group">
           <label for="collection-date" class="ds-field-label">Data da colheita</label>
-          <input id="collection-date" v-model="form.collection_date" type="date" class="ds-field" :aria-invalid="Boolean(form.errors.collection_date)">
+          <DateTimePicker id="collection-date" v-model="form.collection_date" type="date" class="ds-field" :aria-invalid="Boolean(form.errors.collection_date)" />
           <p v-if="form.errors.collection_date" class="ds-field-error">{{ form.errors.collection_date }}</p>
         </div>
         <div class="ds-field-group">
@@ -299,7 +299,7 @@ function submit() {
         </div>
         <div v-if="isScheduled" class="ds-field-group">
           <label for="collection-location" class="ds-field-label">Local da colheita</label>
-          <input id="collection-location" v-model="form.collection_location" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.collection_location)">
+          <BaseInput id="collection-location" v-model="form.collection_location" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.collection_location)" />
           <p v-if="form.errors.collection_location" class="ds-field-error">{{ form.errors.collection_location }}</p>
         </div>
         <div v-if="isScheduled && !isEditing" class="ds-field-group">
@@ -309,7 +309,7 @@ function submit() {
         </div>
         <div v-if="isScheduled && !isEditing" class="ds-field-group">
           <label for="vehicle-reference" class="ds-field-label">Referência da viatura</label>
-          <input id="vehicle-reference" v-model="form.vehicle_reference" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.vehicle_reference)">
+          <BaseInput id="vehicle-reference" v-model="form.vehicle_reference" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.vehicle_reference)" />
           <p v-if="form.errors.vehicle_reference" class="ds-field-error">{{ form.errors.vehicle_reference }}</p>
         </div>
         <div class="ds-field-group sm:col-span-2">
@@ -383,34 +383,34 @@ function submit() {
                 </div>
                 <div class="ds-field-group">
                   <label for="sample-origin" class="ds-field-label">Origem</label>
-                  <input :id="`sample-origin-${index}`" v-model="product.origin" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'origin'))">
+                  <BaseInput :id="`sample-origin-${index}`" v-model="product.origin" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'origin'))" />
                   <p v-if="fieldError(index, 'origin')" class="ds-field-error">{{ fieldError(index, "origin") }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label :for="`sample-brand-${index}`" class="ds-field-label">Marca comercial</label>
-                  <input :id="`sample-brand-${index}`" v-model="product.comercial_brand" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'comercial_brand'))">
+                  <BaseInput :id="`sample-brand-${index}`" v-model="product.comercial_brand" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'comercial_brand'))" />
                 </div>
                 <div class="ds-field-group">
                   <label :for="`sample-qty-${index}`" class="ds-field-label">Quantidade solicitada</label>
-                  <input :id="`sample-qty-${index}`" v-model="product.qty" type="number" min="0" step="0.01" class="ds-field text-right tabular-nums" :aria-invalid="Boolean(fieldError(index, 'qty'))">
+                  <BaseInput :id="`sample-qty-${index}`" v-model="product.qty" type="number" min="0" step="0.01" class="ds-field text-right tabular-nums" :aria-invalid="Boolean(fieldError(index, 'qty'))" />
                   <p v-if="fieldError(index, 'qty')" class="ds-field-error">{{ fieldError(index, "qty") }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label :for="`sample-collected-qty-${index}`" class="ds-field-label">Quantidade colhida</label>
-                  <input :id="`sample-collected-qty-${index}`" v-model="product.collected_qty" type="number" min="0" step="0.01" class="ds-field text-right tabular-nums" :aria-invalid="Boolean(fieldError(index, 'collected_qty'))">
+                  <BaseInput :id="`sample-collected-qty-${index}`" v-model="product.collected_qty" type="number" min="0" step="0.01" class="ds-field text-right tabular-nums" :aria-invalid="Boolean(fieldError(index, 'collected_qty'))" />
                   <p v-if="fieldError(index, 'collected_qty')" class="ds-field-error">{{ fieldError(index, "collected_qty") }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label :for="`sample-production-date-${index}`" class="ds-field-label">Produção</label>
-                  <input :id="`sample-production-date-${index}`" v-model="product.production_date" type="date" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'production_date'))">
+                  <DateTimePicker :id="`sample-production-date-${index}`" v-model="product.production_date" type="date" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'production_date'))" />
                 </div>
                 <div class="ds-field-group">
                   <label :for="`sample-expiry-date-${index}`" class="ds-field-label">Validade</label>
-                  <input :id="`sample-expiry-date-${index}`" v-model="product.expiry_date" type="date" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'expiry_date'))">
+                  <DateTimePicker :id="`sample-expiry-date-${index}`" v-model="product.expiry_date" type="date" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'expiry_date'))" />
                 </div>
                 <div class="ds-field-group sm:col-span-2">
                   <label :for="`sample-location-${index}`" class="ds-field-label">Localização / ponto de colheita</label>
-                  <input :id="`sample-location-${index}`" v-model="product.location" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'location'))">
+                  <BaseInput :id="`sample-location-${index}`" v-model="product.location" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'location'))" />
                 </div>
               </div>
             </div>
@@ -431,14 +431,14 @@ function submit() {
                 </div>
                 <div class="ds-field-group">
                   <label :for="`sample-temperature-${index}`" class="ds-field-label">Temperatura observada</label>
-                  <input :id="`sample-temperature-${index}`" v-model="product.temperature_value" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'temperature_value'))">
+                  <BaseInput :id="`sample-temperature-${index}`" v-model="product.temperature_value" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'temperature_value'))" />
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label">Responsável</label>
                   <ComboboxEnhanced v-model="product.owner_id" :has-error="fieldError(index, 'owner_id')" :load-options="loadUsers" placeholder="Selecionar responsável" />
                 </div>
                 <label class="sm:col-span-2 xl:col-span-4 flex items-start gap-3 border-t border-[var(--ds-border)] pt-4 text-sm font-semibold text-[var(--ds-text-muted)]">
-                  <input v-model="product.collected_by_lab" type="checkbox" class="ds-checkbox mt-0.5">
+                  <CheckboxInput v-model="product.collected_by_lab" type="checkbox" class="ds-checkbox mt-0.5" />
                   Colhida pela equipa do laboratório
                 </label>
               </div>
@@ -458,7 +458,7 @@ function submit() {
                   { key: 'container_no', label: 'Contentor' },
                 ]" :key="field.key" class="ds-field-group">
                   <label :for="`sample-${field.key}-${index}`" class="ds-field-label">{{ field.label }}</label>
-                  <input :id="`sample-${field.key}-${index}`" v-model="product[field.key]" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, field.key))">
+                  <BaseInput :id="`sample-${field.key}-${index}`" v-model="product[field.key]" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, field.key))" />
                   <p v-if="fieldError(index, field.key)" class="ds-field-error">{{ fieldError(index, field.key) }}</p>
                 </div>
               </div>
@@ -472,15 +472,15 @@ function submit() {
               <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <div class="ds-field-group">
                   <label :for="`sample-status-${index}`" class="ds-field-label">Estado da amostra</label>
-                  <input :id="`sample-status-${index}`" v-model="product.sample_status" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'sample_status'))">
+                  <BaseInput :id="`sample-status-${index}`" v-model="product.sample_status" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'sample_status'))" />
                 </div>
                 <div class="ds-field-group">
                   <label :for="`sample-plan-${index}`" class="ds-field-label">Plano de amostragem</label>
-                  <input :id="`sample-plan-${index}`" v-model="product.sampling_plan_ref" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'sampling_plan_ref'))">
+                  <BaseInput :id="`sample-plan-${index}`" v-model="product.sampling_plan_ref" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'sampling_plan_ref'))" />
                 </div>
                 <div class="ds-field-group">
                   <label :for="`sample-customer-info-${index}`" class="ds-field-label">Informação do cliente</label>
-                  <input :id="`sample-customer-info-${index}`" v-model="product.customer_submitted_info" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'customer_submitted_info'))">
+                  <BaseInput :id="`sample-customer-info-${index}`" v-model="product.customer_submitted_info" type="text" class="ds-field" :aria-invalid="Boolean(fieldError(index, 'customer_submitted_info'))" />
                 </div>
                 <div class="ds-field-group sm:col-span-2 xl:col-span-3">
                   <label :for="`sample-notes-${index}`" class="ds-field-label">Observações</label>

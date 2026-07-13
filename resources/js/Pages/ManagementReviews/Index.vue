@@ -93,16 +93,16 @@ function applyFilter() {
           <h2 class="ds-heading text-base">Registo de revisões</h2>
           <p class="ds-copy mt-1 text-sm">{{ reviews.total ?? rows.length }} revisões no histórico de gestão.</p>
         </div>
-        <select v-model="statusFilter" class="ds-field w-full sm:w-56" @change="applyFilter">
+        <BaseSelect v-model="statusFilter" class="ds-field w-full sm:w-56" @change="applyFilter">
           <option value="">Todos os estados</option>
           <option value="planned">Planeadas</option>
           <option value="in_progress">Em curso</option>
           <option value="completed">Concluídas</option>
-        </select>
+        </BaseSelect>
       </div>
 
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-[var(--ds-border)] text-sm">
+        <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-sm">
           <thead class="bg-[var(--ds-panel-subtle)]">
             <tr>
               <th class="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--ds-text-soft)] sm:px-5">Referência</th>
@@ -134,7 +134,7 @@ function applyFilter() {
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div v-if="reviews.last_page" class="border-t border-[var(--ds-border)]">

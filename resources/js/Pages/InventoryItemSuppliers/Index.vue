@@ -163,7 +163,7 @@ function confirmAction() {
 
           <div>
             <label for="supplier-name" class="ds-field-label mb-2 block">Nome do fornecedor</label>
-            <input id="supplier-name" v-model="form.name" type="text" class="ds-field" autocomplete="organization" autofocus>
+            <BaseInput id="supplier-name" v-model="form.name" type="text" class="ds-field" autocomplete="organization" autofocus />
             <p v-if="form.errors.name" class="ds-field-error mt-2">{{ form.errors.name }}</p>
           </div>
 

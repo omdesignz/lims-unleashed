@@ -1,6 +1,6 @@
 <template>
     <div class="overflow-x-auto bg-white shadow-md rounded-lg">
-      <table class="min-w-full divide-y divide-gray-200">
+      <DataTable class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-100">
           <tr>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -25,7 +25,7 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ file.updated }}</td>
           </tr>
         </tbody>
-      </table>
+      </DataTable>
     </div>
   </template>
   

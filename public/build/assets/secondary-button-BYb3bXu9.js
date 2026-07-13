@@ -1,1 +1,0 @@
-import{c as o,e as s,O as n}from"./editor-collab-DPxdpqOV.js";const r=["type"],p={__name:"secondary-button",props:{type:{type:String,default:"button"}},setup(t){return(e,a)=>(o(),s("button",{type:t.type,class:"ds-button ds-button-secondary"},[n(e.$slots,"default")],8,r))}};export{p as _};

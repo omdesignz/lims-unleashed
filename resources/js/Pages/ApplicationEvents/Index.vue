@@ -102,7 +102,7 @@ function associateTemplate(eventId) {
       </div>
 
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-[var(--ds-border)] text-sm">
+        <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-sm">
           <thead class="bg-[var(--ds-panel-subtle)]">
             <tr>
               <th class="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--ds-text-soft)] sm:px-5">Evento</th>
@@ -123,10 +123,10 @@ function associateTemplate(eventId) {
               </td>
               <td class="min-w-80 px-4 py-4 sm:px-5">
                 <div class="flex items-center gap-2">
-                  <select v-model="selectedTemplates[event.id]" class="ds-field min-w-56">
+                  <BaseSelect v-model="selectedTemplates[event.id]" class="ds-field min-w-56">
                     <option value="">Selecionar modelo</option>
                     <option v-for="template in templates" :key="template.id" :value="template.id">{{ template.name }}</option>
-                  </select>
+                  </BaseSelect>
                   <button
                     type="button"
                     class="ds-button ds-button-primary"
@@ -147,7 +147,7 @@ function associateTemplate(eventId) {
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
     </section>
   </div>

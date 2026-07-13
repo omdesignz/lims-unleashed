@@ -25,7 +25,7 @@
         </button>
   
         <div class="flex flex-col space-y-2 md:flex-row md:space-y-0 md:items-center md:space-x-1">
-          <input type="number" @keydown.enter="loadPage(data.page)" v-model="data.page" class="px-2 w-11 h-11 text-center rounded border border-gray-400 shadow-sm lg:h-9 lg:w-9 lg:text-xs focus:ring-blue-500 focus:border-blue-500"/>
+          <BaseInput type="number" @keydown.enter="loadPage(data.page)" v-model="data.page" class="px-2 w-11 h-11 text-center rounded border border-gray-400 shadow-sm lg:h-9 lg:w-9 lg:text-xs focus:ring-blue-500 focus:border-blue-500"/>
           <div class="px-2 text-gray-600 lg:text-sm">{{ $t('gestlab.pagination.of') }} {{ pagination.last_page }}</div>
         </div>
   

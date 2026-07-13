@@ -253,13 +253,13 @@ function executeBulkAction() {
             <div class="grid gap-5 sm:grid-cols-2">
               <div class="sm:col-span-2">
                 <label for="department-name" class="ds-field-label">Nome da unidade</label>
-                <input id="department-name" v-model="form.name" type="text" class="ds-field mt-2" required />
+                <BaseInput id="department-name" v-model="form.name" type="text" class="ds-field mt-2" required />
                 <p v-if="form.errors.name" class="ds-field-error mt-2">{{ form.errors.name }}</p>
               </div>
 
               <div>
                 <label for="department-code" class="ds-field-label">Código</label>
-                <input id="department-code" v-model="form.code" type="text" class="ds-field mt-2" />
+                <BaseInput id="department-code" v-model="form.code" type="text" class="ds-field mt-2" />
                 <p v-if="form.errors.code" class="ds-field-error mt-2">{{ form.errors.code }}</p>
               </div>
 
@@ -293,19 +293,19 @@ function executeBulkAction() {
             <div class="grid gap-5 sm:grid-cols-2">
               <div class="sm:col-span-2">
                 <label for="department-email" class="ds-field-label">Email</label>
-                <input id="department-email" v-model="form.email" type="email" class="ds-field mt-2" required />
+                <BaseInput id="department-email" v-model="form.email" type="email" class="ds-field mt-2" required />
                 <p v-if="form.errors.email" class="ds-field-error mt-2">{{ form.errors.email }}</p>
               </div>
 
               <div>
                 <label for="department-contact" class="ds-field-label">Telefone</label>
-                <input id="department-contact" v-model="form.contact" type="tel" class="ds-field mt-2" />
+                <BaseInput id="department-contact" v-model="form.contact" type="tel" class="ds-field mt-2" />
                 <p v-if="form.errors.contact" class="ds-field-error mt-2">{{ form.errors.contact }}</p>
               </div>
 
               <div>
                 <label for="department-extension" class="ds-field-label">Extensão</label>
-                <input id="department-extension" v-model="form.extension" type="text" inputmode="numeric" class="ds-field mt-2" />
+                <BaseInput id="department-extension" v-model="form.extension" type="text" inputmode="numeric" class="ds-field mt-2" />
                 <p v-if="form.errors.extension" class="ds-field-error mt-2">{{ form.errors.extension }}</p>
               </div>
             </div>

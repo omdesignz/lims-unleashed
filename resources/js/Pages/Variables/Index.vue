@@ -68,12 +68,12 @@
             <div class="mt-5 grid gap-5 sm:grid-cols-2">
               <div class="ds-field-group">
                 <label for="variable-name" class="ds-field-label">Nome <span class="ds-field-required">*</span></label>
-                <input id="variable-name" v-model="form.name" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.name)" placeholder="Ex.: fator_diluicao">
+                <BaseInput id="variable-name" v-model="form.name" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.name)" placeholder="Ex.: fator_diluicao" />
                 <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
               </div>
               <div class="ds-field-group">
                 <label for="variable-value" class="ds-field-label">Valor <span class="ds-field-required">*</span></label>
-                <input id="variable-value" v-model="form.value" type="text" inputmode="decimal" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.value)" placeholder="Ex.: 100">
+                <BaseInput id="variable-value" v-model="form.value" type="text" inputmode="decimal" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.value)" placeholder="Ex.: 100" />
                 <p v-if="form.errors.value" class="ds-field-error">{{ form.errors.value }}</p>
               </div>
             </div>
@@ -82,10 +82,10 @@
           <section class="px-5 py-5 sm:px-6">
             <div class="ds-field-group">
               <label for="variable-formula" class="ds-field-label">Fórmula associada <span class="ds-field-required">*</span></label>
-              <select id="variable-formula" v-model="form.formula_id" class="ds-field" :aria-invalid="Boolean(form.errors.formula_id)">
+              <BaseSelect id="variable-formula" v-model="form.formula_id" class="ds-field" :aria-invalid="Boolean(form.errors.formula_id)">
                 <option :value="null">Selecione uma fórmula</option>
                 <option v-for="formula in formulas" :key="formula.value" :value="formula.value">{{ formula.label }}</option>
-              </select>
+              </BaseSelect>
               <p class="ds-field-help">A associação documenta o contexto de cálculo e evita constantes sem utilização conhecida.</p>
               <p v-if="form.errors.formula_id" class="ds-field-error">{{ form.errors.formula_id }}</p>
             </div>

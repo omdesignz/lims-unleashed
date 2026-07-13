@@ -120,15 +120,15 @@ function clearFilters() {
         <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_14rem_auto]">
           <div class="relative">
             <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-            <input v-model="filterForm.search" type="search" class="ds-field pl-10" placeholder="Pesquisar referência, título ou descrição" />
+            <BaseInput v-model="filterForm.search" type="search" class="ds-field pl-10" placeholder="Pesquisar referência, título ou descrição" />
           </div>
-          <select v-model="filterForm.status" class="ds-field">
+          <BaseSelect v-model="filterForm.status" class="ds-field">
             <option value="">Todos os estados</option>
             <option value="open">Aberta</option>
             <option value="in_review">Em análise</option>
             <option value="resolved">Resolvida</option>
             <option value="closed">Encerrada</option>
-          </select>
+          </BaseSelect>
           <div class="flex gap-2">
             <button type="submit" class="ds-button ds-button-primary">Aplicar</button>
             <button v-if="filterForm.search || filterForm.status" type="button" class="ds-button ds-button-secondary" @click="clearFilters">Limpar</button>
@@ -137,7 +137,7 @@ function clearFilters() {
       </form>
 
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-[var(--ds-border)] text-sm">
+        <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-sm">
           <thead class="bg-[var(--ds-panel-subtle)]">
             <tr>
               <th class="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--ds-text-soft)] sm:px-5">Referência</th>
@@ -172,7 +172,7 @@ function clearFilters() {
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div v-if="complaints.last_page" class="border-t border-[var(--ds-border)]">

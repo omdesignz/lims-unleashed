@@ -30,14 +30,14 @@ function loadCategories(query, setOptions) {
       <div class="grid gap-5 sm:grid-cols-2">
         <div class="ds-field-group sm:col-span-2">
           <label for="customer-name" class="ds-field-label">Nome do cliente <span class="ds-field-required">*</span></label>
-          <input id="customer-name" v-model="form.name" type="text" class="ds-field" autocomplete="organization" :aria-invalid="Boolean(form.errors.name)" />
+          <BaseInput id="customer-name" v-model="form.name" type="text" class="ds-field" autocomplete="organization" :aria-invalid="Boolean(form.errors.name)" />
           <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
           <p v-else class="ds-field-hint">Use a designacao reconhecida nos documentos comerciais e certificados.</p>
         </div>
 
         <div class="ds-field-group">
           <label for="customer-code" class="ds-field-label">Codigo interno</label>
-          <input id="customer-code" v-model="form.code" type="text" class="ds-field font-mono uppercase" :aria-invalid="Boolean(form.errors.code)" />
+          <BaseInput id="customer-code" v-model="form.code" type="text" class="ds-field font-mono uppercase" :aria-invalid="Boolean(form.errors.code)" />
           <p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p>
           <p v-else class="ds-field-hint">Identificador curto para pesquisa e rastreabilidade.</p>
         </div>

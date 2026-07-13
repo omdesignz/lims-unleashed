@@ -196,7 +196,7 @@
               </div>
             </div>
             <div class="overflow-hidden border border-gray-200 rounded-lg">
-              <table class="min-w-full divide-y divide-gray-200">
+              <DataTable class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                   <tr>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -321,7 +321,7 @@
                     </td>
                   </tr>
                 </tfoot>
-              </table>
+              </DataTable>
             </div>
           </div>
 
@@ -358,7 +358,7 @@
             <form v-else @submit.prevent="submitAgreement" class="space-y-6">
               <div class="space-y-4">
                 <div class="flex items-start">
-                  <input
+                  <CheckboxInput
                     type="checkbox"
                     v-model="agreement.confidentiality"
                     id="confidentiality"
@@ -373,7 +373,7 @@
                 </p>
 
                 <div class="flex items-start">
-                  <input
+                  <CheckboxInput
                     type="checkbox"
                     v-model="agreement.impartiality"
                     id="impartiality"
@@ -388,7 +388,7 @@
                 </p>
 
                 <div class="flex items-start">
-                  <input
+                  <CheckboxInput
                     type="checkbox"
                     v-model="agreement.nondisclosure"
                     id="nondisclosure"
@@ -824,7 +824,7 @@ const generateSignatureBlockHtml = (proposal) => {
   const labSigner = props.company?.lab_director || proposal.user?.name || 'Direcção técnica'
   const clientSigner = proposal.customer?.name || 'Representante do cliente'
 
-  return `<section style="margin-top:24px;"><table style="width:100%; border-collapse:collapse;"><tr><td style="width:48%; padding-top:26px; border-top:1px solid #143d37; color:#20332f;"><strong>${escapeHtml(labSigner)}</strong><br><span style="color:#58665f;">Validação técnica / comercial</span></td><td style="width:4%;"></td><td style="width:48%; padding-top:26px; border-top:1px solid #143d37; color:#20332f;"><strong>${escapeHtml(clientSigner)}</strong><br><span style="color:#58665f;">Aceitação da proposta</span></td></tr></table></section>`
+  return `<section style="margin-top:24px;"><DataTable style="width:100%; border-collapse:collapse;"><tr><td style="width:48%; padding-top:26px; border-top:1px solid #143d37; color:#20332f;"><strong>${escapeHtml(labSigner)}</strong><br><span style="color:#58665f;">Validação técnica / comercial</span></td><td style="width:4%;"></td><td style="width:48%; padding-top:26px; border-top:1px solid #143d37; color:#20332f;"><strong>${escapeHtml(clientSigner)}</strong><br><span style="color:#58665f;">Aceitação da proposta</span></td></tr></DataTable></section>`
 }
 
 const generateLabDetailsHtml = () => {
@@ -863,7 +863,7 @@ const generateItemsTableHtml = (proposal) => {
     return '<p>Nenhum item disponível</p>'
   }
   
-  let html = '<table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 9pt; border: 1px solid #ded3bf;">'
+  let html = '<DataTable style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 9pt; border: 1px solid #ded3bf;">'
   html += '<thead>'
   html += '<tr style="background: #143d37; color: #fffdf7;">'
   html += '<th style="padding: 8px; border: 1px solid #143d37; text-align: left;">Item</th>'
@@ -941,7 +941,7 @@ const generateItemsTableHtml = (proposal) => {
   })
 
   html += '</tbody>'
-  html += '</table>'
+  html += '</DataTable>'
 
   return html
 }
@@ -994,7 +994,7 @@ const generateItemsListHtml = (proposal) => {
 }
 
 const generateSummaryTableHtml = (proposal) => {
-  let html = '<table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 10pt;">'
+  let html = '<DataTable style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 10pt;">'
   
   // Subtotal
   html += '<tr>'
@@ -1070,7 +1070,7 @@ const generateSummaryTableHtml = (proposal) => {
   html += '</td>'
   html += '</tr>'
   
-  html += '</table>'
+  html += '</DataTable>'
   
   return html
 }

@@ -228,7 +228,7 @@ function executeBulkAction() {
             <div class="mt-5 grid gap-5 sm:grid-cols-2">
               <div v-if="supportsName" class="ds-field-group">
                 <label for="reference-name" class="ds-field-label">{{ nameLabel }} <span class="ds-field-required">*</span></label>
-                <input id="reference-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" />
+                <BaseInput id="reference-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" />
                 <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
               </div>
               <div v-if="supportsCode" class="ds-field-group" :class="supportsName ? '' : 'sm:col-span-2'">
@@ -236,7 +236,7 @@ function executeBulkAction() {
                   {{ codeLabel }}
                   <span v-if="codeRequired" class="ds-field-required">*</span>
                 </label>
-                <input id="reference-code" v-model="form.code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.code)" />
+                <BaseInput id="reference-code" v-model="form.code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.code)" />
                 <p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p>
               </div>
               <div v-if="supportsDepartment" class="ds-field-group sm:col-span-2">
@@ -267,7 +267,7 @@ function executeBulkAction() {
                     :aria-invalid="Boolean(form.errors[field.key])"
                     :placeholder="field.placeholder || ''"
                   />
-                  <input
+                  <BaseInput
                     v-else
                     :id="`reference-${field.key}`"
                     v-model="form[field.key]"

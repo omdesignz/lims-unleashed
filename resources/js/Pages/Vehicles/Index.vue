@@ -189,7 +189,7 @@ function confirmAction() {
             <label for="vehicle-number-plate" class="ds-field-label mb-2 block">Matrícula</label>
             <div class="relative">
               <IdentificationIcon class="pointer-events-none absolute left-3 top-3.5 h-5 w-5 text-[var(--ds-text-soft)]" aria-hidden="true" />
-              <input id="vehicle-number-plate" v-model="form.number_plate" type="text" class="ds-field pl-10 font-mono uppercase" autocomplete="off" autofocus>
+              <BaseInput id="vehicle-number-plate" v-model="form.number_plate" type="text" class="ds-field pl-10 font-mono uppercase" autocomplete="off" autofocus />
             </div>
             <p v-if="form.errors.number_plate" class="ds-field-error mt-2">{{ form.errors.number_plate }}</p>
           </div>

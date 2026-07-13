@@ -45,13 +45,13 @@ onMounted(() => {
 // --- Calculation Data Mapping & Management ---
 
 /**
- * Maps the flat form.results array into an object containing all inputs (variables) 
+ * Maps the flat form.results array into an object containing all inputs (variables)
  * and existing calculated outputs. This is the crucial data structure for the child component.
  * Keys are: {variable_name: value, parameter_code: value}
  */
 const existingCalculationResults = computed(() => {
   const data = {};
-  
+
   // 1. Collect values for all calculated parameters (their output)
   form.results.forEach(p => {
     if (p.requires_calculation && p.parameter_id?.code && p.inserted_value) {
@@ -63,25 +63,25 @@ const existingCalculationResults = computed(() => {
   calculationParameters.value.forEach(calcParam => {
     // Assuming 'formula' and 'variables' are available on the item from the API call
     const requiredVariables = calcParam.formula?.variables?.map(v => v.name) || [];
-    
+
     // For each required variable name (e.g., 'LENGTH', 'WIDTH'), check if it exists in form.results
     // NOTE: This assumes raw input variables are stored in form.results with the variable name as the key/code.
-    // Since we don't know the exact structure of the input variables, we can only pull them from form.results 
-    // IF the variable name matches a code in the array. Since the component only handles calculated parameters, 
-    // we'll primarily rely on the child component's input mapping. 
-    
-    // TEMPORARY SOLUTION: Since the input variables might not exist as a parameter in form.results, 
-    // we assume for now the variables are stored as properties on the result object OR 
+    // Since we don't know the exact structure of the input variables, we can only pull them from form.results
+    // IF the variable name matches a code in the array. Since the component only handles calculated parameters,
+    // we'll primarily rely on the child component's input mapping.
+
+    // TEMPORARY SOLUTION: Since the input variables might not exist as a parameter in form.results,
+    // we assume for now the variables are stored as properties on the result object OR
     // the variable names are also included in form.results (e.g., if 'LENGTH' is a parameter code).
     // Given the component structure, we MUST pass the input values that have already been entered into the form.
 
-    // A more robust solution requires knowing where the raw inputs are stored. 
-    // Since the child component creates the raw input fields based on `allRequiredVariables`, 
+    // A more robust solution requires knowing where the raw inputs are stored.
+    // Since the child component creates the raw input fields based on `allRequiredVariables`,
     // we assume any existing data matching those variable names is also stored in `form.results`.
 
     // For demonstration, we just return the currently saved values (parameter codes and known variables).
   });
-  
+
   // The child component will use the keys that match the required variable names for its inputs.
   return data;
 });
@@ -93,7 +93,7 @@ function calculateCFU(result) {
   const { cfu1, cfu2, d1, d2, volume = 1 } = result;
   const sumC = Number(cfu1) + Number(cfu2);
   const d = Math.min(Number(d1), Number(d2));
-  
+
   if (d === 0) return 0; // Avoid division by zero
 
   const N = sumC / (volume * 1.1 * d);
@@ -107,7 +107,7 @@ const openCalculationEntry = () => {
   calculationParameters.value = form.results?.filter(p =>
     p.requires_calculation && p.active
   ) || [];
-  
+
   if (calculationParameters.value.length > 0) {
     showCalculationEntry.value = true;
   } else {
@@ -116,7 +116,7 @@ const openCalculationEntry = () => {
 };
 
 /**
- * FIX: This function now receives the calculated results (key: code, value: result) and 
+ * FIX: This function now receives the calculated results (key: code, value: result) and
  * updates the main form.results array AND stores the raw input variables.
  */
 // const handleCalculatedResults = (calculatedData) => {
@@ -129,7 +129,7 @@ const openCalculationEntry = () => {
 //     if (calculatedData[code] !== undefined) {
 //       calculatedOutputs[code] = calculatedData[code];
 //     }
-    
+
 //     // Get the required input variables for this calculated parameter
 //     p.formula?.variables?.forEach(v => {
 //       const varName = v.name;
@@ -141,54 +141,54 @@ const openCalculationEntry = () => {
 
 //   // 1. Update form results with CALCULATED OUTPUTS (e.g., AREA)
 //   Object.keys(calculatedOutputs).forEach(parameterCode => {
-//     const resultIndex = form.results.findIndex(r => 
+//     const resultIndex = form.results.findIndex(r =>
 //       r.parameter_id?.code === parameterCode // Match by code now
 //     );
-    
+
 //     if (resultIndex !== -1) {
 //       // Update the final calculated value
 //       form.results[resultIndex].inserted_value = calculatedOutputs[parameterCode];
 //     }
 //   });
 
-//   // 2. Store RAW INPUT VARIABLES (e.g., LENGTH, WIDTH) in a new structure 
+//   // 2. Store RAW INPUT VARIABLES (e.g., LENGTH, WIDTH) in a new structure
 //   //    or find a way to save them alongside the results.
 //   //    Since the child component gives us the variable names (which are not parameter codes),
-//   //    we must ensure these raw variables are correctly mapped back to form.results 
+//   //    we must ensure these raw variables are correctly mapped back to form.results
 //   //    or are saved separately to be reloaded later.
-  
-//   // CRITICAL ASSUMPTION: The raw input variable names (e.g., 'L') are also treated as 
-//   // parameter codes in form.results for persistence. If this is not true, 
+
+//   // CRITICAL ASSUMPTION: The raw input variable names (e.g., 'L') are also treated as
+//   // parameter codes in form.results for persistence. If this is not true,
 //   // you must create a separate array/object in `form` to store and load these raw inputs.
 //   Object.keys(inputVariables).forEach(variableName => {
-//     const resultIndex = form.results.findIndex(r => 
+//     const resultIndex = form.results.findIndex(r =>
 //       r.parameter_id?.code === variableName // Attempt to match variable name as parameter code
 //     );
-    
+
 //     if (resultIndex !== -1) {
 //       form.results[resultIndex].inserted_value = inputVariables[variableName];
 //     } else {
-//       // If the variable is not a parameter code, we might need to push a new temp item to results 
+//       // If the variable is not a parameter code, we might need to push a new temp item to results
 //       // or store it in the main form object. For simplicity, we'll log it.
 //       console.warn(`Input variable ${variableName} does not match any existing parameter code and may not be saved.`);
 //       // For now, we will not save it unless it's a known parameter.
 //     }
 //   });
-  
+
 //   showCalculationEntry.value = false;
 // };
 
 const handleCalculatedResults = (payload) => {
 
   const { results: calculatedData, overrides: overridesData, metadata: calculationMetadata } = payload;
-  
+
   // 1. Iterate through the parent's form.results array
   form.results = form.results.map(result => {
     const code = result.parameter_id?.code;
-    
+
     // Check if this result is a calculated parameter
     if (result.requires_calculation && code) {
-      
+
       // Update calculated value and metadata for the final output parameter (e.g., AREA)
       if (calculatedData[code]) {
         return {
@@ -198,8 +198,8 @@ const handleCalculatedResults = (payload) => {
           manual_override: overridesData[code] || false, // Attach override status
         };
       }
-    } 
-    
+    }
+
     // Check if this result is an input variable parameter (if inputs are also stored as parameters)
     // NOTE: This logic depends on whether raw inputs (like 'LENGTH') are also in form.results.
     if (calculatedData[code]) {
@@ -209,10 +209,10 @@ const handleCalculatedResults = (payload) => {
           inserted_value: calculatedData[code],
       };
     }
-    
+
     return result; // Return item unchanged if not a calculated/input parameter
   });
-  
+
   showCalculationEntry.value = false;
 };
 
@@ -244,10 +244,10 @@ async function loadResultParameters() {
       d2: result.d2 || null,
       volume: result.volume || 1,
       // CRITICAL: Ensure parameter_id includes the code for lookups
-      parameter_id: { 
-          ...result.parameter_id, 
+      parameter_id: {
+          ...result.parameter_id,
           code: result.parameter_id?.code // Must be present
-      } 
+      }
     }));
 
   // console.log(response.data);
@@ -516,7 +516,7 @@ const removeResult = (index) => {
 
 <form :class="commercialDocumentThemeClasses" @submit.prevent>
     <div class="space-y-6">
-      
+
         <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-10">
             </div>
 
@@ -530,7 +530,7 @@ const removeResult = (index) => {
                 <!-- {{ calculationParameters.length }} parâmetro(s) que requerem cálculo automático -->
               </p>
             </div>
-            <button 
+            <button
               @click="openCalculationEntry"
               type="button"
               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
@@ -568,14 +568,14 @@ const removeResult = (index) => {
               <ClipboardDocumentCheckIcon class="h-5 w-5" />
             </div>
             {{ index + 1 }}º Resultado
-            
+
             <span v-if="result.requires_calculation"
                   class="ml-2 px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
               Calculado
             </span>
-            
+
             <button v-if="props.action !== 'analyze' && !result.requested_counter_analysis" @click="requestCounterAnalysis(result.result_id)" type="button" class="inline-flex justify-center rounded-md bg-orange-900 px-3 py-1.8 text-xs font-semibold text-white shadow-sm hover:bg-orange-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-800">Solicitar CA</button>
-              
+
             <button @click="removeResult(index)" class="hover:text-blue-900 transform transition-all duration-200 hover:scale-150 ml-auto">
               <TrashIcon class="h-5 w-5" />
             </button>
@@ -607,17 +607,17 @@ const removeResult = (index) => {
                     </span>
                   </label>
                   <div class="mt-2">
-                    <input 
+                    <BaseInput
                       :disabled="result.requires_calculation || (props.record?.type_id?.value === 2 && !result.requires_calculation)"
-                      v-model="result.inserted_value" 
-                      type="text" 
-                      :name="`item-${index}-error`" 
-                      :id="`item-${index}-error`" 
-                      class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" 
-                      :class="{ 
+                      v-model="result.inserted_value"
+                      type="text"
+                      :name="`item-${index}-error`"
+                      :id="`item-${index}-error`"
+                      class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
+                      :class="{
                         'border-red-500 text-red-900 placeholder-red-500 focus:ring-red-500 focus:border-red-500': result.inserted_value < result.min_ref_value || result.inserted_value > result.max_ref_value,
                         'bg-gray-100': result.requires_calculation
-                      }" 
+                      }"
                     />
                   </div>
                   <p v-if="form.errors[`results.${index}.inserted_value`]" class="mt-2 text-xs text-red-600" :id="`item-${index}-error`">{{ form.errors[`results.${index}.inserted_value`] }}</p>
@@ -629,17 +629,17 @@ const removeResult = (index) => {
         </li>
       </ul>
       <p v-if="form.errors.results" class="mt-2 text-xs text-red-600">{{ form.errors.results }}</p>
-    
+
     </div>
-    
+
     <!-- <div class="mt-6 flex items-center justify-end gap-x-6">
       </div> -->
 
       <div class="mt-6 flex items-center justify-end gap-x-6">
             <button v-if="!form.results?.some((item) => { return item['requested_counter_analysis'] === true}) && form.results?.length > 0"
-                    @click="submitResults" 
-                    type="button" 
-                    :disabled="form.processing" 
+                    @click="submitResults"
+                    type="button"
+                    :disabled="form.processing"
                     class="nline-flex justify-center rounded-md bg-blue-900 px-3 py-2 text-sm font-semibold shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                     :class="{
                     'bg-blue-900 text-white hover:bg-blue-800 focus-visible:outline-blue-900': props.action === 'analyze',

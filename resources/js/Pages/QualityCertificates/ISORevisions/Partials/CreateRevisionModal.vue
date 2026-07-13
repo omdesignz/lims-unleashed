@@ -120,41 +120,41 @@ function createRevision() {
             <label class="ds-field-label" for="modal-change-type">
               Tipo de alteracao <span class="ds-field-required">*</span>
             </label>
-            <select id="modal-change-type" v-model="form.change_type" class="ds-field">
+            <BaseSelect id="modal-change-type" v-model="form.change_type" class="ds-field">
               <option value="UPDATED">Atualizacao</option>
               <option value="CORRECTED">Correcao</option>
               <option value="REISSUED">Reemissao</option>
               <option value="WITHDRAWN">Retirada</option>
-            </select>
+            </BaseSelect>
           </div>
 
           <div class="ds-field-group">
             <label class="ds-field-label" for="modal-risk">
               Avaliacao de risco <span class="ds-field-required">*</span>
             </label>
-            <select id="modal-risk" v-model="form.risk_assessment" class="ds-field">
+            <BaseSelect id="modal-risk" v-model="form.risk_assessment" class="ds-field">
               <option value="LOW">Baixo</option>
               <option value="MEDIUM">Medio</option>
               <option value="HIGH">Alto</option>
               <option value="CRITICAL">Critico</option>
-            </select>
+            </BaseSelect>
           </div>
 
           <div class="ds-field-group">
             <label class="ds-field-label" for="modal-iso-section">
               Secao ISO <span class="ds-field-required">*</span>
             </label>
-            <input id="modal-iso-section" v-model="form.iso_section" class="ds-field" />
+            <BaseInput id="modal-iso-section" v-model="form.iso_section" class="ds-field" />
           </div>
 
           <div class="ds-field-group">
             <label class="ds-field-label" for="modal-approver">Aprovador</label>
-            <select id="modal-approver" v-model="form.approved_by_id" class="ds-field">
+            <BaseSelect id="modal-approver" v-model="form.approved_by_id" class="ds-field">
               <option value="">Sem aprovador designado</option>
               <option v-for="approver in approvers" :key="approver.id" :value="approver.id">
                 {{ approver.name }}
               </option>
-            </select>
+            </BaseSelect>
           </div>
         </div>
 

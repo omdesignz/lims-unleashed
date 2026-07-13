@@ -64,7 +64,7 @@
               <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <div class="ds-field-group md:col-span-2">
                   <label class="ds-field-label" for="inventory-item-name">Nome do item <span class="ds-field-required">*</span></label>
-                  <input id="inventory-item-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(errorFor('name'))" placeholder="Nome descritivo do item" />
+                  <BaseInput id="inventory-item-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(errorFor('name'))" placeholder="Nome descritivo do item" />
                   <p v-if="errorFor('name')" class="ds-field-error">{{ errorFor('name') }}</p>
                 </div>
 
@@ -122,32 +122,32 @@
               <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="inventory-internal-code">Código interno</label>
-                  <input id="inventory-internal-code" v-model="form.internal_code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(errorFor('internal_code'))" placeholder="INT-001" />
+                  <BaseInput id="inventory-internal-code" v-model="form.internal_code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(errorFor('internal_code'))" placeholder="INT-001" />
                   <p v-if="errorFor('internal_code')" class="ds-field-error">{{ errorFor('internal_code') }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="inventory-barcode">Código de barras</label>
-                  <input id="inventory-barcode" v-model="form.barcode" type="text" class="ds-field font-mono" :aria-invalid="Boolean(errorFor('barcode'))" placeholder="123456789012" />
+                  <BaseInput id="inventory-barcode" v-model="form.barcode" type="text" class="ds-field font-mono" :aria-invalid="Boolean(errorFor('barcode'))" placeholder="123456789012" />
                   <p v-if="errorFor('barcode')" class="ds-field-error">{{ errorFor('barcode') }}</p>
                 </div>
                 <div v-if="isEquipment" class="ds-field-group">
                   <label class="ds-field-label" for="inventory-serial">Número de série</label>
-                  <input id="inventory-serial" v-model="form.serial_number" type="text" class="ds-field font-mono" :aria-invalid="Boolean(errorFor('serial_number'))" placeholder="SN-001-2026" />
+                  <BaseInput id="inventory-serial" v-model="form.serial_number" type="text" class="ds-field font-mono" :aria-invalid="Boolean(errorFor('serial_number'))" placeholder="SN-001-2026" />
                   <p v-if="errorFor('serial_number')" class="ds-field-error">{{ errorFor('serial_number') }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="inventory-brand">Marca</label>
-                  <input id="inventory-brand" v-model="form.brand" type="text" class="ds-field" :aria-invalid="Boolean(errorFor('brand'))" placeholder="Fabricante ou marca" />
+                  <BaseInput id="inventory-brand" v-model="form.brand" type="text" class="ds-field" :aria-invalid="Boolean(errorFor('brand'))" placeholder="Fabricante ou marca" />
                   <p v-if="errorFor('brand')" class="ds-field-error">{{ errorFor('brand') }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="inventory-model">Modelo</label>
-                  <input id="inventory-model" v-model="form.model" type="text" class="ds-field" :aria-invalid="Boolean(errorFor('model'))" placeholder="Modelo ou referência" />
+                  <BaseInput id="inventory-model" v-model="form.model" type="text" class="ds-field" :aria-invalid="Boolean(errorFor('model'))" placeholder="Modelo ou referência" />
                   <p v-if="errorFor('model')" class="ds-field-error">{{ errorFor('model') }}</p>
                 </div>
                 <div v-if="isReagent" class="ds-field-group">
                   <label class="ds-field-label" for="inventory-lot">Lote</label>
-                  <input id="inventory-lot" v-model="form.lot" type="text" class="ds-field font-mono" :aria-invalid="Boolean(errorFor('lot'))" placeholder="LOT-2026-001" />
+                  <BaseInput id="inventory-lot" v-model="form.lot" type="text" class="ds-field font-mono" :aria-invalid="Boolean(errorFor('lot'))" placeholder="LOT-2026-001" />
                   <p v-if="errorFor('lot')" class="ds-field-error">{{ errorFor('lot') }}</p>
                 </div>
               </div>
@@ -165,18 +165,18 @@
               <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <div v-for="field in technicalFields" :key="field.key" class="ds-field-group">
                   <label class="ds-field-label" :for="'inventory-technical-' + field.key">{{ field.label }}</label>
-                  <input :id="'inventory-technical-' + field.key" v-model="form[field.key]" type="text" class="ds-field" :aria-invalid="Boolean(errorFor(field.key))" :placeholder="field.placeholder" />
+                  <BaseInput :id="'inventory-technical-' + field.key" v-model="form[field.key]" type="text" class="ds-field" :aria-invalid="Boolean(errorFor(field.key))" :placeholder="field.placeholder" />
                   <p v-if="errorFor(field.key)" class="ds-field-error">{{ errorFor(field.key) }}</p>
                 </div>
 
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="inventory-uncertainty-value">Incerteza metrológica</label>
-                  <input id="inventory-uncertainty-value" v-model="form.metrological_uncertainty_value" type="number" step="any" class="ds-field" :aria-invalid="Boolean(errorFor('metrological_uncertainty_value'))" placeholder="0.00" />
+                  <BaseInput id="inventory-uncertainty-value" v-model="form.metrological_uncertainty_value" type="number" step="any" class="ds-field" :aria-invalid="Boolean(errorFor('metrological_uncertainty_value'))" placeholder="0.00" />
                   <p v-if="errorFor('metrological_uncertainty_value')" class="ds-field-error">{{ errorFor('metrological_uncertainty_value') }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="inventory-uncertainty-unit">Unidade da incerteza</label>
-                  <input id="inventory-uncertainty-unit" v-model="form.metrological_uncertainty_unit" type="text" class="ds-field" :aria-invalid="Boolean(errorFor('metrological_uncertainty_unit'))" placeholder="%, °C, mg" />
+                  <BaseInput id="inventory-uncertainty-unit" v-model="form.metrological_uncertainty_unit" type="text" class="ds-field" :aria-invalid="Boolean(errorFor('metrological_uncertainty_unit'))" placeholder="%, °C, mg" />
                   <p v-if="errorFor('metrological_uncertainty_unit')" class="ds-field-error">{{ errorFor('metrological_uncertainty_unit') }}</p>
                 </div>
                 <div class="ds-field-group md:col-span-2 xl:col-span-3">
@@ -209,28 +209,28 @@
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="inventory-standard-cost">Custo padrão</label>
-                  <input id="inventory-standard-cost" v-model="form.standard_cost" type="number" min="0" step="0.01" class="ds-field" :aria-invalid="Boolean(errorFor('standard_cost'))" />
+                  <BaseInput id="inventory-standard-cost" v-model="form.standard_cost" type="number" min="0" step="0.01" class="ds-field" :aria-invalid="Boolean(errorFor('standard_cost'))" />
                   <p v-if="errorFor('standard_cost')" class="ds-field-error">{{ errorFor('standard_cost') }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="inventory-last-price">Último preço de compra</label>
-                  <input id="inventory-last-price" v-model="form.last_purchase_price" type="number" min="0" step="0.01" class="ds-field" :aria-invalid="Boolean(errorFor('last_purchase_price'))" />
+                  <BaseInput id="inventory-last-price" v-model="form.last_purchase_price" type="number" min="0" step="0.01" class="ds-field" :aria-invalid="Boolean(errorFor('last_purchase_price'))" />
                   <p v-if="errorFor('last_purchase_price')" class="ds-field-error">{{ errorFor('last_purchase_price') }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="inventory-reorder-qty">Quantidade de reposição</label>
-                  <input id="inventory-reorder-qty" v-model="form.reorder_qty" type="number" min="0" step="0.01" class="ds-field" :aria-invalid="Boolean(errorFor('reorder_qty'))" />
+                  <BaseInput id="inventory-reorder-qty" v-model="form.reorder_qty" type="number" min="0" step="0.01" class="ds-field" :aria-invalid="Boolean(errorFor('reorder_qty'))" />
                   <p v-if="errorFor('reorder_qty')" class="ds-field-error">{{ errorFor('reorder_qty') }}</p>
                 </div>
                 <label class="flex items-start gap-3 border-l-4 border-primary-500 bg-[color:var(--ds-panel-subtle)] p-4">
-                  <input v-model="form.has_safety_documentation" type="checkbox" class="ds-checkbox mt-0.5" />
+                  <CheckboxInput v-model="form.has_safety_documentation" type="checkbox" class="ds-checkbox mt-0.5" />
                   <span>
                     <span class="block text-sm font-bold text-[color:var(--ds-text)]">Documentação de segurança</span>
                     <span class="mt-1 block text-xs leading-5 text-[color:var(--ds-text-soft)]">Ficha ou evidência técnica disponível.</span>
                   </span>
                 </label>
                 <label class="flex items-start gap-3 border-l-4 border-blue-500 bg-[color:var(--ds-panel-subtle)] p-4">
-                  <input v-model="form.refrigerated" type="checkbox" class="ds-checkbox mt-0.5" />
+                  <CheckboxInput v-model="form.refrigerated" type="checkbox" class="ds-checkbox mt-0.5" />
                   <span>
                     <span class="block text-sm font-bold text-[color:var(--ds-text)]">Conservação refrigerada</span>
                     <span class="mt-1 block text-xs leading-5 text-[color:var(--ds-text-soft)]">Exigir localização com controlo térmico.</span>
@@ -299,10 +299,10 @@
                   <div v-for="dimension in packagingDimensions" :key="dimension.key" class="ds-field-group">
                     <label class="ds-field-label" :for="'inventory-' + dimension.key">{{ dimension.label }}</label>
                     <div class="grid grid-cols-[minmax(0,1fr)_5.5rem] gap-2">
-                      <input :id="'inventory-' + dimension.key" v-model="form[dimension.key]" type="number" min="0" step="0.01" class="ds-field" />
-                      <select v-model="form[dimension.unitKey]" class="ds-field">
+                      <BaseInput :id="'inventory-' + dimension.key" v-model="form[dimension.key]" type="number" min="0" step="0.01" class="ds-field" />
+                      <BaseSelect v-model="form[dimension.unitKey]" class="ds-field">
                         <option v-for="unit in dimension.units" :key="unit" :value="unit">{{ unit }}</option>
-                      </select>
+                      </BaseSelect>
                     </div>
                     <p v-if="errorFor(dimension.key)" class="ds-field-error">{{ errorFor(dimension.key) }}</p>
                   </div>
@@ -354,16 +354,16 @@
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" :for="'warehouse-qty-' + index">Quantidade disponível</label>
-                  <input :id="'warehouse-qty-' + index" v-model="warehouse.qty_available" type="number" min="0" step="0.01" class="ds-field" :aria-invalid="Boolean(warehouseErrors[index]?.qty_available)" />
+                  <BaseInput :id="'warehouse-qty-' + index" v-model="warehouse.qty_available" type="number" min="0" step="0.01" class="ds-field" :aria-invalid="Boolean(warehouseErrors[index]?.qty_available)" />
                   <p v-if="warehouseErrors[index]?.qty_available" class="ds-field-error">{{ warehouseErrors[index].qty_available }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" :for="'warehouse-min-' + index">Stock mínimo</label>
-                  <input :id="'warehouse-min-' + index" v-model="warehouse.min_stock_level" type="number" min="0" step="0.01" class="ds-field" />
+                  <BaseInput :id="'warehouse-min-' + index" v-model="warehouse.min_stock_level" type="number" min="0" step="0.01" class="ds-field" />
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" :for="'warehouse-reorder-' + index">Ponto de reposição</label>
-                  <input :id="'warehouse-reorder-' + index" v-model="warehouse.reorder_point" type="number" min="0" step="0.01" class="ds-field" />
+                  <BaseInput :id="'warehouse-reorder-' + index" v-model="warehouse.reorder_point" type="number" min="0" step="0.01" class="ds-field" />
                 </div>
               </div>
 
@@ -414,7 +414,7 @@
               <DocumentPlusIcon class="h-8 w-8 text-primary-700 dark:text-primary-300" />
               <span class="mt-3 text-sm font-bold text-[color:var(--ds-text)]">Selecione ou arraste ficheiros</span>
               <span class="mt-1 text-xs text-[color:var(--ds-text-soft)]">PDF, imagens e documentos técnicos.</span>
-              <input type="file" multiple class="sr-only" @change="onSelectedFiles" />
+              <FileInput type="file" multiple class="sr-only" @change="onSelectedFiles" />
             </label>
 
             <div v-if="documentItems.length" class="mt-4 divide-y divide-[color:var(--ds-border)] border-y border-[color:var(--ds-border)]">

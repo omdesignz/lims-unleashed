@@ -474,7 +474,7 @@ const replacePlaceholders = (template, values) => {
 
 // Function to generate the table HTML
 const generateTableHtml = (data) => {
-    let tableHtml = `<table border="1" style="border-collapse: collapse; width: 100%;">`;
+    let tableHtml = `<DataTable border="1" style="border-collapse: collapse; width: 100%;">`;
     tableHtml += `
         <thead>
             <tr>
@@ -502,7 +502,7 @@ const generateTableHtml = (data) => {
         `;
     });
 
-    tableHtml += `</tbody></table>`;
+    tableHtml += `</tbody></DataTable>`;
     return tableHtml;
 };
 
@@ -571,7 +571,7 @@ const renderedContent = computed(() => {
           <div class="sm:col-span-2">
             <label for="service_location" class="block text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.proposals.service_location') }}</label>
             <div class="mt-2">
-              <input v-model="form.service_location" type="text" name="`service_location" id="`service_location" class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange-800 sm:text-sm sm:leading-6" placeholder="" />
+              <BaseInput v-model="form.service_location" type="text" name="`service_location" id="`service_location" class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange-800 sm:text-sm sm:leading-6" placeholder="" />
             </div>
             <p v-if="form.errors.service_location" class="mt-2 text-xs text-red-600" id="service_location-error">{{ form.errors.service_location }}</p>
           </div>
@@ -580,7 +580,7 @@ const renderedContent = computed(() => {
           <div class="sm:col-span-2">
             <label for="tolerance_days" class="block text-sm font-medium leading-6 text-gray-900">{{ $t('gestlab.general.labels.proposals.tolerance_days') }}</label>
             <div class="mt-2">
-              <input v-model="form.tolerance_days" type="number" name="tolerance_days" id="tolerance_days" class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange-800 sm:text-sm sm:leading-6" placeholder="" />
+              <BaseInput v-model="form.tolerance_days" type="number" name="tolerance_days" id="tolerance_days" class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange-800 sm:text-sm sm:leading-6" placeholder="" />
             </div>
             <p v-if="form.errors.tolerance_days" class="mt-2 text-xs text-red-600" id="tolerance_days-error">{{ form.errors.tolerance_days }}</p>
           </div>
@@ -637,7 +637,7 @@ const renderedContent = computed(() => {
       <div class="">
         
         <div class="-mx-4 mt-8 flow-root sm:mx-0">
-          <table class="min-w-full">
+          <DataTable class="min-w-full">
             <colgroup>
               <col class="w-96" />
               <col class="sm:w-1/6" />
@@ -673,7 +673,7 @@ const renderedContent = computed(() => {
                 </td>
                 <td class="hidden px-3 py-5 text-right text-sm text-gray-500 sm:table-cell align-top">
                   <div class="relative rounded-md shadow-sm">
-                    <input v-model="item.item.qty" type="number" step="1" :name="`qty-${index+1}`" :id="`qty-${index+1}`" class="w-full rounded-md border-0 bg-white py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange-800 sm:text-sm sm:leading-6 text-center" placeholder="0.00" />
+                    <BaseInput v-model="item.item.qty" type="number" step="1" :name="`qty-${index+1}`" :id="`qty-${index+1}`" class="w-full rounded-md border-0 bg-white py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange-800 sm:text-sm sm:leading-6 text-center" placeholder="0.00" />
                     <div class="mt-2 text-gray-500 z-50">
                       <combobox v-model="item.item.unit_id" :load-options="loadUnits"/>
                     </div>
@@ -681,7 +681,7 @@ const renderedContent = computed(() => {
                 </td>
                 <td class="hidden px-3 py-5 text-right text-sm text-gray-500 sm:table-cell align-top">
                   <div class="relative rounded-md shadow-sm">
-                    <input v-model="item.unit_price" type="number" step=".01" :name="`unit_price-${index+1}`" :id="`unit_price-${index+1}`" class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange-800 sm:text-sm sm:leading-6 text-right" placeholder="0.00" />
+                    <BaseInput v-model="item.unit_price" type="number" step=".01" :name="`unit_price-${index+1}`" :id="`unit_price-${index+1}`" class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange-800 sm:text-sm sm:leading-6 text-right" placeholder="0.00" />
                   </div>
                 </td>
                 <td class="py-5 pl-3 pr-4 text-right text-sm text-gray-500 sm:pr-0 align-top">
@@ -692,11 +692,11 @@ const renderedContent = computed(() => {
                 </td>
                 <td class="py-5 pl-3 pr-4 text-right text-sm text-gray-500 sm:pr-0 align-top">
                   <div class="relative rounded-md shadow-sm">
-                    <input v-model="item.item.discount_amount" type="number" :name="`discount_amount-${index+1}`" :id="`discount_amount-${index+1}`" class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange-800 sm:text-sm sm:leading-6" placeholder="0.00" />
+                    <BaseInput v-model="item.item.discount_amount" type="number" :name="`discount_amount-${index+1}`" :id="`discount_amount-${index+1}`" class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange-800 sm:text-sm sm:leading-6" placeholder="0.00" />
                     <div class="absolute inset-y-0 right-0 flex items-center">
-                      <select v-model="item.item.discount_id" :id="`discount_id-${index+1}`" :name="`discount_id-${index+1}`" class="focus:ring-ft-orange focus:border-ft-orange h-full py-0 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md">
+                      <BaseSelect v-model="item.item.discount_id" :id="`discount_id-${index+1}`" :name="`discount_id-${index+1}`" class="focus:ring-ft-orange focus:border-ft-orange h-full py-0 border-transparent bg-transparent text-gray-500 sm:text-sm rounded-md">
                         <option v-for="(type, index) in props.discount_categories" :key="index" :value="type.value" :selected="item.item.discount_id">{{ type.label }}</option>
-                      </select>
+                      </BaseSelect>
                     </div>
                   </div>
                 </td>
@@ -734,7 +734,7 @@ const renderedContent = computed(() => {
                 <td class="pl-3 pr-4 pt-4 text-right text-sm font-semibold text-gray-900 sm:pr-0">{{ proposalTotal }}</td>
               </tr>
             </tfoot>
-          </table>
+          </DataTable>
         </div>
       </div>
 

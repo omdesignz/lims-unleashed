@@ -2,7 +2,7 @@
     <div>
       <h2>Upload Folder</h2>
       <form @submit.prevent="uploadFolder">
-        <input type="file" webkitdirectory multiple @change="handleFiles" />
+        <FileInput type="file" webkitdirectory multiple @change="handleFiles" />
         <button type="submit">Upload Folder</button>
       </form>
 

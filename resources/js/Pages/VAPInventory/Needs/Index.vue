@@ -175,7 +175,7 @@
       </div>
 
       <div v-if="needs.data.length" class="ds-table-shell overflow-x-auto">
-        <table class="min-w-[58rem]">
+        <DataTable class="min-w-[58rem]">
           <thead class="ds-table-head">
             <tr>
               <th class="ds-table-cell text-left">Necessidade</th>
@@ -213,7 +213,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
       <div v-else class="p-5">
         <div class="ds-empty-state p-6 text-center">

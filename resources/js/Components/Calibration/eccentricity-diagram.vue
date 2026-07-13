@@ -4,38 +4,38 @@
 
     <!-- Platform Selection -->
     <label>
-      <input type="radio" value="circle" v-model="platformShape" /> Circle
+      <RadioInput type="radio" value="circle" v-model="platformShape" /> Circle
     </label>
     <label>
-      <input type="radio" value="square" v-model="platformShape" /> Square
+      <RadioInput type="radio" value="square" v-model="platformShape" /> Square
     </label>
     <label>
-      <input type="radio" value="rectangle" v-model="platformShape" /> Rectangle
+      <RadioInput type="radio" value="rectangle" v-model="platformShape" /> Rectangle
     </label>
 
     <!-- Input Table -->
-    <table>
+    <DataTable>
       <tr>
         <td>Top Left</td>
-        <td><input v-model.number="readings.topLeft" @input="updateReading('topLeft', readings.topLeft)" /></td>
+        <td><BaseInput v-model.number="readings.topLeft" @input="updateReading('topLeft', readings.topLeft)" /></td>
       </tr>
       <tr>
         <td>Top Right</td>
-        <td><input v-model.number="readings.topRight" @input="updateReading('topRight', readings.topRight)" /></td>
+        <td><BaseInput v-model.number="readings.topRight" @input="updateReading('topRight', readings.topRight)" /></td>
       </tr>
       <tr>
         <td>Center</td>
-        <td><input v-model.number="readings.center" @input="updateReading('center', readings.center)" /></td>
+        <td><BaseInput v-model.number="readings.center" @input="updateReading('center', readings.center)" /></td>
       </tr>
       <tr>
         <td>Bottom Left</td>
-        <td><input v-model.number="readings.bottomLeft" @input="updateReading('bottomLeft', readings.bottomLeft)" /></td>
+        <td><BaseInput v-model.number="readings.bottomLeft" @input="updateReading('bottomLeft', readings.bottomLeft)" /></td>
       </tr>
       <tr>
         <td>Bottom Right</td>
-        <td><input v-model.number="readings.bottomRight" @input="updateReading('bottomRight', readings.bottomRight)" /></td>
+        <td><BaseInput v-model.number="readings.bottomRight" @input="updateReading('bottomRight', readings.bottomRight)" /></td>
       </tr>
-    </table>
+    </DataTable>
 
     <p>Average Reading: {{ averageReading }}</p>
     <p>Eccentricity: {{ eccentricity }}</p>

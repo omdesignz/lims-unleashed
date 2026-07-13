@@ -8,21 +8,21 @@
 <div class="sm:col-span-2 sm:col-start-1">
   <label for="dilutionFactor" class="block text-sm font-medium leading-6 text-gray-900">Factor de Diluição</label>
   <div class="mt-2">
-    <input v-model.number="dilutionFactor" type="number" name="dilutionFactor" id="dilutionFactor" autocomplete="dilutionFactor" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" @input="updateDilutionFactor" />
+    <BaseInput v-model.number="dilutionFactor" type="number" name="dilutionFactor" id="dilutionFactor" autocomplete="dilutionFactor" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" @input="updateDilutionFactor" />
   </div>
 </div>
 
 <div class="sm:col-span-3">
   <label for="colonyCount" class="block text-sm font-medium leading-6 text-gray-900">Nº de Colónias</label>
   <div class="mt-2">
-    <input v-model="colonyCount" type="text" name="colonyCount" id="colonyCount" autocomplete="colonyCount" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" @input="updateColonyCount" />
+    <BaseInput v-model="colonyCount" type="text" name="colonyCount" id="colonyCount" autocomplete="colonyCount" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" @input="updateColonyCount" />
   </div>
 </div>
 
 <div class="sm:col-span-3">
   <label for="volume" class="block text-sm font-medium leading-6 text-gray-900">Volume (mL or g)</label>
   <div class="mt-2">
-    <input v-model="volume" type="text" name="volume" id="volume" autocomplete="volume" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" @input="updateVolume" />
+    <BaseInput v-model="volume" type="text" name="volume" id="volume" autocomplete="volume" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" @input="updateVolume" />
   </div>
 </div>
 

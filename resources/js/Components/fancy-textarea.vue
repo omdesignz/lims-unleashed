@@ -627,21 +627,21 @@
                               <div>
                                 <label for="title" class="block text-sm/6 font-medium text-slate-900 dark:text-slate-100">Título</label>
                                 <div class="mt-2">
-                                  <input v-model="title" type="text" name="title" id="title" class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 dark:bg-slate-900 dark:text-slate-100 dark:outline-slate-700 sm:text-sm/6" placeholder="Ex.: Fotografia da amostra" />
+                                  <BaseInput v-model="title" type="text" name="title" id="title" class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 dark:bg-slate-900 dark:text-slate-100 dark:outline-slate-700 sm:text-sm/6" placeholder="Ex.: Fotografia da amostra" />
                                 </div>
                               </div>
                               
                               <div>
                                 <label for="src" class="block text-sm/6 font-medium text-slate-900 dark:text-slate-100">Origem</label>
                                 <div class="mt-2">
-                                  <input v-model="src" type="text" name="src" id="src" class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 dark:bg-slate-900 dark:text-slate-100 dark:outline-slate-700 sm:text-sm/6" placeholder="https://... ou /storage/..." />
+                                  <BaseInput v-model="src" type="text" name="src" id="src" class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 dark:bg-slate-900 dark:text-slate-100 dark:outline-slate-700 sm:text-sm/6" placeholder="https://... ou /storage/..." />
                                 </div>
                               </div>
 
                               <div>
                                 <label for="alt" class="block text-sm/6 font-medium text-slate-900 dark:text-slate-100">Texto alternativo</label>
                                 <div class="mt-2">
-                                  <input v-model="alt" type="text" name="alt" id="alt" class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 dark:bg-slate-900 dark:text-slate-100 dark:outline-slate-700 sm:text-sm/6" placeholder="Descrição acessível da imagem" />
+                                  <BaseInput v-model="alt" type="text" name="alt" id="alt" class="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 dark:bg-slate-900 dark:text-slate-100 dark:outline-slate-700 sm:text-sm/6" placeholder="Descrição acessível da imagem" />
                                 </div>
                               </div>
 

@@ -132,7 +132,7 @@
               </button>
             </div>
 
-            <input
+            <FileInput
               ref="importFileInput"
               type="file"
               accept=".xlsx,.xls,.csv,.txt"
@@ -211,7 +211,7 @@
           <div class="flex flex-col gap-2 sm:flex-row">
             <div class="min-w-0 sm:w-72">
               <label class="sr-only" for="sample-search">Pesquisar amostras</label>
-              <input
+              <BaseInput
                 id="sample-search"
                 v-model="searchQuery"
                 type="search"
@@ -221,14 +221,14 @@
             </div>
             <div class="sm:w-48">
               <label class="sr-only" for="sample-status">Filtrar por estado</label>
-              <select id="sample-status" v-model="statusFilter" class="ds-field">
+              <BaseSelect id="sample-status" v-model="statusFilter" class="ds-field">
                 <option value="">Todos os estados</option>
                 <option value="POR_INICIAR">Por iniciar</option>
                 <option value="EN_PROGRESO">Em progresso</option>
                 <option value="COMPLETADO">Completado</option>
                 <option value="CANCELADO">Cancelado</option>
                 <option value="EN_PAUSA">Em pausa</option>
-              </select>
+              </BaseSelect>
             </div>
             <button type="button" class="ds-button ds-button-secondary" @click="exportData">
               <ArrowDownTrayIcon class="h-4 w-4" />
@@ -248,7 +248,7 @@
         </div>
 
         <div v-else class="overflow-x-auto">
-          <table class="min-w-full align-middle">
+          <DataTable class="min-w-full align-middle">
             <thead class="ds-table-head">
               <tr>
                 <th class="ds-table-heading px-5 py-3 text-left">Amostra</th>
@@ -309,7 +309,7 @@
                 </td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
 
         <div v-if="samples.length > 0" class="flex flex-col gap-3 border-t border-[color:var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -372,17 +372,17 @@
               <div class="ds-card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="sample-name">Nome da amostra <span class="ds-field-required">*</span></label>
-                  <input id="sample-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" placeholder="Nome descritivo da amostra" />
+                  <BaseInput id="sample-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" placeholder="Nome descritivo da amostra" />
                   <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="sample-code">Código</label>
-                  <input id="sample-code" v-model="form.code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.code)" placeholder="Gerado automaticamente" />
+                  <BaseInput id="sample-code" v-model="form.code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.code)" placeholder="Gerado automaticamente" />
                   <p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="sample-type">Tipo <span class="ds-field-required">*</span></label>
-                  <select id="sample-type" v-model="form.sample_type" class="ds-field" :aria-invalid="Boolean(form.errors.sample_type)">
+                  <BaseSelect id="sample-type" v-model="form.sample_type" class="ds-field" :aria-invalid="Boolean(form.errors.sample_type)">
                     <option value="">Selecione o tipo</option>
                     <option value="ROTINA">Rotina</option>
                     <option value="MATERIA_PRIMA">Matéria-prima</option>
@@ -391,30 +391,30 @@
                     <option value="CONTRAPROVA">Contraprova</option>
                     <option value="INTERLABORATORIAL">Interlaboratorial</option>
                     <option value="RETENCAO">Retenção</option>
-                  </select>
+                  </BaseSelect>
                   <p v-if="form.errors.sample_type" class="ds-field-error">{{ form.errors.sample_type }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="request-origin">Origem do trabalho</label>
-                  <select id="request-origin" v-model="form.client_submitted_info.request_origin" class="ds-field">
+                  <BaseSelect id="request-origin" v-model="form.client_submitted_info.request_origin" class="ds-field">
                     <option value="client">Cliente</option>
                     <option value="internal">Interno</option>
-                  </select>
+                  </BaseSelect>
                   <p class="ds-field-hint">Trabalhos internos podem seguir sem proposta aceite.</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="collection-type">Fluxo de colheita</label>
-                  <select id="collection-type" v-model="form.client_submitted_info.collection_type" class="ds-field">
+                  <BaseSelect id="collection-type" v-model="form.client_submitted_info.collection_type" class="ds-field">
                     <option value="direct">Direta / receção imediata</option>
                     <option value="programmed">Programada / recolha planeada</option>
-                  </select>
+                  </BaseSelect>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="sample-customer">Cliente <span class="ds-field-required">*</span></label>
-                  <select id="sample-customer" v-model="form.customer_id" class="ds-field" :aria-invalid="Boolean(form.errors.customer_id)">
+                  <BaseSelect id="sample-customer" v-model="form.customer_id" class="ds-field" :aria-invalid="Boolean(form.errors.customer_id)">
                     <option value="">Selecione o cliente</option>
                     <option v-for="customer in customers" :key="customer.id" :value="customer.id">{{ customer.name }} ({{ customer.code }})</option>
-                  </select>
+                  </BaseSelect>
                   <p v-if="form.errors.customer_id" class="ds-field-error">{{ form.errors.customer_id }}</p>
                 </div>
 
@@ -425,11 +425,11 @@
                     <div class="mt-4 grid gap-4 md:grid-cols-2">
                       <div class="ds-field-group">
                         <label class="ds-field-label" for="collection-location">Local de colheita</label>
-                        <input id="collection-location" v-model="form.client_submitted_info.collection_location" type="text" class="ds-field" placeholder="Armazém, linha, sala fria..." />
+                        <BaseInput id="collection-location" v-model="form.client_submitted_info.collection_location" type="text" class="ds-field" placeholder="Armazém, linha, sala fria..." />
                       </div>
                       <div class="ds-field-group">
                         <label class="ds-field-label" for="vehicle-reference">Viatura ou equipa</label>
-                        <input id="vehicle-reference" v-model="form.client_submitted_info.vehicle_reference" type="text" class="ds-field" placeholder="Equipa externa, viatura 02..." />
+                        <BaseInput id="vehicle-reference" v-model="form.client_submitted_info.vehicle_reference" type="text" class="ds-field" placeholder="Equipa externa, viatura 02..." />
                       </div>
                     </div>
                   </div>
@@ -447,35 +447,35 @@
                     <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                       <div class="ds-field-group">
                         <label class="ds-field-label" for="qc-discipline">Disciplina</label>
-                        <select id="qc-discipline" v-model="form.client_submitted_info.analysis_discipline" class="ds-field">
+                        <BaseSelect id="qc-discipline" v-model="form.client_submitted_info.analysis_discipline" class="ds-field">
                           <option value="microbiology">Microbiologia</option>
                           <option value="chemistry">Química / físico-química</option>
                           <option value="microbiology_and_chemistry">Microbiologia + química</option>
-                        </select>
+                        </BaseSelect>
                       </div>
                       <div class="ds-field-group">
                         <label class="ds-field-label" for="qc-purpose">Objetivo</label>
-                        <select id="qc-purpose" v-model="form.client_submitted_info.quality_control_purpose" class="ds-field">
+                        <BaseSelect id="qc-purpose" v-model="form.client_submitted_info.quality_control_purpose" class="ds-field">
                           <option value="raw_material_release">Liberação de matéria-prima</option>
                           <option value="supplier_qualification">Qualificação de fornecedor</option>
                           <option value="process_validation">Validação de processo</option>
                           <option value="stability_follow_up">Acompanhamento de estabilidade</option>
                           <option value="investigation">Investigação interna</option>
                           <option value="other">Outro</option>
-                        </select>
+                        </BaseSelect>
                       </div>
                       <div class="ds-field-group">
                         <label class="ds-field-label" for="qc-decision">Decisão esperada</label>
-                        <select id="qc-decision" v-model="form.client_submitted_info.qc_decision" class="ds-field">
+                        <BaseSelect id="qc-decision" v-model="form.client_submitted_info.qc_decision" class="ds-field">
                           <option value="hold_until_release">Reter até liberação</option>
                           <option value="release_if_compliant">Liberar se conforme</option>
                           <option value="investigate_before_release">Investigar antes de liberar</option>
                           <option value="trend_only">Apenas tendência</option>
-                        </select>
+                        </BaseSelect>
                       </div>
                       <div class="ds-field-group">
                         <label class="ds-field-label" for="material-category">Categoria</label>
-                        <select id="material-category" v-model="form.client_submitted_info.material_category" class="ds-field">
+                        <BaseSelect id="material-category" v-model="form.client_submitted_info.material_category" class="ds-field">
                           <option value="raw_material">Matéria-prima</option>
                           <option value="ingredient">Ingrediente</option>
                           <option value="packaging_material">Material de embalagem</option>
@@ -483,21 +483,21 @@
                           <option value="finished_product">Produto acabado</option>
                           <option value="environmental_control">Controlo ambiental</option>
                           <option value="other">Outro</option>
-                        </select>
+                        </BaseSelect>
                       </div>
                     </div>
                     <div class="mt-4 grid gap-4 md:grid-cols-3">
                       <div class="ds-field-group">
                         <label class="ds-field-label" for="qc-lot">Lote</label>
-                        <input id="qc-lot" v-model="form.client_submitted_info.lot" type="text" class="ds-field" placeholder="Lote da matéria-prima" />
+                        <BaseInput id="qc-lot" v-model="form.client_submitted_info.lot" type="text" class="ds-field" placeholder="Lote da matéria-prima" />
                       </div>
                       <div class="ds-field-group">
                         <label class="ds-field-label" for="qc-batch">Batch / OP</label>
-                        <input id="qc-batch" v-model="form.client_submitted_info.batch" type="text" class="ds-field" placeholder="Batch interno ou OP" />
+                        <BaseInput id="qc-batch" v-model="form.client_submitted_info.batch" type="text" class="ds-field" placeholder="Batch interno ou OP" />
                       </div>
                       <div class="ds-field-group">
                         <label class="ds-field-label" for="qc-supplier">Fornecedor</label>
-                        <input id="qc-supplier" v-model="form.client_submitted_info.supplier_name" type="text" class="ds-field" placeholder="Fornecedor ou origem interna" />
+                        <BaseInput id="qc-supplier" v-model="form.client_submitted_info.supplier_name" type="text" class="ds-field" placeholder="Fornecedor ou origem interna" />
                       </div>
                     </div>
                   </div>
@@ -518,18 +518,18 @@
                 <div class="ds-card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
                   <div class="ds-field-group">
                     <label class="ds-field-label" for="sample-product">Produto</label>
-                    <select id="sample-product" v-model="form.client_submitted_info.product_id" class="ds-field" :aria-invalid="Boolean(form.errors['client_submitted_info.product_id'])">
+                    <BaseSelect id="sample-product" v-model="form.client_submitted_info.product_id" class="ds-field" :aria-invalid="Boolean(form.errors['client_submitted_info.product_id'])">
                       <option :value="null">Selecionar depois</option>
                       <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}{{ product.matrix ? ' · ' + product.matrix : '' }}</option>
-                    </select>
+                    </BaseSelect>
                     <p v-if="form.errors['client_submitted_info.product_id']" class="ds-field-error">{{ form.errors['client_submitted_info.product_id'] }}</p>
                   </div>
                   <div v-if="!isInternalRequest" class="ds-field-group">
                     <label class="ds-field-label" for="sample-proposal">Proposta aceite</label>
-                    <select id="sample-proposal" v-model="form.proposal_id" class="ds-field" :aria-invalid="Boolean(form.errors.proposal_id)">
+                    <BaseSelect id="sample-proposal" v-model="form.proposal_id" class="ds-field" :aria-invalid="Boolean(form.errors.proposal_id)">
                       <option value="">Selecionar depois</option>
                       <option v-for="proposal in acceptedProposals" :key="proposal.id" :value="proposal.id">{{ getProposalLabel(proposal) }}</option>
-                    </select>
+                    </BaseSelect>
                     <p class="ds-field-hint">Obrigatória antes da entrada em análise.</p>
                     <p v-if="form.errors.proposal_id" class="ds-field-error">{{ form.errors.proposal_id }}</p>
                   </div>
@@ -538,46 +538,46 @@
                   </div>
                   <div class="ds-field-group">
                     <label class="ds-field-label" for="sample-lab">Laboratório <span class="ds-field-required">*</span></label>
-                    <select id="sample-lab" v-model="form.lab_id" class="ds-field" :aria-invalid="Boolean(form.errors.lab_id)">
+                    <BaseSelect id="sample-lab" v-model="form.lab_id" class="ds-field" :aria-invalid="Boolean(form.errors.lab_id)">
                       <option value="">Selecione o laboratório</option>
                       <option v-for="lab in labs" :key="lab.id" :value="lab.id">{{ lab.name }} ({{ lab.code }})</option>
-                    </select>
+                    </BaseSelect>
                     <p v-if="form.errors.lab_id" class="ds-field-error">{{ form.errors.lab_id }}</p>
                   </div>
                   <div class="ds-field-group">
                     <label class="ds-field-label" for="sample-department">Departamento <span class="ds-field-required">*</span></label>
-                    <select id="sample-department" v-model="form.department_id" class="ds-field" :aria-invalid="Boolean(form.errors.department_id)">
+                    <BaseSelect id="sample-department" v-model="form.department_id" class="ds-field" :aria-invalid="Boolean(form.errors.department_id)">
                       <option value="">Selecione o departamento</option>
                       <option v-for="department in departments" :key="department.id" :value="department.id">{{ department.name }} ({{ department.code }})</option>
-                    </select>
+                    </BaseSelect>
                     <p v-if="form.errors.department_id" class="ds-field-error">{{ form.errors.department_id }}</p>
                   </div>
                   <div class="ds-field-group">
                     <label class="ds-field-label" for="received-at">Data de receção</label>
-                    <input id="received-at" v-model="form.received_at" type="datetime-local" class="ds-field" />
+                    <DateTimePicker id="received-at" v-model="form.received_at" type="datetime-local" class="ds-field" />
                   </div>
                   <div class="ds-field-group">
                     <label class="ds-field-label" for="sample-packaging">Embalagem</label>
-                    <select id="sample-packaging" v-model="form.packaging_id" class="ds-field">
+                    <BaseSelect id="sample-packaging" v-model="form.packaging_id" class="ds-field">
                       <option value="">Selecione a embalagem</option>
                       <option v-for="packaging in packagingCategories" :key="packaging.id" :value="packaging.id">{{ packaging.name }} ({{ packaging.code }})</option>
-                    </select>
+                    </BaseSelect>
                   </div>
                   <div class="ds-field-group">
                     <label class="ds-field-label" for="sample-warehouse">Armazém <span class="ds-field-required">*</span></label>
-                    <select id="sample-warehouse" v-model="form.warehouse_id" class="ds-field" :aria-invalid="Boolean(form.errors.warehouse_id)">
+                    <BaseSelect id="sample-warehouse" v-model="form.warehouse_id" class="ds-field" :aria-invalid="Boolean(form.errors.warehouse_id)">
                       <option value="">Selecione o armazém</option>
                       <option v-for="warehouse in warehouses" :key="warehouse.id" :value="warehouse.id">{{ warehouse.name }} ({{ warehouse.code }})</option>
-                    </select>
+                    </BaseSelect>
                     <p v-if="form.errors.warehouse_id" class="ds-field-error">{{ form.errors.warehouse_id }}</p>
                   </div>
                   <div class="ds-field-group md:col-span-2 xl:col-span-3">
                     <label class="ds-field-label" for="sample-profiles">Perfis analíticos</label>
-                    <select id="sample-profiles" v-model="form.client_submitted_info.requested_profile_ids" multiple class="ds-field sample-profile-select min-h-40 py-2">
+                    <BaseSelect id="sample-profiles" v-model="form.client_submitted_info.requested_profile_ids" multiple class="ds-field sample-profile-select min-h-40 py-2">
                       <option v-for="profile in availableProfiles" :key="profile.id" :value="profile.id">
                         {{ profile.name }}{{ profile.analysis_type ? ' · ' + profile.analysis_type : '' }}{{ profile.parameter_count ? ' · ' + profile.parameter_count + ' parâmetros' : '' }}
                       </option>
-                    </select>
+                    </BaseSelect>
                     <p class="ds-field-hint">Use Ctrl/Cmd para selecionar mais de um perfil.</p>
                     <p v-if="form.errors['client_submitted_info.requested_profile_ids']" class="ds-field-error">{{ form.errors['client_submitted_info.requested_profile_ids'] }}</p>
                   </div>
@@ -617,7 +617,7 @@
               <div class="ds-card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-4">
                 <div v-for="field in technicalIdentityFields" :key="field.key" class="ds-field-group">
                   <label class="ds-field-label" :for="'technical-' + field.key">{{ field.label }}</label>
-                  <input
+                  <BaseInput
                     :id="'technical-' + field.key"
                     v-model="form.client_submitted_info[field.key]"
                     :type="field.type || 'text'"
@@ -640,20 +640,20 @@
               <div class="ds-card grid gap-4 p-5 md:grid-cols-2">
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="conditioning-status">Decisão de aceitação</label>
-                  <select id="conditioning-status" v-model="form.client_submitted_info.conditioning_status" class="ds-field">
+                  <BaseSelect id="conditioning-status" v-model="form.client_submitted_info.conditioning_status" class="ds-field">
                     <option :value="null">Não avaliado</option>
                     <option value="accepted">Aceite</option>
                     <option value="restricted">Aceite com restrições</option>
                     <option value="rejected">Rejeitado / quarentena</option>
-                  </select>
+                  </BaseSelect>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="packaging-condition">Estado da embalagem</label>
-                  <input id="packaging-condition" v-model="form.client_submitted_info.packaging_condition" type="text" class="ds-field" placeholder="Íntegra, húmida, violada..." />
+                  <BaseInput id="packaging-condition" v-model="form.client_submitted_info.packaging_condition" type="text" class="ds-field" placeholder="Íntegra, húmida, violada..." />
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label" for="temperature-condition">Condição térmica</label>
-                  <input id="temperature-condition" v-model="form.client_submitted_info.temperature_condition" type="text" class="ds-field" placeholder="2-8 °C, ambiente, congelada..." />
+                  <BaseInput id="temperature-condition" v-model="form.client_submitted_info.temperature_condition" type="text" class="ds-field" placeholder="2-8 °C, ambiente, congelada..." />
                 </div>
                 <div class="ds-field-group md:col-span-2">
                   <label class="ds-field-label" for="integrity-observations">Observações de integridade</label>
@@ -781,7 +781,7 @@
               </div>
               <div class="sm:w-56">
                 <label class="sr-only" for="discard-method-filter">Método de descarte</label>
-                <select id="discard-method-filter" v-model="discardMethodFilter" class="ds-field">
+                <BaseSelect id="discard-method-filter" v-model="discardMethodFilter" class="ds-field">
                   <option value="">Todos os métodos</option>
                   <option value="incineration">Incineração</option>
                   <option value="chemical_treatment">Tratamento químico</option>
@@ -789,7 +789,7 @@
                   <option value="landfill">Aterro</option>
                   <option value="recycling">Reciclagem</option>
                   <option value="return_to_client">Retorno ao cliente</option>
-                </select>
+                </BaseSelect>
               </div>
             </div>
 
@@ -802,7 +802,7 @@
             </div>
 
             <div v-else class="overflow-x-auto">
-              <table class="min-w-full align-middle">
+              <DataTable class="min-w-full align-middle">
                 <thead class="ds-table-head">
                   <tr>
                     <th class="ds-table-heading px-5 py-3 text-left">Amostra</th>
@@ -832,7 +832,7 @@
                     </td>
                   </tr>
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           </section>
 
@@ -846,15 +846,15 @@
             <form class="grid gap-4 p-5 md:grid-cols-2" @submit.prevent="submitDiscard">
               <div class="ds-field-group">
                 <label class="ds-field-label" for="discard-sample">Amostra <span class="ds-field-required">*</span></label>
-                <select id="discard-sample" v-model="discardForm.sample_id" class="ds-field" :aria-invalid="Boolean(discardForm.errors.sample_id)" @change="onSampleSelect">
+                <BaseSelect id="discard-sample" v-model="discardForm.sample_id" class="ds-field" :aria-invalid="Boolean(discardForm.errors.sample_id)" @change="onSampleSelect">
                   <option value="">Selecione uma amostra</option>
                   <option v-for="sample in discardableSamples" :key="sample.id" :value="sample.id">{{ sample.code }} - {{ sample.name }} ({{ getStatusLabel(sample.status) }})</option>
-                </select>
+                </BaseSelect>
                 <p v-if="discardForm.errors.sample_id" class="ds-field-error">{{ discardForm.errors.sample_id }}</p>
               </div>
               <div class="ds-field-group">
                 <label class="ds-field-label" for="discard-method">Método <span class="ds-field-required">*</span></label>
-                <select id="discard-method" v-model="discardForm.discard_method" class="ds-field" :aria-invalid="Boolean(discardForm.errors.discard_method)">
+                <BaseSelect id="discard-method" v-model="discardForm.discard_method" class="ds-field" :aria-invalid="Boolean(discardForm.errors.discard_method)">
                   <option value="">Selecione o método</option>
                   <option value="incineration">Incineração</option>
                   <option value="chemical_treatment">Tratamento químico</option>
@@ -862,17 +862,17 @@
                   <option value="landfill">Aterro</option>
                   <option value="recycling">Reciclagem</option>
                   <option value="return_to_client">Retorno ao cliente</option>
-                </select>
+                </BaseSelect>
                 <p v-if="discardForm.errors.discard_method" class="ds-field-error">{{ discardForm.errors.discard_method }}</p>
               </div>
               <div class="ds-field-group">
                 <label class="ds-field-label" for="discard-quantity">Quantidade <span class="ds-field-required">*</span></label>
-                <input id="discard-quantity" v-model="discardForm.qty" type="text" class="ds-field" :aria-invalid="Boolean(discardForm.errors.qty)" placeholder="250 g, 500 ml, 1 unidade" />
+                <BaseInput id="discard-quantity" v-model="discardForm.qty" type="text" class="ds-field" :aria-invalid="Boolean(discardForm.errors.qty)" placeholder="250 g, 500 ml, 1 unidade" />
                 <p v-if="discardForm.errors.qty" class="ds-field-error">{{ discardForm.errors.qty }}</p>
               </div>
               <div class="ds-field-group">
                 <label class="ds-field-label" for="discarded-at">Data do descarte</label>
-                <input id="discarded-at" v-model="discardForm.discarded_at" type="datetime-local" class="ds-field" />
+                <DateTimePicker id="discarded-at" v-model="discardForm.discarded_at" type="datetime-local" class="ds-field" />
               </div>
               <div class="flex items-center justify-end gap-2 border-t border-[color:var(--ds-border)] pt-4 md:col-span-2">
                 <button type="button" class="ds-button ds-button-secondary" @click="cancelDiscard">Cancelar</button>

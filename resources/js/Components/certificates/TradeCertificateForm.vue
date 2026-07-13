@@ -317,12 +317,12 @@ function submit() {
       <div class="grid gap-4 px-5 py-5 sm:grid-cols-2 sm:px-6 xl:grid-cols-4">
         <div class="ds-field-group">
           <label for="certificate-date" class="ds-field-label">Data do certificado <span class="ds-field-required">*</span></label>
-          <input id="certificate-date" v-model="form.date" type="date" class="ds-field" :aria-invalid="Boolean(form.errors.date)" :required="isImport">
+          <DateTimePicker id="certificate-date" v-model="form.date" type="date" class="ds-field" :aria-invalid="Boolean(form.errors.date)" :required="isImport" />
           <p v-if="form.errors.date" class="ds-field-error">{{ form.errors.date }}</p>
         </div>
         <div v-if="!isImport" class="ds-field-group">
           <label for="certificate-expedition-date" class="ds-field-label">Data de expedição <span class="ds-field-required">*</span></label>
-          <input id="certificate-expedition-date" v-model="form.expedition_date" type="date" class="ds-field" :aria-invalid="Boolean(form.errors.expedition_date)" required>
+          <DateTimePicker id="certificate-expedition-date" v-model="form.expedition_date" type="date" class="ds-field" :aria-invalid="Boolean(form.errors.expedition_date)" required />
           <p v-if="form.errors.expedition_date" class="ds-field-error">{{ form.errors.expedition_date }}</p>
         </div>
         <div class="ds-field-group">
@@ -332,7 +332,7 @@ function submit() {
         </div>
         <div class="ds-field-group">
           <label for="certificate-authorized-person" class="ds-field-label">Responsável autorizado <span class="ds-field-required">*</span></label>
-          <input id="certificate-authorized-person" v-model="form.authorized_personnel" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.authorized_personnel)" required>
+          <BaseInput id="certificate-authorized-person" v-model="form.authorized_personnel" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.authorized_personnel)" required />
           <p v-if="form.errors.authorized_personnel" class="ds-field-error">{{ form.errors.authorized_personnel }}</p>
         </div>
       </div>
@@ -390,12 +390,12 @@ function submit() {
       <div v-if="isImport" class="grid gap-4 px-5 py-5 sm:grid-cols-2 sm:px-6 xl:grid-cols-3">
         <div class="ds-field-group">
           <label for="certificate-port-exit" class="ds-field-label">Porto de saída <span class="ds-field-required">*</span></label>
-          <input id="certificate-port-exit" v-model="form.port_exit" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.port_exit)" required>
+          <BaseInput id="certificate-port-exit" v-model="form.port_exit" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.port_exit)" required />
           <p v-if="form.errors.port_exit" class="ds-field-error">{{ form.errors.port_exit }}</p>
         </div>
         <div class="ds-field-group">
           <label for="certificate-port-entry" class="ds-field-label">Porto de entrada <span class="ds-field-required">*</span></label>
-          <input id="certificate-port-entry" v-model="form.port_entry" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.port_entry)" required>
+          <BaseInput id="certificate-port-entry" v-model="form.port_entry" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.port_entry)" required />
           <p v-if="form.errors.port_entry" class="ds-field-error">{{ form.errors.port_entry }}</p>
         </div>
         <div class="ds-field-group">
@@ -413,7 +413,7 @@ function submit() {
         </div>
         <div class="ds-field-group">
           <label for="certificate-origin-city" class="ds-field-label">Cidade de origem <span class="ds-field-required">*</span></label>
-          <input id="certificate-origin-city" v-model="form.origin_city" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.origin_city)" required>
+          <BaseInput id="certificate-origin-city" v-model="form.origin_city" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.origin_city)" required />
           <p v-if="form.errors.origin_city" class="ds-field-error">{{ form.errors.origin_city }}</p>
         </div>
         <div class="ds-field-group">
@@ -423,12 +423,12 @@ function submit() {
         </div>
         <div class="ds-field-group">
           <label for="certificate-destination-city" class="ds-field-label">Cidade de destino <span class="ds-field-required">*</span></label>
-          <input id="certificate-destination-city" v-model="form.destination_city" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.destination_city)" required>
+          <BaseInput id="certificate-destination-city" v-model="form.destination_city" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.destination_city)" required />
           <p v-if="form.errors.destination_city" class="ds-field-error">{{ form.errors.destination_city }}</p>
         </div>
         <div class="ds-field-group sm:col-span-2 xl:col-span-4">
           <label for="certificate-expedition-location" class="ds-field-label">Local de expedição <span class="ds-field-required">*</span></label>
-          <input id="certificate-expedition-location" v-model="form.expedition_location" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.expedition_location)" required>
+          <BaseInput id="certificate-expedition-location" v-model="form.expedition_location" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.expedition_location)" required />
           <p v-if="form.errors.expedition_location" class="ds-field-error">{{ form.errors.expedition_location }}</p>
         </div>
       </div>
@@ -457,12 +457,12 @@ function submit() {
           { key: 'vat', label: 'IVA (%)' },
         ]" :key="field.key" class="ds-field-group">
           <label :for="`certificate-${field.key}`" class="ds-field-label">{{ field.label }} <span class="ds-field-required">*</span></label>
-          <input :id="`certificate-${field.key}`" v-model.number="form[field.key]" type="number" min="0" step="0.01" class="ds-field text-right tabular-nums" :aria-invalid="Boolean(form.errors[field.key])" required>
+          <BaseInput :id="`certificate-${field.key}`" v-model.number="form[field.key]" type="number" min="0" step="0.01" class="ds-field text-right tabular-nums" :aria-invalid="Boolean(form.errors[field.key])" required />
           <p v-if="form.errors[field.key]" class="ds-field-error">{{ form.errors[field.key] }}</p>
         </div>
         <div class="ds-field-group">
           <label for="certificate-vat-cost" class="ds-field-label">Valor do IVA</label>
-          <input id="certificate-vat-cost" :value="formatNumber(form.vat_cost)" type="text" class="ds-field text-right tabular-nums" readonly>
+          <BaseInput id="certificate-vat-cost" :value="formatNumber(form.vat_cost)" type="text" class="ds-field text-right tabular-nums" readonly />
           <p v-if="form.errors.vat_cost" class="ds-field-error">{{ form.errors.vat_cost }}</p>
         </div>
       </div>
@@ -490,7 +490,7 @@ function submit() {
       <p v-if="form.errors.items" class="ds-field-error px-5 pt-4 sm:px-6">{{ form.errors.items }}</p>
 
       <div v-if="form.items.length" class="overflow-x-auto">
-        <table class="ds-table min-w-[58rem]">
+        <DataTable class="ds-table min-w-[58rem]">
           <thead class="ds-table-head">
             <tr>
               <th class="ds-table-header min-w-64 px-5 py-3 text-left sm:px-6">Produto</th>
@@ -510,13 +510,13 @@ function submit() {
                 <ComboboxEnhanced v-model="item.product_id" :has-error="form.errors[`items.${index}.product_id`]" :load-options="loadProducts" placeholder="Selecionar produto" />
               </td>
               <td class="ds-table-cell px-4 py-3">
-                <input v-model.number="item.qty" type="number" min="0.01" step="0.01" class="ds-field text-right tabular-nums" required>
+                <BaseInput v-model.number="item.qty" type="number" min="0.01" step="0.01" class="ds-field text-right tabular-nums" required />
               </td>
               <template v-if="isImport">
-                <td class="ds-table-cell px-4 py-3"><input v-model="item.origin" type="text" class="ds-field" required></td>
-                <td class="ds-table-cell px-4 py-3"><input v-model="item.validity" type="date" class="ds-field" required></td>
-                <td class="ds-table-cell px-4 py-3"><input v-model="item.lot" type="text" class="ds-field" required></td>
-                <td class="ds-table-cell px-4 py-3"><input v-model="item.bl_no" type="text" class="ds-field" required></td>
+                <td class="ds-table-cell px-4 py-3"><BaseInput v-model="item.origin" type="text" class="ds-field" required /></td>
+                <td class="ds-table-cell px-4 py-3"><DateTimePicker v-model="item.validity" type="date" class="ds-field" required /></td>
+                <td class="ds-table-cell px-4 py-3"><BaseInput v-model="item.lot" type="text" class="ds-field" required /></td>
+                <td class="ds-table-cell px-4 py-3"><BaseInput v-model="item.bl_no" type="text" class="ds-field" required /></td>
               </template>
               <td class="ds-table-cell px-5 py-3 text-right sm:px-6">
                 <button type="button" class="ds-icon-button text-rose-600" title="Remover produto" @click="removeItem(index)">
@@ -525,7 +525,7 @@ function submit() {
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
       <div v-else class="px-5 py-10 text-center sm:px-6">
         <CubeIcon class="mx-auto h-7 w-7 text-[var(--ds-text-soft)]" />
@@ -555,7 +555,7 @@ function submit() {
             <p v-if="form.errors.invoice_id" class="ds-field-error">{{ form.errors.invoice_id }}</p>
           </div>
           <label class="flex items-start gap-3 border-t border-[var(--ds-border)] pt-4 text-sm font-semibold text-[var(--ds-text-muted)]">
-            <input v-model="form.invoiced" type="checkbox" class="ds-checkbox mt-0.5">
+            <CheckboxInput v-model="form.invoiced" type="checkbox" class="ds-checkbox mt-0.5" />
             Marcar certificado como faturado
           </label>
         </div>

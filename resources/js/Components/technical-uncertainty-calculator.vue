@@ -6,7 +6,7 @@
       </div>
       <div class="grid gap-3">
         <div v-for="(value, index) in data" :key="index">
-          <input
+          <BaseInput
             type="number"
             v-model.number="data[index]"
             @input="updateMeasurement(index, data[index])"
@@ -19,13 +19,13 @@
         Adicionar medição
       </button>
       <div class="grid gap-3 md:grid-cols-2">
-        <input
+        <BaseInput
           type="number"
           v-model.number="distributionalUncertainty"
           placeholder="Incerteza distribucional"
           class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
         />
-        <input
+        <BaseInput
           type="number"
           v-model.number="technicalUncertainty"
           placeholder="Incerteza técnica"

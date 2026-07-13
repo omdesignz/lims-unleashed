@@ -35,7 +35,7 @@
               Armazém de Origem
               <span class="text-red-500">*</span>
             </label>
-            <select
+            <BaseSelect
               v-model="form.source_id"
               @change="updateSourceStock"
             :class="[
@@ -52,7 +52,7 @@
               >
                 {{ inv.warehouse?.name }} (Disponível: {{ inv.qty_available }} {{ item.unit?.code || 'unidades' }})
               </option>
-            </select>
+            </BaseSelect>
             <p v-if="form.errors.source_id" class="text-xs text-red-600">
               {{ form.errors.source_id }}
             </p>
@@ -64,7 +64,7 @@
               Armazém de Destino
               <span class="text-red-500">*</span>
             </label>
-            <select
+            <BaseSelect
               v-model="form.destination_id"
             :class="[
                 'ds-field',
@@ -83,7 +83,7 @@
                   ({{ warehouse.location.name }})
                 </template>
               </option>
-            </select>
+            </BaseSelect>
             <p v-if="form.errors.destination_id" class="text-xs text-red-600">
               {{ form.errors.destination_id }}
             </p>
@@ -97,7 +97,7 @@
             <span class="text-red-500">*</span>
           </label>
           <div class="relative">
-            <input
+            <BaseInput
               v-model.number="form.qty"
               type="number"
               :min="1"

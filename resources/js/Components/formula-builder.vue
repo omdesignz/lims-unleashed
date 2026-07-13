@@ -49,16 +49,16 @@
         <h4 class="font-medium mb-3">Variáveis da Fórmula</h4>
         <div v-for="(varName, index) in detectedVariables" :key="index"
              class="flex items-center gap-4 mb-2">
-          <input v-model="variables[varName].label" placeholder="Nome para exibir"
-                 class="flex-1 border-gray-300 rounded-md shadow-sm">
-          <input v-model="variables[varName].unit" placeholder="Unidade (opcional)"
-                 class="w-32 border-gray-300 rounded-md shadow-sm">
-          <select v-model="variables[varName].type" 
+          <BaseInput v-model="variables[varName].label" placeholder="Nome para exibir"
+                 class="flex-1 border-gray-300 rounded-md shadow-sm" />
+          <BaseInput v-model="variables[varName].unit" placeholder="Unidade (opcional)"
+                 class="w-32 border-gray-300 rounded-md shadow-sm" />
+          <BaseSelect v-model="variables[varName].type"
                   class="border-gray-300 rounded-md shadow-sm">
             <option value="number">Número</option>
             <option value="integer">Inteiro</option>
             <option value="decimal">Decimal</option>
-          </select>
+          </BaseSelect>
         </div>
       </div>
 
@@ -98,8 +98,8 @@
           <label class="block text-sm font-medium mb-1">
             {{ variables[varName].label || varName }}
           </label>
-          <input v-model="testValues[varName]" type="number" step="any"
-                 class="w-full border-gray-300 rounded-md shadow-sm">
+          <BaseInput v-model="testValues[varName]" type="number" step="any"
+                 class="w-full border-gray-300 rounded-md shadow-sm" />
           <div class="text-xs text-gray-500 mt-1">
             {{ variables[varName].unit }}
           </div>

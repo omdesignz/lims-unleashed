@@ -77,12 +77,11 @@
               <label class="relative block w-full xl:w-72">
                 <span class="sr-only">Pesquisar notificações</span>
                 <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-                <input
+                <BaseInput
                   v-model="searchQuery"
                   type="search"
                   class="ds-field h-10 pl-9"
-                  placeholder="Título, mensagem ou remetente"
-                >
+                  placeholder="Título, mensagem ou remetente" />
               </label>
             </div>
           </div>

@@ -102,38 +102,38 @@ const markAsUnread = (notification) => {
             <label for="notification-search" class="ds-field-label">Pesquisar</label>
             <div class="relative">
               <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-              <input id="notification-search" v-model="filterForm.search" type="search" class="ds-field pl-9" placeholder="Titulo, mensagem, utilizador ou email" />
+              <BaseInput id="notification-search" v-model="filterForm.search" type="search" class="ds-field pl-9" placeholder="Titulo, mensagem, utilizador ou email" />
             </div>
           </div>
           <div class="ds-field-group">
             <label for="notification-type" class="ds-field-label">Tipo</label>
-            <select id="notification-type" v-model="filterForm.type" class="ds-field">
+            <BaseSelect id="notification-type" v-model="filterForm.type" class="ds-field">
               <option value="">Todos os tipos</option>
               <option v-for="(type, key) in notificationTypes" :key="key" :value="key">{{ type.label }}</option>
-            </select>
+            </BaseSelect>
           </div>
           <div class="ds-field-group">
             <label for="notification-status" class="ds-field-label">Estado de leitura</label>
-            <select id="notification-status" v-model="filterForm.read_status" class="ds-field">
+            <BaseSelect id="notification-status" v-model="filterForm.read_status" class="ds-field">
               <option value="">Todos os estados</option>
               <option value="read">Lidas</option>
               <option value="unread">Por ler</option>
-            </select>
+            </BaseSelect>
           </div>
           <div class="ds-field-group md:col-span-2">
             <label for="notification-user" class="ds-field-label">Destinatario</label>
-            <select id="notification-user" v-model="filterForm.user_id" class="ds-field">
+            <BaseSelect id="notification-user" v-model="filterForm.user_id" class="ds-field">
               <option value="">Todos os utilizadores</option>
               <option v-for="user in users" :key="user.id" :value="user.id">{{ user.name }} ({{ user.email }})</option>
-            </select>
+            </BaseSelect>
           </div>
           <div class="ds-field-group">
             <label for="notification-from" class="ds-field-label">Desde</label>
-            <input id="notification-from" v-model="filterForm.date_from" type="date" class="ds-field" />
+            <DateTimePicker id="notification-from" v-model="filterForm.date_from" type="date" class="ds-field" />
           </div>
           <div class="ds-field-group">
             <label for="notification-to" class="ds-field-label">Ate</label>
-            <input id="notification-to" v-model="filterForm.date_to" type="date" class="ds-field" />
+            <DateTimePicker id="notification-to" v-model="filterForm.date_to" type="date" class="ds-field" />
           </div>
         </div>
 
@@ -152,7 +152,7 @@ const markAsUnread = (notification) => {
 
     <section class="ds-panel overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-[var(--ds-border)] text-left">
+        <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left">
           <thead class="bg-[var(--ds-panel-subtle)]">
             <tr>
               <th class="px-5 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Mensagem</th>
@@ -194,7 +194,7 @@ const markAsUnread = (notification) => {
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div v-if="!notifications.data.length" class="px-5 py-14 text-center">

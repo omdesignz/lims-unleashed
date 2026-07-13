@@ -228,7 +228,7 @@
         </div>
 
         <div v-if="!loading && transactionRows.length" class="hidden overflow-x-auto lg:block">
-          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
             <thead class="bg-[var(--ds-panel-subtle)]">
               <tr>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Data e hora</th>
@@ -260,7 +260,7 @@
                 <td class="max-w-xs px-5 py-4 align-top text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">{{ transaction.notes || 'Sem observações.' }}</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
 
         <Pagination
@@ -343,7 +343,7 @@
         </div>
 
         <div v-else-if="summaryRows.length" class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
             <thead class="bg-[var(--ds-panel-subtle)]">
               <tr>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Data</th>
@@ -362,7 +362,7 @@
                 <td :class="['px-5 py-4 text-right font-mono font-black tabular-nums', netTone(day)]">{{ netLabel(day) }}</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
 
         <div v-else-if="!loading" class="ds-empty-state m-5 p-8 text-center">

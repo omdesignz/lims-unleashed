@@ -7,7 +7,7 @@
       <div v-for="(seriesData, seriesIndex) in series" :key="seriesIndex" class="space-y-4 rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
         <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">Série {{ seriesIndex + 1 }}</h3>
         <div class="grid gap-3 md:grid-cols-2">
-          <input
+          <BaseInput
             v-for="(value, dataIndex) in seriesData.data"
             :key="dataIndex"
             type="number"
@@ -22,25 +22,25 @@
         </button>
 
         <div class="grid gap-3 md:grid-cols-2">
-          <input
+          <BaseInput
             type="number"
             v-model.number="seriesData.technicalUncertainty"
             placeholder="Incerteza técnica"
             class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           />
-          <input
+          <BaseInput
             type="number"
             v-model.number="seriesData.confirmationUncertainty"
             placeholder="Incerteza de confirmação"
             class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           />
-          <input
+          <BaseInput
             type="number"
             v-model.number="seriesData.environmentalUncertainty"
             placeholder="Incerteza ambiental"
             class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           />
-          <input
+          <BaseInput
             type="number"
             v-model.number="seriesData.matrixUncertainty"
             placeholder="Incerteza de matriz"

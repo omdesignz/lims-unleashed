@@ -278,32 +278,7 @@ Route::get('/models', function () {
     // return (new NIFIdentificationService())->getCustomerData('000062398LN033');
 })->middleware('auth', 'account.deactivated');
 
-Route::get('/test', function () {
-
-    return inertia('Dashboard', [
-        'toast' => [
-            'title' => 'title',
-            'message' => 'test',
-        ],
-    ]);
-})->middleware('password.confirm');
-
-// Route::get('/users', function (Request $request) {
-
-//     //dd($request->get('query'));
-//     return App\Models\User::where('name', 'LIKE', "%{$request->get('query')}%")->get();
-//     //return App\Models\User::all()->toJSON();
-// });
-
-Route::get('/components', function () {
-    return Inertia::render('Welcome');
-})->name('components.playground');
-
 Route::post('/language', LanguageStoreController::class)->name('language.store');
-
-// Route::get('/security', function () {
-//     return \Inertia\Inertia::render('Profile/Show');
-// })->name('security')->middleware(['web', 'auth']);
 
 Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function () {
 

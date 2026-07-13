@@ -261,18 +261,18 @@
 
               <div class="ds-field-group">
                 <label class="ds-field-label">Preset visual</label>
-                <select v-if="editSettings" v-model="form.app_theme_preset" class="ds-field">
+                <BaseSelect v-if="editSettings" v-model="form.app_theme_preset" class="ds-field">
                   <option v-for="preset in themePresets" :key="preset.value" :value="preset.value">{{ preset.label }}</option>
-                </select>
+                </BaseSelect>
                 <div v-else class="min-h-11 border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-3 py-2.5 text-sm font-semibold text-[color:var(--ds-text)]">{{ selectedThemePreset }}</div>
                 <p v-if="form.errors.app_theme_preset" class="ds-field-error">{{ form.errors.app_theme_preset }}</p>
               </div>
 
               <div class="ds-field-group">
                 <label class="ds-field-label">Modo operacional</label>
-                <select v-if="editSettings" v-model="form.app_operation_mode" class="ds-field">
+                <BaseSelect v-if="editSettings" v-model="form.app_operation_mode" class="ds-field">
                   <option v-for="mode in operationModes" :key="mode.value" :value="mode.value">{{ mode.label }}</option>
-                </select>
+                </BaseSelect>
                 <div v-else class="min-h-11 border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] px-3 py-2.5 text-sm font-semibold text-[color:var(--ds-text)]">{{ selectedOperationMode }}</div>
                 <p v-if="form.errors.app_operation_mode" class="ds-field-error">{{ form.errors.app_operation_mode }}</p>
               </div>

@@ -108,7 +108,7 @@ function deleteSignature() {
       </span>
 
       <div class="min-w-0 space-y-2">
-        <input ref="photoInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="updatePhotoPreview">
+        <FileInput ref="photoInput" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="updatePhotoPreview" />
         <div class="flex flex-wrap gap-2">
           <button type="button" class="ds-button ds-button-secondary" @click="selectNewPhoto">
             <PhotoIcon class="h-4 w-4" />
@@ -126,7 +126,7 @@ function deleteSignature() {
     <div class="grid gap-5 sm:grid-cols-2">
       <label class="ds-field-group">
         <span class="ds-field-label">Nome completo <span class="ds-field-required">*</span></span>
-        <input v-model="form.name" type="text" autocomplete="name" class="ds-field" :aria-invalid="Boolean(form.errors.name)" required>
+        <BaseInput v-model="form.name" type="text" autocomplete="name" class="ds-field" :aria-invalid="Boolean(form.errors.name)" required />
         <span v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</span>
       </label>
 
@@ -138,7 +138,7 @@ function deleteSignature() {
             {{ user.email_verified_at ? 'Verificado' : 'Não verificado' }}
           </span>
         </span>
-        <input v-model="form.email" type="email" autocomplete="email" class="ds-field" :aria-invalid="Boolean(form.errors.email)" required>
+        <BaseInput v-model="form.email" type="email" autocomplete="email" class="ds-field" :aria-invalid="Boolean(form.errors.email)" required />
         <span v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</span>
       </label>
     </div>

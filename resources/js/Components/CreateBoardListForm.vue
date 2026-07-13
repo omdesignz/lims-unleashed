@@ -37,13 +37,12 @@ function onSubmit() {
     @submit.prevent="onSubmit()"
     class="p-3 bg-gray-200 rounded-md"
   >
-    <input
+    <BaseInput
       v-model="form.name"
       ref="inputNameRef"
       class="block w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-blue-400 focus:ring-blue-400"
       placeholder="Enter list name..."
-      type="text"
-    >
+      type="text" />
 
     <div class="mt-2 space-x-2">
       <button

@@ -58,8 +58,8 @@ function applyFilters() {
 
     <section class="ds-card overflow-hidden">
       <form class="grid gap-4 px-5 py-5 sm:grid-cols-[minmax(0,1fr)_14rem_auto] sm:items-end sm:px-6" role="search" @submit.prevent="applyFilters">
-        <div class="ds-field-group"><label class="ds-field-label">Pesquisar</label><div class="relative"><MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--ds-text-soft)]" /><input v-model="search" type="search" class="ds-field pl-10" placeholder="Escreva uma pergunta ou tema" /></div></div>
-        <div class="ds-field-group"><label class="ds-field-label">Categoria</label><select v-model="category" class="ds-field"><option value="">Todas</option><option v-for="item in categories" :key="item.value" :value="item.value">{{ item.label }}</option></select></div>
+        <div class="ds-field-group"><label class="ds-field-label">Pesquisar</label><div class="relative"><MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--ds-text-soft)]" /><BaseInput v-model="search" type="search" class="ds-field pl-10" placeholder="Escreva uma pergunta ou tema" /></div></div>
+        <div class="ds-field-group"><label class="ds-field-label">Categoria</label><BaseSelect v-model="category" class="ds-field"><option value="">Todas</option><option v-for="item in categories" :key="item.value" :value="item.value">{{ item.label }}</option></BaseSelect></div>
         <button type="submit" class="ds-button ds-button-secondary">Aplicar</button>
       </form>
     </section>

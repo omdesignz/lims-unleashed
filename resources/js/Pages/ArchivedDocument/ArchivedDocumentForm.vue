@@ -22,7 +22,7 @@ defineProps({
       <div class="mt-6 space-y-6">
         <div>
           <label for="archived-document-title" class="ds-field-label">Título do registo</label>
-          <input id="archived-document-title" v-model="form.title" type="text" class="ds-field mt-2" required />
+          <BaseInput id="archived-document-title" v-model="form.title" type="text" class="ds-field mt-2" required />
           <p class="ds-field-hint mt-2">Exemplo: SOP substituída, certificado retido ou relatório histórico.</p>
           <p v-if="form.errors.title" class="ds-field-error mt-2">{{ form.errors.title }}</p>
         </div>
@@ -35,7 +35,7 @@ defineProps({
 
         <div>
           <label for="archived-document-file" class="ds-field-label">{{ currentFile ? "Substituir ficheiro" : "Ficheiro arquivado" }}</label>
-          <input id="archived-document-file" type="file" class="ds-field mt-2 file:mr-3 file:border-0 file:bg-transparent file:text-sm file:font-bold file:text-[var(--ds-text)]" @input="form.file = $event.target.files?.[0] ?? null" />
+          <FileInput id="archived-document-file" type="file" class="ds-field mt-2 file:mr-3 file:border-0 file:bg-transparent file:text-sm file:font-bold file:text-[var(--ds-text)]" @input="form.file = $event.target.files?.[0] ?? null" />
           <p v-if="form.file" class="ds-field-hint mt-2">Novo ficheiro: {{ form.file.name }}</p>
           <p v-else-if="currentFile" class="ds-field-hint mt-2 break-all">Ficheiro atual: {{ currentFile }}</p>
           <p v-if="form.errors.file" class="ds-field-error mt-2">{{ form.errors.file }}</p>

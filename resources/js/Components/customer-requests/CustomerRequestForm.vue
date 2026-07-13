@@ -132,7 +132,7 @@ function updateCustomer(customer) {
           </label>
           <div class="relative">
             <UserIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-            <input
+            <BaseInput
               id="customer-request-contact"
               v-model="form.contact"
               type="text"
@@ -152,7 +152,7 @@ function updateCustomer(customer) {
           </label>
           <div class="relative">
             <EnvelopeIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-            <input
+            <BaseInput
               id="customer-request-email"
               v-model="form.email"
               type="email"

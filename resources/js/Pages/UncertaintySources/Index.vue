@@ -22,9 +22,9 @@
           <p class="font-mono text-xs font-semibold uppercase text-[var(--ds-text-soft)]">Incerteza</p>
           <h2 class="mt-1 text-lg font-semibold text-[var(--ds-text)]">{{ editingId ? 'Editar fonte' : 'Nova fonte' }}</h2>
         </div>
-        <input v-model="form.title" type="text" placeholder="Título" class="ds-field">
+        <BaseInput v-model="form.title" type="text" placeholder="Título" class="ds-field" />
         <div class="grid gap-4 md:grid-cols-2">
-          <select v-model="form.source_type" class="ds-field">
+          <BaseSelect v-model="form.source_type" class="ds-field">
             <option value="">Tipo de fonte</option>
             <option value="equipment">Equipamento</option>
             <option value="method">Método</option>
@@ -32,7 +32,7 @@
             <option value="sampling">Amostragem</option>
             <option value="personnel">Pessoal</option>
             <option value="reference_material">Material de referência</option>
-          </select>
+          </BaseSelect>
           <comboboxEnhanced v-model="selectedDepartment" title-label="Departamento" placeholder="Seleccione um departamento" :options="departmentOptions" />
           <comboboxEnhanced v-model="selectedParameter" title-label="Parâmetro associado" placeholder="Seleccione o parâmetro associado" :options="parameterOptions" />
           <comboboxEnhanced v-model="selectedInventoryItem" title-label="Equipamento / item associado" placeholder="Seleccione o equipamento ou item" :options="inventoryItemOptions" />
@@ -41,7 +41,7 @@
         <textarea v-model="form.estimation_method" rows="3" class="ds-field" placeholder="Como a incerteza é estimada"></textarea>
         <textarea v-model="form.control_strategy" rows="3" class="ds-field" placeholder="Como a fonte é monitorizada e controlada"></textarea>
         <label class="inline-flex items-center gap-3 text-sm font-semibold text-[var(--ds-text-muted)]">
-          <input v-model="form.is_active" type="checkbox" class="ds-checkbox">
+          <CheckboxInput v-model="form.is_active" type="checkbox" class="ds-checkbox" />
           Fonte ativa
         </label>
         <div class="flex flex-wrap gap-3">

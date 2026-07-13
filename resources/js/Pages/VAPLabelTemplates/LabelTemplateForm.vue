@@ -255,8 +255,8 @@ function submit() {
             <label v-for="control in [{ field: 'background_color', label: $t('gestlab.general.labels.vap_labels.background_color') }, { field: 'text_color', label: $t('gestlab.general.labels.vap_labels.text_color') }, { field: 'border_color', label: $t('gestlab.general.labels.vap_labels.border_color') }]" :key="control.field" class="ds-field-group">
               <span class="ds-field-label">{{ control.label }}</span>
               <span class="flex gap-2">
-                <input v-model="form.template_data[control.field]" type="color" class="h-10 w-12 shrink-0 cursor-pointer rounded-md border border-[var(--ds-border)] bg-[var(--ds-panel)] p-1" />
-                <input v-model="form.template_data[control.field]" type="text" class="ds-field font-mono" />
+                <ColorInput v-model="form.template_data[control.field]" type="color" class="h-10 w-12 shrink-0 cursor-pointer rounded-md border border-[var(--ds-border)] bg-[var(--ds-panel)] p-1" />
+                <BaseInput v-model="form.template_data[control.field]" type="text" class="ds-field font-mono" />
               </span>
             </label>
 
@@ -269,11 +269,11 @@ function submit() {
 
             <label class="ds-field-group">
               <span class="ds-field-label">{{ $t('gestlab.general.labels.vap_labels.font_size') }} · {{ form.template_data.font_size }}px</span>
-              <input v-model="form.template_data.font_size" type="range" min="6" max="72" class="mt-2 w-full accent-[rgb(var(--primary-700-rgb))]" />
+              <RangeInput v-model="form.template_data.font_size" type="range" min="6" max="72" class="mt-2 w-full accent-[rgb(var(--primary-700-rgb))]" />
             </label>
             <label class="ds-field-group">
               <span class="ds-field-label">{{ $t('gestlab.general.labels.vap_labels.border_width') }} · {{ form.template_data.border_width }}px</span>
-              <input v-model="form.template_data.border_width" type="range" min="0" max="10" class="mt-2 w-full accent-[rgb(var(--primary-700-rgb))]" />
+              <RangeInput v-model="form.template_data.border_width" type="range" min="0" max="10" class="mt-2 w-full accent-[rgb(var(--primary-700-rgb))]" />
             </label>
           </div>
         </section>
@@ -287,14 +287,14 @@ function submit() {
           </div>
           <div class="divide-y divide-[var(--ds-border)]">
             <div class="grid gap-4 p-5 md:grid-cols-[12rem_minmax(0,1fr)]">
-              <label class="flex items-center gap-3 text-sm font-bold text-[var(--ds-text)]"><input v-model="form.template_data.has_qr_code" type="checkbox" class="ds-checkbox" /> Código QR</label>
+              <label class="flex items-center gap-3 text-sm font-bold text-[var(--ds-text)]"><CheckboxInput v-model="form.template_data.has_qr_code" type="checkbox" class="ds-checkbox" /> Código QR</label>
               <div v-if="form.template_data.has_qr_code" class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_10rem]">
                 <BaseInput v-model="form.template_data.qr_code_content" label="Conteúdo QR" />
                 <BaseInput v-model="form.template_data.qr_code_size" type="number" min="1" max="80" label="Tamanho (mm)" />
               </div>
             </div>
             <div class="grid gap-4 p-5 md:grid-cols-[12rem_minmax(0,1fr)]">
-              <label class="flex items-center gap-3 text-sm font-bold text-[var(--ds-text)]"><input v-model="form.template_data.has_barcode" type="checkbox" class="ds-checkbox" /> Código de barras</label>
+              <label class="flex items-center gap-3 text-sm font-bold text-[var(--ds-text)]"><CheckboxInput v-model="form.template_data.has_barcode" type="checkbox" class="ds-checkbox" /> Código de barras</label>
               <div v-if="form.template_data.has_barcode" class="grid gap-3 sm:grid-cols-2">
                 <BaseInput v-model="form.template_data.barcode_content" label="Conteúdo" />
                 <BaseSelect v-model="form.template_data.barcode_type" label="Simbologia"><option value="CODE128">CODE128</option><option value="EAN13">EAN-13</option><option value="CODE39">CODE39</option></BaseSelect>
@@ -336,11 +336,11 @@ function submit() {
           <div class="mt-4 space-y-3">
             <label class="flex items-start justify-between gap-4 rounded-lg border border-[var(--ds-border)] p-3">
               <span><span class="block text-sm font-bold text-[var(--ds-text)]">Modelo ativo</span><span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">Disponível no editor de etiquetas.</span></span>
-              <input v-model="form.is_active" type="checkbox" class="ds-checkbox mt-0.5" />
+              <CheckboxInput v-model="form.is_active" type="checkbox" class="ds-checkbox mt-0.5" />
             </label>
             <label class="flex items-start justify-between gap-4 rounded-lg border border-[var(--ds-border)] p-3">
               <span><span class="block text-sm font-bold text-[var(--ds-text)]">Modelo em destaque</span><span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">Priorizado na seleção de modelos.</span></span>
-              <input v-model="form.is_featured" type="checkbox" class="ds-checkbox mt-0.5" />
+              <CheckboxInput v-model="form.is_featured" type="checkbox" class="ds-checkbox mt-0.5" />
             </label>
           </div>
         </section>

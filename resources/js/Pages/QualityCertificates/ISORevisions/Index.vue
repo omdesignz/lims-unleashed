@@ -349,7 +349,7 @@ function handleRevisionRestored() {
                     :aria-pressed="selectedRevisions.includes(revision.id)"
                     @click="toggleRevision(revision.id)"
                   >
-                    <input
+                    <CheckboxInput
                       type="checkbox"
                       class="ds-checkbox mt-1 pointer-events-none"
                       :checked="selectedRevisions.includes(revision.id)"
@@ -419,7 +419,7 @@ function handleRevisionRestored() {
             </div>
 
             <div class="hidden overflow-x-auto lg:block">
-              <table class="min-w-full">
+              <DataTable class="min-w-full">
                 <thead class="ds-table-head">
                   <tr>
                     <th class="ds-table-heading px-5 py-4 text-left">Comparar</th>
@@ -433,7 +433,7 @@ function handleRevisionRestored() {
                 <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
                   <tr v-for="revision in revisionRows" :key="revision.id" class="ds-table-row">
                     <td class="px-5 py-4">
-                      <input
+                      <CheckboxInput
                         type="checkbox"
                         class="ds-checkbox"
                         :checked="selectedRevisions.includes(revision.id)"
@@ -507,7 +507,7 @@ function handleRevisionRestored() {
                     </td>
                   </tr>
                 </tbody>
-              </table>
+              </DataTable>
             </div>
           </div>
 

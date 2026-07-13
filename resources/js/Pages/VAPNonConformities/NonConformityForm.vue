@@ -260,7 +260,7 @@
             <div class="space-y-4">
               <label class="ds-field-group">
                 <span class="ds-field-label">Anexar evidências</span>
-                <input type="file" multiple class="ds-field" @change="selectAttachmentFiles" />
+                <FileInput type="file" multiple class="ds-field" @change="selectAttachmentFiles" />
                 <span class="ds-field-hint">PDF, imagens ou documentos até 10MB.</span>
                 <span v-if="form.errors.attachment_files" class="ds-field-error">{{ form.errors.attachment_files }}</span>
               </label>

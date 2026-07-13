@@ -31,9 +31,9 @@
                         <label class="block text-sm font-medium text-gray-700">
                             {{ $t('gestlab.general.labels.invoices.type_id') }}
                         </label>
-                        <comboboxEnhanced 
-                            :hasError="form.errors.type_id" 
-                            v-model="form.type_id" 
+                        <comboboxEnhanced
+                            :hasError="form.errors.type_id"
+                            v-model="form.type_id"
                             :load-options="loadInvoiceCategories"
                             :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_type')"
                         />
@@ -48,9 +48,9 @@
                             <UserIcon class="h-4 w-4" />
                             {{ $t('gestlab.general.labels.invoices.customer_id') }}
                         </label>
-                        <comboboxEnhanced 
-                            :hasError="form.errors.customer_id" 
-                            v-model="form.customer_id" 
+                        <comboboxEnhanced
+                            :hasError="form.errors.customer_id"
+                            v-model="form.customer_id"
                             :load-options="loadCustomers"
                             :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_customer')"
                             :disableInput="true"
@@ -66,10 +66,10 @@
                             <BuildingOfficeIcon class="h-4 w-4" />
                             {{ $t('gestlab.general.labels.invoices.warehouse_id') }}
                         </label>
-                        <comboboxEnhanced 
+                        <comboboxEnhanced
                             :loading="loadingWarehouses"
-                            :hasError="form.errors.warehouse_id" 
-                            v-model="form.warehouse_id" 
+                            :hasError="form.errors.warehouse_id"
+                            v-model="form.warehouse_id"
                             :load-options="loadWarehouses"
                             :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_warehouse')"
                             :disableInput="true"
@@ -84,9 +84,9 @@
                         <label class="block text-sm font-medium text-gray-700">
                             {{ $t('gestlab.general.labels.invoices.internal_ref') }}
                         </label>
-                        <input 
-                            v-model="form.internal_ref" 
-                            type="text" 
+                        <BaseInput
+                            v-model="form.internal_ref"
+                            type="text"
                             class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6"
                             :placeholder="$t('gestlab.general.labels.invoices.placeholders.enter_reference')"
                         />
@@ -96,7 +96,7 @@
                     </div>
                 </div>
 
-          
+
             <!-- Items Section -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-2">
 
@@ -108,8 +108,8 @@
                 <p class="mt-2 text-sm text-gray-500">
                     {{ $t('gestlab.general.buttons.add_first_item') }}
                 </p>
-                <button 
-                    @click="addItem" 
+                <button
+                    @click="addItem"
                     type="button"
                     class="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2"
                 >
@@ -120,7 +120,7 @@
 
             <!-- Invoice Items Table -->
             <div v-else class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-300">
+                <DataTable class="min-w-full divide-y divide-gray-300">
                     <thead class="bg-gray-50">
                         <tr>
                             <th scope="col" class="py-3.5 pl-6 pr-3 text-left text-sm font-semibold text-gray-900">
@@ -144,8 +144,8 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white">
-                        <tr 
-                            v-for="(item, index) in itemsWithSubTotal" 
+                        <tr
+                            v-for="(item, index) in itemsWithSubTotal"
                             :key="index"
                             v-motion
                             :initial="{ opacity: 0, y: 10 }"
@@ -157,17 +157,17 @@
                             <td class="whitespace-nowrap py-4 pl-6 pr-3 text-sm">
                                 <div class="space-y-2">
 
-                                    <comboboxEnhanced  
-                                        v-model="item.item.item_id" 
-                                        :load-options="loadPaidServices" 
+                                    <comboboxEnhanced
+                                        v-model="item.item.item_id"
+                                        :load-options="loadPaidServices"
                                         @update:model-value="onSelectedItem(item)"
                                         :placeholder="$t('gestlab.general.labels.invoices.placeholders.select_product')"
                                         class="min-w-[250px]"
                                     />
-                                    
-                                    <textarea 
-                                        v-model="item.item.obs" 
-                                        :placeholder="$t('gestlab.general.labels.invoices.obs')" 
+
+                                    <textarea
+                                        v-model="item.item.obs"
+                                        :placeholder="$t('gestlab.general.labels.invoices.obs')"
                                         rows="1"
                                         class="block w-full border-0 border-b border-transparent p-0 pb-1 resize-none focus:ring-0 focus:border-blue-900 text-sm placeholder-gray-400"
                                     />
@@ -177,15 +177,15 @@
                             <!-- Quantity & Unit -->
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                 <div class="space-y-2">
-                                    <input 
-                                        v-model="item.item.qty" 
-                                        type="number" 
+                                    <BaseInput
+                                        v-model="item.item.qty"
+                                        type="number"
                                         step="1"
                                         min="0"
                                         class="w-20 rounded-md border border-gray-300 px-3 py-1.5 text-center text-sm focus:border-blue-900 focus:ring-blue-900"
                                     />
-                                    <comboboxEnhanced 
-                                        v-model="item.item.unit_id" 
+                                    <comboboxEnhanced
+                                        v-model="item.item.unit_id"
                                         :load-options="loadUnits"
                                         :placeholder="$t('gestlab.general.labels.invoices.placeholders.unit')"
                                         class="w-32"
@@ -197,9 +197,9 @@
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900 text-right">
                                 <div class="flex items-center justify-end gap-1">
                                     <CurrencyEuroIcon class="h-4 w-4 text-gray-400" />
-                                    <input 
-                                        v-model="item.unit_price" 
-                                        type="number" 
+                                    <BaseInput
+                                        v-model="item.unit_price"
+                                        type="number"
                                         step="0.01"
                                         min="0"
                                         class="w-32 rounded-md border border-gray-300 px-3 py-1.5 text-right text-sm focus:border-blue-900 focus:ring-blue-900"
@@ -210,24 +210,24 @@
                             <!-- Discount -->
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900 text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    <input 
-                                        v-model="item.item.discount_amount" 
+                                    <BaseInput
+                                        v-model="item.item.discount_amount"
                                         type="number"
                                         min="0"
                                         class="w-24 rounded-md border border-gray-300 px-3 py-1.5 text-right text-sm focus:border-blue-900 focus:ring-blue-900"
                                     />
-                                    <select 
-                                        v-model="item.item.discount_id" 
+                                    <BaseSelect
+                                        v-model="item.item.discount_id"
                                         class="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-900 focus:ring-blue-900"
                                     >
-                                        <option 
-                                            v-for="(type, typeIndex) in props.discount_categories" 
-                                            :key="typeIndex" 
+                                        <option
+                                            v-for="(type, typeIndex) in props.discount_categories"
+                                            :key="typeIndex"
                                             :value="type.value"
                                         >
                                             {{ type.label }}
                                         </option>
-                                    </select>
+                                    </BaseSelect>
                                 </div>
                             </td>
 
@@ -241,7 +241,7 @@
 
                             <!-- Actions -->
                             <td class="whitespace-nowrap py-4 pl-3 pr-6 text-right text-sm font-medium">
-                                <button 
+                                <button
                                     @click="removeItem(index)"
                                     type="button"
                                     class="text-red-600 hover:text-red-900 transition-colors duration-200 p-1 rounded-md hover:bg-red-50"
@@ -304,7 +304,7 @@
                             <td></td>
                         </tr>
                     </tfoot>
-                </table>
+                </DataTable>
             </div>
         </div>
 
@@ -315,8 +315,8 @@
                     <InformationCircleIcon class="h-4 w-4" />
                     {{ $t('gestlab.general.labels.invoices.obs') }}
                 </label>
-                <textarea 
-                    v-model="form.obs" 
+                <textarea
+                    v-model="form.obs"
                     rows="3"
                     class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-900 focus:ring-blue-900 sm:text-sm"
                     :placeholder="$t('gestlab.general.labels.invoices.placeholders.observations')"
@@ -341,9 +341,9 @@
                     </div>
                 </div>
             </div>
-            
+
         </div>
-            
+
 
         </div>
 
@@ -354,7 +354,7 @@
           <div class="text-sm text-gray-500">
             {{ $t('gestlab.general.labels.quality_certificates.action_irreversible') }}
           </div>
-          
+
           <div class="flex items-center gap-3">
             <button
               type="button"
@@ -363,7 +363,7 @@
             >
               {{ $t('gestlab.general.buttons.cancel') }}
             </button>
-            
+
             <button
               type="submit"
               :disabled="form.processing || !form.type_id"
@@ -541,7 +541,7 @@ let submit = () => {
                 // form.reset();
             },
         });
-  } 
+  }
 
 onMounted(() => {
     addItem();

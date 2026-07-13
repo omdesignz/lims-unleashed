@@ -329,7 +329,7 @@
           <div class="mt-6 border-t border-[#ded2bb] pt-5 dark:border-white/10">
             <p class="text-xs font-black uppercase tracking-[0.22em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.show.actions.share') }}</p>
             <div class="mt-3 flex gap-2">
-              <input
+              <BaseInput
                 :value="publicLink"
                 readonly
                 class="min-w-0 flex-1 rounded-[18px] border border-[#ded2bb] bg-[#fbfaf6] px-3 py-2 text-sm font-semibold text-[#33413a] outline-none focus:border-[#c79a43] focus:ring-2 focus:ring-[#c79a43]/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
@@ -406,11 +406,11 @@
         <div class="space-y-4 text-sm font-medium text-[#59665f] dark:text-slate-300">
           <p>{{ $t('gestlab.general.labels.vap_proposals.show.send_modal.message') }}</p>
           <label class="flex items-center gap-3 rounded-[18px] border border-[#ded2bb] bg-[#fbfaf6] p-3 dark:border-white/10 dark:bg-white/5">
-            <input v-model="sendOptions.generatePdf" type="checkbox" class="h-4 w-4 rounded border-[#ded2bb] text-[#143d37] focus:ring-[#c79a43]" />
+            <CheckboxInput v-model="sendOptions.generatePdf" type="checkbox" class="h-4 w-4 rounded border-[#ded2bb] text-[#143d37] focus:ring-[#c79a43]" />
             <span>{{ $t('gestlab.general.labels.vap_proposals.show.send_modal.generate_pdf') }}</span>
           </label>
           <label class="flex items-center gap-3 rounded-[18px] border border-[#ded2bb] bg-[#fbfaf6] p-3 dark:border-white/10 dark:bg-white/5">
-            <input v-model="sendOptions.sendEmail" type="checkbox" class="h-4 w-4 rounded border-[#ded2bb] text-[#143d37] focus:ring-[#c79a43]" />
+            <CheckboxInput v-model="sendOptions.sendEmail" type="checkbox" class="h-4 w-4 rounded border-[#ded2bb] text-[#143d37] focus:ring-[#c79a43]" />
             <span>{{ $t('gestlab.general.labels.vap_proposals.show.send_modal.send_email') }}</span>
           </label>
         </div>

@@ -6,7 +6,7 @@
       <label class="ds-field-group">
         <span class="ds-field-label">Escanear código de reagente / lote</span>
         <span class="mt-1 flex gap-2">
-          <input
+          <BaseInput
             v-model="barcode"
             type="text"
             class="ds-field"

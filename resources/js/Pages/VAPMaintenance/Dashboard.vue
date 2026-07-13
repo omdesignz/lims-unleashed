@@ -63,12 +63,12 @@
             <TagIcon class="mr-1 inline h-4 w-4" />
             Categoria
           </span>
-          <select v-model="filterState.category_id" class="ds-field" @change="applyFilters">
+          <BaseSelect v-model="filterState.category_id" class="ds-field" @change="applyFilters">
             <option value="">Todas as categorias</option>
             <option v-for="category in categories" :key="category.id" :value="category.id">
               {{ category.name }}
             </option>
-          </select>
+          </BaseSelect>
         </label>
 
         <label class="ds-field-group">
@@ -76,13 +76,13 @@
             <CheckCircleIcon class="mr-1 inline h-4 w-4" />
             Estado
           </span>
-          <select v-model="filterState.status" class="ds-field" @change="applyFilters">
+          <BaseSelect v-model="filterState.status" class="ds-field" @change="applyFilters">
             <option value="">Todos os estados</option>
             <option value="overdue">Atrasadas</option>
             <option value="due_soon">Vencendo em breve</option>
             <option value="executed">Executadas</option>
             <option value="planned">Planeadas</option>
-          </select>
+          </BaseSelect>
         </label>
 
         <label class="ds-field-group">
@@ -90,12 +90,12 @@
             <ArrowsUpDownIcon class="mr-1 inline h-4 w-4" />
             Ordenar por
           </span>
-          <select v-model="filterState.sort_by" class="ds-field" @change="applyFilters">
+          <BaseSelect v-model="filterState.sort_by" class="ds-field" @change="applyFilters">
             <option value="due_date">Data de vencimento</option>
             <option value="name">Nome da tarefa</option>
             <option value="created_at">Data de criação</option>
             <option value="cost">Custo</option>
-          </select>
+          </BaseSelect>
         </label>
 
         <label class="ds-field-group">
@@ -103,10 +103,10 @@
             <ArrowsUpDownIcon class="mr-1 inline h-4 w-4" />
             Direção
           </span>
-          <select v-model="filterState.sort_direction" class="ds-field" @change="applyFilters">
+          <BaseSelect v-model="filterState.sort_direction" class="ds-field" @change="applyFilters">
             <option value="asc">Ascendente</option>
             <option value="desc">Descendente</option>
-          </select>
+          </BaseSelect>
         </label>
       </div>
     </section>
@@ -129,7 +129,7 @@
       </div>
 
       <div v-if="taskItems.length" class="min-w-full overflow-x-auto">
-        <table class="min-w-full align-middle text-sm">
+        <DataTable class="min-w-full align-middle text-sm">
           <thead class="ds-table-head">
             <tr>
               <th class="ds-table-heading px-5 py-3 text-left">Tarefa</th>
@@ -211,7 +211,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div v-else class="p-6">
@@ -250,11 +250,11 @@
             </h3>
             <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Estado agregado por período operacional.</p>
           </div>
-          <select v-model="chartPeriod" class="ds-field w-48" @change="loadChartData">
+          <BaseSelect v-model="chartPeriod" class="ds-field w-48" @change="loadChartData">
             <option value="month">Último mês</option>
             <option value="quarter">Último trimestre</option>
             <option value="year">Último ano</option>
-          </select>
+          </BaseSelect>
         </div>
 
         <simpleChart

@@ -70,15 +70,14 @@ function closeModal() {
         </div>
         <label class="ds-field-group mt-5">
           <span class="ds-field-label">Palavra-passe</span>
-          <input
+          <BaseInput
             ref="passwordInput"
             v-model="form.password"
             type="password"
             autocomplete="current-password"
             class="ds-field"
             :aria-invalid="Boolean(form.errors.password)"
-            @keyup.enter="deleteUser"
-          >
+            @keyup.enter="deleteUser" />
           <span v-if="form.errors.password" class="ds-field-error">{{ form.errors.password }}</span>
         </label>
       </template>

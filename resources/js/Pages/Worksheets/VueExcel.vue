@@ -6,7 +6,7 @@
         <button @click="undo" class="bg-blue-500 text-white px-4 py-2 rounded">Undo</button>
         <button @click="redo" class="bg-green-500 text-white px-4 py-2 rounded">Redo</button>
       </div>
-      <table class="border-collapse border border-gray-300 w-full">
+      <DataTable class="border-collapse border border-gray-300 w-full">
         <thead>
           <tr>
             <th class="border border-gray-300 bg-gray-200 p-2">&nbsp;</th>
@@ -20,7 +20,7 @@
             <td class="border border-gray-300 bg-gray-200 p-2 text-center">{{ rowIndex + 1 }}</td>
             <td v-for="(col, colIndex) in columns" :key="col" class="border border-gray-300 p-2">
               <div class="relative">
-                <input
+                <BaseInput
                   type="text"
                   class="w-full h-full bg-transparent border-none focus:ring-0"
                   v-model="grid[rowIndex][colIndex]"
@@ -33,7 +33,7 @@
             </td>
           </tr>
         </tbody>
-      </table>
+      </DataTable>
     </div>
   </div>
 </template>

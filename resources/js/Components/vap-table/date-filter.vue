@@ -22,9 +22,9 @@
             <template #default="{ togglePopover }">
                 <div class="flex rounded-2xl border border-slate-300/90 bg-white/95 shadow-sm ring-1 ring-white/50 dark:border-slate-700 dark:bg-slate-900/90 dark:ring-slate-800/60">
                 <div class="relative flex min-w-0 flex-grow items-stretch focus-within:z-10">
-                    <select v-model="dateFilter.field" id="field" name="field" autocomplete="field" class="block w-full rounded-l-2xl border-0 bg-transparent py-2.5 pl-3 pr-8 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary-500 dark:text-slate-100 dark:placeholder:text-slate-500" @change="onChange">
+                    <BaseSelect v-model="dateFilter.field" id="field" name="field" autocomplete="field" class="block w-full rounded-l-2xl border-0 bg-transparent py-2.5 pl-3 pr-8 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary-500 dark:text-slate-100 dark:placeholder:text-slate-500" @change="onChange">
                         <option v-for="column in columns.filter(column => column.type === 'date')" :key="column.id" :value="column.field">{{ $t(column.label) }}</option>
-                    </select>
+                    </BaseSelect>
                 </div>
                 <button type="button" class="relative -ml-px inline-flex items-center gap-x-1.5 rounded-r-2xl border-l border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-primary-50 hover:text-primary-900 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-primary-500/10 dark:hover:text-primary-200" @click="togglePopover">
                     <CalendarDateRangeIcon class="-ml-1 h-5 w-5 text-primary-800 dark:text-primary-300" aria-hidden="true" /> {{ dateFilter.value ? `${dateFilter.value.start} - ${dateFilter.value.end}` : '-' }}

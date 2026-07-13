@@ -467,7 +467,7 @@ function submitReview() {
                     </button>
                   </div>
                   <div v-else class="mt-2 flex gap-2">
-                    <input
+                    <BaseInput
                       :value="currentValue(result)"
                       class="ds-field"
                       inputmode="decimal"
@@ -487,7 +487,7 @@ function submitReview() {
                   <label class="ds-field-label">Incerteza</label>
                   <div class="relative mt-2">
                     <ScaleIcon class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-                    <input
+                    <BaseInput
                       :value="editedValues[getResultUniqueId(result)]?.uncertainty"
                       class="ds-field pl-9"
                       inputmode="decimal"
@@ -499,7 +499,7 @@ function submitReview() {
                 <template v-if="isApproval">
                   <div class="ds-field-group">
                     <label class="ds-field-label">Referência mínima</label>
-                    <input
+                    <BaseInput
                       :value="editedValues[getResultUniqueId(result)]?.minRef"
                       class="ds-field mt-2"
                       inputmode="decimal"
@@ -508,7 +508,7 @@ function submitReview() {
                   </div>
                   <div class="ds-field-group">
                     <label class="ds-field-label">Referência máxima</label>
-                    <input
+                    <BaseInput
                       :value="editedValues[getResultUniqueId(result)]?.maxRef"
                       class="ds-field mt-2"
                       inputmode="decimal"

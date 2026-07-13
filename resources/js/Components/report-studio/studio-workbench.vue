@@ -1815,7 +1815,7 @@ const snippetLibraries = {
   ],
   executive: [
     { label: 'Hero executivo', description: 'Capa com título e narrativa de gestão.', html: '<section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:24px;"><h1 style="margin:0; font-size:28px;">Resumo Executivo</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">KPIs, risco, capacidade e contexto operacional.</p></section>' },
-    { label: 'Resumo KPI', description: 'Quadro de indicadores principais.', html: '<section style="margin:20px 0;"><table style="width:100%; border-collapse:collapse;"><tr><th style="border:1px solid #cbd5e1; padding:6px;">Indicador</th><th style="border:1px solid #cbd5e1; padding:6px;">Valor</th></tr><tr><td style="border:1px solid #cbd5e1; padding:6px;">Receita</td><td style="border:1px solid #cbd5e1; padding:6px;">AOA 12.500.000</td></tr></table></section>' },
+    { label: 'Resumo KPI', description: 'Quadro de indicadores principais.', html: '<section style="margin:20px 0;"><DataTable style="width:100%; border-collapse:collapse;"><tr><th style="border:1px solid #cbd5e1; padding:6px;">Indicador</th><th style="border:1px solid #cbd5e1; padding:6px;">Valor</th></tr><tr><td style="border:1px solid #cbd5e1; padding:6px;">Receita</td><td style="border:1px solid #cbd5e1; padding:6px;">AOA 12.500.000</td></tr></DataTable></section>' },
     { label: 'Callout de risco', description: 'Área destacada para risco e observações.', html: '<section style="border-left:4px solid #d9b05f; background:#fffaf0; padding:18px 20px; border-radius:18px; margin:20px 0;"><p style="margin:0;">Use este espaço para risco, desvios e decisões executivas.</p></section>' },
     { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página no preview e no PDF.', html: '<pagebreak />' },
   ],
@@ -4148,11 +4148,11 @@ function submit() {
               <p class="studio-output-description">O nome, o tipo documental e a descrição orientam a equipa e determinam as variáveis disponíveis no estúdio.</p>
               <div class="mt-6 grid gap-4 md:grid-cols-2">
                 <label class="studio-setup-field">Nome do modelo
-                  <input v-model="props.form.name" type="text" placeholder="Ex.: Relatório analítico de rotina" />
+                  <BaseInput v-model="props.form.name" type="text" placeholder="Ex.: Relatório analítico de rotina" />
                   <span v-if="props.form.errors.name" class="studio-setup-field__error">{{ props.form.errors.name }}</span>
                 </label>
                 <label class="studio-setup-field">Tipo documental
-                  <select v-model="props.form.studio_type" @change="emit('update:studio-type', props.form.studio_type)">
+                  <BaseSelect v-model="props.form.studio_type" @change="emit('update:studio-type', props.form.studio_type)">
                     <option value="analysis">Relatório analítico</option>
                     <option value="executive">Relatório executivo</option>
                     <option value="export_certificate">Certificado de exportação</option>
@@ -4162,7 +4162,7 @@ function submit() {
                     <option value="receipt">Recibo</option>
                     <option value="credit_note">Nota de crédito</option>
                     <option value="proposal">Proposta</option>
-                  </select>
+                  </BaseSelect>
                 </label>
                 <label class="studio-setup-field md:col-span-2">Descrição operacional
                   <textarea v-model="props.form.description" rows="4" placeholder="Explique quando este modelo deve ser utilizado e que decisões suporta." />
@@ -4172,7 +4172,7 @@ function submit() {
 
             <aside class="studio-lifecycle-card">
               <div class="studio-output-eyebrow">Ciclo de vida</div>
-              <h3 class="mt-2 text-lg font-black text-[#15231f] dark:text-[#f7f1e7]">Disponibilidade do modelo</h3>
+              <h3 class="mt-2 text-lg font-black text-[var(--ds-text)] dark:text-[var(--ds-text)]">Disponibilidade do modelo</h3>
               <div class="mt-5 space-y-2">
                 <button
                   v-for="option in studioStatusOptions"
@@ -4190,7 +4190,7 @@ function submit() {
                 </button>
               </div>
               <label class="studio-default-toggle mt-4">
-                <input v-model="props.form.is_default" type="checkbox" />
+                <CheckboxInput v-model="props.form.is_default" type="checkbox" class="ds-checkbox" />
                 <span>
                   <span class="block text-sm font-black">Modelo padrão</span>
                   <span class="mt-1 block text-xs font-medium leading-5 opacity-70">Pré-seleccionar para novos {{ studioLabels.plural }}.</span>
@@ -4264,10 +4264,10 @@ function submit() {
               <summary>Referência externa e diagnóstico técnico</summary>
               <div class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.7fr)]">
                 <label class="studio-code-field">Referência externa de design
-                  <input v-model="props.form.canva_design_url" type="url" placeholder="https://www.canva.com/design/..." />
+                  <BaseInput v-model="props.form.canva_design_url" type="url" placeholder="https://www.canva.com/design/..." />
                 </label>
-                <div class="rounded-[1.2rem] border border-[#ded3bf] bg-[#fffdf7] p-4 text-xs font-medium leading-5 text-[#6b7b74] dark:border-[#25443c] dark:bg-[#07110f] dark:text-[#a9bcb2]">
-                  <div class="font-black text-[#15231f] dark:text-[#f7f1e7]">{{ selectedRendererOption.label }} · {{ selectedRendererOption.badge }}</div>
+                <div class="rounded-[1.2rem] border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4 text-xs font-medium leading-5 text-[var(--ds-text-muted)] dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-canvas)] dark:text-[var(--ds-text-muted)]">
+                  <div class="font-black text-[var(--ds-text)] dark:text-[var(--ds-text)]">{{ selectedRendererOption.label }} · {{ selectedRendererOption.badge }}</div>
                   <p class="mt-2">{{ selectedRendererOption.description }}</p>
                   <p v-if="selectedRendererOption.value === 'chrome' && selectedRendererOption.binaryPath" class="mt-2 font-mono text-[11px]">Chrome: {{ selectedRendererOption.binaryPath }}</p>
                 </div>
@@ -4302,9 +4302,9 @@ function submit() {
             </div>
             <div class="lg:w-72">
               <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Superfície alvo</label>
-              <select v-model="snippetTarget" class="studio-inspector-select">
+              <BaseSelect v-model="snippetTarget" class="studio-inspector-select">
                 <option v-for="option in snippetTargetOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-              </select>
+              </BaseSelect>
             </div>
           </div>
 
@@ -4312,14 +4312,14 @@ function submit() {
             A editar agora: <span class="font-semibold">{{ surfaceLabel }}</span>
           </div>
 
-          <div class="mt-6 overflow-hidden rounded-[2rem] border border-slate-200 bg-[#f7f1e7] shadow-inner dark:border-slate-700 dark:bg-slate-950">
+          <div class="mt-6 overflow-hidden rounded-[2rem] border border-slate-200 bg-[var(--ds-panel-subtle)] shadow-inner dark:border-slate-700 dark:bg-slate-950">
             <div class="grid min-h-[760px] 2xl:grid-cols-[300px_minmax(0,1fr)_340px]">
               <aside class="border-b border-slate-200 bg-white/80 p-4 dark:border-slate-800 dark:bg-slate-900/80 2xl:border-b-0 2xl:border-r">
                 <div class="flex rounded-full border border-slate-200 bg-slate-50 p-1 text-xs font-bold dark:border-slate-700 dark:bg-slate-950">
                   <button
                     type="button"
                     class="flex-1 rounded-full px-3 py-2 transition"
-                    :class="editorRailMode === 'layers' ? 'bg-[#143d37] text-white shadow-sm dark:bg-[#d9b05f] dark:text-[#07110f]' : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white'"
+                    :class="editorRailMode === 'layers' ? 'bg-[rgb(var(--primary-800-rgb))] text-white shadow-sm dark:bg-[rgb(var(--primary-700-rgb))] dark:text-white' : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white'"
                     @click="editorRailMode = 'layers'"
                   >
                     Objectos
@@ -4327,7 +4327,7 @@ function submit() {
                   <button
                     type="button"
                     class="flex-1 rounded-full px-3 py-2 transition"
-                    :class="editorRailMode === 'assets' ? 'bg-[#143d37] text-white shadow-sm dark:bg-[#d9b05f] dark:text-[#07110f]' : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white'"
+                    :class="editorRailMode === 'assets' ? 'bg-[rgb(var(--primary-800-rgb))] text-white shadow-sm dark:bg-[rgb(var(--primary-700-rgb))] dark:text-white' : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white'"
                     @click="editorRailMode = 'assets'"
                   >
                     Media
@@ -4349,7 +4349,7 @@ function submit() {
                           type="button"
                           class="w-full rounded-2xl border px-3 py-3 text-left transition"
                           :class="selectedCanvasBlockId === block.id
-                            ? 'border-[#d9b05f] bg-[#f8f0dd] text-[#143d37] dark:border-[#d9b05f]/70 dark:bg-[#d9b05f]/10 dark:text-[#f7f1e7]'
+                            ? 'border-[rgb(var(--primary-500-rgb))] bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:border-[rgb(var(--primary-500-rgb))]/70 dark:bg-[rgb(var(--primary-700-rgb))]/10 dark:text-[var(--ds-text)]'
                             : canvasBlockIsHidden(block)
                               ? 'border-slate-200 bg-slate-50/60 text-slate-400 opacity-70 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-500 dark:hover:border-slate-600'
                               : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-600'"
@@ -4378,7 +4378,7 @@ function submit() {
                 </div>
 
                 <div v-show="editorRailMode === 'assets'" class="mt-4 space-y-4">
-                  <input
+                  <FileInput
                     ref="backgroundUploadInput"
                     type="file"
                     class="hidden"
@@ -4469,13 +4469,13 @@ function submit() {
                 </div>
               </aside>
 
-              <section class="relative overflow-auto bg-[radial-gradient(circle_at_top_left,rgba(20,61,55,0.12),transparent_34%),linear-gradient(135deg,#f7f1e7,#ebe2d2)] p-4 dark:bg-none dark:bg-slate-950 sm:p-6 xl:p-8">
+              <section class="relative overflow-auto bg-[var(--ds-canvas)] p-4 dark:bg-none dark:bg-slate-950 sm:p-6 xl:p-8">
                 <div class="mx-auto flex max-w-6xl flex-col gap-4">
                   <div class="studio-canvas-toolbar">
                     <div class="min-w-0">
-                      <div class="text-[10px] font-black uppercase tracking-[0.24em] text-[#6b7b74] dark:text-[#a9bcb2]">Prancheta activa</div>
-                      <div class="mt-1 truncate text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">{{ previewPageSummary }}</div>
-                      <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-bold text-[#6b7b74] dark:text-[#a9bcb2]">
+                      <div class="text-[10px] font-black uppercase tracking-[0.24em] text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">Prancheta activa</div>
+                      <div class="mt-1 truncate text-sm font-black text-[var(--ds-text)] dark:text-[var(--ds-text)]">{{ previewPageSummary }}</div>
+                      <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-bold text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">
                         <span class="studio-toolbar-status">{{ previewPageFormatLabel }}</span>
                         <span class="studio-toolbar-status">{{ visibleCanvasBlocks.length }} objecto{{ visibleCanvasBlocks.length === 1 ? '' : 's' }} {{ visibleCanvasBlocks.length === 1 ? 'visível' : 'visíveis' }}</span>
                       </div>
@@ -4488,7 +4488,7 @@ function submit() {
                           Adicionar
                         </summary>
                         <div class="studio-toolbar-menu-panel">
-                          <div class="px-2 pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#6b7b74] dark:text-[#a9bcb2]">Novo objecto</div>
+                          <div class="px-2 pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">Novo objecto</div>
                           <div class="grid grid-cols-2 gap-2">
                             <button type="button" class="studio-toolbar-menu-action" @click="addTextCanvasBlock">
                               <SparklesIcon class="h-4 w-4" />
@@ -4528,7 +4528,7 @@ function submit() {
                         >
                           ‹
                         </button>
-                        <span class="min-w-14 px-1 text-center text-[11px] font-black tracking-[0.08em] text-[#475a53] dark:text-[#cbd8cf]">{{ currentPreviewPage }}/{{ previewPages.length }}</span>
+                        <span class="min-w-14 px-1 text-center text-[11px] font-black tracking-[0.08em] text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">{{ currentPreviewPage }}/{{ previewPages.length }}</span>
                         <button
                           type="button"
                           class="studio-toolbar-icon-button"
@@ -4540,11 +4540,11 @@ function submit() {
                         </button>
                       </div>
 
-                      <label class="studio-toolbar-group gap-2 pl-3 text-[10px] font-black uppercase tracking-[0.14em] text-[#6b7b74] dark:text-[#a9bcb2]">
+                      <label class="studio-toolbar-group gap-2 pl-3 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">
                         Zoom
-                        <select v-model.number="canvasZoom" class="studio-toolbar-select">
+                        <BaseSelect v-model.number="canvasZoom" class="studio-toolbar-select">
                           <option v-for="option in canvasZoomOptions" :key="`zoom-${option.value}`" :value="option.value">{{ option.label }}</option>
-                        </select>
+                        </BaseSelect>
                       </label>
 
                       <details class="studio-toolbar-menu relative">
@@ -4553,21 +4553,21 @@ function submit() {
                           Vista
                         </summary>
                         <div class="studio-toolbar-menu-panel studio-toolbar-menu-panel--compact">
-                          <div class="px-1 pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#6b7b74] dark:text-[#a9bcb2]">Assistentes do canvas</div>
+                          <div class="px-1 pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">Assistentes do canvas</div>
                           <label class="studio-view-option">
-                            <input v-model="showCanvasGrid" type="checkbox" />
+                            <CheckboxInput v-model="showCanvasGrid" type="checkbox" class="ds-checkbox" />
                             <span>Mostrar grelha</span>
                           </label>
                           <label class="studio-view-option">
-                            <input v-model="showCanvasRulers" type="checkbox" />
+                            <CheckboxInput v-model="showCanvasRulers" type="checkbox" class="ds-checkbox" />
                             <span>Mostrar réguas</span>
                           </label>
                           <label class="studio-view-option">
-                            <input v-model="showSafeArea" type="checkbox" />
+                            <CheckboxInput v-model="showSafeArea" type="checkbox" class="ds-checkbox" />
                             <span>Mostrar área segura</span>
                           </label>
                           <label class="studio-view-option">
-                            <input v-model="snapToGrid" type="checkbox" />
+                            <CheckboxInput v-model="snapToGrid" type="checkbox" class="ds-checkbox" />
                             <span>Alinhamento inteligente</span>
                           </label>
                         </div>
@@ -4577,8 +4577,8 @@ function submit() {
 
                   <div v-if="selectedCanvasBlock" class="studio-context-bar">
                     <div class="min-w-0">
-                      <div class="truncate text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">{{ selectedCanvasBlock.title || 'Objecto sem título' }}</div>
-                      <div class="mt-1 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#6b7b74] dark:text-[#a9bcb2]">
+                      <div class="truncate text-sm font-black text-[var(--ds-text)] dark:text-[var(--ds-text)]">{{ selectedCanvasBlock.title || 'Objecto sem título' }}</div>
+                      <div class="mt-1 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">
                         <span>{{ selectedCanvasBlockKindLabel }}</span>
                         <span aria-hidden="true">·</span>
                         <span>{{ blockSurfaceLabel(selectedCanvasBlock.surface) }}</span>
@@ -4750,9 +4750,9 @@ function submit() {
                 <div class="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-950/60">
                   <div class="text-xs font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Documento</div>
                   <label class="mt-4 block text-sm font-semibold text-slate-800 dark:text-slate-200">Fonte editorial
-                    <select v-model="props.layoutSchema.document_font_family" class="studio-inspector-select">
+                    <BaseSelect v-model="props.layoutSchema.document_font_family" class="studio-inspector-select">
                       <option v-for="option in studioFontOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <p class="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
                     {{ studioFontOptions.find((option) => option.value === documentFontFamily)?.description || 'Fonte usada no preview e persistida no CSS do PDF.' }}
@@ -4779,21 +4779,21 @@ function submit() {
                   </div>
                   <div class="mt-4 grid gap-3">
                     <label class="text-xs font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Ajuste
-                      <select v-model="props.layoutSchema.background_size" class="studio-inspector-select studio-inspector-select--compact">
+                      <BaseSelect v-model="props.layoutSchema.background_size" class="studio-inspector-select studio-inspector-select--compact">
                         <option v-for="option in backgroundFitOptions" :key="`inspector-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
-                      </select>
+                      </BaseSelect>
                     </label>
                     <label class="text-xs font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Posição
-                      <select v-model="props.layoutSchema.background_position" class="studio-inspector-select studio-inspector-select--compact">
+                      <BaseSelect v-model="props.layoutSchema.background_position" class="studio-inspector-select studio-inspector-select--compact">
                         <option v-for="option in backgroundPositionOptions" :key="`inspector-position-${option.value}`" :value="option.value">{{ option.label }}</option>
-                      </select>
+                      </BaseSelect>
                     </label>
                     <div v-if="props.layoutSchema.background_image_path" class="grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
                       <label class="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Foco horizontal
-                        <input :value="imagePositionCoordinates(props.layoutSchema.background_position).x" type="range" min="0" max="100" step="1" class="mt-1 w-full accent-primary-700" @input="setDocumentBackgroundFocalCoordinate('x', $event.target.value)" />
+                        <RangeInput :value="imagePositionCoordinates(props.layoutSchema.background_position).x" type="range" min="0" max="100" step="1" class="mt-1 w-full accent-primary-700" @input="setDocumentBackgroundFocalCoordinate('x', $event.target.value)" />
                       </label>
                       <label class="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Foco vertical
-                        <input :value="imagePositionCoordinates(props.layoutSchema.background_position).y" type="range" min="0" max="100" step="1" class="mt-1 w-full accent-primary-700" @input="setDocumentBackgroundFocalCoordinate('y', $event.target.value)" />
+                        <RangeInput :value="imagePositionCoordinates(props.layoutSchema.background_position).y" type="range" min="0" max="100" step="1" class="mt-1 w-full accent-primary-700" @input="setDocumentBackgroundFocalCoordinate('y', $event.target.value)" />
                       </label>
                     </div>
                     <button
@@ -4811,7 +4811,7 @@ function submit() {
                   <div class="text-xs font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Inspector</div>
                   <div v-if="selectedCanvasBlock" class="mt-4 space-y-3">
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
-                      <input
+                      <BaseInput
                         v-model="selectedCanvasBlock.title"
                         type="text"
                         class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm font-black text-slate-950 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
@@ -4825,7 +4825,7 @@ function submit() {
                         type="button"
                         class="rounded-full px-2 py-2 transition"
                         :class="editorInspectorMode === mode.value
-                          ? 'bg-[#143d37] text-white shadow-sm dark:bg-[#d9b05f] dark:text-[#07110f]'
+                          ? 'bg-[rgb(var(--primary-800-rgb))] text-white shadow-sm dark:bg-[rgb(var(--primary-700-rgb))] dark:text-white'
                           : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'"
                         @click="editorInspectorMode = mode.value"
                       >
@@ -4851,28 +4851,28 @@ function submit() {
                       <summary>Medidas exactas</summary>
                       <div class="mt-3 grid grid-cols-2 gap-2">
                         <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">X
-                          <input v-model.number="selectedCanvasBlock.x" type="number" min="0" max="100" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <BaseInput v-model.number="selectedCanvasBlock.x" type="number" min="0" max="100" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         </label>
                         <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Y
-                          <input v-model.number="selectedCanvasBlock.y" type="number" min="0" max="100" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <BaseInput v-model.number="selectedCanvasBlock.y" type="number" min="0" max="100" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         </label>
                         <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Largura
-                          <input v-model.number="selectedCanvasBlock.width" type="number" min="1" max="100" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <BaseInput v-model.number="selectedCanvasBlock.width" type="number" min="1" max="100" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         </label>
                         <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Altura
-                          <input v-model.number="selectedCanvasBlock.min_height" type="number" min="0" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <BaseInput v-model.number="selectedCanvasBlock.min_height" type="number" min="0" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         </label>
                       </div>
                     </details>
                     <div v-if="['image', 'stamp'].includes(selectedCanvasBlock.block_kind)" v-show="editorInspectorMode === 'media'" class="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
                       <div class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Imagem / recorte</div>
                       <div class="mt-3 grid gap-2">
-                        <select v-model="selectedCanvasBlock.image_fit" class="studio-inspector-select studio-inspector-select--compact">
+                        <BaseSelect v-model="selectedCanvasBlock.image_fit" class="studio-inspector-select studio-inspector-select--compact">
                           <option v-for="option in backgroundFitOptions" :key="`selected-image-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
-                        </select>
-                        <select v-model="selectedCanvasBlock.image_position" class="studio-inspector-select studio-inspector-select--compact">
+                        </BaseSelect>
+                        <BaseSelect v-model="selectedCanvasBlock.image_position" class="studio-inspector-select studio-inspector-select--compact">
                           <option v-for="option in imagePositionOptions" :key="`selected-image-position-${option.value}`" :value="option.value">{{ option.label }}</option>
-                        </select>
+                        </BaseSelect>
                       </div>
                       <div v-if="selectedCanvasBlock.image_url || selectedCanvasBlock.background_image" class="mt-3 overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-950">
                         <div
@@ -4891,10 +4891,10 @@ function submit() {
                         </div>
                         <div class="mt-3 grid gap-2">
                           <label class="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Foco horizontal
-                            <input :value="imagePositionCoordinates(selectedCanvasBlock.image_position).x" type="range" min="0" max="100" step="1" class="mt-1 w-full accent-primary-700" @input="setSelectedImageFocalCoordinate('x', $event.target.value)" />
+                            <RangeInput :value="imagePositionCoordinates(selectedCanvasBlock.image_position).x" type="range" min="0" max="100" step="1" class="mt-1 w-full accent-primary-700" @input="setSelectedImageFocalCoordinate('x', $event.target.value)" />
                           </label>
                           <label class="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Foco vertical
-                            <input :value="imagePositionCoordinates(selectedCanvasBlock.image_position).y" type="range" min="0" max="100" step="1" class="mt-1 w-full accent-primary-700" @input="setSelectedImageFocalCoordinate('y', $event.target.value)" />
+                            <RangeInput :value="imagePositionCoordinates(selectedCanvasBlock.image_position).y" type="range" min="0" max="100" step="1" class="mt-1 w-full accent-primary-700" @input="setSelectedImageFocalCoordinate('y', $event.target.value)" />
                           </label>
                         </div>
                       </div>
@@ -4906,64 +4906,64 @@ function submit() {
 
                     <div v-show="editorInspectorMode === 'layout'" class="grid grid-cols-2 gap-2">
                       <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Tipo
-                        <select v-model="selectedCanvasBlock.block_kind" class="studio-inspector-select studio-inspector-select--compact">
+                        <BaseSelect v-model="selectedCanvasBlock.block_kind" class="studio-inspector-select studio-inspector-select--compact">
                           <option v-for="option in blockKindOptions" :key="`inspector-kind-${option.value}`" :value="option.value">{{ option.label }}</option>
-                        </select>
+                        </BaseSelect>
                       </label>
                       <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Superfície
-                        <select v-model="selectedCanvasBlock.surface" class="studio-inspector-select studio-inspector-select--compact">
+                        <BaseSelect v-model="selectedCanvasBlock.surface" class="studio-inspector-select studio-inspector-select--compact">
                           <option v-for="option in canvasSurfaceOptions" :key="`inspector-surface-${option.value}`" :value="option.value">{{ option.label }}</option>
-                        </select>
+                        </BaseSelect>
                       </label>
                       <label v-if="selectedCanvasBlock.surface === 'content'" class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Âmbito
-                        <select v-model="selectedCanvasBlock.page_scope" class="studio-inspector-select studio-inspector-select--compact">
+                        <BaseSelect v-model="selectedCanvasBlock.page_scope" class="studio-inspector-select studio-inspector-select--compact">
                           <option v-for="option in canvasContentScopeOptions" :key="`inspector-scope-${option.value}`" :value="option.value">{{ option.label }}</option>
-                        </select>
+                        </BaseSelect>
                       </label>
                       <label v-if="selectedCanvasBlock.surface === 'content' && selectedCanvasBlock.page_scope === 'specific'" class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Página
-                        <input v-model.number="selectedCanvasBlock.page_number" type="number" min="1" max="999" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        <BaseInput v-model.number="selectedCanvasBlock.page_number" type="number" min="1" max="999" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                       </label>
                     </div>
 
                     <div v-show="editorInspectorMode === 'style'" class="space-y-3">
                       <div class="grid grid-cols-2 gap-2">
                         <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Padding
-                          <input v-model.number="selectedCanvasBlock.padding" type="number" min="0" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <BaseInput v-model.number="selectedCanvasBlock.padding" type="number" min="0" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         </label>
                         <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Raio
-                          <input v-model.number="selectedCanvasBlock.border_radius" type="number" min="0" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <BaseInput v-model.number="selectedCanvasBlock.border_radius" type="number" min="0" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         </label>
                         <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Borda
-                          <input v-model.number="selectedCanvasBlock.border_width" type="number" min="0" max="40" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <BaseInput v-model.number="selectedCanvasBlock.border_width" type="number" min="0" max="40" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         </label>
                         <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Opacidade
-                          <input v-model.number="selectedCanvasBlock.opacity" type="number" min="0.05" max="1" step="0.05" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <BaseInput v-model.number="selectedCanvasBlock.opacity" type="number" min="0.05" max="1" step="0.05" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         </label>
                       </div>
                       <label class="block text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Cor de fundo
                         <div class="mt-1 flex gap-2">
-                          <input :value="colorInputValue(selectedCanvasBlock.background_color, '#ffffff')" type="color" @input="setSelectedBlockColor('background_color', $event.target.value)" class="h-11 w-12 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                          <input v-model="selectedCanvasBlock.background_color" type="text" placeholder="#ffffff ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <ColorInput :value="colorInputValue(selectedCanvasBlock.background_color, '#ffffff')" type="color" @input="setSelectedBlockColor('background_color', $event.target.value)" class="h-11 w-12 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                          <BaseInput v-model="selectedCanvasBlock.background_color" type="text" placeholder="#ffffff ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         </div>
                       </label>
                       <label class="block text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Cor do texto
                         <div class="mt-1 flex gap-2">
-                          <input :value="colorInputValue(selectedCanvasBlock.text_color, '#0f172a')" type="color" @input="setSelectedBlockColor('text_color', $event.target.value)" class="h-11 w-12 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                          <input v-model="selectedCanvasBlock.text_color" type="text" placeholder="#0f172a" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <ColorInput :value="colorInputValue(selectedCanvasBlock.text_color, '#0f172a')" type="color" @input="setSelectedBlockColor('text_color', $event.target.value)" class="h-11 w-12 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                          <BaseInput v-model="selectedCanvasBlock.text_color" type="text" placeholder="#0f172a" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         </div>
                       </label>
                       <label class="block text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Cor da borda
                         <div class="mt-1 flex gap-2">
-                          <input :value="colorInputValue(selectedCanvasBlock.border_color, '#94a3b8')" type="color" @input="setSelectedBlockColor('border_color', $event.target.value)" class="h-11 w-12 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                          <input v-model="selectedCanvasBlock.border_color" type="text" placeholder="#94a3b8 ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <ColorInput :value="colorInputValue(selectedCanvasBlock.border_color, '#94a3b8')" type="color" @input="setSelectedBlockColor('border_color', $event.target.value)" class="h-11 w-12 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                          <BaseInput v-model="selectedCanvasBlock.border_color" type="text" placeholder="#94a3b8 ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         </div>
                       </label>
                       <div class="grid grid-cols-2 gap-2">
                         <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Texto
-                          <input v-model.number="selectedCanvasBlock.font_size" type="number" min="8" max="72" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <BaseInput v-model.number="selectedCanvasBlock.font_size" type="number" min="8" max="72" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         </label>
                         <label class="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Entrelinha
-                          <input v-model.number="selectedCanvasBlock.line_height" type="number" min="0.8" max="3" step="0.1" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <BaseInput v-model.number="selectedCanvasBlock.line_height" type="number" min="0.8" max="3" step="0.1" class="mt-1 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm normal-case tracking-normal text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         </label>
                       </div>
                     </div>
@@ -4978,26 +4978,26 @@ function submit() {
                       />
                       <div v-if="selectedCanvasBlock.block_kind === 'qr_code'" class="space-y-2">
                         <textarea v-model="selectedCanvasBlock.qr_content" rows="4" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" placeholder="{{document_code}} · {{customer_name}}" />
-                        <input v-model="selectedCanvasBlock.qr_label" type="text" placeholder="Legenda do QR" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        <BaseInput v-model="selectedCanvasBlock.qr_label" type="text" placeholder="Legenda do QR" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         <div class="grid grid-cols-2 gap-2">
                           <label class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">QR
-                            <input :value="colorInputValue(selectedCanvasBlock.qr_foreground_color, '#0f172a')" type="color" @input="setSelectedBlockColor('qr_foreground_color', $event.target.value)" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                            <ColorInput :value="colorInputValue(selectedCanvasBlock.qr_foreground_color, '#0f172a')" type="color" @input="setSelectedBlockColor('qr_foreground_color', $event.target.value)" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
                           </label>
                           <label class="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">Fundo
-                            <input :value="colorInputValue(selectedCanvasBlock.qr_background_color, '#ffffff')" type="color" @input="setSelectedBlockColor('qr_background_color', $event.target.value)" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                            <ColorInput :value="colorInputValue(selectedCanvasBlock.qr_background_color, '#ffffff')" type="color" @input="setSelectedBlockColor('qr_background_color', $event.target.value)" class="mt-1 h-10 w-full rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
                           </label>
                         </div>
                       </div>
                       <div v-if="selectedCanvasBlock.block_kind === 'signature'" class="space-y-2">
-                        <input v-model="selectedCanvasBlock.signature_label" type="text" placeholder="Legenda da assinatura" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                        <input v-model="selectedCanvasBlock.signature_name" type="text" placeholder="Nome / variável" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                        <input v-model="selectedCanvasBlock.signature_title" type="text" placeholder="Cargo / função" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        <BaseInput v-model="selectedCanvasBlock.signature_label" type="text" placeholder="Legenda da assinatura" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        <BaseInput v-model="selectedCanvasBlock.signature_name" type="text" placeholder="Nome / variável" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        <BaseInput v-model="selectedCanvasBlock.signature_title" type="text" placeholder="Cargo / função" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                       </div>
                       <div v-if="selectedCanvasBlock.block_kind === 'chart_snapshot'" class="space-y-2">
-                        <input v-model="selectedCanvasBlock.chart_title" type="text" placeholder="Título do gráfico" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                        <select v-model="selectedCanvasBlock.chart_type" class="studio-inspector-select studio-inspector-select--compact">
+                        <BaseInput v-model="selectedCanvasBlock.chart_title" type="text" placeholder="Título do gráfico" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        <BaseSelect v-model="selectedCanvasBlock.chart_type" class="studio-inspector-select studio-inspector-select--compact">
                           <option v-for="option in chartTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                        </select>
+                        </BaseSelect>
                         <textarea v-model="selectedCanvasBlock.chart_labels" rows="3" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" placeholder="Recepção, Validação, Emissão" />
                         <textarea v-model="selectedCanvasBlock.chart_values" rows="3" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" placeholder="18, 12, 9" />
                         <textarea v-model="selectedCanvasBlock.chart_caption" rows="3" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" placeholder="Legenda ou leitura executiva do gráfico" />
@@ -5034,8 +5034,8 @@ function submit() {
                       <details class="studio-advanced-panel">
                         <summary>Origem avançada da media</summary>
                         <div class="mt-3 space-y-2">
-                          <input v-model="selectedCanvasBlock.image_url" type="text" placeholder="URL da imagem principal" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                          <input v-model="selectedCanvasBlock.background_image" type="text" placeholder="URL do fundo do bloco" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <BaseInput v-model="selectedCanvasBlock.image_url" type="text" placeholder="URL da imagem principal" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                          <BaseInput v-model="selectedCanvasBlock.background_image" type="text" placeholder="URL do fundo do bloco" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                         </div>
                       </details>
                     </div>
@@ -5179,20 +5179,20 @@ function submit() {
           <div class="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
             <div>
               <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Imagem / ficheiro do layout</label>
-              <input
+              <BaseInput
                 v-model="mediaAssetUrl"
                 type="text"
                 placeholder="/storage/report-studios/backgrounds/documento-hero.png"
                 class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               />
-              <select
+              <BaseSelect
                 v-if="localAssetLibrary.length"
                 class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 @change="mediaAssetUrl = $event.target.value"
               >
                 <option value="">Selecionar da galeria ou assinaturas</option>
                 <option v-for="asset in localAssetLibrary" :key="asset.id" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
-              </select>
+              </BaseSelect>
               <button
                 type="button"
                 @click="openMediaPicker('asset-url')"
@@ -5413,160 +5413,160 @@ function submit() {
 
                 <div class="mt-4 grid gap-4 sm:grid-cols-2">
                   <label class="text-sm text-slate-700 dark:text-slate-300">Título
-                    <input v-model="selectedCanvasBlock.title" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.title" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Tipo de bloco
-                    <select v-model="selectedCanvasBlock.block_kind" class="studio-inspector-select">
+                    <BaseSelect v-model="selectedCanvasBlock.block_kind" class="studio-inspector-select">
                       <option v-for="option in blockKindOptions" :key="`inspector-kind-${option.value}`" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Superfície
-                    <select v-model="selectedCanvasBlock.surface" class="studio-inspector-select">
+                    <BaseSelect v-model="selectedCanvasBlock.surface" class="studio-inspector-select">
                       <option v-for="option in canvasSurfaceOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Posição X (%)
-                    <input v-model="selectedCanvasBlock.x" type="number" min="0" max="100" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.x" type="number" min="0" max="100" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Posição Y (%)
-                    <input v-model="selectedCanvasBlock.y" type="number" min="0" max="100" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.y" type="number" min="0" max="100" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Largura (%)
-                    <input v-model="selectedCanvasBlock.width" type="number" min="1" max="100" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.width" type="number" min="1" max="100" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Altura mínima (px)
-                    <input v-model="selectedCanvasBlock.min_height" type="number" min="0" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.min_height" type="number" min="0" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Padding (px)
-                    <input v-model="selectedCanvasBlock.padding" type="number" min="0" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.padding" type="number" min="0" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Raio (px)
-                    <input v-model="selectedCanvasBlock.border_radius" type="number" min="0" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.border_radius" type="number" min="0" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Cor de fundo
                     <div class="mt-2 flex gap-2">
-                      <input :value="colorInputValue(selectedCanvasBlock.background_color, '#ffffff')" type="color" @input="setSelectedBlockColor('background_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                      <input v-model="selectedCanvasBlock.background_color" type="text" placeholder="#ffffff ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="colorInputValue(selectedCanvasBlock.background_color, '#ffffff')" type="color" @input="setSelectedBlockColor('background_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <BaseInput v-model="selectedCanvasBlock.background_color" type="text" placeholder="#ffffff ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Imagem de fundo do bloco
-                    <input v-model="selectedCanvasBlock.background_image" type="text" placeholder="/storage/report-studios/blocks/hero-cover.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    <select v-if="localAssetLibrary.length" class="studio-gallery-select" @change="applyAssetToSelectedBlock($event.target.value, 'background_image')">
+                    <BaseInput v-model="selectedCanvasBlock.background_image" type="text" placeholder="/storage/report-studios/blocks/hero-cover.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseSelect v-if="localAssetLibrary.length" class="studio-gallery-select" @change="applyAssetToSelectedBlock($event.target.value, 'background_image')">
                       <option value="">Aplicar ficheiro como fundo do bloco</option>
                       <option v-for="asset in localAssetLibrary" :key="`bg-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
-                    </select>
+                    </BaseSelect>
                     <button type="button" @click="openMediaPicker('selected-block', 'background_image')" class="studio-media-picker-button">Escolher da galeria</button>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Ajuste da imagem
-                    <select v-model="selectedCanvasBlock.background_image_fit" class="studio-inspector-select">
+                    <BaseSelect v-model="selectedCanvasBlock.background_image_fit" class="studio-inspector-select">
                       <option v-for="option in backgroundFitOptions" :key="`block-background-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Posição da imagem
-                    <select v-model="selectedCanvasBlock.background_image_position" class="studio-inspector-select">
+                    <BaseSelect v-model="selectedCanvasBlock.background_image_position" class="studio-inspector-select">
                       <option v-for="option in backgroundPositionOptions" :key="`block-background-position-${option.value}`" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Cor do overlay
                     <div class="mt-2 flex gap-2">
-                      <input :value="colorInputValue(selectedCanvasBlock.overlay_color, '#0f172a')" type="color" @input="setSelectedBlockColor('overlay_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                      <input v-model="selectedCanvasBlock.overlay_color" type="text" placeholder="#0f172a ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="colorInputValue(selectedCanvasBlock.overlay_color, '#0f172a')" type="color" @input="setSelectedBlockColor('overlay_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <BaseInput v-model="selectedCanvasBlock.overlay_color" type="text" placeholder="#0f172a ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Opacidade do overlay
-                    <input v-model="selectedCanvasBlock.overlay_opacity" type="number" min="0" max="1" step="0.05" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.overlay_opacity" type="number" min="0" max="1" step="0.05" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Cor do texto
                     <div class="mt-2 flex gap-2">
-                      <input :value="colorInputValue(selectedCanvasBlock.text_color, '#0f172a')" type="color" @input="setSelectedBlockColor('text_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                      <input v-model="selectedCanvasBlock.text_color" type="text" placeholder="#0f172a" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="colorInputValue(selectedCanvasBlock.text_color, '#0f172a')" type="color" @input="setSelectedBlockColor('text_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <BaseInput v-model="selectedCanvasBlock.text_color" type="text" placeholder="#0f172a" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Espessura da borda (px)
-                    <input v-model="selectedCanvasBlock.border_width" type="number" min="0" max="40" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.border_width" type="number" min="0" max="40" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Cor da borda
                     <div class="mt-2 flex gap-2">
-                      <input :value="colorInputValue(selectedCanvasBlock.border_color, '#94a3b8')" type="color" @input="setSelectedBlockColor('border_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                      <input v-model="selectedCanvasBlock.border_color" type="text" placeholder="#94a3b8 ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="colorInputValue(selectedCanvasBlock.border_color, '#94a3b8')" type="color" @input="setSelectedBlockColor('border_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <BaseInput v-model="selectedCanvasBlock.border_color" type="text" placeholder="#94a3b8 ou rgba(...)" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Ordem visual
-                    <input v-model="selectedCanvasBlock.z_index" type="number" min="0" max="999" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.z_index" type="number" min="0" max="999" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Opacidade
-                    <input v-model="selectedCanvasBlock.opacity" type="number" min="0.05" max="1" step="0.05" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.opacity" type="number" min="0.05" max="1" step="0.05" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Rotação
-                    <input v-model.number="selectedCanvasBlock.rotation_deg" type="range" min="-45" max="45" step="1" class="mt-3 w-full accent-primary-800 dark:accent-primary-300" />
+                    <RangeInput v-model.number="selectedCanvasBlock.rotation_deg" type="range" min="-45" max="45" step="1" class="mt-3 w-full accent-primary-800 dark:accent-primary-300" />
                     <span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">{{ selectedCanvasBlock.rotation_deg || 0 }}°</span>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Sombra
-                    <select v-model="selectedCanvasBlock.shadow_preset" class="studio-inspector-select">
+                    <BaseSelect v-model="selectedCanvasBlock.shadow_preset" class="studio-inspector-select">
                       <option v-for="option in canvasShadowPresets" :key="option.value" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Alinhamento do texto
-                    <select v-model="selectedCanvasBlock.text_align" class="studio-inspector-select">
+                    <BaseSelect v-model="selectedCanvasBlock.text_align" class="studio-inspector-select">
                       <option v-for="option in textAlignmentOptions" :key="`text-align-${option.value}`" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Tamanho do texto (px)
-                    <input v-model="selectedCanvasBlock.font_size" type="number" min="8" max="72" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.font_size" type="number" min="8" max="72" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Entrelinha
-                    <input v-model="selectedCanvasBlock.line_height" type="number" min="0.8" max="3" step="0.1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.line_height" type="number" min="0.8" max="3" step="0.1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300">
-                    <input v-model="selectedCanvasBlock.is_locked" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
+                    <CheckboxInput v-model="selectedCanvasBlock.is_locked" type="checkbox" class="ds-checkbox" />
                     Bloco bloqueado para mover e redimensionar
                   </label>
                   <label v-if="selectedCanvasBlock.surface === 'content'" class="text-sm text-slate-700 dark:text-slate-300">Âmbito no PDF
-                    <select v-model="selectedCanvasBlock.page_scope" class="studio-inspector-select">
+                    <BaseSelect v-model="selectedCanvasBlock.page_scope" class="studio-inspector-select">
                       <option v-for="option in canvasContentScopeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label v-if="selectedCanvasBlock.surface === 'content' && selectedCanvasBlock.page_scope === 'specific'" class="text-sm text-slate-700 dark:text-slate-300">Página específica
-                    <input v-model="selectedCanvasBlock.page_number" type="number" min="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.page_number" type="number" min="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                 </div>
 
                 <div v-if="selectedCanvasBlock.block_kind === 'signature'" class="mt-4 grid gap-4 sm:grid-cols-2">
                   <label class="text-sm text-slate-700 dark:text-slate-300">Etiqueta
-                    <input v-model="selectedCanvasBlock.signature_label" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.signature_label" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Nome / placeholder
-                    <input v-model="selectedCanvasBlock.signature_name" type="text" placeholder="{{customer_name}}" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.signature_name" type="text" placeholder="{{customer_name}}" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Função / cargo
-                    <input v-model="selectedCanvasBlock.signature_title" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.signature_title" type="text" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Imagem da assinatura
-                    <input v-model="selectedCanvasBlock.signature_image" type="text" placeholder="/storage/signatures/director.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    <select v-if="localAssetLibrary.length" class="studio-gallery-select" @change="applyAssetToSelectedBlock($event.target.value, 'signature_image')">
+                    <BaseInput v-model="selectedCanvasBlock.signature_image" type="text" placeholder="/storage/signatures/director.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseSelect v-if="localAssetLibrary.length" class="studio-gallery-select" @change="applyAssetToSelectedBlock($event.target.value, 'signature_image')">
                       <option value="">Usar assinatura/ficheiro guardado</option>
                       <option v-for="asset in localAssetLibrary" :key="`sig-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
-                    </select>
+                    </BaseSelect>
                     <button type="button" @click="openMediaPicker('selected-block', 'signature_image')" class="studio-media-picker-button">Escolher no media picker</button>
                   </label>
                   <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900 sm:col-span-2">
                     <div class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Imagem impressa da assinatura</div>
                     <div class="mt-3 grid gap-3 sm:grid-cols-2">
                       <label class="text-sm text-slate-700 dark:text-slate-300">Encaixe
-                        <select v-model="selectedCanvasBlock.signature_image_fit" class="studio-inspector-select">
+                        <BaseSelect v-model="selectedCanvasBlock.signature_image_fit" class="studio-inspector-select">
                           <option v-for="option in backgroundFitOptions" :key="`signature-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
-                        </select>
+                        </BaseSelect>
                       </label>
                       <label class="text-sm text-slate-700 dark:text-slate-300">Foco / recorte
-                        <select v-model="selectedCanvasBlock.signature_image_position" class="studio-inspector-select">
+                        <BaseSelect v-model="selectedCanvasBlock.signature_image_position" class="studio-inspector-select">
                           <option v-for="option in imagePositionOptions" :key="`signature-position-${option.value}`" :value="option.value">{{ option.label }}</option>
-                        </select>
+                        </BaseSelect>
                       </label>
                       <label class="text-sm text-slate-700 dark:text-slate-300">Largura impressa
-                        <input v-model.number="selectedCanvasBlock.signature_image_width" type="number" min="24" max="360" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        <BaseInput v-model.number="selectedCanvasBlock.signature_image_width" type="number" min="24" max="360" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                       </label>
                       <label class="text-sm text-slate-700 dark:text-slate-300">Altura impressa
-                        <input v-model.number="selectedCanvasBlock.signature_image_height" type="number" min="16" max="240" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                        <BaseInput v-model.number="selectedCanvasBlock.signature_image_height" type="number" min="16" max="240" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                       </label>
                     </div>
                     <div v-if="selectedCanvasBlock.signature_image" class="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-950">
@@ -5584,45 +5584,45 @@ function submit() {
                     </div>
                   </div>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Estilo da linha
-                    <select v-model="selectedCanvasBlock.signature_line_style" class="studio-inspector-select">
+                    <BaseSelect v-model="selectedCanvasBlock.signature_line_style" class="studio-inspector-select">
                       <option v-for="option in signatureLineStyleOptions" :key="`signature-line-${option.value}`" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Alinhamento da assinatura
-                    <select v-model="selectedCanvasBlock.signature_align" class="studio-inspector-select">
+                    <BaseSelect v-model="selectedCanvasBlock.signature_align" class="studio-inspector-select">
                       <option v-for="option in signatureAlignOptions" :key="`signature-align-${option.value}`" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300">
-                    <input v-model="selectedCanvasBlock.signature_show_date" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
+                    <CheckboxInput v-model="selectedCanvasBlock.signature_show_date" type="checkbox" class="ds-checkbox" />
                     Mostrar campo de data
                   </label>
                   <label v-if="selectedCanvasBlock.signature_show_date" class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Texto do campo de data
-                    <input v-model="selectedCanvasBlock.signature_date_label" type="text" placeholder="Data: ____ / ____ / ______" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.signature_date_label" type="text" placeholder="Data: ____ / ____ / ______" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                 </div>
 
                 <div v-if="['image', 'stamp'].includes(selectedCanvasBlock.block_kind)" class="mt-4 grid gap-4 sm:grid-cols-2">
                   <label class="text-sm text-slate-700 dark:text-slate-300">Imagem / carimbo
-                    <input v-model="selectedCanvasBlock.image_url" type="text" placeholder="/storage/media/stamp.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    <select v-if="localAssetLibrary.length" class="studio-gallery-select" @change="applyAssetToSelectedBlock($event.target.value, 'image_url')">
+                    <BaseInput v-model="selectedCanvasBlock.image_url" type="text" placeholder="/storage/media/stamp.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseSelect v-if="localAssetLibrary.length" class="studio-gallery-select" @change="applyAssetToSelectedBlock($event.target.value, 'image_url')">
                       <option value="">Selecionar da galeria/assinaturas</option>
                       <option v-for="asset in localAssetLibrary" :key="`image-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
-                    </select>
+                    </BaseSelect>
                     <button type="button" @click="openMediaPicker('selected-block', 'image_url')" class="studio-media-picker-button">Escolher no media picker</button>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Texto alternativo
-                    <input v-model="selectedCanvasBlock.image_alt" type="text" placeholder="Carimbo de aprovação" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.image_alt" type="text" placeholder="Carimbo de aprovação" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Ajuste
-                    <select v-model="selectedCanvasBlock.image_fit" class="studio-inspector-select">
+                    <BaseSelect v-model="selectedCanvasBlock.image_fit" class="studio-inspector-select">
                       <option v-for="option in backgroundFitOptions" :key="`block-image-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Foco / recorte
-                    <select v-model="selectedCanvasBlock.image_position" class="studio-inspector-select">
+                    <BaseSelect v-model="selectedCanvasBlock.image_position" class="studio-inspector-select">
                       <option v-for="option in imagePositionOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <div v-if="selectedCanvasBlock.image_url || selectedCanvasBlock.background_image" class="sm:col-span-2 rounded-[1.6rem] border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/40">
                     <div class="flex flex-col gap-4 lg:flex-row">
@@ -5652,10 +5652,10 @@ function submit() {
                         </div>
                         <div class="grid gap-3 sm:grid-cols-2">
                           <label class="text-xs font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">Horizontal
-                            <input :value="imagePositionCoordinates(selectedCanvasBlock.image_position).x" type="range" min="0" max="100" step="1" class="mt-2 w-full accent-primary-700" @input="setSelectedImageFocalCoordinate('x', $event.target.value)" />
+                            <RangeInput :value="imagePositionCoordinates(selectedCanvasBlock.image_position).x" type="range" min="0" max="100" step="1" class="mt-2 w-full accent-primary-700" @input="setSelectedImageFocalCoordinate('x', $event.target.value)" />
                           </label>
                           <label class="text-xs font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">Vertical
-                            <input :value="imagePositionCoordinates(selectedCanvasBlock.image_position).y" type="range" min="0" max="100" step="1" class="mt-2 w-full accent-primary-700" @input="setSelectedImageFocalCoordinate('y', $event.target.value)" />
+                            <RangeInput :value="imagePositionCoordinates(selectedCanvasBlock.image_position).y" type="range" min="0" max="100" step="1" class="mt-2 w-full accent-primary-700" @input="setSelectedImageFocalCoordinate('y', $event.target.value)" />
                           </label>
                         </div>
                         <div class="flex flex-wrap gap-2">
@@ -5675,30 +5675,30 @@ function submit() {
 
                 <div v-if="selectedCanvasBlock.block_kind === 'qr_code'" class="mt-4 grid gap-4 sm:grid-cols-2">
                   <label class="text-sm text-slate-700 dark:text-slate-300">Conteúdo do QR
-                    <input v-model="selectedCanvasBlock.qr_content" type="text" placeholder="{{document_code}} · {{customer_name}} · {{issue_date}}" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.qr_content" type="text" placeholder="{{document_code}} · {{customer_name}} · {{issue_date}}" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Legenda do QR
-                    <input v-model="selectedCanvasBlock.qr_label" type="text" placeholder="Verificação digital" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.qr_label" type="text" placeholder="Verificação digital" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Cor do QR
                     <div class="mt-2 flex gap-2">
-                      <input :value="colorInputValue(selectedCanvasBlock.qr_foreground_color, '#0f172a')" type="color" @input="setSelectedBlockColor('qr_foreground_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                      <input v-model="selectedCanvasBlock.qr_foreground_color" type="text" placeholder="#0f172a" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="colorInputValue(selectedCanvasBlock.qr_foreground_color, '#0f172a')" type="color" @input="setSelectedBlockColor('qr_foreground_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <BaseInput v-model="selectedCanvasBlock.qr_foreground_color" type="text" placeholder="#0f172a" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Cor de fundo do QR
                     <div class="mt-2 flex gap-2">
-                      <input :value="colorInputValue(selectedCanvasBlock.qr_background_color, '#ffffff')" type="color" @input="setSelectedBlockColor('qr_background_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                      <input v-model="selectedCanvasBlock.qr_background_color" type="text" placeholder="#ffffff" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="colorInputValue(selectedCanvasBlock.qr_background_color, '#ffffff')" type="color" @input="setSelectedBlockColor('qr_background_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <BaseInput v-model="selectedCanvasBlock.qr_background_color" type="text" placeholder="#ffffff" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Tolerância de leitura
-                    <select v-model="selectedCanvasBlock.qr_error_correction" class="studio-inspector-select">
+                    <BaseSelect v-model="selectedCanvasBlock.qr_error_correction" class="studio-inspector-select">
                       <option v-for="option in qrErrorCorrectionOptions" :key="`qr-correction-${option.value}`" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Margem de segurança
-                    <input v-model.number="selectedCanvasBlock.qr_margin" type="number" min="0" max="32" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model.number="selectedCanvasBlock.qr_margin" type="number" min="0" max="32" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <p class="text-xs leading-5 text-slate-500 dark:text-slate-400 sm:col-span-2">
                     Use uma URL pública de validação ou variáveis do documento. A pré-visualização codifica o mesmo conteúdo usado no PDF final.
@@ -5707,12 +5707,12 @@ function submit() {
 
                 <div v-if="selectedCanvasBlock.block_kind === 'chart_snapshot'" class="mt-4 grid gap-4 sm:grid-cols-2">
                   <label class="text-sm text-slate-700 dark:text-slate-300">Título do gráfico
-                    <input v-model="selectedCanvasBlock.chart_title" type="text" placeholder="Tendência de ensaios por mês" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.chart_title" type="text" placeholder="Tendência de ensaios por mês" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Tipo de gráfico
-                    <select v-model="selectedCanvasBlock.chart_type" class="studio-inspector-select">
+                    <BaseSelect v-model="selectedCanvasBlock.chart_type" class="studio-inspector-select">
                       <option v-for="option in chartTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Rótulos
                     <textarea v-model="selectedCanvasBlock.chart_labels" rows="4" placeholder="Recepção, Validação, Emissão" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
@@ -5723,34 +5723,34 @@ function submit() {
                     <span class="mt-2 block text-xs text-slate-500 dark:text-slate-400">Os valores são convertidos em SVG no preview e no PDF.</span>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Paleta
-                    <input v-model="selectedCanvasBlock.chart_colors" type="text" placeholder="#143d37, #d9b05f, #0f766e" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.chart_colors" type="text" placeholder="#143d37, #d9b05f, #0f766e" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Cor principal
                     <div class="mt-2 flex gap-2">
-                      <input :value="colorInputValue(selectedCanvasBlock.chart_primary_color, '#143d37')" type="color" @input="setSelectedBlockColor('chart_primary_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                      <input v-model="selectedCanvasBlock.chart_primary_color" type="text" placeholder="#143d37" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="colorInputValue(selectedCanvasBlock.chart_primary_color, '#143d37')" type="color" @input="setSelectedBlockColor('chart_primary_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <BaseInput v-model="selectedCanvasBlock.chart_primary_color" type="text" placeholder="#143d37" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Fundo do gráfico
                     <div class="mt-2 flex gap-2">
-                      <input :value="colorInputValue(selectedCanvasBlock.chart_background_color, '#f8f4ea')" type="color" @input="setSelectedBlockColor('chart_background_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
-                      <input v-model="selectedCanvasBlock.chart_background_color" type="text" placeholder="#f8f4ea" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                      <ColorInput :value="colorInputValue(selectedCanvasBlock.chart_background_color, '#f8f4ea')" type="color" @input="setSelectedBlockColor('chart_background_color', $event.target.value)" class="h-12 w-14 rounded-2xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900" />
+                      <BaseInput v-model="selectedCanvasBlock.chart_background_color" type="text" placeholder="#f8f4ea" class="block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </label>
                   <label class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300">
-                    <input v-model="selectedCanvasBlock.chart_show_values" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
+                    <CheckboxInput v-model="selectedCanvasBlock.chart_show_values" type="checkbox" class="ds-checkbox" />
                     Mostrar valores no gráfico
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Imagem exportada / ficheiro
-                    <input v-model="selectedCanvasBlock.chart_image_url" type="text" placeholder="/storage/report-studios/charts/trend.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    <select v-if="localAssetLibrary.length" class="studio-gallery-select" @change="applyAssetToSelectedBlock($event.target.value, 'chart_image_url')">
+                    <BaseInput v-model="selectedCanvasBlock.chart_image_url" type="text" placeholder="/storage/report-studios/charts/trend.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseSelect v-if="localAssetLibrary.length" class="studio-gallery-select" @change="applyAssetToSelectedBlock($event.target.value, 'chart_image_url')">
                       <option value="">Selecionar gráfico da galeria</option>
                       <option v-for="asset in localAssetLibrary" :key="`chart-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
-                    </select>
+                    </BaseSelect>
                     <button type="button" @click="openMediaPicker('selected-block', 'chart_image_url')" class="studio-media-picker-button">Escolher no media picker</button>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Legenda / leitura executiva
-                    <input v-model="selectedCanvasBlock.chart_caption" type="text" placeholder="Inclui somente resultados validados no período selecionado." class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.chart_caption" type="text" placeholder="Inclui somente resultados validados no período selecionado." class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">SVG do gráfico
                     <textarea v-model="selectedCanvasBlock.chart_svg" rows="7" placeholder="<svg ...> exportado do ApexCharts</svg>" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 font-mono text-xs text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
@@ -5774,9 +5774,9 @@ function submit() {
         <section class="studio-output-command">
           <div class="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div class="max-w-3xl">
-              <div class="text-[11px] font-black uppercase tracking-[0.24em] text-[#d9b05f]">Finalização documental</div>
+              <div class="text-[11px] font-black uppercase tracking-[0.24em] text-[rgb(var(--primary-700-rgb))]">Finalização documental</div>
               <h2 class="mt-3 text-2xl font-black tracking-tight text-white sm:text-3xl">Prepare a versão que será emitida</h2>
-              <p class="mt-3 max-w-2xl text-sm font-medium leading-6 text-[#cbd8cf]">
+              <p class="mt-3 max-w-2xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
                 Estruture superfícies recorrentes, proteja a área útil e seleccione o renderizador adequado antes de guardar ou emitir o PDF.
               </p>
             </div>
@@ -5838,15 +5838,15 @@ function submit() {
               <div class="p-4">
                 <div class="flex items-start justify-between gap-3">
                   <div>
-                    <h4 class="text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">{{ surface.label }}</h4>
-                    <p class="mt-1 text-xs font-medium leading-5 text-[#6b7b74] dark:text-[#a9bcb2]">{{ surface.description }}</p>
+                    <h4 class="text-sm font-black text-[var(--ds-text)] dark:text-[var(--ds-text)]">{{ surface.label }}</h4>
+                    <p class="mt-1 text-xs font-medium leading-5 text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">{{ surface.description }}</p>
                   </div>
                   <span class="studio-surface-status" :class="{ 'studio-surface-status--ready': surface.isConfigured }">
                     {{ surface.isConfigured ? 'Configurado' : 'Em falta' }}
                   </span>
                 </div>
                 <div class="mt-4 flex items-center justify-between gap-3">
-                  <span class="text-[11px] font-black uppercase tracking-[0.14em] text-[#6b7b74] dark:text-[#83978d]">
+                  <span class="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--ds-text-muted)] dark:text-[var(--ds-text-soft)]">
                     {{ surface.objectCount }} objecto{{ surface.objectCount === 1 ? '' : 's' }}
                   </span>
                   <button type="button" class="studio-surface-edit" @click="editPdfSurfaceInCanvas(surface.surface, surface.pageNumber)">
@@ -5862,8 +5862,8 @@ function submit() {
               <div class="studio-output-panel__heading">
                 <div>
                   <div class="studio-output-eyebrow">Plano de fundo</div>
-                  <h4 class="mt-2 text-lg font-black text-[#15231f] dark:text-[#f7f1e7]">Identidade aplicada à página</h4>
-                  <p class="mt-2 text-sm font-medium leading-6 text-[#6b7b74] dark:text-[#a9bcb2]">Escolha uma imagem da galeria e controle o enquadramento sem introduzir ligações manualmente.</p>
+                  <h4 class="mt-2 text-lg font-black text-[var(--ds-text)] dark:text-[var(--ds-text)]">Identidade aplicada à página</h4>
+                  <p class="mt-2 text-sm font-medium leading-6 text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">Escolha uma imagem da galeria e controle o enquadramento sem introduzir ligações manualmente.</p>
                 </div>
                 <button type="button" class="studio-output-action" @click="openMediaPicker('document-background')">
                   <PhotoIcon class="h-4 w-4" />
@@ -5880,28 +5880,28 @@ function submit() {
                     :style="{ objectFit: mediaObjectFit(props.layoutSchema.background_size || 'cover'), objectPosition: props.layoutSchema.background_position || 'center center' }"
                   />
                   <div v-else class="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-                    <PhotoIcon class="h-7 w-7 text-[#d9b05f]" />
-                    <span class="text-xs font-black uppercase tracking-[0.16em] text-[#6b7b74] dark:text-[#a9bcb2]">Sem fundo aplicado</span>
+                    <PhotoIcon class="h-7 w-7 text-[rgb(var(--primary-700-rgb))]" />
+                    <span class="text-xs font-black uppercase tracking-[0.16em] text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">Sem fundo aplicado</span>
                   </div>
                 </div>
                 <div class="grid content-start gap-3 sm:grid-cols-3">
                   <label class="studio-color-field sm:col-span-3">Cor de página
-                    <input :value="colorInputValue(props.layoutSchema.page_background_color, '#fffdf7')" type="color" @input="props.layoutSchema.page_background_color = $event.target.value" />
+                    <ColorInput :value="colorInputValue(props.layoutSchema.page_background_color, '#fffdf7')" type="color" @input="props.layoutSchema.page_background_color = $event.target.value" />
                   </label>
                   <label class="studio-compact-field">Ajuste
-                    <select v-model="props.layoutSchema.background_size">
+                    <BaseSelect v-model="props.layoutSchema.background_size">
                       <option v-for="option in backgroundFitOptions" :key="`pdf-fit-${option.value}`" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="studio-compact-field">Posição
-                    <select v-model="props.layoutSchema.background_position">
+                    <BaseSelect v-model="props.layoutSchema.background_position">
                       <option v-for="option in backgroundPositionOptions" :key="`pdf-position-${option.value}`" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <label class="studio-compact-field">Repetição
-                    <select v-model="props.layoutSchema.background_repeat">
+                    <BaseSelect v-model="props.layoutSchema.background_repeat">
                       <option v-for="option in backgroundRepeatOptions" :key="`pdf-repeat-${option.value}`" :value="option.value">{{ option.label }}</option>
-                    </select>
+                    </BaseSelect>
                   </label>
                   <button
                     v-if="props.layoutSchema.background_image_path"
@@ -5917,19 +5917,19 @@ function submit() {
 
             <div class="studio-background-card">
               <div class="studio-output-eyebrow">Tipografia documental</div>
-              <h4 class="mt-2 text-lg font-black text-[#15231f] dark:text-[#f7f1e7]">Leitura consistente em todas as páginas</h4>
+              <h4 class="mt-2 text-lg font-black text-[var(--ds-text)] dark:text-[var(--ds-text)]">Leitura consistente em todas as páginas</h4>
               <label class="studio-compact-field mt-5">Família tipográfica
-                <select v-model="props.layoutSchema.document_font_family">
+                <BaseSelect v-model="props.layoutSchema.document_font_family">
                   <option v-for="option in studioFontOptions" :key="`pdf-font-${option.value}`" :value="option.value">{{ option.label }}</option>
-                </select>
+                </BaseSelect>
               </label>
-              <p class="mt-3 text-xs font-medium leading-5 text-[#6b7b74] dark:text-[#a9bcb2]">
+              <p class="mt-3 text-xs font-medium leading-5 text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">
                 {{ studioFontOptions.find((option) => option.value === documentFontFamily)?.description }}
               </p>
-              <div class="mt-5 rounded-[1.25rem] border border-[#ded3bf] bg-[#fffdf7] p-4 dark:border-[#25443c] dark:bg-[#07110f]">
-                <div class="text-[10px] font-black uppercase tracking-[0.18em] text-[#d9b05f]">Amostra tipográfica</div>
-                <div class="mt-3 text-xl font-black text-[#15231f] dark:text-[#f7f1e7]" :style="{ fontFamily: documentFontFamily }">Relatório técnico controlado</div>
-                <p class="mt-2 text-xs leading-5 text-[#6b7b74] dark:text-[#a9bcb2]" :style="{ fontFamily: documentFontFamily }">Resultado, incerteza, método e decisão apresentados com hierarquia consistente.</p>
+              <div class="mt-5 rounded-[1.25rem] border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4 dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-canvas)]">
+                <div class="text-[10px] font-black uppercase tracking-[0.18em] text-[rgb(var(--primary-700-rgb))]">Amostra tipográfica</div>
+                <div class="mt-3 text-xl font-black text-[var(--ds-text)] dark:text-[var(--ds-text)]" :style="{ fontFamily: documentFontFamily }">Relatório técnico controlado</div>
+                <p class="mt-2 text-xs leading-5 text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]" :style="{ fontFamily: documentFontFamily }">Resultado, incerteza, método e decisão apresentados com hierarquia consistente.</p>
               </div>
             </div>
           </div>
@@ -5950,10 +5950,10 @@ function submit() {
                 <textarea v-model="props.layoutSchema.styles_css" rows="6" />
               </label>
               <label class="studio-code-field xl:col-span-2">Ligação directa do fundo
-                <input v-model="props.layoutSchema.background_image_path" type="text" @change="syncAssetUrlFromBackground" />
+                <BaseInput v-model="props.layoutSchema.background_image_path" type="text" @change="syncAssetUrlFromBackground" />
               </label>
               <label class="studio-code-field">Cor de página
-                <input v-model="props.layoutSchema.page_background_color" type="text" placeholder="#fffdf7" />
+                <BaseInput v-model="props.layoutSchema.page_background_color" type="text" placeholder="#fffdf7" />
               </label>
             </div>
           </details>
@@ -5988,39 +5988,39 @@ function submit() {
             <div class="studio-table-stage">
               <div class="grid gap-3 sm:grid-cols-3">
                 <label class="studio-color-field">Cabeçalho
-                  <input v-model="props.layoutSchema.table_header_background" type="color" />
+                  <ColorInput v-model="props.layoutSchema.table_header_background" type="color" />
                 </label>
                 <label class="studio-color-field">Texto
-                  <input v-model="props.layoutSchema.table_header_text_color" type="color" />
+                  <ColorInput v-model="props.layoutSchema.table_header_text_color" type="color" />
                 </label>
                 <label class="studio-color-field">Bordas
-                  <input v-model="props.layoutSchema.table_border_color" type="color" />
+                  <ColorInput v-model="props.layoutSchema.table_border_color" type="color" />
                 </label>
                 <label class="studio-color-field">Cartões
-                  <input v-model="props.layoutSchema.table_summary_background" type="color" />
+                  <ColorInput v-model="props.layoutSchema.table_summary_background" type="color" />
                 </label>
                 <label class="studio-color-field">Texto dos cartões
-                  <input v-model="props.layoutSchema.table_summary_text_color" type="color" />
+                  <ColorInput v-model="props.layoutSchema.table_summary_text_color" type="color" />
                 </label>
                 <label class="studio-color-field">Texto auxiliar
-                  <input v-model="props.layoutSchema.table_summary_muted_color" type="color" />
+                  <ColorInput v-model="props.layoutSchema.table_summary_muted_color" type="color" />
                 </label>
                 <label class="studio-compact-field">Tamanho da fonte
-                  <input v-model.number="props.layoutSchema.table_font_size" type="number" min="8" max="16" />
+                  <BaseInput v-model.number="props.layoutSchema.table_font_size" type="number" min="8" max="16" />
                 </label>
                 <label class="studio-compact-field sm:col-span-2">Espaçamento interno · {{ tableStyleSettings.table_cell_padding }} px
-                  <input v-model.number="props.layoutSchema.table_cell_padding" type="range" min="2" max="24" />
+                  <RangeInput v-model.number="props.layoutSchema.table_cell_padding" type="range" min="2" max="24" />
                 </label>
               </div>
-              <div class="mt-5 overflow-hidden rounded-[1.6rem] border border-[#ded3bf] bg-[#fffdf7] shadow-sm dark:border-[#25443c] dark:bg-[#07110f]">
-                <div class="flex items-center justify-between border-b border-[#ded3bf] px-5 py-4 dark:border-[#25443c]">
+              <div class="mt-5 overflow-hidden rounded-[1.6rem] border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] shadow-sm dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-canvas)]">
+                <div class="flex items-center justify-between border-b border-[var(--ds-border)] px-5 py-4 dark:border-[var(--ds-border-strong)]">
                   <div>
                     <div class="studio-output-eyebrow">Pré-visualização real</div>
-                    <div class="mt-1 text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">Tabela analítica bilingue</div>
+                    <div class="mt-1 text-sm font-black text-[var(--ds-text)] dark:text-[var(--ds-text)]">Tabela analítica bilingue</div>
                   </div>
                   <span class="studio-toolbar-status text-xs font-black">{{ tableStyleSettings.table_font_size }} px</span>
                 </div>
-                <table class="w-full border-collapse">
+                <DataTable class="w-full border-collapse">
                   <thead>
                     <tr>
                       <th class="border text-left uppercase tracking-[0.12em]" :style="tablePreviewHeaderStyle">Parâmetro</th>
@@ -6028,7 +6028,7 @@ function submit() {
                       <th class="border text-left uppercase tracking-[0.12em]" :style="tablePreviewHeaderStyle">Unidade</th>
                     </tr>
                   </thead>
-                  <tbody class="text-[#475a53] dark:text-[#cbd8cf]">
+                  <tbody class="text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">
                     <tr>
                       <td class="border" :style="tablePreviewCellStyle">Proteína<span class="block text-[0.8em] opacity-65">Protein</span></td>
                       <td class="border font-black" :style="tablePreviewCellStyle">12,4 ± 0,3</td>
@@ -6040,8 +6040,8 @@ function submit() {
                       <td class="border" :style="tablePreviewCellStyle">%</td>
                     </tr>
                   </tbody>
-                </table>
-                <div class="grid gap-3 border-t border-[#ded3bf] p-4 dark:border-[#25443c] sm:grid-cols-2">
+                </DataTable>
+                <div class="grid gap-3 border-t border-[var(--ds-border)] p-4 dark:border-[var(--ds-border-strong)] sm:grid-cols-2">
                   <div class="rounded-2xl border p-4" :style="tablePreviewSummaryStyle">
                     <span class="block text-[0.68rem] font-black uppercase tracking-[0.18em]" :style="tablePreviewSummaryMutedStyle">Amostra / Sample</span>
                     <span class="mt-1 block text-sm font-black">SE-2026-0142</span>
@@ -6116,8 +6116,8 @@ function submit() {
                 <div class="studio-page-specimen__safe" />
               </div>
               <div class="mt-4 text-center">
-                <div class="text-sm font-black text-[#15231f] dark:text-[#f7f1e7]">{{ previewPageSummary }}</div>
-                <div class="mt-1 text-xs font-medium text-[#6b7b74] dark:text-[#a9bcb2]">{{ previewMarginSummary }}</div>
+                <div class="text-sm font-black text-[var(--ds-text)] dark:text-[var(--ds-text)]">{{ previewPageSummary }}</div>
+                <div class="mt-1 text-xs font-medium text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">{{ previewMarginSummary }}</div>
               </div>
               <div class="mt-4 grid grid-cols-2 gap-2">
                 <button
@@ -6138,25 +6138,25 @@ function submit() {
             <summary>Medidas exactas da página e margens</summary>
             <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <label v-if="props.exportSettings.paper_size === 'custom'" class="studio-compact-field">Largura (mm)
-                <input v-model.number="props.exportSettings.custom_page_width" type="number" min="50" max="2000" step="1" />
+                <BaseInput v-model.number="props.exportSettings.custom_page_width" type="number" min="50" max="2000" step="1" />
               </label>
               <label v-if="props.exportSettings.paper_size === 'custom'" class="studio-compact-field">Altura (mm)
-                <input v-model.number="props.exportSettings.custom_page_height" type="number" min="50" max="2000" step="1" />
+                <BaseInput v-model.number="props.exportSettings.custom_page_height" type="number" min="50" max="2000" step="1" />
               </label>
               <label class="studio-compact-field">Topo (mm)
-                <input v-model.number="props.exportSettings.margin_top" type="number" min="0" max="200" step="1" />
+                <BaseInput v-model.number="props.exportSettings.margin_top" type="number" min="0" max="200" step="1" />
               </label>
               <label class="studio-compact-field">Direita (mm)
-                <input v-model.number="props.exportSettings.margin_right" type="number" min="0" max="200" step="1" />
+                <BaseInput v-model.number="props.exportSettings.margin_right" type="number" min="0" max="200" step="1" />
               </label>
               <label class="studio-compact-field">Base (mm)
-                <input v-model.number="props.exportSettings.margin_bottom" type="number" min="0" max="200" step="1" />
+                <BaseInput v-model.number="props.exportSettings.margin_bottom" type="number" min="0" max="200" step="1" />
               </label>
               <label class="studio-compact-field">Esquerda (mm)
-                <input v-model.number="props.exportSettings.margin_left" type="number" min="0" max="200" step="1" />
+                <BaseInput v-model.number="props.exportSettings.margin_left" type="number" min="0" max="200" step="1" />
               </label>
               <label class="studio-compact-field">Topo inicial (mm)
-                <input v-model.number="props.exportSettings.first_page_margin_top" type="number" min="0" max="250" step="1" />
+                <BaseInput v-model.number="props.exportSettings.first_page_margin_top" type="number" min="0" max="250" step="1" />
               </label>
             </div>
           </details>
@@ -6221,9 +6221,9 @@ function submit() {
             <div class="studio-emission-card">
               <div class="studio-output-eyebrow">Resumo de emissão</div>
               <dl class="mt-4 space-y-3 text-sm">
-                <div class="flex items-start justify-between gap-4"><dt class="text-[#6b7b74] dark:text-[#a9bcb2]">Página</dt><dd class="text-right font-black text-[#15231f] dark:text-[#f7f1e7]">{{ selectedPageFormatOption.label }}</dd></div>
-                <div class="flex items-start justify-between gap-4"><dt class="text-[#6b7b74] dark:text-[#a9bcb2]">Área útil</dt><dd class="text-right font-black text-[#15231f] dark:text-[#f7f1e7]">{{ printableAreaSummary }}</dd></div>
-                <div class="flex items-start justify-between gap-4"><dt class="text-[#6b7b74] dark:text-[#a9bcb2]">Renderizador</dt><dd class="text-right font-black text-[#15231f] dark:text-[#f7f1e7]">{{ selectedRendererOption.label }}</dd></div>
+                <div class="flex items-start justify-between gap-4"><dt class="text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">Página</dt><dd class="text-right font-black text-[var(--ds-text)] dark:text-[var(--ds-text)]">{{ selectedPageFormatOption.label }}</dd></div>
+                <div class="flex items-start justify-between gap-4"><dt class="text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">Área útil</dt><dd class="text-right font-black text-[var(--ds-text)] dark:text-[var(--ds-text)]">{{ printableAreaSummary }}</dd></div>
+                <div class="flex items-start justify-between gap-4"><dt class="text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">Renderizador</dt><dd class="text-right font-black text-[var(--ds-text)] dark:text-[var(--ds-text)]">{{ selectedRendererOption.label }}</dd></div>
               </dl>
               <button type="button" class="studio-output-action studio-output-action--primary mt-5 w-full justify-center" :disabled="draftPreviewBusy || props.form.processing" @click="previewDraftPdf">
                 <EyeIcon class="h-4 w-4" />
@@ -6244,7 +6244,7 @@ function submit() {
 
           <details class="studio-advanced-panel mt-5">
             <summary>Notas técnicas do renderizador</summary>
-            <p class="mt-3 text-xs font-medium leading-6 text-[#6b7b74] dark:text-[#a9bcb2]">
+            <p class="mt-3 text-xs font-medium leading-6 text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">
               O mPDF usa principalmente CSS 2.1. Para flex/grid, filtros, transforms, gráficos exportados como SVG ou imagem e posicionamento moderno, seleccione Chrome PDF. No Chrome, cabeçalhos, rodapés e paginação usam templates nativos.
             </p>
           </details>
@@ -6257,11 +6257,11 @@ function submit() {
         <div class="min-w-0">
           <div class="studio-output-eyebrow">Prova editorial</div>
           <div class="mt-2 flex flex-wrap items-center gap-2">
-            <h2 class="text-xl font-black tracking-tight text-[#15231f] dark:text-[#f7f1e7]">{{ previewMeta.title }}</h2>
+            <h2 class="text-xl font-black tracking-tight text-[var(--ds-text)] dark:text-[var(--ds-text)]">{{ previewMeta.title }}</h2>
             <span class="studio-toolbar-status text-[10px] font-black uppercase tracking-[0.12em]">{{ previewPageFormatLabel }}</span>
             <span class="studio-toolbar-status text-[10px] font-black uppercase tracking-[0.12em]">{{ printableAreaSummary }}</span>
           </div>
-          <p class="mt-2 max-w-3xl text-xs font-medium leading-5 text-[#6b7b74] dark:text-[#a9bcb2]">{{ previewMeta.subtitle }}</p>
+          <p class="mt-2 max-w-3xl text-xs font-medium leading-5 text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">{{ previewMeta.subtitle }}</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
           <div class="studio-preview-toggle">
@@ -6278,12 +6278,12 @@ function submit() {
               Assistentes
             </summary>
             <div class="studio-toolbar-menu-panel studio-toolbar-menu-panel--compact">
-              <label class="studio-view-option"><input v-model="showCanvasGrid" type="checkbox" /><span>Grelha</span></label>
-              <label class="studio-view-option"><input v-model="showCanvasRulers" type="checkbox" /><span>Réguas</span></label>
-              <label class="studio-view-option"><input v-model="showSafeArea" type="checkbox" /><span>Área segura</span></label>
-              <label class="studio-view-option"><input v-model="snapToGrid" type="checkbox" /><span>Alinhamento inteligente</span></label>
+              <label class="studio-view-option"><CheckboxInput v-model="showCanvasGrid" type="checkbox" class="ds-checkbox" /><span>Grelha</span></label>
+              <label class="studio-view-option"><CheckboxInput v-model="showCanvasRulers" type="checkbox" class="ds-checkbox" /><span>Réguas</span></label>
+              <label class="studio-view-option"><CheckboxInput v-model="showSafeArea" type="checkbox" class="ds-checkbox" /><span>Área segura</span></label>
+              <label class="studio-view-option"><CheckboxInput v-model="snapToGrid" type="checkbox" class="ds-checkbox" /><span>Alinhamento inteligente</span></label>
               <label class="studio-compact-field mt-2">Passo da grelha (%)
-                <input v-model="gridSize" type="number" min="1" max="24" />
+                <BaseInput v-model="gridSize" type="number" min="1" max="24" />
               </label>
             </div>
           </details>
@@ -6293,7 +6293,7 @@ function submit() {
       <div v-if="previewPages.length > 1" class="studio-preview-pagebar">
         <div class="studio-toolbar-group">
           <button type="button" class="studio-toolbar-icon-button" :disabled="currentPreviewPage <= 1 || previewDisplayMode === 'all'" aria-label="Página anterior" @click="stepPreviewPage(-1)">‹</button>
-          <span class="min-w-16 px-2 text-center text-[11px] font-black tracking-[0.08em] text-[#475a53] dark:text-[#cbd8cf]">{{ currentPreviewPage }}/{{ previewPages.length }}</span>
+          <span class="min-w-16 px-2 text-center text-[11px] font-black tracking-[0.08em] text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">{{ currentPreviewPage }}/{{ previewPages.length }}</span>
           <button type="button" class="studio-toolbar-icon-button" :disabled="currentPreviewPage >= previewPages.length || previewDisplayMode === 'all'" aria-label="Página seguinte" @click="stepPreviewPage(1)">›</button>
         </div>
         <div class="flex min-w-0 flex-1 gap-2 overflow-x-auto py-1">
@@ -6456,28 +6456,28 @@ function submit() {
         </div>
       </div>
 
-      <p class="mt-4 text-center text-xs font-medium text-[#6b7b74] dark:text-[#a9bcb2]">
+      <p class="mt-4 text-center text-xs font-medium text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">
         Esta pré-visualização serve para a composição editorial. No PDF final, cabeçalhos, rodapés, margens, orientação, fundo, paginação e o âmbito por página dos blocos do corpo são respeitados.
       </p>
     </div>
 
-    <div v-if="mediaPickerOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-[#06100e]/80 p-4 backdrop-blur-sm" @click.self="mediaPickerOpen = false">
-      <div class="max-h-[88vh] w-full max-w-6xl overflow-hidden rounded-[2.4rem] border border-[#ded3bf] bg-[#fffdf7] shadow-[0_40px_120px_rgba(6,16,14,0.34)] dark:border-[#29483f] dark:bg-[#07110f]">
-        <div class="flex flex-col gap-4 border-b border-[#ded3bf] bg-[linear-gradient(135deg,#fffdf7,#f4efe4)] px-6 py-5 dark:border-[#29483f] dark:bg-[linear-gradient(135deg,#0d1d19,#07110f)] md:flex-row md:items-center md:justify-between">
+    <div v-if="mediaPickerOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm" @click.self="mediaPickerOpen = false">
+      <div class="max-h-[88vh] w-full max-w-6xl overflow-hidden rounded-[2.4rem] border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] shadow-[0_40px_120px_rgba(6,16,14,0.34)] dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-canvas)]">
+        <div class="flex flex-col gap-4 border-b border-[var(--ds-border)] bg-[linear-gradient(135deg,var(--ds-panel-raised),var(--ds-panel-subtle))] px-6 py-5 dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-panel)] md:flex-row md:items-center md:justify-between">
           <div>
-            <div class="text-[10px] font-black uppercase tracking-[0.22em] text-[#d9b05f]">{{ studioCopy('media_picker.eyebrow') }}</div>
-            <h2 class="mt-1 text-xl font-black tracking-tight text-[#15231f] dark:text-[#fffdf7]">{{ studioCopy('media_picker.title') }}</h2>
-            <p class="mt-1 max-w-2xl text-sm font-medium leading-6 text-[#6b7b74] dark:text-[#b8c9c0]">{{ studioCopy('media_picker.description') }}</p>
-            <div class="mt-3 inline-flex rounded-full border border-[#ded3bf] bg-white/80 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#143d37] shadow-sm dark:border-[#29483f] dark:bg-[#10231f] dark:text-[#d9b05f]">
+            <div class="text-[10px] font-black uppercase tracking-[0.22em] text-[rgb(var(--primary-700-rgb))]">{{ studioCopy('media_picker.eyebrow') }}</div>
+            <h2 class="mt-1 text-xl font-black tracking-tight text-[var(--ds-text)] dark:text-white">{{ studioCopy('media_picker.title') }}</h2>
+            <p class="mt-1 max-w-2xl text-sm font-medium leading-6 text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">{{ studioCopy('media_picker.description') }}</p>
+            <div class="mt-3 inline-flex rounded-full border border-[var(--ds-border)] bg-white/80 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[rgb(var(--primary-800-rgb))] shadow-sm dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-panel)] dark:text-[rgb(var(--primary-700-rgb))]">
               {{ studioCopy('media_picker.target_label', { target: mediaPickerTargetLabel }) }}
             </div>
           </div>
-          <button type="button" @click="mediaPickerOpen = false" class="rounded-2xl border border-[#ded3bf] bg-white/80 px-4 py-2 text-sm font-black text-[#20332f] transition hover:bg-[#f4efe4] dark:border-[#29483f] dark:bg-[#10231f] dark:text-[#fffdf7] dark:hover:bg-[#143d37]">
+          <button type="button" @click="mediaPickerOpen = false" class="rounded-2xl border border-[var(--ds-border)] bg-white/80 px-4 py-2 text-sm font-black text-[var(--ds-text)] transition hover:bg-[var(--ds-panel-subtle)] dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-panel)] dark:text-white dark:hover:bg-[rgb(var(--primary-800-rgb))]">
             {{ studioCopy('media_picker.close') }}
           </button>
         </div>
         <div class="max-h-[70vh] overflow-y-auto p-6">
-          <input
+          <FileInput
             ref="mediaPickerUploadInput"
             type="file"
             class="hidden"
@@ -6488,8 +6488,8 @@ function submit() {
             type="button"
             class="mb-5 w-full rounded-[2rem] border border-dashed p-5 text-left transition"
             :class="mediaPickerUploadDragging
-              ? 'border-[#d9b05f] bg-[#fff7e1] dark:border-[#d9b05f] dark:bg-[#d9b05f]/10'
-              : 'border-[#d8cbb8] bg-white/70 hover:border-[#d9b05f] hover:bg-[#fffaf0] dark:border-[#29483f] dark:bg-[#10231f]/80 dark:hover:border-[#d9b05f]/70 dark:hover:bg-[#d9b05f]/10'"
+              ? 'border-[rgb(var(--primary-500-rgb))] bg-[#fff7e1] dark:border-[rgb(var(--primary-500-rgb))] dark:bg-[rgb(var(--primary-700-rgb))]/10'
+              : 'border-[#d8cbb8] bg-white/70 hover:border-[rgb(var(--primary-500-rgb))] hover:bg-[var(--ds-panel-subtle)] dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-panel)]/80 dark:hover:border-[rgb(var(--primary-500-rgb))]/70 dark:hover:bg-[rgb(var(--primary-700-rgb))]/10'"
             @click="pickMediaPickerUpload"
             @dragenter.prevent="mediaPickerUploadDragging = true"
             @dragover.prevent="mediaPickerUploadDragging = true"
@@ -6498,32 +6498,32 @@ function submit() {
           >
             <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div class="flex items-start gap-3">
-                <div class="rounded-2xl bg-[#143d37] p-3 text-[#fffdf7] shadow-lg shadow-[#143d37]/20">
+                <div class="rounded-2xl bg-[rgb(var(--primary-800-rgb))] p-3 text-white shadow-lg shadow-[rgb(var(--primary-800-rgb))]/20">
                   <PhotoIcon class="h-5 w-5" />
                 </div>
                 <div>
-                  <div class="text-sm font-black text-[#15231f] dark:text-[#fffdf7]">{{ studioCopy('media_picker.add_title') }}</div>
-                  <p class="mt-1 text-xs font-medium leading-5 text-[#6b7b74] dark:text-[#a9bcb2]">
+                  <div class="text-sm font-black text-[var(--ds-text)] dark:text-white">{{ studioCopy('media_picker.add_title') }}</div>
+                  <p class="mt-1 text-xs font-medium leading-5 text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">
                     {{ studioCopy('media_picker.add_description') }}
                   </p>
                 </div>
               </div>
-              <span class="rounded-full border border-[#eadfca] bg-[#fffdf7] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-[#9a7a2f] shadow-sm dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#d9b05f]">
+              <span class="rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-[rgb(var(--primary-700-rgb))] shadow-sm dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-canvas)] dark:text-[rgb(var(--primary-700-rgb))]">
                 {{ studioCopy('media_picker.allowed_badge') }}
               </span>
             </div>
-            <div v-if="mediaPickerUploadBusy" class="mt-4 h-2 overflow-hidden rounded-full bg-[#eadfca] dark:bg-[#29483f]">
-              <div class="h-full rounded-full bg-[#d9b05f] transition-all" :style="{ width: `${mediaPickerUploadProgress}%` }" />
+            <div v-if="mediaPickerUploadBusy" class="mt-4 h-2 overflow-hidden rounded-full bg-[var(--ds-border)] dark:bg-[var(--ds-border-strong)]">
+              <div class="h-full rounded-full bg-[rgb(var(--primary-700-rgb))] transition-all" :style="{ width: `${mediaPickerUploadProgress}%` }" />
             </div>
             <p v-if="mediaPickerUploadError" class="mt-3 text-xs font-semibold text-red-600 dark:text-red-300">{{ mediaPickerUploadError }}</p>
           </button>
 
-          <div class="rounded-[2rem] border border-[#ded3bf] bg-white/75 p-4 shadow-sm dark:border-[#29483f] dark:bg-[#0d1d19]/80">
-            <input
+          <div class="rounded-[2rem] border border-[var(--ds-border)] bg-white/75 p-4 shadow-sm dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-panel)]/80">
+            <BaseInput
               v-model="mediaPickerSearch"
               type="search"
               :placeholder="studioCopy('media_picker.search_placeholder')"
-              class="block w-full rounded-2xl border border-[#ded3bf] bg-[#fffdf7] px-4 py-3 text-sm font-semibold text-[#15231f] shadow-sm placeholder:text-[#8a9a92] focus:border-[#d9b05f] focus:outline-none focus:ring-2 focus:ring-[#d9b05f]/20 dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#fffdf7] dark:placeholder:text-[#789087]"
+              class="block w-full rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-4 py-3 text-sm font-semibold text-[var(--ds-text)] shadow-sm placeholder:text-[var(--ds-text-soft)] focus:border-[rgb(var(--primary-500-rgb))] focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)] dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-canvas)] dark:text-white dark:placeholder:text-[var(--ds-text-soft)]"
             />
 
             <div class="mt-3 flex gap-2 overflow-x-auto pb-1">
@@ -6533,31 +6533,31 @@ function submit() {
                 type="button"
                 class="inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-black uppercase tracking-[0.12em] transition"
                 :class="mediaPickerKind === option.value
-                  ? 'border-[#143d37] bg-[#143d37] text-[#fffdf7] shadow-lg shadow-[#143d37]/12 dark:border-[#d9b05f] dark:bg-[#d9b05f] dark:text-[#07110f]'
-                  : 'border-[#ded3bf] bg-[#fffdf7] text-[#6b7b74] hover:border-[#d9b05f] hover:text-[#143d37] dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#b8c9c0] dark:hover:border-[#d9b05f]/70 dark:hover:text-[#fffdf7]'"
+                  ? 'border-[rgb(var(--primary-700-rgb))] bg-[rgb(var(--primary-800-rgb))] text-white shadow-lg shadow-[rgb(var(--primary-800-rgb))]/12 dark:border-[rgb(var(--primary-500-rgb))] dark:bg-[rgb(var(--primary-700-rgb))] dark:text-white'
+                  : 'border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[var(--ds-text-muted)] hover:border-[rgb(var(--primary-500-rgb))] hover:text-[rgb(var(--primary-800-rgb))] dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-canvas)] dark:text-[var(--ds-text-muted)] dark:hover:border-[rgb(var(--primary-500-rgb))]/70 dark:hover:text-white'"
                 @click="mediaPickerKind = option.value"
               >
                 <span>{{ option.label }}</span>
-                <span class="rounded-full bg-[#f4efe4] px-2 py-0.5 text-[10px] text-[#6b7b74] dark:bg-[#10231f] dark:text-[#b8c9c0]" :class="mediaPickerKind === option.value ? '!bg-white/20 !text-white dark:!bg-[#07110f]/20 dark:!text-[#07110f]' : ''">
+                <span class="rounded-full bg-[var(--ds-panel-subtle)] px-2 py-0.5 text-[10px] text-[var(--ds-text-muted)] dark:bg-[var(--ds-panel)] dark:text-[var(--ds-text-muted)]" :class="mediaPickerKind === option.value ? '!bg-white/20 !text-white dark:!bg-white/20 dark:!text-white' : ''">
                   {{ option.count }}
                 </span>
               </button>
             </div>
 
-            <details class="mt-3 rounded-[1.4rem] border border-[#eadfca] bg-[#fffaf0]/80 p-3 dark:border-[#29483f] dark:bg-[#07110f]">
-              <summary class="cursor-pointer text-xs font-black uppercase tracking-[0.14em] text-[#6b7b74] dark:text-[#a9bcb2]">
+            <details class="mt-3 rounded-[1.4rem] border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)]/80 p-3 dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-canvas)]">
+              <summary class="cursor-pointer text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">
                 {{ studioCopy('media_picker.manual_advanced') }}
               </summary>
               <div class="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px]">
-                <input
+                <BaseInput
                   v-model="mediaPickerManualUrl"
                   type="url"
                   :placeholder="studioCopy('media_picker.manual_url_placeholder')"
-                  class="block w-full rounded-2xl border border-[#ded3bf] bg-[#fffdf7] px-3 py-2.5 text-sm font-semibold text-[#15231f] placeholder:text-[#8a9a92] focus:border-[#d9b05f] focus:outline-none focus:ring-2 focus:ring-[#d9b05f]/20 dark:border-[#29483f] dark:bg-[#10231f] dark:text-[#fffdf7] dark:placeholder:text-[#789087]"
+                  class="block w-full rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-3 py-2.5 text-sm font-semibold text-[var(--ds-text)] placeholder:text-[var(--ds-text-soft)] focus:border-[rgb(var(--primary-500-rgb))] focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus)] dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-panel)] dark:text-white dark:placeholder:text-[var(--ds-text-soft)]"
                 />
                 <button
                   type="button"
-                  class="rounded-2xl bg-[#143d37] px-4 py-2.5 text-sm font-black text-[#fffdf7] transition hover:bg-[#0e2c27] disabled:cursor-not-allowed disabled:opacity-45 dark:bg-[#d9b05f] dark:text-[#07110f] dark:hover:bg-[#efc76f]"
+                  class="rounded-2xl bg-[rgb(var(--primary-800-rgb))] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[rgb(var(--primary-900-rgb))] disabled:cursor-not-allowed disabled:opacity-45 dark:bg-[rgb(var(--primary-700-rgb))] dark:text-white dark:hover:bg-[rgb(var(--primary-600-rgb))]"
                   :disabled="!mediaPickerManualUrl.trim()"
                   @click="applyMediaPickerManualUrl"
                 >
@@ -6583,28 +6583,28 @@ function submit() {
               <button
                 type="button"
                 @click="applyMediaPickerAsset(asset)"
-                class="group w-full overflow-hidden rounded-3xl border border-[#ded3bf] bg-[#fffdf7] text-left transition hover:-translate-y-0.5 hover:border-[#d9b05f] hover:shadow-lg dark:border-[#29483f] dark:bg-[#10231f]"
+                class="group w-full overflow-hidden rounded-3xl border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-left transition hover:-translate-y-0.5 hover:border-[rgb(var(--primary-500-rgb))] hover:shadow-lg dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-panel)]"
               >
-                <div class="flex h-44 items-center justify-center bg-[#f4efe4] dark:bg-[#07110f]/80">
+                <div class="flex h-44 items-center justify-center bg-[var(--ds-panel-subtle)] dark:bg-[var(--ds-canvas)]/80">
                   <img :src="asset.url" :alt="asset.label" class="h-full w-full object-contain p-4 transition group-hover:scale-105" />
                 </div>
                 <div class="p-4">
                   <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
-                      <div class="truncate text-sm font-black text-[#15231f] dark:text-[#fffdf7]">{{ asset.label }}</div>
-                      <div class="mt-1 text-xs font-medium text-[#6b7b74] dark:text-[#a9bcb2]">{{ asset.source }}</div>
+                      <div class="truncate text-sm font-black text-[var(--ds-text)] dark:text-white">{{ asset.label }}</div>
+                      <div class="mt-1 text-xs font-medium text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">{{ asset.source }}</div>
                     </div>
-                    <span class="shrink-0 rounded-full border border-[#eadfca] bg-[#fffaf0] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#9a7a2f] dark:border-[#29483f] dark:bg-[#07110f] dark:text-[#d9b05f]">
+                    <span class="shrink-0 rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[rgb(var(--primary-700-rgb))] dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-canvas)] dark:text-[rgb(var(--primary-700-rgb))]">
                       {{ mediaKindLabel(mediaKindValue(asset)) }}
                     </span>
                   </div>
-                  <div v-if="asset.author" class="mt-1 text-[11px] font-medium text-[#8a9a92] dark:text-[#789087]">{{ asset.author }}</div>
+                  <div v-if="asset.author" class="mt-1 text-[11px] font-medium text-[var(--ds-text-soft)] dark:text-[var(--ds-text-soft)]">{{ asset.author }}</div>
                 </div>
               </button>
             </swiper-slide>
           </swiper-container>
 
-          <div v-else class="mt-5 rounded-3xl border border-dashed border-[#ded3bf] bg-white/60 p-8 text-center text-sm font-semibold text-[#6b7b74] dark:border-[#29483f] dark:bg-[#10231f]/60 dark:text-[#a9bcb2]">
+          <div v-else class="mt-5 rounded-3xl border border-dashed border-[var(--ds-border)] bg-white/60 p-8 text-center text-sm font-semibold text-[var(--ds-text-muted)] dark:border-[var(--ds-border-strong)] dark:bg-[var(--ds-panel)]/60 dark:text-[var(--ds-text-muted)]">
             {{ studioCopy('media_picker.empty') }}
           </div>
         </div>
@@ -6621,29 +6621,29 @@ function submit() {
 }
 
 .report-studio-shell {
-  --studio-accent: rgb(var(--accent-400-rgb));
-  --studio-border: #ded3bf;
-  --studio-border-dark: #25443c;
-  --studio-ink: #15231f;
-  --studio-muted: #475a53;
-  --studio-soft: #f8f4ea;
-  --studio-surface: #fffdf7;
-  --studio-surface-strong: #fffaf0;
-  --studio-surface-dark: #07110f;
-  --studio-surface-dark-soft: #10231f;
-  color: #15231f;
+  --studio-accent: rgb(var(--primary-600-rgb));
+  --studio-border: var(--ds-border);
+  --studio-border-dark: var(--ds-border-strong);
+  --studio-ink: var(--ds-text);
+  --studio-muted: var(--ds-text-muted);
+  --studio-soft: var(--ds-panel-subtle);
+  --studio-surface: var(--ds-panel-raised);
+  --studio-surface-strong: var(--ds-panel);
+  --studio-surface-dark: var(--ds-canvas);
+  --studio-surface-dark-soft: var(--ds-panel);
+  color: var(--ds-text);
   font-family: var(--font-sans);
 }
 
 .dark .report-studio-shell {
-  color: #f7f1e7;
+  color: var(--ds-text);
 }
 
 .studio-canvas-toolbar {
   align-items: center;
-  background: color-mix(in srgb, #fffdf7 92%, white);
-  border: 1px solid color-mix(in srgb, #ded3bf 82%, white);
-  border-radius: 1.6rem;
+  background: color-mix(in srgb, var(--ds-panel-raised) 92%, white);
+  border: 1px solid color-mix(in srgb, var(--ds-border) 82%, white);
+  border-radius: var(--ds-radius-card);
   box-shadow: 0 18px 45px rgb(20 61 55 / 0.08);
   display: flex;
   flex-wrap: wrap;
@@ -6653,29 +6653,29 @@ function submit() {
 }
 
 .dark .studio-canvas-toolbar {
-  background: color-mix(in srgb, #10231f 92%, #07110f);
-  border-color: #25443c;
+  background: color-mix(in srgb, var(--ds-panel) 92%, var(--ds-canvas));
+  border-color: var(--ds-border-strong);
   box-shadow: 0 18px 45px rgb(0 0 0 / 0.22);
 }
 
 .studio-toolbar-status {
   align-items: center;
-  background: #f8f4ea;
-  border: 1px solid #ded3bf;
+  background: var(--ds-panel-subtle);
+  border: 1px solid var(--ds-border);
   border-radius: 999px;
   display: inline-flex;
   padding: 0.28rem 0.58rem;
 }
 
 .dark .studio-toolbar-status {
-  background: #07110f;
-  border-color: #25443c;
+  background: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
 }
 
 .studio-toolbar-group {
   align-items: center;
-  background: color-mix(in srgb, #fffdf7 90%, white);
-  border: 1px solid #ded3bf;
+  background: color-mix(in srgb, var(--ds-panel-raised) 90%, white);
+  border: 1px solid var(--ds-border);
   border-radius: 999px;
   display: inline-flex;
   min-height: 2.65rem;
@@ -6683,16 +6683,16 @@ function submit() {
 }
 
 .dark .studio-toolbar-group {
-  background: #07110f;
-  border-color: #25443c;
+  background: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
 }
 
 .studio-toolbar-button {
   align-items: center;
-  background: color-mix(in srgb, #fffdf7 90%, white);
-  border: 1px solid #ded3bf;
+  background: color-mix(in srgb, var(--ds-panel-raised) 90%, white);
+  border: 1px solid var(--ds-border);
   border-radius: 999px;
-  color: #475a53;
+  color: var(--ds-text-muted);
   cursor: pointer;
   display: inline-flex;
   font-size: 0.75rem;
@@ -6710,46 +6710,46 @@ function submit() {
 
 .studio-toolbar-button:hover,
 .studio-toolbar-menu[open] > .studio-toolbar-button {
-  border-color: #d9b05f;
+  border-color: rgb(var(--primary-500-rgb));
   box-shadow: 0 12px 30px rgb(20 61 55 / 0.12);
-  color: #143d37;
+  color: rgb(var(--primary-800-rgb));
   transform: translateY(-1px);
 }
 
 .studio-toolbar-button--primary {
-  background: #143d37;
-  border-color: #143d37;
+  background: rgb(var(--primary-800-rgb));
+  border-color: rgb(var(--primary-800-rgb));
   color: white;
 }
 
 .studio-toolbar-button--primary:hover,
 .studio-toolbar-menu[open] > .studio-toolbar-button--primary {
-  background: #0f302b;
+  background: rgb(var(--primary-900-rgb));
   color: white;
 }
 
 .dark .studio-toolbar-button {
-  background: #07110f;
-  border-color: #25443c;
-  color: #cbd8cf;
+  background: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-toolbar-button:hover,
 .dark .studio-toolbar-menu[open] > .studio-toolbar-button {
-  border-color: #d9b05f;
-  color: #f7f1e7;
+  border-color: rgb(var(--primary-500-rgb));
+  color: var(--ds-text);
 }
 
 .dark .studio-toolbar-button--primary {
-  background: #d9b05f;
-  border-color: #d9b05f;
-  color: #07110f;
+  background: rgb(var(--primary-500-rgb));
+  border-color: rgb(var(--primary-500-rgb));
+  color: var(--ds-canvas);
 }
 
 .studio-toolbar-menu-panel {
-  background: #fffdf7;
-  border: 1px solid #ded3bf;
-  border-radius: 1.25rem;
+  background: var(--ds-panel-raised);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   box-shadow: 0 24px 60px rgb(20 61 55 / 0.18);
   margin-top: 0.55rem;
   padding: 0.75rem;
@@ -6764,17 +6764,17 @@ function submit() {
 }
 
 .dark .studio-toolbar-menu-panel {
-  background: #10231f;
-  border-color: #25443c;
+  background: var(--ds-panel);
+  border-color: var(--ds-border-strong);
   box-shadow: 0 24px 60px rgb(0 0 0 / 0.4);
 }
 
 .studio-toolbar-menu-action {
   align-items: center;
-  background: #f8f4ea;
+  background: var(--ds-panel-subtle);
   border: 1px solid transparent;
-  border-radius: 0.9rem;
-  color: #475a53;
+  border-radius: var(--ds-radius-card);
+  color: var(--ds-text-muted);
   display: inline-flex;
   font-size: 0.72rem;
   font-weight: 800;
@@ -6785,26 +6785,26 @@ function submit() {
 }
 
 .studio-toolbar-menu-action:hover {
-  background: #fffaf0;
-  border-color: #d9b05f;
-  color: #143d37;
+  background: var(--ds-panel);
+  border-color: rgb(var(--primary-500-rgb));
+  color: rgb(var(--primary-800-rgb));
 }
 
 .dark .studio-toolbar-menu-action {
-  background: #07110f;
-  color: #cbd8cf;
+  background: var(--ds-canvas);
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-toolbar-menu-action:hover {
-  background: #143d37;
-  border-color: #d9b05f;
-  color: #f7f1e7;
+  background: rgb(var(--primary-800-rgb));
+  border-color: rgb(var(--primary-500-rgb));
+  color: var(--ds-text);
 }
 
 .studio-toolbar-icon-button {
   align-items: center;
   border-radius: 999px;
-  color: #143d37;
+  color: rgb(var(--primary-800-rgb));
   display: inline-flex;
   font-size: 1.15rem;
   font-weight: 900;
@@ -6815,7 +6815,7 @@ function submit() {
 }
 
 .studio-toolbar-icon-button:hover:not(:disabled) {
-  background: #143d37;
+  background: rgb(var(--primary-800-rgb));
   color: white;
 }
 
@@ -6825,12 +6825,12 @@ function submit() {
 }
 
 .dark .studio-toolbar-icon-button {
-  color: #f7f1e7;
+  color: var(--ds-text);
 }
 
 .dark .studio-toolbar-icon-button:hover:not(:disabled) {
-  background: #d9b05f;
-  color: #07110f;
+  background: rgb(var(--primary-500-rgb));
+  color: var(--ds-canvas);
 }
 
 .studio-toolbar-select {
@@ -6838,7 +6838,7 @@ function submit() {
   background: transparent;
   border: 0;
   border-radius: 999px;
-  color: #143d37;
+  color: rgb(var(--primary-800-rgb));
   cursor: pointer;
   font-size: 0.72rem;
   font-weight: 900;
@@ -6847,13 +6847,13 @@ function submit() {
 }
 
 .dark .studio-toolbar-select {
-  color: #f7f1e7;
+  color: var(--ds-text);
 }
 
 .studio-view-option {
   align-items: center;
-  border-radius: 0.85rem;
-  color: #475a53;
+  border-radius: var(--ds-radius-card);
+  color: var(--ds-text-muted);
   cursor: pointer;
   display: flex;
   font-size: 0.75rem;
@@ -6864,32 +6864,32 @@ function submit() {
 }
 
 .studio-view-option:hover {
-  background: #f8f4ea;
-  color: #143d37;
+  background: var(--ds-panel-subtle);
+  color: rgb(var(--primary-800-rgb));
 }
 
 .studio-view-option input {
-  accent-color: #143d37;
+  accent-color: rgb(var(--primary-800-rgb));
 }
 
 .dark .studio-view-option {
-  color: #cbd8cf;
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-view-option:hover {
-  background: #07110f;
-  color: #f7f1e7;
+  background: var(--ds-canvas);
+  color: var(--ds-text);
 }
 
 .dark .studio-view-option input {
-  accent-color: #d9b05f;
+  accent-color: rgb(var(--primary-500-rgb));
 }
 
 .studio-context-bar {
   align-items: center;
-  background: color-mix(in srgb, #f8f4ea 88%, white);
-  border: 1px solid #ded3bf;
-  border-radius: 1.35rem;
+  background: color-mix(in srgb, var(--ds-panel-subtle) 88%, white);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   display: flex;
   flex-wrap: wrap;
   gap: 0.8rem;
@@ -6898,16 +6898,16 @@ function submit() {
 }
 
 .dark .studio-context-bar {
-  background: #10231f;
-  border-color: #25443c;
+  background: var(--ds-panel);
+  border-color: var(--ds-border-strong);
 }
 
 .studio-context-action {
   align-items: center;
-  background: #fffdf7;
-  border: 1px solid #ded3bf;
-  border-radius: 0.8rem;
-  color: #475a53;
+  background: var(--ds-panel-raised);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
+  color: var(--ds-text-muted);
   display: inline-flex;
   font-size: 0.68rem;
   font-weight: 900;
@@ -6919,8 +6919,8 @@ function submit() {
 }
 
 .studio-context-action:hover {
-  border-color: #d9b05f;
-  color: #143d37;
+  border-color: rgb(var(--primary-500-rgb));
+  color: rgb(var(--primary-800-rgb));
   transform: translateY(-1px);
 }
 
@@ -6938,14 +6938,14 @@ function submit() {
 }
 
 .dark .studio-context-action {
-  background: #07110f;
-  border-color: #25443c;
-  color: #cbd8cf;
+  background: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-context-action:hover {
-  border-color: #d9b05f;
-  color: #f7f1e7;
+  border-color: rgb(var(--primary-500-rgb));
+  color: var(--ds-text);
 }
 
 .dark .studio-context-action--danger {
@@ -6953,10 +6953,10 @@ function submit() {
 }
 
 .studio-advanced-panel {
-  background: color-mix(in srgb, #f8f4ea 88%, white);
-  border: 1px solid #ded3bf;
-  border-radius: 1rem;
-  color: #475a53;
+  background: color-mix(in srgb, var(--ds-panel-subtle) 88%, white);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
+  color: var(--ds-text-muted);
   padding: 0.7rem 0.8rem;
 }
 
@@ -6974,7 +6974,7 @@ function submit() {
 }
 
 .studio-advanced-panel > summary::after {
-  color: #d9b05f;
+  color: rgb(var(--primary-500-rgb));
   content: "+";
   float: right;
   font-size: 0.9rem;
@@ -6986,17 +6986,17 @@ function submit() {
 }
 
 .dark .studio-advanced-panel {
-  background: #07110f;
-  border-color: #25443c;
-  color: #cbd8cf;
+  background: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text-muted);
 }
 
 .studio-composition-drawer {
-  background: #fffdf7;
-  border: 1px solid #ded3bf;
-  border-radius: 1.8rem;
+  background: var(--ds-panel-raised);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   box-shadow: 0 18px 55px rgb(20 61 55 / 0.08);
-  color: #475a53;
+  color: var(--ds-text-muted);
   overflow: hidden;
 }
 
@@ -7021,7 +7021,7 @@ function submit() {
 }
 
 .studio-composition-drawer__eyebrow {
-  color: #b98a34;
+  color: rgb(var(--primary-700-rgb));
   font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 0.18em;
@@ -7029,7 +7029,7 @@ function submit() {
 }
 
 .studio-composition-drawer__title {
-  color: #15231f;
+  color: var(--ds-text);
   font-size: 1rem;
   font-weight: 900;
   letter-spacing: -0.01em;
@@ -7037,7 +7037,7 @@ function submit() {
 }
 
 .studio-composition-drawer__description {
-  color: #6b7b74;
+  color: var(--ds-text-soft);
   font-size: 0.78rem;
   font-weight: 650;
   line-height: 1.55;
@@ -7047,9 +7047,9 @@ function submit() {
 
 .studio-composition-drawer__action {
   align-items: center;
-  background: #143d37;
+  background: rgb(var(--primary-800-rgb));
   border-radius: 999px;
-  color: #fffaf0;
+  color: var(--ds-panel);
   display: inline-flex;
   flex-shrink: 0;
   font-size: 0.72rem;
@@ -7061,44 +7061,44 @@ function submit() {
 }
 
 .studio-composition-drawer__content {
-  border-top: 1px solid #ded3bf;
+  border-top: 1px solid var(--ds-border);
   padding: 0 1.25rem 1.25rem;
 }
 
 .dark .studio-composition-drawer {
-  background: #07110f;
-  border-color: #25443c;
+  background: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
   box-shadow: 0 18px 55px rgb(0 0 0 / 0.24);
-  color: #cbd8cf;
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-composition-drawer__eyebrow {
-  color: #d9b05f;
+  color: rgb(var(--primary-500-rgb));
 }
 
 .dark .studio-composition-drawer__title {
-  color: #f7f1e7;
+  color: var(--ds-text);
 }
 
 .dark .studio-composition-drawer__description {
-  color: #a9bcb2;
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-composition-drawer__action {
-  background: #d9b05f;
-  color: #07110f;
+  background: rgb(var(--primary-500-rgb));
+  color: var(--ds-canvas);
 }
 
 .dark .studio-composition-drawer__content {
-  border-color: #25443c;
+  border-color: var(--ds-border-strong);
 }
 
 .studio-output-command {
   background:
     radial-gradient(circle at 88% 8%, rgb(217 176 95 / 0.2), transparent 30%),
-    linear-gradient(135deg, #07110f, #143d37);
-  border: 1px solid #25443c;
-  border-radius: 2rem;
+    linear-gradient(135deg, var(--ds-canvas), rgb(var(--primary-800-rgb)));
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-card);
   box-shadow: 0 26px 70px rgb(20 61 55 / 0.2);
   overflow: hidden;
   padding: 1.5rem;
@@ -7120,7 +7120,7 @@ function submit() {
   align-items: center;
   background: rgb(255 255 255 / 0.07);
   border: 1px solid rgb(255 255 255 / 0.12);
-  border-radius: 1.2rem;
+  border-radius: var(--ds-radius-card);
   display: flex;
   flex-direction: column;
   min-width: 5.5rem;
@@ -7128,13 +7128,13 @@ function submit() {
 }
 
 .studio-output-metric__value {
-  color: #fffaf0;
+  color: var(--ds-panel);
   font-size: 1.05rem;
   font-weight: 900;
 }
 
 .studio-output-metric__label {
-  color: #a9bcb2;
+  color: var(--ds-text-muted);
   font-size: 0.58rem;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -7143,9 +7143,9 @@ function submit() {
 }
 
 .studio-pdf-navigation {
-  background: #fffdf7;
-  border: 1px solid #ded3bf;
-  border-radius: 1.6rem;
+  background: var(--ds-panel-raised);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   box-shadow: 0 16px 45px rgb(20 61 55 / 0.07);
   display: grid;
   gap: 0.45rem;
@@ -7154,45 +7154,45 @@ function submit() {
 }
 
 .dark .studio-pdf-navigation {
-  background: #07110f;
-  border-color: #25443c;
+  background: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
   box-shadow: 0 16px 45px rgb(0 0 0 / 0.24);
 }
 
 .studio-pdf-navigation__item {
   border: 1px solid transparent;
-  border-radius: 1.2rem;
-  color: #6b7b74;
+  border-radius: var(--ds-radius-card);
+  color: var(--ds-text-soft);
   padding: 0.8rem 0.9rem;
   text-align: left;
   transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
 }
 
 .studio-pdf-navigation__item:hover {
-  background: #f8f4ea;
-  color: #143d37;
+  background: var(--ds-panel-subtle);
+  color: rgb(var(--primary-800-rgb));
 }
 
 .studio-pdf-navigation__item--active {
-  background: #143d37;
-  border-color: #143d37;
+  background: rgb(var(--primary-800-rgb));
+  border-color: rgb(var(--primary-800-rgb));
   box-shadow: 0 12px 30px rgb(20 61 55 / 0.16);
-  color: #fffaf0;
+  color: var(--ds-panel);
 }
 
 .dark .studio-pdf-navigation__item {
-  color: #a9bcb2;
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-pdf-navigation__item:hover {
-  background: #10231f;
-  color: #f7f1e7;
+  background: var(--ds-panel);
+  color: var(--ds-text);
 }
 
 .dark .studio-pdf-navigation__item--active {
-  background: #d9b05f;
-  border-color: #d9b05f;
-  color: #07110f;
+  background: rgb(var(--primary-500-rgb));
+  border-color: rgb(var(--primary-500-rgb));
+  color: var(--ds-canvas);
 }
 
 .studio-pdf-navigation__label,
@@ -7214,16 +7214,16 @@ function submit() {
 }
 
 .studio-output-panel {
-  background: #fffdf7;
-  border: 1px solid #ded3bf;
-  border-radius: 2rem;
+  background: var(--ds-panel-raised);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   box-shadow: 0 20px 55px rgb(20 61 55 / 0.07);
   padding: 1.5rem;
 }
 
 .dark .studio-output-panel {
-  background: #07110f;
-  border-color: #25443c;
+  background: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
   box-shadow: 0 20px 55px rgb(0 0 0 / 0.24);
 }
 
@@ -7235,7 +7235,7 @@ function submit() {
 }
 
 .studio-output-eyebrow {
-  color: #b98a34;
+  color: rgb(var(--primary-700-rgb));
   font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 0.2em;
@@ -7243,11 +7243,11 @@ function submit() {
 }
 
 .dark .studio-output-eyebrow {
-  color: #d9b05f;
+  color: rgb(var(--primary-500-rgb));
 }
 
 .studio-output-title {
-  color: #15231f;
+  color: var(--ds-text);
   font-size: 1.25rem;
   font-weight: 900;
   letter-spacing: -0.02em;
@@ -7255,11 +7255,11 @@ function submit() {
 }
 
 .dark .studio-output-title {
-  color: #f7f1e7;
+  color: var(--ds-text);
 }
 
 .studio-output-description {
-  color: #6b7b74;
+  color: var(--ds-text-soft);
   font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.6;
@@ -7268,15 +7268,15 @@ function submit() {
 }
 
 .dark .studio-output-description {
-  color: #a9bcb2;
+  color: var(--ds-text-muted);
 }
 
 .studio-output-action {
   align-items: center;
-  background: #fffdf7;
-  border: 1px solid #ded3bf;
+  background: var(--ds-panel-raised);
+  border: 1px solid var(--ds-border);
   border-radius: 999px;
-  color: #143d37;
+  color: rgb(var(--primary-800-rgb));
   display: inline-flex;
   flex-shrink: 0;
   font-size: 0.72rem;
@@ -7288,66 +7288,66 @@ function submit() {
 }
 
 .studio-output-action:hover {
-  border-color: #d9b05f;
+  border-color: rgb(var(--primary-500-rgb));
   box-shadow: 0 12px 28px rgb(20 61 55 / 0.12);
   transform: translateY(-1px);
 }
 
 .studio-output-action--primary {
-  background: #143d37;
-  border-color: #143d37;
+  background: rgb(var(--primary-800-rgb));
+  border-color: rgb(var(--primary-800-rgb));
   color: white;
 }
 
 .dark .studio-output-action {
-  background: #10231f;
-  border-color: #25443c;
-  color: #f7f1e7;
+  background: var(--ds-panel);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text);
 }
 
 .dark .studio-output-action--primary {
-  background: #d9b05f;
-  border-color: #d9b05f;
-  color: #07110f;
+  background: rgb(var(--primary-500-rgb));
+  border-color: rgb(var(--primary-500-rgb));
+  color: var(--ds-canvas);
 }
 
 .studio-surface-card {
-  background: #f8f4ea;
-  border: 1px solid #ded3bf;
-  border-radius: 1.5rem;
+  background: var(--ds-panel-subtle);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   overflow: hidden;
   transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
 .studio-surface-card:hover {
-  border-color: #d9b05f;
+  border-color: rgb(var(--primary-500-rgb));
   box-shadow: 0 18px 42px rgb(20 61 55 / 0.1);
   transform: translateY(-2px);
 }
 
 .dark .studio-surface-card {
-  background: #10231f;
-  border-color: #25443c;
+  background: var(--ds-panel);
+  border-color: var(--ds-border-strong);
 }
 
 .studio-surface-card__preview {
   background:
     linear-gradient(rgb(20 61 55 / 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgb(20 61 55 / 0.04) 1px, transparent 1px),
-    #f1ecdf;
+    var(--ds-canvas);
   background-size: 14px 14px;
   padding: 1rem;
 }
 
 .dark .studio-surface-card__preview {
-  background-color: #07110f;
+  background-color: var(--ds-canvas);
 }
 
 .studio-surface-card__paper {
   aspect-ratio: 1.65 / 1;
   background: white;
-  border: 1px solid #e9e0d1;
-  border-radius: 0.8rem;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   box-shadow: 0 10px 28px rgb(20 61 55 / 0.1);
   overflow: hidden;
   padding: 1rem;
@@ -7355,7 +7355,7 @@ function submit() {
 }
 
 .studio-surface-card__content {
-  color: #15231f;
+  color: var(--ds-text);
   font-size: 0.45rem;
   line-height: 1.35;
   max-height: 100%;
@@ -7371,9 +7371,9 @@ function submit() {
 }
 
 .studio-surface-status {
-  background: #ede7dc;
+  background: var(--ds-panel-subtle);
   border-radius: 999px;
-  color: #7c6850;
+  color: var(--ds-text-muted);
   flex-shrink: 0;
   font-size: 0.55rem;
   font-weight: 900;
@@ -7384,47 +7384,47 @@ function submit() {
 
 .studio-surface-status--ready {
   background: #dcebe5;
-  color: #143d37;
+  color: rgb(var(--primary-800-rgb));
 }
 
 .dark .studio-surface-status {
-  background: #07110f;
-  color: #a9bcb2;
+  background: var(--ds-canvas);
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-surface-status--ready {
   background: rgb(217 176 95 / 0.16);
-  color: #d9b05f;
+  color: rgb(var(--primary-500-rgb));
 }
 
 .studio-surface-edit {
-  color: #143d37;
+  color: rgb(var(--primary-800-rgb));
   font-size: 0.68rem;
   font-weight: 900;
 }
 
 .studio-surface-edit:hover {
-  color: #9a6e23;
+  color: rgb(var(--primary-800-rgb));
 }
 
 .dark .studio-surface-edit {
-  color: #d9b05f;
+  color: rgb(var(--primary-500-rgb));
 }
 
 .studio-background-card,
 .studio-table-stage,
 .studio-emission-card {
-  background: #f8f4ea;
-  border: 1px solid #ded3bf;
-  border-radius: 1.6rem;
+  background: var(--ds-panel-subtle);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   padding: 1.2rem;
 }
 
 .dark .studio-background-card,
 .dark .studio-table-stage,
 .dark .studio-emission-card {
-  background: #10231f;
-  border-color: #25443c;
+  background: var(--ds-panel);
+  border-color: var(--ds-border-strong);
 }
 
 .studio-background-card__preview {
@@ -7432,23 +7432,23 @@ function submit() {
   background:
     linear-gradient(45deg, rgb(20 61 55 / 0.04) 25%, transparent 25%, transparent 75%, rgb(20 61 55 / 0.04) 75%),
     linear-gradient(45deg, rgb(20 61 55 / 0.04) 25%, transparent 25%, transparent 75%, rgb(20 61 55 / 0.04) 75%),
-    #fffdf7;
+    var(--ds-panel-raised);
   background-position: 0 0, 10px 10px;
   background-size: 20px 20px;
-  border: 1px solid #ded3bf;
-  border-radius: 1.25rem;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   overflow: hidden;
 }
 
 .dark .studio-background-card__preview {
-  background-color: #07110f;
-  border-color: #25443c;
+  background-color: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
 }
 
 .studio-compact-field,
 .studio-code-field,
 .studio-color-field {
-  color: #6b7b74;
+  color: var(--ds-text-soft);
   display: block;
   font-size: 0.62rem;
   font-weight: 900;
@@ -7459,15 +7459,15 @@ function submit() {
 .dark .studio-compact-field,
 .dark .studio-code-field,
 .dark .studio-color-field {
-  color: #a9bcb2;
+  color: var(--ds-text-muted);
 }
 
 .studio-compact-field :where(input, select),
 .studio-code-field :where(input, textarea) {
-  background: #fffdf7;
-  border: 1px solid #ded3bf;
-  border-radius: 1rem;
-  color: #15231f;
+  background: var(--ds-panel-raised);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
+  color: var(--ds-text);
   display: block;
   font-size: 0.78rem;
   font-weight: 700;
@@ -7492,15 +7492,15 @@ function submit() {
 
 .dark .studio-compact-field :where(input, select),
 .dark .studio-code-field :where(input, textarea) {
-  background: #07110f;
-  border-color: #25443c;
-  color: #f7f1e7;
+  background: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text);
 }
 
 .studio-color-field input {
-  background: #fffdf7;
-  border: 1px solid #ded3bf;
-  border-radius: 1rem;
+  background: var(--ds-panel-raised);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   display: block;
   height: 2.8rem;
   margin-top: 0.5rem;
@@ -7509,20 +7509,20 @@ function submit() {
 }
 
 .dark .studio-color-field input {
-  background: #07110f;
-  border-color: #25443c;
+  background: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
 }
 
 .studio-inspector-select,
 .studio-gallery-select {
   appearance: none;
   background:
-    linear-gradient(45deg, transparent 50%, #9a7a2f 50%) calc(100% - 1.05rem) 52% / 0.38rem 0.38rem no-repeat,
-    linear-gradient(135deg, #fffdf7, #f8f4ea);
-  border: 1px solid #ded3bf;
-  border-radius: 1.05rem;
+    linear-gradient(45deg, transparent 50%, rgb(var(--primary-700-rgb)) 50%) calc(100% - 1.05rem) 52% / 0.38rem 0.38rem no-repeat,
+    linear-gradient(135deg, var(--ds-panel-raised), var(--ds-panel-subtle));
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   box-shadow: 0 10px 24px rgb(20 61 55 / 0.06);
-  color: #15231f;
+  color: var(--ds-text);
   display: block;
   font-size: 0.84rem;
   font-weight: 850;
@@ -7536,13 +7536,13 @@ function submit() {
 }
 
 .studio-gallery-select {
-  color: #475a53;
+  color: var(--ds-text-muted);
   font-size: 0.76rem;
   font-weight: 750;
 }
 
 .studio-inspector-select--compact {
-  border-radius: 0.95rem;
+  border-radius: var(--ds-radius-card);
   font-size: 0.78rem;
   margin-top: 0.25rem;
   min-height: 2.55rem;
@@ -7552,7 +7552,7 @@ function submit() {
 
 .studio-inspector-select:focus,
 .studio-gallery-select:focus {
-  border-color: #d9b05f;
+  border-color: rgb(var(--primary-500-rgb));
   box-shadow: 0 0 0 3px rgb(217 176 95 / 0.2), 0 14px 30px rgb(20 61 55 / 0.1);
   outline: none;
   transform: translateY(-1px);
@@ -7561,30 +7561,30 @@ function submit() {
 .dark .studio-inspector-select,
 .dark .studio-gallery-select {
   background:
-    linear-gradient(45deg, transparent 50%, #d9b05f 50%) calc(100% - 1.05rem) 52% / 0.38rem 0.38rem no-repeat,
-    linear-gradient(135deg, #07110f, #10231f);
-  border-color: #25443c;
+    linear-gradient(45deg, transparent 50%, rgb(var(--primary-500-rgb)) 50%) calc(100% - 1.05rem) 52% / 0.38rem 0.38rem no-repeat,
+    linear-gradient(135deg, var(--ds-canvas), var(--ds-panel));
+  border-color: var(--ds-border-strong);
   box-shadow: 0 12px 28px rgb(0 0 0 / 0.24);
-  color: #f7f1e7;
+  color: var(--ds-text);
 }
 
 .dark .studio-gallery-select {
-  color: #cbd8cf;
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-inspector-select:focus,
 .dark .studio-gallery-select:focus {
-  border-color: #d9b05f;
+  border-color: rgb(var(--primary-500-rgb));
   box-shadow: 0 0 0 3px rgb(217 176 95 / 0.18), 0 14px 32px rgb(0 0 0 / 0.34);
 }
 
 .studio-media-picker-button {
   align-items: center;
-  background: #143d37;
-  border: 1px solid #143d37;
-  border-radius: 1rem;
+  background: rgb(var(--primary-800-rgb));
+  border: 1px solid rgb(var(--primary-800-rgb));
+  border-radius: var(--ds-radius-card);
   box-shadow: 0 14px 34px rgb(20 61 55 / 0.14);
-  color: #fffaf0;
+  color: var(--ds-panel);
   display: inline-flex;
   font-size: 0.74rem;
   font-weight: 900;
@@ -7597,8 +7597,8 @@ function submit() {
 }
 
 .studio-media-picker-button:hover {
-  background: #0f302b;
-  border-color: #d9b05f;
+  background: rgb(var(--primary-900-rgb));
+  border-color: rgb(var(--primary-500-rgb));
   box-shadow: 0 18px 42px rgb(20 61 55 / 0.18);
   transform: translateY(-1px);
 }
@@ -7608,46 +7608,46 @@ function submit() {
 }
 
 .studio-media-picker-button--secondary {
-  background: #fffaf0;
-  border-color: #ded3bf;
+  background: var(--ds-panel);
+  border-color: var(--ds-border);
   box-shadow: none;
-  color: #143d37;
+  color: rgb(var(--primary-800-rgb));
 }
 
 .studio-media-picker-button--secondary:hover {
-  background: #f8f4ea;
-  border-color: #d9b05f;
+  background: var(--ds-panel-subtle);
+  border-color: rgb(var(--primary-500-rgb));
   box-shadow: 0 14px 34px rgb(20 61 55 / 0.08);
 }
 
 .dark .studio-media-picker-button {
-  background: #d9b05f;
-  border-color: #d9b05f;
+  background: rgb(var(--primary-500-rgb));
+  border-color: rgb(var(--primary-500-rgb));
   box-shadow: 0 16px 38px rgb(0 0 0 / 0.28);
-  color: #07110f;
+  color: var(--ds-canvas);
 }
 
 .dark .studio-media-picker-button:hover {
-  background: #efc76f;
-  border-color: #efc76f;
+  background: rgb(var(--primary-300-rgb));
+  border-color: rgb(var(--primary-300-rgb));
 }
 
 .dark .studio-media-picker-button--secondary {
-  background: #07110f;
-  border-color: #25443c;
-  color: #f7f1e7;
+  background: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text);
 }
 
 .dark .studio-media-picker-button--secondary:hover {
-  background: #10231f;
-  border-color: #d9b05f;
+  background: var(--ds-panel);
+  border-color: rgb(var(--primary-500-rgb));
 }
 
 .studio-inspector-tip {
-  background: linear-gradient(135deg, #fffaf0, #f8f4ea);
-  border: 1px solid #ded3bf;
-  border-radius: 1rem;
-  color: #475a53;
+  background: linear-gradient(135deg, var(--ds-panel), var(--ds-panel-subtle));
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
+  color: var(--ds-text-muted);
   font-size: 0.74rem;
   font-weight: 750;
   line-height: 1.65;
@@ -7655,14 +7655,14 @@ function submit() {
 }
 
 .dark .studio-inspector-tip {
-  background: linear-gradient(135deg, #10231f, #07110f);
-  border-color: #25443c;
-  color: #cbd8cf;
+  background: linear-gradient(135deg, var(--ds-panel), var(--ds-canvas));
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text-muted);
 }
 
 .studio-danger-action {
   border: 1px solid #fecdd3;
-  border-radius: 1rem;
+  border-radius: var(--ds-radius-card);
   color: #be123c;
   font-size: 0.7rem;
   font-weight: 900;
@@ -7682,10 +7682,10 @@ function submit() {
 .studio-preset-card,
 .studio-renderer-card,
 .studio-quality-card {
-  background: #fffdf7;
-  border: 1px solid #ded3bf;
-  border-radius: 1.25rem;
-  color: #475a53;
+  background: var(--ds-panel-raised);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
+  color: var(--ds-text-muted);
   padding: 1rem;
   text-align: left;
   transition: border-color 150ms ease, box-shadow 150ms ease, color 150ms ease, transform 150ms ease;
@@ -7695,32 +7695,32 @@ function submit() {
 .studio-preset-card:hover,
 .studio-renderer-card:hover:not(:disabled),
 .studio-quality-card:hover {
-  border-color: #d9b05f;
+  border-color: rgb(var(--primary-500-rgb));
   box-shadow: 0 14px 32px rgb(20 61 55 / 0.08);
-  color: #143d37;
+  color: rgb(var(--primary-800-rgb));
   transform: translateY(-1px);
 }
 
 .studio-preset-card--active,
 .studio-renderer-card--active {
-  background: #143d37;
-  border-color: #143d37;
-  color: #fffaf0;
+  background: rgb(var(--primary-800-rgb));
+  border-color: rgb(var(--primary-800-rgb));
+  color: var(--ds-panel);
 }
 
 .dark .studio-preset-card,
 .dark .studio-renderer-card,
 .dark .studio-quality-card {
-  background: #07110f;
-  border-color: #25443c;
-  color: #cbd8cf;
+  background: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-preset-card--active,
 .dark .studio-renderer-card--active {
-  background: #d9b05f;
-  border-color: #d9b05f;
-  color: #07110f;
+  background: rgb(var(--primary-500-rgb));
+  border-color: rgb(var(--primary-500-rgb));
+  color: var(--ds-canvas);
 }
 
 .studio-renderer-card:disabled {
@@ -7731,7 +7731,7 @@ function submit() {
 .studio-renderer-card__badge {
   background: rgb(217 176 95 / 0.18);
   border-radius: 999px;
-  color: #9a6e23;
+  color: rgb(var(--primary-800-rgb));
   flex-shrink: 0;
   font-size: 0.55rem;
   font-weight: 900;
@@ -7747,10 +7747,10 @@ function submit() {
 
 .studio-format-card {
   align-items: center;
-  background: #f8f4ea;
-  border: 1px solid #ded3bf;
-  border-radius: 1.3rem;
-  color: #475a53;
+  background: var(--ds-panel-subtle);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
+  color: var(--ds-text-muted);
   display: flex;
   gap: 0.9rem;
   padding: 0.9rem;
@@ -7760,29 +7760,29 @@ function submit() {
 
 .studio-format-card:hover,
 .studio-format-card--active {
-  border-color: #d9b05f;
+  border-color: rgb(var(--primary-500-rgb));
   box-shadow: 0 14px 30px rgb(20 61 55 / 0.08);
   transform: translateY(-1px);
 }
 
 .studio-format-card--active {
-  color: #143d37;
+  color: rgb(var(--primary-800-rgb));
 }
 
 .dark .studio-format-card {
-  background: #10231f;
-  border-color: #25443c;
-  color: #cbd8cf;
+  background: var(--ds-panel);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-format-card--active {
-  border-color: #d9b05f;
-  color: #f7f1e7;
+  border-color: rgb(var(--primary-500-rgb));
+  color: var(--ds-text);
 }
 
 .studio-format-card__paper {
   background: white;
-  border: 1px solid #ded3bf;
+  border: 1px solid var(--ds-border);
   border-radius: 0.22rem;
   box-shadow: 0 4px 10px rgb(20 61 55 / 0.1);
   flex-shrink: 0;
@@ -7796,22 +7796,22 @@ function submit() {
 }
 
 .studio-page-specimen {
-  background: #f8f4ea;
-  border: 1px solid #ded3bf;
-  border-radius: 1.6rem;
+  background: var(--ds-panel-subtle);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   padding: 1.2rem;
 }
 
 .dark .studio-page-specimen {
-  background: #10231f;
-  border-color: #25443c;
+  background: var(--ds-panel);
+  border-color: var(--ds-border-strong);
 }
 
 .studio-page-specimen__sheet {
   aspect-ratio: 210 / 297;
   background: white;
-  border: 1px solid #ded3bf;
-  border-radius: 0.8rem;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   box-shadow: 0 16px 40px rgb(20 61 55 / 0.12);
   margin: 0 auto;
   max-height: 15rem;
@@ -7824,54 +7824,54 @@ function submit() {
 }
 
 .studio-page-specimen__safe {
-  border: 1px dashed #d9b05f;
+  border: 1px dashed rgb(var(--primary-500-rgb));
   border-radius: 0.5rem;
   inset: 12%;
   position: absolute;
 }
 
 .studio-orientation-button {
-  border: 1px solid #ded3bf;
+  border: 1px solid var(--ds-border);
   border-radius: 999px;
-  color: #6b7b74;
+  color: var(--ds-text-soft);
   font-size: 0.68rem;
   font-weight: 900;
   padding: 0.65rem;
 }
 
 .studio-orientation-button--active {
-  background: #143d37;
-  border-color: #143d37;
+  background: rgb(var(--primary-800-rgb));
+  border-color: rgb(var(--primary-800-rgb));
   color: white;
 }
 
 .dark .studio-orientation-button {
-  border-color: #25443c;
-  color: #a9bcb2;
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-orientation-button--active {
-  background: #d9b05f;
-  border-color: #d9b05f;
-  color: #07110f;
+  background: rgb(var(--primary-500-rgb));
+  border-color: rgb(var(--primary-500-rgb));
+  color: var(--ds-canvas);
 }
 
 .studio-output-warning {
-  background: #fff8e7;
-  border: 1px solid #ead9ae;
-  border-radius: 1.3rem;
-  color: #7c5b1e;
+  background: rgb(var(--primary-50-rgb) / 0.72);
+  border: 1px solid rgb(var(--primary-200-rgb) / 0.72);
+  border-radius: var(--ds-radius-card);
+  color: rgb(var(--primary-800-rgb));
   padding: 1rem;
 }
 
 .dark .studio-output-warning {
   background: rgb(217 176 95 / 0.1);
   border-color: rgb(217 176 95 / 0.28);
-  color: #f1d89e;
+  color: rgb(var(--primary-200-rgb));
 }
 
 .studio-setup-field {
-  color: #6b7b74;
+  color: var(--ds-text-soft);
   display: block;
   font-size: 0.62rem;
   font-weight: 900;
@@ -7880,10 +7880,10 @@ function submit() {
 }
 
 .studio-setup-field :where(input, select, textarea) {
-  background: #f8f4ea;
-  border: 1px solid #ded3bf;
-  border-radius: 1.1rem;
-  color: #15231f;
+  background: var(--ds-panel-subtle);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
+  color: var(--ds-text);
   display: block;
   font-size: 0.82rem;
   font-weight: 700;
@@ -7901,18 +7901,18 @@ function submit() {
 }
 
 .studio-setup-field :where(input, textarea)::placeholder {
-  color: #93a099;
+  color: var(--ds-text-soft);
   font-weight: 600;
 }
 
 .dark .studio-setup-field {
-  color: #a9bcb2;
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-setup-field :where(input, select, textarea) {
-  background: #10231f;
-  border-color: #25443c;
-  color: #f7f1e7;
+  background: var(--ds-panel);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text);
 }
 
 .studio-setup-field__error {
@@ -7927,9 +7927,9 @@ function submit() {
 .studio-lifecycle-card {
   background:
     radial-gradient(circle at top right, rgb(217 176 95 / 0.18), transparent 38%),
-    #f8f4ea;
-  border: 1px solid #ded3bf;
-  border-radius: 2rem;
+    var(--ds-panel-subtle);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   box-shadow: 0 20px 55px rgb(20 61 55 / 0.07);
   padding: 1.5rem;
 }
@@ -7937,17 +7937,17 @@ function submit() {
 .dark .studio-lifecycle-card {
   background:
     radial-gradient(circle at top right, rgb(217 176 95 / 0.1), transparent 38%),
-    #10231f;
-  border-color: #25443c;
+    var(--ds-panel);
+  border-color: var(--ds-border-strong);
 }
 
 .studio-lifecycle-option,
 .studio-default-toggle {
   align-items: flex-start;
-  background: #fffdf7;
-  border: 1px solid #ded3bf;
-  border-radius: 1.2rem;
-  color: #475a53;
+  background: var(--ds-panel-raised);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
+  color: var(--ds-text-muted);
   display: flex;
   gap: 0.8rem;
   padding: 0.9rem;
@@ -7958,29 +7958,29 @@ function submit() {
 
 .studio-lifecycle-option:hover,
 .studio-lifecycle-option--active {
-  border-color: #d9b05f;
+  border-color: rgb(var(--primary-500-rgb));
   box-shadow: 0 12px 28px rgb(20 61 55 / 0.08);
   transform: translateY(-1px);
 }
 
 .studio-lifecycle-option--active {
-  color: #143d37;
+  color: rgb(var(--primary-800-rgb));
 }
 
 .dark .studio-lifecycle-option,
 .dark .studio-default-toggle {
-  background: #07110f;
-  border-color: #25443c;
-  color: #cbd8cf;
+  background: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-lifecycle-option--active {
-  border-color: #d9b05f;
-  color: #f7f1e7;
+  border-color: rgb(var(--primary-500-rgb));
+  color: var(--ds-text);
 }
 
 .studio-lifecycle-option__mark {
-  border: 2px solid #cfc3ae;
+  border: 2px solid var(--ds-border-strong);
   border-radius: 999px;
   flex-shrink: 0;
   height: 0.9rem;
@@ -7990,11 +7990,11 @@ function submit() {
 }
 
 .studio-lifecycle-option--active .studio-lifecycle-option__mark {
-  border-color: #143d37;
+  border-color: rgb(var(--primary-800-rgb));
 }
 
 .studio-lifecycle-option--active .studio-lifecycle-option__mark::after {
-  background: #d9b05f;
+  background: rgb(var(--primary-500-rgb));
   border-radius: inherit;
   content: "";
   inset: 2px;
@@ -8002,7 +8002,7 @@ function submit() {
 }
 
 .dark .studio-lifecycle-option--active .studio-lifecycle-option__mark {
-  border-color: #d9b05f;
+  border-color: rgb(var(--primary-500-rgb));
 }
 
 .studio-default-toggle {
@@ -8010,7 +8010,7 @@ function submit() {
 }
 
 .studio-default-toggle input {
-  accent-color: #143d37;
+  accent-color: rgb(var(--primary-800-rgb));
   flex-shrink: 0;
   height: 1rem;
   margin-top: 0.2rem;
@@ -8018,14 +8018,14 @@ function submit() {
 }
 
 .dark .studio-default-toggle input {
-  accent-color: #d9b05f;
+  accent-color: rgb(var(--primary-500-rgb));
 }
 
 .studio-theme-badge {
   background: rgb(217 176 95 / 0.16);
   border: 1px solid rgb(217 176 95 / 0.4);
   border-radius: 999px;
-  color: #8a641f;
+  color: rgb(var(--primary-800-rgb));
   flex-shrink: 0;
   font-size: 0.62rem;
   font-weight: 900;
@@ -8035,14 +8035,14 @@ function submit() {
 }
 
 .dark .studio-theme-badge {
-  color: #f1d89e;
+  color: rgb(var(--primary-200-rgb));
 }
 
 .studio-theme-card {
-  background: #f8f4ea;
-  border: 1px solid #ded3bf;
-  border-radius: 1.4rem;
-  color: #475a53;
+  background: var(--ds-panel-subtle);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
+  color: var(--ds-text-muted);
   padding: 0.85rem;
   text-align: left;
   transition: border-color 150ms ease, box-shadow 150ms ease, color 150ms ease, transform 150ms ease;
@@ -8050,27 +8050,27 @@ function submit() {
 
 .studio-theme-card:hover,
 .studio-theme-card--active {
-  border-color: #d9b05f;
+  border-color: rgb(var(--primary-500-rgb));
   box-shadow: 0 16px 36px rgb(20 61 55 / 0.09);
-  color: #143d37;
+  color: rgb(var(--primary-800-rgb));
   transform: translateY(-2px);
 }
 
 .dark .studio-theme-card {
-  background: #10231f;
-  border-color: #25443c;
-  color: #cbd8cf;
+  background: var(--ds-panel);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-theme-card--active {
-  border-color: #d9b05f;
-  color: #f7f1e7;
+  border-color: rgb(var(--primary-500-rgb));
+  color: var(--ds-text);
 }
 
 .studio-theme-card__specimen {
   background: white;
-  border: 1px solid #e7dece;
-  border-radius: 0.95rem;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   box-shadow: 0 10px 24px rgb(20 61 55 / 0.08);
   display: block;
   min-height: 7.5rem;
@@ -8085,7 +8085,7 @@ function submit() {
 }
 
 .studio-theme-card__line {
-  background: #e7e0d5;
+  background: var(--ds-border);
   border-radius: 999px;
   display: block;
   height: 0.3rem;
@@ -8094,14 +8094,14 @@ function submit() {
 }
 
 .studio-theme-card__line--strong {
-  background: #aab9b2;
+  background: var(--ds-text-muted);
   height: 0.45rem;
   margin-top: 0.8rem;
   width: 48%;
 }
 
 .studio-theme-card__table {
-  border: 1px solid #ded3bf;
+  border: 1px solid var(--ds-border);
   border-radius: 0.35rem;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -8110,7 +8110,7 @@ function submit() {
 }
 
 .studio-theme-card__table span {
-  border-right: 1px solid #ded3bf;
+  border-right: 1px solid var(--ds-border);
   display: block;
   height: 1.6rem;
 }
@@ -8120,16 +8120,16 @@ function submit() {
 }
 
 .studio-preview-workspace {
-  background: #fffdf7;
-  border: 1px solid #ded3bf;
-  border-radius: 2rem;
+  background: var(--ds-panel-raised);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   box-shadow: 0 22px 65px rgb(20 61 55 / 0.09);
   padding: 1.25rem;
 }
 
 .dark .studio-preview-workspace {
-  background: #07110f;
-  border-color: #25443c;
+  background: var(--ds-canvas);
+  border-color: var(--ds-border-strong);
   box-shadow: 0 22px 65px rgb(0 0 0 / 0.3);
 }
 
@@ -8142,31 +8142,31 @@ function submit() {
 }
 
 .studio-preview-header {
-  border-bottom: 1px solid #ded3bf;
+  border-bottom: 1px solid var(--ds-border);
   padding: 0.35rem 0.35rem 1rem;
 }
 
 .dark .studio-preview-header {
-  border-color: #25443c;
+  border-color: var(--ds-border-strong);
 }
 
 .studio-preview-toggle {
   align-items: center;
-  background: #f8f4ea;
-  border: 1px solid #ded3bf;
+  background: var(--ds-panel-subtle);
+  border: 1px solid var(--ds-border);
   border-radius: 999px;
   display: inline-flex;
   padding: 0.25rem;
 }
 
 .dark .studio-preview-toggle {
-  background: #10231f;
-  border-color: #25443c;
+  background: var(--ds-panel);
+  border-color: var(--ds-border-strong);
 }
 
 .studio-preview-toggle__item {
   border-radius: 999px;
-  color: #6b7b74;
+  color: var(--ds-text-soft);
   font-size: 0.66rem;
   font-weight: 900;
   min-height: 2.1rem;
@@ -8175,39 +8175,39 @@ function submit() {
 }
 
 .studio-preview-toggle__item:hover {
-  color: #143d37;
+  color: rgb(var(--primary-800-rgb));
 }
 
 .studio-preview-toggle__item--active {
-  background: #143d37;
+  background: rgb(var(--primary-800-rgb));
   box-shadow: 0 8px 20px rgb(20 61 55 / 0.16);
   color: white;
 }
 
 .dark .studio-preview-toggle__item {
-  color: #a9bcb2;
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-preview-toggle__item--active {
-  background: #d9b05f;
-  color: #07110f;
+  background: rgb(var(--primary-500-rgb));
+  color: var(--ds-canvas);
 }
 
 .studio-preview-pagebar {
-  border-bottom: 1px solid #ded3bf;
+  border-bottom: 1px solid var(--ds-border);
   padding: 0.8rem 0.35rem;
 }
 
 .dark .studio-preview-pagebar {
-  border-color: #25443c;
+  border-color: var(--ds-border-strong);
 }
 
 .studio-preview-page-chip {
   align-items: center;
-  background: #f8f4ea;
-  border: 1px solid #ded3bf;
+  background: var(--ds-panel-subtle);
+  border: 1px solid var(--ds-border);
   border-radius: 999px;
-  color: #6b7b74;
+  color: var(--ds-text-soft);
   display: inline-flex;
   flex-shrink: 0;
   font-size: 0.62rem;
@@ -8220,25 +8220,25 @@ function submit() {
 
 .studio-preview-page-chip:hover,
 .studio-preview-page-chip--active {
-  border-color: #d9b05f;
-  color: #143d37;
+  border-color: rgb(var(--primary-500-rgb));
+  color: rgb(var(--primary-800-rgb));
   transform: translateY(-1px);
 }
 
 .dark .studio-preview-page-chip {
-  background: #10231f;
-  border-color: #25443c;
-  color: #a9bcb2;
+  background: var(--ds-panel);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text-muted);
 }
 
 .dark .studio-preview-page-chip--active {
-  border-color: #d9b05f;
-  color: #f7f1e7;
+  border-color: rgb(var(--primary-500-rgb));
+  color: var(--ds-text);
 }
 
 .studio-preview-page-chip__paper {
   background: white;
-  border: 1px solid #ded3bf;
+  border: 1px solid var(--ds-border);
   border-radius: 0.12rem;
   height: 0.9rem;
   width: 0.65rem;
@@ -8248,10 +8248,10 @@ function submit() {
   background:
     linear-gradient(rgb(20 61 55 / 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgb(20 61 55 / 0.035) 1px, transparent 1px),
-    #f1ecdf;
+    var(--ds-canvas);
   background-size: 20px 20px;
-  border: 1px solid #ded3bf;
-  border-radius: 1.6rem;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-card);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.65);
   display: grid;
   gap: 1.25rem;
@@ -8264,9 +8264,9 @@ function submit() {
   background:
     linear-gradient(rgb(217 176 95 / 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgb(217 176 95 / 0.04) 1px, transparent 1px),
-    #10231f;
+    var(--ds-panel);
   background-size: 20px 20px;
-  border-color: #25443c;
+  border-color: var(--ds-border-strong);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
 }
 
@@ -8331,7 +8331,7 @@ function submit() {
 }
 
 .dark .report-studio-shell :where([class*="text-slate-950"], [class*="text-slate-900"], [class*="text-slate-800"], [class*="text-slate-700"], [class*="text-slate-600"], [class*="text-slate-500"], [class*="text-slate-400"], [class*="text-gray-900"], [class*="text-gray-700"], [class*="text-gray-600"], [class*="text-gray-500"], [class*="text-gray-400"]):not(.studio-preview-document, .studio-preview-document *) {
-  color: #f7f1e7 !important;
+  color: var(--ds-text) !important;
 }
 
 .report-studio-shell :where(button[class*="border-slate-"], button[class*="border-gray-"], a[class*="border-slate-"], a[class*="border-gray-"]):not(.studio-preview-document, .studio-preview-document *) {
@@ -8349,20 +8349,20 @@ function submit() {
   box-shadow: 0 12px 28px rgb(0 0 0 / 0.22);
 }
 
-.report-studio-shell :where(.rounded-3xl, .rounded-\[2rem\]):not(.studio-preview-document, .studio-preview-document *) {
-  backdrop-filter: saturate(1.08);
+.report-studio-shell :where(.rounded-3xl, .rounded-2xl, [class*="rounded-["]):not(.studio-preview-document, .studio-preview-document *) {
+  border-radius: var(--ds-radius-card) !important;
 }
 
 .report-studio-shell :where(input, select, textarea):not(.studio-preview-document *) {
-  border-color: #ded3bf;
-  background-color: #fffdf7;
-  color: #15231f;
+  border-color: var(--ds-border);
+  background-color: var(--ds-panel-raised);
+  color: var(--ds-text);
 }
 
 .dark .report-studio-shell :where(input, select, textarea):not(.studio-preview-document *) {
-  border-color: #25443c;
-  background-color: #10231f;
-  color: #f7f1e7;
+  border-color: var(--ds-border);
+  background-color: var(--ds-panel-raised);
+  color: var(--ds-text);
 }
 
 .report-studio-shell :where(input, select, textarea):not(.studio-preview-document *):focus {
@@ -8374,7 +8374,7 @@ function submit() {
   background-color: transparent;
   border: 0;
   box-shadow: none;
-  color: #143d37;
+  color: var(--ds-text);
 }
 
 .report-studio-shell .studio-toolbar-select:focus {
@@ -8384,7 +8384,7 @@ function submit() {
 
 .dark .report-studio-shell .studio-toolbar-select {
   background-color: transparent;
-  color: #f7f1e7;
+  color: var(--ds-text);
 }
 
 .report-studio-swiper::part(button-prev),
@@ -8418,7 +8418,7 @@ function submit() {
 .dark .report-studio-swiper::part(button-prev),
 .dark .report-studio-swiper::part(button-next) {
   background: transparent;
-  color: #f7f1e7;
+  color: var(--ds-text);
 }
 
 .dark .report-studio-swiper::part(button-prev):hover,

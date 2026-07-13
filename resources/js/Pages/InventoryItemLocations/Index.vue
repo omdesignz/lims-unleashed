@@ -181,13 +181,13 @@ function confirmAction() {
           <div class="grid gap-5 sm:grid-cols-2">
             <div>
               <label for="location-name" class="ds-field-label mb-2 block">Nome da localização</label>
-              <input id="location-name" v-model="form.name" type="text" class="ds-field" autofocus>
+              <BaseInput id="location-name" v-model="form.name" type="text" class="ds-field" autofocus />
               <p v-if="form.errors.name" class="ds-field-error mt-2">{{ form.errors.name }}</p>
             </div>
 
             <div>
               <label for="location-address" class="ds-field-label mb-2 block">Endereço interno</label>
-              <input id="location-address" v-model="form.address" type="text" class="ds-field" placeholder="Edifício, piso, sala ou zona">
+              <BaseInput id="location-address" v-model="form.address" type="text" class="ds-field" placeholder="Edifício, piso, sala ou zona" />
               <p v-if="form.errors.address" class="ds-field-error mt-2">{{ form.errors.address }}</p>
             </div>
           </div>

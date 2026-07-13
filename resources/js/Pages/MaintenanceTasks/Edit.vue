@@ -50,7 +50,7 @@
                   {{ $t('gestlab.general.labels.maintenance_tasks.name') }}
                   <span class="text-red-500">*</span>
                 </label>
-                <input
+                <BaseInput
                   type="text"
                   v-model="form.name"
                   :placeholder="$t('gestlab.general.labels.maintenance_tasks.name_placeholder')"
@@ -160,7 +160,7 @@
                   {{ $t('gestlab.general.labels.maintenance_tasks.periodicity') }}
                 </label>
                 <div class="flex gap-2">
-                  <input
+                  <BaseInput
                     type="number"
                     v-model="form.periodicity"
                     min="1"
@@ -245,7 +245,7 @@
                   <CheckCircleIcon class="h-4 w-4" />
                   {{ $t('gestlab.general.labels.maintenance_tasks.calibration_status') }}
                 </label>
-                <select
+                <BaseSelect
                   v-model="form.calibration_status"
                   :class="[
                     'w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-colors duration-200',
@@ -257,7 +257,7 @@
                   <option value="in_progress">{{ $t('gestlab.general.labels.maintenance_tasks.status.in_progress') }}</option>
                   <option value="completed">{{ $t('gestlab.general.labels.maintenance_tasks.status.completed') }}</option>
                   <option value="failed">{{ $t('gestlab.general.labels.maintenance_tasks.status.failed') }}</option>
-                </select>
+                </BaseSelect>
               </div>
 
               <!-- CERTIFICATE NUMBER -->
@@ -266,7 +266,7 @@
                   <DocumentIcon class="h-4 w-4" />
                   {{ $t('gestlab.general.labels.maintenance_tasks.calibration_certificate_no') }}
                 </label>
-                <input
+                <BaseInput
                   type="text"
                   v-model="form.calibration_certificate_no"
                   :placeholder="$t('gestlab.general.labels.maintenance_tasks.calibration_certificate_placeholder')"
@@ -283,7 +283,7 @@
                   <ScaleIcon class="h-4 w-4" />
                   {{ $t('gestlab.general.labels.maintenance_tasks.acceptance_criteria') }}
                 </label>
-                <input
+                <BaseInput
                   type="text"
                   v-model="form.acceptance_criteria"
                   :placeholder="$t('gestlab.general.labels.maintenance_tasks.acceptance_placeholder')"
@@ -300,7 +300,7 @@
                   <ArrowsRightLeftIcon class="h-4 w-4" />
                   {{ $t('gestlab.general.labels.maintenance_tasks.range') }}
                 </label>
-                <input
+                <BaseInput
                   type="text"
                   v-model="form.range"
                   :placeholder="$t('gestlab.general.labels.maintenance_tasks.range_placeholder')"
@@ -467,7 +467,7 @@
               </label>
               <div class="relative">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">AOA</span>
-                <input
+                <BaseInput
                   type="number"
                   v-model="form.cost"
                   step="0.01"

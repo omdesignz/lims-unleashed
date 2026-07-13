@@ -2,7 +2,7 @@
     <div>
       <h2>Standard Deviation Calculator</h2>
       <div v-for="(value, index) in data" :key="index">
-        <input
+        <BaseInput
           type="number"
           v-model.number="data[index]"
           @input="updateMeasurement(index, data[index])"

@@ -490,7 +490,7 @@ function loadProposals(query, setOptions) {
                   <label for="confidentiality" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.proposal_compliance_agreements.confidentiality') }}</label>
                 </div>
                 <div class="sm:col-span-2">
-                  <input v-model="form.confidentiality" type="checkbox" name="confidentiality" id="confidentiality" class="focus:ring-blue-900 h-4 w-4 text-blue-900 border-blue-900 rounded-full" />
+                  <CheckboxInput v-model="form.confidentiality" type="checkbox" name="confidentiality" id="confidentiality" class="focus:ring-blue-900 h-4 w-4 text-blue-900 border-blue-900 rounded-full" />
                   <p v-if="form.errors.confidentiality" class="mt-2 text-sm text-red-600" id="confidentiality-error">{{ form.errors.confidentiality }}</p>
                 </div>
               </div>
@@ -502,7 +502,7 @@ function loadProposals(query, setOptions) {
                   <label for="impartiality" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.proposal_compliance_agreements.impartiality') }}</label>
                 </div>
                 <div class="sm:col-span-2">
-                  <input v-model="form.impartiality" type="checkbox" name="impartiality" id="impartiality" class="focus:ring-blue-900 h-4 w-4 text-blue-900 border-blue-900 rounded-full" />
+                  <CheckboxInput v-model="form.impartiality" type="checkbox" name="impartiality" id="impartiality" class="focus:ring-blue-900 h-4 w-4 text-blue-900 border-blue-900 rounded-full" />
                   <p v-if="form.errors.impartiality" class="mt-2 text-sm text-red-600" id="impartiality-error">{{ form.errors.impartiality }}</p>
                 </div>
               </div>
@@ -513,7 +513,7 @@ function loadProposals(query, setOptions) {
                   <label for="nondisclosure" class="block text-sm font-medium leading-6 text-gray-900 sm:mt-1.5">{{ $t('gestlab.general.labels.proposal_compliance_agreements.nondisclosure') }}</label>
                 </div>
                 <div class="sm:col-span-2">
-                  <input v-model="form.nondisclosure" type="checkbox" name="nondisclosure" id="nondisclosure" class="focus:ring-blue-900 h-4 w-4 text-blue-900 border-blue-900 rounded-full" />
+                  <CheckboxInput v-model="form.nondisclosure" type="checkbox" name="nondisclosure" id="nondisclosure" class="focus:ring-blue-900 h-4 w-4 text-blue-900 border-blue-900 rounded-full" />
                   <p v-if="form.errors.nondisclosure" class="mt-2 text-sm text-red-600" id="nondisclosure-error">{{ form.errors.nondisclosure }}</p>
                 </div>
               </div>

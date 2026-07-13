@@ -75,7 +75,7 @@
           <span class="ds-field-label">Pesquisar</span>
           <span class="relative block">
             <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-            <input
+            <BaseInput
               v-model="search"
               type="search"
               class="ds-field pl-10"
@@ -237,7 +237,7 @@
       </div>
 
       <div v-if="nonConformityRows.length" class="hidden overflow-x-auto lg:block">
-        <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+        <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
           <thead class="bg-[var(--ds-panel-subtle)]">
             <tr>
               <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">{{ $t('gestlab.general.labels.vap_non_conformities.nc_number') }}</th>
@@ -293,7 +293,7 @@
               </td>
             </tr>
           </tbody>
-        </table>
+        </DataTable>
       </div>
 
       <div v-if="!nonConformityRows.length" class="ds-empty-state p-10 text-center">

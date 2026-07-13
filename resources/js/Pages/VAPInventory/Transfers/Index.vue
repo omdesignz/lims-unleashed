@@ -57,7 +57,7 @@
           <span class="ds-field-label">Pesquisar</span>
           <span class="relative block">
             <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-            <input
+            <BaseInput
               v-model="localFilters.search"
               type="search"
               class="ds-field pl-10"
@@ -68,32 +68,32 @@
 
         <label class="ds-field-group">
           <span class="ds-field-label">Estado</span>
-          <select v-model="localFilters.status" class="ds-field">
+          <BaseSelect v-model="localFilters.status" class="ds-field">
             <option value="">Todos os estados</option>
             <option value="pending">Pendente</option>
             <option value="sent">Em trânsito</option>
             <option value="received">Recebida</option>
-          </select>
+          </BaseSelect>
         </label>
 
         <label class="ds-field-group">
           <span class="ds-field-label">Origem</span>
-          <select v-model="localFilters.source_id" class="ds-field">
+          <BaseSelect v-model="localFilters.source_id" class="ds-field">
             <option value="">Todos os armazéns</option>
             <option v-for="warehouse in warehouses" :key="`source-${warehouse.id}`" :value="warehouse.id">
               {{ warehouse.name }}
             </option>
-          </select>
+          </BaseSelect>
         </label>
 
         <label class="ds-field-group">
           <span class="ds-field-label">Destino</span>
-          <select v-model="localFilters.destination_id" class="ds-field">
+          <BaseSelect v-model="localFilters.destination_id" class="ds-field">
             <option value="">Todos os armazéns</option>
             <option v-for="warehouse in warehouses" :key="`destination-${warehouse.id}`" :value="warehouse.id">
               {{ warehouse.name }}
             </option>
-          </select>
+          </BaseSelect>
         </label>
       </div>
 
@@ -182,7 +182,7 @@
         </div>
 
         <div v-if="transferRows.length" class="hidden overflow-x-auto lg:block">
-          <table class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
+          <DataTable class="min-w-full divide-y divide-[var(--ds-border)] text-left text-sm">
             <thead class="bg-[var(--ds-panel-subtle)]">
               <tr>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Transferência</th>
@@ -243,7 +243,7 @@
                 </td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
 
         <div v-if="!transferRows.length" class="ds-empty-state p-10 text-center">
@@ -361,13 +361,13 @@
                     <div class="grid gap-4 sm:grid-cols-2">
                       <label class="ds-field-group">
                         <span class="ds-field-label">Quantidade recebida <span class="ds-field-required">*</span></span>
-                        <input v-model="receiveForm.actual_qty" type="number" min="1" :max="selectedTransfer?.qty" class="ds-field" required />
+                        <BaseInput v-model="receiveForm.actual_qty" type="number" min="1" :max="selectedTransfer?.qty" class="ds-field" required />
                         <span class="ds-field-hint">Máximo previsto: {{ selectedTransfer?.qty || 0 }}</span>
                         <span v-if="receiveForm.errors.actual_qty" class="ds-field-error">{{ receiveForm.errors.actual_qty }}</span>
                       </label>
                       <label class="ds-field-group">
                         <span class="ds-field-label">Data de receção <span class="ds-field-required">*</span></span>
-                        <input v-model="receiveForm.received_date" type="date" class="ds-field" required />
+                        <DateTimePicker v-model="receiveForm.received_date" type="date" class="ds-field" required />
                         <span v-if="receiveForm.errors.received_date" class="ds-field-error">{{ receiveForm.errors.received_date }}</span>
                       </label>
                     </div>

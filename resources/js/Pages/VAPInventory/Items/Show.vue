@@ -251,7 +251,7 @@
           </div>
 
           <div v-else class="overflow-x-auto">
-            <table class="min-w-full align-middle">
+            <DataTable class="min-w-full align-middle">
               <thead class="ds-table-head">
                 <tr>
                   <th class="ds-table-heading px-5 py-3 text-left">Armazém</th>
@@ -290,7 +290,7 @@
                   </td>
                 </tr>
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </section>
 
@@ -312,7 +312,7 @@
           </div>
 
           <div v-else class="overflow-x-auto">
-            <table class="min-w-full align-middle">
+            <DataTable class="min-w-full align-middle">
               <thead class="ds-table-head">
                 <tr>
                   <th class="ds-table-heading px-5 py-3 text-left">Data</th>
@@ -337,7 +337,7 @@
                   <td class="ds-table-cell min-w-60 px-5 py-3">{{ transaction.reason || 'Sem motivo registado' }}</td>
                 </tr>
               </tbody>
-            </table>
+            </DataTable>
           </div>
         </section>
 

@@ -256,7 +256,7 @@ function formatDate(date) {
       <aside class="ds-card self-start p-3 xl:sticky xl:top-24">
         <div class="border-b border-[var(--ds-border)] px-2 pb-4">
           <label for="worksheet-name" class="ds-field-label">Nome da worksheet</label>
-          <input id="worksheet-name" v-model="form.name" type="text" class="ds-field mt-2 min-h-10" />
+          <BaseInput id="worksheet-name" v-model="form.name" type="text" class="ds-field mt-2 min-h-10" />
           <p class="ds-field-hint mt-2">Identificacao visivel na fila e nos registos de bancada.</p>
         </div>
 
@@ -287,7 +287,7 @@ function formatDate(date) {
         <div class="ds-table-summary flex-col items-stretch px-4 py-4 lg:flex-row lg:items-center">
           <div class="min-w-0 flex-1">
             <label for="active-sheet-name" class="ds-field-label">Sheet ativa</label>
-            <input
+            <BaseInput
               v-if="activeSheet"
               id="active-sheet-name"
               v-model="activeSheet.name"
@@ -334,7 +334,7 @@ function formatDate(date) {
         </div>
 
         <div class="overflow-x-auto">
-          <table v-if="activeSheet" class="min-w-full border-separate border-spacing-0 text-sm">
+          <DataTable v-if="activeSheet" class="min-w-full border-separate border-spacing-0 text-sm">
             <thead class="ds-table-head">
               <tr>
                 <th class="sticky left-0 z-20 w-12 border-b border-r border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-2 py-2 text-center ds-table-heading">#</th>
@@ -357,7 +357,7 @@ function formatDate(date) {
                   :key="`cell-${rowIndex}-${columnIndex}`"
                   class="min-w-40 border-b border-r border-[var(--ds-border)] bg-[var(--ds-panel)] p-0 last:border-r-0"
                 >
-                  <input
+                  <BaseInput
                     v-model="activeSheet.data[rowIndex][columnIndex - 1]"
                     type="text"
                     class="min-h-10 w-full border-0 bg-transparent px-3 py-2 text-sm font-semibold text-[var(--ds-text)] outline-none transition focus:bg-[rgb(var(--primary-50-rgb)/0.7)] focus:ring-2 focus:ring-inset focus:ring-[rgb(var(--primary-500-rgb)/0.45)] dark:focus:bg-[rgb(var(--primary-400-rgb)/0.08)]"
@@ -366,7 +366,7 @@ function formatDate(date) {
                 </td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
 
         <footer class="flex flex-col gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3 text-xs font-semibold text-[var(--ds-text-muted)] sm:flex-row sm:items-center sm:justify-between">

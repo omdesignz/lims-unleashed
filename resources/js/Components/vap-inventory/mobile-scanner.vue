@@ -20,7 +20,7 @@
         Posicione o código QR na moldura ou use um scanner de bancada.
       </p>
 
-      <input
+      <BaseInput
         ref="barcodeInput"
         v-model="manualInput"
         class="absolute opacity-0 pointer-events-none"
@@ -62,7 +62,7 @@
 
         <label class="ds-field-group mt-5">
           <span class="ds-field-label">Quantidade a remover</span>
-          <input v-model="form.qty" type="number" step="0.01" class="ds-field text-lg font-bold" />
+          <BaseInput v-model="form.qty" type="number" step="0.01" class="ds-field text-lg font-bold" />
         </label>
 
         <div class="mt-5 grid gap-2">

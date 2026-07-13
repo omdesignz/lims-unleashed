@@ -43,7 +43,7 @@
             Armazém
             <span class="text-red-500">*</span>
           </label>
-          <select
+          <BaseSelect
             v-model="form.warehouse_id"
             @change="updateWarehouseInfo"
             :class="[
@@ -64,7 +64,7 @@
                 • Refrigerado
               </template>
             </option>
-          </select>
+          </BaseSelect>
           <p v-if="form.errors.warehouse_id" class="text-xs text-red-600">
             {{ form.errors.warehouse_id }}
           </p>
@@ -77,7 +77,7 @@
               Data de Consumo
               <span class="text-red-500">*</span>
             </label>
-            <input
+            <DateTimePicker
               v-model="form.date"
               type="date"
               :max="new Date().toISOString().split('T')[0]"
@@ -85,8 +85,7 @@
               :class="[
                 'ds-field',
                 form.errors.date ? 'border-[var(--color-danger-500)]' : 'border-[var(--ds-border)]'
-              ]"
-            />
+              ]" />
             <p v-if="form.errors.date" class="text-xs text-red-600">
               {{ form.errors.date }}
             </p>
@@ -98,7 +97,7 @@
               <span class="text-red-500">*</span>
             </label>
             <div class="relative">
-              <input
+              <BaseInput
                 v-model.number="form.quantity_used"
                 type="number"
                 :min="0.01"
@@ -136,7 +135,7 @@
               Usado Por
               <span class="text-red-500">*</span>
             </label>
-            <input
+            <BaseInput
               v-model="form.used_by"
               type="text"
               required
@@ -155,11 +154,10 @@
             <label class="block text-sm font-medium text-gray-700">
               Usado Em (Hora)
             </label>
-            <input
+            <DateTimePicker
               v-model="form.used_at"
               type="time"
-              class="ds-field"
-            />
+              class="ds-field" />
           </div>
         </div>
 
@@ -168,7 +166,7 @@
           <label class="block text-sm font-medium text-gray-700">
             Contexto de Uso
           </label>
-          <input
+          <BaseInput
             v-model="form.project"
             type="text"
             class="ds-field"
@@ -228,7 +226,7 @@
             </div>
           </div>
           <div class="mt-3 flex items-center">
-            <input
+            <CheckboxInput
               v-model="form.authorized_usage"
               type="checkbox"
               id="authorized"

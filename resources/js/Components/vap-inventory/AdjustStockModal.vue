@@ -34,7 +34,7 @@
             Armazém
             <span class="text-red-500">*</span>
           </label>
-          <select
+          <BaseSelect
             v-model="form.warehouse_id"
             @change="updateWarehouseStock"
             :class="[
@@ -51,7 +51,7 @@
             >
               {{ inv.warehouse?.name }} (Atual: {{ inv.qty_available }} {{ item.unit?.code || 'unidades' }})
             </option>
-          </select>
+          </BaseSelect>
           <p v-if="form.errors.warehouse_id" class="text-xs text-red-600">
             {{ form.errors.warehouse_id }}
           </p>
@@ -107,7 +107,7 @@
             <span class="text-red-500">*</span>
           </label>
           <div class="relative">
-            <input
+            <BaseInput
               v-model.number="form.quantity"
               type="number"
               :min="form.adjustment_type === 'remove' ? 1 : 1"
@@ -143,7 +143,7 @@
             Motivo
             <span class="text-red-500">*</span>
           </label>
-          <select
+          <BaseSelect
             v-model="form.reason"
             :class="[
               'ds-field',
@@ -159,7 +159,7 @@
             <option value="expired">Itens Expirados</option>
             <option value="calibration">Ajuste de Calibração</option>
             <option value="other">Outro</option>
-          </select>
+          </BaseSelect>
           <p v-if="form.errors.reason" class="text-xs text-red-600">
             {{ form.errors.reason }}
           </p>

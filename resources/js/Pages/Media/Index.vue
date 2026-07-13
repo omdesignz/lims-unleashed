@@ -141,13 +141,13 @@ const showDeleteConfirmation = ref(false);
       <section class="flex flex-col p-4 mb-4 space-y-4 bg-white shadow sm:rounded lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:p-2">
         <div class="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-2">
 
-          <select v-model="query.fileType" aria-label="Media type" id="type" class="pr-10 pl-3 w-full h-11 rounded border-gray-300 shadow-sm lg:h-9 lg:text-sm sm:w-44 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          <BaseSelect v-model="query.fileType" aria-label="Media type" id="type" class="pr-10 pl-3 w-full h-11 rounded border-gray-300 shadow-sm lg:h-9 lg:text-sm sm:w-44 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
             <option v-for="type in allFileTypes" :value="type.value"> {{ type.label }} </option>
-          </select>
+          </BaseSelect>
  
-          <select v-model="query.month" aria-label="Media date" id="date" class="pr-10 pl-3 w-full h-11 rounded border-gray-300 shadow-sm lg:h-9 lg:text-sm sm:w-44 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          <BaseSelect v-model="query.month" aria-label="Media date" id="date" class="pr-10 pl-3 w-full h-11 rounded border-gray-300 shadow-sm lg:h-9 lg:text-sm sm:w-44 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
             <option v-for="month in allMonths" :value="month.value">{{ month.label }}</option>
-          </select>
+          </BaseSelect>
  
           <button @click="filter()" type="button" class="inline-flex items-center px-4 h-11 font-medium text-gray-700 bg-white rounded border border-gray-300 shadow-sm lg:h-9 lg:text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             {{ $t('gestlab.filter.apply') }}
@@ -161,7 +161,7 @@ const showDeleteConfirmation = ref(false);
  
         <div class="flex flex-col">
           <label for="search" class="text-sm font-medium text-gray-700 sr-only">Search</label>
-          <input v-model="query.term" @keydown.enter="filter()" type="search" id="search" class="w-full h-11 rounded border-gray-300 shadow-sm lg:h-9 lg:text-sm lg:w-64 focus:ring-blue-500 focus:border-blue-500" :placeholder="$t('gestlab.general.search_input_placeholder')" autocomplete="off"/>
+          <BaseInput v-model="query.term" @keydown.enter="filter()" type="search" id="search" class="w-full h-11 rounded border-gray-300 shadow-sm lg:h-9 lg:text-sm lg:w-64 focus:ring-blue-500 focus:border-blue-500" :placeholder="$t('gestlab.general.search_input_placeholder')" autocomplete="off"/>
         </div>
       </section>
  
@@ -183,11 +183,11 @@ const showDeleteConfirmation = ref(false);
       </section>
  
       <section class="mb-4">
-        <table class="min-w-full bg-white shadow table-fixed sm:rounded">
+        <DataTable class="min-w-full bg-white shadow table-fixed sm:rounded">
           <thead>
           <tr class="border-b border-gray-200">
             <th class="px-2 w-10 text-center">
-              <input type="checkbox" @change="toggleSelectAll" class="w-6 h-6 text-blue-600 rounded-full border-gray-300 lg:w-4 lg:h-4 focus:ring-blue-500">
+              <CheckboxInput type="checkbox" @change="toggleSelectAll" class="w-6 h-6 text-blue-600 rounded-full border-gray-300 lg:w-4 lg:h-4 focus:ring-blue-500" />
             </th>
             <th class="text-left">
               <Link
@@ -212,7 +212,7 @@ const showDeleteConfirmation = ref(false);
           <tbody class="divide-y divide-gray-100">
           <tr class="align-top group" v-for="(item, index) in props.record.data" :key="item.id">
             <td class="p-2 w-10 text-center">
-              <input type="checkbox" v-model="item.selected" class="w-6 h-6 text-blue-600 rounded-full border-gray-300 lg:w-4 lg:h-4 focus:ring-blue-500">
+              <CheckboxInput type="checkbox" v-model="item.selected" class="w-6 h-6 text-blue-600 rounded-full border-gray-300 lg:w-4 lg:h-4 focus:ring-blue-500" />
             </td>
             <td class="p-2 text-left">
               <div class="flex space-x-4">
@@ -264,7 +264,7 @@ const showDeleteConfirmation = ref(false);
             </td>
           </tr>
           </tbody>
-        </table>
+        </DataTable>
       </section>
  
       <section class="flex flex-col mb-4 lg:flex-row lg:justify-between">

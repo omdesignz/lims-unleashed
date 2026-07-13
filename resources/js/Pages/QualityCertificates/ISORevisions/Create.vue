@@ -215,7 +215,7 @@ function submitForm() {
               <label class="ds-field-label" for="change-type">
                 Tipo de alteracao <span class="ds-field-required">*</span>
               </label>
-              <select
+              <BaseSelect
                 id="change-type"
                 v-model="form.change_type"
                 class="ds-field"
@@ -227,7 +227,7 @@ function submitForm() {
                 <option value="CORRECTED">Correcao</option>
                 <option value="REISSUED">Reemissao</option>
                 <option value="WITHDRAWN">Retirada</option>
-              </select>
+              </BaseSelect>
               <p v-if="form.errors.change_type" class="ds-field-error">
                 {{ form.errors.change_type }}
               </p>
@@ -237,7 +237,7 @@ function submitForm() {
               <label class="ds-field-label" for="risk-assessment">
                 Avaliacao de risco <span class="ds-field-required">*</span>
               </label>
-              <select
+              <BaseSelect
                 id="risk-assessment"
                 v-model="form.risk_assessment"
                 class="ds-field"
@@ -249,7 +249,7 @@ function submitForm() {
                 <option value="MEDIUM">Medio</option>
                 <option value="HIGH">Alto</option>
                 <option value="CRITICAL">Critico</option>
-              </select>
+              </BaseSelect>
               <p v-if="form.errors.risk_assessment" class="ds-field-error">
                 {{ form.errors.risk_assessment }}
               </p>
@@ -261,7 +261,7 @@ function submitForm() {
               </label>
               <div class="relative">
                 <DocumentMagnifyingGlassIcon class="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--ds-text-soft)]" />
-                <input
+                <BaseInput
                   id="iso-section"
                   v-model="form.iso_section"
                   class="ds-field pl-10"
@@ -345,7 +345,7 @@ function submitForm() {
                   </p>
 
                   <div v-if="selectedFields.includes(field.name)" class="mt-4">
-                    <select
+                    <BaseSelect
                       v-if="field.type === 'select'"
                       v-model="form.fields[field.name]"
                       class="ds-field"
@@ -357,14 +357,14 @@ function submitForm() {
                       >
                         {{ option.label }}
                       </option>
-                    </select>
+                    </BaseSelect>
                     <textarea
                       v-else-if="field.type === 'textarea' || field.type === 'json'"
                       v-model="form.fields[field.name]"
                       class="ds-field min-h-28 font-mono"
                       :placeholder="field.placeholder"
                     />
-                    <input
+                    <BaseInput
                       v-else
                       v-model="form.fields[field.name]"
                       class="ds-field"
@@ -441,7 +441,7 @@ function submitForm() {
             </label>
             <div class="relative">
               <UserIcon class="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--ds-text-soft)]" />
-              <select
+              <BaseSelect
                 id="approver"
                 v-model="form.approved_by_id"
                 class="ds-field pl-10"
@@ -455,7 +455,7 @@ function submitForm() {
                 >
                   {{ approver.name }}
                 </option>
-              </select>
+              </BaseSelect>
             </div>
             <p class="ds-field-hint">
               A designacao pode ser concluida posteriormente, conforme o fluxo de aprovacao.

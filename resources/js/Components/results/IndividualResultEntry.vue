@@ -271,7 +271,7 @@ function saveIndividualResult() {
       <div class="max-h-[75vh] space-y-6 overflow-y-auto p-5 sm:p-6">
         <div class="ds-field-group">
           <label class="ds-field-label" for="individual-parameter">Parâmetro</label>
-          <select id="individual-parameter" v-model="selectedParameterId" class="ds-field mt-2">
+          <BaseSelect id="individual-parameter" v-model="selectedParameterId" class="ds-field mt-2">
             <option value="">Selecione um parâmetro</option>
             <option
               v-for="parameter in filteredParameters"
@@ -280,7 +280,7 @@ function saveIndividualResult() {
             >
               {{ parameter.parameter_id?.code || "N/A" }} - {{ parameter.parameter_id?.name || "Sem nome" }}
             </option>
-          </select>
+          </BaseSelect>
         </div>
 
         <template v-if="selectedParameter">
@@ -332,7 +332,7 @@ function saveIndividualResult() {
               </button>
             </div>
             <div v-else class="mt-2 flex gap-2">
-              <input
+              <BaseInput
                 v-model="resultValue"
                 class="ds-field"
                 :disabled="selectedParameter.requires_calculation"
@@ -357,7 +357,7 @@ function saveIndividualResult() {
           <div class="grid gap-4 sm:grid-cols-2">
             <div class="ds-field-group">
               <label class="ds-field-label" for="individual-uncertainty">Incerteza</label>
-              <input
+              <BaseInput
                 id="individual-uncertainty"
                 v-model="uncertaintyValue"
                 class="ds-field mt-2"

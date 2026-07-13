@@ -9,7 +9,7 @@
       <div v-for="(series, seriesIndex) in seriesList" :key="seriesIndex">
         <h3>Series {{ seriesIndex + 1 }}</h3>
         <div v-for="(value, dataIndex) in series.data" :key="dataIndex">
-          <input
+          <BaseInput
             type="number"
             v-model.number="series.data[dataIndex]"
             @input="updateSeriesData(seriesIndex, dataIndex, series.data[dataIndex])"

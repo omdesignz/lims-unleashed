@@ -151,7 +151,7 @@ function toneClass(tone) {
         <form class="mt-4 flex min-w-0 gap-2 sm:mt-0 sm:w-full sm:max-w-md" role="search" @submit.prevent="submitSearch">
           <div class="relative min-w-0 flex-1">
             <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--ds-text-soft)]" />
-            <input v-model="search" type="search" class="ds-field pl-10" :placeholder="`Pesquisar ${entityLabel}`" />
+            <BaseInput v-model="search" type="search" class="ds-field pl-10" :placeholder="`Pesquisar ${entityLabel}`" />
           </div>
           <button type="submit" class="ds-button ds-button-secondary">Pesquisar</button>
           <button v-if="search" type="button" class="ds-icon-button" title="Limpar pesquisa" @click="clearSearch">

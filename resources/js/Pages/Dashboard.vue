@@ -211,7 +211,7 @@
           <span class="ds-badge ds-badge-neutral">{{ props.executive.top_customers?.length || 0 }} clientes</span>
         </div>
         <div class="overflow-x-auto">
-          <table class="min-w-full">
+          <DataTable class="min-w-full">
             <thead class="ds-table-head">
               <tr>
                 <th class="ds-table-heading px-5 py-3 text-left">Cliente</th>
@@ -229,7 +229,7 @@
                 <td colspan="3" class="px-5 py-10 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem atividade recente de clientes.</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </section>
 
@@ -246,7 +246,7 @@
           </a>
         </div>
         <div class="overflow-x-auto">
-          <table class="min-w-full">
+          <DataTable class="min-w-full">
             <thead class="ds-table-head">
               <tr>
                 <th class="ds-table-heading px-5 py-3 text-left">Fornecedor</th>
@@ -270,7 +270,7 @@
                 <td colspan="6" class="px-5 py-10 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Nenhum fornecedor exige observação neste momento.</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </section>
 
@@ -287,7 +287,7 @@
           </a>
         </div>
         <div class="overflow-x-auto">
-          <table class="min-w-full">
+          <DataTable class="min-w-full">
             <thead class="ds-table-head">
               <tr>
                 <th class="ds-table-heading px-5 py-3 text-left">Referência</th>
@@ -324,7 +324,7 @@
                 <td colspan="6" class="px-5 py-10 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Não existem necessidades aprovadas pendentes de compra.</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </section>
 
@@ -341,7 +341,7 @@
           </a>
         </div>
         <div class="overflow-x-auto">
-          <table class="min-w-full">
+          <DataTable class="min-w-full">
             <thead class="ds-table-head">
               <tr>
                 <th class="ds-table-heading px-5 py-3 text-left">Não conformidade</th>
@@ -368,7 +368,7 @@
                 <td colspan="6" class="px-5 py-10 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Nenhuma receção tem não conformidade aberta.</td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </section>
     </template>

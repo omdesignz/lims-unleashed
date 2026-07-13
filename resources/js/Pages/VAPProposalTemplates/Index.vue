@@ -421,7 +421,7 @@
           @dragleave="dragOver = false"
           @drop="handleFileDrop"
         >
-          <input
+          <FileInput
             ref="fileInput"
             type="file"
             accept=".json,.txt,.xlsx,.csv"

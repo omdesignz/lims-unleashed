@@ -315,17 +315,17 @@ function logoutOtherSessions() {
           <div class="grid gap-5 p-5 sm:p-6 lg:grid-cols-2">
             <div class="ds-field-group lg:col-span-2">
               <label for="current-password" class="ds-field-label">Palavra-passe actual</label>
-              <input id="current-password" v-model="passwordForm.current_password" type="password" autocomplete="current-password" class="ds-field" :aria-invalid="Boolean(passwordForm.errors.current_password)" />
+              <BaseInput id="current-password" v-model="passwordForm.current_password" type="password" autocomplete="current-password" class="ds-field" :aria-invalid="Boolean(passwordForm.errors.current_password)" />
               <p v-if="passwordForm.errors.current_password" class="ds-field-error">{{ passwordForm.errors.current_password }}</p>
             </div>
             <div class="ds-field-group">
               <label for="new-password" class="ds-field-label">Nova palavra-passe</label>
-              <input id="new-password" v-model="passwordForm.password" type="password" autocomplete="new-password" class="ds-field" :aria-invalid="Boolean(passwordForm.errors.password)" />
+              <BaseInput id="new-password" v-model="passwordForm.password" type="password" autocomplete="new-password" class="ds-field" :aria-invalid="Boolean(passwordForm.errors.password)" />
               <p v-if="passwordForm.errors.password" class="ds-field-error">{{ passwordForm.errors.password }}</p>
             </div>
             <div class="ds-field-group">
               <label for="password-confirmation" class="ds-field-label">Confirmar palavra-passe</label>
-              <input id="password-confirmation" v-model="passwordForm.password_confirmation" type="password" autocomplete="new-password" class="ds-field" :aria-invalid="Boolean(passwordForm.errors.password_confirmation)" />
+              <BaseInput id="password-confirmation" v-model="passwordForm.password_confirmation" type="password" autocomplete="new-password" class="ds-field" :aria-invalid="Boolean(passwordForm.errors.password_confirmation)" />
               <p v-if="passwordForm.errors.password_confirmation" class="ds-field-error">{{ passwordForm.errors.password_confirmation }}</p>
             </div>
           </div>
@@ -382,7 +382,7 @@ function logoutOtherSessions() {
               <form v-if="!twoFactorConfirmed" class="mt-4 flex flex-col gap-2 sm:flex-row" @submit.prevent="confirmTwoFactor">
                 <div class="min-w-0 flex-1">
                   <label for="two-factor-code" class="sr-only">Codigo de seis digitos</label>
-                  <input id="two-factor-code" v-model="confirmationForm.code" type="text" inputmode="numeric" autocomplete="one-time-code" class="ds-field" placeholder="Codigo de 6 digitos" />
+                  <BaseInput id="two-factor-code" v-model="confirmationForm.code" type="text" inputmode="numeric" autocomplete="one-time-code" class="ds-field" placeholder="Codigo de 6 digitos" />
                   <p v-if="confirmationForm.errors.code" class="ds-field-error mt-1">{{ confirmationForm.errors.code }}</p>
                 </div>
                 <button type="submit" class="ds-button ds-button-primary self-start">Confirmar</button>
@@ -447,7 +447,7 @@ function logoutOtherSessions() {
             <div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))]"><LockClosedIcon class="h-4 w-4" /></span><div><h2 class="text-base font-bold">Confirmar identidade</h2><p class="ds-copy mt-1 text-sm">Introduza a palavra-passe antes desta operacao sensivel.</p></div></div>
           </div>
           <form @submit.prevent="confirmPasswordForSensitiveAction">
-            <div class="p-5 sm:p-6"><div class="ds-field-group"><label for="sensitive-password" class="ds-field-label">Palavra-passe</label><input id="sensitive-password" v-model="passwordConfirmationForm.password" type="password" autocomplete="current-password" class="ds-field" /><p v-if="passwordConfirmationForm.errors.password" class="ds-field-error">{{ passwordConfirmationForm.errors.password }}</p></div></div>
+            <div class="p-5 sm:p-6"><div class="ds-field-group"><label for="sensitive-password" class="ds-field-label">Palavra-passe</label><BaseInput id="sensitive-password" v-model="passwordConfirmationForm.password" type="password" autocomplete="current-password" class="ds-field" /><p v-if="passwordConfirmationForm.errors.password" class="ds-field-error">{{ passwordConfirmationForm.errors.password }}</p></div></div>
             <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6"><button type="button" class="ds-button ds-button-secondary" @click="closePasswordConfirmation">Cancelar</button><button type="submit" class="ds-button ds-button-primary" :disabled="passwordConfirmationForm.processing">{{ passwordConfirmationForm.processing ? 'A confirmar...' : 'Confirmar' }}</button></footer>
           </form>
         </DialogPanel>
@@ -462,7 +462,7 @@ function logoutOtherSessions() {
             <div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200"><ComputerDesktopIcon class="h-4 w-4" /></span><div><h2 class="text-base font-bold">Terminar outras sessoes</h2><p class="ds-copy mt-1 text-sm">A sessao deste dispositivo permanece activa.</p></div></div>
           </div>
           <form @submit.prevent="logoutOtherSessions">
-            <div class="p-5 sm:p-6"><div class="ds-field-group"><label for="session-password" class="ds-field-label">Palavra-passe</label><input id="session-password" v-model="sessionLogoutForm.password" type="password" autocomplete="current-password" class="ds-field" /><p v-if="sessionLogoutForm.errors.password" class="ds-field-error">{{ sessionLogoutForm.errors.password }}</p></div></div>
+            <div class="p-5 sm:p-6"><div class="ds-field-group"><label for="session-password" class="ds-field-label">Palavra-passe</label><BaseInput id="session-password" v-model="sessionLogoutForm.password" type="password" autocomplete="current-password" class="ds-field" /><p v-if="sessionLogoutForm.errors.password" class="ds-field-error">{{ sessionLogoutForm.errors.password }}</p></div></div>
             <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6"><button type="button" class="ds-button ds-button-secondary" @click="closeSessionLogoutModal">Cancelar</button><button type="submit" class="ds-button ds-button-danger" :disabled="sessionLogoutForm.processing">{{ sessionLogoutForm.processing ? 'A terminar...' : 'Terminar sessoes' }}</button></footer>
           </form>
         </DialogPanel>

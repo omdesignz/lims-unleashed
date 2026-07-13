@@ -35,7 +35,7 @@ function submit() {
   <form v-if="isShowingForm" class="ds-panel space-y-3 p-3" @keydown.esc="closeForm" @submit.prevent="submit">
     <div class="ds-field-group">
       <label for="new-list-name" class="ds-field-label">{{ $t('gestlab.general.labels.kanban.list_name_placeholder') }}</label>
-      <input
+      <BaseInput
         id="new-list-name"
         ref="inputNameRef"
         v-model="form.name"

@@ -26,7 +26,7 @@ defineProps({
           {{ $t('gestlab.general.labels.standards.code') }}
           <span class="ds-field-required">*</span>
         </label>
-        <input
+        <BaseInput
           id="standard-code"
           v-model="form.code"
           type="text"

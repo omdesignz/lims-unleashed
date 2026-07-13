@@ -134,7 +134,7 @@ function clearSearch() {
                 <label for="tax-number" class="ds-field-label">Numero de identificacao fiscal <span class="ds-field-required">*</span></label>
                 <div class="relative">
                   <IdentificationIcon class="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--ds-text-soft)]" />
-                  <input id="tax-number" v-model="taxNumber" type="text" inputmode="numeric" class="ds-field pl-10 font-mono" autocomplete="off" :aria-invalid="Boolean(searchError)" placeholder="Introduza o NIF" />
+                  <BaseInput id="tax-number" v-model="taxNumber" type="text" inputmode="numeric" class="ds-field pl-10 font-mono" autocomplete="off" :aria-invalid="Boolean(searchError)" placeholder="Introduza o NIF" />
                 </div>
                 <p v-if="searchError" class="ds-field-error">{{ searchError }}</p>
                 <p v-else class="ds-field-hint">Prima Enter ou use o botao Consultar.</p>

@@ -17,6 +17,7 @@ import {
 } from "@heroicons/vue/24/outline";
 import { usePermission } from "@/Composables/usePermissions";
 import { trans } from "laravel-vue-i18n";
+import DataTableShell from "@/Components/tables/DataTableShell.vue";
 
 const { hasPermission } = usePermission();
 
@@ -276,7 +277,7 @@ const masks = ref({
               <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <MagnifyingGlassIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
               </div>
-              <input
+              <BaseInput
                 v-model="query.search"
                 type="search"
                 :placeholder="$t('gestlab.general.search_input_placeholder')"
@@ -325,10 +326,8 @@ const masks = ref({
       </div>
     </section>
 
-    <section class="ds-table-shell">
-      <div
-        class="ds-table-summary px-5 py-4 sm:px-7"
-      >
+    <DataTableShell>
+      <template #summary>
         <div>
           <p class="ds-heading text-sm">
             {{ $t("gestlab.general.titles.records_list") }}
@@ -345,7 +344,7 @@ const masks = ref({
         >
           {{ allVisibleSelected ? $t("gestlab.general.labels.clear_selection") : $t("gestlab.general.buttons.select_all") }}
         </button>
-      </div>
+      </template>
 
       <!-- Records -->
       <div v-if="record.data.length">
@@ -358,7 +357,7 @@ const masks = ref({
           >
             <div class="flex items-start justify-between gap-3">
               <div class="flex items-center gap-3">
-                <input
+                <CheckboxInput
                   v-model="item.selected"
                   type="checkbox"
                   class="ds-checkbox"
@@ -461,11 +460,11 @@ const masks = ref({
 
         <!-- Desktop table -->
         <div class="hidden md:block overflow-x-auto">
-          <table class="min-w-full">
+          <DataTable class="min-w-full">
             <thead class="ds-table-head">
               <tr>
                 <th class="py-4 pl-7 pr-3 text-left">
-                  <input
+                  <CheckboxInput
                     :checked="allVisibleSelected"
                     type="checkbox"
                     class="ds-checkbox"
@@ -493,7 +492,7 @@ const masks = ref({
                 class="ds-table-row"
               >
                 <td class="py-5 pl-7 pr-3">
-                  <input
+                  <CheckboxInput
                     v-model="row.selected"
                     type="checkbox"
                     class="ds-checkbox"
@@ -581,7 +580,7 @@ const masks = ref({
                 </td>
               </tr>
             </tbody>
-          </table>
+          </DataTable>
         </div>
       </div>
 
@@ -593,7 +592,7 @@ const masks = ref({
         :description="$t('gestlab.general.labels.start_creating')"
         @create-record="$emit('create-record')"
       />
-    </section>
+    </DataTableShell>
 
     <!-- Pagination -->
     <div v-if="props.record.data.length" class="flex justify-center">
