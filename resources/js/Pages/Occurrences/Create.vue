@@ -66,7 +66,7 @@ function submit() {
             <div>
               <p class="ds-kicker">Qualidade e conformidade</p>
               <h1 class="ds-heading mt-1 text-2xl">Nova ocorrência</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Abra um registo rastreável para triagem, investigação e ação corretiva.</p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">Abra um registo rastreável para triagem, investigação e acção correctiva.</p>
             </div>
           </div>
         </div>

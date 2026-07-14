@@ -32,7 +32,7 @@ const totalRecords = computed(() => props.record?.meta?.total ?? rows.value.leng
 const metrics = computed(() => [
   { label: "Guias", value: totalRecords.value, detail: "registos controlados", icon: TruckIcon },
   { label: "Com cliente", value: rows.value.filter((guide) => guide.customer).length, detail: "destino identificado", icon: ClipboardDocumentCheckIcon },
-  { label: "Arquivadas", value: rows.value.filter((guide) => guide.deleted).length, detail: "fora do circuito ativo", icon: ArchiveBoxIcon },
+  { label: "Arquivadas", value: rows.value.filter((guide) => guide.deleted).length, detail: "fora do circuito activo", icon: ArchiveBoxIcon },
 ]);
 const actions = [
   { id: null, label: "gestlab.actions.bulk_actions_text" },

@@ -30,7 +30,7 @@
                             RESULTADO & U
                         </div>
                         <div class="muted small-text" style="color: rgba(255,255,255,0.9); font-weight: 400;">
-                            Results and Uncertainty
+                            Resultados e incerteza
                         </div>
                     </th>
                     <th style="padding: 12px 10px; text-align: center; border-bottom: 2px solid #1e3a8a;">
@@ -184,7 +184,7 @@
             FIM DOS RESULTADOS ANALÍTICOS
         </div>
         <div class="small-text muted">
-            End of analytical results
+            Fim dos resultados analíticos
         </div>
         
         <!-- Status Summary -->
@@ -202,7 +202,7 @@
             <div class="small-text" style="display: inline-block;">
                 <span style="font-weight: 600; color: #374151;">Data de Análise:</span>
                 <span class="value" style="margin-left: 5px;">
-                    {{ $model->collection->code->results->first()->updated_at->format('d/m/Y') ?? 'N/A' }}
+                    {{ $model->collection->code->results->first()->updated_at->format('d/m/Y') ?? 'N/D' }}
                 </span>
             </div>
         </div>

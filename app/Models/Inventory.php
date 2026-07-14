@@ -7,12 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-
 class Inventory extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public CONST MENU_NAME = 'inventory';
+    public const MENU_NAME = 'inventory';
 
     /**
      * The attributes that are mass assignable.
@@ -32,6 +31,7 @@ class Inventory extends Model
     ];
 
     protected $table = 'inventory';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     /**
@@ -52,7 +52,8 @@ class Inventory extends Model
      *
      * @return Relationship
      */
-    public function item() {
+    public function item()
+    {
         return $this->belongsTo(InventoryItem::class, 'item_id');
     }
 
@@ -61,7 +62,8 @@ class Inventory extends Model
      *
      * @return Relationship
      */
-    public function category() {
+    public function category()
+    {
         return $this->belongsTo(ItemCategory::class, 'category_id');
     }
 
@@ -70,7 +72,8 @@ class Inventory extends Model
      *
      * @return Relationship
      */
-    public function warehouse() {
+    public function warehouse()
+    {
         return $this->belongsTo(InventoryItemWarehouse::class, 'warehouse_id');
     }
 
@@ -109,7 +112,7 @@ class Inventory extends Model
 
     public function getStockStatusColorAttribute()
     {
-        return match($this->stock_status) {
+        return match ($this->stock_status) {
             'out_of_stock' => 'red',
             'critical_stock' => 'orange',
             'low_stock' => 'yellow',
@@ -120,19 +123,19 @@ class Inventory extends Model
 
     public function getStockStatusLabelAttribute()
     {
-        return match($this->stock_status) {
-            'out_of_stock' => 'Out of Stock',
-            'critical_stock' => 'Critical',
-            'low_stock' => 'Low Stock',
-            'in_stock' => 'In Stock',
-            default => 'Unknown',
+        return match ($this->stock_status) {
+            'out_of_stock' => 'Sem existências',
+            'critical_stock' => 'Crítico',
+            'low_stock' => 'Existências baixas',
+            'in_stock' => 'Disponível',
+            default => 'Desconhecido',
         };
     }
 
     // Deduct Stock
-    public function deductStock($quantity) {
+    public function deductStock($quantity)
+    {
         $this->qty_available -= $quantity;
         $this->save();
     }
-
 }

@@ -2,49 +2,40 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Http\Requests\StandardRequest;
-use App\Http\Resources\StandardResource;
 use App\Jobs\CreateBackup;
-use Illuminate\Support\Facades\DB;
-use App\Models\Standard;
 use App\Rules\BackupDisk;
 use App\Rules\PathToZip;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Spatie\Backup\BackupDestination\Backup;
 use Spatie\Backup\BackupDestination\BackupDestination;
 use Spatie\Backup\Helpers\Format;
-use Spatie\Backup\Config\Config;
-
 
 class SystemBackupController extends Controller
 {
-     /**
+    /**
      * Display a listing of the resource.
-     *
      */
     public function backups()
     {
-        abort_if( !auth()->user()->can('view_settings'), 403, '');
+        abort_if(! auth()->user()->can('view_settings'), 403, '');
 
         return Inertia::render('Backups/Index', []);
     }
-    
-     /**
-     * Display a listing of the resource.
-     *
-     */
 
+    /**
+     * Display a listing of the resource.
+     */
     public function index(Request $request)
     {
         $validated = $request->validate([
-            'disk' => ['nullable', new BackupDisk()],
+            'disk' => ['nullable', new BackupDisk],
         ]);
 
         $disk = $validated['disk'] ?? collect(config('backup.backup.destination.disks'))->first();
 
-        abort_unless($disk, 422, 'No backup disk is configured.');
+        abort_unless($disk, 422, 'Não está configurado nenhum disco de cópias de segurança.');
 
         $backupDestination = BackupDestination::create($disk, config('backup.backup.name'));
 
@@ -66,7 +57,7 @@ class SystemBackupController extends Controller
 
     public function create(Request $request)
     {
-        abort_if( !auth()->user()->can('edit_settings'), 403, '');
+        abort_if(! auth()->user()->can('edit_settings'), 403, '');
 
         $option = $request->input('option', '');
 
@@ -74,20 +65,20 @@ class SystemBackupController extends Controller
             ->onQueue(config('queue.default'));
 
         return redirect()->back()->with([
-                'toast' => [
-                    'title' => trans('gestlab.toasts.notification'),
-                    'message' => trans('gestlab.toasts.record_successfully_created'),
-                ]
-            ]);   
+            'toast' => [
+                'title' => trans('gestlab.toasts.notification'),
+                'message' => trans('gestlab.toasts.record_successfully_created'),
+            ],
+        ]);
     }
 
     public function delete(Request $request)
     {
-        abort_if( !auth()->user()->can('edit_settings'), 403, '');
+        abort_if(! auth()->user()->can('edit_settings'), 403, '');
 
         $validated = $request->validate([
-            'disk' => new BackupDisk(),
-            'path' => ['required', new PathToZip()],
+            'disk' => new BackupDisk,
+            'path' => ['required', new PathToZip],
         ]);
 
         $backupDestination = BackupDestination::create($validated['disk'], config('backup.backup.name'));
@@ -99,14 +90,13 @@ class SystemBackupController extends Controller
             })
             ->delete();
 
-            return redirect()->back()->with([
-                'toast' => [
-                    'title' => trans('gestlab.toasts.notification'),
-                    'message' => trans('gestlab.toasts.record_successfully_deleted'),
-                ]
-            ]);
+        return redirect()->back()->with([
+            'toast' => [
+                'title' => trans('gestlab.toasts.notification'),
+                'message' => trans('gestlab.toasts.record_successfully_deleted'),
+            ],
+        ]);
 
         // $this->respondSuccess();
     }
-
 }

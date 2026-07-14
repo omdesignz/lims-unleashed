@@ -469,6 +469,7 @@ class ResultRequest extends FormRequest
                 ? Sample::query()
                     ->with([
                         "{$workflowRelation}.profile.parameters:id,result_is_qualitative",
+                        'collection:id,collection_id',
                         'results:id,sample_id,parameter_id',
                     ])
                     ->find($sampleId)
@@ -480,8 +481,8 @@ class ResultRequest extends FormRequest
                     $validator->errors()->add(
                         'sample_id',
                         $workflowRelation === 'counteranalysis'
-                            ? 'A amostra selecionada ainda não tem uma contra-análise associada.'
-                            : 'A amostra selecionada ainda não tem uma análise associada.'
+                            ? 'A amostra seleccionada ainda não tem uma contra-análise associada.'
+                            : 'A amostra seleccionada ainda não tem uma análise associada.'
                     );
 
                     return;
@@ -503,6 +504,25 @@ class ResultRequest extends FormRequest
                     ->map(fn (array $result) => (int) data_get($result, 'parameter_id'))
                     ->filter()
                     ->values();
+
+                $expectedLineage = [
+                    'sample_id' => (int) $sample->id,
+                    'code_id' => (int) $sample->cl_id,
+                    'collection_id' => (int) $sample->collection?->collection_id,
+                    'product_id' => (int) $sample->{$workflowRelation}?->product_id,
+                    'profile_id' => (int) $sample->{$workflowRelation}?->profile_id,
+                ];
+
+                $results->each(function (array $result, int $index) use ($validator, $expectedLineage): void {
+                    foreach ($expectedLineage as $field => $expectedValue) {
+                        if ($expectedValue > 0 && (int) data_get($result, $field) !== $expectedValue) {
+                            $validator->errors()->add(
+                                "results.$index.$field",
+                                'A linhagem do resultado não corresponde à amostra seleccionada.'
+                            );
+                        }
+                    }
+                });
 
                 if ($submittedParameterIds->diff($expectedParameterIds)->isNotEmpty()) {
                     $validator->errors()->add(
@@ -534,7 +554,7 @@ class ResultRequest extends FormRequest
                     if ($submittedResultIds->diff($existingResultIds)->isNotEmpty()) {
                         $validator->errors()->add(
                             'results',
-                            'A submissão inclui resultados que não pertencem à amostra selecionada.'
+                            'A submissão inclui resultados que não pertencem à amostra seleccionada.'
                         );
                     }
                 }

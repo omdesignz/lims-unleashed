@@ -6,19 +6,17 @@ use App\Traits\ISO17025Revisionable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasOneThrough;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Spatie\Activitylog\Traits\CausesActivity;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 class QualityCertificate extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, InteractsWithMedia, ISO17025Revisionable, CausesActivity;
+    use CausesActivity, HasFactory, InteractsWithMedia, ISO17025Revisionable, SoftDeletes;
 
-    public CONST MENU_NAME = 'quality_certificates';
+    public const MENU_NAME = 'quality_certificates';
 
-     /**
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -40,24 +38,23 @@ class QualityCertificate extends Model implements HasMedia
         'validated_by_id',
         'validated_at',
         'validated_on_behalf_of',
-        'validated_on_behalf_of_id'
+        'validated_on_behalf_of_id',
     ];
 
-
     protected $table = 'quality_certificates';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
-
-     /**
+    /**
      * The attributes that should be cast.
      *
      * @var array<string, string>
      */
     protected $casts = [
         'status' => 'boolean',
+        'validated_at' => 'datetime',
         // 'verdict' => 'boolean',
     ];
-
 
     /**
      * Customer
@@ -111,7 +108,6 @@ class QualityCertificate extends Model implements HasMedia
         return $this->belongsTo(LabCode::class, 'cl_id');
     }
 
-
     public function invoice_item()
     {
         return $this->morphOne(InvoiceItem::class, 'itemable');
@@ -127,7 +123,7 @@ class QualityCertificate extends Model implements HasMedia
         return $this->morphOne(CreditNoteItem::class, 'itemable');
     }
 
-     /**
+    /**
      * User
      *
      * @return Relationship
@@ -137,7 +133,7 @@ class QualityCertificate extends Model implements HasMedia
         return $this->belongsTo(User::class, 'user_id');
     }
 
-     /**
+    /**
      * Product
      *
      * @return Relationship
@@ -177,11 +173,12 @@ class QualityCertificate extends Model implements HasMedia
     public function getCurrentVersionAttribute()
     {
         $revision = $this->currentRevision;
+
         return $revision ? $revision->version : '1.0';
     }
 
     // Helper method for ISO-compliant updates
-    public function updateWithIsoCompliance(array $attributes, string $changeReason, array $approvalData = null)
+    public function updateWithIsoCompliance(array $attributes, string $changeReason, ?array $approvalData = null)
     {
         return $this->logIsoChange($attributes, $changeReason, $approvalData);
     }
@@ -203,13 +200,12 @@ class QualityCertificate extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-            
-            $this->addMediaCollection('validation_signature')
+
+        $this->addMediaCollection('validation_signature')
             ->acceptsMimeTypes([
                 'image/jpeg',
-                'image/png'
-                ])
-            ->singleFile();   
+                'image/png',
+            ])
+            ->singleFile();
     }
-
 }

@@ -182,7 +182,7 @@ const calculateParameter = async (parameter) => {
     const numericValue = safeEval(...Object.values(context))
 
     if (isNaN(numericValue) || !isFinite(numericValue)) {
-      throw new Error('Invalid calculation result')
+      throw new Error('Resultado de cálculo inválido')
     }
 
     const decimalPlaces = parameter.formula.decimal_places || 2

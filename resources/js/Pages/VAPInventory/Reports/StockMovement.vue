@@ -15,7 +15,7 @@
               <ArrowsUpDownIcon class="h-5 w-5" />
             </span>
             <div class="min-w-0">
-              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Movimento de stock</h1>
+              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Movimento de existências</h1>
               <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
                 Audite entradas, saídas, ajustes, transferências e consumo com rastreabilidade por item, armazém e operador.
               </p>
@@ -78,7 +78,7 @@
           <option value="qty">Quantidade</option>
         </BaseSelect>
 
-        <BaseSelect v-model="filters.sort_direction" label="Direção">
+        <BaseSelect v-model="filters.sort_direction" label="Direcção">
           <option value="desc">Descendente</option>
           <option value="asc">Ascendente</option>
         </BaseSelect>
@@ -124,7 +124,7 @@
       <div class="ds-table-summary px-5 py-4">
         <div>
           <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Análise de fluxo</p>
-          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Direção, composição e ritmo diário</h2>
+          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Direcção, composição e ritmo diário</h2>
         </div>
         <span class="ds-chip">{{ filterPeriod || 'Período completo' }}</span>
       </div>
@@ -133,8 +133,8 @@
         <article class="min-w-0 p-5">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h3 class="text-sm font-black text-[var(--ds-text)]">Atividade diária</h3>
-              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Entradas, saídas e número de transações ao longo do período.</p>
+              <h3 class="text-sm font-black text-[var(--ds-text)]">Actividade diária</h3>
+              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Entradas, saídas e número de transacções ao longo do período.</p>
             </div>
             <span class="ds-chip">{{ dailyActivityDays }} dias</span>
           </div>
@@ -185,7 +185,7 @@
 
         <div v-if="loading" class="ds-empty-state m-5 p-8 text-center">
           <span class="mx-auto block h-7 w-7 animate-spin rounded-full border-2 border-[var(--ds-border)] border-t-[rgb(var(--primary-700-rgb))]"></span>
-          <p class="mt-3 text-sm font-semibold text-[var(--ds-text-muted)]">A atualizar movimentos...</p>
+          <p class="mt-3 text-sm font-semibold text-[var(--ds-text-muted)]">A actualizar movimentos...</p>
         </div>
 
         <div v-else-if="transactionRows.length" class="divide-y divide-[var(--ds-border)] lg:hidden">
@@ -276,14 +276,14 @@
 
       <aside class="space-y-6">
         <section class="ds-panel p-5">
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Maior atividade</p>
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Maior actividade</p>
           <div class="mt-3 flex items-start gap-3">
             <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-cyan-50 text-cyan-800 dark:bg-cyan-500/10 dark:text-cyan-200">
               <TrophyIcon class="h-5 w-5" />
             </span>
             <div class="min-w-0">
               <p class="truncate text-lg font-black text-[var(--ds-text)]">{{ stats.most_active_item?.item?.name || 'Sem dados' }}</p>
-              <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ stats.most_active_item?.transaction_count || 0 }} transações no período</p>
+              <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">{{ stats.most_active_item?.transaction_count || 0 }} transacções no período</p>
             </div>
           </div>
         </section>
@@ -347,7 +347,7 @@
             <thead class="bg-[var(--ds-panel-subtle)]">
               <tr>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Data</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Transações</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Transacções</th>
                 <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Entradas</th>
                 <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Saídas</th>
                 <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Saldo</th>
@@ -367,8 +367,8 @@
 
         <div v-else-if="!loading" class="ds-empty-state m-5 p-8 text-center">
           <ChartBarSquareIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
-          <h3 class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem atividade diária</h3>
-          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Selecione outro período para gerar a reconciliação.</p>
+          <h3 class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem actividade diária</h3>
+          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Seleccione outro período para gerar a reconciliação.</p>
         </div>
       </section>
 
@@ -376,7 +376,7 @@
         <section class="ds-panel p-5">
           <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Ritmo médio</p>
           <p class="mt-3 text-3xl font-black tabular-nums text-[var(--ds-text)]">{{ formatQuantity(stats.avg_daily_transactions) }}</p>
-          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">transações por dia no período</p>
+          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">transacções por dia no período</p>
         </section>
 
         <section class="ds-panel overflow-hidden">
@@ -468,7 +468,7 @@ const chartTooltipTheme = computed(() => isDarkMode.value ? 'dark' : 'light')
 
 const summaryCards = computed(() => [
   {
-    label: 'Transações',
+    label: 'Transacções',
     value: formatQuantity(props.stats?.total_transactions),
     detail: 'Registos no período',
     icon: ClipboardDocumentListIcon,
@@ -491,7 +491,7 @@ const summaryCards = computed(() => [
   {
     label: 'Saldo líquido',
     value: signedNumber(props.stats?.net_movement),
-    detail: `${formatQuantity(props.stats?.avg_daily_transactions)} transações / dia`,
+    detail: `${formatQuantity(props.stats?.avg_daily_transactions)} transacções / dia`,
     icon: ChartBarSquareIcon,
     tone: Number(props.stats?.net_movement || 0) >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-amber-700 dark:text-amber-300',
   },
@@ -507,7 +507,7 @@ const filterPeriod = computed(() => {
 const activeFilterPills = computed(() => {
   const pills = []
   if (filterPeriod.value) pills.push(filterPeriod.value)
-  if (filters.item_id) pills.push(`Item: ${selectedItem.value?.label || 'Selecionado'}`)
+  if (filters.item_id) pills.push(`Item: ${selectedItem.value?.label || 'Seleccionado'}`)
   if (filters.warehouse_id) pills.push(`Armazém: ${warehouseName(filters.warehouse_id)}`)
   if (filters.search) pills.push(`Pesquisa: ${filters.search}`)
   return pills

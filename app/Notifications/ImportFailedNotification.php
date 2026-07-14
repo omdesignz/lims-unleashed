@@ -2,8 +2,8 @@
 
 namespace App\Notifications;
 
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class ImportFailedNotification extends Notification
 {
@@ -15,15 +15,15 @@ class ImportFailedNotification extends Notification
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->subject('Import Failed')
-            ->line('Your CSV import has failed. Please check and try again.');
+            ->subject('Falha na importação')
+            ->line('A importação do ficheiro CSV falhou. Verifique o ficheiro e tente novamente.');
     }
 
     public function toArray($notifiable)
     {
         return [
-            'title' => 'Import Failed',
-            'message' => 'Your CSV import has failed. Please check and try again.',
+            'title' => 'Falha na importação',
+            'message' => 'A importação do ficheiro CSV falhou. Verifique o ficheiro e tente novamente.',
             'sender_id' => $notifiable->id,
             'sender_name' => $notifiable->name,
         ];

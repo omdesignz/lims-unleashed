@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between mb-6">
       <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
         <WrenchScrewdriverIcon class="h-5 w-5 text-blue-900" />
-        Equipment Maintenance History
+        Histórico de manutenção do equipamento
       </h3>
       <div class="flex items-center gap-3">
         <BaseSelect
@@ -11,17 +11,17 @@
           @change="onTimeRangeChange"
           class="text-sm rounded-lg border border-gray-300 px-3 py-1.5 focus:border-blue-900 focus:ring-blue-900"
         >
-          <option value="6months">Last 6 Months</option>
-          <option value="1year">Last Year</option>
-          <option value="2years">Last 2 Years</option>
-          <option value="all">All Time</option>
+          <option value="6months">Últimos 6 meses</option>
+          <option value="1year">Último ano</option>
+          <option value="2years">Últimos 2 anos</option>
+          <option value="all">Todo o período</option>
         </BaseSelect>
       </div>
     </div>
     
     <div v-if="loading" class="h-64 flex items-center justify-center">
       <Spinner class="h-8 w-8 text-blue-900" />
-      <span class="ml-2 text-gray-500">Loading history...</span>
+      <span class="ml-2 text-gray-500">A carregar o histórico...</span>
     </div>
     
     <div v-else-if="hasData">
@@ -36,23 +36,23 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-200">
         <div class="text-center">
           <div class="text-2xl font-bold text-blue-900">{{ stats.totalTasks }}</div>
-          <div class="text-sm text-gray-600">Total Tasks</div>
+          <div class="text-sm text-gray-600">Total de tarefas</div>
         </div>
         <div class="text-center">
           <div class="text-2xl font-bold text-green-900">{{ formatCurrency(stats.avgCost) }}</div>
-          <div class="text-sm text-gray-600">Avg. Cost per Task</div>
+          <div class="text-sm text-gray-600">Custo médio por tarefa</div>
         </div>
         <div class="text-center">
           <div class="text-2xl font-bold text-orange-900">{{ stats.completionRate }}%</div>
-          <div class="text-sm text-gray-600">Completion Rate</div>
+          <div class="text-sm text-gray-600">Taxa de conclusão</div>
         </div>
       </div>
     </div>
     
     <div v-else class="h-64 flex flex-col items-center justify-center text-gray-400">
       <WrenchScrewdriverIcon class="h-12 w-12 mb-3" />
-      <p>No maintenance history available</p>
-      <p class="text-sm mt-1">for the selected time period</p>
+      <p>Sem histórico de manutenção disponível</p>
+      <p class="text-sm mt-1">para o período seleccionado</p>
     </div>
   </div>
 </template>
@@ -98,12 +98,12 @@ const series = computed(() => {
   
   return [
     {
-      name: 'Cost (AOA)',
+      name: 'Custo (AOA)',
       type: 'column',
       data: costs
     },
     {
-      name: 'Status (Completed)',
+      name: 'Estado (concluído)',
       type: 'line',
       data: statuses
     }
@@ -152,7 +152,7 @@ const options = computed(() => ({
   yaxis: [
     {
       title: {
-        text: 'Cost (AOA)',
+        text: 'Custo (AOA)',
         style: {
           fontSize: '12px',
           fontWeight: 400
@@ -167,7 +167,7 @@ const options = computed(() => ({
     {
       opposite: true,
       title: {
-        text: 'Status',
+        text: 'Estado',
         style: {
           fontSize: '12px',
           fontWeight: 400
@@ -177,7 +177,7 @@ const options = computed(() => ({
       max: 1,
       labels: {
         formatter: function(val) {
-          return val === 1 ? 'Completed' : 'Pending'
+          return val === 1 ? 'Concluído' : 'Pendente'
         }
       }
     }
@@ -193,7 +193,7 @@ const options = computed(() => ({
       },
       {
         formatter: function(val) {
-          return val === 1 ? 'Completed' : 'Pending'
+          return val === 1 ? 'Concluído' : 'Pendente'
         }
       }
     ]

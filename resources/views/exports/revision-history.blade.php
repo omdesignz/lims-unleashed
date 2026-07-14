@@ -166,12 +166,12 @@
         <div class="section-title">Resumo do Certificado</div>
         <table class="details-table">
             <tr>
-                <td><span class="label">Código / Code</span><span class="value">{{ $certificate->code ?? 'N/A' }}</span></td>
-                <td><span class="label">Versão actual / Current version</span><span class="value">{{ $certificate->current_version ?? '1.0' }}</span></td>
+                <td><span class="label">Código</span><span class="value">{{ $certificate->code ?? 'N/D' }}</span></td>
+                <td><span class="label">Versão actual</span><span class="value">{{ $certificate->current_version ?? '1.0' }}</span></td>
             </tr>
             <tr>
-                <td><span class="label">Cliente / Customer</span><span class="value">{{ optional($certificate->customer)->name ?? 'N/A' }}</span></td>
-                <td><span class="label">Armazém / Warehouse</span><span class="value">{{ optional($certificate->warehouse)->name ?? 'N/A' }}</span></td>
+                <td><span class="label">Cliente</span><span class="value">{{ optional($certificate->customer)->name ?? 'N/D' }}</span></td>
+                <td><span class="label">Armazém</span><span class="value">{{ optional($certificate->warehouse)->name ?? 'N/D' }}</span></td>
             </tr>
         </table>
     </div>
@@ -201,7 +201,7 @@
                         <td>{{ optional($revision->createdBy)->name ?? 'N/A' }}</td>
                         <td>{{ optional($revision->approvedBy)->name ?? 'N/A' }}</td>
                         <td>{{ optional($revision->effective_date)?->format('d/m/Y H:i') ?? 'N/A' }}</td>
-                        <td>{{ $revision->is_current ? 'Sim / Yes' : 'Não / No' }}</td>
+                        <td>{{ $revision->is_current ? 'Sim' : 'Não' }}</td>
                     </tr>
                 @empty
                     <tr>

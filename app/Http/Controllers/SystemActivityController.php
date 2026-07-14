@@ -125,7 +125,7 @@ class SystemActivityController extends Controller
     public function show(Activity $activity) // Use route model binding
     {
         if (! auth()->user()->can('view_activity_log')) {
-            abort(403, 'Unauthorized action.');
+            abort(403, 'Acção não autorizada.');
         }
 
         // Load relationships
@@ -147,7 +147,7 @@ class SystemActivityController extends Controller
 
         // If properties is null or empty, provide default
         if (empty($properties)) {
-            $properties = ['No properties available'];
+            $properties = ['Sem propriedades disponíveis'];
         }
 
         return response()->json([
@@ -162,7 +162,7 @@ class SystemActivityController extends Controller
     public function destroy(Activity $activity)
     {
         if (! auth()->user()->can('delete_activity_log')) {
-            abort(403, 'Unauthorized action.');
+            abort(403, 'Acção não autorizada.');
         }
 
         try {
@@ -173,7 +173,7 @@ class SystemActivityController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => __('Failed to delete activity log.'),
+                'message' => __('Não foi possível eliminar o registo de actividade.'),
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
@@ -185,7 +185,7 @@ class SystemActivityController extends Controller
     public function destroyAll(Request $request)
     {
         if (! auth()->user()->can('delete_activity_log')) {
-            abort(403, 'Unauthorized action.');
+            abort(403, 'Acção não autorizada.');
         }
 
         try {
@@ -199,13 +199,13 @@ class SystemActivityController extends Controller
             return back()->with([
                 'toast' => [
                     'title' => trans('gestlab.toasts.notification'),
-                    'message' => __(':count activity logs deleted successfully.', ['count' => $count]),
+                    'message' => __('Foram eliminados :count registos de actividade.', ['count' => $count]),
                 ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => __('Failed to delete activity logs.'),
+                'message' => __('Não foi possível eliminar os registos de actividade.'),
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
@@ -242,7 +242,7 @@ class SystemActivityController extends Controller
         // dd($request->all());
 
         if (! auth()->user()->can('export_activity_log')) {
-            abort(403, 'Unauthorized action.');
+            abort(403, 'Acção não autorizada.');
         }
 
         $query = Activity::with(['causer' => function ($query) {
@@ -270,7 +270,7 @@ class SystemActivityController extends Controller
     public function stats(Request $request)
     {
         if (! auth()->user()->can('view_activity_log')) {
-            abort(403, 'Unauthorized action.');
+            abort(403, 'Acção não autorizada.');
         }
 
         $stats = [
@@ -294,7 +294,7 @@ class SystemActivityController extends Controller
     public function stream(Request $request)
     {
         if (! auth()->user()->can('view_activity_log')) {
-            abort(403, 'Unauthorized action.');
+            abort(403, 'Acção não autorizada.');
         }
 
         // Set headers for Server-Sent Events
@@ -344,7 +344,7 @@ class SystemActivityController extends Controller
     public function cleanupRecommendations()
     {
         if (! auth()->user()->can('manage_activity_log')) {
-            abort(403, 'Unauthorized action.');
+            abort(403, 'Acção não autorizada.');
         }
 
         $recommendations = [];
@@ -355,7 +355,7 @@ class SystemActivityController extends Controller
             $recommendations[] = [
                 'type' => 'old_logs',
                 'title' => __('Old Activity Logs'),
-                'description' => __('You have :count activity logs older than 6 months.', ['count' => $oldLogsCount]),
+                'description' => __('Existem :count registos de actividade com mais de seis meses.', ['count' => $oldLogsCount]),
                 'action' => 'cleanup_old',
                 'severity' => 'low',
             ];
@@ -367,7 +367,7 @@ class SystemActivityController extends Controller
             $recommendations[] = [
                 'type' => 'large_table',
                 'title' => __('Large Activity Log Table'),
-                'description' => __('Your activity log table has :count entries, consider archiving old data.', ['count' => $totalLogs]),
+                'description' => __('A tabela de actividade tem :count entradas. Considere arquivar os dados antigos.', ['count' => $totalLogs]),
                 'action' => 'archive',
                 'severity' => 'medium',
             ];
@@ -382,7 +382,7 @@ class SystemActivityController extends Controller
             $recommendations[] = [
                 'type' => 'frequent_errors',
                 'title' => __('Frequent Errors Detected'),
-                'description' => __(':count error logs in the last hour detected.', ['count' => $errorLogsLastHour]),
+                'description' => __('Foram detectados :count registos de erro na última hora.', ['count' => $errorLogsLastHour]),
                 'action' => 'investigate_errors',
                 'severity' => 'high',
             ];
@@ -623,7 +623,7 @@ class SystemActivityController extends Controller
     public function archive(Request $request)
     {
         if (! auth()->user()->can('manage_activity_log')) {
-            abort(403, 'Unauthorized action.');
+            abort(403, 'Acção não autorizada.');
         }
 
         $request->validate([
@@ -683,7 +683,7 @@ class SystemActivityController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => __('Successfully archived :count activity logs older than :months months.', [
+                'message' => __('Foram arquivados :count registos de actividade com mais de :months meses.', [
                     'count' => $count,
                     'months' => $months,
                 ]),
@@ -692,7 +692,7 @@ class SystemActivityController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => __('Failed to archive activity logs.'),
+                'message' => __('Não foi possível arquivar os registos de actividade.'),
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
@@ -704,7 +704,7 @@ class SystemActivityController extends Controller
     public function restoreArchive(Request $request)
     {
         if (! auth()->user()->can('manage_activity_log')) {
-            abort(403, 'Unauthorized action.');
+            abort(403, 'Acção não autorizada.');
         }
 
         $request->validate([
@@ -747,7 +747,7 @@ class SystemActivityController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => __('Successfully restored :count archived activity logs.', [
+                'message' => __('Foram restaurados :count registos de actividade arquivados.', [
                     'count' => $count,
                 ]),
                 'count' => $count,
@@ -755,7 +755,7 @@ class SystemActivityController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => __('Failed to restore archived activity logs.'),
+                'message' => __('Não foi possível restaurar os registos de actividade arquivados.'),
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }

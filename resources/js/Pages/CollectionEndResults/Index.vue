@@ -8,5 +8,5 @@ defineProps({ record: { type: Object, default: () => ({ data: [], meta: {} }) },
 </script>
 
 <template>
-  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="collectionendresults" route-parameter="endresult" permission-key="collection_end_results" title="Resultados de recolha" kicker="Pre-analitica" description="Desfechos controlados para documentar a conclusao de cada recolha." entity-label="Resultado de recolha" new-entity-label="Novo resultado" name-label="Nome" description-label="Criterio de aplicacao" :supports-name="true" :supports-code="false" :icon="CheckBadgeIcon" />
+  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="collectionendresults" route-parameter="endresult" permission-key="collection_end_results" title="Resultados de recolha" kicker="Pre-analítica" description="Desfechos controlados para documentar a conclusão de cada recolha." entity-label="Resultado de recolha" new-entity-label="Novo resultado" name-label="Nome" description-label="Critério de aplicação" :supports-name="true" :supports-code="false" :icon="CheckBadgeIcon" />
 </template>

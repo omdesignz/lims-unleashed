@@ -11,6 +11,8 @@ import {
 } from '@headlessui/vue'
 import { CheckIcon, ChevronUpDownIcon, XMarkIcon } from '@heroicons/vue/20/solid'
 
+defineOptions({ inheritAttrs: false })
+
 const emit = defineEmits(['update:modelValue'])
 
 const props = defineProps({
@@ -148,7 +150,7 @@ function clear() {
     <ComboboxLabel v-if="props.titleLabel" class="ds-field-label mb-2 block">
       {{ props.titleLabel }}
     </ComboboxLabel>
-    <div class="relative mt-0">
+    <div v-bind="$attrs" class="relative mt-0">
       <div
         class="ds-combobox-control cursor-default text-left"
         :data-invalid="props.hasError"

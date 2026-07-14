@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Role;
 use App\Models\User;
 use App\Settings\GeneralSettings;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class LandingAndSettingsTest extends TestCase
@@ -28,6 +29,14 @@ class LandingAndSettingsTest extends TestCase
         $response = $this->get(route('landing'));
 
         $response->assertSuccessful();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('Public/Landing')
+            ->has('branding.app_name')
+            ->has('branding.portal_enabled')
+            ->has('metrics.samples')
+            ->has('metrics.certificates')
+            ->has('metrics.inventory_items')
+            ->has('metrics.customer_requests'));
     }
 
     public function test_authenticated_user_is_redirected_from_public_landing_to_dashboard(): void

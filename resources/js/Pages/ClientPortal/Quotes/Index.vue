@@ -19,12 +19,12 @@ function mapQuote(quote) {
     reference: quote.quote_no,
     date: quote.date,
     total: quote.total,
-    status: converted ? "Convertida em fatura" : expired ? "Expirada" : "Em vigor",
+    status: converted ? "Convertida em factura" : expired ? "Expirada" : "Em vigor",
     tone: converted ? "success" : expired ? "danger" : "info",
     description: quote.description || quote.obs,
     details: [
-      { label: "Valida ate", value: formatDate(quote.due_date) },
-      { label: "Referencia interna", value: quote.internal_ref },
+      { label: "Válida até", value: formatDate(quote.due_date) },
+      { label: "Referência interna", value: quote.internal_ref },
     ],
   };
 }
@@ -39,14 +39,14 @@ function formatDate(value) {
     :record="record"
     :query="query"
     title="Propostas comerciais"
-    kicker="Escopos e precos"
+    kicker="Âmbitos e preços"
     description="Reveja propostas emitidas, validade, conversao e o PDF integral de cada documento."
     entity-label="proposta"
     :icon="DocumentCheckIcon"
     download-route="portal.quotes.getQuotePDF"
     support-type="billing_support"
     support-title="Apoio sobre proposta comercial"
-    value-metric-label="Proposto nesta pagina"
+    value-metric-label="Proposto nesta página"
     :map-record="mapQuote"
   />
 </template>

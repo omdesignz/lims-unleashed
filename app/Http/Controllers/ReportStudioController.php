@@ -87,7 +87,7 @@ class ReportStudioController extends Controller
                 'mpdf' => [
                     'available' => true,
                     'label' => 'mPDF interno',
-                    'description' => 'Estável para PDFs clássicos, headers/footers e CSS compatível com mPDF/CSS 2.1. Não é 1:1 com o preview browser quando usa flex, grid, filtros, transforms ou CSS moderno.',
+                    'description' => 'Estável para PDFs clássicos, cabeçalhos, rodapés e CSS compatível com mPDF/CSS 2.1. A pré-visualização no navegador pode diferir quando utiliza flex, grid, filtros, transformações ou CSS moderno.',
                 ],
                 'chrome' => [
                     'available' => $chromeAvailable,
@@ -102,7 +102,7 @@ class ReportStudioController extends Controller
                 'browsershot' => [
                     'available' => class_exists(Browsershot::class),
                     'label' => 'Spatie Laravel PDF · Browsershot',
-                    'description' => 'Alternativa Chromium com Puppeteer/Browsershot para maior fidelidade visual. Requer spatie/browsershot, Node e Chrome/Chromium no servidor.',
+                    'description' => 'Alternativa Chromium com Puppeteer/Browsershot para maior fidelidade visual. Requer spatie/browsershot, Node.js e Chrome/Chromium no servidor.',
                 ],
             ],
         ]);
@@ -145,7 +145,7 @@ class ReportStudioController extends Controller
             'updated_by_id' => auth()->id(),
         ]));
 
-        return back()->with('success', 'Template de estúdio atualizado com sucesso.');
+        return back()->with('success', 'Template de estúdio actualizado com sucesso.');
     }
 
     public function destroy(ReportStudioTemplate $reportStudio)
@@ -259,8 +259,8 @@ class ReportStudioController extends Controller
             'kpis' => [
                 ['label' => 'Propostas aceites', 'value' => 18, 'hint' => 'Trabalhos autorizados pelo cliente'],
                 ['label' => 'Pedidos do portal abertos', 'value' => 7, 'hint' => 'Pedidos pendentes de resposta ou validação'],
-                ['label' => 'Amostras ativas', 'value' => 14, 'hint' => 'Fluxo operacional ainda em curso'],
-                ['label' => 'Recebível em aberto', 'value' => 'AOA 12.500.000,00', 'hint' => 'Montante agregado de faturas por liquidar'],
+                ['label' => 'Amostras activas', 'value' => 14, 'hint' => 'Fluxo operacional ainda em curso'],
+                ['label' => 'Recebível em aberto', 'value' => 'AOA 12.500.000,00', 'hint' => 'Montante agregado de facturas por liquidar'],
             ],
             'charts' => [
                 'throughput' => [

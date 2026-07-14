@@ -9,6 +9,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class InventoryReportExport implements FromCollection, WithHeadings, WithMapping
 {
     protected $data;
+
     protected $reportType;
 
     public function __construct($data, $reportType)
@@ -26,31 +27,31 @@ class InventoryReportExport implements FromCollection, WithHeadings, WithMapping
 
     public function headings(): array
     {
-        return match($this->reportType) {
-            'consumption' => ['Date', 'Reagent', 'Quantity Used', 'User'],
-            'stock'       => ['Item Name', 'Warehouse', 'Available Qty', 'Min Level'],
-            'expiry'      => ['Item Name', 'Batch', 'Expiry Date', 'Status'],
-            default       => []
+        return match ($this->reportType) {
+            'consumption' => ['Data', 'Reagente', 'Quantidade utilizada', 'Utilizador'],
+            'stock' => ['Artigo', 'Armazém', 'Quantidade disponível', 'Nível mínimo'],
+            'expiry' => ['Artigo', 'Lote', 'Data de caducidade', 'Estado'],
+            default => [],
         };
     }
 
     public function map($row): array
     {
-        return match($this->reportType) {
+        return match ($this->reportType) {
             'consumption' => [
                 $row['date'],
                 $row['reagent_name'],
                 $row['quantity_used'],
-                $row['used_by']
+                $row['used_by'],
             ],
             'stock' => [
                 $row->item->name,
                 $row->warehouse->name,
                 $row->qty_available,
-                $row->min_stock_level
+                $row->min_stock_level,
             ],
             // ... add mapping for other types
-            default => []
+            default => [],
         };
     }
 }

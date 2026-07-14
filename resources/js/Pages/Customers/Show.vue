@@ -41,16 +41,16 @@ const openFinance = computed(() => props.customerState?.open_finance ?? []);
 const hasCommercialAttention = computed(() => Number(summary.value.open_amount_due || 0) > 0 || Number(summary.value.open_requests || 0) > 0);
 
 const metrics = computed(() => [
-  { label: "Propostas aceites", value: summary.value.accepted_proposals || 0, detail: "escopos comerciais ativos", icon: CheckBadgeIcon },
-  { label: "Amostras em curso", value: summary.value.samples_in_progress || 0, detail: `${summary.value.completed_samples || 0} concluidas`, icon: BeakerIcon },
-  { label: "Saldo em aberto", value: formatCurrency(summary.value.open_amount_due), detail: `${summary.value.open_invoices || 0} fatura(s)`, icon: BanknotesIcon },
+  { label: "Propostas aceites", value: summary.value.accepted_proposals || 0, detail: "âmbitos comerciais activos", icon: CheckBadgeIcon },
+  { label: "Amostras em curso", value: summary.value.samples_in_progress || 0, detail: `${summary.value.completed_samples || 0} concluídas`, icon: BeakerIcon },
+  { label: "Saldo em aberto", value: formatCurrency(summary.value.open_amount_due), detail: `${summary.value.open_invoices || 0} factura(s)`, icon: BanknotesIcon },
   { label: "Pedidos abertos", value: summary.value.open_requests || 0, detail: "portal do cliente", icon: ClipboardDocumentCheckIcon },
 ]);
 
 const governanceFacts = computed(() => [
   { label: "Certificados", value: summary.value.certificates || 0, icon: DocumentTextIcon },
   { label: "Recibos", value: summary.value.receipts || 0, icon: ReceiptPercentIcon },
-  { label: "Notas de credito", value: summary.value.credit_notes || 0, icon: BanknotesIcon },
+  { label: "Notas de crédito", value: summary.value.credit_notes || 0, icon: BanknotesIcon },
   { label: "Locais", value: sites.value.length, icon: MapPinIcon },
 ]);
 
@@ -64,7 +64,7 @@ function formatCurrency(value) {
 
 function formatDate(value) {
   if (!value) {
-    return "Nao definido";
+    return "Não definido";
   }
 
   return new Intl.DateTimeFormat("pt-PT", { dateStyle: "medium" }).format(new Date(value));
@@ -104,12 +104,12 @@ function statusClass(status) {
             <div class="min-w-0">
               <p class="ds-kicker">Dossier do cliente #{{ customer.id }}</p>
               <h1 class="ds-heading mt-1 break-words text-2xl">{{ customer.name }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Visao consolidada da execucao laboratorial, relacionamento comercial, locais e contactos da conta.</p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">Visao consolidada da execução laboratorial, relacionamento comercial, locais e contactos da conta.</p>
               <div class="mt-3 flex flex-wrap gap-2">
                 <span v-if="customer.code" class="ds-chip font-mono">{{ customer.code }}</span>
                 <span class="ds-chip">{{ customer.category || "Sem categoria" }}</span>
                 <span :class="['ds-chip', customer.deleted ? 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20' : 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20']">
-                  {{ customer.deleted ? "Arquivado" : "Ativo" }}
+                  {{ customer.deleted ? "Arquivado" : "Activo" }}
                 </span>
               </div>
             </div>
@@ -149,7 +149,7 @@ function statusClass(status) {
         <p class="mt-1 text-sm font-medium">
           <span v-if="summary.open_amount_due">Existe {{ formatCurrency(summary.open_amount_due) }} por regularizar. </span>
           <span v-if="summary.open_requests">Ha {{ summary.open_requests }} pedido(s) aberto(s) no portal. </span>
-          <span v-if="!primarySite">O local operacional principal ainda nao foi definido.</span>
+          <span v-if="!primarySite">O local operacional principal ainda não foi definido.</span>
         </p>
       </div>
     </div>
@@ -161,9 +161,9 @@ function statusClass(status) {
             <div>
               <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
                 <BeakerIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
-                Execucao laboratorial recente
+                Execução laboratorial recente
               </h2>
-              <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Ultimas amostras recebidas para esta conta.</p>
+              <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Últimas amostras recebidas para esta conta.</p>
             </div>
             <span class="ds-chip mt-3 sm:mt-0">{{ recentSamples.length }} registo(s)</span>
           </header>
@@ -175,7 +175,7 @@ function statusClass(status) {
                   <h3 class="break-words text-sm font-bold text-[var(--ds-text)]">{{ sample.name || "Amostra sem nome" }}</h3>
                   <span :class="['ds-chip', statusClass(sample.status)]">{{ sample.status || "Sem estado" }}</span>
                 </div>
-                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]"><span class="font-mono">{{ sample.code || "Sem codigo" }}</span> / recebida {{ formatDate(sample.received_at) }}</p>
+                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]"><span class="font-mono">{{ sample.code || "Sem código" }}</span> / recebida {{ formatDate(sample.received_at) }}</p>
               </div>
               <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--ds-text-muted)]">
                 <ClockIcon class="h-4 w-4" />
@@ -195,14 +195,14 @@ function statusClass(status) {
               <ClipboardDocumentCheckIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
               Pedidos do portal
             </h2>
-            <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Solicitacoes recentes submetidas pelo cliente.</p>
+            <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Pedidos recentes submetidos pelo cliente.</p>
           </header>
           <div v-if="recentRequests.length" class="divide-y divide-[var(--ds-border)]">
             <article v-for="request in recentRequests" :key="request.id" class="px-5 py-4 sm:px-6">
               <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div class="min-w-0">
                   <h3 class="break-words text-sm font-bold text-[var(--ds-text)]">{{ request.title }}</h3>
-                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]"><span class="font-mono">{{ request.reference || "Sem referencia" }}</span> / {{ request.request_type || "Sem tipo" }}</p>
+                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]"><span class="font-mono">{{ request.reference || "Sem referência" }}</span> / {{ request.request_type || "Sem tipo" }}</p>
                 </div>
                 <span :class="['ds-chip', statusClass(request.status)]">{{ request.status || "Sem estado" }}</span>
               </div>
@@ -221,7 +221,7 @@ function statusClass(status) {
                 <MapPinIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
                 Locais e pontos focais
               </h2>
-              <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Enderecos operacionais associados a recolha, rececao e faturacao.</p>
+              <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Endereços operacionais associados a recolha, recepção e facturação.</p>
             </div>
             <span class="ds-chip mt-3 sm:mt-0">{{ sites.length }} local(is)</span>
           </header>
@@ -236,8 +236,8 @@ function statusClass(status) {
                       <StarIcon class="h-3.5 w-3.5" /> Principal
                     </span>
                   </div>
-                  <p class="mt-2 text-sm font-semibold text-[var(--ds-text-muted)]">{{ site.address || "Endereco nao definido" }}</p>
-                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ [site.municipality, site.province].filter(Boolean).join(", ") || "Localidade nao definida" }}</p>
+                  <p class="mt-2 text-sm font-semibold text-[var(--ds-text-muted)]">{{ site.address || "Endereço não definido" }}</p>
+                  <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">{{ [site.municipality, site.province].filter(Boolean).join(", ") || "Localidade não definida" }}</p>
                 </div>
                 <div class="grid gap-2 text-xs font-semibold text-[var(--ds-text-muted)] sm:grid-cols-2 md:min-w-72 md:grid-cols-1">
                   <span class="inline-flex items-center gap-2"><UserCircleIcon class="h-4 w-4" />{{ site.focal_point || "Sem ponto focal" }}</span>
@@ -264,9 +264,9 @@ function statusClass(status) {
           </header>
           <dl class="divide-y divide-[var(--ds-border)] px-5">
             <div class="py-4"><dt class="ds-field-label">Nome legal</dt><dd class="mt-1.5 break-words text-sm font-bold text-[var(--ds-text)]">{{ customer.name }}</dd></div>
-            <div class="py-4"><dt class="ds-field-label">Codigo</dt><dd class="mt-1.5 break-words font-mono text-sm font-bold text-[var(--ds-text)]">{{ customer.code || "Nao definido" }}</dd></div>
-            <div class="py-4"><dt class="ds-field-label">Categoria</dt><dd class="mt-1.5 break-words text-sm font-bold text-[var(--ds-text)]">{{ customer.category || "Nao definida" }}</dd></div>
-            <div class="py-4"><dt class="ds-field-label">Descricao</dt><dd class="mt-1.5 whitespace-pre-line break-words text-sm font-semibold text-[var(--ds-text-muted)]">{{ customer.description || "Sem descricao" }}</dd></div>
+            <div class="py-4"><dt class="ds-field-label">Código</dt><dd class="mt-1.5 break-words font-mono text-sm font-bold text-[var(--ds-text)]">{{ customer.code || "Não definido" }}</dd></div>
+            <div class="py-4"><dt class="ds-field-label">Categoria</dt><dd class="mt-1.5 break-words text-sm font-bold text-[var(--ds-text)]">{{ customer.category || "Não definida" }}</dd></div>
+            <div class="py-4"><dt class="ds-field-label">Descrição</dt><dd class="mt-1.5 whitespace-pre-line break-words text-sm font-semibold text-[var(--ds-text-muted)]">{{ customer.description || "Sem descrição" }}</dd></div>
           </dl>
         </section>
 
@@ -274,7 +274,7 @@ function statusClass(status) {
           <header class="border-b border-[var(--ds-border)] px-5 py-4">
             <h2 class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]">
               <BanknotesIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
-              Faturas em aberto
+              Facturas em aberto
             </h2>
           </header>
           <div v-if="openFinance.length" class="divide-y divide-[var(--ds-border)]">
@@ -285,15 +285,13 @@ function statusClass(status) {
               </div>
             </article>
           </div>
-          <p v-else class="px-5 py-6 text-sm font-semibold text-[var(--ds-text-muted)]">Sem faturas em aberto.</p>
+          <p v-else class="px-5 py-6 text-sm font-semibold text-[var(--ds-text-muted)]">Sem facturas em aberto.</p>
         </section>
 
         <section class="ds-card overflow-hidden">
           <header class="border-b border-[var(--ds-border)] px-5 py-4">
             <h2 class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]">
-              <DocumentTextIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
-              Evidencia documental
-            </h2>
+              <DocumentTextIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" /> Evidência documental </h2>
           </header>
           <dl class="divide-y divide-[var(--ds-border)]">
             <div v-for="fact in governanceFacts" :key="fact.label" class="flex items-center justify-between gap-3 px-5 py-3.5">

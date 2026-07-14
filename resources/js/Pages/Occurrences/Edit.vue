@@ -73,7 +73,7 @@ function submit() {
             <div>
               <p class="ds-kicker">Dossier {{ occurrence.occurrence_no }}</p>
               <h1 class="ds-heading mt-1 text-2xl">Editar ocorrência</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Atualize a investigação, a ação corretiva e a evidência de encerramento.</p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">Actualize a investigação, a acção correctiva e a evidência de encerramento.</p>
             </div>
           </div>
         </div>

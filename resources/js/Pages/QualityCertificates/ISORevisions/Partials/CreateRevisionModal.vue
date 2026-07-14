@@ -35,7 +35,7 @@ const form = useForm({
 const selectedFields = ref([]);
 const updatableFields = [
   { name: "status", label: "Estado do certificado" },
-  { name: "obs", label: "Observacoes" },
+  { name: "obs", label: "Observações" },
   { name: "validated_by", label: "Validado por" },
   { name: "extra_data", label: "Dados adicionais" },
 ];
@@ -71,7 +71,7 @@ function closeModal() {
 
 function createRevision() {
   if (!selectedFields.value.length) {
-    form.setError("fields", "Selecione pelo menos um campo.");
+    form.setError("fields", "Seleccione pelo menos um campo.");
     return;
   }
 
@@ -101,8 +101,8 @@ function createRevision() {
             <DocumentPlusIcon class="h-5 w-5" />
           </div>
           <div>
-            <p class="ds-kicker">Alteracao rapida</p>
-            <h2 class="ds-heading mt-2 text-lg">Criar revisao ISO</h2>
+            <p class="ds-kicker">Alteração rapida</p>
+            <h2 class="ds-heading mt-2 text-lg">Criar revisão ISO</h2>
             <p class="ds-copy mt-1 text-xs">
               {{ certificate.code || "Certificado" }} - v{{ certificate.current_revision?.version || "1.0" }}
             </p>
@@ -117,8 +117,7 @@ function createRevision() {
       <div class="space-y-5 px-5 py-5 sm:px-6">
         <div class="grid gap-4 sm:grid-cols-2">
           <div class="ds-field-group">
-            <label class="ds-field-label" for="modal-change-type">
-              Tipo de alteracao <span class="ds-field-required">*</span>
+            <label class="ds-field-label" for="modal-change-type"> Tipo de alteração <span class="ds-field-required">*</span>
             </label>
             <BaseSelect id="modal-change-type" v-model="form.change_type" class="ds-field">
               <option value="UPDATED">Atualizacao</option>
@@ -136,13 +135,12 @@ function createRevision() {
               <option value="LOW">Baixo</option>
               <option value="MEDIUM">Medio</option>
               <option value="HIGH">Alto</option>
-              <option value="CRITICAL">Critico</option>
+              <option value="CRITICAL">Crítico</option>
             </BaseSelect>
           </div>
 
           <div class="ds-field-group">
-            <label class="ds-field-label" for="modal-iso-section">
-              Secao ISO <span class="ds-field-required">*</span>
+            <label class="ds-field-label" for="modal-iso-section"> Secção ISO <span class="ds-field-required">*</span>
             </label>
             <BaseInput id="modal-iso-section" v-model="form.iso_section" class="ds-field" />
           </div>
@@ -159,15 +157,14 @@ function createRevision() {
         </div>
 
         <div class="ds-field-group">
-          <label class="ds-field-label" for="modal-change-reason">
-            Justificacao <span class="ds-field-required">*</span>
+          <label class="ds-field-label" for="modal-change-reason"> Justificação <span class="ds-field-required">*</span>
           </label>
           <textarea
             id="modal-change-reason"
             v-model="form.change_reason"
             class="ds-field min-h-28"
             :aria-invalid="Boolean(form.errors.change_reason)"
-            placeholder="Descreva o motivo da revisao"
+            placeholder="Descreva o motivo da revisão"
           />
           <p class="ds-field-hint">Minimo de 10 caracteres.</p>
           <p v-if="form.errors.change_reason" class="ds-field-error">
@@ -177,7 +174,7 @@ function createRevision() {
 
         <section class="ds-command-surface overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-4 py-3">
-            <p class="ds-table-heading">Campos a preservar na nova revisao</p>
+            <p class="ds-table-heading">Campos a preservar na nova revisão</p>
           </div>
           <div class="grid sm:grid-cols-2">
             <button
@@ -208,9 +205,7 @@ function createRevision() {
         <div v-if="form.hasErrors" class="lims-status-strip p-4">
           <div class="flex items-start gap-3">
             <ExclamationTriangleIcon class="h-5 w-5 shrink-0 text-[var(--lims-critical)]" />
-            <p class="text-xs font-semibold text-[var(--ds-text-muted)]">
-              Reveja os campos assinalados antes de criar a revisao.
-            </p>
+            <p class="text-xs font-semibold text-[var(--ds-text-muted)]"> Reveja os campos assinalados antes de criar a revisão. </p>
           </div>
         </div>
       </div>
@@ -221,7 +216,7 @@ function createRevision() {
         </button>
         <button type="submit" class="ds-button ds-button-primary" :disabled="!isReady">
           <DocumentPlusIcon class="h-4 w-4" />
-          {{ form.processing ? "A criar..." : "Criar revisao" }}
+          {{ form.processing ? "A criar..." : "Criar revisão" }}
         </button>
       </footer>
     </form>

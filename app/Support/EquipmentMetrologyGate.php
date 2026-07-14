@@ -35,14 +35,14 @@ class EquipmentMetrologyGate
 
             if (! $item) {
                 throw ValidationException::withMessages([
-                    "results.{$index}.equipment_id" => 'O equipamento selecionado não foi encontrado.',
+                    "results.{$index}.equipment_id" => 'O equipamento seleccionado não foi encontrado.',
                 ]);
             }
 
             if (! $item->is_metrologically_ready) {
                 throw ValidationException::withMessages([
                     "results.{$index}.equipment_id" => sprintf(
-                        'O equipamento %s não está liberado para ensaio. Estado metrológico atual: %s.',
+                        'O equipamento %s não está liberado para ensaio. Estado metrológico actual: %s.',
                         $item->name,
                         $item->metrology_status
                     ),

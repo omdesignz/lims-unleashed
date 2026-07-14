@@ -6,7 +6,7 @@
 </div>
 
   <div :class="[progress < 100 ? 'p-2 mt-2 border border-gray-200 rounded-md' : '']">
-      <h4 class="sr-only">Data Import Status</h4>
+      <h4 class="sr-only">Estado da importação de dados</h4>
 
       <div class="mt-6" aria-hidden="true" v-if="progress < 100">
         <p class="text-sm font-bold text-gray-900 mb-2">Importação em Curso ... {{ progress }}%</p>
@@ -23,7 +23,7 @@
         </div>
 
       <div class="mt-6" aria-hidden="true" v-else>
-        <nav aria-label="Progress">
+        <nav aria-label="Progresso">
           <ol role="list" class="divide-y divide-gray-300 rounded-md border border-gray-300 md:flex md:divide-y-0">
             <li class="relative md:flex md:flex-1">
               <a href="#" class="group flex items-center">

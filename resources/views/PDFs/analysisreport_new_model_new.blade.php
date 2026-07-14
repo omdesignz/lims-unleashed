@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-AO">
 <head>
 <meta charset="UTF-8" />
 <style>
@@ -249,7 +249,7 @@
             RELATÓRIO DE ANÁLISE
         </div>
         <div class="h3" style="color: #1e3a8a;">
-            Analysis Report
+            Relatório de análise
         </div>
         <div style="margin-top: 15px;">
             <span class="report-badge">
@@ -268,32 +268,32 @@
                 <tr>
                     <td width="50%" style="vertical-align: top; padding-right: 15px;">
                         <div style="margin-bottom: 12px;">
-                            <div class="label">Cliente / Client</div>
+                            <div class="label">Cliente</div>
                             <div class="value highlight-value">
-                                {!! mb_strtoupper($model->collection->customer->name ?? 'N/A') !!}
+                                {!! mb_strtoupper($model->collection->customer->name ?? 'N/D') !!}
                             </div>
                         </div>
                         
                         <div style="margin-bottom: 12px;">
-                            <div class="label">NIF / Tax ID</div>
+                            <div class="label">NIF</div>
                             <div class="value">
-                                {!! $model->collection->warehouse->nif ?? 'N/A' !!}
+                                {!! $model->collection->warehouse->nif ?? 'N/D' !!}
                             </div>
                         </div>
                     </td>
                     
                     <td width="50%" style="vertical-align: top; padding-left: 15px; border-left: 1px solid #e5e7eb;">
                         <div style="margin-bottom: 12px;">
-                            <div class="label">Endereço / Address</div>
+                            <div class="label">Endereço</div>
                             <div class="value">
-                                {!! $model->collection->warehouse->address ?? 'N/A' !!}
+                                {!! $model->collection->warehouse->address ?? 'N/D' !!}
                             </div>
                         </div>
                         
                         <div style="margin-bottom: 12px;">
-                            <div class="label">Contacto / Contact</div>
+                            <div class="label">Contacto</div>
                             <div class="value">
-                                {!! $model->collection->warehouse->primary_phone ?? 'N/A' !!}
+                                {!! $model->collection->warehouse->primary_phone ?? 'N/D' !!}
                             </div>
                         </div>
                     </td>
@@ -312,9 +312,9 @@
                 <tr>
                     <td width="50%" style="vertical-align: top; padding-right: 15px;">
                         <div style="margin-bottom: 12px;">
-                            <div class="label">Produto / Product</div>
+                            <div class="label">Produto</div>
                             <div class="value highlight-value">
-                                {!! mb_strtoupper($model->collection->product->name ?? 'N/A') !!}
+                                {!! mb_strtoupper($model->collection->product->name ?? 'N/D') !!}
                             </div>
                         </div>
                         
@@ -323,7 +323,7 @@
                             <div class="value">
                                 {!! Carbon\Carbon::parse($model->collection->collection_date)->format('d/m/Y') !!}
                             </div>
-                            <div class="muted small-text">Collection Date</div>
+                            <div class="muted small-text">Data de recolha</div>
                         </div>
                     </td>
                     
@@ -331,14 +331,14 @@
                         <div style="margin-bottom: 12px;">
                             <div class="label">Marca Comercial</div>
                             <div class="value highlight-value">
-                                {!! mb_strtoupper($model->collection->comercial_brand ?? 'N/A') !!}
+                                {!! mb_strtoupper($model->collection->comercial_brand ?? 'N/D') !!}
                             </div>
                         </div>
                         
                         <div style="margin-bottom: 12px;">
-                            <div class="label">Lote / Batch</div>
+                            <div class="label">Lote</div>
                             <div class="value">
-                                {!! $model->collection->lot ?? 'N/A' !!}
+                                {!! $model->collection->lot ?? 'N/D' !!}
                             </div>
                         </div>
                     </td>
@@ -355,7 +355,7 @@
                 <line x1="12" y1="16" x2="12" y2="12"></line>
                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
-            Observações / Observations
+            Observações
         </div>
         <div class="body-text">
             @include('PDFs.includes.analysisreport.templates_new_model.obs')
@@ -422,7 +422,7 @@
                                 RESULTADO & U
                             </div>
                             <div class="muted small-text" style="color: rgba(255,255,255,0.9); font-weight: 400;">
-                                Results and Uncertainty
+                                Resultados e incerteza
                             </div>
                         </th>
                         <th style="padding: 12px 10px; text-align: center; border-bottom: 2px solid #1e3a8a;">
@@ -575,7 +575,7 @@
                 FIM DOS RESULTADOS ANALÍTICOS
             </div>
             <div class="small-text muted">
-                End of analytical results
+                Fim dos resultados analíticos
             </div>
             
             @if($model->collection->code->results->count() > 0)
@@ -587,7 +587,7 @@
                 <div class="small-text" style="display: inline-block;">
                     <span style="font-weight: 600; color: #374151;">Data de Análise:</span>
                     <span class="value" style="margin-left: 5px;">
-                        {{ $model->collection->code->results->first()->updated_at->format('d/m/Y') ?? 'N/A' }}
+                        {{ $model->collection->code->results->first()->updated_at->format('d/m/Y') ?? 'N/D' }}
                     </span>
                 </div>
             </div>
@@ -607,7 +607,7 @@
                     <div style="margin-bottom: 15px;">
                         @if ($model?->collection?->code?->results?->first()?->approved_signature?->signature_url)
                         <div style="margin-bottom: 5px;">
-                            <img src="{{ $model?->collection?->code?->results?->first()?->approved_signature?->signature_url }}" alt="Signature" style="width: 60px; height: auto;">
+                            <img src="{{ $model?->collection?->code?->results?->first()?->approved_signature?->signature_url }}" alt="Assinatura" style="width: 60px; height: auto;">
                         </div>
                         @else
                         <div style="margin-bottom: 5px; padding: 10px;">
@@ -616,7 +616,7 @@
                         @endif
                         <div class="small-text">
                             <strong>{{ $model?->collection?->code?->results?->first()?->approved_by ?? '_________________' }}</strong><br>
-                            <span class="muted">Autorizado Por / Authorized By</span>
+                            <span class="muted">Autorizado por</span>
                         </div>
                     </div>
                 </td>

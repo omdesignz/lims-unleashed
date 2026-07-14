@@ -78,7 +78,7 @@ const props = defineProps({
     default: null,
   },
   label: { type: String, default: '' },
-  placeholder: { type: String, default: 'Selecione uma opção' },
+  placeholder: { type: String, default: 'Seleccione uma opção' },
   hint: { type: String, default: '' },
   error: { type: String, default: '' },
   required: { type: Boolean, default: false },

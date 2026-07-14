@@ -234,7 +234,7 @@
                     <td class="meta">
                         <strong>{{ $model->proposal_no }}</strong><br>
                         Emitida em {{ $model->created_at?->format('d/m/Y') ?? now()->format('d/m/Y') }}<br>
-                        Validade: {{ $model->expiry_date ? \Illuminate\Support\Carbon::parse($model->expiry_date)->format('d/m/Y') : 'N/A' }}
+                        Validade: {{ $model->expiry_date ? \Illuminate\Support\Carbon::parse($model->expiry_date)->format('d/m/Y') : 'N/D' }}
                     </td>
                 </tr>
             </table>
@@ -245,19 +245,19 @@
     </div>
 
     <div class="section">
-        <div class="section-title">Cliente e Laboratório <span>Client and laboratory details</span></div>
+        <div class="section-title">Cliente e laboratório</div>
         <table class="details-table">
             <tr>
-                <td><span class="label">Cliente / Client</span><span class="value">{{ $model->customer->name ?? 'N/A' }}</span></td>
-                <td><span class="label">Código / Code</span><span class="value">{{ $model->customer->code ?? 'N/A' }}</span></td>
+                <td><span class="label">Cliente</span><span class="value">{{ $model->customer->name ?? 'N/D' }}</span></td>
+                <td><span class="label">Código</span><span class="value">{{ $model->customer->code ?? 'N/D' }}</span></td>
             </tr>
             <tr>
-                <td><span class="label">Local de serviço / Service location</span><span class="value">{{ $model->service_location ?: ($model->warehouse->address ?? 'N/A') }}</span></td>
-                <td><span class="label">Departamento / Department</span><span class="value">{{ $model->department->name ?? 'N/A' }}</span></td>
+                <td><span class="label">Local do serviço</span><span class="value">{{ $model->service_location ?: ($model->warehouse->address ?? 'N/D') }}</span></td>
+                <td><span class="label">Departamento</span><span class="value">{{ $model->department->name ?? 'N/D' }}</span></td>
             </tr>
             <tr>
-                <td><span class="label">Laboratório / Laboratory</span><span class="value">{{ $labName }}</span></td>
-                <td><span class="label">Preparada por / Prepared by</span><span class="value">{{ $model->user->name ?? 'N/A' }}</span></td>
+                <td><span class="label">Laboratório</span><span class="value">{{ $labName }}</span></td>
+                <td><span class="label">Preparada por</span><span class="value">{{ $model->user->name ?? 'N/D' }}</span></td>
             </tr>
         </table>
         @if($labDetails)
@@ -266,7 +266,7 @@
     </div>
 
     <div class="section">
-        <div class="section-title">Itens da Proposta <span>Commercial scope</span></div>
+        <div class="section-title">Itens da proposta</div>
         <table class="items-table">
             <thead>
                 <tr>
@@ -282,13 +282,13 @@
                 @forelse($model->items as $item)
                     <tr>
                         <td>
-                            <strong>{{ $item->item_description ?: ('Item #'.$item->item_id) }}</strong>
+                            <strong>{{ $item->item_description ?: ('Artigo #'.$item->item_id) }}</strong>
                             @if($item->obs)
                                 <br><span style="color: #64748b;">{{ $item->obs }}</span>
                             @endif
                         </td>
-                        <td>{{ $item->standard->name ?? $item->standard->code ?? 'N/A' }}</td>
-                        <td>{{ $item->unit->code ?? $item->unit->name ?? 'N/A' }}</td>
+                        <td>{{ $item->standard->name ?? $item->standard->code ?? 'N/D' }}</td>
+                        <td>{{ $item->unit->code ?? $item->unit->name ?? 'N/D' }}</td>
                         <td style="text-align: right;">{{ number_format((float) $item->qty, 2, ',', '.') }}</td>
                         <td style="text-align: right;">{{ number_format((float) $item->unit_price, 2, ',', '.') }}</td>
                         <td style="text-align: right;">{{ number_format((float) $item->total, 2, ',', '.') }}</td>
@@ -312,21 +312,21 @@
 
     @if(trim(strip_tags($detailsText)) !== '')
         <div class="section">
-            <div class="section-title">Condições e Observações <span>Terms and observations</span></div>
+            <div class="section-title">Condições e observações</div>
             <div class="note-box">{!! nl2br(e(strip_tags($detailsText))) !!}</div>
         </div>
     @endif
 
     <div class="section">
-        <div class="section-title">Aceitação, Decisão e Conformidade <span>Acceptance, decision rule and compliance</span></div>
+        <div class="section-title">Aceitação, decisão e conformidade</div>
         <table class="details-table">
             <tr>
-                <td><span class="label">Estado / Status</span><span class="value">{{ $statusValue ?: 'N/A' }}</span></td>
-                <td><span class="label">Tolerância / Tolerance</span><span class="value">{{ $model->tolerance_days ?? 0 }} dia(s)</span></td>
+                <td><span class="label">Estado</span><span class="value">{{ $statusValue ?: 'N/D' }}</span></td>
+                <td><span class="label">Tolerância</span><span class="value">{{ $model->tolerance_days ?? 0 }} dia(s)</span></td>
             </tr>
             <tr>
-                <td><span class="label">Confidencialidade / Confidentiality</span><span class="value">{{ $model->complianceAgreement?->confidentiality ? 'Aceite / Accepted' : 'Pendente / Pending' }}</span></td>
-                <td><span class="label">Imparcialidade / Impartiality</span><span class="value">{{ $model->complianceAgreement?->impartiality ? 'Aceite / Accepted' : 'Pendente / Pending' }}</span></td>
+                <td><span class="label">Confidencialidade</span><span class="value">{{ $model->complianceAgreement?->confidentiality ? 'Aceite' : 'Pendente' }}</span></td>
+                <td><span class="label">Imparcialidade</span><span class="value">{{ $model->complianceAgreement?->impartiality ? 'Aceite' : 'Pendente' }}</span></td>
             </tr>
         </table>
         <div class="note-box" style="margin-top: 10px;">
@@ -336,15 +336,15 @@
 
     @if($bankDetails)
         <div class="section">
-            <div class="section-title">Dados Bancários <span>Banking details</span></div>
+            <div class="section-title">Dados bancários</div>
             <div class="note-box">{{ $bankDetails }}</div>
         </div>
     @endif
 
     <table class="signature-table">
         <tr>
-            <td><div class="signature-line">Pelo laboratório / For the laboratory</div></td>
-            <td><div class="signature-line">Aceite pelo cliente / Accepted by client</div></td>
+            <td><div class="signature-line">Pelo laboratório</div></td>
+            <td><div class="signature-line">Aceite pelo cliente</div></td>
         </tr>
     </table>
 

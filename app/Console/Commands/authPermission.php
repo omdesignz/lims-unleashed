@@ -6,7 +6,6 @@ use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Console\Command;
 
-
 class authPermission extends Command
 {
     /**
@@ -21,7 +20,7 @@ class authPermission extends Command
      *
      * @var string
      */
-    protected $description = 'Create authorization permissions for a given model';
+    protected $description = 'Criar permissões de autorização para um determinado modelo';
 
     /**
      * Execute the console command.
@@ -31,12 +30,12 @@ class authPermission extends Command
         $permissions = $this->generatePermissions();
 
         // check if its remove
-        if( $is_remove = $this->option('remove') ) {
+        if ($is_remove = $this->option('remove')) {
             // remove permission
-            if( Permission::where('name', 'LIKE', '%'. $this->getNameArgument())->delete() ) {
-                $this->warn('Permissions ' . implode(', ', $permissions) . ' deleted.');
-            }  else {
-                $this->warn('No permissions found!');
+            if (Permission::where('name', 'LIKE', '%'.$this->getNameArgument())->delete()) {
+                $this->warn('Permissões eliminadas: '.implode(', ', $permissions).'.');
+            } else {
+                $this->warn('Não foram encontradas permissões.');
             }
 
         } else {
@@ -47,19 +46,18 @@ class authPermission extends Command
             foreach ($permissions as $permission) {
                 Permission::firstOrCreate([
                     'name' => $permission,
-                    'label' => trans('gestlab.actions.' . str()->before($permission, '_')) . ' ' . strtolower(trans('gestlab.menu.' . str()->after($permission, '_'))),
+                    'label' => trans('gestlab.actions.'.str()->before($permission, '_')).' '.strtolower(trans('gestlab.menu.'.str()->after($permission, '_'))),
                 ]);
             }
 
-            $this->info('Permissions ' . implode(', ', $permissions) . ' created.');
+            $this->info('Permissões criadas: '.implode(', ', $permissions).'.');
         }
 
-
         // sync role for admin
-        if( $role = Role::where('name', 'Admin')->first() ) {
+        if ($role = Role::where('name', 'Admin')->first()) {
             $role->syncPermissions(Permission::all());
 
-            $this->info('Admin permissions updated.');
+            $this->info('Permissões de administração actualizadas.');
         }
     }
 
@@ -74,8 +72,8 @@ class authPermission extends Command
 
         $name = $this->getNameArgument();
 
-        return array_map(function($val) use ($name) {
-            return $val . '_'. $name;
+        return array_map(function ($val) use ($name) {
+            return $val.'_'.$name;
         }, $abilities);
     }
 

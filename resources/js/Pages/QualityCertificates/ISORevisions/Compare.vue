@@ -49,7 +49,7 @@ const differenceGroups = computed(() => {
 
   const labels = {
     certificate: "Dados do certificado",
-    metadata: "Metadados da revisao",
+    metadata: "Metadados da revisão",
     related: "Dados relacionados",
     iso: "Conformidade ISO",
   };
@@ -59,7 +59,7 @@ const differenceGroups = computed(() => {
     const category = difference.category || "other";
     const group = groups.get(category) ?? {
       category,
-      label: labels[category] || "Outras alteracoes",
+      label: labels[category] || "Outras alterações",
       items: [],
     };
     group.items.push(difference);
@@ -84,22 +84,22 @@ const highImpactChanges = computed(() => {
 
 const comparisonMetrics = computed(() => [
   {
-    label: "Alteracoes encontradas",
+    label: "Alterações encontradas",
     value: flattenedDifferences.value.length,
     note: `${differenceGroups.value.length} categoria(s)`,
   },
   {
     label: "Impacto elevado",
     value: highImpactChanges.value,
-    note: "exigem revisao prioritaria",
+    note: "exigem revisão prioritaria",
   },
   {
     label: "Intervalo temporal",
     value: timeBetweenRevisions.value,
-    note: "entre datas efetivas",
+    note: "entre datas efectivas",
   },
   {
-    label: "Direcao",
+    label: "Direcção",
     value: `v${props.revisionA?.version || "-"} to v${props.revisionB?.version || "-"}`,
     note: "A para B",
   },
@@ -107,7 +107,7 @@ const comparisonMetrics = computed(() => [
 
 const timeBetweenRevisions = computed(() => {
   if (!props.revisionA?.effective_date || !props.revisionB?.effective_date) {
-    return "Nao calculado";
+    return "Não calculado";
   }
 
   const firstDate = new Date(props.revisionA.effective_date);
@@ -132,11 +132,11 @@ const timeBetweenRevisions = computed(() => {
 function revisionDetails(revision) {
   return [
     {
-      label: "Revisao",
+      label: "Revisão",
       value: revision?.revision_number ?? "-",
     },
     {
-      label: "Data efetiva",
+      label: "Data efectiva",
       value: formatDate(revision?.effective_date),
     },
     {
@@ -153,14 +153,14 @@ function revisionDetails(revision) {
     },
     {
       label: "Risco",
-      value: revision?.compliance_metadata?.risk_assessment || "Nao avaliado",
+      value: revision?.compliance_metadata?.risk_assessment || "Não avaliado",
     },
   ];
 }
 
 function formatDate(date) {
   if (!date) {
-    return "Nao registada";
+    return "Não registada";
   }
 
   return new Date(date).toLocaleString("pt-PT", {
@@ -174,11 +174,11 @@ function formatDate(date) {
 
 function formatValue(value) {
   if (value === null || value === undefined || value === "") {
-    return "Nao registado";
+    return "Não registado";
   }
 
   if (typeof value === "boolean") {
-    return value ? "Sim" : "Nao";
+    return value ? "Sim" : "Não";
   }
 
   if (Array.isArray(value)) {
@@ -194,7 +194,7 @@ function formatValue(value) {
 
 function changeTypeLabel(changeType) {
   const labels = {
-    CREATED: "Criacao",
+    CREATED: "Criação",
     UPDATED: "Atualizacao",
     CORRECTED: "Correcao",
     REISSUED: "Reemissao",
@@ -204,7 +204,7 @@ function changeTypeLabel(changeType) {
     MODIFIED: "Modificado",
   };
 
-  return labels[changeType] || changeType || "Alteracao";
+  return labels[changeType] || changeType || "Alteração";
 }
 
 function impactDot(impact) {
@@ -246,17 +246,13 @@ function printComparison() {
             :href="route('qualitycertificates.iso-revisions.index', certificate.id)"
             class="ds-table-action -ml-2 mb-3 print:hidden"
           >
-            <ArrowLeftIcon class="h-4 w-4" />
-            Voltar ao historico
-          </Link>
+            <ArrowLeftIcon class="h-4 w-4" /> Voltar ao histórico </Link>
           <div class="flex flex-wrap items-center gap-2">
-            <p class="ds-kicker">Comparacao controlada</p>
-            <span class="ds-chip font-mono">{{ certificate.code || "Sem codigo" }}</span>
+            <p class="ds-kicker">Comparação controlada</p>
+            <span class="ds-chip font-mono">{{ certificate.code || "Sem código" }}</span>
           </div>
-          <h1 class="ds-heading mt-2 text-2xl">Comparar revisoes</h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm">
-            Leitura lado a lado das diferencas de conteudo, relacoes e metadados ISO.
-          </p>
+          <h1 class="ds-heading mt-2 text-2xl">Comparar revisões</h1>
+          <p class="ds-copy mt-2 max-w-2xl text-sm"> Leitura lado a lado das diferenças de conteúdo, relações e metadados ISO. </p>
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row print:hidden">
@@ -296,7 +292,7 @@ function printComparison() {
         <div class="border-b border-[var(--ds-border)] px-5 py-4">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <p class="ds-kicker">Revisao A</p>
+              <p class="ds-kicker">Revisão A</p>
               <h2 class="ds-heading mt-2 text-lg">v{{ revisionA.version }}</h2>
             </div>
             <span class="ds-chip">
@@ -319,7 +315,7 @@ function printComparison() {
         </dl>
         <div class="border-t border-[var(--ds-border)] px-5 py-4">
           <p class="ds-table-heading">Motivo</p>
-          <p class="ds-copy mt-2 text-xs">{{ revisionA.change_reason || "Nao registado." }}</p>
+          <p class="ds-copy mt-2 text-xs">{{ revisionA.change_reason || "Não registado." }}</p>
         </div>
       </article>
 
@@ -327,11 +323,11 @@ function printComparison() {
         <button
           type="button"
           class="ds-icon-button bg-[var(--ds-panel-raised)]"
-          title="Inverter revisoes"
+          title="Inverter revisões"
           @click="swapRevisions"
         >
           <ArrowsRightLeftIcon class="h-5 w-5" />
-          <span class="sr-only">Inverter revisoes</span>
+          <span class="sr-only">Inverter revisões</span>
         </button>
       </div>
 
@@ -339,7 +335,7 @@ function printComparison() {
         <div class="border-b border-[var(--ds-border)] px-5 py-4">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <p class="ds-kicker">Revisao B</p>
+              <p class="ds-kicker">Revisão B</p>
               <h2 class="ds-heading mt-2 text-lg">v{{ revisionB.version }}</h2>
             </div>
             <span class="ds-chip">
@@ -362,7 +358,7 @@ function printComparison() {
         </dl>
         <div class="border-t border-[var(--ds-border)] px-5 py-4">
           <p class="ds-table-heading">Motivo</p>
-          <p class="ds-copy mt-2 text-xs">{{ revisionB.change_reason || "Nao registado." }}</p>
+          <p class="ds-copy mt-2 text-xs">{{ revisionB.change_reason || "Não registado." }}</p>
         </div>
       </article>
     </section>
@@ -370,11 +366,9 @@ function printComparison() {
     <section class="ds-panel overflow-hidden print:shadow-none">
       <div class="flex flex-col gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
-          <p class="ds-kicker">Matriz de diferencas</p>
-          <h2 class="ds-heading mt-2 text-lg">Alteracoes por categoria</h2>
-          <p class="ds-copy mt-1 text-sm">
-            Valores da revisao A comparados com a revisao B.
-          </p>
+          <p class="ds-kicker">Matriz de diferenças</p>
+          <h2 class="ds-heading mt-2 text-lg">Alterações por categoria</h2>
+          <p class="ds-copy mt-1 text-sm"> Valores da revisão A comparados com a revisão B. </p>
         </div>
         <span v-if="highImpactChanges" class="ds-chip">
           <span class="lims-status-dot lims-status-dot-critical" />
@@ -393,8 +387,7 @@ function printComparison() {
             <span>
               <span class="ds-heading block text-sm">{{ group.label }}</span>
               <span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">
-                {{ group.count }} alteracao(oes)
-              </span>
+                {{ group.count }} alteração(oes) </span>
             </span>
             <ChevronDownIcon
               :class="[
@@ -410,8 +403,8 @@ function printComparison() {
                 <thead class="ds-table-head">
                   <tr>
                     <th class="ds-table-heading px-5 py-3 text-left">Campo</th>
-                    <th class="ds-table-heading px-4 py-3 text-left">Revisao A</th>
-                    <th class="ds-table-heading px-4 py-3 text-left">Revisao B</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">Revisão A</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">Revisão B</th>
                     <th class="ds-table-heading px-5 py-3 text-right">Impacto</th>
                   </tr>
                 </thead>
@@ -447,11 +440,11 @@ function printComparison() {
                 </div>
                 <div class="grid gap-2">
                   <div class="ds-command-toolbar p-3">
-                    <p class="ds-table-heading">Revisao A</p>
+                    <p class="ds-table-heading">Revisão A</p>
                     <p class="mt-2 break-words text-sm font-semibold text-[var(--ds-text)]">{{ formatValue(item.valueA) }}</p>
                   </div>
                   <div class="ds-command-toolbar p-3">
-                    <p class="ds-table-heading">Revisao B</p>
+                    <p class="ds-table-heading">Revisão B</p>
                     <p class="mt-2 break-words text-sm font-semibold text-[var(--ds-text)]">{{ formatValue(item.valueB) }}</p>
                   </div>
                 </div>
@@ -463,8 +456,8 @@ function printComparison() {
 
       <div v-else class="ds-empty-state m-5 p-10 text-center">
         <ClockIcon class="mx-auto h-7 w-7 text-[var(--ds-text-soft)]" />
-        <h3 class="ds-heading mt-3 text-sm">Nenhuma diferenca encontrada</h3>
-        <p class="ds-copy mt-1 text-xs">As duas revisoes preservam o mesmo conteudo comparavel.</p>
+        <h3 class="ds-heading mt-3 text-sm">Nenhuma diferença encontrada</h3>
+        <p class="ds-copy mt-1 text-xs">As duas revisões preservam o mesmo conteúdo comparável.</p>
       </div>
     </section>
 
@@ -472,11 +465,8 @@ function printComparison() {
       <div class="flex items-start gap-3">
         <ExclamationTriangleIcon class="h-5 w-5 shrink-0 text-[var(--lims-critical)]" />
         <div>
-          <h2 class="ds-heading text-sm">Revisao tecnica necessaria</h2>
-          <p class="ds-copy mt-1 text-xs">
-            Existem alteracoes de impacto elevado. Confirme a rastreabilidade e
-            a aprovacao antes de utilizar a revisao B como evidencia.
-          </p>
+          <h2 class="ds-heading text-sm">Revisão técnica necessária</h2>
+          <p class="ds-copy mt-1 text-xs"> Existem alterações de impacto elevado. Confirme a rastreabilidade e a aprovação antes de utilizar a revisão B como evidência. </p>
         </div>
       </div>
     </section>

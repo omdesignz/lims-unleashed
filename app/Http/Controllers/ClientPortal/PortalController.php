@@ -92,8 +92,8 @@ class PortalController extends Controller
             ],
             [
                 'type' => 'billing_support',
-                'title' => 'Apoio de faturação',
-                'description' => 'Abra pedidos sobre faturas, recibos, pagamentos e notas de crédito.',
+                'title' => 'Apoio de facturação',
+                'description' => 'Abra pedidos sobre facturas, recibos, pagamentos e notas de crédito.',
                 'icon' => 'currency',
             ],
             [
@@ -211,7 +211,7 @@ class PortalController extends Controller
             'labels' => [
                 'Certificados',
                 'Colheitas',
-                'Faturas',
+                'Facturas',
                 'Recibos',
                 'Guias',
                 'Notas crédito',
@@ -984,7 +984,7 @@ class PortalController extends Controller
             $warehouse
         )) {
             return back()->withErrors([
-                'duplicate_submission' => 'Já existe uma solicitação idêntica em processamento. Aguarde alguns segundos antes de reenviar.',
+                'duplicate_submission' => 'Já existe uma pedido idêntica em processamento. Aguarde alguns segundos antes de reenviar.',
             ])->withInput();
         }
 
@@ -1016,7 +1016,7 @@ class PortalController extends Controller
                 Notification::send(
                     User::query()->role('admin')->whereNotNull('email_verified_at')->get(),
                     new GlobalNotification(
-                        'Nova solicitação do portal',
+                        'Nova pedido do portal',
                         sprintf(
                             'O cliente %s submeteu o pedido %s (%s).',
                             $warehouse->name ?? ('Armazém #'.$warehouse->id),
@@ -1031,8 +1031,8 @@ class PortalController extends Controller
 
         return redirect()->back()->with([
             'toast' => [
-                'title' => 'Notificção',
-                'message' => 'Solicitação enviada com sucesso.',
+                'title' => 'Notificação',
+                'message' => 'Pedido enviado com êxito.',
             ],
         ]);
     }
@@ -1221,8 +1221,8 @@ class PortalController extends Controller
 
         return redirect()->back()->with([
             'toast' => [
-                'title' => 'Notificção',
-                'message' => 'Registro actualizado com êxito',
+                'title' => 'Notificação',
+                'message' => 'Registo actualizado com êxito',
             ],
         ]);
     }
@@ -1245,7 +1245,7 @@ class PortalController extends Controller
             return redirect()->back()->with([
                 'toast' => [
                     'title' => '',
-                    'message' => 'Registro removido com sucesso',
+                    'message' => 'Registo removido com êxito',
                 ],
             ]);
         }
@@ -1253,7 +1253,7 @@ class PortalController extends Controller
         return redirect()->back()->with([
             'toast' => [
                 'title' => '',
-                'message' => 'Unable Registro removido com sucesso',
+                'message' => 'Não foi possível remover o registo',
             ],
         ]);
     }
@@ -1274,7 +1274,7 @@ class PortalController extends Controller
         return redirect()->back()->with([
             'toast' => [
                 'title' => '',
-                'message' => 'Registro removido com sucesso',
+                'message' => 'Registo removido com êxito',
             ],
         ]);
     }
@@ -1295,7 +1295,7 @@ class PortalController extends Controller
         return redirect()->back()->with([
             'toast' => [
                 'title' => '',
-                'message' => 'Registro restaurado com sucesso',
+                'message' => 'Registo restaurado com êxito',
             ],
         ]);
     }

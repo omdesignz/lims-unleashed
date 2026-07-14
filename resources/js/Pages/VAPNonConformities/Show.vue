@@ -118,10 +118,10 @@
               <WrenchScrewdriverIcon class="mt-0.5 h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
               <div>
                 <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.vap_non_conformities.corrective_actions') }}</h2>
-                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">Correções e ações corretivas registadas no dossier.</p>
+                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">Correcções e acções correctivas registadas no dossier.</p>
               </div>
             </div>
-            <span class="ds-chip">{{ actionRows.length }} ações</span>
+            <span class="ds-chip">{{ actionRows.length }} acções</span>
           </div>
 
           <div v-if="actionRows.length" class="divide-y divide-[var(--ds-border)]">
@@ -175,7 +175,7 @@
               <ClipboardDocumentCheckIcon class="mt-0.5 h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]" />
               <div>
                 <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.vap_non_conformities.additional_info') }}</h2>
-                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">Causa raiz, prevenção, ações globais e comentários.</p>
+                <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">Causa raiz, prevenção, acções globais e comentários.</p>
               </div>
             </div>
           </div>
@@ -233,7 +233,7 @@
 
         <section class="ds-command-surface p-5">
           <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.vap_non_conformities.actions.title') }}</h2>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">Ações administrativas para este dossier.</p>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">Acções administrativas para este dossier.</p>
           <div class="mt-5 space-y-2">
             <Link :href="route('vap_non_conformities.edit', nonConformity.id)" class="ds-button ds-button-primary w-full">
               <PencilSquareIcon class="h-4 w-4" />
@@ -387,9 +387,9 @@ const summaryCards = computed(() => [
     valueClass: severityClasses.value,
   },
   {
-    label: 'Ações',
+    label: 'Acções',
     value: actionRows.value.length,
-    detail: 'Correções e CAPA associadas',
+    detail: 'Correcções e CAPA associadas',
     icon: WrenchScrewdriverIcon,
     tone: 'text-[rgb(var(--primary-700-rgb))] dark:text-[rgb(var(--accent-200-rgb))]',
     valueClass: 'text-[var(--ds-text)]',
@@ -499,11 +499,11 @@ const additionalNarratives = computed(() => [
     value: props.nonConformity.root_cause,
   },
   {
-    label: 'Ações corretivas gerais',
+    label: 'Acções correctivas gerais',
     value: props.nonConformity.corrective_actions,
   },
   {
-    label: 'Ações preventivas',
+    label: 'Acções preventivas',
     value: props.nonConformity.preventive_actions,
   },
   {

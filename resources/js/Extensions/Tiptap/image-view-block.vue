@@ -23,7 +23,7 @@
 
             <div v-if="imageState.error" class="absolute inset-0 flex flex-col items-center justify-center">
               <InfoCircledIcon class="size-8 text-destructive" />
-              <p class="mt-2 text-sm text-muted-foreground">Failed to load image</p>
+              <p class="mt-2 text-sm text-muted-foreground">Não foi possível carregar a imagem</p>
             </div>
 
             <controlled-zoom
@@ -71,7 +71,7 @@
         <ActionWrapper v-if="imageState.error">
           <ActionButton
             icon="TrashIcon"
-            tooltip="Remove image"
+            tooltip="Remover imagem"
             @click="onRemoveImg"
           />
         </ActionWrapper>

@@ -11,6 +11,10 @@ use App\Models\CreditNoteItem;
 use App\Models\CustomerRequest;
 use App\Models\Department;
 use App\Models\DirectCollection;
+use App\Models\IntegrationConnector;
+use App\Models\IntegrationDelivery;
+use App\Models\IntegrationMapping;
+use App\Models\IntegrationTransmission;
 use App\Models\InventoryItem;
 use App\Models\InventoryOrder;
 use App\Models\Invoice;
@@ -99,6 +103,10 @@ class AppServiceProvider extends ServiceProvider
             'management_review' => ManagementReview::class,
             'packaging_category' => PackagingCategory::class,
             'inventoryitem' => InventoryItem::class,
+            'integration_connector' => IntegrationConnector::class,
+            'integration_delivery' => IntegrationDelivery::class,
+            'integration_mapping' => IntegrationMapping::class,
+            'integration_transmission' => IntegrationTransmission::class,
             'vap_file' => VAPFile::class,
             'vap_non_conformity' => VAPNonConformity::class,
             'reagent_consumption' => ReagentConsumption::class,

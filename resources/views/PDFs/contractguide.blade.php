@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-AO">
 <head>
     <meta charset="UTF-8">
     <style>
@@ -311,7 +311,7 @@
                     GUIA DE CONTRATAÇÃO {!! $model->guide_no !!}
                 </div>
                 <div style="font-size: 11px; color: rgba(255,255,255,0.9); margin-top: 5px; font-weight: 500;">
-                    Documento Oficial de Solicitação de Serviços
+                    Documento oficial de pedido de serviços
                 </div>
             </td>
         </tr>
@@ -416,7 +416,7 @@
             
             <!-- Status Indicator (Full width below columns) -->
             <div class="status-indicator">
-                Cliente Activo • Cadastro válido até {!! Carbon\Carbon::parse($model->date)->addYear()->format('d/m/Y') !!}
+                Cliente activo • Registo válido até {!! Carbon\Carbon::parse($model->date)->addYear()->format('d/m/Y') !!}
             </div>
         </div>
     </div>
@@ -450,7 +450,7 @@
                 <table class="status-table">
                     <tr>
                         <td class="status-label-cell">
-                            <div style="font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 4px;">Status dos Documentos</div>
+                            <div style="font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 4px;">Estado dos documentos</div>
                             <div style="font-size: 10px; color: #6b7280;">Documentação completa e válida</div>
                         </td>
                         <td class="status-value-cell">

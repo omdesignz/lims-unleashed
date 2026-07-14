@@ -194,25 +194,25 @@
         <div class="label-container">
             @if($label->has_qr_code && $qr_content && $qr_code_image)
             <div class="qr-code">
-                <img src="{{ $qr_code_image }}" alt="QR Code" style="width: 100%; height: 100%;">
+                <img src="{{ $qr_code_image }}" alt="Código QR" style="width: 100%; height: 100%;">
             </div>
             @endif
             
             @if($label->has_barcode && $barcode_content)
             <div class="barcode">
-                <!-- Barcode generation would go here -->
-                <div style="border: 1px solid #000; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 8px;">
-                    {{ $barcode_content }}
-                </div>
+                @if($barcode_image)
+                    <img src="{{ $barcode_image }}" alt="{{ $barcode_content }}" style="width: 100%; height: 100%;">
+                @else
+                    <div style="border: 1px solid #000; width: 100%; height: 100%; text-align: center; font-size: 8px;">
+                        {{ $barcode_content }}
+                    </div>
+                @endif
             </div>
             @endif
             
-            @if($label->logo_path)
+            @if($logo_src)
             <div class="logo">
-                <!-- Logo display would go here -->
-                <div style="border: 1px dashed #ccc; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 8px;">
-                    LOGO
-                </div>
+                <img src="{{ $logo_src }}" alt="Logo" style="width: 100%; height: 100%;">
             </div>
             @endif
             

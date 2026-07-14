@@ -3,15 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\NotifyFolderDownloadJob;
+use App\Models\File;
 use App\Models\ModernFolder;
 use Diglactic\Breadcrumbs\Breadcrumbs;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use App\Models\File;
-use App\Notifications\FolderDownloadReadyNotification;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ZipArchive;
@@ -49,7 +47,7 @@ class ModernFolderController extends Controller
         ]);
 
         // Create the folder in the filesystem
-        if (!Storage::exists($folderPath)) {
+        if (! Storage::exists($folderPath)) {
             Storage::makeDirectory($folderPath);
         }
 
@@ -57,7 +55,7 @@ class ModernFolderController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
     }
 
@@ -76,9 +74,10 @@ class ModernFolderController extends Controller
         $path = $folder->name;
         while ($folder->parent) {
             $folder = $folder->parent;
-            $path = $folder->name . '/' . $path;
+            $path = $folder->name.'/'.$path;
         }
-        return 'uploads/' . $path;
+
+        return 'uploads/'.$path;
     }
 
     public function update(Request $request, ModernFolder $folder)
@@ -104,13 +103,11 @@ class ModernFolderController extends Controller
         // Update the paths of files inside this folder and its subfolders
         $this->updateFilePaths($folder, $oldFolderPath, $newFolderPath);
 
-
-
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
@@ -119,6 +116,7 @@ class ModernFolderController extends Controller
     {
         // Construct new path with the updated folder name
         $oldPath = $this->getFolderPath($folder);
+
         return preg_replace('/[^\/]+$/', $newFolderName, $oldPath);
     }
 
@@ -168,7 +166,7 @@ class ModernFolderController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ]
+            ],
         ]);
     }
 
@@ -203,9 +201,9 @@ class ModernFolderController extends Controller
 
         $oldFolderPath = $folder->path;
         // $newFolderPath = $this->getFolderPath($newFolder);
-        $newFolderPath = $this->getNewFolderPath($newFolder, $newFolder->name . '/' . $folder->name);
+        $newFolderPath = $this->getNewFolderPath($newFolder, $newFolder->name.'/'.$folder->name);
 
-        if (!is_null($folder->parent_id) && Storage::exists($oldFolderPath) && $folder->path !== $newFolderPath) {
+        if (! is_null($folder->parent_id) && Storage::exists($oldFolderPath) && $folder->path !== $newFolderPath) {
             Storage::move($oldFolderPath, $newFolderPath);
         } else {
             Storage::move($oldFolderPath, $newFolderPath);
@@ -225,20 +223,21 @@ class ModernFolderController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
     }
 
-    public function getFolder() {
+    public function getFolder()
+    {
         $data = [];
 
-        if(request()->has('q')){
+        if (request()->has('q')) {
             $search = request()->q;
-            
-            $data = DB::table("modern_folders")
+
+            $data = DB::table('modern_folders')
                 ->select('modern_folders.*')
-                ->where('name','LIKE',"%$search%")
-                ->orWhere('path','LIKE',"%$search%")
+                ->where('name', 'LIKE', "%$search%")
+                ->orWhere('path', 'LIKE', "%$search%")
                 ->get();
         }
 
@@ -250,52 +249,52 @@ class ModernFolderController extends Controller
         // Construct new path with the updated folder name
         $oldPath = $file->path;
         $newFolderPath = $this->getFolderPath($folder);
-        return $newFolderPath . '/' . $file->name . '.' . $file->extension;
+
+        return $newFolderPath.'/'.$file->name.'.'.$file->extension;
 
     }
 
-     // Share a folder with one or more users
-     public function share(Request $request, ModernFolder $folder)
-     {
-         $validated = $request->validate([
-             'user_ids' => 'required|array',
-             'user_ids.*' => 'exists:users,id', // Validate that each user ID exists
-         ]);
- 
-         // Attach users to the folder
-         $folder->sharedWithUsers()->syncWithoutDetaching($validated['user_ids']);
- 
-         return redirect()->back()->with([
+    // Share a folder with one or more users
+    public function share(Request $request, ModernFolder $folder)
+    {
+        $validated = $request->validate([
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'exists:users,id', // Validate that each user ID exists
+        ]);
+
+        // Attach users to the folder
+        $folder->sharedWithUsers()->syncWithoutDetaching($validated['user_ids']);
+
+        return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
-     }
+    }
 
-     public function unshare(Request $request, ModernFolder $folder)
-        {
-            $validated = $request->validate([
-                'user_ids' => 'required|array',
-                'user_ids.*' => 'exists:users,id',
-            ]);
+    public function unshare(Request $request, ModernFolder $folder)
+    {
+        $validated = $request->validate([
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'exists:users,id',
+        ]);
 
-            // Detach users from the folder
-            $folder->sharedWithUsers()->detach($validated['user_ids']);
+        // Detach users from the folder
+        $folder->sharedWithUsers()->detach($validated['user_ids']);
 
-            return redirect()->back()->with([
-                'toast' => [
-                    'title' => trans('gestlab.toasts.notification'),
-                    'message' => trans('gestlab.toasts.record_successfully_created'),
-                ]
-            ]);
-        }
-
+        return redirect()->back()->with([
+            'toast' => [
+                'title' => trans('gestlab.toasts.notification'),
+                'message' => trans('gestlab.toasts.record_successfully_created'),
+            ],
+        ]);
+    }
 
     public function download(ModernFolder $folder)
     {
 
-        $folderPath = storage_path('app/' . $folder->path); // Adjust as needed based on your folder structure
+        $folderPath = storage_path('app/'.$folder->path); // Adjust as needed based on your folder structure
 
         // Calculate the folder size
         $folderSize = $this->getFolderSize(storage_path("app/{$folder->path}")); // Ensure the path is correct
@@ -303,25 +302,24 @@ class ModernFolderController extends Controller
         // Define a size threshold (e.g., 100 MB)
         $sizeThreshold = 100 * 1024 * 1024;
 
-
         if ($folderSize > $sizeThreshold) {
             // Dispatch a background job to generate the ZIP
             NotifyFolderDownloadJob::dispatch($folder, auth()->user());
-    
+
             return response()->json([
-                'message' => 'Your folder is too large to download directly. A ZIP file will be created, and you will be notified once it is ready.'
+                'message' => 'A pasta é demasiado grande para transferência directa. Será criado um ficheiro ZIP e receberá uma notificação quando estiver pronto.',
             ]);
         }
 
         // Generate the ZIP file on the fly for smaller folders
         $zipFilePath = $this->createZipFile($folder);
 
-        if (!$zipFilePath) {
-            return response()->json(['message' => 'Unable to create ZIP file.'], 500);
+        if (! $zipFilePath) {
+            return response()->json(['message' => 'Não foi possível criar o ficheiro ZIP.'], 500);
         }
 
         // Generate the public URL
-        $publicUrl = asset('storage/temp/' . basename($zipFilePath));
+        $publicUrl = asset('storage/temp/'.basename($zipFilePath));
 
         return response()->json(['download_url' => $publicUrl], 200);
 
@@ -334,26 +332,26 @@ class ModernFolderController extends Controller
     public function downloadZipped($file)
     {
 
-        if (Storage::exists('temp/' . $file)) {
-            return Storage::download('temp/' . $file);
+        if (Storage::exists('temp/'.$file)) {
+            return Storage::download('temp/'.$file);
         }
 
-        return response()->json(['error' => 'File not found'], 404);
+        return response()->json(['error' => 'Ficheiro não encontrado.'], 404);
     }
 
     protected function createZipFile($folder)
     {
         // Define a path in the public storage folder
-        $zipFileName = $folder->name . '_' . time() . '.zip';
+        $zipFileName = $folder->name.'_'.time().'.zip';
         $zipFilePath = public_path("storage/temp/{$zipFileName}");
 
         // Ensure the temp directory exists in public storage
-        if (!file_exists(public_path('storage/temp'))) {
+        if (! file_exists(public_path('storage/temp'))) {
             mkdir(public_path('storage/temp'), 0755, true);
         }
 
         // Create a new ZIP archive
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
 
         if ($zip->open($zipFilePath, ZipArchive::CREATE) !== true) {
             return false; // Return false if the ZIP file could not be created
@@ -371,26 +369,24 @@ class ModernFolderController extends Controller
         return $zipFilePath;
     }
 
-
     private function createZip($folderPath, $zipFullPath)
     {
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
 
         if ($zip->open($zipFullPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
             if (Storage::exists($folderPath)) {
                 $this->addFolderToZip($folderPath, $zip);
 
             } else {
-                
+
             }
             $zip->close();
 
             ob_end_clean();
         } else {
-            throw new \Exception('Could not create zip file.');
+            throw new \Exception('Não foi possível criar o ficheiro ZIP.');
         }
     }
-
 
     // Add folder contents to the ZIP file based on the database path
     private function addFolderToZipUsingDatabasePath($folderPath, ZipArchive $zip, $basePath = '')
@@ -401,14 +397,14 @@ class ModernFolderController extends Controller
                 continue;
             }
 
-            $filePath = $folderPath . '/' . $file;
+            $filePath = $folderPath.'/'.$file;
 
             if (is_dir($filePath)) {
                 // Recursively add subfolders
-                $this->addFolderToZipUsingDatabasePath($filePath, $zip, $basePath . $file . '/');
+                $this->addFolderToZipUsingDatabasePath($filePath, $zip, $basePath.$file.'/');
             } else {
                 // Add file to ZIP
-                $zip->addFile($filePath, $basePath . $file);
+                $zip->addFile($filePath, $basePath.$file);
             }
         }
     }
@@ -433,15 +429,13 @@ class ModernFolderController extends Controller
                 continue;
             }
 
-            $filePath = $folderPath . DIRECTORY_SEPARATOR . $file;
+            $filePath = $folderPath.DIRECTORY_SEPARATOR.$file;
 
             if (is_dir($filePath)) {
-                $this->addFolderToZip($filePath, $zip, $parentFolder . $file . '/');
+                $this->addFolderToZip($filePath, $zip, $parentFolder.$file.'/');
             } else {
-                $zip->addFile($filePath, $parentFolder . $file);
+                $zip->addFile($filePath, $parentFolder.$file);
             }
         }
     }
-
-
 }

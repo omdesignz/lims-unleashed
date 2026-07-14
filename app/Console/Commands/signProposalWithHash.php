@@ -20,7 +20,7 @@ class signProposalWithHash extends Command
      *
      * @var string
      */
-    protected $description = 'Sign Credit Note with hash and save to DB';
+    protected $description = 'Assinar a proposta com um resumo criptográfico e guardá-la na base de dados';
 
     /**
      * Execute the console command.
@@ -31,13 +31,13 @@ class signProposalWithHash extends Command
 
         if (Proposal::whereProposalYear(now()->format('Y'))->count() !== 1) {
             $prev_hash = Proposal::where('id', '<', $proposal->id)->orderBy('id', 'desc')->first()->unique_hash;
-            $data = $proposal->created_at->format('Y-m-d') . ';' . $proposal->created_at->toDateTimeLocalString() . ';' . $proposal->proposal_no . ';' . $proposal->total . ';' . $prev_hash;
+            $data = $proposal->created_at->format('Y-m-d').';'.$proposal->created_at->toDateTimeLocalString().';'.$proposal->proposal_no.';'.$proposal->total.';'.$prev_hash;
 
             $proposal->unique_hash = $documentSignature->sign($data);
         }
 
         if (Proposal::whereProposalYear(now()->format('Y'))->count() == 1) {
-            $data = $proposal->created_at->format('Y-m-d') . ';' . $proposal->created_at->toDateTimeLocalString() . ';' . $proposal->proposal_no . ';' . $proposal->total . ';';
+            $data = $proposal->created_at->format('Y-m-d').';'.$proposal->created_at->toDateTimeLocalString().';'.$proposal->proposal_no.';'.$proposal->total.';';
 
             $proposal->unique_hash = $documentSignature->sign($data);
         }

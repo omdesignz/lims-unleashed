@@ -390,7 +390,7 @@
                     </div>
 
                     <div v-else class="grid gap-3">
-                      <p class="text-sm font-semibold text-[color:var(--ds-text-soft)]">Quantidades pendentes para recebimento</p>
+                      <p class="text-sm font-semibold text-[color:var(--ds-text-soft)]">Quantidades pendentes de recepção</p>
                       <div v-for="item in pendingItems" :key="item.id" class="ds-card grid gap-3 p-4 sm:grid-cols-[1fr_8rem] sm:items-center">
                         <div class="min-w-0">
                           <p class="truncate text-sm font-bold text-[color:var(--ds-text)]">{{ item.item?.name || 'Item sem nome' }}</p>
@@ -425,7 +425,7 @@
                       </div>
 
                       <div>
-                        <label for="receiveDate" class="ds-field-label">Data de recebimento</label>
+                        <label for="receiveDate" class="ds-field-label">Data de recepção</label>
                         <DateTimePicker id="receiveDate" v-model="receiveDate" type="date" required class="ds-field" />
                       </div>
 
@@ -437,7 +437,7 @@
 
                       <div>
                         <label for="reason" class="ds-field-label">Motivo</label>
-                        <BaseInput id="reason" v-model="receivingReason" type="text" class="ds-field" placeholder="Ex: Recebimento normal" />
+                        <BaseInput id="reason" v-model="receivingReason" type="text" class="ds-field" placeholder="Ex.: recepção normal" />
                       </div>
                     </div>
 
@@ -486,7 +486,7 @@
                     <button type="submit" class="ds-button ds-button-primary" :disabled="isSubmitting">
                       <ArrowPathIcon v-if="isSubmitting" class="h-4 w-4 animate-spin" />
                       <CheckCircleIcon v-else class="h-4 w-4" />
-                      {{ isSubmitting ? 'Processando...' : 'Confirmar recebimento' }}
+                      {{ isSubmitting ? 'A processar...' : 'Confirmar recepção' }}
                     </button>
                   </div>
                 </form>
@@ -619,7 +619,7 @@ const summaryCards = computed(() => [
   {
     label: 'Recebida',
     value: formatQuantity(receivedQuantity.value),
-    caption: 'Entrada em stock',
+    caption: 'Entrada em existências',
     dotClass: 'lims-status-dot-release',
     valueClass: 'text-emerald-700 dark:text-emerald-300',
   },
@@ -656,7 +656,7 @@ const orderDetailFields = computed(() => [
     caption: 'Estado de tracking do pedido',
   },
   {
-    label: 'Última atualização',
+    label: 'Última actualização',
     value: formatDateTime(props.order.updated_at),
     caption: props.order.reference || 'Sem referência',
   },
@@ -688,13 +688,13 @@ const timelineItems = computed(() => [
     dotClass: 'lims-status-dot-release',
   },
   {
-    label: 'Estado atual',
+    label: 'Estado actual',
     value: formatStatus(props.order.status),
     caption: props.order.reference || 'Sem referência operacional',
     dotClass: statusDotClass(props.order.status),
   },
   {
-    label: 'Última atualização',
+    label: 'Última actualização',
     value: formatDateTime(props.order.updated_at),
     caption: `${formatQuantity(pendingItems.value.length)} linha(s) pendente(s)`,
     dotClass: pendingItems.value.length ? 'lims-status-dot-hold' : 'lims-status-dot-release',
@@ -1158,7 +1158,7 @@ async function submitReceipt() {
       const maximumQuantity = Number(receivingItem.value.qty || 0) - Number(receivingItem.value.received_qty || 0)
 
       if (receivingQuantity.value <= 0 || receivingQuantity.value > maximumQuantity) {
-        receiptError.value = 'Quantidade inválida para a recepção selecionada.'
+        receiptError.value = 'Quantidade inválida para a recepção seleccionada.'
         isSubmitting.value = false
 
         return
@@ -1179,7 +1179,7 @@ async function submitReceipt() {
         }))
 
       if (itemsData.length === 0) {
-        receiptError.value = 'Selecione quantidades para pelo menos um item.'
+        receiptError.value = 'Seleccione quantidades para pelo menos um item.'
         isSubmitting.value = false
 
         return
@@ -1212,11 +1212,11 @@ async function submitReceipt() {
         router.reload({ only: ['order'] })
       },
       onError: (errors) => {
-        receiptError.value = errors.message || 'Erro ao processar recebimento.'
+        receiptError.value = errors.message || 'Erro ao processar a recepção.'
       },
     })
   } catch (error) {
-    receiptError.value = 'Erro ao processar recebimento.'
+    receiptError.value = 'Erro ao processar a recepção.'
   } finally {
     isSubmitting.value = false
   }

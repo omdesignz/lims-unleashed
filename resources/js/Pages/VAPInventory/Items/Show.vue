@@ -35,14 +35,14 @@
 
       <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] sm:grid-cols-4 sm:divide-y-0">
         <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Stock total</dt>
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Existências total</dt>
           <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ totalStock || 0 }}</dd>
           <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ item.unit?.code || 'unidades' }}</p>
         </div>
         <div class="px-5 py-4">
           <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Armazéns</dt>
           <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ inventory.length }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">localizações ativas</p>
+          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">localizações activas</p>
         </div>
         <div class="px-5 py-4">
           <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Reabastecimento</dt>
@@ -50,9 +50,9 @@
           <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ item.unit?.code || 'unidades' }}</p>
         </div>
         <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Atividade recente</dt>
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Actividade recente</dt>
           <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ recentTransactions.length }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">transações</p>
+          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">transacções</p>
         </div>
       </dl>
     </section>
@@ -62,7 +62,7 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p class="ds-kicker">Disponibilidade</p>
-            <h2 class="ds-heading mt-2 text-base">Distribuição de stock</h2>
+            <h2 class="ds-heading mt-2 text-base">Distribuição de existências</h2>
             <p class="ds-copy mt-1 text-xs">Saldo disponível por armazém.</p>
           </div>
           <span class="ds-chip">{{ stockDistributionTotal }} monitorizadas</span>
@@ -236,7 +236,7 @@
         <section class="ds-table-shell">
           <div class="ds-table-summary px-5 py-4">
             <div>
-              <h2 class="ds-heading text-base">Stock por armazém</h2>
+              <h2 class="ds-heading text-base">Existências por armazém</h2>
               <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ inventory.length }} localizações com registo.</p>
             </div>
             <BuildingLibraryIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
@@ -245,7 +245,7 @@
           <div v-if="inventory.length === 0" class="p-5">
             <div class="ds-empty-state px-5 py-10 text-center">
               <BuildingLibraryIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
-              <h3 class="ds-heading mt-3 text-sm">Sem stock disponível</h3>
+              <h3 class="ds-heading mt-3 text-sm">Sem existências disponível</h3>
               <p class="ds-copy mt-1 text-xs">Este item ainda não está associado a um armazém.</p>
             </div>
           </div>
@@ -259,7 +259,7 @@
                   <th class="ds-table-heading px-5 py-3 text-left">Mínimo</th>
                   <th class="ds-table-heading px-5 py-3 text-left">Reabastecimento</th>
                   <th class="ds-table-heading px-5 py-3 text-left">Estado</th>
-                  <th class="ds-table-heading px-5 py-3 text-right">Ações</th>
+                  <th class="ds-table-heading px-5 py-3 text-right">Acções</th>
                 </tr>
               </thead>
               <tbody class="ds-table-body divide-y divide-[color:var(--ds-border)]">
@@ -297,7 +297,7 @@
         <section class="ds-table-shell">
           <div class="ds-table-summary px-5 py-4">
             <div>
-              <h2 class="ds-heading text-base">Transações recentes</h2>
+              <h2 class="ds-heading text-base">Transacções recentes</h2>
               <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">{{ recentTransactions.length }} movimentos registados.</p>
             </div>
             <ClockIcon class="h-5 w-5 text-primary-700 dark:text-primary-300" />
@@ -306,7 +306,7 @@
           <div v-if="recentTransactions.length === 0" class="p-5">
             <div class="ds-empty-state px-5 py-10 text-center">
               <ClockIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
-              <h3 class="ds-heading mt-3 text-sm">Sem transações recentes</h3>
+              <h3 class="ds-heading mt-3 text-sm">Sem transacções recentes</h3>
               <p class="ds-copy mt-1 text-xs">Os movimentos deste item aparecerão aqui.</p>
             </div>
           </div>
@@ -386,16 +386,16 @@
 
       <aside class="space-y-4">
         <section class="ds-command-surface p-5">
-          <p class="ds-kicker">Comandos de stock</p>
-          <h2 class="ds-heading mt-2 text-base">Ações rápidas</h2>
+          <p class="ds-kicker">Comandos de existências</p>
+          <h2 class="ds-heading mt-2 text-base">Acções rápidas</h2>
           <div class="mt-4 grid gap-2">
             <button type="button" class="ds-button ds-button-primary w-full" @click="adjustStockModal = true">
               <ArrowsUpDownIcon class="h-4 w-4" />
-              Ajustar stock
+              Ajustar existências
             </button>
             <button type="button" class="ds-button ds-button-secondary w-full" @click="transferStockModal = true">
               <ArrowsRightLeftIcon class="h-4 w-4" />
-              Transferir stock
+              Transferir existências
             </button>
             <button v-if="item.is_reagent || isReagent" type="button" class="ds-button ds-button-secondary w-full" @click="consumeReagentModal = true">
               <BeakerIcon class="h-4 w-4" />
@@ -438,7 +438,7 @@
         </section>
 
         <section class="ds-card p-5">
-          <h2 class="ds-heading text-base">Atividade recente</h2>
+          <h2 class="ds-heading text-base">Actividade recente</h2>
           <div v-if="recentActivity.length" class="mt-4 space-y-4">
             <article v-for="activity in recentActivity" :key="activity.type + '-' + activity.id" class="flex items-start gap-3">
               <span :class="['mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', getActivityColor(activity.type)]">
@@ -450,7 +450,7 @@
               </div>
             </article>
           </div>
-          <div v-else class="ds-empty-state mt-4 px-4 py-6 text-center text-xs font-semibold text-[color:var(--ds-text-soft)]">Sem atividade recente.</div>
+          <div v-else class="ds-empty-state mt-4 px-4 py-6 text-center text-xs font-semibold text-[color:var(--ds-text-soft)]">Sem actividade recente.</div>
         </section>
       </aside>
     </section>
@@ -611,7 +611,7 @@ const statusChipClasses = {
 
 const stockDistributionChartSeries = computed(() => [
   {
-    name: 'Stock',
+    name: 'Existências',
     data: props.charts?.stock_distribution?.series || []
   }
 ])
@@ -813,9 +813,9 @@ const getStatusClasses = (status) => {
   if (!status) return statusChipClasses.neutral
   
   const statusName = status.name.toLowerCase()
-  if (statusName.includes('active') || statusName.includes('ativo')) {
+  if (statusName.includes('active') || statusName.includes('activo')) {
     return statusChipClasses.success
-  } else if (statusName.includes('inactive') || statusName.includes('inativo') || statusName.includes('out')) {
+  } else if (statusName.includes('inactive') || statusName.includes('inactivo') || statusName.includes('out')) {
     return statusChipClasses.danger
   } else if (statusName.includes('maintenance') || statusName.includes('calibration')) {
     return statusChipClasses.warning

@@ -50,7 +50,7 @@ const metrics = computed(() => [
   {
     label: "Prazo excedido",
     value: pageRecords.value.filter((occurrence) => occurrence.implementation_date_overdue && !occurrence.date_closed).length,
-    detail: "ação requer atenção",
+    detail: "acção requer atenção",
     icon: ExclamationTriangleIcon,
   },
   {

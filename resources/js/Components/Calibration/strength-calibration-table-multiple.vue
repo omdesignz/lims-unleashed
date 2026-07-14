@@ -1,6 +1,6 @@
 <template>
     <div>
-      <button @click="addRow">Add Row</button>
+      <button @click="addRow">Adicionar linha</button>
       <DataTable>
         <thead>
           <tr>
@@ -46,7 +46,7 @@
         </thead>
         <tbody>
           <tr v-for="(row, index) in rows" :key="index">
-            <td><button @click="removeRow(index)">Remove</button></td>
+            <td><button @click="removeRow(index)">Remover</button></td>
             <td><BaseInput v-model.number="row.Nr1" type="number" /></td>
             <td><BaseInput v-model.number="row.Nr2" type="number" /></td>
             <td><BaseInput v-model.number="row.Nr3" type="number" /></td>
@@ -89,14 +89,14 @@
       </DataTable>
     </div>
   </template>
-  
+
   <script>
   import { useStrengthCalibrationCalculatorMultiple } from '@/Composables/Calibrations/useStrengthCalibrationCalculatorMultiple';
-  
+
   export default {
     setup() {
       const { rows, addRow, removeRow } = useStrengthCalibrationCalculatorMultiple();
-  
+
       return {
         rows,
         addRow,
@@ -105,4 +105,4 @@
     }
   };
   </script>
-  
+

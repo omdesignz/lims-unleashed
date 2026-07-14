@@ -20,7 +20,7 @@ class signReceiptWithHash extends Command
      *
      * @var string
      */
-    protected $description = 'Sign Receipt with hash and save to DB';
+    protected $description = 'Assinar o recibo com um resumo criptográfico e guardá-lo na base de dados';
 
     /**
      * Execute the console command.
@@ -31,13 +31,13 @@ class signReceiptWithHash extends Command
 
         if (Receipt::whereRecMonth(now()->format('Y'))->count() !== 1) {
             $prev_hash = Receipt::where('id', '<', $receipt->id)->orderBy('id', 'desc')->first()->unique_hash;
-            $data = $receipt->date . ';' . $receipt->created_at->toDateTimeLocalString() . ';' . $receipt->rec_no . ';' . $receipt->items->sum('paid_amount') . ';' . $prev_hash;
+            $data = $receipt->date.';'.$receipt->created_at->toDateTimeLocalString().';'.$receipt->rec_no.';'.$receipt->items->sum('paid_amount').';'.$prev_hash;
 
             $receipt->unique_hash = $documentSignature->sign($data);
         }
 
         if (Receipt::whereRecMonth(now()->format('Y'))->count() == 1) {
-            $data = $receipt->date . ';' . $receipt->created_at->toDateTimeLocalString() . ';' . $receipt->rec_no . ';' . $receipt->items->sum('paid_amount') . ';';
+            $data = $receipt->date.';'.$receipt->created_at->toDateTimeLocalString().';'.$receipt->rec_no.';'.$receipt->items->sum('paid_amount').';';
 
             $receipt->unique_hash = $documentSignature->sign($data);
         }

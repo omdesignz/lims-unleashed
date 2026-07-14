@@ -8,7 +8,7 @@
               Ensaios de proficiência e comparações interlaboratoriais
             </h1>
             <p class="ds-copy mt-2 max-w-2xl text-sm">
-              Planeie rondas externas, acompanhe prazos, registe z-score, gere ações corretivas e mantenha evidência pronta para auditorias.
+              Planeie rondas externas, acompanhe prazos, registe z-score, gere acções correctivas e mantenha evidência pronta para auditorias.
             </p>
           </div>
 
@@ -105,7 +105,7 @@
                 <th class="ds-table-heading px-5 py-3 text-left">Prazo</th>
                 <th class="ds-table-heading px-5 py-3 text-left">Estado</th>
                 <th class="ds-table-heading px-5 py-3 text-left">Resultado</th>
-                <th class="ds-table-heading px-5 py-3 text-right">Ações</th>
+                <th class="ds-table-heading px-5 py-3 text-right">Acções</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[var(--ds-border)]">
@@ -250,7 +250,7 @@
               <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
                 <p class="ds-kicker">Programa de proficiência</p>
                 <h2 class="ds-heading mt-1 text-xl">{{ editorTitle }}</h2>
-                <p class="ds-copy mt-1 text-sm">Registe planeamento, prazo, resultado e ações corretivas associadas.</p>
+                <p class="ds-copy mt-1 text-sm">Registe planeamento, prazo, resultado e acções correctivas associadas.</p>
               </div>
 
               <form class="space-y-6 px-6 py-6" @submit.prevent="submit">
@@ -269,14 +269,14 @@
                     v-model="selectedFormScheme"
                     :options="schemeFormOptions"
                     title-label="Tipo"
-                    placeholder="Selecionar tipo"
+                    placeholder="Seleccionar tipo"
                     :has-error="Boolean(form.errors.scheme_type)"
                   />
                   <ComboboxEnhanced
                     v-model="selectedFormRole"
                     :options="roleFormOptions"
                     title-label="Papel do laboratório"
-                    placeholder="Selecionar papel"
+                    placeholder="Seleccionar papel"
                     :has-error="Boolean(form.errors.role)"
                   />
                   <div class="space-y-2">
@@ -288,14 +288,14 @@
                     v-model="selectedFormStatus"
                     :options="statusFormOptions"
                     title-label="Estado"
-                    placeholder="Selecionar estado"
+                    placeholder="Seleccionar estado"
                     :has-error="Boolean(form.errors.status)"
                   />
                   <ComboboxEnhanced
                     v-model="selectedFormOutcome"
                     :options="outcomeFormOptions"
                     title-label="Resultado"
-                    placeholder="Selecionar resultado"
+                    placeholder="Seleccionar resultado"
                     :has-error="Boolean(form.errors.outcome)"
                   />
                   <DatePickerEnhanced
@@ -384,8 +384,8 @@
                 </div>
 
                 <div class="grid gap-5 md:grid-cols-2">
-                  <BaseTextarea v-model="form.scope" label="Escopo" :rows="3" :error="form.errors.scope" />
-                  <BaseTextarea v-model="form.corrective_actions" label="Ações corretivas" :rows="3" :error="form.errors.corrective_actions" />
+                  <BaseTextarea v-model="form.scope" label="Âmbito" :rows="3" :error="form.errors.scope" />
+                  <BaseTextarea v-model="form.corrective_actions" label="Acções correctivas" :rows="3" :error="form.errors.corrective_actions" />
                 </div>
 
                 <BaseTextarea v-model="form.notes" label="Notas e evidências" :rows="3" :error="form.errors.notes" />
@@ -577,7 +577,7 @@ function participantStatusLabel(value) {
     enrolled: 'Inscrito',
     submitted: 'Submetido',
     reviewed: 'Revisto',
-    requires_action: 'Requer ação',
+    requires_action: 'Requer acção',
   }[value] || 'Pendente'
 }
 

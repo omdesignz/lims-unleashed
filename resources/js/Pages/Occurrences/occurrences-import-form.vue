@@ -45,7 +45,7 @@ function submit() {
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <label class="ds-button ds-button-secondary cursor-pointer">
           <FileInput ref="fileInput" type="file" accept=".csv,text/csv" class="sr-only" required @change="onFileChange" />
-          Selecionar CSV
+          Seleccionar CSV
         </label>
         <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.file">
           <ArrowUpTrayIcon class="h-4 w-4" />

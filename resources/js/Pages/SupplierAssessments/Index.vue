@@ -31,7 +31,7 @@ const supplierOptions = computed(() => props.suppliers.map((supplier) => ({ valu
 const departmentOptions = computed(() => props.departments.map((department) => ({ value: department.id, label: department.name })));
 const canEditForm = computed(() => editingId.value ? hasPermission("edit_isuppliers") : hasPermission("add_isuppliers"));
 const metrics = computed(() => [
-  { label: "Avaliações", value: props.summary.total ?? 0, detail: "registos ativos", icon: TruckIcon },
+  { label: "Avaliações", value: props.summary.total ?? 0, detail: "registos activos", icon: TruckIcon },
   { label: "Aprovados", value: props.summary.approved ?? 0, detail: "fornecedores conformes", icon: CheckBadgeIcon },
   { label: "Revisão próxima", value: props.summary.due_reviews ?? 0, detail: "nos próximos 30 dias", icon: CalendarDaysIcon },
   { label: "Risco elevado", value: props.summary.high_risk ?? 0, detail: "alto ou crítico", icon: ExclamationTriangleIcon },
@@ -182,7 +182,7 @@ function riskTone(value) {
         <div>
           <p class="ds-kicker">Qualificação externa</p>
           <h1 class="ds-heading mt-1 text-2xl">Avaliação de fornecedores</h1>
-          <p class="ds-copy mt-1 max-w-3xl text-sm">Aprovação, risco, desempenho e ações de seguimento para fornecedores que afetam a qualidade laboratorial.</p>
+          <p class="ds-copy mt-1 max-w-3xl text-sm">Aprovação, risco, desempenho e acções de seguimento para fornecedores que afetam a qualidade laboratorial.</p>
         </div>
       </div>
 
@@ -206,11 +206,11 @@ function riskTone(value) {
         <div class="space-y-6 px-5 py-5 sm:px-6">
           <div class="grid gap-4 sm:grid-cols-2">
             <div class="sm:col-span-2">
-              <ComboboxEnhanced v-model="selectedSupplier" title-label="Fornecedor" placeholder="Selecione um fornecedor" :options="supplierOptions" />
+              <ComboboxEnhanced v-model="selectedSupplier" title-label="Fornecedor" placeholder="Seleccione um fornecedor" :options="supplierOptions" />
               <p v-if="form.errors.inventory_item_supplier_id" class="ds-field-error mt-2">{{ form.errors.inventory_item_supplier_id }}</p>
             </div>
             <div class="sm:col-span-2">
-              <ComboboxEnhanced v-model="selectedDepartment" title-label="Departamento" placeholder="Selecione um departamento" :options="departmentOptions" />
+              <ComboboxEnhanced v-model="selectedDepartment" title-label="Departamento" placeholder="Seleccione um departamento" :options="departmentOptions" />
               <p v-if="form.errors.department_id" class="ds-field-error mt-2">{{ form.errors.department_id }}</p>
             </div>
             <div><label for="assessment_date" class="ds-field-label mb-2 block">Data da avaliação</label><DateTimePicker id="assessment_date" v-model="form.assessment_date" type="date" class="ds-field" /></div>
@@ -233,19 +233,19 @@ function riskTone(value) {
           <div><label for="evidence_reference" class="ds-field-label mb-2 block">Referência de evidência</label><BaseInput id="evidence_reference" v-model="form.evidence_reference" type="text" class="ds-field" placeholder="Relatório, auditoria ou registo associado" /></div>
           <div><label for="strengths" class="ds-field-label mb-2 block">Pontos fortes</label><textarea id="strengths" v-model="form.strengths" rows="3" class="ds-field min-h-24 resize-y"></textarea></div>
           <div><label for="gaps" class="ds-field-label mb-2 block">Lacunas e riscos</label><textarea id="gaps" v-model="form.gaps" rows="3" class="ds-field min-h-24 resize-y"></textarea></div>
-          <div><label for="corrective_actions" class="ds-field-label mb-2 block">Ações corretivas</label><textarea id="corrective_actions" v-model="form.corrective_actions" rows="3" class="ds-field min-h-24 resize-y"></textarea></div>
+          <div><label for="corrective_actions" class="ds-field-label mb-2 block">Acções correctivas</label><textarea id="corrective_actions" v-model="form.corrective_actions" rows="3" class="ds-field min-h-24 resize-y"></textarea></div>
           <div><label for="follow_up_actions" class="ds-field-label mb-2 block">Seguimento</label><textarea id="follow_up_actions" v-model="form.follow_up_actions" rows="3" class="ds-field min-h-24 resize-y"></textarea></div>
           <div><label for="assessment_notes" class="ds-field-label mb-2 block">Observações</label><textarea id="assessment_notes" v-model="form.notes" rows="3" class="ds-field min-h-24 resize-y"></textarea></div>
 
           <div class="grid gap-3 sm:grid-cols-2">
             <label class="flex items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3 text-sm font-semibold text-[var(--ds-text-muted)]"><CheckboxInput v-model="form.approved_supplier" type="checkbox" class="ds-checkbox" /> Fornecedor aprovado</label>
-            <label class="flex items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3 text-sm font-semibold text-[var(--ds-text-muted)]"><CheckboxInput v-model="form.is_active" type="checkbox" class="ds-checkbox" /> Avaliação ativa</label>
+            <label class="flex items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3 text-sm font-semibold text-[var(--ds-text-muted)]"><CheckboxInput v-model="form.is_active" type="checkbox" class="ds-checkbox" /> Avaliação activa</label>
           </div>
         </div>
 
         <div class="flex flex-col-reverse gap-3 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
           <button v-if="editingId" type="button" class="ds-button ds-button-secondary" @click="resetForm">Cancelar</button>
-          <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">{{ form.processing ? "A guardar..." : (editingId ? "Atualizar avaliação" : "Guardar avaliação") }}</button>
+          <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">{{ form.processing ? "A guardar..." : (editingId ? "Actualizar avaliação" : "Guardar avaliação") }}</button>
         </div>
       </form>
 
@@ -290,7 +290,7 @@ function riskTone(value) {
     <ConfirmDialog
       v-if="pendingArchive"
       title="Arquivar avaliação de fornecedor?"
-      description="A avaliação deixa de integrar a qualificação ativa, mantendo o histórico disponível para auditoria."
+      description="A avaliação deixa de integrar a qualificação activa, mantendo o histórico disponível para auditoria."
       confirm="Arquivar"
       cancel="Cancelar"
       @canceled="pendingArchive = null"

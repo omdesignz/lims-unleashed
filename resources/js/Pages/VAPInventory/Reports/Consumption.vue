@@ -83,7 +83,7 @@
             <option value="date">Data</option>
             <option value="quantity_used">Quantidade</option>
           </BaseSelect>
-          <BaseSelect v-model="filters.sort_direction" label="Direção">
+          <BaseSelect v-model="filters.sort_direction" label="Direcção">
             <option value="desc">Descendente</option>
             <option value="asc">Ascendente</option>
           </BaseSelect>
@@ -170,7 +170,7 @@
 
         <div v-if="loading" class="ds-empty-state m-5 p-8 text-center">
           <span class="mx-auto block h-7 w-7 animate-spin rounded-full border-2 border-[var(--ds-border)] border-t-[rgb(var(--primary-700-rgb))]"></span>
-          <p class="mt-3 text-sm font-semibold text-[var(--ds-text-muted)]">A atualizar o relatório...</p>
+          <p class="mt-3 text-sm font-semibold text-[var(--ds-text-muted)]">A actualizar o relatório...</p>
         </div>
 
         <div v-else-if="consumptionRows.length" class="divide-y divide-[var(--ds-border)] lg:hidden">
@@ -281,7 +281,7 @@
         <section class="ds-panel overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-5 py-4">
             <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Responsabilidade</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Utilizadores mais ativos</h2>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Utilizadores mais activos</h2>
           </div>
           <ol v-if="summaryByUser.length" class="divide-y divide-[var(--ds-border)]">
             <li v-for="user in summaryByUser.slice(0, 7)" :key="user.used_by" class="px-5 py-3">
@@ -458,7 +458,7 @@ const filterPeriod = computed(() => {
 const activeFilterPills = computed(() => {
   const pills = []
   if (filterPeriod.value) pills.push(filterPeriod.value)
-  if (filters.item_id) pills.push(`Reagente: ${selectedItem.value?.label || 'Selecionado'}`)
+  if (filters.item_id) pills.push(`Reagente: ${selectedItem.value?.label || 'Seleccionado'}`)
   if (filters.warehouse_id) pills.push(`Armazém: ${warehouseName(filters.warehouse_id)}`)
   if (filters.user_id) pills.push(`Utilizador: ${userName(filters.user_id)}`)
   if (filters.search) pills.push(`Pesquisa: ${filters.search}`)

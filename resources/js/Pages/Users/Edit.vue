@@ -84,7 +84,7 @@
         </div>
 
         <div class="ds-field-group">
-          <label for="user-email" class="ds-field-label">Email</label>
+          <label for="user-email" class="ds-field-label">Correio electrónico</label>
           <BaseInput v-if="editUserInfo" id="user-email" v-model="form.email" type="email" class="ds-field" autocomplete="email" :aria-invalid="Boolean(form.errors.email)" />
           <p v-else class="min-h-10 break-all rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-3 py-2 text-sm font-semibold text-[var(--ds-text)]">{{ displayValue(form.email) }}</p>
           <p v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</p>
@@ -126,7 +126,7 @@
           <ShieldCheckIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))]" />
           <div>
             <h2 class="ds-heading text-base">Vínculo organizacional e acesso</h2>
-            <p class="ds-copy mt-1 text-sm">Departamentos, funções e autorizações efetivas deste utilizador.</p>
+            <p class="ds-copy mt-1 text-sm">Departamentos, funções e autorizações efectivas deste utilizador.</p>
           </div>
         </div>
       </header>
@@ -138,7 +138,7 @@
             <p class="ds-copy mt-1 text-xs">Unidades onde o colaborador pode operar.</p>
           </div>
           <div>
-            <ComboboxMultipleEnhanced v-if="editUserInfo" v-model="form.departments" :load-options="loadDepartments" multiple placeholder="Selecionar departamentos" />
+            <ComboboxMultipleEnhanced v-if="editUserInfo" v-model="form.departments" :load-options="loadDepartments" multiple placeholder="Seleccionar departamentos" />
             <div v-else class="flex min-h-10 flex-wrap items-center gap-2">
               <span v-for="department in form.departments" :key="department.value" class="ds-badge ds-badge-neutral">{{ department.label }}</span>
               <span v-if="form.departments.length === 0" class="text-sm font-semibold text-[var(--ds-text-soft)]">Sem departamento atribuído</span>
@@ -153,7 +153,7 @@
             <p class="ds-copy mt-1 text-xs">Perfis de acesso e responsabilidade.</p>
           </div>
           <div>
-            <ComboboxMultipleEnhanced v-if="editUserInfo" v-model="form.roles" :load-options="loadRoles" multiple placeholder="Selecionar funções" />
+            <ComboboxMultipleEnhanced v-if="editUserInfo" v-model="form.roles" :load-options="loadRoles" multiple placeholder="Seleccionar funções" />
             <div v-else class="flex min-h-10 flex-wrap items-center gap-2">
               <span v-for="role in form.roles" :key="role.value" class="ds-badge ds-badge-success">{{ role.label }}</span>
               <span v-if="form.roles.length === 0" class="text-sm font-semibold text-[var(--ds-text-soft)]">Sem função atribuída</span>
@@ -164,9 +164,9 @@
 
         <div class="grid gap-4 px-5 py-5 sm:px-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
           <div>
-            <h3 class="ds-heading text-sm">Permissões diretas</h3>
-            <p class="ds-copy mt-1 text-xs">Exceções atribuídas além das permissões herdadas das funções.</p>
-            <p class="mt-3 text-xs font-bold tabular-nums text-[var(--ds-text-muted)]">{{ form.permissions.length }} selecionadas</p>
+            <h3 class="ds-heading text-sm">Permissões directas</h3>
+            <p class="ds-copy mt-1 text-xs">Excepções atribuídas além das permissões herdadas das funções.</p>
+            <p class="mt-3 text-xs font-bold tabular-nums text-[var(--ds-text-muted)]">{{ form.permissions.length }} seleccionadas</p>
           </div>
 
           <div v-if="editUserInfo && canEditPermissions" class="min-w-0">
@@ -194,7 +194,7 @@
 
           <div v-else class="flex min-h-10 flex-wrap items-center gap-2">
             <span v-for="permission in form.permissions" :key="permission.value" class="ds-badge ds-badge-neutral">{{ permission.label }}</span>
-            <span v-if="form.permissions.length === 0" class="text-sm font-semibold text-[var(--ds-text-soft)]">Sem permissões diretas</span>
+            <span v-if="form.permissions.length === 0" class="text-sm font-semibold text-[var(--ds-text-soft)]">Sem permissões directas</span>
           </div>
         </div>
       </div>
@@ -262,7 +262,7 @@
             </div>
             <div class="ds-field-group">
               <label class="ds-field-label">Departamento</label>
-              <ComboboxMultipleEnhanced v-model="qualification.department_id" :load-options="loadDepartments" :multiple="false" placeholder="Selecionar departamento" />
+              <ComboboxMultipleEnhanced v-model="qualification.department_id" :load-options="loadDepartments" :multiple="false" placeholder="Seleccionar departamento" />
             </div>
             <div class="ds-field-group">
               <label :for="`qualification-reference-${index}`" class="ds-field-label">Referência da formação ou certificado</label>
@@ -284,13 +284,13 @@
             <ToggleField
               :id="`qualification-active-${index}`"
               v-model="qualification.is_active"
-              label="Autorização ativa"
+              label="Autorização activa"
               description="Disponibiliza esta competência nos fluxos técnicos aplicáveis."
               class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:col-span-2 xl:col-span-3"
             />
             <div class="ds-field-group sm:col-span-2 xl:col-span-3">
               <label :for="`qualification-notes-${index}`" class="ds-field-label">Plano de acompanhamento e notas</label>
-              <textarea :id="`qualification-notes-${index}`" v-model="qualification.notes" rows="4" class="ds-field resize-y" placeholder="Ações de acompanhamento, reciclagem, evidência de auditoria ou dependências para renovação." />
+              <textarea :id="`qualification-notes-${index}`" v-model="qualification.notes" rows="4" class="ds-field resize-y" placeholder="Acções de acompanhamento, reciclagem, evidência de auditoria ou dependências para renovação." />
             </div>
           </div>
 
@@ -364,7 +364,7 @@
       v-if="confirmationAction"
       :title="confirmationAction === 'save' ? 'Guardar alterações do dossier' : 'Descartar alterações'"
       :description="confirmationAction === 'save'
-        ? 'Os dados pessoais, acessos e qualificações alterados serão atualizados.'
+        ? 'Os dados pessoais, acessos e qualificações alterados serão actualizados.'
         : 'As alterações ainda não guardadas serão perdidas.'"
       :confirm="confirmationAction === 'save' ? 'Guardar' : 'Descartar'"
       :variant="confirmationAction === 'save' ? 'question' : 'danger'"
@@ -461,11 +461,11 @@ const dateMasks = {
 }
 
 const qualificationStatus = {
-  active: { label: 'Ativa', className: 'ds-badge-success' },
+  active: { label: 'Activa', className: 'ds-badge-success' },
   expiring_soon: { label: 'Renovação próxima', className: 'ds-badge-warning' },
   expiring_critical: { label: 'Renovação urgente', className: 'ds-badge-danger' },
   expired: { label: 'Expirada', className: 'ds-badge-danger' },
-  inactive: { label: 'Inativa', className: 'ds-badge-neutral' },
+  inactive: { label: 'Inactiva', className: 'ds-badge-neutral' },
   scheduled: { label: 'Programada', className: 'ds-badge-info' },
 }
 
@@ -502,14 +502,14 @@ const formStatus = computed(() => {
   if (hasUnsavedChanges.value) return { label: 'Alterações pendentes', className: 'ds-badge-warning', icon: ExclamationTriangleIcon }
   if (editUserInfo.value) return { label: 'Em edição', className: 'ds-badge-info', icon: PencilSquareIcon }
 
-  return { label: 'Dossier atualizado', className: 'ds-badge-success', icon: CheckCircleIcon }
+  return { label: 'Dossier actualizado', className: 'ds-badge-success', icon: CheckCircleIcon }
 })
 
 const competenceMetrics = computed(() => [
-  { label: 'Qualificações ativas', value: props.competenceSummary.active ?? 0, detail: 'autorizadas', tone: 'text-emerald-700 dark:text-emerald-300' },
+  { label: 'Qualificações activas', value: props.competenceSummary.active ?? 0, detail: 'autorizadas', tone: 'text-emerald-700 dark:text-emerald-300' },
   { label: 'Renovações próximas', value: props.competenceSummary.expiring_soon ?? 0, detail: 'a acompanhar', tone: 'text-amber-700 dark:text-amber-300' },
   { label: 'Prontas para revisão', value: props.competenceSummary.ready_for_renewal ?? 0, detail: 'com evidência', tone: 'text-sky-700 dark:text-sky-300' },
-  { label: 'Evidência em falta', value: props.competenceSummary.missing_evidence ?? 0, detail: 'requer ação', tone: 'text-red-700 dark:text-red-300' },
+  { label: 'Evidência em falta', value: props.competenceSummary.missing_evidence ?? 0, detail: 'requer acção', tone: 'text-red-700 dark:text-red-300' },
 ])
 
 const filteredPermissions = computed(() => {

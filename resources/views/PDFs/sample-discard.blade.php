@@ -224,12 +224,12 @@
                     <td>
                         <div class="hero-label">{{ $labName }}</div>
                         <div class="hero-title">Certificado de Descarte de Amostra</div>
-                        <div class="hero-subtitle">Sample discard certificate · Retenção e eliminação controlada</div>
+                        <div class="hero-subtitle">Retenção e eliminação controlada</div>
                     </td>
                     <td class="hero-meta">
                         <strong>{{ $certificateCode }}</strong><br>
                         Emitido em {{ $date }} · {{ $time }}<br>
-                        Amostra: {{ $sample->code ?? 'N/A' }}
+                        Amostra: {{ $sample->code ?? 'N/D' }}
                     </td>
                 </tr>
             </table>
@@ -240,61 +240,61 @@
     </div>
 
     <div class="alert-box">
-        AMOSTRA DESCARTADA DE FORMA PERMANENTE / SAMPLE PERMANENTLY DISCARDED
+        AMOSTRA DESCARTADA DE FORMA PERMANENTE
     </div>
 
     <div class="barcode">*{{ $certificateCode }}*</div>
 
     <div class="section">
-        <div class="section-title">Informação do Descarte <span>Discard information</span></div>
+        <div class="section-title">Informação do descarte</div>
         <table class="details-table">
             <tr>
                 <td>
-                    <span class="label">Método / Method</span>
-                    <span class="value">{{ $discard->discard_method ?: 'N/A' }}</span>
+                    <span class="label">Método</span>
+                    <span class="value">{{ $discard->discard_method ?: 'N/D' }}</span>
                     <span class="method-badge">{{ $discard->discard_method ?: 'Método não informado' }}</span>
                 </td>
-                <td><span class="label">Quantidade / Quantity</span><span class="value">{{ $discard->qty ?: 'N/A' }}</span></td>
+                <td><span class="label">Quantidade</span><span class="value">{{ $discard->qty ?: 'N/D' }}</span></td>
             </tr>
             <tr>
-                <td><span class="label">Data / Date</span><span class="value">{{ $discardedAt->format('d/m/Y H:i') }}</span></td>
-                <td><span class="label">Responsável / Performed by</span><span class="value">{{ $discard->discardedBy->name ?? 'N/A' }}</span></td>
+                <td><span class="label">Data</span><span class="value">{{ $discardedAt->format('d/m/Y H:i') }}</span></td>
+                <td><span class="label">Responsável</span><span class="value">{{ $discard->discardedBy->name ?? 'N/D' }}</span></td>
             </tr>
             <tr>
-                <td><span class="label">Certificado / Certificate</span><span class="value">{{ $certificateCode }}</span></td>
-                <td><span class="label">Estado documental / Document status</span><span class="value">Final / Final</span></td>
-            </tr>
-        </table>
-    </div>
-
-    <div class="section">
-        <div class="section-title">Amostra Original <span>Original sample information</span></div>
-        <table class="details-table">
-            <tr>
-                <td><span class="label">Código / Code</span><span class="value">{{ $sample->code ?? 'N/A' }}</span></td>
-                <td><span class="label">Nome / Name</span><span class="value">{{ $sample->name ?? 'N/A' }}</span></td>
-            </tr>
-            <tr>
-                <td><span class="label">Tipo / Type</span><span class="value">{{ $sample->sample_type ?? 'N/A' }}</span></td>
-                <td><span class="label">Estado original / Original status</span><span class="value">{{ $sample->status ?? 'N/A' }}</span></td>
-            </tr>
-            <tr>
-                <td><span class="label">Cliente / Customer</span><span class="value">{{ $sample->customer->name ?? 'N/A' }}</span></td>
-                <td><span class="label">Recebida em / Received at</span><span class="value">{{ $sample?->received_at?->format('d/m/Y H:i') ?: 'N/A' }}</span></td>
+                <td><span class="label">Certificado</span><span class="value">{{ $certificateCode }}</span></td>
+                <td><span class="label">Estado documental</span><span class="value">Final</span></td>
             </tr>
         </table>
     </div>
 
     <div class="section">
-        <div class="section-title">Laboratório e Rastreabilidade <span>Laboratory and traceability</span></div>
+        <div class="section-title">Amostra original</div>
         <table class="details-table">
             <tr>
-                <td><span class="label">Laboratório / Laboratory</span><span class="value">{{ $discard->lab->name ?? ($sample->lab->name ?? $labName) }}</span></td>
-                <td><span class="label">Departamento / Department</span><span class="value">{{ $discard->department->name ?? ($sample->department->name ?? 'N/A') }}</span></td>
+                <td><span class="label">Código</span><span class="value">{{ $sample->code ?? 'N/D' }}</span></td>
+                <td><span class="label">Nome</span><span class="value">{{ $sample->name ?? 'N/D' }}</span></td>
             </tr>
             <tr>
-                <td><span class="label">Documento relacionado / Related record</span><span class="value">{{ $sample->code ?? 'N/A' }}</span></td>
-                <td><span class="label">Palavras-chave / Keywords</span><span class="value">{{ $settings->app_document_keywords ?: 'rastreabilidade; retenção; descarte; ISO 17025' }}</span></td>
+                <td><span class="label">Tipo</span><span class="value">{{ $sample->sample_type ?? 'N/D' }}</span></td>
+                <td><span class="label">Estado original</span><span class="value">{{ $sample->status ?? 'N/D' }}</span></td>
+            </tr>
+            <tr>
+                <td><span class="label">Cliente</span><span class="value">{{ $sample->customer->name ?? 'N/D' }}</span></td>
+                <td><span class="label">Recebida em</span><span class="value">{{ $sample?->received_at?->format('d/m/Y H:i') ?: 'N/D' }}</span></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Laboratório e rastreabilidade</div>
+        <table class="details-table">
+            <tr>
+                <td><span class="label">Laboratório</span><span class="value">{{ $discard->lab->name ?? ($sample->lab->name ?? $labName) }}</span></td>
+                <td><span class="label">Departamento</span><span class="value">{{ $discard->department->name ?? ($sample->department->name ?? 'N/D') }}</span></td>
+            </tr>
+            <tr>
+                <td><span class="label">Documento relacionado</span><span class="value">{{ $sample->code ?? 'N/D' }}</span></td>
+                <td><span class="label">Palavras-chave</span><span class="value">{{ $settings->app_document_keywords ?: 'rastreabilidade; retenção; descarte; ISO 17025' }}</span></td>
             </tr>
         </table>
         <div class="note-box" style="margin-top: 10px;">
@@ -304,8 +304,8 @@
 
     <table class="signature-table">
         <tr>
-            <td><div class="signature-line">Executado por / Performed by: {{ $discard->discardedBy->name ?? 'N/A' }}</div></td>
-            <td><div class="signature-line">Validação da qualidade / Quality validation</div></td>
+            <td><div class="signature-line">Executado por: {{ $discard->discardedBy->name ?? 'N/D' }}</div></td>
+            <td><div class="signature-line">Validação da qualidade</div></td>
         </tr>
     </table>
 
@@ -317,7 +317,7 @@
 
     <div class="footer">
         Documento controlado gerado pelo sistema em {{ $date }} às {{ $time }}. Código de rastreabilidade: {{ $certificateCode }}.<br>
-        This certificate confirms permanent discard according to laboratory procedures and must remain linked to the original sample record.
+        Este certificado confirma o descarte permanente segundo os procedimentos laboratoriais e deve permanecer associado ao registo original da amostra.
     </div>
 </body>
 </html>

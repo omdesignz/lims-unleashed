@@ -825,7 +825,7 @@ const exportTemplates = async () => {
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', downloadFilename(response, `modelos-proposta-${new Date().toISOString().split('T')[0]}.${exportFormat.value}`))
+    link.setAttribute('download', downloadFilename(response, `templates-proposta-${new Date().toISOString().split('T')[0]}.${exportFormat.value}`))
     document.body.appendChild(link)
     link.click()
     link.remove()

@@ -4,10 +4,10 @@
     <div class="flex items-center justify-between">
       <div>
         <h3 class="text-lg font-semibold text-gray-900">Progresso da Amostra</h3>
-        <p class="mt-1 text-sm text-gray-500">Acompanhe o estado atual da análise</p>
+        <p class="mt-1 text-sm text-gray-500">Acompanhe o estado actual da análise</p>
       </div>
       <div class="flex items-center gap-2">
-        <span class="text-sm text-gray-500">Última atualização:</span>
+        <span class="text-sm text-gray-500">Última actualização:</span>
         <span class="text-sm font-medium text-blue-900">{{ formatDate(latestUpdate) }}</span>
       </div>
     </div>
@@ -46,7 +46,7 @@
         </div>
         <div class="flex items-center gap-2">
           <div class="h-2 w-2 rounded-full bg-red-500"></div>
-          <span class="text-gray-600">Critico</span>
+          <span class="text-gray-600">Crítico</span>
           <span class="font-semibold">{{ getCriticalCount() }}</span>
         </div>
       </div>
@@ -525,7 +525,7 @@ const getAnalysisStatusLabel = (status) => {
     'completed': 'Completo',
     'in_progress': 'Em Progresso',
     'pending': 'Pendente',
-    'critical': 'Critico'
+    'critical': 'Crítico'
   };
   return labels[status] || status;
 };

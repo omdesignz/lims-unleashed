@@ -3,7 +3,7 @@
       <DropdownMenu v-if="shouldMerge" v-model:open="isOpen">
         <template #trigger>
           <ActionButton
-            :tooltip="'Open menu'"
+            :tooltip="'Abrir menu'"
             @click.prevent
           >
             <EllipsesHorizontalIcon class="size-4" />
@@ -34,20 +34,20 @@
       </template>
     </ActionWrapper>
   </template>
-  
+
   <script>
   import { ref, computed } from "vue";
   import ActionWrapper from "@/Extensions/Tiptap/action-wrapper.vue";
   import ActionButton from "@/Extensions/Tiptap/action-button.vue";
   import { EllipsesHorizontalIcon, ArrowsPointingOutIcon, CloudArrowDown, ClipboardDocumentCheckIcon, LinkIcon } from "@headlessui/vue/20/solid";
-  
+
   const ActionItems = [
-    { key: "onView", icon: ArrowsPointingOutIcon, tooltip: "View image" },
-    { key: "onDownload", icon: CloudArrowDown, tooltip: "Download image" },
-    { key: "onCopy", icon: ClipboardDocumentCheckIcon, tooltip: "Copy image to clipboard" },
-    { key: "onCopyLink", icon: LinkIcon, tooltip: "Copy image link", isLink: true },
+    { key: "onView", icon: ArrowsPointingOutIcon, tooltip: "Ver imagem" },
+    { key: "onDownload", icon: CloudArrowDown, tooltip: "Descarregar imagem" },
+    { key: "onCopy", icon: ClipboardDocumentCheckIcon, tooltip: "Copiar imagem para a área de transferência" },
+    { key: "onCopyLink", icon: LinkIcon, tooltip: "Copiar ligação da imagem", isLink: true },
   ];
-  
+
   export default {
     name: "ImageActions",
     components: { ActionWrapper, ActionButton },
@@ -67,19 +67,19 @@
     },
     setup(props) {
       const isOpen = ref(false);
-  
+
       const handleAction = (event, action) => {
         event.preventDefault();
         event.stopPropagation();
         if (action) action();
       };
-  
+
       const filteredActions = computed(() =>
         ActionItems.filter((item) => props.isLink || !item.isLink)
       );
-  
+
       return { isOpen, handleAction, filteredActions };
     },
   };
   </script>
-  
+

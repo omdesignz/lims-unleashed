@@ -4,13 +4,14 @@ namespace App\Rules;
 
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Translation\PotentiallyTranslatedString;
 
 class PathToZip implements ValidationRule
 {
     /**
      * Run the validation rule.
      *
-     * @param  \Closure(string): \Illuminate\Translation\PotentiallyTranslatedString  $fail
+     * @param  Closure(string): PotentiallyTranslatedString  $fail
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
@@ -18,11 +19,11 @@ class PathToZip implements ValidationRule
 
         $result = str()->endsWith($value, '.zip');
 
-        !$result ? $fail('The path is invalid.') : '';
+        ! $result ? $fail('O caminho indicado não é válido.') : '';
     }
 
     public function message()
     {
-        return 'The given value must be a path to a zip file.';
+        return 'O valor indicado deve ser o caminho para um ficheiro ZIP.';
     }
 }

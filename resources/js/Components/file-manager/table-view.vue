@@ -4,10 +4,10 @@
         <thead class="bg-gray-100">
           <tr>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-              Name
+              Nome
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-              Last Updated
+              Última actualização
             </th>
           </tr>
         </thead>
@@ -28,7 +28,7 @@
       </DataTable>
     </div>
   </template>
-  
+
   <script setup>
   const props = defineProps({
     files: {
@@ -38,4 +38,4 @@
         },
   });
   </script>
-  
+

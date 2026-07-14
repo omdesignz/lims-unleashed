@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class FilterActivityLogRequest extends FormRequest
@@ -17,7 +18,7 @@ class FilterActivityLogRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -40,9 +41,9 @@ class FilterActivityLogRequest extends FormRequest
     public function messages()
     {
         return [
-            'end_date.after_or_equal' => 'The end date must be after or equal to the start date.',
-            'per_page.min' => 'The per page value must be at least 10.',
-            'per_page.max' => 'The per page value may not be greater than 100.',
+            'end_date.after_or_equal' => 'A data final deve ser igual ou posterior à data inicial.',
+            'per_page.min' => 'O número de registos por página deve ser, no mínimo, 10.',
+            'per_page.max' => 'O número de registos por página não pode ser superior a 100.',
         ];
     }
 }

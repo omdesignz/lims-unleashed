@@ -4,7 +4,7 @@
       <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
         <div class="max-w-3xl">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Reagent control</span>
+            <span class="ds-kicker">Controlo de reagentes</span>
             <span class="ds-chip">
               <span class="lims-status-dot lims-status-dot-instrument" />
               Consumo rastreável
@@ -13,7 +13,7 @@
           </div>
           <h1 class="ds-heading mt-3 text-2xl">Relatório de consumo de reagentes</h1>
           <p class="ds-copy mt-2 text-sm">
-            Acompanhe saída de reagentes por data, armazém, utilizador e lote operacional, mantendo evidência para stock, auditoria e investigação de desvios.
+            Acompanhe saída de reagentes por data, armazém, utilizador e lote operacional, mantendo evidência para existências, auditoria e investigação de desvios.
           </p>
         </div>
 
@@ -156,7 +156,7 @@
             <div>
               <h2 class="ds-heading text-base">Registos de consumo</h2>
               <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
-                {{ consumptions.total || 0 }} registos com impacto directo no stock.
+                {{ consumptions.total || 0 }} registos com impacto directo no existências.
               </p>
             </div>
           </div>
@@ -238,7 +238,7 @@
                     Visualizar
                   </Link>
                   <button type="button" class="ds-table-action ds-table-action-danger" @click="openDeleteConsumption(consumption)">
-                    Excluir
+                    Eliminar
                   </button>
                 </div>
               </td>
@@ -340,9 +340,9 @@
 
     <confirm-dialog
       v-if="consumptionPendingDeletion"
-      title="Excluir registo de consumo"
-      description="Esta ação restaura o stock associado ao registo e deve ser usada apenas quando a saída foi lançada por engano."
-      confirm="Excluir registo"
+      title="Eliminar registo de consumo"
+      description="Esta acção restaura as existências associadas ao registo e deve ser usada apenas quando a saída foi lançada por engano."
+      confirm="Eliminar registo"
       cancel="Manter registo"
       variant="danger"
       @confirmed="confirmDeleteConsumption"

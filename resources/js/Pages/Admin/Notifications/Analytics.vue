@@ -28,10 +28,10 @@ const props = defineProps({
 const selectedPeriod = ref(props.period)
 
 const periodOptions = [
-  { value: 'week', label: 'Ultimos 7 dias' },
-  { value: 'month', label: 'Ultimos 30 dias' },
-  { value: 'quarter', label: 'Ultimos 3 meses' },
-  { value: 'year', label: 'Ultimo ano' },
+  { value: 'week', label: 'Últimos 7 dias' },
+  { value: 'month', label: 'Últimos 30 dias' },
+  { value: 'quarter', label: 'Últimos 3 meses' },
+  { value: 'year', label: 'Último ano' },
 ]
 
 const deliveryTrend = computed(() => Object.entries(props.stats.delivery_trend || {}).map(([date, values]) => ({ date, ...values })))
@@ -40,10 +40,10 @@ const typeDistribution = computed(() => Object.entries(props.stats.notification_
 const totalTypes = computed(() => typeDistribution.value.reduce((total, [, count]) => total + Number(count), 0))
 
 const metrics = computed(() => [
-  { label: 'Mensagens emitidas', value: props.stats.total_sent ?? 0, context: 'No periodo selecionado', icon: ChartBarSquareIcon },
+  { label: 'Mensagens emitidas', value: props.stats.total_sent ?? 0, context: 'No período seleccionado', icon: ChartBarSquareIcon },
   { label: 'Mensagens lidas', value: props.stats.total_read ?? 0, context: 'Confirmacoes registadas', icon: CheckCircleIcon },
   { label: 'Taxa de leitura', value: `${props.stats.read_rate ?? 0}%`, context: 'Alcance confirmado', icon: UserGroupIcon },
-  { label: 'Tempo medio', value: props.stats.avg_read_time ?? 'N/A', context: 'Da emissao a leitura', icon: ClockIcon },
+  { label: 'Tempo medio', value: props.stats.avg_read_time ?? 'N/A', context: 'Da emissão a leitura', icon: ClockIcon },
 ])
 
 const formatDate = (value) => new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'short' }).format(new Date(value))
@@ -58,7 +58,7 @@ const updatePeriod = () => {
 <template>
   <div class="space-y-5">
     <NotificationAdminHeader
-      title="Analitica de comunicacao"
+      title="Analítica de comunicação"
       :description="`Desempenho entre ${formatRangeDate(dateRange[0])} e ${formatRangeDate(dateRange[1])}.`"
     >
       <template #actions>
@@ -78,11 +78,11 @@ const updatePeriod = () => {
     <section class="ds-panel overflow-hidden">
       <div class="flex flex-col gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p class="ds-kicker">Janela de analise</p>
+          <p class="ds-kicker">Janela de análise</p>
           <h2 class="ds-heading mt-1 text-base">Indicadores de leitura</h2>
         </div>
         <div class="flex items-center gap-2">
-          <label for="analytics-period" class="sr-only">Periodo</label>
+          <label for="analytics-period" class="sr-only">Período</label>
           <BaseSelect id="analytics-period" v-model="selectedPeriod" class="ds-field min-w-48" @change="updatePeriod">
             <option v-for="option in periodOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </BaseSelect>
@@ -107,7 +107,7 @@ const updatePeriod = () => {
       <section class="ds-panel overflow-hidden">
         <header class="border-b border-[var(--ds-border)] px-5 py-4">
           <p class="ds-kicker">Evolucao temporal</p>
-          <h2 class="ds-heading mt-1 text-base">Emissao e leitura por dia</h2>
+          <h2 class="ds-heading mt-1 text-base">Emissão e leitura por dia</h2>
         </header>
         <div v-if="deliveryTrend.length" class="overflow-x-auto p-5">
           <div class="min-w-[40rem] space-y-3">
@@ -125,13 +125,13 @@ const updatePeriod = () => {
             </div>
           </div>
         </div>
-        <p v-else class="px-5 py-12 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem atividade no periodo selecionado.</p>
+        <p v-else class="px-5 py-12 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem actividade no período seleccionado.</p>
       </section>
 
       <section class="ds-panel overflow-hidden">
         <header class="border-b border-[var(--ds-border)] px-5 py-4">
-          <p class="ds-kicker">Composicao</p>
-          <h2 class="ds-heading mt-1 text-base">Distribuicao por tipo</h2>
+          <p class="ds-kicker">Composição</p>
+          <h2 class="ds-heading mt-1 text-base">Distribuição por tipo</h2>
         </header>
         <div v-if="typeDistribution.length" class="divide-y divide-[var(--ds-border)]">
           <article v-for="([type, count]) in typeDistribution" :key="type" class="px-5 py-4">
@@ -144,13 +144,13 @@ const updatePeriod = () => {
             <p class="mt-2 text-right text-xs font-bold text-[var(--ds-text-muted)]">{{ percentage(count, totalTypes) }}%</p>
           </article>
         </div>
-        <p v-else class="px-5 py-12 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem classificacoes no periodo.</p>
+        <p v-else class="px-5 py-12 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem classificações no período.</p>
       </section>
     </div>
 
     <section class="ds-panel overflow-hidden">
       <header class="border-b border-[var(--ds-border)] px-5 py-4">
-        <p class="ds-kicker">Destinatarios</p>
+        <p class="ds-kicker">Destinatários</p>
         <h2 class="ds-heading mt-1 text-base">Utilizadores com maior volume</h2>
       </header>
       <div class="overflow-x-auto">
@@ -166,7 +166,7 @@ const updatePeriod = () => {
           </tbody>
         </DataTable>
       </div>
-      <p v-if="!stats.top_users?.length" class="px-5 py-12 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem utilizadores no periodo selecionado.</p>
+      <p v-if="!stats.top_users?.length" class="px-5 py-12 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem utilizadores no período seleccionado.</p>
     </section>
   </div>
 </template>

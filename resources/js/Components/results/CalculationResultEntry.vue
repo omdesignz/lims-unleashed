@@ -255,7 +255,7 @@ async function calculateParameter() {
     const numericValue = evaluateFormula(...Object.values(context));
 
     if (Number.isNaN(numericValue) || !Number.isFinite(numericValue)) {
-      throw new Error("Invalid calculation result");
+      throw new Error("Resultado de cálculo inválido");
     }
 
     const decimalPlaces = selectedParameter.value.formula.decimal_places || 2;
@@ -373,7 +373,7 @@ function selectNextParameter() {
             class="ds-field mt-2"
             @change="initializeSelectedParameter"
           >
-            <option value="">Selecione um parâmetro</option>
+            <option value="">Seleccione um parâmetro</option>
             <option
               v-for="parameter in calculatedParameters"
               :key="parameter.parameter_id?.code"

@@ -2,11 +2,11 @@
 
 namespace App\Notifications;
 
+use App\Models\Occurrence;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use App\Models\Occurrence;
 
 class PastDueOccurrenceNotification extends Notification implements ShouldQueue
 {
@@ -38,12 +38,12 @@ class PastDueOccurrenceNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-                ->subject('Ocorrência em Atraso')
-                ->line('A data de implementação da ocorrencia é atrasada.')
-                ->line('Nº de Ocorrência: ' . $this->occurrence->occurrence_no)
-                ->line('Descrição: ' . $this->occurrence->issue_description) // Assuming your Occurrence model has a 'title' attribute
-                ->line('Prazo de Implementação: ' . $this->occurrence->implementation_date)
-                ->action('Ver', route('occurrences.show', $this->occurrence->id));
+            ->subject('Ocorrência em Atraso')
+            ->line('A data de implementação da ocorrência está em atraso.')
+            ->line('Nº de Ocorrência: '.$this->occurrence->occurrence_no)
+            ->line('Descrição: '.$this->occurrence->issue_description) // Assuming your Occurrence model has a 'title' attribute
+            ->line('Prazo de Implementação: '.$this->occurrence->implementation_date)
+            ->action('Ver', route('occurrences.show', $this->occurrence->id));
     }
 
     /**
@@ -54,8 +54,8 @@ class PastDueOccurrenceNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => 'Ocorrencia em Atraso',
-            'message' => 'A data de implementação da ocorrencia ' . $this->occurrence->occurrence_no . ' é atrasada.',
+            'title' => 'Ocorrência em atraso',
+            'message' => 'A data de implementação da ocorrência '.$this->occurrence->occurrence_no.' está em atraso.',
             'link' => route('occurrences.show', $this->occurrence->id),
             'sender_id' => null,
             'sender_name' => 'SISTEMA',

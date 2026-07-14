@@ -13,6 +13,7 @@ use App\Models\VAPProposal;
 use App\Models\VAPProposalTemplate;
 use App\Models\Warehouse;
 use App\Settings\GeneralSettings;
+use App\Support\LaboratoryDossierService;
 use App\Support\ProposalWorkflowNotifier;
 use App\Support\ReportStudioPdfBuilder;
 use App\Support\ReportStudioPdfRenderer;
@@ -246,8 +247,11 @@ class VAPProposalController extends Controller
         }
     }
 
-    public function show(VAPProposal $proposal, GeneralSettings $settings)
-    {
+    public function show(
+        VAPProposal $proposal,
+        GeneralSettings $settings,
+        LaboratoryDossierService $laboratoryDossierService
+    ) {
         $proposal->load([
             'customer',
             'warehouse',
@@ -276,6 +280,9 @@ class VAPProposalController extends Controller
                 : null,
             'canSend' => $proposal->status === 'PENDING',
             'canRevise' => in_array($proposal->status, ['PENDING', 'SENT', 'VIEWED', 'REJECTED']),
+            'laboratoryDossier' => $proposal->status === 'ACCEPTED'
+                ? $laboratoryDossierService->summarize($proposal, auth()->user())
+                : null,
         ]);
     }
 

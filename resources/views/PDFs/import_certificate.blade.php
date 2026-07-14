@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-AO">
 <head>
     <meta charset="UTF-8">
     <style>
@@ -301,7 +301,7 @@
             page-break-before: always;
         }
         
-        /* QR Code Styling */
+        /* Código QR Styling */
         .qr-container {
             text-align: center;
             padding: 10px;
@@ -421,30 +421,30 @@
     <!-- Importer Section with 2-column table -->
     <div class="info-section">
         <div class="section-header">
-            Importador / Importer
+            Importador
         </div>
         <div class="section-content">
             <table class="two-column-table">
                 <tr>
                     <td class="column-cell left-column">
                         <div class="info-row">
-                            <div class="label">Empresa / Company</div>
+                            <div class="label">Empresa</div>
                             <div class="value highlight-value">
                                 {!! mb_strtoupper($model->importer->name) !!}
                             </div>
                         </div>
                         
                         <div class="info-row">
-                            <div class="label">NIF / Tax ID</div>
+                            <div class="label">NIF</div>
                             <div class="value">
-                                {!! $model->importer_warehouse->nif ?? 'N/A' !!}
+                                {!! $model->importer_warehouse->nif ?? 'N/D' !!}
                             </div>
                         </div>
                     </td>
                     
                     <td class="column-cell right-column">
                         <div class="info-row">
-                            <div class="label">Endereço / Address</div>
+                            <div class="label">Endereço</div>
                             <div class="value">
                                 {!! $model->importer_warehouse->address !!}<br>
                                 {!! $model->importer_warehouse->province !!}, 
@@ -453,11 +453,11 @@
                         </div>
                         
                         <div class="info-row">
-                            <div class="label">Contacto / Contact</div>
+                            <div class="label">Contacto</div>
                             <div class="value">
-                                {!! $model->importer_warehouse->primary_phone ?? 'N/A' !!}
-                                {!! $model->importer_warehouse->alternative_phone ?? 'N/A' !!}
-                                {!! $model->importer_warehouse->email ?? 'N/A' !!}
+                                {!! $model->importer_warehouse->primary_phone ?? 'N/D' !!}
+                                {!! $model->importer_warehouse->alternative_phone ?? 'N/D' !!}
+                                {!! $model->importer_warehouse->email ?? 'N/D' !!}
                             </div>
                         </div>
                     </td>
@@ -469,30 +469,30 @@
     <!-- Exporter Section with 2-column table -->
     <div class="info-section">
         <div class="section-header">
-            Exportador / Exporter
+            Exportador
         </div>
         <div class="section-content">
             <table class="two-column-table">
                 <tr>
                     <td class="column-cell left-column">
                         <div class="info-row">
-                            <div class="label">Empresa / Company</div>
+                            <div class="label">Empresa</div>
                             <div class="value highlight-value">
                                 {!! mb_strtoupper($model->exporter->name) !!}
                             </div>
                         </div>
                         
                         <div class="info-row">
-                            <div class="label">NIF / Tax ID</div>
+                            <div class="label">NIF</div>
                             <div class="value">
-                                {!! $model->exporter_warehouse->nif ?? 'N/A' !!}
+                                {!! $model->exporter_warehouse->nif ?? 'N/D' !!}
                             </div>
                         </div>
                     </td>
                     
                     <td class="column-cell right-column">
                         <div class="info-row">
-                            <div class="label">Endereço / Address</div>
+                            <div class="label">Endereço</div>
                             <div class="value">
                                 {!! $model->exporter_warehouse->address !!}<br>
                                 {!! $model->exporter_warehouse->province !!}, 
@@ -501,11 +501,11 @@
                         </div>
                         
                         <div class="info-row">
-                            <div class="label">Contacto / Contact</div>
+                            <div class="label">Contacto</div>
                             <div class="value">
-                                {!! $model->exporter_warehouse->primary_phone ?? 'N/A' !!}
-                                {!! $model->exporter_warehouse->alternative_phone ?? 'N/A' !!}
-                                {!! $model->exporter_warehouse->email ?? 'N/A' !!}
+                                {!! $model->exporter_warehouse->primary_phone ?? 'N/D' !!}
+                                {!! $model->exporter_warehouse->alternative_phone ?? 'N/D' !!}
+                                {!! $model->exporter_warehouse->email ?? 'N/D' !!}
                             </div>
                         </div>
                     </td>
@@ -525,12 +525,12 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Produto / Product</th>
-                        <th>Quantidade (kg/l)<br><span class="muted">Quantity</span></th>
-                        <th>Origem / Origin</th>
-                        <th>Validade / Validity</th>
-                        <th>Lote / Lot</th>
-                        <th>B/L No.</th>
+                        <th>Produto</th>
+                        <th>Quantidade (kg/l)</th>
+                        <th>Origem</th>
+                        <th>Validade</th>
+                        <th>Lote</th>
+                        <th>N.º B/L</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -576,13 +576,13 @@
                         <div class="info-row">
                             <div class="label">Meio de Transporte</div>
                             <div class="value highlight-value">{!! $model->trans->name !!}</div>
-                            <div class="muted small-text">Transportation Type</div>
+                            <div class="muted small-text">Tipo de transporte</div>
                         </div>
                         
                         <div class="info-row">
                             <div class="label">Porto de Saída</div>
                             <div class="value highlight-value">{!! $model->port_exit !!}</div>
-                            <div class="muted small-text">Port: Departure</div>
+                            <div class="muted small-text">Porto de saída</div>
                         </div>
                     </td>
                     
@@ -591,13 +591,13 @@
                         <div class="info-row">
                             <div class="label">Destino Final</div>
                             <div class="value highlight-value">{!! $model->destination_country->name !!}</div>
-                            <div class="muted small-text">Destination</div>
+                            <div class="muted small-text">Destino</div>
                         </div>
                         
                         <div class="info-row">
                             <div class="label">Porto de Entrada</div>
                             <div class="value highlight-value">{!! $model->port_entry !!}</div>
-                            <div class="muted small-text">Port: Entry</div>
+                            <div class="muted small-text">Porto de entrada</div>
                         </div>
                     </td>
                 </tr>
@@ -640,18 +640,18 @@
                     <!-- Right Column: Responsible Parties -->
                     <td class="column-cell right-column">
                         <div class="info-row">
-                            <div class="label">Operador / Operator</div>
+                            <div class="label">Operador</div>
                             <div class="value">{!! $model->user->full_name !!}</div>
                         </div>
                         <div class="info-row">
                             <div class="label">Funcionário Autorizado</div>
                             <div class="value highlight-value">{!! $model->authorized_personnel !!}</div>
-                            <div class="muted small-text">Authorized Personnel</div>
+                            <div class="muted small-text">Pessoal autorizado</div>
                         </div>
                         <div class="info-row">
                             <div class="label">Data da Operação</div>
                             <div class="value">{!! Carbon\Carbon::parse($model->created_at)->format('d/m/Y H:i') !!}</div>
-                            <div class="muted small-text">Operation Date & Time</div>
+                            <div class="muted small-text">Data e hora da operação</div>
                         </div>
                     </td>
                 </tr>
@@ -668,8 +668,7 @@
             <div class="legal-notice">
                 <div class="h3" style="margin-bottom: 10px; color: #1e3a8a;">Termos e Condições do Certificado</div>
                 <div class="body-text">
-                    <p><strong>Atendendo a solicitação, se concede este certificado para a importação de produtos ou subprodutos alimentares, em conformidade com a legislação vigente e requisitos estabelecidos no país e outros que sejam fixados em casos específicos. Não serve para efeitos de comercialização. É válido por 20 dias.</strong></p>
-                    <p><em>In attention to your request, herewith is provided the certificate for granting permission to import alimentation products according to the standing legislation and established requirements within the country and others which are determined in special cases.</em></p>
+                    <p><strong>Em resposta ao pedido, concede-se este certificado para a importação de produtos ou subprodutos alimentares, em conformidade com a legislação em vigor, com os requisitos estabelecidos no país e com outros que sejam definidos em casos específicos. Não serve para efeitos de comercialização. É válido por 20 dias.</strong></p>
                 </div>
                 
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
@@ -692,12 +691,12 @@
                             <div class="value highlight-value" style="font-size: 13px;">
                                 {!! Carbon\Carbon::parse($model->date)->format('d/m/Y') !!}
                             </div>
-                            <div class="muted small-text">Document Date</div>
+                            <div class="muted small-text">Data do documento</div>
                         </div>
                     </td>
                     <td class="column-cell right-column">
                         <div class="info-row" style="text-align: right;">
-                            <div class="label">Local / Location</div>
+                            <div class="label">Local</div>
                             <div class="value highlight-value" style="font-size: 13px;">
                                 Luanda, Angola
                             </div>
@@ -710,19 +709,19 @@
         <!-- Signatures -->
         <div style="text-align: center;">
             <div class="h3" style="margin-bottom: 30px; color: #1e3a8a;">
-                Assinaturas Autorizadas / Authorized Signatures
+                Assinaturas autorizadas
             </div>
             
             <div style="display: flex; justify-content: space-around; align-items: flex-start; margin-top: 20px;">
                 <div style="text-align: center; width: 200px;">
                     <div class="signature-line"></div>
-                    <div class="small-text" style="margin-top: 5px;">Assinatura / Signature</div>
+                    <div class="small-text" style="margin-top: 5px;">Assinatura</div>
                     
                     <div style="margin-top: 25px;">
-                        <img src="{!! public_path() . '/images/stamp_wgaspar.svg' !!}" style="width: 80px; height: auto;" alt="Official Stamp">
+                        <img src="{!! public_path() . '/images/stamp_wgaspar.svg' !!}" style="width: 80px; height: auto;" alt="Carimbo oficial">
                         <div class="small-text" style="margin-top: 5px;">
                             <strong>Wladimira Gaspar</strong><br>
-                            Autorizado por / Authorized by
+                            Autorizado por
                         </div>
                     </div>
                 </div>

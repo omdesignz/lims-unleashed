@@ -51,7 +51,7 @@ const loginWithPasskey = async () => {
     })
 
     if (!response.ok) {
-      throw new Error('Nao foi possivel iniciar a autenticacao com passkey.')
+      throw new Error('Não foi possível iniciar a autenticação com a chave de acesso.')
     }
 
     const options = await response.json()
@@ -61,7 +61,7 @@ const loginWithPasskey = async () => {
     passkeyLoginForm.value?.submit()
   } catch (error) {
     passkeyProcessing.value = false
-    form.setError('email', error?.message || 'Nao foi possivel autenticar com passkey.')
+    form.setError('email', error?.message || 'Não foi possível autenticar com a chave de acesso.')
   }
 }
 </script>
@@ -70,17 +70,17 @@ const loginWithPasskey = async () => {
   <Head title="Portal do cliente" />
 
   <AuthExperienceShell
-    title="Acompanhe o trabalho do seu laboratorio"
+    title="Acompanhe o trabalho do seu laboratório"
     eyebrow="Portal do cliente"
-    description="Consulte solicitacoes, colheitas, resultados, certificados e documentos comerciais num unico local."
-    context-title="Acesso associado a sua organizacao"
+    description="Consulte pedidos, colheitas, resultados, certificados e documentos comerciais num único local."
+    context-title="Acesso associado a sua organização"
     context-description="Os registos apresentados respeitam o cliente e o local operacional vinculados a sua conta."
     mode="portal"
   >
     <div>
       <p class="ds-kicker">Portal do cliente</p>
-      <h2 class="ds-heading mt-2 text-2xl">Iniciar sessao</h2>
-      <p class="ds-copy mt-2 text-sm leading-6">Use o email ou NIF atribuido pelo laboratorio.</p>
+      <h2 class="ds-heading mt-2 text-2xl">Iniciar sessão</h2>
+      <p class="ds-copy mt-2 text-sm leading-6">Use o correio electrónico ou NIF atribuido pelo laboratório.</p>
 
       <div
         v-if="status"
@@ -91,7 +91,7 @@ const loginWithPasskey = async () => {
 
       <form class="mt-7 space-y-5" @submit.prevent="submit">
         <div class="ds-field-group">
-          <label for="portal-email" class="ds-field-label">Email ou NIF</label>
+          <label for="portal-email" class="ds-field-label">Correio electrónico ou NIF</label>
           <BaseInput
             id="portal-email"
             v-model="form.email"
@@ -140,17 +140,17 @@ const loginWithPasskey = async () => {
 
         <label class="flex items-center gap-3 text-sm font-medium text-[var(--ds-text-muted)]">
           <CheckboxInput v-model="form.remember" name="remember" type="checkbox" class="ds-checkbox" />
-          <span>Manter sessao iniciada</span>
+          <span>Manter sessão iniciada</span>
         </label>
 
         <button type="submit" class="ds-button ds-button-primary w-full" :disabled="form.processing || passkeyProcessing">
           <ArrowRightStartOnRectangleIcon class="h-4 w-4" aria-hidden="true" />
-          {{ form.processing ? 'A iniciar sessao...' : 'Entrar no portal' }}
+          {{ form.processing ? 'A iniciar sessão...' : 'Entrar no portal' }}
         </button>
 
         <button type="button" class="ds-button ds-button-secondary w-full" :disabled="passkeyProcessing || form.processing" @click="loginWithPasskey">
           <FingerPrintIcon class="h-4 w-4" aria-hidden="true" />
-          {{ passkeyProcessing ? 'A preparar passkey...' : 'Entrar com passkey' }}
+          {{ passkeyProcessing ? 'A preparar a chave de acesso...' : 'Entrar com a chave de acesso' }}
         </button>
       </form>
 
@@ -162,7 +162,7 @@ const loginWithPasskey = async () => {
 
       <div class="mt-6 border-t border-[var(--ds-border)] pt-5">
         <Link :href="route('login')" class="ds-button ds-button-ghost w-full">
-          Area interna
+          Área interna
           <ArrowRightIcon class="h-4 w-4" aria-hidden="true" />
         </Link>
       </div>

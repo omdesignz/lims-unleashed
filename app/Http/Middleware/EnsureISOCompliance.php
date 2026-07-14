@@ -14,19 +14,19 @@ class EnsureISOCompliance
         if ($user = $request->user()) {
             CauserResolver::setCauser($user);
         }
-        
+
         // Add ISO compliance headers for audit trail
         $response = $next($request);
-        
+
         if ($request->isMethod('POST') || $request->isMethod('PUT') || $request->isMethod('PATCH')) {
             // Check if the request contains ISO-required fields
             if ($request->has('change_reason') && empty($request->input('change_reason'))) {
                 return back()->withErrors([
-                    'change_reason' => 'Change reason is required for ISO 17025 compliance.'
+                    'change_reason' => 'O motivo da alteração é obrigatório para cumprir a ISO/IEC 17025.',
                 ]);
             }
         }
-        
+
         return $response;
     }
 }

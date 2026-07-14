@@ -37,9 +37,9 @@ const totalRecords = computed(() => props.record?.meta?.total ?? rows.value.leng
 const withScheduledDate = computed(() => rows.value.filter((row) => row.collection_date).length);
 const withSampleEntry = computed(() => rows.value.filter((row) => row.sample_entry || row.entry_origin?.is_sample_entry_first).length);
 const metrics = computed(() => [
-  { label: "Na fila", value: totalRecords.value, detail: activeCategory.value === "pending" ? "planeamentos ativos" : "registos processados", icon: ClipboardDocumentListIcon },
+  { label: "Na fila", value: totalRecords.value, detail: activeCategory.value === "pending" ? "planeamentos activos" : "registos processados", icon: ClipboardDocumentListIcon },
   { label: "Com data", value: withScheduledDate.value, detail: "nesta página", icon: CalendarDaysIcon },
-  { label: "Via Sample Entry", value: withSampleEntry.value, detail: "linhagem preservada", icon: ArchiveBoxIcon },
+  { label: "Via entrada de amostra", value: withSampleEntry.value, detail: "linhagem preservada", icon: ArchiveBoxIcon },
 ]);
 const actions = [
   { id: null, label: "gestlab.actions.bulk_actions_text" },
@@ -105,7 +105,7 @@ function executeBulkAction() {
           <div>
             <p class="ds-kicker">Planeamento de campo</p>
             <h1 class="ds-heading mt-1 text-2xl">Colheitas programadas</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Agenda de colheitas externas com destino, data prevista e linhagem para a receção laboratorial.</p>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Agenda de colheitas externas com destino, data prevista e linhagem para a recepção laboratorial.</p>
           </div>
         </div>
         <div class="flex flex-wrap gap-3">
@@ -118,7 +118,7 @@ function executeBulkAction() {
             </button>
           </div>
           <Link :href="entrypoint.create_sample_url || route('vap_samples.index', { collection_type: 'programmed' })" class="ds-button ds-button-primary">
-            <PlusIcon class="h-4 w-4" /> Nova Sample Entry
+            <PlusIcon class="h-4 w-4" /> Nova entrada de amostra
           </Link>
         </div>
       </div>
@@ -138,7 +138,7 @@ function executeBulkAction() {
         <div>
           <p class="ds-kicker">Preparação de bancada</p>
           <h2 class="ds-heading mt-1 text-base">Folha de parâmetros</h2>
-          <p class="ds-copy mt-1 text-sm">{{ selectedRecordIds.length ? `${selectedRecordIds.length} registo(s) selecionados.` : "Selecione planeamentos na tabela para exportar o XLSX." }}</p>
+          <p class="ds-copy mt-1 text-sm">{{ selectedRecordIds.length ? `${selectedRecordIds.length} registo(s) seleccionados.` : "Seleccione planeamentos na tabela para exportar o XLSX." }}</p>
         </div>
         <button type="button" class="ds-button ds-button-secondary" :disabled="!selectedRecordIds.length" @click="exportSelectedAnalysisSheet">
           <ArrowDownTrayIcon class="h-4 w-4" /> Exportar XLSX

@@ -2,12 +2,12 @@
   <section class="ds-table-shell overflow-hidden">
     <div class="ds-table-summary px-5 py-4">
       <div>
-        <p class="ds-kicker">Label control</p>
+        <p class="ds-kicker">Controlo de etiquetas</p>
         <h3 class="mt-1 text-base font-bold text-[var(--ds-text)]">Novos lotes de reagentes</h3>
       </div>
       <button type="button" class="ds-button ds-button-primary" :disabled="selectedIds.length === 0" @click="printSelectedLabels">
         <PrinterIcon class="h-4 w-4" />
-        Imprimir selecionados
+        Imprimir seleccionados
       </button>
     </div>
 

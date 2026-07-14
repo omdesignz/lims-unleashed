@@ -2,6 +2,7 @@
 import '../CommercialDocumentSurface.css';
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { optionRows } from "@/Composables/useCommercialDocumentOptions";
 import { ref, computed, reactive, watch } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue';
@@ -130,7 +131,7 @@ watch(() => form.customer_id.value, (customerId) => {
     fetch(`/warehouses/getWarehouse?q=&customer_id=${customerId}`)
       .then(response => response.json())
       .then(results => {
-        customerWarehouses = results.map(result => ({
+        customerWarehouses = optionRows(results).map(result => ({
           value: result.id,
           label: result.address,
         }));
@@ -175,7 +176,7 @@ function loadInvoices(query, setOptions) {
     .then(response => response.json())
     .then(results => {
       setOptions(
-        results.map(result => ({
+        optionRows(results).map(result => ({
           value: result.id,
           label: `${result.inv_no} - AOA${parseFloat(result.amount_due || 0).toFixed(2)}`,
           amount_due: result.amount_due,
@@ -191,7 +192,7 @@ function loadCustomers(query, setOptions) {
     .then(response => response.json())
     .then(results => {
       setOptions(
-        results.map(result => ({
+        optionRows(results).map(result => ({
           value: result.id,
           label: result.name,
         }))
@@ -209,7 +210,7 @@ function loadWarehouses(query, setOptions) {
     .then(response => response.json())
     .then(results => {
       setOptions(
-        results.map(result => ({
+        optionRows(results).map(result => ({
           value: result.id,
           label: result.address,
         }))
@@ -282,10 +283,10 @@ const handleConfirmSubmit = () => {
 </script>
 
 <template>
-  <div class="commercial-document-page space-y-8" :class="commercialDocumentThemeClasses">
+  <div class="commercial-document-page commercial-document-create min-w-0 space-y-5 overflow-x-clip pb-10" :class="commercialDocumentThemeClasses">
     <!-- HEADER CARD -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div class="flex items-center justify-between">
+    <header class="commercial-document-header px-0 pb-5 pt-1">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <ClipboardDocumentCheckIcon class="h-7 w-7 text-blue-900" />
@@ -304,15 +305,15 @@ const handleConfirmSubmit = () => {
           </span>
         </div>
       </div>
-    </div>
+    </header>
 
     <!-- MAIN CONTENT SECTION -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(17rem,0.8fr)]">
       <!-- LEFT COLUMN (2/3 width) -->
-      <div class="lg:col-span-2 space-y-6">
+      <div class="min-w-0 space-y-5">
         
         <!-- CUSTOMER INFORMATION SECTION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <section class="ds-panel commercial-document-section overflow-hidden">
           <!-- GRADIENT HEADER -->
           <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-6 py-4">
             <h2 class="ds-heading flex items-center gap-2 text-lg">
@@ -365,10 +366,10 @@ const handleConfirmSubmit = () => {
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         <!-- PAYMENT ITEMS SECTION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <section class="ds-panel commercial-document-section overflow-hidden">
           <div class="border-b border-gray-200 px-6 py-4">
             <div class="flex items-center justify-between">
               <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -414,7 +415,7 @@ const handleConfirmSubmit = () => {
             <div 
               v-for="(item, index) in itemsWithPendingValues"
               :key="index"
-              class="group relative bg-white rounded-lg border border-gray-200 hover:border-blue-900 transition-all duration-200 overflow-hidden shadow-sm"
+              class="commercial-document-line-item group relative overflow-hidden border transition-colors"
             >
               <!-- ITEM HEADER -->
               <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-4 py-3">
@@ -551,10 +552,10 @@ const handleConfirmSubmit = () => {
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         <!-- OBSERVATIONS SECTION -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <section class="ds-panel commercial-document-section overflow-hidden">
           <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-6 py-4">
             <h2 class="ds-heading flex items-center gap-2 text-lg">
               <DocumentTextIcon class="h-5 w-5" />
@@ -577,13 +578,13 @@ const handleConfirmSubmit = () => {
               </p>
             </div>
           </div>
-        </div>
+        </section>
       </div>
 
       <!-- RIGHT COLUMN (1/3 width) -->
-      <div class="space-y-6">
+      <aside class="space-y-5 lg:sticky lg:top-5 lg:self-start">
         <!-- ACTIONS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <section class="ds-panel commercial-document-section p-5">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">
             {{ $t('gestlab.general.labels.actions') }}
           </h3>
@@ -592,7 +593,7 @@ const handleConfirmSubmit = () => {
               @click="submit"
               :disabled="form.processing || !isFormValid"
               :class="[
-                'w-full inline-flex justify-center items-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
+                'ds-button w-full justify-center px-4 py-3',
                 form.processing || !isFormValid
                   ? 'cursor-not-allowed bg-[var(--ds-border)] text-[var(--ds-muted)]'
                   : 'ds-button-primary'
@@ -627,10 +628,10 @@ const handleConfirmSubmit = () => {
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         <!-- STATUS CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <section class="ds-panel commercial-document-section p-5">
           <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Cog6ToothIcon class="h-5 w-5 text-blue-900" />
             {{ $t('gestlab.general.labels.status') }}
@@ -665,10 +666,10 @@ const handleConfirmSubmit = () => {
               </span>
             </div>
           </div>
-        </div>
+        </section>
 
         <!-- CUSTOMER INFO CARD -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <section class="ds-panel commercial-document-section p-5">
           <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <UserIcon class="h-5 w-5 text-blue-900" />
             {{ $t('gestlab.general.labels.receipts.customer_info') }}
@@ -694,12 +695,12 @@ const handleConfirmSubmit = () => {
               {{ $t('gestlab.general.labels.receipts.select_customer_first') }}
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+      </aside>
     </div>
 
     <!-- FOOTER ACTIONS -->
-    <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+    <div class="commercial-document-command flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div class="text-sm text-gray-500">
         {{ $t('gestlab.general.labels.receipts.auto_save') }}
       </div>
@@ -717,7 +718,7 @@ const handleConfirmSubmit = () => {
           :disabled="!isFormValid"
           type="button"
           :class="[
-            'inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200',
+            'ds-button px-4 py-2.5',
             !isFormValid
               ? 'cursor-not-allowed bg-[var(--ds-border)] text-[var(--ds-muted)]'
               : 'ds-button-primary'

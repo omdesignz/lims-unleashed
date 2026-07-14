@@ -143,7 +143,7 @@ class FileController extends Controller
             'size' => $version->size,
         ]);
 
-        return redirect()->back()->with('success', 'File reverted to previous version!');
+        return redirect()->back()->with('success', 'Ficheiro restaurado para a versão anterior.');
     }
 
     public function versions(File $file)
@@ -224,7 +224,7 @@ class FileController extends Controller
 
             return response()->download($zipFilePath)->deleteFileAfterSend(true);
         } else {
-            return response()->json(['error' => 'Unable to create zip file'], 500);
+            return response()->json(['error' => 'Não foi possível criar o ficheiro ZIP.'], 500);
         }
 
     }
@@ -263,7 +263,7 @@ class FileController extends Controller
         if ($totalSize > 100 * 1024 * 1024) { // 100MB in bytes
             ZipFilesJob::dispatch(auth()->user(), $validated['file_ids'], $validated['folder_ids'] ?? []);
 
-            return redirect()->back()->with('success', 'Your ZIP file is being prepared. You will be notified once it is ready.');
+            return redirect()->back()->with('success', 'O seu ficheiro ZIP está a ser preparado. Receberá uma notificação quando estiver pronto.');
         }
 
         // For smaller files, zip and download directly
@@ -341,7 +341,7 @@ class FileController extends Controller
             return Storage::download($file);
         }
 
-        return response()->json(['error' => 'File not found'], 404);
+        return response()->json(['error' => 'Ficheiro não encontrado.'], 404);
     }
 
     public function destroy(Request $request)

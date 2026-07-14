@@ -6,7 +6,7 @@
       <div class="bg-gradient-to-r from-blue-900 to-blue-800 rounded-xl shadow-sm p-6 text-white">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium opacity-90">Consumo Ativo Hoje</p>
+            <p class="text-sm font-medium opacity-90">Consumo Activo Hoje</p>
             <p class="text-2xl font-bold mt-1">{{ formatNumber(todayConsumption) }} unidades</p>
           </div>
           <div class="relative">
@@ -34,7 +34,7 @@
       <div class="bg-gradient-to-r from-orange-900 to-orange-800 rounded-xl shadow-sm p-6 text-white">
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium opacity-90">Itens com Baixo Nível de Estoque</p>
+            <p class="text-sm font-medium opacity-90">Itens com baixo nível de existências</p>
             <p class="text-2xl font-bold mt-1">{{ lowStockCount }}</p>
           </div>
           <BellAlertIcon class="h-8 w-8" />
@@ -122,8 +122,8 @@
       <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div class="flex items-center justify-between mb-4">
           <div>
-            <h3 class="text-lg font-semibold text-gray-900">Monitor de Nível de Estoque</h3>
-            <p class="text-sm text-gray-500">Saúde Geral do Estoque</p>
+            <h3 class="text-lg font-semibold text-gray-900">Monitor do nível de existências</h3>
+            <p class="text-sm text-gray-500">Estado geral das existências</p>
           </div>
           <div class="flex items-center gap-2">
             <span 
@@ -166,7 +166,7 @@
             :disabled="refreshing"
           >
             <ArrowPathIcon class="h-3 w-3" />
-            {{ refreshing ? 'Atualizando...' : 'Atualizar' }}
+            {{ refreshing ? 'Atualizando...' : 'Actualizar' }}
           </button>
         </div>
       </div>
@@ -204,8 +204,8 @@
       </div>
       <div v-if="recentActivity.length === 0" class="p-12 text-center">
         <BellAlertIcon class="mx-auto h-12 w-12 text-gray-300" />
-        <h3 class="mt-4 text-sm font-semibold text-gray-900">Nenhuma atividade recente</h3>
-        <p class="mt-2 text-sm text-gray-500">A atividade aparecerá aqui assim que acontecer</p>
+        <h3 class="mt-4 text-sm font-semibold text-gray-900">Nenhuma actividade recente</h3>
+        <p class="mt-2 text-sm text-gray-500">A actividade aparecerá aqui assim que acontecer</p>
       </div>
     </div>
   </div>
@@ -273,7 +273,7 @@ const stockGauges = ref([
         },
       },
       colors: ['#1e3a8a'],
-      labels: ['Nível de Estoque'],
+      labels: ['Nível de existências'],
     },
   },
   {
@@ -293,7 +293,7 @@ const stockGauges = ref([
         },
       },
       colors: ['#10b981'],
-      labels: ['Nível de Estoque'],
+      labels: ['Nível de existências'],
     },
   },
   {
@@ -313,7 +313,7 @@ const stockGauges = ref([
         },
       },
       colors: ['#f59e0b'],
-      labels: ['Nível de Estoque'],
+      labels: ['Nível de existências'],
     },
   },
 ])
@@ -490,8 +490,8 @@ const setupRealtime = () => {
       recentActivity.value.unshift({
         id: Date.now(),
         type: 'stock_in',
-        description: 'Estoque atualizado',
-        details: `${event.item} estoque alterado para ${event.quantity}`,
+        description: 'Existências actualizadas',
+        details: `Existências de ${event.item} alteradas para ${event.quantity}`,
         timestamp: new Date().toISOString(),
       })
       

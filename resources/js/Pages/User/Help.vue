@@ -28,7 +28,7 @@ const navigation = [
 const workflowStages = [
   {
     icon: IdentificationIcon,
-    title: "Receção e identificação",
+    title: "Recepção e identificação",
     text: "Confirme cliente, local, matriz, produto, condição da amostra e cadeia de custódia antes da aceitação.",
   },
   {
@@ -52,7 +52,7 @@ const qualityControls = [
   {
     icon: ShieldCheckIcon,
     title: "Competência válida",
-    text: "A execução, verificação e aprovação devem respeitar autorizações ativas e evidência de formação.",
+    text: "A execução, verificação e aprovação devem respeitar autorizações activas e evidência de formação.",
   },
   {
     icon: CheckBadgeIcon,
@@ -68,7 +68,7 @@ const qualityControls = [
 
 const evidenceItems = [
   { term: "Quem", description: "Utilizador autenticado, função e competência aplicável." },
-  { term: "Quando", description: "Data, hora e sequência da ação no processo." },
+  { term: "Quando", description: "Data, hora e sequência da acção no processo." },
   { term: "O quê", description: "Valor, estado ou documento antes e depois da alteração." },
   { term: "Porquê", description: "Justificação, ocorrência, método ou referência normativa." },
 ];

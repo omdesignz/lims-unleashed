@@ -87,7 +87,7 @@ class CustomerRequestController extends Controller
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
-                'message' => 'Registro armazenado com êxito',
+                'message' => 'Registo guardado com êxito',
             ],
         ]);
 

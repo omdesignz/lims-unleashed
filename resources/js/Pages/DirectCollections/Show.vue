@@ -40,7 +40,7 @@
         </div>
         <div class="px-5 py-4">
           <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Origem</dt>
-          <dd class="mt-2 truncate text-sm font-bold text-[color:var(--ds-text)]">{{ sampleEntry ? 'Sample Entry' : 'Registo legado' }}</dd>
+          <dd class="mt-2 truncate text-sm font-bold text-[color:var(--ds-text)]">{{ sampleEntry ? 'Entrada de amostra' : 'Registo legado' }}</dd>
         </div>
         <div class="px-5 py-4">
           <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Quantidade recolhida</dt>
@@ -59,17 +59,17 @@
           <CircleStackIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
           <div>
             <p class="ds-kicker">Entrada canónica do processo</p>
-            <h2 class="ds-heading mt-2 text-base">{{ sampleEntry ? (sampleEntry.code || `Sample Entry #${sampleEntry.id}`) : 'Registo legado de colheita' }}</h2>
+            <h2 class="ds-heading mt-2 text-base">{{ sampleEntry ? (sampleEntry.code || `Entrada de amostra #${sampleEntry.id}`) : 'Registo legado de colheita' }}</h2>
             <p class="ds-copy mt-2 max-w-3xl text-xs">
               {{ sampleEntry
-                ? 'Produto, matriz, escopo analítico e códigos laboratoriais permanecem ligados à receção da amostra.'
-                : 'Este registo antecede o fluxo de Sample Entry. Novas colheitas devem iniciar na receção para garantir rastreabilidade ponta a ponta.' }}
+                ? 'Produto, matriz, âmbito analítico e códigos laboratoriais permanecem ligados à recepção da amostra.'
+                : 'Este registo antecede o fluxo de recepção de amostras. As novas colheitas devem iniciar na recepção para garantir a rastreabilidade integral.' }}
             </p>
           </div>
         </div>
         <Link v-if="sampleEntry" :href="sampleEntry.show_url" class="ds-button ds-button-secondary shrink-0">
           <ArrowTopRightOnSquareIcon class="h-4 w-4" />
-          Abrir Sample Entry
+          Abrir entrada de amostra
         </Link>
       </div>
     </section>
@@ -121,8 +121,8 @@
         <div class="border-l-4 border-amber-500 bg-amber-50/70 p-4 dark:bg-amber-500/10">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 class="text-sm font-bold text-amber-950 dark:text-amber-100">Escopo controlado da receção</h3>
-              <p class="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">Planeamento analítico e condicionamento herdados da receção.</p>
+              <h3 class="text-sm font-bold text-amber-950 dark:text-amber-100">Âmbito controlado da recepção</h3>
+              <p class="mt-1 text-xs leading-5 text-amber-800 dark:text-amber-200">Planeamento analítico e condicionamento herdados da recepção.</p>
             </div>
             <span class="ds-chip shrink-0">{{ scopeControl.required_parameter_count || 0 }} parâmetros previstos</span>
           </div>
@@ -171,7 +171,7 @@
             <div>
               <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">{{ $t('gestlab.general.labels.direct_collections.qr_code') }}</p>
               <div class="mt-2 flex aspect-square w-32 items-center justify-center border border-[color:var(--ds-border)] bg-white p-2">
-                <img v-if="data.qr" :src="data.qr" alt="QR Code" class="h-full w-full object-contain" />
+                <img v-if="data.qr" :src="data.qr" alt="Código QR" class="h-full w-full object-contain" />
                 <QrCodeIcon v-else class="h-8 w-8 text-[color:var(--ds-text-soft)]" />
               </div>
             </div>
@@ -244,7 +244,7 @@
                   <dd class="mt-1 text-sm font-semibold text-[color:var(--ds-text)]">{{ result.min_ref_value || 'N/D' }} - {{ result.max_ref_value || 'N/D' }}</dd>
                 </div>
                 <div>
-                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Última atualização</dt>
+                  <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Última actualização</dt>
                   <dd class="mt-1 text-sm font-semibold text-[color:var(--ds-text)]">{{ formatDate(result.updated_at) }}</dd>
                 </div>
               </dl>
@@ -383,8 +383,8 @@ const data = computed(() => props.record?.data || {})
 const presentation = computed(() => props.collectionPresentation || {})
 const sampleEntry = computed(() => data.value.sample_entry || null)
 const scopeControl = computed(() => data.value.scope_control || {})
-const collectionTitle = computed(() => presentation.value.title || 'Colheita direta')
-const collectionDescription = computed(() => presentation.value.description || 'Etapa operacional ligada à Sample Entry e ao código laboratorial.')
+const collectionTitle = computed(() => presentation.value.title || 'Colheita directa')
+const collectionDescription = computed(() => presentation.value.description || 'Etapa operacional ligada à entrada de amostra e ao código laboratorial.')
 const collectionIndexUrl = computed(() => presentation.value.index_url || route('directcollections.index'))
 const collectionEditUrl = computed(() => presentation.value.edit_url || (data.value.id ? route('directcollections.edit', { collection: data.value.id }) : '#'))
 const completionPercentage = computed(() => getCompletionPercentage())
@@ -406,7 +406,7 @@ const statusDotClass = computed(() => {
 
 const workflowSteps = computed(() => [
   { key: 'collection', label: 'Colheita', date: data.value.collection_date, icon: CircleStackIcon, complete: isStepComplete('collection'), active: false },
-  { key: 'reception', label: 'Receção', date: data.value.created_at, icon: InboxIcon, complete: isStepComplete('reception'), active: false },
+  { key: 'reception', label: 'Recepção', date: data.value.created_at, icon: InboxIcon, complete: isStepComplete('reception'), active: false },
   { key: 'analysis', label: 'Análise', date: data.value.analysis_start_date, icon: BeakerIcon, complete: isStepComplete('analysis'), active: Boolean(data.value.placed_analysis) },
   { key: 'verification', label: 'Verificação', date: data.value.verified_date, icon: CheckCircleIcon, complete: isStepComplete('verification'), active: false },
   { key: 'approval', label: 'Aprovação', date: data.value.approved_date, icon: DocumentCheckIcon, complete: isStepComplete('approval'), active: false },
@@ -433,7 +433,7 @@ const sampleIdentityFields = computed(() => [
 
 const processFlags = computed(() => [
   { label: 'Análise', active: Boolean(data.value.placed_analysis), activeLabel: 'Em análise', inactiveLabel: 'Aguardando' },
-  { label: 'Faturação', active: Boolean(data.value.invoiced), activeLabel: 'Faturado', inactiveLabel: 'Por faturar' },
+  { label: 'Facturação', active: Boolean(data.value.invoiced), activeLabel: 'Facturado', inactiveLabel: 'Por facturar' },
   { label: 'Processamento', active: Boolean(data.value.processed), activeLabel: 'Processado', inactiveLabel: 'Por processar' },
 ])
 

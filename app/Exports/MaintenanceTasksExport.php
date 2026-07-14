@@ -7,6 +7,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class MaintenanceTasksExport implements FromCollection, WithHeadings, WithMapping, WithStyles
@@ -49,18 +50,18 @@ class MaintenanceTasksExport implements FromCollection, WithHeadings, WithMappin
     public function headings(): array
     {
         return [
-            'Task Number',
-            'Task Name',
-            'Category',
-            'Equipment',
-            'Serial Number',
-            'Due Date',
-            'Status',
-            'Cost (AOA)',
-            'Supplier',
-            'Certificate Number',
-            'Created At',
-            'Description',
+            'Número da tarefa',
+            'Nome da tarefa',
+            'Categoria',
+            'Equipamento',
+            'Número de série',
+            'Data de vencimento',
+            'Estado',
+            'Custo (AOA)',
+            'Fornecedor',
+            'Número do certificado',
+            'Criado em',
+            'Descrição',
         ];
     }
 
@@ -72,10 +73,10 @@ class MaintenanceTasksExport implements FromCollection, WithHeadings, WithMappin
             $task->category->name,
             $task->equipment->name,
             $task->equipment->serial_number,
-            $task?->due_date?->format('d/m/Y') ?? 'N/A',
-            $task->is_executed ? 'Executed' : ($task->due_date < now() ? 'Overdue' : 'Pending'),
+            $task?->due_date?->format('d/m/Y') ?? 'N/D',
+            $task->is_executed ? 'Executada' : ($task->due_date < now() ? 'Em atraso' : 'Pendente'),
             number_format($task->cost, 2, ',', '.'),
-            $task->supplier ? $task->supplier->name : 'Internal',
+            $task->supplier ? $task->supplier->name : 'Interno',
             $task->calibration_certificate_no,
             $task->created_at->format('d/m/Y H:i'),
             strip_tags($task->description),
@@ -88,9 +89,9 @@ class MaintenanceTasksExport implements FromCollection, WithHeadings, WithMappin
             1 => [
                 'font' => ['bold' => true],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                    'color' => ['argb' => 'FFE8F4FF']
-                ]
+                    'fillType' => Fill::FILL_SOLID,
+                    'color' => ['argb' => 'FFE8F4FF'],
+                ],
             ],
         ];
     }

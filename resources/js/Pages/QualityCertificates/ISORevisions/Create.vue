@@ -54,19 +54,19 @@ const fieldConfigurations = {
     ],
   },
   obs: {
-    label: "Observacoes",
+    label: "Observações",
     type: "textarea",
-    placeholder: "Descreva a observacao atualizada",
+    placeholder: "Descreva a observação actualizada",
   },
   validated_by: {
     label: "Validado por",
     type: "text",
-    placeholder: "Nome do responsavel pela validacao",
+    placeholder: "Nome do responsável pela validação",
   },
   extra_data: {
     label: "Dados adicionais",
     type: "json",
-    placeholder: "Insira um objeto JSON valido",
+    placeholder: "Insira um objecto JSON válido",
   },
 };
 
@@ -94,7 +94,7 @@ const fieldDefinitions = computed(() => {
 
 const workflowSteps = computed(() => [
   {
-    label: "Classificacao",
+    label: "Classificação",
     complete: Boolean(
       form.change_type &&
       form.change_reason.length >= 10 &&
@@ -107,7 +107,7 @@ const workflowSteps = computed(() => [
     complete: selectedFields.value.length > 0,
   },
   {
-    label: "Aprovacao",
+    label: "Aprovação",
     complete: Boolean(form.approved_by_id),
     optional: true,
   },
@@ -141,7 +141,7 @@ function toggleField(fieldName) {
 
 function submitForm() {
   if (!selectedFields.value.length) {
-    form.setError("fields", "Selecione pelo menos um campo para atualizar.");
+    form.setError("fields", "Seleccione pelo menos um campo para actualizar.");
     return;
   }
 
@@ -168,28 +168,23 @@ function submitForm() {
             :href="route('qualitycertificates.iso-revisions.index', certificate.id)"
             class="ds-table-action -ml-2 mb-3"
           >
-            <ArrowLeftIcon class="h-4 w-4" />
-            Voltar ao historico
-          </Link>
+            <ArrowLeftIcon class="h-4 w-4" /> Voltar ao histórico </Link>
           <div class="flex flex-wrap items-center gap-2">
-            <p class="ds-kicker">Nova alteracao controlada</p>
-            <span class="ds-chip font-mono">{{ certificate.code || "Sem codigo" }}</span>
+            <p class="ds-kicker">Nova alteração controlada</p>
+            <span class="ds-chip font-mono">{{ certificate.code || "Sem código" }}</span>
           </div>
-          <h1 class="ds-heading mt-2 text-2xl">Criar revisao ISO</h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm">
-            Classifique a alteracao, identifique os campos afetados e registe a
-            justificacao exigida pela cadeia de controlo documental.
-          </p>
+          <h1 class="ds-heading mt-2 text-2xl">Criar revisão ISO</h1>
+          <p class="ds-copy mt-2 max-w-2xl text-sm"> Classifique a alteração, identifique os campos afectados e registe a justificação exigida pela cadeia de controlo documental. </p>
         </div>
 
         <div class="lims-status-strip flex items-center gap-3 px-4 py-3">
           <span class="lims-status-dot lims-status-dot-instrument" />
           <div>
             <p class="text-xs font-bold text-[var(--ds-text)]">
-              v{{ certificate.current_revision?.version || "1.0" }} atual
+              v{{ certificate.current_revision?.version || "1.0" }} actual
             </p>
             <p class="mt-0.5 text-xs font-semibold text-[var(--ds-text-muted)]">
-              {{ selectedFields.length }} campo(s) selecionado(s)
+              {{ selectedFields.length }} campo(s) seleccionado(s)
             </p>
           </div>
         </div>
@@ -203,17 +198,14 @@ function submitForm() {
       <div class="space-y-6">
         <section class="ds-panel overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
-            <p class="ds-kicker">Classificacao da mudanca</p>
+            <p class="ds-kicker">Classificação da mudanca</p>
             <h2 class="ds-heading mt-2 text-lg">Motivo, norma e risco</h2>
-            <p class="ds-copy mt-1 text-sm">
-              Estes metadados sustentam a decisao e a aprovacao da revisao.
-            </p>
+            <p class="ds-copy mt-1 text-sm"> Estes metadados sustentam a decisão e a aprovação da revisão. </p>
           </div>
 
           <div class="grid gap-5 px-5 py-5 sm:px-6 lg:grid-cols-2">
             <div class="ds-field-group">
-              <label class="ds-field-label" for="change-type">
-                Tipo de alteracao <span class="ds-field-required">*</span>
+              <label class="ds-field-label" for="change-type"> Tipo de alteração <span class="ds-field-required">*</span>
               </label>
               <BaseSelect
                 id="change-type"
@@ -222,7 +214,7 @@ function submitForm() {
                 :aria-invalid="Boolean(form.errors.change_type)"
                 required
               >
-                <option value="">Selecionar tipo</option>
+                <option value="">Seleccionar tipo</option>
                 <option value="UPDATED">Atualizacao</option>
                 <option value="CORRECTED">Correcao</option>
                 <option value="REISSUED">Reemissao</option>
@@ -244,11 +236,11 @@ function submitForm() {
                 :aria-invalid="Boolean(form.errors.risk_assessment)"
                 required
               >
-                <option value="">Selecionar nivel</option>
+                <option value="">Seleccionar nivel</option>
                 <option value="LOW">Baixo</option>
                 <option value="MEDIUM">Medio</option>
                 <option value="HIGH">Alto</option>
-                <option value="CRITICAL">Critico</option>
+                <option value="CRITICAL">Crítico</option>
               </BaseSelect>
               <p v-if="form.errors.risk_assessment" class="ds-field-error">
                 {{ form.errors.risk_assessment }}
@@ -256,8 +248,7 @@ function submitForm() {
             </div>
 
             <div class="ds-field-group">
-              <label class="ds-field-label" for="iso-section">
-                Secao ISO <span class="ds-field-required">*</span>
+              <label class="ds-field-label" for="iso-section"> Secção ISO <span class="ds-field-required">*</span>
               </label>
               <div class="relative">
                 <DocumentMagnifyingGlassIcon class="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--ds-text-soft)]" />
@@ -276,15 +267,14 @@ function submitForm() {
             </div>
 
             <div class="ds-field-group lg:row-span-2">
-              <label class="ds-field-label" for="change-reason">
-                Justificacao da alteracao <span class="ds-field-required">*</span>
+              <label class="ds-field-label" for="change-reason"> Justificação da alteração <span class="ds-field-required">*</span>
               </label>
               <textarea
                 id="change-reason"
                 v-model="form.change_reason"
                 class="ds-field min-h-36"
                 :aria-invalid="Boolean(form.errors.change_reason)"
-                placeholder="Descreva o problema, a decisao e o resultado esperado"
+                placeholder="Descreva o problema, a decisão e o resultado esperado"
                 required
               />
               <div class="flex items-center justify-between gap-3">
@@ -301,13 +291,11 @@ function submitForm() {
         <section class="ds-panel overflow-hidden">
           <div class="flex flex-col gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div>
-              <p class="ds-kicker">Escopo da revisao</p>
-              <h2 class="ds-heading mt-2 text-lg">Campos a atualizar</h2>
-              <p class="ds-copy mt-1 text-sm">
-                Apenas os campos selecionados serao incluidos na nova versao.
-              </p>
+              <p class="ds-kicker">Âmbito da revisão</p>
+              <h2 class="ds-heading mt-2 text-lg">Campos a actualizar</h2>
+              <p class="ds-copy mt-1 text-sm"> Apenas os campos seleccionados serão incluidos na nova versão. </p>
             </div>
-            <span class="ds-chip">{{ selectedFields.length }} selecionado(s)</span>
+            <span class="ds-chip">{{ selectedFields.length }} seleccionado(s)</span>
           </div>
 
           <div class="divide-y divide-[var(--ds-border)]">
@@ -381,9 +369,7 @@ function submitForm() {
 
           <div v-if="!fieldDefinitions.length" class="ds-empty-state m-5 p-8 text-center">
             <DocumentTextIcon class="mx-auto h-6 w-6 text-[var(--ds-text-soft)]" />
-            <p class="mt-2 text-sm font-semibold text-[var(--ds-text-muted)]">
-              Nenhum campo disponivel para revisao.
-            </p>
+            <p class="mt-2 text-sm font-semibold text-[var(--ds-text-muted)]"> Nenhum campo disponível para revisão. </p>
           </div>
 
           <p v-if="form.errors.fields" class="ds-field-error border-t border-[var(--ds-border)] px-5 py-3 sm:px-6">
@@ -396,10 +382,9 @@ function submitForm() {
         <section class="ds-command-surface overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-5 py-4">
             <p class="ds-kicker">Progresso</p>
-            <h2 class="ds-heading mt-2 text-base">Preparacao da revisao</h2>
+            <h2 class="ds-heading mt-2 text-base">Preparacao da revisão</h2>
             <p class="ds-copy mt-1 text-xs">
-              {{ completedRequiredSteps }}/2 etapas obrigatorias concluidas
-            </p>
+              {{ completedRequiredSteps }}/2 etapas obrigatórias concluídas </p>
           </div>
           <ol class="px-5 py-5">
             <li
@@ -427,7 +412,7 @@ function submitForm() {
               <div class="pt-1">
                 <p class="text-sm font-bold text-[var(--ds-text)]">{{ step.label }}</p>
                 <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
-                  {{ step.optional ? "Opcional" : step.complete ? "Concluida" : "Pendente" }}
+                  {{ step.optional ? "Opcional" : step.complete ? "Concluída" : "Pendente" }}
                 </p>
               </div>
             </li>
@@ -457,9 +442,7 @@ function submitForm() {
                 </option>
               </BaseSelect>
             </div>
-            <p class="ds-field-hint">
-              A designacao pode ser concluida posteriormente, conforme o fluxo de aprovacao.
-            </p>
+            <p class="ds-field-hint"> A designação pode ser concluída posteriormente, conforme o fluxo de aprovação. </p>
             <p v-if="form.errors.approved_by_id" class="ds-field-error">
               {{ form.errors.approved_by_id }}
             </p>
@@ -471,10 +454,7 @@ function submitForm() {
             <span class="lims-status-dot lims-status-dot-hold mt-1" />
             <div>
               <h2 class="ds-heading text-sm">Impacto documental</h2>
-              <p class="ds-copy mt-1 text-xs">
-                A submissao cria uma nova versao imutavel e atualiza os campos
-                selecionados do certificado.
-              </p>
+              <p class="ds-copy mt-1 text-xs"> A submissão cria uma nova versão imutável e actualiza os campos seleccionados do certificado. </p>
             </div>
           </div>
         </section>
@@ -486,7 +466,7 @@ function submitForm() {
             :disabled="!isReadyToSubmit"
           >
             <DocumentPlusIcon class="h-4 w-4" />
-            {{ form.processing ? "A criar..." : "Criar revisao" }}
+            {{ form.processing ? "A criar..." : "Criar revisão" }}
           </button>
           <Link
             :href="route('qualitycertificates.iso-revisions.index', certificate.id)"

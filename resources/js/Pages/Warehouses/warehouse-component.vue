@@ -119,7 +119,7 @@ function makePrimary() {
             <span v-if="isPrimary" class="ds-chip bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20">Principal</span>
             <span v-else class="ds-chip">Secundario</span>
           </div>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ form.code || "Codigo por definir" }}</p>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ form.code || "Código por definir" }}</p>
         </div>
       </div>
 
@@ -142,7 +142,7 @@ function makePrimary() {
             <BuildingOffice2Icon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
             Conta cliente
           </div>
-          <p class="ds-copy mt-2 text-sm">Associe o local ao cliente responsavel pelas amostras e documentos.</p>
+          <p class="ds-copy mt-2 text-sm">Associe o local ao cliente responsável pelas amostras e documentos.</p>
         </div>
         <div class="ds-field-group">
           <label class="ds-field-label">Cliente <span class="ds-field-required">*</span></label>
@@ -155,9 +155,9 @@ function makePrimary() {
         <div>
           <div class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]">
             <MapPinIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
-            Identificacao e morada
+            Identificação e morada
           </div>
-          <p class="ds-copy mt-2 text-sm">Local usado na rececao, recolha e emissao documental.</p>
+          <p class="ds-copy mt-2 text-sm">Local usado na recepção, recolha e emissão documental.</p>
         </div>
         <div class="grid gap-4 sm:grid-cols-2">
           <div class="ds-field-group">
@@ -166,12 +166,12 @@ function makePrimary() {
             <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
           </div>
           <div class="ds-field-group">
-            <label class="ds-field-label">Codigo</label>
+            <label class="ds-field-label">Código</label>
             <BaseInput v-model="form.code" type="text" class="ds-field font-mono uppercase" :aria-invalid="Boolean(form.errors.code)" />
             <p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p>
           </div>
           <div class="ds-field-group sm:col-span-2">
-            <label class="ds-field-label">Endereco <span class="ds-field-required">*</span></label>
+            <label class="ds-field-label">Endereço <span class="ds-field-required">*</span></label>
             <BaseInput v-model="form.address" type="text" class="ds-field" autocomplete="street-address" :aria-invalid="Boolean(form.errors.address)" />
             <p v-if="form.errors.address" class="ds-field-error">{{ form.errors.address }}</p>
           </div>
@@ -188,7 +188,7 @@ function makePrimary() {
             <BaseInput v-model="form.nif" type="text" class="ds-field font-mono" />
           </div>
           <div class="ds-field-group">
-            <label class="ds-field-label">Descricao</label>
+            <label class="ds-field-label">Descrição</label>
             <BaseInput v-model="form.description" type="text" class="ds-field" />
           </div>
         </div>
@@ -200,16 +200,16 @@ function makePrimary() {
             <EnvelopeIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
             Canais da conta
           </div>
-          <p class="ds-copy mt-2 text-sm">Enderecos e telefones usados nas comunicacoes operacionais e financeiras.</p>
+          <p class="ds-copy mt-2 text-sm">Endereços e telefones usados nas comunicacoes operacionais e financeiras.</p>
         </div>
         <div class="grid gap-4 sm:grid-cols-2">
           <div class="ds-field-group">
-            <label class="ds-field-label">Email operacional <span class="ds-field-required">*</span></label>
+            <label class="ds-field-label">Correio electrónico operacional <span class="ds-field-required">*</span></label>
             <BaseInput v-model="form.email" type="email" class="ds-field" autocomplete="email" :aria-invalid="Boolean(form.errors.email)" />
             <p v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</p>
           </div>
           <div class="ds-field-group">
-            <label class="ds-field-label">Email de faturacao</label>
+            <label class="ds-field-label">Correio electrónico de facturação</label>
             <BaseInput v-model="form.invoicing_email" type="email" class="ds-field" :aria-invalid="Boolean(form.errors.invoicing_email)" />
             <p v-if="form.errors.invoicing_email" class="ds-field-error">{{ form.errors.invoicing_email }}</p>
           </div>
@@ -233,7 +233,7 @@ function makePrimary() {
             <UserCircleIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
             Ponto focal
           </div>
-          <p class="ds-copy mt-2 text-sm">Pessoa a contactar para amostras, agenda e esclarecimentos tecnicos.</p>
+          <p class="ds-copy mt-2 text-sm">Pessoa a contactar para amostras, agenda e esclarecimentos técnicos.</p>
         </div>
         <div class="grid gap-4 sm:grid-cols-3">
           <div class="ds-field-group">
@@ -241,7 +241,7 @@ function makePrimary() {
             <BaseInput v-model="form.focal_point" type="text" class="ds-field" />
           </div>
           <div class="ds-field-group">
-            <label class="ds-field-label">Email</label>
+            <label class="ds-field-label">Correio electrónico</label>
             <BaseInput v-model="form.focal_point_email" type="email" class="ds-field" :aria-invalid="Boolean(form.errors.focal_point_email)" />
             <p v-if="form.errors.focal_point_email" class="ds-field-error">{{ form.errors.focal_point_email }}</p>
           </div>

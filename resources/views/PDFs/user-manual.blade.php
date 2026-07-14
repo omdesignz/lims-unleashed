@@ -45,7 +45,7 @@
         [
             'number' => '03',
             'title' => 'Resultados e relatórios',
-            'description' => 'Inserção de resultados, incerteza, contra-análise, certificado, QR, assinatura e templates controlados.',
+            'description' => 'Inserção de resultados, incerteza, contra-análise, certificado, QR, assinatura e modelos controlados.',
         ],
         [
             'number' => '04',
@@ -55,7 +55,7 @@
         [
             'number' => '05',
             'title' => 'Inventário e compras',
-            'description' => 'Stock multi-localização, necessidades laboratoriais, aprovações, compras e recepção parcial.',
+            'description' => 'Existências em várias localizações, necessidades laboratoriais, aprovações, compras e recepção parcial.',
         ],
         [
             'number' => '06',
@@ -82,7 +82,7 @@
         ],
         [
             'phase' => 'Validação operacional',
-            'importance' => 'Confirma que a amostra pode seguir para análise sem lacunas de escopo, método, equipamento ou reagente.',
+            'importance' => 'Confirma que a amostra pode seguir para análise sem lacunas de âmbito, método, equipamento ou reagente.',
             'action' => 'Validar campos obrigatórios, parâmetros, laboratório, disciplina, embalagem, temperatura e integridade.',
             'evidence' => 'Estado validado, observações técnicas e trilho de auditoria da decisão.',
         ],
@@ -100,7 +100,7 @@
         ],
         [
             'phase' => 'Aprovação e emissão',
-            'importance' => 'Liberta certificado ou relatório apenas quando existe autorização técnica e template controlado.',
+            'importance' => 'Liberta certificado ou relatório apenas quando existe autorização técnica e modelo controlado.',
             'action' => 'Aprovar, gerar relatório/certificado, confirmar assinatura, cabeçalhos, rodapés, paginação e QR.',
             'evidence' => 'PDF emitido, versão, assinatura, QR de autenticidade e histórico de entrega.',
         ],
@@ -140,22 +140,22 @@
     ];
 
     $routeMap = [
-        ['area' => 'Dashboard', 'path' => '/dashboard', 'purpose' => 'Prioridades, pendências, atalhos operacionais e indicadores executivos.'],
+        ['area' => 'Painel', 'path' => '/dashboard', 'purpose' => 'Prioridades, pendências, atalhos operacionais e indicadores executivos.'],
         ['area' => 'Entrada de Amostra', 'path' => '/sample-entry', 'purpose' => 'Ponto principal para iniciar trabalho laboratorial interno ou de cliente.'],
         ['area' => 'Amostras', 'path' => '/vap-samples', 'purpose' => 'Fila técnica de amostras já ligadas ao processo normal.'],
         ['area' => 'Análises', 'path' => '/analysis', 'purpose' => 'Planeamento e execução de análises e parâmetros.'],
         ['area' => 'Contra-análise', 'path' => '/counteranalysis', 'purpose' => 'Registo técnico de revisão, repetição ou decisão sobre resultado contestado.'],
-        ['area' => 'Report Studio', 'path' => '/report-studios', 'purpose' => 'Templates de relatórios, certificados e documentos com paginação controlada.'],
-        ['area' => 'Propostas', 'path' => '/vap-proposals', 'purpose' => 'Escopo, regra de decisão, aceite/rejeição do cliente e base comercial.'],
+        ['area' => 'Estúdio de relatórios', 'path' => '/report-studios', 'purpose' => 'Modelos de relatórios, certificados e documentos com paginação controlada.'],
+        ['area' => 'Propostas', 'path' => '/vap-proposals', 'purpose' => 'Âmbito, regra de decisão, aceite/rejeição do cliente e base comercial.'],
         ['area' => 'Inventário', 'path' => '/vap-inventory', 'purpose' => 'Itens, reagentes, armazéns, transferências, compras e necessidades laboratoriais.'],
         ['area' => 'SGQ', 'path' => '/vap-non-conformities', 'purpose' => 'Não conformidades, evidências, responsáveis, acções e melhoria contínua.'],
         ['area' => 'Ficheiros', 'path' => '/file-manager', 'purpose' => 'Documentos controlados, anexos e evidência organizada por processo.'],
     ];
 
     $moduleGuide = [
-        ['module' => 'Sample Entry', 'why' => 'É a origem do rasto de análise.', 'evidence' => 'Código, cliente/origem, produto, matriz, perfis, lote, anexos, estado.'],
+        ['module' => 'Entrada de amostra', 'why' => 'É a origem do rasto de análise.', 'evidence' => 'Código, cliente/origem, produto, matriz, perfis, lote, anexos, estado.'],
         ['module' => 'Resultados', 'why' => 'É onde o valor técnico é produzido.', 'evidence' => 'Resultado, método, unidade, incerteza, fórmula, verificação, aprovação.'],
-        ['module' => 'Report Studio', 'why' => 'Controla a aparência e validade dos PDFs.', 'evidence' => 'Template, versão, cabeçalho, rodapé, assinatura, QR, paginação.'],
+        ['module' => 'Estúdio de relatórios', 'why' => 'Controla a aparência e validade dos PDFs.', 'evidence' => 'Modelo, versão, cabeçalho, rodapé, assinatura, QR, paginação.'],
         ['module' => 'Inventário', 'why' => 'Evita ruptura operacional e perdas.', 'evidence' => 'Localização, lote, validade, consumo, recepção, transferência, necessidade.'],
         ['module' => 'Equipamentos', 'why' => 'Demonstra aptidão técnica.', 'evidence' => 'Manutenção, calibração, estado operacional, certificados e ligação à amostra.'],
         ['module' => 'SGQ', 'why' => 'Sustenta ISO/IEC 17025.', 'evidence' => 'Não conformidades, acções, competência, proficiência, fornecedores, avaliações.'],
@@ -163,11 +163,11 @@
 
     $readinessChecks = [
         ['area' => 'Dados mestres', 'ready' => 'Clientes, produtos, matrizes, parâmetros, unidades, métodos e perfis estão actualizados.', 'owner' => 'Administração técnica'],
-        ['area' => 'Pessoas', 'ready' => 'Utilizadores, papéis, permissões, assinaturas, passkeys/segurança e competências estão configurados.', 'owner' => 'Administração / Qualidade'],
+        ['area' => 'Pessoas', 'ready' => 'Utilizadores, papéis, permissões, assinaturas, chaves de acesso, segurança e competências estão configurados.', 'owner' => 'Administração / Qualidade'],
         ['area' => 'Laboratórios', 'ready' => 'Departamentos, laboratórios, responsáveis, equipamentos e condições ambientais estão ligados.', 'owner' => 'Direcção técnica'],
-        ['area' => 'Documentos', 'ready' => 'Templates de propostas, certificados, relatórios e documentos comerciais estão aprovados.', 'owner' => 'Qualidade / Direcção'],
+        ['area' => 'Documentos', 'ready' => 'Modelos de propostas, certificados, relatórios e documentos comerciais estão aprovados.', 'owner' => 'Qualidade / Direcção'],
         ['area' => 'Comunicação', 'ready' => 'Notificações, emails, lembretes e portal de cliente estão activos e testados.', 'owner' => 'Administração'],
-        ['area' => 'Auditoria', 'ready' => 'Backups, logs, actividade, evidências e exportações estão disponíveis.', 'owner' => 'Administração / TI'],
+        ['area' => 'Auditoria', 'ready' => 'Cópias de segurança, registos, actividade, evidências e exportações estão disponíveis.', 'owner' => 'Administração / TI'],
     ];
 @endphp
 
@@ -621,7 +621,7 @@
     <span class="section-kicker">Controlo documental</span>
     <h2 class="section-heading">Informação de gestão deste manual.</h2>
     <p class="section-lead">
-        Este guia deve ser tratado como documento vivo. Sempre que o laboratório alterar fluxos, permissões, templates, regras de decisão, notificações ou módulos críticos, a versão publicada deve ser revista.
+        Este guia deve ser tratado como documento vivo. Sempre que o laboratório alterar fluxos, permissões, modelos, regras de decisão, notificações ou módulos críticos, a versão publicada deve ser revista.
     </p>
 
     <table class="control-table">
@@ -856,7 +856,7 @@
     </table>
 
     <div class="callout-strong">
-        Sempre que o template usar gráficos, fundos, posicionamento livre ou composição visual avançada, validar a saída final no renderizador Chrome. Para documentos clássicos e compatíveis com CSS 2.1, o mPDF continua a ser fallback operacional.
+        Sempre que o modelo usar gráficos, fundos, posicionamento livre ou composição visual avançada, validar a saída final no renderizador Chrome. Para documentos clássicos e compatíveis com CSS 2.1, o mPDF continua a ser a alternativa operacional.
     </div>
 </section>
 
@@ -919,7 +919,7 @@
         </tr>
         <tr>
             <td>Documento incompleto</td>
-            <td>Validar template, variáveis, sample details, assinaturas, QR, cabeçalho, rodapé e paginação.</td>
+            <td>Validar modelo, variáveis, dados da amostra, assinaturas, QR, cabeçalho, rodapé e paginação.</td>
             <td>Qualidade / Direcção</td>
         </tr>
         <tr>

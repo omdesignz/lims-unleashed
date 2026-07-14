@@ -107,7 +107,7 @@ class StoreSampleEntryRequest extends FormRequest
                 if ($selectedMatrixId && (int) $selectedMatrixId !== (int) $product->matrix_id) {
                     $validator->errors()->add(
                         'client_submitted_info.matrix_id',
-                        'A matriz selecionada não corresponde ao produto escolhido.'
+                        'A matriz seleccionada não corresponde ao produto escolhido.'
                     );
                 }
 
@@ -125,7 +125,7 @@ class StoreSampleEntryRequest extends FormRequest
                     if ($invalidProfileIds->isNotEmpty()) {
                         $validator->errors()->add(
                             'client_submitted_info.requested_profile_ids',
-                            'Os perfis selecionados devem pertencer à matriz do produto escolhido.'
+                            'Os perfis seleccionados devem pertencer à matriz do produto escolhido.'
                         );
                     }
                 }
@@ -145,7 +145,7 @@ class StoreSampleEntryRequest extends FormRequest
                 if ($profilesForDepartmentCheck->isEmpty()) {
                     $validator->errors()->add(
                         'client_submitted_info.requested_profile_ids',
-                        'O produto selecionado não possui perfis analíticos compatíveis para o departamento informado.'
+                        'O produto seleccionado não possui perfis analíticos compatíveis para o departamento informado.'
                     );
 
                     return;
@@ -159,7 +159,7 @@ class StoreSampleEntryRequest extends FormRequest
                 ) {
                     $validator->errors()->add(
                         'client_submitted_info.requested_profile_ids',
-                        'Os perfis analíticos devem pertencer ao departamento selecionado.'
+                        'Os perfis analíticos devem pertencer ao departamento seleccionado.'
                     );
                 }
             },

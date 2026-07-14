@@ -53,7 +53,7 @@ watchEffect(() => {
 
 const isEditing = computed(() => Boolean(props.lab?.id))
 const completionChecks = computed(() => [
-  { label: 'Identificacao', complete: Boolean(form.name.trim() && form.code.trim()) },
+  { label: 'Identificação', complete: Boolean(form.name.trim() && form.code.trim()) },
   { label: 'Contacto', complete: Boolean(form.contact.trim() || form.email.trim() || form.extension.trim()) },
   { label: 'Responsabilidade', complete: Boolean(form.supervisor_id || form.technical_head_id || form.department_id) },
 ])

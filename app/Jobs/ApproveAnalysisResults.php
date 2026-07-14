@@ -2,17 +2,15 @@
 
 namespace App\Jobs;
 
-use App\Events\AnalysisResultsValidated;
 use App\Events\AnalysisResultsApproved;
+use App\Events\AnalysisResultsValidated;
 use App\Models\Analysis;
 use App\Models\CollectionProduct;
 use App\Models\QualityCertificate;
 use App\Models\Result;
 use App\Models\User;
 use App\Support\LaboratoryWorkflowNotifier;
-use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -23,8 +21,11 @@ class ApproveAnalysisResults implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $results;
+
     public $analysis_id;
+
     public $user;
+
     public $signature;
 
     /**
@@ -43,64 +44,67 @@ class ApproveAnalysisResults implements ShouldQueue
      */
     public function handle(LaboratoryWorkflowNotifier $workflowNotifier): void
     {
-        $analysis = Analysis::with('sample.collection.collection')->find($this->analysis_id);
+        $analysis = Analysis::with('sample.collection.collection')->findOrFail($this->analysis_id);
+        $user = User::findOrFail($this->user->id);
 
-        // Aprove The Results
         $lastResult = null;
         foreach ($this->results as $result) {
-            
-            $obj = Result::with('code')->find($result['result_id']);
+            $obj = Result::with('code')
+                ->whereBelongsTo($analysis->sample)
+                ->findOrFail($result['result_id']);
             $lastResult = $obj;
-                            
+
             $obj->update($result);
 
-            // Log result aproval
-            $u = User::find($this->user->id);
-
             activity()
-                ->by($u)
+                ->by($user)
                 ->performedOn($obj)
-                ->log('Validou o resultado ' .$obj->approved_value . ' no parâmetro: ' . $obj->parameter_label . ' da CL: ' . $obj->code->code);
+                ->log('Validou o resultado '.$obj->approved_value.' no parâmetro: '.$obj->parameter_label.' da CL: '.$obj->code->code);
 
             if ($this->signature) {
                 $obj->addMediaFromBase64($this->signature)
-                    ->usingFileName('approval-signature-' . $obj->id . '.png')
+                    ->usingFileName('approval-signature-'.$obj->id.'.png')
                     ->toMediaCollection('approval_signature');
-            } elseif ($u?->getFirstMedia('signature')) {
-                $obj->copyMedia($u->getFirstMedia('signature'))
+            } elseif (($signatureMedia = $user->getFirstMedia('signature')) && is_file($signatureMedia->getPath())) {
+                $obj->copyMedia($signatureMedia->getPath())
                     ->toMediaCollection('approval_signature');
             }
         }
 
-        // Update Status of Analysis
-        Analysis::find($this->analysis_id)->update([
+        $analysis->update([
             'end_date' => now(),
-            'status' => true
+            'status' => true,
         ]);
 
-        // Something Goes Here
-        if ( CollectionProduct::with('code.samples')->find($analysis->sample->collection->collection_id)->code->samples->count() == CollectionProduct::with('code.samples')->find($analysis->sample->collection->collection_id)->code->analysis->where('end_date', !null)->count() ) {
-            
-            CollectionProduct::find($analysis->sample->collection->collection_id)->update([
+        $collectionProduct = CollectionProduct::with(['code.analysis', 'sampleEntry'])
+            ->findOrFail($analysis->sample->collection->collection_id);
+        $analyses = $collectionProduct->code?->analysis ?? collect();
+
+        if ($analyses->isNotEmpty() && $analyses->every(fn (Analysis $item): bool => filled($item->end_date))) {
+            $collectionProduct->update([
                 'status' => true,
                 'processed' => true,
                 'analysis_end_date' => now()->format('Y-m-d'),
+                'sample_status' => 'Concluída',
             ]);
-    
-            $res = Result::with('sample.analysis.profile', 'counter_analysis', 'sample.collection')->find($this->results[0]['result_id']);
-    
-            if( QualityCertificate::whereCollectionId($analysis->sample->collection->collection_id)->count() > 0 ) {
-                
-            } else {
-                event( new AnalysisResultsValidated($res, $this->user->id) );
+
+            $collectionProduct->sampleEntry?->forceFill([
+                'analysis_end_date' => now(),
+                'status' => 'COMPLETADO',
+            ])->save();
+
+            $result = Result::with('sample.analysis.profile', 'counter_analysis', 'sample.collection')
+                ->findOrFail($this->results[0]['result_id']);
+
+            if (! QualityCertificate::whereCollectionId($collectionProduct->id)->exists()) {
+                event(new AnalysisResultsValidated($result, $user->id));
             }
         }
-        
-        // Notify User
-        broadcast(new AnalysisResultsApproved($this->user,$analysis->sample->collection));
+
+        broadcast(new AnalysisResultsApproved($this->user, $analysis->sample->collection));
 
         if ($lastResult) {
-            $workflowNotifier->notifyResultsApproved($lastResult->fresh(['sample.collection.collection.warehouse', 'inserted_by', 'verified_by', 'approved_by']), User::find($this->user->id));
+            $workflowNotifier->notifyResultsApproved($lastResult->fresh(['sample.collection.collection.warehouse', 'inserted_by', 'verified_by', 'approved_by']), $user);
         }
     }
 }

@@ -27,9 +27,7 @@ function submit() {
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <nav aria-label="Breadcrumb" class="mb-5">
         <Link :href="route('profiles.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ds-text-muted)] hover:text-[rgb(var(--primary-700-rgb))]">
-          <ArrowLeftIcon class="h-4 w-4" />
-          Perfis analiticos
-        </Link>
+          <ArrowLeftIcon class="h-4 w-4" /> Perfis analíticos </Link>
       </nav>
 
       <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -40,7 +38,7 @@ function submit() {
           <div class="min-w-0">
             <p class="ds-kicker">Perfil #{{ profile.id }}</p>
             <h1 class="ds-heading mt-1 break-words text-2xl">{{ profile.name }}</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Atualize a composicao analitica, a rastreabilidade e os criterios usados na entrada e execucao de amostras.</p>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Actualize a composição analítica, a rastreabilidade e os critérios usados na entrada e execução de amostras.</p>
             <div class="mt-3 flex flex-wrap gap-2">
               <span v-if="profile.code" class="ds-chip font-mono">{{ profile.code }}</span>
               <span class="ds-chip">{{ form.parameters.length }} ensaio(s)</span>
@@ -53,7 +51,7 @@ function submit() {
             <EyeIcon class="h-4 w-4" /> Ver perfil
           </Link>
           <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-            {{ form.processing ? "A guardar..." : "Guardar alteracoes" }}
+            {{ form.processing ? "A guardar..." : "Guardar alterações" }}
           </button>
         </div>
       </div>
@@ -64,7 +62,7 @@ function submit() {
       <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
         <Link :href="route('profiles.show', { profile: profile.id })" class="ds-button ds-button-secondary">Cancelar</Link>
         <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-          {{ form.processing ? "A guardar..." : "Guardar alteracoes" }}
+          {{ form.processing ? "A guardar..." : "Guardar alterações" }}
         </button>
       </footer>
     </section>

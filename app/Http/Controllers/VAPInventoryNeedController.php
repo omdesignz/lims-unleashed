@@ -484,8 +484,8 @@ class VAPInventoryNeedController extends Controller
             'obs' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        abort_if($need->status !== 'approved', 422, 'Only approved needs can be converted into an order.');
-        abort_if($need->inventory_order_id !== null, 422, 'This need has already been converted into an order.');
+        abort_if($need->status !== 'approved', 422, 'Apenas necessidades aprovadas podem ser convertidas em pedidos.');
+        abort_if($need->inventory_order_id !== null, 422, 'Esta necessidade já foi convertida num pedido.');
 
         $supplier = InventoryItemSupplier::query()->findOrFail($validated['supplier_id']);
         $supplierAssessmentBlocker = $this->supplierAssessmentBlocker($supplier);

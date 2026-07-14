@@ -2,19 +2,18 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
 use App\Models\Inventory;
+use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class LowStockAlert extends Notification
 {
     use Queueable;
 
     public $inventory;
-    public $sender;
 
+    public $sender;
 
     public function __construct(Inventory $inventory, $sender)
     {
@@ -25,25 +24,25 @@ class LowStockAlert extends Notification
     public function via($notifiable)
     {
         return [
-            'database'
+            'database',
         ]; // Change to ['mail', 'database'] if needed
     }
 
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->subject("⚠️ Alerta de Estoque Baixo: {$this->inventory->item->name}")
-            ->line("O item **{$this->inventory->item->name}** está com pouca quantidade disponível.")
-            ->line("Quantidade Disponível: {$this->inventory->qty_available}")
-            ->line("Quantidade Mínima de Estoque: {$this->inventory->min_stock_level}")
-            ->line("Por favor, verifique o estoque e reajuste.");
+            ->subject("Alerta de existências baixas: {$this->inventory->item->name}")
+            ->line("O artigo **{$this->inventory->item->name}** tem poucas existências disponíveis.")
+            ->line("Quantidade disponível: {$this->inventory->qty_available}")
+            ->line("Quantidade mínima: {$this->inventory->min_stock_level}")
+            ->line('Verifique as existências e proceda à reposição.');
     }
 
     public function toDatabase($notifiable)
     {
         return [
-            'title' => '⚠️ Alerta de Estoque Baixo',
-            'message' => "O item **{$this->inventory->item->name}** está com pouca quantidade disponível. ().\nQuantidade Disponível: {$this->inventory->qty_available}\nQuantidade Mínima de Estoque: {$this->inventory->min_stock_level}\nPor favor, verifique o estoque e reajuste.",
+            'title' => 'Alerta de existências baixas',
+            'message' => "O artigo **{$this->inventory->item->name}** tem poucas existências disponíveis.\nQuantidade disponível: {$this->inventory->qty_available}\nQuantidade mínima: {$this->inventory->min_stock_level}\nVerifique as existências e proceda à reposição.",
             'sender_id' => $this->sender->id,
             'sender_name' => $this->sender->name,
         ];

@@ -1,15 +1,15 @@
 <template>
     <div>
-      <button @click="shareFolder">Share</button>
+      <button @click="shareFolder">Partilhar</button>
       <div v-if="showModal">
         <form @submit.prevent="share">
-          <BaseInput v-model="email" placeholder="Enter user's email" />
-          <button type="submit">Share</button>
+          <BaseInput v-model="email" placeholder="Introduza o correio electrónico do utilizador" />
+          <button type="submit">Partilhar</button>
         </form>
       </div>
     </div>
   </template>
-  
+
   <script setup>
   import { ref } from 'vue';
 import { useForm, router } from "@inertiajs/vue3";
@@ -27,4 +27,4 @@ import { useForm, router } from "@inertiajs/vue3";
     router.post(route('folders.share', folder.id), { email: email.value });
   };
   </script>
-  
+

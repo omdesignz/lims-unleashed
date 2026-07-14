@@ -45,14 +45,14 @@ function applyFilters() {
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="flex min-w-0 items-start gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><QuestionMarkCircleIcon class="h-5 w-5" /></span><div><p class="ds-kicker">Centro de ajuda</p><h1 class="ds-heading mt-1 text-2xl">Perguntas frequentes</h1><p class="ds-copy mt-1 max-w-3xl text-sm">Respostas sobre colheitas, analises, certificados, documentos e faturacao.</p></div></div>
+          <div class="flex min-w-0 items-start gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><QuestionMarkCircleIcon class="h-5 w-5" /></span><div><p class="ds-kicker">Centro de ajuda</p><h1 class="ds-heading mt-1 text-2xl">Perguntas frequentes</h1><p class="ds-copy mt-1 max-w-3xl text-sm">Respostas sobre colheitas, análises, certificados, documentos e facturação.</p></div></div>
           <Link :href="route('portal.requests.index', { new: 1, request_type: 'general_support', title: 'Pedido de ajuda' })" class="ds-button ds-button-primary"><PlusIcon class="h-4 w-4" />Pedir ajuda</Link>
         </div>
       </div>
       <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-3">
-        <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label">Perguntas nesta pagina</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ questions.length }}</dd></div>
+        <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label">Perguntas nesta página</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ questions.length }}</dd></div>
         <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label">Com resposta</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ answeredCount }}</dd></div>
-        <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label">Categorias visiveis</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ categories.length }}</dd></div>
+        <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label">Categorias visíveis</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ categories.length }}</dd></div>
       </dl>
     </section>
 
@@ -65,7 +65,7 @@ function applyFilters() {
     </section>
 
     <section class="ds-card overflow-hidden">
-      <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6"><h2 class="text-base font-bold text-[var(--ds-text)]">Respostas</h2><p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Abra uma pergunta para consultar a orientacao disponivel.</p></header>
+      <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6"><h2 class="text-base font-bold text-[var(--ds-text)]">Respostas</h2><p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Abra uma pergunta para consultar a orientação disponível.</p></header>
       <div v-if="questions.length" class="divide-y divide-[var(--ds-border)]">
         <Disclosure v-for="faq in questions" :key="faq.id" v-slot="{ open }" as="div">
           <DisclosureButton class="flex w-full items-start justify-between gap-4 px-5 py-4 text-left hover:bg-[var(--ds-panel-subtle)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[var(--ds-focus)] sm:px-6">
@@ -74,7 +74,7 @@ function applyFilters() {
           </DisclosureButton>
           <DisclosurePanel class="border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-5 sm:px-6">
             <div v-if="faq.answers?.length" class="space-y-4"><div v-for="answer in faq.answers" :key="answer.id" class="flex items-start gap-3"><ChatBubbleLeftRightIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))]" /><p class="whitespace-pre-line text-sm font-medium leading-6 text-[var(--ds-text-muted)]">{{ answer.description }}</p></div></div>
-            <p v-else class="text-sm font-semibold text-[var(--ds-text-muted)]">A resposta ainda nao esta publicada. Abra um pedido de apoio para acompanhamento.</p>
+            <p v-else class="text-sm font-semibold text-[var(--ds-text-muted)]">A resposta ainda não esta publicada. Abra um pedido de apoio para acompanhamento.</p>
           </DisclosurePanel>
         </Disclosure>
       </div>

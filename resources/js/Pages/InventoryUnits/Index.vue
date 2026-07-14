@@ -8,5 +8,5 @@ defineProps({ record: { type: Object, default: () => ({ data: [], meta: {} }) },
 </script>
 
 <template>
-  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="iunits" route-parameter="iunit" permission-key="iunits" title="Unidades de inventario" kicker="Metrologia de stock" description="Unidades padronizadas para rececao, armazenamento, consumo e reconciliacao." entity-label="Unidade de inventario" new-entity-label="Nova unidade" code-label="Codigo" description-label="Definicao" :supports-name="false" :icon="ScaleIcon" />
+  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="iunits" route-parameter="iunit" permission-key="iunits" title="Unidades de inventário" kicker="Metrologia de existências" description="Unidades padronizadas para recepção, armazenamento, consumo e reconciliação." entity-label="Unidade de inventário" new-entity-label="Nova unidade" code-label="Código" description-label="Definição" :supports-name="false" :icon="ScaleIcon" />
 </template>

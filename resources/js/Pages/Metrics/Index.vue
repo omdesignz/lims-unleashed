@@ -10,7 +10,7 @@
             </span>
             <div class="min-w-0">
               <h1 class="ds-heading text-xl sm:text-2xl">Indicadores laboratoriais</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Volume de amostras, conclusão analítica, tempo de resposta e faturação no período selecionado.</p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">Volume de amostras, conclusão analítica, tempo de resposta e facturação no período seleccionado.</p>
             </div>
           </div>
         </div>
@@ -96,13 +96,13 @@
         <div class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
           <div>
             <p class="ds-kicker">Receita emitida</p>
-            <h2 class="ds-heading mt-1 text-base">Faturação validada</h2>
+            <h2 class="ds-heading mt-1 text-base">Facturação validada</h2>
           </div>
           <BanknotesIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
         </div>
         <div class="px-5 py-6 sm:px-6">
           <p class="text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ formatCurrency(total_invoice_amount) }}</p>
-          <p class="ds-copy mt-2 text-sm">Total das faturas emitidas e válidas dentro do período de referência.</p>
+          <p class="ds-copy mt-2 text-sm">Total das facturas emitidas e válidas dentro do período de referência.</p>
         </div>
       </section>
     </div>

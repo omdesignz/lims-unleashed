@@ -23,7 +23,7 @@ function mapInvoice(invoice) {
     description: invoice.description,
     details: [
       { label: "Em aberto", value: formatCurrency(amountDue) },
-      { label: "Referencia interna", value: invoice.internal_ref },
+      { label: "Referência interna", value: invoice.internal_ref },
     ],
   };
 }
@@ -37,15 +37,15 @@ function formatCurrency(value) {
   <PortalDocumentLibrary
     :record="record"
     :query="query"
-    title="Faturas"
+    title="Facturas"
     kicker="Conta corrente"
-    description="Consulte documentos emitidos, saldos pendentes e o PDF fiscal associado a cada fatura."
-    entity-label="fatura"
+    description="Consulte documentos emitidos, saldos pendentes e o PDF fiscal associado a cada factura."
+    entity-label="factura"
     :icon="BanknotesIcon"
     download-route="portal.invoices.getInvoicePDF"
     support-type="billing_support"
-    support-title="Apoio sobre faturacao"
-    value-metric-label="Faturado nesta pagina"
+    support-title="Apoio sobre facturação"
+    value-metric-label="Facturado nesta página"
     :map-record="mapInvoice"
   />
 </template>

@@ -44,7 +44,7 @@ const status = computed(() => {
 const resultFields = computed(() => [
   { label: "Nome legal", value: taxData.value?.gsmc, icon: BuildingOffice2Icon },
   { label: "Regime de IVA", value: taxData.value?.regimeIva, icon: IdentificationIcon },
-  { label: "Email", value: taxData.value?.email, icon: EnvelopeIcon },
+  { label: "Correio electrónico", value: taxData.value?.email, icon: EnvelopeIcon },
   { label: "Contacto", value: taxData.value?.lxfs, icon: PhoneIcon },
 ]);
 
@@ -70,12 +70,12 @@ async function getTaxData() {
     });
 
     if (!response.ok || !response.headers.get("content-type")?.includes("application/json")) {
-      throw new Error("A autoridade fiscal nao devolveu uma resposta valida.");
+      throw new Error("A autoridade fiscal não devolveu uma resposta válida.");
     }
 
     taxData.value = await response.json();
   } catch (error) {
-    searchError.value = error instanceof Error ? error.message : "Nao foi possivel consultar o NIF.";
+    searchError.value = error instanceof Error ? error.message : "Não foi possível consultar o NIF.";
   } finally {
     isLoading.value = false;
   }
@@ -104,9 +104,9 @@ function clearSearch() {
             <DocumentMagnifyingGlassIcon class="h-5 w-5" />
           </span>
           <div class="min-w-0">
-            <p class="ds-kicker">Validacao fiscal</p>
+            <p class="ds-kicker">Validação fiscal</p>
             <h1 class="ds-heading mt-1 text-2xl">Consulta de NIF</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Confirme a identidade legal e o regime fiscal antes de concluir o cadastro ou emitir documentos comerciais.</p>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Confirme a identidade legal e o regime fiscal antes de concluir o registo ou emitir documentos comerciais.</p>
           </div>
         </div>
 
@@ -125,13 +125,13 @@ function clearSearch() {
               <MagnifyingGlassIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
               Pesquisar contribuinte
             </h2>
-            <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Introduza o numero de identificacao fiscal sem espacos adicionais.</p>
+            <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Introduza o número de identificação fiscal sem espacos adicionais.</p>
           </header>
 
           <form class="px-5 py-5 sm:px-6" @submit.prevent="getTaxData">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start">
               <div class="ds-field-group min-w-0 flex-1">
-                <label for="tax-number" class="ds-field-label">Numero de identificacao fiscal <span class="ds-field-required">*</span></label>
+                <label for="tax-number" class="ds-field-label">Número de identificação fiscal <span class="ds-field-required">*</span></label>
                 <div class="relative">
                   <IdentificationIcon class="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--ds-text-soft)]" />
                   <BaseInput id="tax-number" v-model="taxNumber" type="text" inputmode="numeric" class="ds-field pl-10 font-mono" autocomplete="off" :aria-invalid="Boolean(searchError)" placeholder="Introduza o NIF" />
@@ -163,7 +163,7 @@ function clearSearch() {
             </div>
             <button type="button" class="ds-button ds-button-secondary mt-3 sm:mt-0" :disabled="isLoading" @click="getTaxData">
               <ArrowPathIcon class="h-4 w-4" />
-              Atualizar
+              Actualizar
             </button>
           </header>
 
@@ -173,23 +173,23 @@ function clearSearch() {
                 <component :is="field.icon" class="h-4 w-4" />
                 {{ field.label }}
               </dt>
-              <dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ field.value || "Nao disponivel" }}</dd>
+              <dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ field.value || "Não disponível" }}</dd>
             </div>
           </dl>
 
           <div class="border-t border-[var(--ds-border)] px-5 py-5 sm:px-6">
             <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[var(--ds-text-soft)]">
               <MapPinIcon class="h-4 w-4" />
-              Endereco fiscal
+              Endereço fiscal
             </dt>
-            <dd class="mt-2 whitespace-pre-line break-words text-sm font-semibold text-[var(--ds-text-muted)]">{{ taxData.addressDbb || "Endereco nao disponibilizado pela fonte." }}</dd>
+            <dd class="mt-2 whitespace-pre-line break-words text-sm font-semibold text-[var(--ds-text-muted)]">{{ taxData.addressDbb || "Endereço não disponibilizado pela fonte." }}</dd>
           </div>
         </section>
 
         <div v-else-if="!isLoading && !searchError" class="ds-empty-state py-14 text-center">
           <DocumentMagnifyingGlassIcon class="mx-auto h-10 w-10 text-[var(--ds-text-soft)]" />
           <h2 class="mt-4 text-sm font-bold text-[var(--ds-text)]">Nenhuma consulta efetuada</h2>
-          <p class="ds-copy mx-auto mt-1 max-w-md text-sm">Os dados legais e fiscais aparecerao aqui depois de consultar um NIF valido.</p>
+          <p class="ds-copy mx-auto mt-1 max-w-md text-sm">Os dados legais e fiscais aparecerao aqui depois de consultar um NIF válido.</p>
         </div>
       </div>
 
@@ -202,18 +202,18 @@ function clearSearch() {
             </h2>
           </header>
           <dl class="divide-y divide-[var(--ds-border)] px-5">
-            <div class="flex items-center justify-between gap-3 py-3.5"><dt class="text-xs font-bold text-[var(--ds-text-muted)]">NIF informado</dt><dd class="font-mono text-xs font-bold text-[var(--ds-text)]">{{ taxNumber || "Nao" }}</dd></div>
-            <div class="flex items-center justify-between gap-3 py-3.5"><dt class="text-xs font-bold text-[var(--ds-text-muted)]">Dados disponiveis</dt><dd class="text-xs font-bold text-[var(--ds-text)]">{{ hasTaxData ? "Sim" : "Nao" }}</dd></div>
-            <div class="flex items-center justify-between gap-3 py-3.5"><dt class="text-xs font-bold text-[var(--ds-text-muted)]">Em processamento</dt><dd class="text-xs font-bold text-[var(--ds-text)]">{{ isLoading ? "Sim" : "Nao" }}</dd></div>
+            <div class="flex items-center justify-between gap-3 py-3.5"><dt class="text-xs font-bold text-[var(--ds-text-muted)]">NIF informado</dt><dd class="font-mono text-xs font-bold text-[var(--ds-text)]">{{ taxNumber || "Não" }}</dd></div>
+            <div class="flex items-center justify-between gap-3 py-3.5"><dt class="text-xs font-bold text-[var(--ds-text-muted)]">Dados disponíveis</dt><dd class="text-xs font-bold text-[var(--ds-text)]">{{ hasTaxData ? "Sim" : "Não" }}</dd></div>
+            <div class="flex items-center justify-between gap-3 py-3.5"><dt class="text-xs font-bold text-[var(--ds-text-muted)]">Em processamento</dt><dd class="text-xs font-bold text-[var(--ds-text)]">{{ isLoading ? "Sim" : "Não" }}</dd></div>
           </dl>
         </section>
 
         <section class="ds-card p-5">
           <h2 class="text-sm font-bold text-[var(--ds-text)]">Antes de usar os dados</h2>
           <ul class="mt-4 space-y-3 text-sm font-semibold text-[var(--ds-text-muted)]">
-            <li class="flex items-start gap-2"><CheckCircleIcon class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-300" />Confirme a designacao legal com o cliente.</li>
+            <li class="flex items-start gap-2"><CheckCircleIcon class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-300" />Confirme a designação legal com o cliente.</li>
             <li class="flex items-start gap-2"><CheckCircleIcon class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-300" />Valide o regime de IVA no documento comercial.</li>
-            <li class="flex items-start gap-2"><CheckCircleIcon class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-300" />Registe o endereco no local de faturacao correto.</li>
+            <li class="flex items-start gap-2"><CheckCircleIcon class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-300" />Registe o endereço no local de facturação correcto.</li>
           </ul>
         </section>
       </aside>

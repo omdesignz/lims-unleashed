@@ -4,19 +4,18 @@ namespace App\Exports;
 
 use App\Models\VAPNonConformity;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithTitle;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Border;
 
-class NonConformitiesExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize, WithColumnFormatting
+class NonConformitiesExport implements FromCollection, ShouldAutoSize, WithColumnFormatting, WithHeadings, WithMapping, WithStyles
 {
     protected $filters;
 
@@ -30,27 +29,27 @@ class NonConformitiesExport implements FromCollection, WithHeadings, WithMapping
         $query = VAPNonConformity::with(['lab', 'department'])
             ->orderBy('created_at', 'desc');
 
-        if (!empty($this->filters['status'])) {
+        if (! empty($this->filters['status'])) {
             $query->where('status', $this->filters['status']);
         }
 
-        if (!empty($this->filters['severity'])) {
+        if (! empty($this->filters['severity'])) {
             $query->where('severity', $this->filters['severity']);
         }
 
-        if (!empty($this->filters['category'])) {
+        if (! empty($this->filters['category'])) {
             $query->where('category', $this->filters['category']);
         }
 
-        if (!empty($this->filters['lab_id'])) {
+        if (! empty($this->filters['lab_id'])) {
             $query->where('lab_id', $this->filters['lab_id']);
         }
 
-        if (!empty($this->filters['start_date'])) {
+        if (! empty($this->filters['start_date'])) {
             $query->whereDate('reported_at', '>=', $this->filters['start_date']);
         }
 
-        if (!empty($this->filters['end_date'])) {
+        if (! empty($this->filters['end_date'])) {
             $query->whereDate('reported_at', '<=', $this->filters['end_date']);
         }
 
@@ -77,10 +76,10 @@ class NonConformitiesExport implements FromCollection, WithHeadings, WithMapping
             'Equipamento ID',
             'Número do Lote',
             'Causa Raiz',
-            'Ações Corretivas',
-            'Ações Preventivas',
+            'Acções Corretivas',
+            'Acções Preventivas',
             'Comentários',
-            'Dias Abertos'
+            'Dias Abertos',
         ];
     }
 
@@ -107,7 +106,7 @@ class NonConformitiesExport implements FromCollection, WithHeadings, WithMapping
             $nonConformity->corrective_actions,
             $nonConformity->preventive_actions,
             $nonConformity->comments,
-            $nonConformity->daysOpen()
+            $nonConformity->daysOpen(),
         ];
     }
 
@@ -117,52 +116,52 @@ class NonConformitiesExport implements FromCollection, WithHeadings, WithMapping
         $sheet->getStyle('A1:U1')->applyFromArray([
             'font' => [
                 'bold' => true,
-                'color' => ['rgb' => 'FFFFFF']
+                'color' => ['rgb' => 'FFFFFF'],
             ],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '1E3A8A']
+                'startColor' => ['rgb' => '1E3A8A'],
             ],
             'alignment' => [
                 'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER
+                'vertical' => Alignment::VERTICAL_CENTER,
             ],
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => '000000']
-                ]
-            ]
+                    'color' => ['rgb' => '000000'],
+                ],
+            ],
         ]);
 
         // Set row height for header
         $sheet->getRowDimension(1)->setRowHeight(25);
 
         // Auto size columns
-        foreach(range('A', 'U') as $column) {
+        foreach (range('A', 'U') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
 
         // Add border to all cells
         $lastRow = $sheet->getHighestRow();
         $lastColumn = $sheet->getHighestColumn();
-        
+
         $sheet->getStyle("A1:{$lastColumn}{$lastRow}")->applyFromArray([
             'borders' => [
                 'outline' => [
                     'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => '000000']
+                    'color' => ['rgb' => '000000'],
                 ],
                 'inside' => [
                     'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => 'DDDDDD']
-                ]
-            ]
+                    'color' => ['rgb' => 'DDDDDD'],
+                ],
+            ],
         ]);
 
         // Wrap text for description and other long fields
-        $sheet->getStyle('C2:C' . $lastRow)->getAlignment()->setWrapText(true);
-        $sheet->getStyle('Q2:S' . $lastRow)->getAlignment()->setWrapText(true);
+        $sheet->getStyle('C2:C'.$lastRow)->getAlignment()->setWrapText(true);
+        $sheet->getStyle('Q2:S'.$lastRow)->getAlignment()->setWrapText(true);
 
         // Set column widths for better readability
         $sheet->getColumnDimension('A')->setWidth(15); // NC Number
@@ -194,9 +193,9 @@ class NonConformitiesExport implements FromCollection, WithHeadings, WithMapping
             'opened' => 'Aberto',
             'in_progress' => 'Em Andamento',
             'resolved' => 'Resolvido',
-            'closed' => 'Fechado'
+            'closed' => 'Fechado',
         ];
-        
+
         return $statuses[$status] ?? $status;
     }
 
@@ -206,9 +205,9 @@ class NonConformitiesExport implements FromCollection, WithHeadings, WithMapping
             'low' => 'Baixa',
             'medium' => 'Média',
             'high' => 'Alta',
-            'critical' => 'Crítica'
+            'critical' => 'Crítica',
         ];
-        
+
         return $severities[$severity] ?? $severity;
     }
 
@@ -219,9 +218,9 @@ class NonConformitiesExport implements FromCollection, WithHeadings, WithMapping
             'safety' => 'Segurança',
             'environmental' => 'Ambiental',
             'regulatory' => 'Regulatório',
-            'other' => 'Outro'
+            'other' => 'Outro',
         ];
-        
+
         return $categories[$category] ?? $category;
     }
 }

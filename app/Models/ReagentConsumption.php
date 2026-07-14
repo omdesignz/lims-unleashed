@@ -2,19 +2,18 @@
 
 namespace App\Models;
 
+use App\Filters\GlobalFilter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\AllowedSort;
-use App\Filters\GlobalFilter;
 
 class ReagentConsumption extends Model
 {
     use HasFactory, LogsActivity;
 
-    public CONST MENU_NAME = 'reagent_consumption';
+    public const MENU_NAME = 'reagent_consumption';
 
     protected $table = 'reagent_consumption';
 
@@ -56,7 +55,13 @@ class ReagentConsumption extends Model
         return LogOptions::defaults()
             ->logOnly(['reagent_id', 'quantity_used', 'used_by', 'used_at', 'remarks'])
             ->useLogName('reagent_consumption')
-            ->setDescriptionForEvent(fn(string $eventName) => "Reagent consumption {$eventName}"); 
+            ->setDescriptionForEvent(fn (string $eventName) => 'Consumo de reagente '.match ($eventName) {
+                'created' => 'registado',
+                'updated' => 'actualizado',
+                'deleted' => 'eliminado',
+                'restored' => 'restaurado',
+                default => $eventName,
+            });
     }
 
     public static function getAllowedFilters(): array
@@ -82,51 +87,51 @@ class ReagentConsumption extends Model
     public static function getColumns(): array
     {
         return [
-                [
-                    'name' => trans('gestlab.general.labels.reagent_consumption.date'),
-                    'value' => 'date',
-                    'filter_field' => 'date',
-                    'filterable' => true,
-                    'type' => 'string',
-                    'format' => '',
-                    'filter' => '',
-                ],
-                [
-                    'name' => trans('gestlab.general.labels.reagent_consumption.reagent_name'),
-                    'value' => 'reagent_name',
-                    'filter_field' => 'reagent_name',
-                    'filterable' => true,
-                    'type' => 'string',
-                    'format' => '',
-                    'filter' => '',
-                ],
-                [
-                    'name' => trans('gestlab.general.labels.reagent_consumption.quantity_used'),
-                    'value' => 'quantity_used',
-                    'filter_field' => 'quantity_used',
-                    'filterable' => true,
-                    'type' => 'string',
-                    'format' => '',
-                    'filter' => '',
-                ],
-                [
-                    'name' => trans('gestlab.general.labels.created_at'),
-                    'value' => 'created_at',
-                    'filter_field' => 'created_at',
-                    'filterable' => true,
-                    'type' => 'date',
-                    'format' => '',
-                    'filter' => '',
-                ],
-                // [
-                //     'name' => trans('gestlab.actions.edit'),
-                //     'value' => 'actions',
-                //     'filter_field' => 'actions',
-                //     'filterable' => false,
-                //     'type' => 'actions',
-                //     'format' => '',
-                //     'filter' => '',
-                // ],
-            ];
+            [
+                'name' => trans('gestlab.general.labels.reagent_consumption.date'),
+                'value' => 'date',
+                'filter_field' => 'date',
+                'filterable' => true,
+                'type' => 'string',
+                'format' => '',
+                'filter' => '',
+            ],
+            [
+                'name' => trans('gestlab.general.labels.reagent_consumption.reagent_name'),
+                'value' => 'reagent_name',
+                'filter_field' => 'reagent_name',
+                'filterable' => true,
+                'type' => 'string',
+                'format' => '',
+                'filter' => '',
+            ],
+            [
+                'name' => trans('gestlab.general.labels.reagent_consumption.quantity_used'),
+                'value' => 'quantity_used',
+                'filter_field' => 'quantity_used',
+                'filterable' => true,
+                'type' => 'string',
+                'format' => '',
+                'filter' => '',
+            ],
+            [
+                'name' => trans('gestlab.general.labels.created_at'),
+                'value' => 'created_at',
+                'filter_field' => 'created_at',
+                'filterable' => true,
+                'type' => 'date',
+                'format' => '',
+                'filter' => '',
+            ],
+            // [
+            //     'name' => trans('gestlab.actions.edit'),
+            //     'value' => 'actions',
+            //     'filter_field' => 'actions',
+            //     'filterable' => false,
+            //     'type' => 'actions',
+            //     'format' => '',
+            //     'filter' => '',
+            // ],
+        ];
     }
 }

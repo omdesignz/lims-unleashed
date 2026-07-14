@@ -72,7 +72,7 @@ class ResponsibilityMatrixController extends Controller
 
         $responsibilityMatrix->update($validated);
 
-        return back()->with('success', 'Entrada da matriz atualizada.');
+        return back()->with('success', 'Entrada da matriz actualizada.');
     }
 
     public function destroy(ResponsibilityMatrixEntry $responsibilityMatrix)

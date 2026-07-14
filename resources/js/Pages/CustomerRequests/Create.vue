@@ -43,9 +43,7 @@ function submit() {
           <div class="min-w-0">
             <p class="ds-kicker">Novo registo</p>
             <h1 class="ds-heading mt-1 text-2xl">Pedido de cliente</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">
-              Registe a necessidade, o local do cliente e o contacto responsavel pela comunicacao.
-            </p>
+            <p class="ds-copy mt-1 max-w-3xl text-sm"> Registe a necessidade, o local do cliente e o contacto responsável pela comunicação. </p>
           </div>
         </div>
 

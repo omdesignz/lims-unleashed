@@ -192,7 +192,7 @@
 
                 @if($label->has_qr_code && $item['qr_code_image'])
                     <div class="label-qr">
-                        <img src="{{ $item['qr_code_image'] }}" alt="QR Code">
+                        <img src="{{ $item['qr_code_image'] }}" alt="Código QR">
                     </div>
                 @endif
 

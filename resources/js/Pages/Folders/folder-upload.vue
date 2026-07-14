@@ -1,9 +1,9 @@
 <template>
     <div>
-      <h2>Upload Folder</h2>
+      <h2>Carregar pasta</h2>
       <form @submit.prevent="uploadFolder">
         <FileInput type="file" webkitdirectory multiple @change="handleFiles" />
-        <button type="submit">Upload Folder</button>
+        <button type="submit">Carregar pasta</button>
       </form>
 
       <div v-if="progress > 0">
@@ -11,15 +11,15 @@
         </div>
 
       <div v-if="folderStructure.length">
-        <h3>Folder Contents2:</h3>
+        <h3>Conteúdo da pasta:</h3>
         <ul>
           <li v-for="file in folderStructure" :key="file.relativePath">{{ file.relativePath }}</li>
         </ul>
       </div>
-      
+
     </div>
   </template>
-  
+
   <script setup>
   import { ref } from 'vue';
   import { useForm, router } from "@inertiajs/vue3";
@@ -38,7 +38,7 @@
 
   const uploadFolder = async () => {
     const formData = new FormData();
-    
+
     // Append each file along with its relative path to FormData
     folderStructure.value.forEach(item => {
       formData.append('files[]', item.file);
@@ -62,11 +62,11 @@
       // Reset the progress and uploading state
       uploading.value = false;
       progress.value = 0;
-      
+
     } catch (error) {
       console.error('Error uploading folder:', error);
     }
   };
 
   </script>
-  
+

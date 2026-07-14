@@ -28,13 +28,13 @@ class ApplicationEventController extends Controller
         $eventFiles = File::allFiles(app_path('Events'));
 
         foreach ($eventFiles as $file) {
-            $className = 'App\\Events\\' . Str::replaceLast('.php', '', $file->getFilename());
+            $className = 'App\\Events\\'.Str::replaceLast('.php', '', $file->getFilename());
             if (class_exists($className)) {
                 ApplicationEvent::firstOrCreate(['name' => $className], ['description' => '']);
             }
         }
 
-        return redirect()->back()->with('success', 'Events synchronized successfully.');
+        return redirect()->back()->with('success', 'Eventos sincronizados com sucesso.');
     }
 
     public function associate(Request $request, ApplicationEvent $event)
@@ -45,6 +45,6 @@ class ApplicationEventController extends Controller
 
         $event->emailTemplate()->sync([$request->email_template_id]);
 
-        return redirect()->back()->with('success', 'Email template associated successfully.');
+        return redirect()->back()->with('success', 'Modelo de correio electrónico associado com sucesso.');
     }
 }

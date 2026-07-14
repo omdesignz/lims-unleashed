@@ -80,6 +80,109 @@
       </div>
     </section>
 
+    <section v-if="laboratoryDossier" class="ds-panel overflow-hidden">
+      <div class="grid gap-6 border-b border-[var(--ds-border)] px-5 py-5 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start lg:px-6">
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <p class="ds-kicker">Execução laboratorial</p>
+            <span class="inline-flex border border-primary-300 bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-900 dark:border-primary-400/30 dark:bg-primary-500/10 dark:text-primary-100">
+              {{ laboratoryDossier.stage.label }}
+            </span>
+          </div>
+          <h2 class="ds-heading mt-2 text-lg">Do aceite ao boletim</h2>
+          <p class="ds-copy mt-2 max-w-3xl text-sm">{{ laboratoryDossier.stage.description }}</p>
+        </div>
+
+        <div class="border-l-4 border-primary-500 bg-[var(--ds-panel-subtle)] p-4">
+          <p class="text-xs font-bold text-[var(--ds-text)]">Próxima acção</p>
+          <p class="mt-1 text-xs leading-5 text-[var(--ds-text-muted)]">{{ laboratoryDossier.primary_action.description }}</p>
+          <button v-if="laboratoryDossier.primary_action.disabled" type="button" class="ds-button ds-button-secondary mt-4 w-full" disabled>
+            {{ laboratoryDossier.primary_action.label }}
+          </button>
+          <Link
+            v-else-if="laboratoryDossier.primary_action.method === 'post'"
+            :href="laboratoryDossier.primary_action.url"
+            method="post"
+            as="button"
+            class="ds-button ds-button-primary mt-4 w-full"
+          >
+            {{ laboratoryDossier.primary_action.label }}
+            <ArrowRightIcon class="h-4 w-4" />
+          </Link>
+          <Link v-else :href="laboratoryDossier.primary_action.url" class="ds-button ds-button-primary mt-4 w-full">
+            {{ laboratoryDossier.primary_action.label }}
+            <ArrowRightIcon class="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+
+      <div class="grid gap-6 p-5 lg:grid-cols-[minmax(0,1fr)_17rem] lg:p-6">
+        <div>
+          <ol class="grid grid-cols-6 gap-1" aria-label="Etapas do dossier laboratorial">
+            <li v-for="(step, index) in laboratoryDossier.steps" :key="step.key" class="min-w-0 text-center">
+              <div class="flex items-center">
+                <span v-if="index > 0" :class="['h-px flex-1', step.status === 'pending' ? 'bg-[var(--ds-border)]' : 'bg-emerald-500']" />
+                <span
+                  :class="[
+                    'flex h-8 w-8 shrink-0 items-center justify-center border text-xs font-bold',
+                    step.status === 'complete'
+                      ? 'border-emerald-600 bg-emerald-600 text-white'
+                      : step.status === 'current'
+                        ? 'border-primary-600 bg-primary-50 text-primary-800 ring-2 ring-primary-200 dark:bg-primary-500/10 dark:text-primary-100 dark:ring-primary-500/20'
+                        : 'border-[var(--ds-border-strong)] bg-[var(--ds-panel)] text-[var(--ds-text-soft)]'
+                  ]"
+                >
+                  <CheckCircleIcon v-if="step.status === 'complete'" class="h-5 w-5" />
+                  <span v-else>{{ index + 1 }}</span>
+                </span>
+                <span v-if="index < laboratoryDossier.steps.length - 1" :class="['h-px flex-1', step.status === 'complete' ? 'bg-emerald-500' : 'bg-[var(--ds-border)]']" />
+              </div>
+              <span class="mt-2 block truncate text-[10px] font-bold text-[var(--ds-text-soft)]" :title="step.label">{{ step.label }}</span>
+            </li>
+          </ol>
+
+          <div v-if="laboratoryDossier.samples.length" class="mt-6 border border-[var(--ds-border)] text-xs">
+            <div class="hidden grid-cols-[minmax(12rem,1.2fr)_9rem_minmax(11rem,1fr)_4rem] bg-[var(--ds-panel-subtle)] px-4 py-3 font-bold text-[var(--ds-text-soft)] md:grid">
+              <span>Amostra</span>
+              <span>Código laboratorial</span>
+              <span>Produto</span>
+              <span class="text-right">Acção</span>
+            </div>
+            <div class="divide-y divide-[var(--ds-border)]">
+              <div v-for="sample in laboratoryDossier.samples" :key="sample.id" class="grid gap-3 px-4 py-3 md:grid-cols-[minmax(12rem,1.2fr)_9rem_minmax(11rem,1fr)_4rem] md:items-center">
+                <div class="min-w-0">
+                  <p class="font-mono font-bold text-[var(--ds-text)]">{{ sample.code || 'Por gerar' }}</p>
+                  <p class="mt-1 truncate text-[var(--ds-text-muted)]" :title="sample.name">{{ sample.name }}</p>
+                </div>
+                <p class="font-mono font-bold text-[var(--ds-text)]"><span class="mr-2 font-sans text-[var(--ds-text-soft)] md:hidden">Código laboratorial</span>{{ sample.lab_code || 'Pendente' }}</p>
+                <p class="truncate font-semibold text-[var(--ds-text-muted)]" :title="sample.product || 'Âmbito por definir'"><span class="mr-2 text-[var(--ds-text-soft)] md:hidden">Produto</span>{{ sample.product || 'Âmbito por definir' }}</p>
+                <Link :href="sample.show_url" class="justify-self-start font-bold text-primary-800 hover:underline dark:text-primary-200 md:justify-self-end">Abrir</Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <dl class="divide-y divide-[var(--ds-border)] border-y border-[var(--ds-border)]">
+          <div class="flex items-center justify-between gap-3 py-3">
+            <dt class="text-xs font-semibold text-[var(--ds-text-muted)]">Amostras</dt>
+            <dd class="text-sm font-bold text-[var(--ds-text)]">{{ laboratoryDossier.counts.accessioned_samples }}/{{ laboratoryDossier.counts.samples }}</dd>
+          </div>
+          <div class="flex items-center justify-between gap-3 py-3">
+            <dt class="text-xs font-semibold text-[var(--ds-text-muted)]">Análises</dt>
+            <dd class="text-sm font-bold text-[var(--ds-text)]">{{ laboratoryDossier.counts.analyses }}</dd>
+          </div>
+          <div class="flex items-center justify-between gap-3 py-3">
+            <dt class="text-xs font-semibold text-[var(--ds-text-muted)]">Resultados aprovados</dt>
+            <dd class="text-sm font-bold text-[var(--ds-text)]">{{ laboratoryDossier.counts.approved_results }}/{{ laboratoryDossier.counts.results }}</dd>
+          </div>
+          <div class="flex items-center justify-between gap-3 py-3">
+            <dt class="text-xs font-semibold text-[var(--ds-text-muted)]">Boletins validados</dt>
+            <dd class="text-sm font-bold text-[var(--ds-text)]">{{ laboratoryDossier.counts.validated_reports }}/{{ laboratoryDossier.counts.reports }}</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
     <div class="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_24rem]">
       <main class="space-y-8">
         <section class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90 sm:p-7">
@@ -487,6 +590,10 @@ const props = defineProps({
   parsedTemplateContent: {
     type: String,
     default: '',
+  },
+  laboratoryDossier: {
+    type: Object,
+    default: null,
   },
 })
 

@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Inventory;
 use App\Models\InventoryItem;
 use App\Models\InventoryItemTransfer;
-use App\Models\ReagentConsumption;
-use App\Models\ItemCategory;
 use App\Models\InventoryItemWarehouse;
+use App\Models\InventoryOrder;
 use App\Models\InventoryTransaction;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Illuminate\Support\Facades\DB;
+use App\Models\ItemCategory;
+use App\Models\ReagentConsumption;
+use App\Models\User;
 use Carbon\Carbon;
-use PDF;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
+use Inertia\Inertia;
+use PDF;
 
 class VAPInventoryReportController extends Controller
 {
@@ -25,33 +26,33 @@ class VAPInventoryReportController extends Controller
             'item.category',
             'warehouse.location',
             'type',
-            'user'
+            'user',
         ])
-        ->when($request->date_from, function ($query, $dateFrom) {
-            $query->whereDate('created_at', '>=', $dateFrom);
-        })
-        ->when($request->date_to, function ($query, $dateTo) {
-            $query->whereDate('created_at', '<=', $dateTo);
-        })
-        ->when($request->item_id, function ($query, $itemId) {
-            $query->where('item_id', $itemId);
-        })
-        ->when($request->warehouse_id, function ($query, $warehouseId) {
-            $query->where('warehouse_id', $warehouseId);
-        })
-        ->when($request->type_id, function ($query, $typeId) {
-            $query->where('type_id', $typeId);
-        })
-        ->when($request->search, function ($query, $search) {
-            $query->whereHas('item', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%");
+            ->when($request->date_from, function ($query, $dateFrom) {
+                $query->whereDate('created_at', '>=', $dateFrom);
             })
-            ->orWhereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
-            });
-        })
-        ->orderBy($request->sort_by ?? 'created_at', $request->sort_direction ?? 'desc');
+            ->when($request->date_to, function ($query, $dateTo) {
+                $query->whereDate('created_at', '<=', $dateTo);
+            })
+            ->when($request->item_id, function ($query, $itemId) {
+                $query->where('item_id', $itemId);
+            })
+            ->when($request->warehouse_id, function ($query, $warehouseId) {
+                $query->where('warehouse_id', $warehouseId);
+            })
+            ->when($request->type_id, function ($query, $typeId) {
+                $query->where('type_id', $typeId);
+            })
+            ->when($request->search, function ($query, $search) {
+                $query->whereHas('item', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                })
+                    ->orWhereHas('user', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+            })
+            ->orderBy($request->sort_by ?? 'created_at', $request->sort_direction ?? 'desc');
 
         $movementTrend = InventoryTransaction::select(
             DB::raw('DATE(created_at) as date'),
@@ -59,15 +60,15 @@ class VAPInventoryReportController extends Controller
             DB::raw('SUM(CASE WHEN type_id IN (SELECT id FROM itransaction_types WHERE code IN ("stock_in", "stock_adjustment_add")) THEN CAST(qty AS SIGNED) ELSE 0 END) as total_in'),
             DB::raw('SUM(CASE WHEN type_id IN (SELECT id FROM itransaction_types WHERE code IN ("stock_out", "stock_adjustment_remove", "consumption")) THEN CAST(qty AS SIGNED) ELSE 0 END) as total_out')
         )
-        ->when($request->date_from, function ($query, $dateFrom) {
-            $query->whereDate('created_at', '>=', $dateFrom);
-        })
-        ->when($request->date_to, function ($query, $dateTo) {
-            $query->whereDate('created_at', '<=', $dateTo);
-        })
-        ->groupBy(DB::raw('DATE(created_at)'))
-        ->orderBy('date')
-        ->get();
+            ->when($request->date_from, function ($query, $dateFrom) {
+                $query->whereDate('created_at', '>=', $dateFrom);
+            })
+            ->when($request->date_to, function ($query, $dateTo) {
+                $query->whereDate('created_at', '<=', $dateTo);
+            })
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->orderBy('date')
+            ->get();
 
         $summary = $request->view === 'summary' ? $movementTrend->sortByDesc('date')->values() : null;
 
@@ -132,7 +133,7 @@ class VAPInventoryReportController extends Controller
                             'data' => $movementTrend->pluck('total_out')->map(fn ($value) => (float) $value)->all(),
                         ],
                         [
-                            'name' => 'Transações',
+                            'name' => 'Transacções',
                             'data' => $movementTrend->pluck('total_transactions')->map(fn ($value) => (int) $value)->all(),
                         ],
                     ],
@@ -181,9 +182,9 @@ class VAPInventoryReportController extends Controller
     {
         $dateFrom = $request->date_from ? Carbon::parse($request->date_from) : Carbon::now()->subMonth();
         $dateTo = $request->date_to ? Carbon::parse($request->date_to) : Carbon::now();
-        
+
         $days = $dateFrom->diffInDays($dateTo) ?: 1;
-        
+
         $total = InventoryTransaction::query()
             ->when($request->date_from, function ($query, $dateFrom) {
                 $query->whereDate('created_at', '>=', $dateFrom);
@@ -192,7 +193,7 @@ class VAPInventoryReportController extends Controller
                 $query->whereDate('created_at', '<=', $dateTo);
             })
             ->count();
-        
+
         return round($total / $days, 2);
     }
 
@@ -202,16 +203,16 @@ class VAPInventoryReportController extends Controller
             'item_id',
             DB::raw('COUNT(*) as transaction_count')
         )
-        ->with('item:id,name')
-        ->when($request->date_from, function ($query, $dateFrom) {
-            $query->whereDate('created_at', '>=', $dateFrom);
-        })
-        ->when($request->date_to, function ($query, $dateTo) {
-            $query->whereDate('created_at', '<=', $dateTo);
-        })
-        ->groupBy('item_id')
-        ->orderByDesc('transaction_count')
-        ->first();
+            ->with('item:id,name')
+            ->when($request->date_from, function ($query, $dateFrom) {
+                $query->whereDate('created_at', '>=', $dateFrom);
+            })
+            ->when($request->date_to, function ($query, $dateTo) {
+                $query->whereDate('created_at', '<=', $dateTo);
+            })
+            ->groupBy('item_id')
+            ->orderByDesc('transaction_count')
+            ->first();
     }
 
     private function getMostActiveUser($request)
@@ -220,16 +221,16 @@ class VAPInventoryReportController extends Controller
             'user_id',
             DB::raw('COUNT(*) as transaction_count')
         )
-        ->with('user:id,name')
-        ->when($request->date_from, function ($query, $dateFrom) {
-            $query->whereDate('created_at', '>=', $dateFrom);
-        })
-        ->when($request->date_to, function ($query, $dateTo) {
-            $query->whereDate('created_at', '<=', $dateTo);
-        })
-        ->groupBy('user_id')
-        ->orderByDesc('transaction_count')
-        ->first();
+            ->with('user:id,name')
+            ->when($request->date_from, function ($query, $dateFrom) {
+                $query->whereDate('created_at', '>=', $dateFrom);
+            })
+            ->when($request->date_to, function ($query, $dateTo) {
+                $query->whereDate('created_at', '<=', $dateTo);
+            })
+            ->groupBy('user_id')
+            ->orderByDesc('transaction_count')
+            ->first();
     }
 
     public function consumptionReport(Request $request)
@@ -237,29 +238,29 @@ class VAPInventoryReportController extends Controller
         $query = ReagentConsumption::with([
             'item.category',
             'warehouse',
-            'user'
+            'user',
         ])
-        ->when($request->date_from, function ($query, $dateFrom) {
-            $query->whereDate('date', '>=', $dateFrom);
-        })
-        ->when($request->date_to, function ($query, $dateTo) {
-            $query->whereDate('date', '<=', $dateTo);
-        })
-        ->when($request->item_id, function ($query, $itemId) {
-            $query->where('reagent_id', $itemId);
-        })
-        ->when($request->warehouse_id, function ($query, $warehouseId) {
-            $query->where('warehouse_id', $warehouseId);
-        })
-        ->when($request->user_id, function ($query, $userId) {
-            $query->where('user_id', $userId);
-        })
-        ->when($request->search, function ($query, $search) {
-            $query->where('reagent_name', 'like', "%{$search}%")
-                  ->orWhere('used_by', 'like', "%{$search}%")
-                  ->orWhere('remarks', 'like', "%{$search}%");
-        })
-        ->orderBy($request->sort_by ?? 'date', $request->sort_direction ?? 'desc');
+            ->when($request->date_from, function ($query, $dateFrom) {
+                $query->whereDate('date', '>=', $dateFrom);
+            })
+            ->when($request->date_to, function ($query, $dateTo) {
+                $query->whereDate('date', '<=', $dateTo);
+            })
+            ->when($request->item_id, function ($query, $itemId) {
+                $query->where('reagent_id', $itemId);
+            })
+            ->when($request->warehouse_id, function ($query, $warehouseId) {
+                $query->where('warehouse_id', $warehouseId);
+            })
+            ->when($request->user_id, function ($query, $userId) {
+                $query->where('user_id', $userId);
+            })
+            ->when($request->search, function ($query, $search) {
+                $query->where('reagent_name', 'like', "%{$search}%")
+                    ->orWhere('used_by', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%");
+            })
+            ->orderBy($request->sort_by ?? 'date', $request->sort_direction ?? 'desc');
 
         // Summary by item
         $summaryByItem = ReagentConsumption::select(
@@ -269,15 +270,15 @@ class VAPInventoryReportController extends Controller
             DB::raw('COUNT(*) as usage_count'),
             DB::raw('AVG(quantity_used) as avg_per_use')
         )
-        ->when($request->date_from, function ($query, $dateFrom) {
-            $query->whereDate('date', '>=', $dateFrom);
-        })
-        ->when($request->date_to, function ($query, $dateTo) {
-            $query->whereDate('date', '<=', $dateTo);
-        })
-        ->groupBy('reagent_id', 'reagent_name')
-        ->orderByDesc('total_consumption')
-        ->get();
+            ->when($request->date_from, function ($query, $dateFrom) {
+                $query->whereDate('date', '>=', $dateFrom);
+            })
+            ->when($request->date_to, function ($query, $dateTo) {
+                $query->whereDate('date', '<=', $dateTo);
+            })
+            ->groupBy('reagent_id', 'reagent_name')
+            ->orderByDesc('total_consumption')
+            ->get();
 
         // Summary by date
         $summaryByDate = ReagentConsumption::select(
@@ -285,15 +286,15 @@ class VAPInventoryReportController extends Controller
             DB::raw('SUM(quantity_used) as total_consumption'),
             DB::raw('COUNT(*) as usage_count')
         )
-        ->when($request->date_from, function ($query, $dateFrom) {
-            $query->whereDate('date', '>=', $dateFrom);
-        })
-        ->when($request->date_to, function ($query, $dateTo) {
-            $query->whereDate('date', '<=', $dateTo);
-        })
-        ->groupBy(DB::raw('DATE(date)'))
-        ->orderByDesc('date')
-        ->get();
+            ->when($request->date_from, function ($query, $dateFrom) {
+                $query->whereDate('date', '>=', $dateFrom);
+            })
+            ->when($request->date_to, function ($query, $dateTo) {
+                $query->whereDate('date', '<=', $dateTo);
+            })
+            ->groupBy(DB::raw('DATE(date)'))
+            ->orderByDesc('date')
+            ->get();
 
         // Summary by user
         $summaryByUser = ReagentConsumption::select(
@@ -301,16 +302,16 @@ class VAPInventoryReportController extends Controller
             DB::raw('SUM(quantity_used) as total_consumption'),
             DB::raw('COUNT(*) as usage_count')
         )
-        ->when($request->date_from, function ($query, $dateFrom) {
-            $query->whereDate('date', '>=', $dateFrom);
-        })
-        ->when($request->date_to, function ($query, $dateTo) {
-            $query->whereDate('date', '<=', $dateTo);
-        })
-        ->whereNotNull('used_by')
-        ->groupBy('used_by')
-        ->orderByDesc('total_consumption')
-        ->get();
+            ->when($request->date_from, function ($query, $dateFrom) {
+                $query->whereDate('date', '>=', $dateFrom);
+            })
+            ->when($request->date_to, function ($query, $dateTo) {
+                $query->whereDate('date', '<=', $dateTo);
+            })
+            ->whereNotNull('used_by')
+            ->groupBy('used_by')
+            ->orderByDesc('total_consumption')
+            ->get();
 
         return Inertia::render('VAPInventory/Reports/Consumption', [
             'consumptions' => $query->paginate($request->per_page ?? 50)->withQueryString(),
@@ -374,7 +375,7 @@ class VAPInventoryReportController extends Controller
             'filters' => $request->only(['date_from', 'date_to', 'item_id', 'warehouse_id', 'user_id', 'search', 'sort_by', 'sort_direction']),
             'items' => InventoryItem::reagents()->active()->get(['id', 'name', 'code']),
             'warehouses' => InventoryItemWarehouse::active()->get(['id', 'name']),
-            'users' => \App\Models\User::whereHas('reagentConsumptions')->get(['id', 'name']),
+            'users' => User::whereHas('reagentConsumptions')->get(['id', 'name']),
             'stats' => [
                 'total_consumption' => $summaryByItem->sum('total_consumption'),
                 'total_uses' => $summaryByItem->sum('usage_count'),
@@ -390,9 +391,9 @@ class VAPInventoryReportController extends Controller
     {
         $dateFrom = $request->date_from ? Carbon::parse($request->date_from) : Carbon::now()->subMonth();
         $dateTo = $request->date_to ? Carbon::parse($request->date_to) : Carbon::now();
-        
+
         $days = $dateFrom->diffInDays($dateTo) ?: 1;
-        
+
         $total = ReagentConsumption::query()
             ->when($request->date_from, function ($query, $dateFrom) {
                 $query->whereDate('date', '>=', $dateFrom);
@@ -401,7 +402,7 @@ class VAPInventoryReportController extends Controller
                 $query->whereDate('date', '<=', $dateTo);
             })
             ->sum('quantity_used');
-        
+
         return round($total / $days, 2);
     }
 
@@ -409,26 +410,26 @@ class VAPInventoryReportController extends Controller
     {
         // Note: This requires adding a 'unit_price' field to inventory_items
         // For now, we'll use a placeholder value
-        
+
         $query = Inventory::with([
             'item.category',
             'warehouse.location',
-            'item'
+            'item',
         ])
-        ->when($request->category_id, function ($query, $categoryId) {
-            $query->where('category_id', $categoryId);
-        })
-        ->when($request->warehouse_id, function ($query, $warehouseId) {
-            $query->where('warehouse_id', $warehouseId);
-        })
-        ->when($request->search, function ($query, $search) {
-            $query->whereHas('item', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%");
-            });
-        })
-        ->where('qty_available', '>', 0)
-        ->orderBy($request->sort_by ?? 'qty_available', $request->sort_direction ?? 'desc');
+            ->when($request->category_id, function ($query, $categoryId) {
+                $query->where('category_id', $categoryId);
+            })
+            ->when($request->warehouse_id, function ($query, $warehouseId) {
+                $query->where('warehouse_id', $warehouseId);
+            })
+            ->when($request->search, function ($query, $search) {
+                $query->whereHas('item', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                });
+            })
+            ->where('qty_available', '>', 0)
+            ->orderBy($request->sort_by ?? 'qty_available', $request->sort_direction ?? 'desc');
 
         // Summary by category
         $summaryByCategory = Inventory::select(
@@ -437,13 +438,13 @@ class VAPInventoryReportController extends Controller
             DB::raw('COUNT(DISTINCT item_id) as unique_items'),
             DB::raw('SUM(qty_available * 100) as total_value') // Placeholder: $100 per unit
         )
-        ->leftJoin('item_categories', 'inventory.category_id', '=', 'item_categories.id')
-        ->when($request->warehouse_id, function ($query, $warehouseId) {
-            $query->where('warehouse_id', $warehouseId);
-        })
-        ->groupBy('item_categories.name', 'item_categories.id')
-        ->orderByDesc('total_value')
-        ->get();
+            ->leftJoin('item_categories', 'inventory.category_id', '=', 'item_categories.id')
+            ->when($request->warehouse_id, function ($query, $warehouseId) {
+                $query->where('warehouse_id', $warehouseId);
+            })
+            ->groupBy('item_categories.name', 'item_categories.id')
+            ->orderByDesc('total_value')
+            ->get();
 
         // Summary by warehouse
         $summaryByWarehouse = Inventory::select(
@@ -452,13 +453,13 @@ class VAPInventoryReportController extends Controller
             DB::raw('COUNT(DISTINCT item_id) as unique_items'),
             DB::raw('SUM(qty_available * 100) as total_value') // Placeholder: $100 per unit
         )
-        ->leftJoin('i_warehouses', 'inventory.warehouse_id', '=', 'i_warehouses.id')
-        ->when($request->category_id, function ($query, $categoryId) {
-            $query->where('category_id', $categoryId);
-        })
-        ->groupBy('i_warehouses.name', 'i_warehouses.id')
-        ->orderByDesc('total_value')
-        ->get();
+            ->leftJoin('i_warehouses', 'inventory.warehouse_id', '=', 'i_warehouses.id')
+            ->when($request->category_id, function ($query, $categoryId) {
+                $query->where('category_id', $categoryId);
+            })
+            ->groupBy('i_warehouses.name', 'i_warehouses.id')
+            ->orderByDesc('total_value')
+            ->get();
 
         // Top valuable items
         $topValuableItems = Inventory::select(
@@ -466,17 +467,17 @@ class VAPInventoryReportController extends Controller
             DB::raw('SUM(qty_available) as total_quantity'),
             DB::raw('SUM(qty_available * 100) as total_value') // Placeholder: $100 per unit
         )
-        ->with('item:id,name,code')
-        ->when($request->category_id, function ($query, $categoryId) {
-            $query->where('category_id', $categoryId);
-        })
-        ->when($request->warehouse_id, function ($query, $warehouseId) {
-            $query->where('warehouse_id', $warehouseId);
-        })
-        ->groupBy('item_id')
-        ->orderByDesc('total_value')
-        ->limit(10)
-        ->get();
+            ->with('item:id,name,code')
+            ->when($request->category_id, function ($query, $categoryId) {
+                $query->where('category_id', $categoryId);
+            })
+            ->when($request->warehouse_id, function ($query, $warehouseId) {
+                $query->where('warehouse_id', $warehouseId);
+            })
+            ->groupBy('item_id')
+            ->orderByDesc('total_value')
+            ->limit(10)
+            ->get();
 
         $totalInventoryValue = $summaryByCategory->sum('total_value');
 
@@ -518,7 +519,7 @@ class VAPInventoryReportController extends Controller
                 ],
                 'top_item_value' => [
                     'labels' => $topValuableItems
-                        ->map(fn ($item) => $item->item?->code ?: $item->item?->name ?: "Item #{$item->item_id}")
+                        ->map(fn ($item) => $item->item?->code ?: $item->item?->name ?: "Artigo #{$item->item_id}")
                         ->values()
                         ->all(),
                     'series' => [
@@ -555,7 +556,13 @@ class VAPInventoryReportController extends Controller
         ]);
 
         $filters = $request->filters ?? [];
-        $fileName = $request->report_type . '_report_' . date('Y-m-d_H-i-s');
+        $reportLabels = [
+            'stock_movement' => 'movimentos_de_existencias',
+            'consumption' => 'consumo',
+            'inventory_value' => 'valor_do_inventario',
+            'low_stock' => 'existencias_baixas',
+        ];
+        $fileName = $reportLabels[$request->report_type].'_relatorio_'.date('Y-m-d_H-i-s');
 
         switch ($request->report_type) {
             case 'stock_movement':
@@ -583,24 +590,29 @@ class VAPInventoryReportController extends Controller
             $pdf = PDF::loadView($view, [
                 'data' => $data,
                 'filters' => $filters,
-                'title' => ucwords(str_replace('_', ' ', $request->report_type)) . ' Report',
+                'title' => match ($request->report_type) {
+                    'stock_movement' => 'Relatório de movimentos de existências',
+                    'consumption' => 'Relatório de consumo',
+                    'inventory_value' => 'Relatório do valor do inventário',
+                    'low_stock' => 'Relatório de existências baixas',
+                },
                 'generated_at' => now()->format('Y-m-d H:i:s'),
                 'generated_by' => auth()->user()->name,
             ])->setPaper('a4', 'landscape');
 
-            return $pdf->download($fileName . '.pdf');
+            return $pdf->download($fileName.'.pdf');
         }
 
         if ($request->format === 'csv') {
             $csvData = $this->convertToCsv($data, $request->report_type);
-            
+
             return Response::make($csvData)
                 ->header('Content-Type', 'text/csv')
-                ->header('Content-Disposition', 'attachment; filename="' . $fileName . '.csv"');
+                ->header('Content-Disposition', 'attachment; filename="'.$fileName.'.csv"');
         }
 
         // For Excel format, you would need to install maatwebsite/excel package
-        return response()->json(['message' => 'Excel export requires additional setup'], 501);
+        return response()->json(['message' => 'A exportação para Excel requer configuração adicional.'], 501);
     }
 
     private function getStockMovementData($filters)
@@ -609,7 +621,7 @@ class VAPInventoryReportController extends Controller
             'item.category',
             'warehouse',
             'type',
-            'user'
+            'user',
         ]);
 
         if (isset($filters['date_from'])) {
@@ -636,7 +648,7 @@ class VAPInventoryReportController extends Controller
         $query = ReagentConsumption::with([
             'item.category',
             'warehouse',
-            'user'
+            'user',
         ]);
 
         if (isset($filters['date_from'])) {
@@ -675,9 +687,9 @@ class VAPInventoryReportController extends Controller
         $query = Inventory::with([
             'item.category',
             'warehouse.location',
-            'item'
+            'item',
         ])
-        ->where('qty_available', '>', 0);
+            ->where('qty_available', '>', 0);
 
         if (isset($filters['category_id'])) {
             $query->where('category_id', $filters['category_id']);
@@ -710,10 +722,10 @@ class VAPInventoryReportController extends Controller
         $query = Inventory::with([
             'item.category',
             'warehouse.location',
-            'item'
+            'item',
         ])
-        ->whereColumn('qty_available', '<=', 'reorder_point')
-        ->where('qty_available', '>', 0);
+            ->whereColumn('qty_available', '<=', 'reorder_point')
+            ->where('qty_available', '>', 0);
 
         if (isset($filters['warehouse_id'])) {
             $query->where('warehouse_id', $filters['warehouse_id']);
@@ -737,15 +749,15 @@ class VAPInventoryReportController extends Controller
     private function convertToCsv($data, $reportType)
     {
         $rows = [];
-        
+
         switch ($reportType) {
             case 'stock_movement':
-                $rows[] = ['Date', 'Item', 'Category', 'Warehouse', 'Type', 'Quantity', 'User', 'Reason', 'Notes'];
+                $rows[] = ['Data', 'Artigo', 'Categoria', 'Armazém', 'Tipo', 'Quantidade', 'Utilizador', 'Motivo', 'Notas'];
                 foreach ($data['transactions'] as $transaction) {
                     $rows[] = [
                         $transaction->created_at->format('Y-m-d H:i'),
                         $transaction->item->name,
-                        $transaction->item->category->name ?? 'N/A',
+                        $transaction->item->category->name ?? 'N/D',
                         $transaction->warehouse->name,
                         $transaction->type->name,
                         $transaction->qty,
@@ -757,26 +769,26 @@ class VAPInventoryReportController extends Controller
                 break;
 
             case 'consumption':
-                $rows[] = ['Date', 'Reagent', 'Quantity Used', 'Used By', 'Warehouse', 'Remarks'];
+                $rows[] = ['Data', 'Reagente', 'Quantidade utilizada', 'Utilizado por', 'Armazém', 'Observações'];
                 foreach ($data['consumptions'] as $consumption) {
                     $rows[] = [
                         $consumption->date,
                         $consumption->reagent_name,
                         $consumption->quantity_used,
                         $consumption->used_by,
-                        $consumption->warehouse->name ?? 'N/A',
+                        $consumption->warehouse->name ?? 'N/D',
                         $consumption->remarks,
                     ];
                 }
                 break;
 
             case 'inventory_value':
-                $rows[] = ['Item', 'Category', 'Warehouse', 'Quantity', 'Unit Value', 'Total Value'];
+                $rows[] = ['Artigo', 'Categoria', 'Armazém', 'Quantidade', 'Valor unitário', 'Valor total'];
                 foreach ($data['inventory'] as $item) {
                     $unitValue = 100; // Placeholder
                     $rows[] = [
                         $item->item->name,
-                        $item->item->category->name ?? 'N/A',
+                        $item->item->category->name ?? 'N/D',
                         $item->warehouse->name,
                         $item->qty_available,
                         $unitValue,
@@ -786,12 +798,12 @@ class VAPInventoryReportController extends Controller
                 break;
 
             case 'low_stock':
-                $rows[] = ['Item', 'Category', 'Warehouse', 'Current Stock', 'Reorder Point', 'Min Stock', 'Status'];
+                $rows[] = ['Artigo', 'Categoria', 'Armazém', 'Existências actuais', 'Ponto de reposição', 'Existências mínimas', 'Estado'];
                 foreach ($data['lowStock'] as $item) {
-                    $status = $item->qty_available <= $item->min_stock_level ? 'CRITICAL' : 'LOW';
+                    $status = $item->qty_available <= $item->min_stock_level ? 'CRÍTICO' : 'BAIXO';
                     $rows[] = [
                         $item->item->name,
-                        $item->item->category->name ?? 'N/A',
+                        $item->item->category->name ?? 'N/D',
                         $item->warehouse->name,
                         $item->qty_available,
                         $item->reorder_point,
@@ -830,7 +842,7 @@ class VAPInventoryReportController extends Controller
                 'today_consumption' => ReagentConsumption::whereDate('date', $today)->sum('quantity_used'),
                 'monthly_consumption' => ReagentConsumption::whereBetween('date', [$thirtyDaysAgo, $today])->sum('quantity_used'),
                 'pending_transfers' => InventoryItemTransfer::whereNull('received_date')->count(),
-                'pending_orders' => \App\Models\InventoryOrder::where('status', 'pending')->count(),
+                'pending_orders' => InventoryOrder::where('status', 'pending')->count(),
             ],
             'recent_activity' => InventoryTransaction::with('item', 'user')
                 ->latest()
@@ -850,11 +862,11 @@ class VAPInventoryReportController extends Controller
                 'reagent_name',
                 DB::raw('SUM(quantity_used) as total')
             )
-            ->whereBetween('date', [$thirtyDaysAgo, $today])
-            ->groupBy('reagent_name')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get(),
+                ->whereBetween('date', [$thirtyDaysAgo, $today])
+                ->groupBy('reagent_name')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get(),
         ]);
     }
 }

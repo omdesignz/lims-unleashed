@@ -230,7 +230,7 @@
         </section>
 
         <section class="ds-command-surface p-5">
-          <h3 class="text-base font-bold text-[var(--ds-text)]">Ações</h3>
+          <h3 class="text-base font-bold text-[var(--ds-text)]">Acções</h3>
           <div class="mt-4 space-y-3">
             <button v-if="!task.is_executed" type="button" class="ds-button ds-button-primary w-full" @click="markAsExecuted">
               <CheckCircleIcon class="h-4 w-4" />
@@ -275,7 +275,7 @@
               <dd class="font-bold text-[var(--ds-text)]">{{ formatDateTime(task.created_at) }}</dd>
             </div>
             <div class="flex items-center justify-between gap-4">
-              <dt class="font-semibold text-[var(--ds-text-soft)]">Atualizada em</dt>
+              <dt class="font-semibold text-[var(--ds-text-soft)]">Actualizada em</dt>
               <dd class="font-bold text-[var(--ds-text)]">{{ formatDateTime(task.updated_at) }}</dd>
             </div>
             <div v-if="task.deleted_at" class="flex items-center justify-between gap-4">
@@ -295,7 +295,7 @@
             Histórico do equipamento
           </h2>
           <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">
-            Últimas tarefas e custos associados ao equipamento selecionado.
+            Últimas tarefas e custos associados ao equipamento seleccionado.
           </p>
         </div>
         <Link
@@ -386,7 +386,7 @@
           <label v-if="isCalibrationTask" class="ds-field-group">
             <span class="ds-field-label">Estado da calibração</span>
             <BaseSelect v-model="resultForm.calibration_status" class="ds-field">
-              <option value="">Selecione um estado</option>
+              <option value="">Seleccione um estado</option>
               <option value="approved">Aprovado</option>
               <option value="rejected">Rejeitado</option>
               <option value="pending">Pendente</option>
@@ -624,7 +624,7 @@ const notifyCompletion = async () => {
 }
 
 const deleteTask = () => {
-  if (confirm('Tem a certeza que deseja eliminar esta tarefa? Esta ação não pode ser revertida.')) {
+  if (confirm('Tem a certeza que deseja eliminar esta tarefa? Esta acção não pode ser revertida.')) {
     router.delete(route('vap-maintenance.tasks.destroy', props.task.id))
   }
 }

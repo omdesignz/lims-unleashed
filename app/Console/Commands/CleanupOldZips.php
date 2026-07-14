@@ -19,7 +19,7 @@ class CleanupOldZips extends Command
      *
      * @var string
      */
-    protected $description = 'Delete old ZIP files after a given number of days';
+    protected $description = 'Eliminar ficheiros ZIP antigos após um determinado número de dias';
 
     /**
      * Execute the console command.
@@ -35,6 +35,6 @@ class CleanupOldZips extends Command
             }
         }
 
-        $this->info('Old ZIP files cleaned up successfully.');
+        $this->info('Ficheiros ZIP antigos eliminados com sucesso.');
     }
 }

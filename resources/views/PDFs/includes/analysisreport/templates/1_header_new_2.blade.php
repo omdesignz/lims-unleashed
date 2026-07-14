@@ -77,7 +77,7 @@
             <img src="{!! public_path() . '/img/hicons/heroicons-mini/calendar.svg'!!}">
         </td>
         <td class="tg-0lax" style="text-align:right;padding:5px 5px;font-size:11px;">
-            {!! ($model->collection->collection->collectionable->col_date ? $model->collection->collection->collectionable->col_date->format('d/m/Y') : 'N/A') !!}
+            {!! ($model->collection->collection->collectionable->col_date ? $model->collection->collection->collectionable->col_date->format('d/m/Y') : 'N/D') !!}
         </td>
     </tr>
 </table>
@@ -135,7 +135,7 @@
             {{ \Settings::get('qcertfood_expiry_label') }}:
             </td>
             <td class="tg-s268" style="padding:5px 5px;font-weight:bold;font-size:11px;">
-            {!! ( $model->collection->expiry_date ? Carbon\Carbon::parse($model->collection->expiry_date)->format('d/m/Y') : 'N/A' ) !!}
+            {!! ( $model->collection->expiry_date ? Carbon\Carbon::parse($model->collection->expiry_date)->format('d/m/Y') : 'N/D' ) !!}
             </td>
         </tr>
         <tr>

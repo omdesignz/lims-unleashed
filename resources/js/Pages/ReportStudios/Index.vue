@@ -379,7 +379,7 @@ const studioPresets = [
     category: 'analysis',
     theme_preset: 'compliance',
     descriptionKey: 'gestlab.general.labels.vap_report_studios.presets.descriptions.analysis',
-    description: 'Certificado multi-página com amostra, recepção, escopo, resultados, incerteza, decisão e assinatura.',
+    description: 'Certificado multi-página com amostra, recepção, âmbito, resultados, incerteza, decisão e assinatura.',
     layout_schema: studioPresetLayout('analysis'),
     export_settings: studioPresetExportSettings({ margin_bottom: 24, first_page_margin_top: 58 }),
     body_html: '<section style="padding:30px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:22px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.78;">{lab_name}</div><h1 style="margin:12px 0 0; font-size:28px;">{report_title}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">{certificate_code} · {customer_name} · Entrada {sample_entry_code}</p></section><section style="margin:18px 0;">{sample_details}</section><section style="margin:18px 0;">{collection_details}</section><section style="margin:18px 0;">{analytical_scope}</section><section style="margin:20px 0;">{results_table}</section><section style="margin:20px 0;">{analysis_chart_card}</section><section style="margin:18px 0; border-left:4px solid #d9b05f; background:#fffaf0; padding:16px; border-radius:16px;">{uncertainty_statement}<br />{decision_rule}</section><section style="margin-top:24px;">{signature_block}</section>',
@@ -403,7 +403,7 @@ const studioPresets = [
     category: 'proposal',
     theme_preset: 'corporate',
     descriptionKey: 'gestlab.general.labels.vap_report_studios.presets.descriptions.proposal',
-    description: 'Proposta multipágina com escopo técnico, condições comerciais, aceite do cliente e assinatura.',
+    description: 'Proposta multipágina com âmbito técnico, condições comerciais, aceite do cliente e assinatura.',
     layout_schema: studioPresetLayout('proposal'),
     export_settings: studioPresetExportSettings(),
     body_html: '<section style="padding:30px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:22px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.78;">Proposta técnica-comercial</div><h1 style="margin:12px 0 0; font-size:28px;">{proposal_number}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">{customer_name} · {service_location} · válida até {expiry_date}</p></section><section style="margin:18px 0;">{proposal_content}</section><section style="margin:20px 0;">{items_table}</section><section style="margin:20px 0;">{summary_table}</section><section style="margin-top:20px;">{banking_details}</section><section style="margin-top:20px;"><DataTable class="document-summary-table studio-avoid-break"><tr><td class="document-summary-cell" style="width:50%; vertical-align:top;">{proposal_acceptance_evidence}</td><td class="document-summary-cell" style="width:50%; vertical-align:top;">{proposal_authenticity}</td></tr></DataTable></section><section style="margin-top:18px;">{document_keywords}</section><section style="margin-top:24px;">{signature_block}</section>',
@@ -459,7 +459,7 @@ const studioPresets = [
     category: 'receipt',
     theme_preset: 'corporate',
     descriptionKey: 'gestlab.general.labels.vap_report_studios.presets.descriptions.receipt',
-    description: 'Recibo com rastreio de liquidação, confirmação de recebimento e assinatura.',
+    description: 'Recibo com rastreio da liquidação, confirmação do pagamento e assinatura.',
     layout_schema: studioPresetLayout('receipt'),
     export_settings: studioPresetExportSettings(),
   },
@@ -829,7 +829,7 @@ const onStudioTypeUpdate = (studioType) => {
               <th class="px-5 py-3 ds-table-heading">Tipo e saída</th>
               <th class="px-5 py-3 ds-table-heading">Estado</th>
               <th class="px-5 py-3 ds-table-heading">Última revisão</th>
-              <th class="px-5 py-3 text-right ds-table-heading">Ações</th>
+              <th class="px-5 py-3 text-right ds-table-heading">Acções</th>
             </tr>
           </thead>
           <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">

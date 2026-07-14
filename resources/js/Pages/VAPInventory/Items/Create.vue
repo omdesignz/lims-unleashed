@@ -2,7 +2,7 @@
   <InventoryItemFormSurface
     mode="create"
     title="Adicionar item"
-    description="Registe reagentes, equipamentos e consumíveis com stock inicial, rastreabilidade, anexos e controlos metrológicos desde a entrada."
+    description="Registe reagentes, equipamentos e consumíveis com existências inicial, rastreabilidade, anexos e controlos metrológicos desde a entrada."
     :back-href="route('vap-inventory.items.index')"
     back-label="Voltar para itens"
     submit-label="Criar item"

@@ -16,7 +16,7 @@
     />
     <div v-else class="h-64 flex items-center justify-center text-gray-400">
       <Spinner class="h-8 w-8 text-blue-900" />
-      <span class="ml-2">Loading chart data...</span>
+      <span class="ml-2">A carregar os dados do gráfico...</span>
     </div>
   </div>
 </template>
@@ -34,7 +34,7 @@ const props = defineProps({
   },
   title: {
     type: String,
-    default: 'Maintenance Trend'
+    default: 'Tendência da manutenção'
   },
   showLegend: {
     type: Boolean,
@@ -44,20 +44,20 @@ const props = defineProps({
 
 const series = computed(() => {
   if (!props.data || props.data.length === 0) return []
-  
+
   return [
-    { 
-      name: 'Created', 
+    {
+      name: 'Criadas',
       data: props.data.map(item => item.created || 0),
       type: 'line'
     },
-    { 
-      name: 'Executed', 
+    {
+      name: 'Executadas',
       data: props.data.map(item => item.executed || 0),
       type: 'line'
     },
-    { 
-      name: 'Overdue', 
+    {
+      name: 'Em atraso',
       data: props.data.map(item => item.overdue || 0),
       type: 'line'
     }
@@ -103,7 +103,7 @@ const options = computed(() => ({
   },
   yaxis: {
     title: {
-      text: 'Number of Tasks',
+      text: 'Número de tarefas',
       style: {
         fontSize: '12px',
         fontWeight: 400

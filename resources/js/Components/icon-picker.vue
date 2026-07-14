@@ -14,13 +14,57 @@ const props = defineProps({
 const emit = defineEmits(['icon-selected', 'picker-closed', 'update:modelValue'])
 const query = ref('')
 
-const iconOptions = Object.keys(OutlinedIcons)
-  .filter((name) => name.endsWith('Icon'))
-  .sort((firstName, secondName) => firstName.localeCompare(secondName))
-  .map((name) => ({
+const iconLabels = {
+  ArchiveBoxIcon: 'Arquivo',
+  BeakerIcon: 'Laboratório',
+  BellAlertIcon: 'Alertas',
+  BookOpenIcon: 'Procedimentos',
+  BuildingLibraryIcon: 'Normas',
+  BuildingOffice2Icon: 'Organização',
+  CalculatorIcon: 'Cálculos',
+  CalendarDaysIcon: 'Calendário',
+  ChartBarIcon: 'Indicadores',
+  CheckBadgeIcon: 'Aprovação',
+  CircleStackIcon: 'Inventário',
+  ClipboardDocumentListIcon: 'Lista de controlo',
+  ClockIcon: 'Prazos',
+  CpuChipIcon: 'Equipamento',
+  CubeIcon: 'Amostras',
+  DocumentCheckIcon: 'Certificados',
+  DocumentTextIcon: 'Documentos',
+  EnvelopeIcon: 'Mensagens',
+  ExclamationTriangleIcon: 'Ocorrências',
+  FolderIcon: 'Pastas',
+  GlobeAltIcon: 'Portal',
+  HomeModernIcon: 'Instalações',
+  ListBulletIcon: 'Listas',
+  MagnifyingGlassIcon: 'Pesquisa',
+  MapPinIcon: 'Locais',
+  PhotoIcon: 'Multimédia',
+  PresentationChartLineIcon: 'Relatórios',
+  QrCodeIcon: 'Código QR',
+  QueueListIcon: 'Filas',
+  ScaleIcon: 'Metrologia',
+  ServerStackIcon: 'Sistemas',
+  ShieldCheckIcon: 'Qualidade',
+  ShoppingCartIcon: 'Compras',
+  SwatchIcon: 'Identidade visual',
+  TableCellsIcon: 'Tabelas',
+  TagIcon: 'Etiquetas',
+  TruckIcon: 'Logística',
+  UserGroupIcon: 'Equipa',
+  UsersIcon: 'Utilizadores',
+  WrenchScrewdriverIcon: 'Manutenção',
+}
+
+const iconOptions = Object.entries(iconLabels)
+  .filter(([name]) => OutlinedIcons[name])
+  .map(([name, label]) => ({
     name,
+    label,
     component: OutlinedIcons[name],
   }))
+  .sort((firstIcon, secondIcon) => firstIcon.label.localeCompare(secondIcon.label, 'pt'))
 
 const filteredIconOptions = computed(() => {
   const normalizedQuery = query.value.trim().toLowerCase()
@@ -29,7 +73,11 @@ const filteredIconOptions = computed(() => {
     return iconOptions
   }
 
-  return iconOptions.filter((icon) => icon.name.toLowerCase().includes(normalizedQuery))
+  return iconOptions.filter((icon) => {
+    const searchIndex = `${icon.label} ${icon.name}`.toLocaleLowerCase('pt')
+
+    return searchIndex.includes(normalizedQuery)
+  })
 })
 
 function closePicker() {
@@ -44,8 +92,9 @@ function selectIcon(iconName) {
 </script>
 
 <template>
-  <TransitionRoot appear as="template" :show="true">
-    <Dialog as="div" class="relative z-[70]" @close="closePicker">
+  <Teleport to="body">
+    <TransitionRoot appear as="template" :show="true">
+      <Dialog as="div" class="relative z-[90]" @close="closePicker">
       <TransitionChild
         as="template"
         enter="ease-out duration-200"
@@ -55,10 +104,10 @@ function selectIcon(iconName) {
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <div class="fixed inset-0 bg-black/45 backdrop-blur-[1px]" />
+        <div class="ds-modal-backdrop fixed inset-0 transition-opacity" />
       </TransitionChild>
 
-      <div class="fixed inset-0 z-[70] overflow-y-auto p-4 sm:p-6">
+      <div class="fixed inset-0 z-10 overflow-y-auto p-4 sm:p-6">
         <div class="flex min-h-full items-end justify-center sm:items-center">
           <TransitionChild
             as="template"
@@ -69,11 +118,11 @@ function selectIcon(iconName) {
             leave-from="translate-y-0 opacity-100 sm:scale-100"
             leave-to="translate-y-3 opacity-0 sm:translate-y-0 sm:scale-95"
           >
-            <DialogPanel class="ds-panel relative flex max-h-[min(44rem,calc(100vh-2rem))] w-full max-w-3xl flex-col overflow-hidden shadow-2xl">
+            <DialogPanel class="ds-modal-panel relative flex max-h-[min(44rem,calc(100vh-2rem))] w-full max-w-3xl transform flex-col overflow-hidden">
               <header class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
                 <div class="min-w-0">
                   <p class="ds-kicker">Configuração visual</p>
-                  <DialogTitle class="ds-heading mt-1 text-lg">Selecionar ícone do quadro</DialogTitle>
+                  <DialogTitle class="ds-heading mt-1 text-lg">Seleccionar ícone do quadro</DialogTitle>
                   <p class="ds-copy mt-1 text-sm">Escolha um símbolo reconhecível para identificar este fluxo de trabalho.</p>
                 </div>
                 <button
@@ -96,7 +145,7 @@ function selectIcon(iconName) {
                     v-model="query"
                     type="search"
                     class="ds-field min-h-10 py-2 pl-9"
-                    placeholder="Ex.: flask, clipboard, document"
+                    placeholder="Ex.: laboratório, documentos, qualidade"
                   />
                 </div>
               </div>
@@ -107,7 +156,7 @@ function selectIcon(iconName) {
                     {{ filteredIconOptions.length }} ícone(s)
                   </p>
                   <p v-if="props.modelValue" class="truncate text-xs font-semibold text-[var(--ds-text-muted)]">
-                    Atual: {{ props.modelValue }}
+                    Actual: {{ props.modelValue }}
                   </p>
                 </div>
 
@@ -122,7 +171,7 @@ function selectIcon(iconName) {
                       type="button"
                       role="option"
                       :aria-selected="icon.name === props.modelValue"
-                      :title="icon.name"
+                      :title="icon.label"
                       class="group relative flex h-24 w-full flex-col items-center justify-center gap-2 rounded-lg border px-2 py-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--primary-500-rgb))] focus-visible:ring-offset-2"
                       :class="icon.name === props.modelValue
                         ? 'border-[rgb(var(--primary-500-rgb))] bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-800-rgb))] dark:bg-[rgb(var(--primary-950-rgb))] dark:text-[rgb(var(--primary-200-rgb))]'
@@ -130,7 +179,7 @@ function selectIcon(iconName) {
                       @click="selectIcon(icon.name)"
                     >
                       <component :is="icon.component" class="h-6 w-6 shrink-0" aria-hidden="true" />
-                      <span class="w-full truncate text-[11px] font-bold">{{ icon.name }}</span>
+                      <span class="w-full truncate text-[11px] font-bold">{{ icon.label }}</span>
                       <span
                         v-if="icon.name === props.modelValue"
                         class="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-full bg-[rgb(var(--primary-600-rgb))] text-white"
@@ -155,6 +204,7 @@ function selectIcon(iconName) {
           </TransitionChild>
         </div>
       </div>
-    </Dialog>
-  </TransitionRoot>
+      </Dialog>
+    </TransitionRoot>
+  </Teleport>
 </template>

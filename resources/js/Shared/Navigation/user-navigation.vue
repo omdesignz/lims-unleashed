@@ -23,7 +23,7 @@ const userNavigation = computed(() => {
 
   return [
     { name: 'Perfil e segurança', href: userId ? route('users.edit', userId) : route('dashboard') },
-    { name: 'Terminar sessão', href: route('logout'), method: 'post' },
+    { name: 'Logout', href: route('logout'), method: 'post' },
   ]
 })
 </script>

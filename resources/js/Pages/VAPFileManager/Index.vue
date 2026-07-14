@@ -163,7 +163,7 @@ const attentionCards = computed(() => {
     {
       label: "Pendentes de decisão",
       value: pendingApprovalCount.value,
-      description: "Draft, revisão ou aprovação ainda em aberto.",
+      description: "Rascunho, revisão ou aprovação ainda em aberto.",
       icon: DocumentTextIcon,
       tone: "blue",
     },
@@ -221,138 +221,22 @@ function closeSidePanel(): void {
 
 <template>
   <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden p-5 sm:p-6">
-      <div class="grid gap-6 xl:grid-cols-[1.2fr,0.8fr] xl:items-start">
-        <div class="space-y-6">
-          <div class="flex flex-wrap items-center gap-3">
-            <span class="ds-badge ds-badge-info">ISO 17025 · controlo documental</span>
-            <span class="ds-badge ds-badge-neutral">
-              Aprovação, retenção, obsolescência e arquivo no mesmo fluxo
-            </span>
+    <section class="ds-panel overflow-hidden" data-testid="document-manager-overview">
+      <div class="flex flex-col gap-4 border-b border-[var(--ds-border)] p-4 sm:p-5 xl:flex-row xl:items-center xl:justify-between">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="ds-badge ds-badge-info">ISO 17025</span>
+            <span class="ds-badge ds-badge-neutral">Controlo documental</span>
           </div>
-
-          <div class="max-w-4xl">
-            <h1 class="ds-heading text-2xl">
-              {{ $t("gestlab.general.labels.vap_filemanager.page_title") }}
-            </h1>
-            <p class="ds-copy mt-2 max-w-3xl text-sm">
-              Um centro de controlo documental pensado para operação real: localizar rapidamente, decidir o estado do documento,
-              acompanhar revisões e manter evidência auditável sem espalhar a tarefa por ecrãs paralelos.
-            </p>
-          </div>
-
-          <dl class="grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] md:grid-cols-2 xl:grid-cols-4">
-            <div
-              v-for="card in dashboardCards"
-              :key="card.label"
-              class="border-b border-[var(--ds-border)] px-4 py-3 md:[&:nth-child(odd)]:border-r md:[&:nth-child(n+3)]:border-b-0 xl:border-b-0 xl:border-r xl:last:border-r-0"
-            >
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ card.label }}</dt>
-                  <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ card.value }}</dd>
-                </div>
-                <div class="grid h-9 w-9 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
-                  <component :is="card.icon" class="h-5 w-5 text-[var(--ds-text-soft)]" />
-                </div>
-              </div>
-              <p class="mt-2 text-xs font-semibold text-[var(--ds-text-muted)]">{{ card.caption }}</p>
-            </div>
-          </dl>
-        </div>
-
-        <div class="space-y-4">
-          <section class="border-l-4 border-amber-400/70 pl-5">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <p class="ds-kicker">Fila de atenção</p>
-                <h2 class="ds-heading mt-1 text-base">O que exige acção agora</h2>
-              </div>
-              <ExclamationTriangleIcon class="h-5 w-5 text-amber-600 dark:text-amber-300" />
-            </div>
-
-            <div class="mt-4 divide-y divide-[var(--ds-border)]">
-              <article
-                v-for="card in attentionCards"
-                :key="card.label"
-                class="py-3"
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <div>
-                    <p class="text-sm font-bold text-[var(--ds-text)]">{{ card.label }}</p>
-                    <p class="ds-copy mt-1 text-sm">{{ card.description }}</p>
-                  </div>
-                  <div class="min-w-[4.25rem] text-right">
-                    <component :is="card.icon" class="ml-auto h-4 w-4 text-[var(--ds-text-soft)]" />
-                    <p class="mt-1 text-xl font-bold text-[var(--ds-text)]">{{ card.value }}</p>
-                  </div>
-                </div>
-              </article>
-            </div>
-
-            <button
-              type="button"
-              class="ds-button ds-button-secondary mt-4 w-full"
-              @click="showArchivedItems = true"
-            >
-              <ArchiveBoxIcon class="h-5 w-5" />
-              <span>{{ $t("gestlab.general.labels.vap_filemanager.view_archived_items") }}</span>
-            </button>
-          </section>
-
-          <section class="border-t border-[var(--ds-border)] pt-4">
-            <p class="ds-kicker">Documento seleccionado</p>
-            <div v-if="selectedFile" class="mt-4 space-y-4">
-              <div>
-                <h3 class="ds-heading text-base">{{ selectedFile.name }}</h3>
-                <p class="ds-copy mt-1 text-sm">
-                  {{ selectedFile.document_number || $t("gestlab.general.labels.vap_filemanager.missing_document_number") }} •
-                  {{ selectedFile.revision_code || $t("gestlab.general.labels.vap_filemanager.missing_revision") }}
-                </p>
-              </div>
-
-              <div class="flex flex-wrap gap-2">
-                <span
-                  v-for="signal in selectedFileSignals"
-                  :key="signal.label"
-                  class="ds-badge"
-                  :class="signalClass(signal.tone)"
-                >
-                  {{ signal.label }}
-                </span>
-              </div>
-
-              <dl class="grid gap-3 sm:grid-cols-2">
-                <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3">
-                  <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Próxima revisão</dt>
-                  <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ formatDate(selectedFile.review_due_at) }}</dd>
-                </div>
-                <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3">
-                  <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Confidencialidade</dt>
-                  <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ selectedFile.confidentiality_level || "internal" }}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <div v-else class="ds-empty-state mt-4 px-4 py-5 text-sm">
-              {{ $t("gestlab.general.labels.vap_filemanager.select_single_document_hint") }}
-            </div>
-          </section>
-        </div>
-      </div>
-    </section>
-
-    <main class="space-y-4">
-      <div class="ds-command-surface flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p class="ds-kicker">Biblioteca operacional</p>
-          <h2 class="ds-heading mt-1 text-base">Workspace documental</h2>
-          <p class="ds-copy mt-1 text-sm">
-            A lista ocupa toda a largura. Abra os painéis laterais apenas quando precisar de controlo ou workflow.
+          <h1 class="ds-heading mt-3 text-xl sm:text-2xl">
+            {{ $t("gestlab.general.labels.vap_filemanager.page_title") }}
+          </h1>
+          <p class="ds-copy mt-1 max-w-3xl text-sm">
+            Biblioteca operacional com revisão, aprovação, retenção e rastreabilidade no mesmo registo.
           </p>
         </div>
 
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap gap-2">
           <button
             type="button"
             class="ds-button ds-button-secondary"
@@ -367,14 +251,52 @@ function closeSidePanel(): void {
             @click="openSidePanel('workflow')"
           >
             <CheckBadgeIcon class="h-4 w-4" />
-            Workflow e tarefas
+            Fluxo de trabalho e tarefas
+          </button>
+          <button
+            type="button"
+            class="ds-button ds-button-secondary"
+            @click="showArchivedItems = true"
+          >
+            <ArchiveBoxIcon class="h-4 w-4" />
+            Arquivo
           </button>
         </div>
       </div>
 
-      <div class="min-w-0">
-        <FileList />
+      <div class="grid divide-y divide-[var(--ds-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4">
+        <dl
+          v-for="card in dashboardCards"
+          :key="card.label"
+          class="flex items-center gap-3 px-4 py-3"
+        >
+          <div class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)]">
+            <component :is="card.icon" class="h-4 w-4 text-[var(--ds-text-soft)]" />
+          </div>
+          <div class="min-w-0">
+            <dt class="truncate text-xs font-bold uppercase text-[var(--ds-text-soft)]">{{ card.label }}</dt>
+            <dd class="mt-0.5 text-lg font-bold tabular-nums text-[var(--ds-text)]">{{ card.value }}</dd>
+          </div>
+        </dl>
       </div>
+    </section>
+
+    <section
+      v-if="pendingApprovalCount || overdueReviewCount || restrictedAccessCount"
+      class="ds-command-surface flex flex-col gap-3 p-3 sm:flex-row sm:items-center"
+      aria-label="Atenção documental"
+    >
+      <div class="flex items-center gap-2 sm:mr-auto">
+        <ExclamationTriangleIcon class="h-5 w-5 text-amber-600 dark:text-amber-300" />
+        <p class="text-sm font-bold text-[var(--ds-text)]">Atenção documental</p>
+      </div>
+      <span v-for="card in attentionCards" :key="card.label" class="ds-badge ds-badge-neutral">
+        {{ card.label }}: {{ card.value }}
+      </span>
+    </section>
+
+    <main class="min-w-0">
+      <FileList />
     </main>
 
     <ArchivedItems
@@ -448,7 +370,7 @@ function closeSidePanel(): void {
                           :class="activeSidePanel === 'workflow' ? 'bg-[var(--ds-panel-raised)] text-[var(--ds-text)] shadow-sm' : 'text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'"
                           @click="openSidePanel('workflow')"
                         >
-                          Workflow e tarefas
+                          Fluxo de trabalho e tarefas
                         </button>
                       </div>
                     </div>

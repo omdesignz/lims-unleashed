@@ -4,7 +4,7 @@
       <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
         <div class="max-w-3xl">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Reagent control</span>
+            <span class="ds-kicker">Controlo de reagentes</span>
             <span class="ds-chip">
               <span class="lims-status-dot lims-status-dot-hold" />
               Saída controlada
@@ -12,7 +12,7 @@
           </div>
           <h1 class="ds-heading mt-3 text-2xl">Registrar consumo de reagente</h1>
           <p class="ds-copy mt-2 text-sm">
-            Registe a saída com stock disponível, armazém, responsável, data e observações para preservar rastreabilidade operacional.
+            Registe a saída com existências disponível, armazém, responsável, data e observações para preservar rastreabilidade operacional.
           </p>
         </div>
 
@@ -42,7 +42,7 @@
               <BeakerIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
               <div>
                 <h2 class="ds-heading text-base">Detalhes do consumo</h2>
-                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Seleccione material, origem de stock, quantidade e responsável técnico.</p>
+                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Seleccione material, origem de existências, quantidade e responsável técnico.</p>
               </div>
             </div>
           </div>
@@ -59,7 +59,7 @@
               <option v-for="reagent in reagents" :key="reagent.id" :value="reagent.id">
                 {{ reagent.name }} ({{ reagent.code }})
                 <template v-if="reagent.total_stock !== undefined">
-                  · Stock total: {{ formatQuantity(reagent.total_stock) }}
+                  · Existências total: {{ formatQuantity(reagent.total_stock) }}
                 </template>
               </option>
             </BaseSelect>
@@ -135,7 +135,7 @@
         <aside class="space-y-4">
           <article class="ds-panel overflow-hidden">
             <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
-              <h2 class="ds-heading text-base">Validação de stock</h2>
+              <h2 class="ds-heading text-base">Validação de existências</h2>
               <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Confirme disponibilidade antes de submeter.</p>
             </div>
 
@@ -169,7 +169,7 @@
           <div class="flex items-start gap-3">
             <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 text-rose-700 dark:text-rose-300" />
             <div>
-              <h3 class="text-sm font-bold text-[color:var(--ds-text)]">Stock insuficiente</h3>
+              <h3 class="text-sm font-bold text-[color:var(--ds-text)]">Existências insuficiente</h3>
               <p class="mt-1 text-sm text-[color:var(--ds-text-soft)]">
                 Disponível: {{ formatQuantity(currentStock) }} · Requisitado: {{ formatQuantity(form.quantity_used) }}.
               </p>
@@ -196,7 +196,7 @@
             <span v-if="form.reagent_id && form.warehouse_id">
               Saída a partir de <span class="font-bold text-[color:var(--ds-text)]">{{ getWarehouseName(form.warehouse_id) }}</span>.
             </span>
-            <span v-else>Seleccione reagente e armazém para validar stock.</span>
+            <span v-else>Seleccione reagente e armazém para validar existências.</span>
           </p>
 
           <div class="flex flex-col gap-2 sm:flex-row">
@@ -216,7 +216,7 @@
     <confirm-dialog
       v-if="showSubmitConfirmation"
       title="Registrar consumo de reagente"
-      description="Confirme a saída controlada antes de abater stock do armazém selecionado."
+      description="Confirme a saída controlada antes de abater existências do armazém seleccionado."
       confirm="Registrar consumo"
       cancel="Rever dados"
       variant="warning"
@@ -368,7 +368,7 @@ const workspaceMetrics = computed(() => [
   {
     label: 'Armazéns',
     value: formatQuantity(props.warehouses.length),
-    caption: 'Com stock operacional',
+    caption: 'Com existências operacional',
     dotClass: 'lims-status-dot-release',
   },
   {
@@ -387,7 +387,7 @@ const workspaceMetrics = computed(() => [
 
 const stockReview = computed(() => [
   {
-    label: 'Stock actual',
+    label: 'Existências actual',
     value: formatQuantity(currentStock.value),
     caption: 'Quantidade disponível no armazém',
     valueClass: currentStock.value > 0 ? 'text-[color:var(--ds-text)]' : 'text-rose-700 dark:text-rose-300',

@@ -61,7 +61,7 @@ const securityCards = computed(() => [
     tone: props.security?.has_password ? 'good' : 'warn',
   },
   {
-    label: 'Email',
+    label: 'Correio electrónico',
     value: props.security?.email_verified ? 'Verificado' : 'Pendente',
     icon: EnvelopeIcon,
     tone: props.security?.email_verified ? 'good' : 'warn',
@@ -96,7 +96,7 @@ async function getJson(routeName) {
   })
 
   if (!response.ok) {
-    throw new Error('Nao foi possivel obter os dados de seguranca. Tente novamente.')
+    throw new Error('Não foi possível obter os dados de seguranca. Tente novamente.')
   }
 
   return response.json()
@@ -128,7 +128,7 @@ async function requestPasswordConfirmation(action) {
     pendingSensitiveAction.value = action
     passwordConfirmationOpen.value = true
   } catch (error) {
-    securityError.value = error?.message || 'Nao foi possivel confirmar a identidade.'
+    securityError.value = error?.message || 'Não foi possível confirmar a identidade.'
   }
 }
 
@@ -179,7 +179,7 @@ function enableTwoFactor() {
       try {
         await loadTwoFactorDetails()
       } catch (error) {
-        securityError.value = error?.message || 'O duplo factor foi activado, mas os dados de configuracao nao puderam ser carregados.'
+        securityError.value = error?.message || 'O duplo factor foi activado, mas os dados de configuração não puderam ser carregados.'
       }
     },
     onFinish: () => {
@@ -195,7 +195,7 @@ async function showTwoFactorDetails() {
   try {
     await loadTwoFactorDetails()
   } catch (error) {
-    securityError.value = error?.message || 'Nao foi possivel carregar os dados do duplo factor.'
+    securityError.value = error?.message || 'Não foi possível carregar os dados do duplo factor.'
   } finally {
     twoFactorWorking.value = false
   }
@@ -221,7 +221,7 @@ function regenerateRecoveryCodes() {
       try {
         recoveryCodes.value = await getJson('portal.two-factor.recovery-codes')
       } catch (error) {
-        securityError.value = error?.message || 'Os codigos foram regenerados, mas nao puderam ser apresentados.'
+        securityError.value = error?.message || 'Os códigos foram regenerados, mas não puderam ser apresentados.'
       }
     },
     onFinish: () => {
@@ -330,7 +330,7 @@ function logoutOtherSessions() {
             </div>
           </div>
           <footer class="flex flex-col gap-3 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <p class="ds-copy text-xs">A alteracao termina sessoes que deixem de ser confiaveis.</p>
+            <p class="ds-copy text-xs">A alteração termina sessões que deixem de ser confiáveis.</p>
             <button type="submit" class="ds-button ds-button-primary" :disabled="passwordForm.processing">{{ passwordForm.processing ? 'A guardar...' : 'Actualizar palavra-passe' }}</button>
           </footer>
         </form>
@@ -338,8 +338,8 @@ function logoutOtherSessions() {
 
       <section class="grid gap-4 md:grid-cols-[15rem_minmax(0,1fr)] md:gap-6">
         <div>
-          <h2 class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]"><EnvelopeIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />Email verificado</h2>
-          <p class="ds-copy mt-2 text-sm">Necessario para alertas, recuperacao da conta e comunicacoes criticas.</p>
+          <h2 class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]"><EnvelopeIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />Correio electrónico verificado</h2>
+          <p class="ds-copy mt-2 text-sm">Necessário para alertas, recuperação da conta e comunicacoes críticas.</p>
         </div>
         <div class="ds-card overflow-hidden">
           <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
@@ -347,11 +347,11 @@ function logoutOtherSessions() {
               <div class="flex items-center gap-2">
                 <CheckCircleIcon v-if="security?.email_verified" class="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 <ExclamationTriangleIcon v-else class="h-5 w-5 text-amber-600 dark:text-amber-300" />
-                <p class="text-sm font-bold text-[var(--ds-text)]">{{ security?.email_verified ? 'Email verificado' : 'Verificacao pendente' }}</p>
+                <p class="text-sm font-bold text-[var(--ds-text)]">{{ security?.email_verified ? 'Email verificado' : 'Verificação pendente' }}</p>
               </div>
               <p class="ds-copy mt-1 break-words text-sm">{{ warehouse?.email || 'Sem email registado' }}</p>
             </div>
-            <button v-if="!security?.email_verified" type="button" class="ds-button ds-button-secondary" @click="resendVerification">Reenviar verificacao</button>
+            <button v-if="!security?.email_verified" type="button" class="ds-button ds-button-secondary" @click="resendVerification">Reenviar verificação</button>
           </div>
         </div>
       </section>
@@ -359,30 +359,30 @@ function logoutOtherSessions() {
       <section class="grid gap-4 md:grid-cols-[15rem_minmax(0,1fr)] md:gap-6">
         <div>
           <h2 class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]"><KeyIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />Duplo factor</h2>
-          <p class="ds-copy mt-2 text-sm">Adiciona um codigo temporario ao inicio de sessao com palavra-passe.</p>
+          <p class="ds-copy mt-2 text-sm">Adiciona um código temporario ao inicio de sessão com palavra-passe.</p>
         </div>
         <div class="ds-card overflow-hidden">
           <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div>
-              <p class="text-sm font-bold text-[var(--ds-text)]">{{ twoFactorEnabled ? (twoFactorConfirmed ? 'Proteccao activa' : 'Configuracao por confirmar') : 'Proteccao inactiva' }}</p>
+              <p class="text-sm font-bold text-[var(--ds-text)]">{{ twoFactorEnabled ? (twoFactorConfirmed ? 'Proteccao activa' : 'Configuração por confirmar') : 'Proteccao inactiva' }}</p>
               <p class="ds-copy mt-1 text-sm">{{ twoFactorEnabled ? 'A conta exige uma prova adicional de identidade.' : 'Active esta proteccao para reduzir o risco de credenciais comprometidas.' }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
               <button v-if="!twoFactorEnabled" type="button" class="ds-button ds-button-primary" :disabled="twoFactorWorking" @click="requestPasswordConfirmation(enableTwoFactor)">Activar 2FA</button>
-              <button v-else type="button" class="ds-button ds-button-secondary" :disabled="twoFactorWorking" @click="requestPasswordConfirmation(showTwoFactorDetails)">Mostrar codigos</button>
+              <button v-else type="button" class="ds-button ds-button-secondary" :disabled="twoFactorWorking" @click="requestPasswordConfirmation(showTwoFactorDetails)">Mostrar códigos</button>
               <button v-if="twoFactorEnabled" type="button" class="ds-button ds-button-secondary text-rose-700 dark:text-rose-200" :disabled="twoFactorWorking" @click="requestPasswordConfirmation(disableTwoFactor)">Desactivar</button>
             </div>
           </div>
 
           <div v-if="qrCode || recoveryCodes.length" class="grid gap-px border-t border-[var(--ds-border)] bg-[var(--ds-border)] lg:grid-cols-2">
             <div v-if="qrCode" class="bg-[var(--ds-panel)] p-5 sm:p-6">
-              <h3 class="text-sm font-bold text-[var(--ds-text)]">Aplicacao autenticadora</h3>
-              <p class="ds-copy mt-1 text-xs">Leia o codigo e introduza o token de seis digitos.</p>
+              <h3 class="text-sm font-bold text-[var(--ds-text)]">Aplicação autenticadora</h3>
+              <p class="ds-copy mt-1 text-xs">Leia o código e introduza o token de seis digitos.</p>
               <div class="mt-4 inline-flex max-w-full overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[rgb(255,255,255)] p-3" v-html="qrCode" />
               <form v-if="!twoFactorConfirmed" class="mt-4 flex flex-col gap-2 sm:flex-row" @submit.prevent="confirmTwoFactor">
                 <div class="min-w-0 flex-1">
-                  <label for="two-factor-code" class="sr-only">Codigo de seis digitos</label>
-                  <BaseInput id="two-factor-code" v-model="confirmationForm.code" type="text" inputmode="numeric" autocomplete="one-time-code" class="ds-field" placeholder="Codigo de 6 digitos" />
+                  <label for="two-factor-code" class="sr-only">Código de seis digitos</label>
+                  <BaseInput id="two-factor-code" v-model="confirmationForm.code" type="text" inputmode="numeric" autocomplete="one-time-code" class="ds-field" placeholder="Código de 6 digitos" />
                   <p v-if="confirmationForm.errors.code" class="ds-field-error mt-1">{{ confirmationForm.errors.code }}</p>
                 </div>
                 <button type="submit" class="ds-button ds-button-primary self-start">Confirmar</button>
@@ -391,7 +391,7 @@ function logoutOtherSessions() {
 
             <div v-if="recoveryCodes.length" class="bg-[var(--ds-panel)] p-5 sm:p-6">
               <div class="flex items-start justify-between gap-3">
-                <div><h3 class="text-sm font-bold text-[var(--ds-text)]">Codigos de recuperacao</h3><p class="ds-copy mt-1 text-xs">Guarde-os fora deste dispositivo.</p></div>
+                <div><h3 class="text-sm font-bold text-[var(--ds-text)]">Códigos de recuperação</h3><p class="ds-copy mt-1 text-xs">Guarde-os fora deste dispositivo.</p></div>
                 <button type="button" class="ds-button ds-button-secondary" :disabled="twoFactorWorking" @click="requestPasswordConfirmation(regenerateRecoveryCodes)">Regenerar</button>
               </div>
               <div class="mt-4 grid gap-2 sm:grid-cols-2">
@@ -404,8 +404,8 @@ function logoutOtherSessions() {
 
       <section class="grid gap-4 md:grid-cols-[15rem_minmax(0,1fr)] md:gap-6">
         <div>
-          <h2 class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]"><ComputerDesktopIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />Sessoes activas</h2>
-          <p class="ds-copy mt-2 text-sm">Reveja navegadores recentes e termine acessos que ja nao reconhece.</p>
+          <h2 class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]"><ComputerDesktopIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />Sessões activas</h2>
+          <p class="ds-copy mt-2 text-sm">Reveja navegadores recentes e termine acessos que já não reconhece.</p>
         </div>
         <div class="ds-card overflow-hidden">
           <ul v-if="sessions.length" class="divide-y divide-[var(--ds-border)]">
@@ -416,14 +416,14 @@ function logoutOtherSessions() {
               </span>
               <div class="min-w-0 flex-1">
                 <p class="break-words text-sm font-bold text-[var(--ds-text)]">{{ session.agent?.platform || 'Dispositivo desconhecido' }} · {{ session.agent?.browser || 'Navegador desconhecido' }}</p>
-                <p class="ds-copy mt-1 text-xs">{{ session.ip_address || 'IP nao registado' }} · {{ session.is_current_device ? 'Este dispositivo' : `Ultima actividade ${session.last_active}` }}</p>
+                <p class="ds-copy mt-1 text-xs">{{ session.ip_address || 'IP não registado' }} · {{ session.is_current_device ? 'Este dispositivo' : `Ultima actividade ${session.last_active}` }}</p>
               </div>
               <span v-if="session.is_current_device" class="ds-chip shrink-0">Actual</span>
             </li>
           </ul>
-          <div v-else class="p-5 sm:p-6"><div class="ds-empty-state px-4 py-6 text-center"><p class="text-sm font-bold">Sem lista de sessoes</p><p class="ds-copy mt-1 text-xs">Disponivel quando o armazenamento de sessoes usa a base de dados.</p></div></div>
+          <div v-else class="p-5 sm:p-6"><div class="ds-empty-state px-4 py-6 text-center"><p class="text-sm font-bold">Sem lista de sessões</p><p class="ds-copy mt-1 text-xs">Disponível quando o armazenamento de sessões usa a base de dados.</p></div></div>
           <footer class="flex justify-end border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:px-6">
-            <button type="button" class="ds-button ds-button-secondary text-rose-700 dark:text-rose-200" @click="openSessionLogoutModal">Terminar outras sessoes</button>
+            <button type="button" class="ds-button ds-button-secondary text-rose-700 dark:text-rose-200" @click="openSessionLogoutModal">Terminar outras sessões</button>
           </footer>
         </div>
       </section>
@@ -431,7 +431,7 @@ function logoutOtherSessions() {
       <section class="grid gap-4 md:grid-cols-[15rem_minmax(0,1fr)] md:gap-6">
         <div>
           <h2 class="flex items-center gap-2 text-sm font-bold text-[var(--ds-text)]"><FingerPrintIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />Passkeys</h2>
-          <p class="ds-copy mt-2 text-sm">Associe biometria, um gestor de credenciais ou uma chave fisica.</p>
+          <p class="ds-copy mt-2 text-sm">Associe biometria, um gestor de credenciais ou uma chave física.</p>
         </div>
         <div class="ds-card p-5 sm:p-6">
           <PasskeyManagementForm :passkeys="passkeys" :routes="portalPasskeyRoutes" />
@@ -444,7 +444,7 @@ function logoutOtherSessions() {
       <div class="fixed inset-0 overflow-y-auto p-4 sm:grid sm:place-items-center">
         <DialogPanel class="ds-modal-panel mx-auto w-full max-w-md overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
-            <div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))]"><LockClosedIcon class="h-4 w-4" /></span><div><h2 class="text-base font-bold">Confirmar identidade</h2><p class="ds-copy mt-1 text-sm">Introduza a palavra-passe antes desta operacao sensivel.</p></div></div>
+            <div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))]"><LockClosedIcon class="h-4 w-4" /></span><div><h2 class="text-base font-bold">Confirmar identidade</h2><p class="ds-copy mt-1 text-sm">Introduza a palavra-passe antes desta operação sensível.</p></div></div>
           </div>
           <form @submit.prevent="confirmPasswordForSensitiveAction">
             <div class="p-5 sm:p-6"><div class="ds-field-group"><label for="sensitive-password" class="ds-field-label">Palavra-passe</label><BaseInput id="sensitive-password" v-model="passwordConfirmationForm.password" type="password" autocomplete="current-password" class="ds-field" /><p v-if="passwordConfirmationForm.errors.password" class="ds-field-error">{{ passwordConfirmationForm.errors.password }}</p></div></div>
@@ -459,11 +459,11 @@ function logoutOtherSessions() {
       <div class="fixed inset-0 overflow-y-auto p-4 sm:grid sm:place-items-center">
         <DialogPanel class="ds-modal-panel mx-auto w-full max-w-md overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
-            <div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200"><ComputerDesktopIcon class="h-4 w-4" /></span><div><h2 class="text-base font-bold">Terminar outras sessoes</h2><p class="ds-copy mt-1 text-sm">A sessao deste dispositivo permanece activa.</p></div></div>
+            <div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200"><ComputerDesktopIcon class="h-4 w-4" /></span><div><h2 class="text-base font-bold">Terminar outras sessões</h2><p class="ds-copy mt-1 text-sm">A sessão deste dispositivo permanece activa.</p></div></div>
           </div>
           <form @submit.prevent="logoutOtherSessions">
             <div class="p-5 sm:p-6"><div class="ds-field-group"><label for="session-password" class="ds-field-label">Palavra-passe</label><BaseInput id="session-password" v-model="sessionLogoutForm.password" type="password" autocomplete="current-password" class="ds-field" /><p v-if="sessionLogoutForm.errors.password" class="ds-field-error">{{ sessionLogoutForm.errors.password }}</p></div></div>
-            <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6"><button type="button" class="ds-button ds-button-secondary" @click="closeSessionLogoutModal">Cancelar</button><button type="submit" class="ds-button ds-button-danger" :disabled="sessionLogoutForm.processing">{{ sessionLogoutForm.processing ? 'A terminar...' : 'Terminar sessoes' }}</button></footer>
+            <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6"><button type="button" class="ds-button ds-button-secondary" @click="closeSessionLogoutModal">Cancelar</button><button type="submit" class="ds-button ds-button-danger" :disabled="sessionLogoutForm.processing">{{ sessionLogoutForm.processing ? 'A terminar...' : 'Terminar sessões' }}</button></footer>
           </form>
         </DialogPanel>
       </div>

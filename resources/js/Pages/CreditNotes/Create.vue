@@ -2,6 +2,7 @@
 import '../CommercialDocumentSurface.css';
 import Layout from "@/Shared/Layouts/Layout.vue";
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
+import { optionRows } from "@/Composables/useCommercialDocumentOptions";
 import { ref, computed, reactive, watch } from "vue";
 import { router, useForm } from "@inertiajs/vue3";
 import comboboxEnhanced from '@/Components/combobox-enhanced.vue';
@@ -68,7 +69,7 @@ watch(() => [form.customer_id.value], (currentValue, oldValue) => {
     fetch('/warehouses/getWarehouse?q=' + '&customer_id=' + form.customer_id?.value)
     .then(response => response.json())
     .then(results => {
-        customerWarehouses = results.map(result => ({
+        customerWarehouses = optionRows(results).map(result => ({
             value: result.id,
             label: result.address,
         }));
@@ -132,7 +133,7 @@ function loadUnits(query, setOptions) {
     .then(response => response.json())
     .then(results => {
         setOptions(
-            results.map(result => ({
+            optionRows(results).map(result => ({
                 value: result.id,
                 label: result.code,
             }))
@@ -145,7 +146,7 @@ function loadInvoices(query, setOptions) {
     .then(response => response.json())
     .then(results => {
         setOptions(
-            results.map(result => ({
+            optionRows(results).map(result => ({
                 value: result.id,
                 label: result.inv_no,
             }))
@@ -158,7 +159,7 @@ function loadInvoiceCategories(query, setOptions) {
     .then(response => response.json())
     .then(results => {
         setOptions(
-            results.map(result => ({
+            optionRows(results).map(result => ({
                 value: result.id,
                 label: result.code,
             }))
@@ -171,7 +172,7 @@ function loadCustomers(query, setOptions) {
     .then(response => response.json())
     .then(results => {
         setOptions(
-            results.map(result => ({
+            optionRows(results).map(result => ({
                 value: result.id,
                 label: result.name,
             }))
@@ -184,7 +185,7 @@ let loadWarehouses = (query, setOptions) => {
     .then(response => response.json())
     .then(results => {
         setOptions(
-            results.map(result => ({
+            optionRows(results).map(result => ({
                 value: result.id,
                 label: result.address,
             }))
@@ -197,7 +198,7 @@ function loadParameters(query, setOptions) {
     .then(response => response.json())
     .then(results => {
         setOptions(
-            results.map(result => ({
+            optionRows(results).map(result => ({
                 value: result.id,
                 label: result.name,
                 price: result.price,
@@ -216,7 +217,7 @@ function loadMatrixes(query, setOptions) {
     .then(response => response.json())
     .then(results => {
         setOptions(
-            results.map(result => ({
+            optionRows(results).map(result => ({
                 value: result.id,
                 label: result.code,
                 price: result.fixed_price,
@@ -235,7 +236,7 @@ function loadLabCodes(query, setOptions) {
     .then(response => response.json())
     .then(results => {
         setOptions(
-            results.map(result => ({
+            optionRows(results).map(result => ({
                 value: result.id,
                 label: result.code,
             }))
@@ -371,10 +372,10 @@ const onSelectedItem = (item) => {
 </script>
 
 <template>
-    <div class="commercial-document-page space-y-8" :class="commercialDocumentThemeClasses">
+    <div class="commercial-document-page commercial-document-create min-w-0 space-y-5 overflow-x-clip pb-10" :class="commercialDocumentThemeClasses">
         <!-- Header -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center justify-between">
+        <header class="commercial-document-header px-0 pb-5 pt-1">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
                         <ReceiptRefundIcon class="h-7 w-7 text-blue-900" />
@@ -393,10 +394,10 @@ const onSelectedItem = (item) => {
                     </span>
                 </div>
             </div>
-        </div>
+        </header>
 
         <!-- Credit Note Settings Card -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <section class="ds-panel commercial-document-section overflow-hidden">
             <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-6 py-4">
                 <h2 class="ds-heading flex items-center gap-2 text-lg">
                     <DocumentDuplicateIcon class="h-5 w-5" />
@@ -529,10 +530,10 @@ const onSelectedItem = (item) => {
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
         <!-- Items Section -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <section class="ds-panel commercial-document-section overflow-hidden">
             <div class="border-b border-gray-200 px-6 py-4">
                 <div class="flex items-center justify-between">
                     <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -777,10 +778,10 @@ const onSelectedItem = (item) => {
                     </tfoot>
                 </DataTable>
             </div>
-        </div>
+        </section>
 
         <!-- Observations -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <section class="ds-panel commercial-document-section p-5 sm:p-6">
             <div class="space-y-2">
                 <label class="ds-field-label flex items-center gap-2">
                     <InformationCircleIcon class="h-4 w-4" />
@@ -796,10 +797,10 @@ const onSelectedItem = (item) => {
                     {{ form.errors.obs }}
                 </p>
             </div>
-        </div>
+        </section>
 
         <!-- Submit Section -->
-        <div class="flex items-center justify-between pt-6">
+        <div class="commercial-document-command flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="text-sm text-gray-500">
                 <div class="flex items-center gap-4">
                     <div class="flex items-center gap-2">
@@ -820,7 +821,7 @@ const onSelectedItem = (item) => {
                     @click="showDeleteConfirmation = true"
                     :disabled="form.processing || form.items.length === 0"
                     :class="[
-                        'inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold shadow-sm transition-all duration-200',
+                        'ds-button px-6 py-3',
                         form.processing || form.items.length === 0
                             ? 'cursor-not-allowed bg-[var(--ds-border)] text-[var(--ds-muted)]'
                             : 'ds-button-primary'
@@ -884,7 +885,7 @@ const onSelectedItem = (item) => {
                         <div class="px-4 py-6 sm:grid sm:grid-cols-1 sm:gap-4 sm:px-0">
 
                         <div class="w-full pt-2">
-                            <div class="mx-auto w-full rounded-2xl bg-white">
+                            <div class="mx-auto w-full rounded-lg bg-[var(--ds-panel-raised)]">
                             <Disclosure v-slot="{ open }" v-for="(product, index) in itemsWithSubTotal" :key="index" v-if="itemsWithSubTotal.length">
                                 <DisclosureButton
                                 class="flex w-full justify-between rounded-lg bg-blue-900 px-4 py-2 mb-2 text-left text-sm font-medium text-white focus:outline-none focus-visible:ring focus-visible:ring-blue-900"

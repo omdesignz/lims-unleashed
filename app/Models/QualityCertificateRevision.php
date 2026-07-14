@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class QualityCertificateRevision extends Model
 {
-    use SoftDeletes, LogsActivity;
+    use LogsActivity, SoftDeletes;
 
     /**
      * The table associated with the model.
@@ -79,7 +79,7 @@ class QualityCertificateRevision extends Model
         return LogOptions::defaults()
             ->logOnly(['version', 'change_type', 'change_reason', 'is_current'])
             ->logOnlyDirty()
-            ->setDescriptionForEvent(fn(string $eventName) => $this->getDescriptionForEvent($eventName))
+            ->setDescriptionForEvent(fn (string $eventName) => $this->getDescriptionForEvent($eventName))
             ->useLogName('iso-revision')
             ->dontSubmitEmptyLogs();
     }
@@ -91,13 +91,13 @@ class QualityCertificateRevision extends Model
     {
         switch ($eventName) {
             case 'created':
-                return "Created revision v{$this->version} for certificate #{$this->quality_certificate_id}";
+                return "Revisão v{$this->version} criada para o certificado n.º {$this->quality_certificate_id}";
             case 'updated':
-                return "Updated revision v{$this->version}";
+                return "Revisão v{$this->version} actualizada";
             case 'deleted':
-                return "Deleted revision v{$this->version}";
+                return "Revisão v{$this->version} eliminada";
             default:
-                return "Performed {$eventName} on revision v{$this->version}";
+                return "Evento {$eventName} registado na revisão v{$this->version}";
         }
     }
 
@@ -317,7 +317,7 @@ class QualityCertificateRevision extends Model
 
         // Generate from activity logs if available
         $logs = $this->relatedActivityLogs();
-        
+
         if ($logs->isNotEmpty()) {
             $changes = [];
             foreach ($logs as $log) {
@@ -330,13 +330,13 @@ class QualityCertificateRevision extends Model
                     }
                 }
             }
-            
-            if (!empty($changes)) {
+
+            if (! empty($changes)) {
                 return implode('; ', $changes);
             }
         }
 
-        return 'No specific changes documented';
+        return 'Sem alterações específicas documentadas';
     }
 
     /**
@@ -345,18 +345,18 @@ class QualityCertificateRevision extends Model
     private function formatFieldChange(string $field, $oldValue, $newValue): string
     {
         $fieldLabels = [
-            'status' => 'Status',
-            'obs' => 'Observations',
-            'validated_by' => 'Validated By',
-            'validated_at' => 'Validation Date',
+            'status' => 'Estado',
+            'obs' => 'Observações',
+            'validated_by' => 'Validado por',
+            'validated_at' => 'Data de validação',
             // Add more field labels as needed
         ];
 
         $label = $fieldLabels[$field] ?? ucwords(str_replace('_', ' ', $field));
-        
+
         $formattedOld = $this->formatValue($oldValue);
         $formattedNew = $this->formatValue($newValue);
-        
+
         return "{$label}: {$formattedOld} → {$formattedNew}";
     }
 
@@ -366,17 +366,17 @@ class QualityCertificateRevision extends Model
     private function formatValue($value): string
     {
         if (is_null($value)) {
-            return '[empty]';
+            return '[vazio]';
         }
-        
+
         if (is_bool($value)) {
             return $value ? 'Yes' : 'No';
         }
-        
+
         if (is_array($value) || is_object($value)) {
-            return '[data]';
+            return '[dados]';
         }
-        
+
         return (string) $value;
     }
 
@@ -386,8 +386,8 @@ class QualityCertificateRevision extends Model
     public function canBeRestored(): bool
     {
         // Check various conditions for restoration
-        return !$this->is_current 
-            && !$this->trashed()
+        return ! $this->is_current
+            && ! $this->trashed()
             && $this->qualityCertificate->exists
             && $this->snapshot_data !== null;
     }
@@ -410,26 +410,26 @@ class QualityCertificateRevision extends Model
      * Create a new revision from the current state of a certificate
      */
     public static function createFromCertificate(
-        QualityCertificate $certificate, 
-        string $changeReason, 
+        QualityCertificate $certificate,
+        string $changeReason,
         string $changeType = 'UPDATED',
         ?User $createdBy = null,
         ?User $approvedBy = null,
         array $complianceMetadata = []
     ): self {
         $createdBy = $createdBy ?? auth()->user();
-        
+
         // Calculate next revision number
         $lastRevision = self::where('quality_certificate_id', $certificate->id)
             ->orderBy('revision_number', 'desc')
             ->first();
-        
+
         $revisionNumber = $lastRevision ? $lastRevision->revision_number + 1 : 1;
         $version = self::calculateVersion($revisionNumber);
-        
+
         // Create snapshot data
         $snapshot = $certificate->createIsoSnapshot();
-        
+
         // Get recent activity logs
         $recentLogs = activity()
             ->performedOn($certificate)
@@ -437,7 +437,7 @@ class QualityCertificateRevision extends Model
             ->get()
             ->pluck('id')
             ->toArray();
-        
+
         // Create the revision
         $revision = self::create([
             'quality_certificate_id' => $certificate->id,
@@ -460,13 +460,13 @@ class QualityCertificateRevision extends Model
                 'approval_workflow' => $complianceMetadata['approval_workflow'] ?? 'DIRECT',
             ], $complianceMetadata),
         ]);
-        
+
         // Mark previous revisions as superseded
         self::where('quality_certificate_id', $certificate->id)
             ->where('id', '!=', $revision->id)
             ->where('is_current', true)
             ->update(['is_current' => false, 'superseded_date' => now()]);
-        
+
         // Log the revision creation
         activity()
             ->performedOn($revision)
@@ -478,7 +478,7 @@ class QualityCertificateRevision extends Model
                 'change_type' => $changeType,
             ])
             ->log('ISO_REVISION_CREATED');
-        
+
         return $revision;
     }
 
@@ -489,6 +489,7 @@ class QualityCertificateRevision extends Model
     {
         $major = floor(($revisionNumber - 1) / 10) + 1;
         $minor = ($revisionNumber - 1) % 10;
+
         return sprintf('%d.%d', $major, $minor);
     }
 
@@ -498,11 +499,11 @@ class QualityCertificateRevision extends Model
     public static function getChangeTypes(): array
     {
         return [
-            'CREATED' => 'Initial creation of certificate',
-            'UPDATED' => 'Regular update or modification',
-            'CORRECTED' => 'Correction of errors or mistakes',
-            'REISSUED' => 'Re-issue of certificate',
-            'WITHDRAWN' => 'Withdrawal or cancellation',
+            'CREATED' => 'Criação inicial do certificado',
+            'UPDATED' => 'Actualização ou modificação regular',
+            'CORRECTED' => 'Correcção de erros ou incorrecções',
+            'REISSUED' => 'Reemissão do certificado',
+            'WITHDRAWN' => 'Retirada ou cancelamento',
         ];
     }
 
@@ -512,7 +513,8 @@ class QualityCertificateRevision extends Model
     public function getChangeTypeDescriptionAttribute(): string
     {
         $descriptions = self::getChangeTypes();
-        return $descriptions[$this->change_type] ?? 'Unknown change type';
+
+        return $descriptions[$this->change_type] ?? 'Tipo de alteração desconhecido';
     }
 
     /**
@@ -521,10 +523,10 @@ class QualityCertificateRevision extends Model
     public function getBreadcrumbTrail(): array
     {
         return [
-            ['label' => 'Quality Certificates', 'url' => route('qualitycertificates.index')],
+            ['label' => 'Certificados de qualidade', 'url' => route('qualitycertificates.index')],
             ['label' => $this->qualityCertificate->code, 'url' => route('qualitycertificates.show', $this->qualityCertificate)],
-            ['label' => 'Revisions', 'url' => route('qualitycertificates.iso-revisions.index', $this->qualityCertificate)],
-            ['label' => 'v' . $this->version, 'url' => route('qualitycertificates.iso-revisions.show', [$this->qualityCertificate, $this])],
+            ['label' => 'Revisões', 'url' => route('qualitycertificates.iso-revisions.index', $this->qualityCertificate)],
+            ['label' => 'v'.$this->version, 'url' => route('qualitycertificates.iso-revisions.show', [$this->qualityCertificate, $this])],
         ];
     }
 
@@ -552,7 +554,7 @@ class QualityCertificateRevision extends Model
                     ->where('id', '!=', $model->id)
                     ->orderBy('revision_number', 'desc')
                     ->first();
-                
+
                 if ($newCurrent) {
                     $newCurrent->update(['is_current' => true, 'superseded_date' => null]);
                 }

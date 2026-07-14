@@ -105,7 +105,7 @@ class VAPSampleEntryController extends Controller
 
         return [
             'labels' => [
-                'Retenção ativa',
+                'Retenção activa',
                 'Próximo descarte',
                 'Retenção vencida',
                 'Descartadas',
@@ -126,7 +126,7 @@ class VAPSampleEntryController extends Controller
 
         return [
             'title' => 'Controlo interno de matéria-prima',
-            'description' => 'Receção interna de matéria-prima para microbiologia e química, com integração automática no fluxo normal de análise.',
+            'description' => 'Recepção interna de matéria-prima para microbiologia e química, com integração automática no fluxo normal de análise.',
             'requires_proposal' => false,
             'sample_type' => 'MATERIA_PRIMA',
             'request_origin' => 'internal',
@@ -147,9 +147,9 @@ class VAPSampleEntryController extends Controller
             ],
             'workflow' => [
                 'Registar como origem interna e tipo MATERIA_PRIMA.',
-                'Selecionar produto, matriz e perfis analíticos de microbiologia/química.',
-                'Validar receção, condicionamento, lote, fornecedor e decisão de liberação.',
-                'Gerar automaticamente lab code, amostras internas e análises no fluxo normal.',
+                'Seleccionar produto, matriz e perfis analíticos de microbiologia/química.',
+                'Validar recepção, condicionamento, lote, fornecedor e decisão de libertação.',
+                'Gerar automaticamente o código laboratorial, as amostras internas e as análises no fluxo normal.',
                 'Inserir resultados, verificar, aprovar e emitir certificado/relatório quando aplicável.',
             ],
         ];
@@ -173,6 +173,13 @@ class VAPSampleEntryController extends Controller
      */
     public function index(Request $request)
     {
+        $proposalPrefill = $request->integer('proposal_id')
+            ? Proposal::query()
+                ->accepted()
+                ->with(['customer:id,name', 'warehouse:id,address', 'department:id,name'])
+                ->find($request->integer('proposal_id'))
+            : null;
+
         // $stats = [
         //     'total_samples' => VAPSampleEntry::count(),
         //     'pending_analysis' => VAPSampleEntry::pending()->count(),
@@ -287,6 +294,18 @@ class VAPSampleEntryController extends Controller
             'internalQualityControlPath' => $this->buildInternalQualityControlPath(),
             'entryWorkflowDefaults' => [
                 'collection_type' => $request->string('collection_type')->value() === 'programmed' ? 'programmed' : 'direct',
+                'open_form' => (bool) $proposalPrefill && $request->boolean('start', true),
+                'proposal' => $proposalPrefill ? [
+                    'id' => $proposalPrefill->id,
+                    'proposal_no' => $proposalPrefill->proposal_no,
+                    'customer_id' => $proposalPrefill->customer_id,
+                    'customer' => $proposalPrefill->customer?->name,
+                    'warehouse_id' => $proposalPrefill->warehouse_id,
+                    'warehouse' => $proposalPrefill->warehouse?->address,
+                    'department_id' => $proposalPrefill->department_id,
+                    'department' => $proposalPrefill->department?->name,
+                    'service_location' => $proposalPrefill->service_location,
+                ] : null,
             ],
             'charts' => [
                 'intake_trend' => $this->buildSampleIntakeTrendChart(),
@@ -310,7 +329,10 @@ class VAPSampleEntryController extends Controller
                     'customer' => $proposal->customer?->name,
                     'warehouse_id' => $proposal->warehouse_id,
                     'warehouse' => $proposal->warehouse?->address,
-                    'status' => (string) $proposal->status,
+                    'department_id' => $proposal->department_id,
+                    'status' => $proposal->status instanceof \BackedEnum
+                        ? $proposal->status->value
+                        : (string) $proposal->status,
                     'total' => $proposal->total,
                     'updated_at' => optional($proposal->updated_at)?->toIso8601String(),
                 ]),
@@ -524,7 +546,7 @@ class VAPSampleEntryController extends Controller
                     'profile' => $analysis->profile?->name,
                     'department' => $analysis->department?->name,
                     'type' => $analysis->type?->name,
-                    'status' => $analysis->end_date ? 'Arquivada' : 'Ativa',
+                    'status' => $analysis->end_date ? 'Arquivada' : 'Activa',
                     'entry_date' => optional($analysis->entry_date)?->format('Y-m-d'),
                     'analysis_url' => route('analysis.edit', $analysis),
                     'result_id' => $result?->id,
@@ -606,7 +628,7 @@ class VAPSampleEntryController extends Controller
                 'archived' => 'Rever análises concluídas',
                 default => 'Inserir resultados',
             },
-            'description' => 'Abrir a fila operacional correspondente ao estado atual desta entrada.',
+            'description' => 'Abrir a fila operacional correspondente ao estado actual desta entrada.',
             'url' => route('analysis.index', ['category' => $analysisQueueCategory]),
             'type' => 'analysis',
         ];
@@ -680,17 +702,17 @@ class VAPSampleEntryController extends Controller
         } elseif ($approvedResults < $totalResults) {
             $status = 'awaiting_approval';
             $label = 'Aguardar verificação/aprovação';
-            $message = 'A liberação só deve avançar quando todos os resultados estiverem verificados e aprovados.';
+            $message = 'A libertação só deve avançar quando todos os resultados estiverem verificados e aprovados.';
         } elseif ($decision === 'investigate_before_release' || $counterAnalysisCount > 0) {
             $status = 'requires_review';
             $label = 'Revisão técnica necessária';
-            $message = 'Existem indicações de investigação ou contra-análise antes da decisão final de liberação.';
+            $message = 'Existem indicações de investigação ou contra-análise antes da decisão final de libertação.';
         } else {
             $status = 'ready_for_release';
-            $label = 'Pronto para decisão de liberação';
+            $label = 'Pronto para decisão de libertação';
             $message = $decision === 'release_if_compliant'
                 ? 'Todos os resultados estão aprovados; a matéria-prima pode ser liberada se estiver conforme.'
-                : 'Todos os resultados estão aprovados; a equipa pode registar a decisão final de liberação.';
+                : 'Todos os resultados estão aprovados; a equipa pode registar a decisão final de libertação.';
         }
 
         return [
@@ -1046,7 +1068,7 @@ class VAPSampleEntryController extends Controller
 
         if ($validated['decision'] === 'released' && ! ($releaseGate['can_release'] ?? false)) {
             throw ValidationException::withMessages([
-                'decision' => 'A liberação só pode ser registada quando todos os resultados estiverem aprovados e sem revisão técnica pendente.',
+                'decision' => 'A libertação só pode ser registada quando todos os resultados estiverem aprovados e sem revisão técnica pendente.',
             ]);
         }
 
@@ -1735,7 +1757,7 @@ class VAPSampleEntryController extends Controller
         $collectionType = $this->normalizedImportChoice(
             $this->importString($row, ['collection_type', 'fluxo_de_colheita', 'tipo_de_colheita']),
             [
-                'direta' => 'direct',
+                'directa', 'direta' => 'direct',
                 'directa' => 'direct',
                 'direct' => 'direct',
                 'imediata' => 'direct',
@@ -2091,6 +2113,27 @@ class VAPSampleEntryController extends Controller
 
     private function ensureExecutionIsAuthorized(array $validated, ?Proposal $proposal): void
     {
+        if ($proposal) {
+            $lineageErrors = collect([
+                'proposal_id' => ! $proposal->isAccepted()
+                    ? 'A proposta seleccionada ainda não foi aceite pelo cliente.'
+                    : null,
+                'customer_id' => (int) $proposal->customer_id !== (int) ($validated['customer_id'] ?? 0)
+                    ? 'O cliente da amostra deve ser o mesmo da proposta aceite.'
+                    : null,
+                'warehouse_id' => (int) $proposal->warehouse_id !== (int) ($validated['warehouse_id'] ?? 0)
+                    ? 'O local da amostra deve ser o mesmo da proposta aceite.'
+                    : null,
+                'department_id' => (int) $proposal->department_id !== (int) ($validated['department_id'] ?? 0)
+                    ? 'O departamento da amostra deve corresponder ao âmbito da proposta aceite.'
+                    : null,
+            ])->filter()->all();
+
+            if ($lineageErrors !== []) {
+                throw ValidationException::withMessages($lineageErrors);
+            }
+        }
+
         $workIsStarting = ($validated['status'] ?? 'POR_INICIAR') !== 'POR_INICIAR'
             || ! empty($validated['analysis_start_date'])
             || ! empty($validated['analysis_end_date']);
@@ -2386,9 +2429,9 @@ class VAPSampleEntryController extends Controller
 
         $title = match ($action) {
             'created' => 'Nova amostra registada',
-            'status_updated' => 'Estado da amostra atualizado',
+            'status_updated' => 'Estado da amostra actualizado',
             'quality_control_decision' => 'Decisão de CQ interno registada',
-            default => 'Amostra atualizada',
+            default => 'Amostra actualizada',
         };
 
         $message = match ($action) {
@@ -2404,7 +2447,7 @@ class VAPSampleEntryController extends Controller
                 $sample->code ?: $sample->name,
                 $context['decision_label'] ?? 'decisão registada'
             ),
-            default => sprintf('A amostra %s recebeu uma atualização no fluxo de rastreio.', $sample->code ?: $sample->name),
+            default => sprintf('A amostra %s recebeu uma actualização no fluxo de rastreio.', $sample->code ?: $sample->name),
         };
 
         $recipients = collect([

@@ -55,10 +55,10 @@ const showActionConfirmation = ref(false);
 const selectedAction = ref(null);
 const form = useForm(createEmptyParameterData());
 
-const panelTitle = computed(() => form.id ? `Editar parametro ${form.code || form.name}` : "Novo parametro analitico");
+const panelTitle = computed(() => form.id ? `Editar parâmetro ${form.code || form.name}` : "Novo parâmetro analítico");
 const panelDescription = computed(() => form.id
-  ? "Atualize a definicao tecnica, comercial e de calculo deste parametro."
-  : "Configure um parametro reutilizavel em perfis, worksheets e resultados.");
+  ? "Actualize a definição técnica, comercial e de cálculo deste parâmetro."
+  : "Configure um parâmetro reutilizável em perfis, worksheets e resultados.");
 
 const confirmationDialogTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${selectedAction.value}`));
 const confirmationDialogDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${selectedAction.value}`));
@@ -70,9 +70,9 @@ const calculatedRecords = computed(() => pageRecords.value.filter((record) => re
 const qualitativeRecords = computed(() => pageRecords.value.filter((record) => record.result_is_qualitative && !record.deleted).length);
 
 const metrics = computed(() => [
-  { label: "Parametros", value: totalRecords.value, detail: "catalogo total", icon: ListBulletIcon },
-  { label: "Ativos nesta pagina", value: activeRecords.value, detail: "disponiveis nos perfis", icon: CheckBadgeIcon },
-  { label: "Calculados", value: calculatedRecords.value, detail: "formula controlada", icon: CalculatorIcon },
+  { label: "Parâmetros", value: totalRecords.value, detail: "catálogo total", icon: ListBulletIcon },
+  { label: "Activos nesta página", value: activeRecords.value, detail: "disponíveis nos perfis", icon: CheckBadgeIcon },
+  { label: "Calculados", value: calculatedRecords.value, detail: "fórmula controlada", icon: CalculatorIcon },
   { label: "Qualitativos", value: qualitativeRecords.value, detail: "resultado categorial", icon: BeakerIcon },
 ]);
 
@@ -151,7 +151,7 @@ function executeBulkAction() {
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div class="min-w-0">
-          <p class="ds-kicker">Configuracao analitica</p>
+          <p class="ds-kicker">Configuração analítica</p>
           <div class="mt-3 flex items-start gap-3">
             <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
               <BeakerIcon class="h-5 w-5" />
@@ -159,16 +159,14 @@ function executeBulkAction() {
             <div class="min-w-0">
               <h1 class="ds-heading text-2xl">{{ $t('gestlab.general.labels.parameters.page_title') }}</h1>
               <p class="ds-copy mt-1 max-w-3xl text-sm">
-                Catalogo controlado de mensurandos, prazos, fiscalidade e regras de apresentacao dos resultados.
+                Catálogo controlado de mensurandos, prazos, fiscalidade e regras de apresentacao dos resultados.
               </p>
             </div>
           </div>
         </div>
 
         <button v-if="hasPermission('add_parameters')" type="button" class="ds-button ds-button-primary" @click="openCreatePanel">
-          <PlusIcon class="h-4 w-4" />
-          Novo parametro
-        </button>
+          <PlusIcon class="h-4 w-4" /> Novo parâmetro </button>
       </div>
 
       <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
@@ -214,7 +212,7 @@ function executeBulkAction() {
         <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button type="button" class="ds-button ds-button-secondary" @click="closePanel">{{ $t('gestlab.general.buttons.cancel') }}</button>
           <button type="submit" form="parameter-form" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-            {{ form.processing ? "A guardar..." : form.id ? "Guardar alteracoes" : "Adicionar parametro" }}
+            {{ form.processing ? "A guardar..." : form.id ? "Guardar alterações" : "Adicionar parâmetro" }}
           </button>
         </div>
       </template>
@@ -226,7 +224,7 @@ function executeBulkAction() {
       :description="confirmationDialogDescription"
       :variant="selectedAction === 'restore' ? 'question' : 'danger'"
       confirm="Sim"
-      cancel="Nao"
+      cancel="Não"
       @canceled="showActionConfirmation = false"
       @confirmed="executeBulkAction"
     />

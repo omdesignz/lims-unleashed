@@ -75,7 +75,7 @@ const actions = [
 
 const editorTitle = computed(() => form.id ? "Editar permissão" : "Nova permissão");
 const editorDescription = computed(() => form.id
-  ? `Atualize a apresentação e o contexto de ${form.name}.`
+  ? `Actualize a apresentação e o contexto de ${form.name}.`
   : "Registe uma chave de autorização para funções e políticas do sistema.",
 );
 const confirmationDialogTitle = computed(() =>

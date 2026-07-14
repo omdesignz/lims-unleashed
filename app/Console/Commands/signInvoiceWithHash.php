@@ -20,7 +20,7 @@ class signInvoiceWithHash extends Command
      *
      * @var string
      */
-    protected $description = 'Sign Invoice with hash and save to DB';
+    protected $description = 'Assinar a factura com um resumo criptográfico e guardá-la na base de dados';
 
     /**
      * Execute the console command.
@@ -37,13 +37,13 @@ class signInvoiceWithHash extends Command
 
         if (Invoice::where('type_id', $invoice->type_id)->whereInvoiceMonth(now()->format('Y'))->count() !== 1) {
             $prev_hash = Invoice::where('type_id', $invoice->type_id)->where('id', '<', $invoice->id)->orderBy('id', 'desc')->first()->unique_hash;
-            $data = $invoice->date . ';' . $invoice->created_at->toDateTimeLocalString() . ';' . $invoice->inv_no . ';' . $invoice->total . ';' . $prev_hash;
+            $data = $invoice->date.';'.$invoice->created_at->toDateTimeLocalString().';'.$invoice->inv_no.';'.$invoice->total.';'.$prev_hash;
 
             $invoice->unique_hash = $documentSignature->sign($data);
         }
 
         if (Invoice::where('type_id', $invoice->type_id)->whereInvoiceMonth(now()->format('Y'))->count() == 1) {
-            $data = $invoice->date . ';' . $invoice->created_at->toDateTimeLocalString() . ';' . $invoice->inv_no . ';' . $invoice->total . ';';
+            $data = $invoice->date.';'.$invoice->created_at->toDateTimeLocalString().';'.$invoice->inv_no.';'.$invoice->total.';';
 
             $invoice->unique_hash = $documentSignature->sign($data);
         }

@@ -73,7 +73,7 @@ function confirmAction() {
           <div>
             <p class="ds-kicker">Portefólio analítico</p>
             <h1 class="ds-heading mt-1 text-2xl">Produtos laboratoriais</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Ofertas comerciais ligadas a matrizes, preços e regras fiscais para propostas, guias e faturação.</p>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Ofertas comerciais ligadas a matrizes, preços e regras fiscais para propostas, guias e facturação.</p>
           </div>
         </div>
 

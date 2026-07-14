@@ -8,10 +8,10 @@ defineProps({ record: { type: Object, default: () => ({ data: [], meta: {} }) },
 
 const extraFields = [
   { key: 'reason', label: 'Motivo da isencao', required: true, fullWidth: true, placeholder: 'Fundamento resumido apresentado no documento' },
-  { key: 'law', label: 'Referencia legal', required: true, fullWidth: true, placeholder: 'Diploma, artigo ou norma aplicavel' },
+  { key: 'law', label: 'Referência legal', required: true, fullWidth: true, placeholder: 'Diploma, artigo ou norma aplicavel' },
 ]
 </script>
 
 <template>
-  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="taxexemptions" route-parameter="taxexemption" permission-key="tax_exemptions" title="Isencoes fiscais" kicker="Governanca fiscal" description="Fundamentos legais controlados para emissao coerente de documentos comerciais isentos." entity-label="Isencao fiscal" new-entity-label="Nova isencao" code-label="Codigo" description-label="Notas de aplicacao" :supports-name="false" :supports-code="true" :extra-fields="extraFields" :icon="ScaleIcon" create-description="Registe um fundamento legal reutilizavel na emissao comercial." form-description="Identifique o codigo fiscal e documente o motivo e a referencia legal sem abreviacoes ambiguas." />
+  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="taxexemptions" route-parameter="taxexemption" permission-key="tax_exemptions" title="Isencoes fiscais" kicker="Governação fiscal" description="Fundamentos legais controlados para emissão coerente de documentos comerciais isentos." entity-label="Isencao fiscal" new-entity-label="Nova isencao" code-label="Código" description-label="Notas de aplicação" :supports-name="false" :supports-code="true" :extra-fields="extraFields" :icon="ScaleIcon" create-description="Registe um fundamento legal reutilizável na emissão comercial." form-description="Identifique o código fiscal e documente o motivo e a referência legal sem abreviacoes ambiguas." />
 </template>

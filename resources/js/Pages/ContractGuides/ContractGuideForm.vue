@@ -146,7 +146,7 @@ function loadWarehouses(query, setOptions) {
           <div>
             <p class="ds-kicker">Destino e referência</p>
             <h2 class="ds-heading mt-2 text-lg">Identificação da guia</h2>
-            <p class="ds-copy mt-1 text-sm">Associe a guia à conta, local e referência documental corretos.</p>
+            <p class="ds-copy mt-1 text-sm">Associe a guia à conta, local e referência documental correctos.</p>
           </div>
         </div>
 
@@ -171,7 +171,7 @@ function loadWarehouses(query, setOptions) {
               :disable-input="!form.customer_id"
               :has-error="Boolean(form.errors.warehouse_id)"
               :load-options="loadWarehouses"
-              :placeholder="form.customer_id ? 'Pesquisar local' : 'Selecione primeiro o cliente'"
+              :placeholder="form.customer_id ? 'Pesquisar local' : 'Seleccione primeiro o cliente'"
             />
             <p v-if="form.errors.warehouse_id" class="ds-field-error mt-2">{{ form.errors.warehouse_id }}</p>
           </div>
@@ -237,7 +237,7 @@ function loadWarehouses(query, setOptions) {
             <p v-if="form.errors.contact" class="ds-field-error mt-2">{{ form.errors.contact }}</p>
           </div>
           <div class="md:col-span-2">
-            <label for="contract-guide-email" class="ds-field-label">Email</label>
+            <label for="contract-guide-email" class="ds-field-label">Correio electrónico</label>
             <BaseInput id="contract-guide-email" v-model="form.email" type="email" class="ds-field mt-2" />
             <p v-if="form.errors.email" class="ds-field-error mt-2">{{ form.errors.email }}</p>
           </div>
@@ -336,7 +336,7 @@ function loadWarehouses(query, setOptions) {
           <DocumentTextIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
           <div class="min-w-0 flex-1">
             <label for="contract-guide-observations" class="ds-field-label">Observações gerais</label>
-            <textarea id="contract-guide-observations" v-model="form.obs" class="ds-field mt-2 min-h-32 resize-y" placeholder="Condições, exceções ou informação útil para interpretação futura" />
+            <textarea id="contract-guide-observations" v-model="form.obs" class="ds-field mt-2 min-h-32 resize-y" placeholder="Condições, excepções ou informação útil para interpretação futura" />
             <p v-if="form.errors.obs" class="ds-field-error mt-2">{{ form.errors.obs }}</p>
           </div>
         </div>

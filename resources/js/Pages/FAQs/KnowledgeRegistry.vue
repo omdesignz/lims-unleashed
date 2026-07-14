@@ -38,7 +38,7 @@ const config = computed(() => props.kind === "answer" ? {
   description: "Respostas operacionais ligadas a perguntas frequentes sobre serviços, recolhas e utilização do portal.",
   entityLabel: "resposta",
   fieldLabel: "Resposta publicada",
-  fieldPlaceholder: "Redija uma resposta objetiva e operacional",
+  fieldPlaceholder: "Redija uma resposta objectiva e operacional",
   icon: ChatBubbleBottomCenterTextIcon,
 } : {
   routePrefix: "faqs",
@@ -67,7 +67,7 @@ const totalRecords = computed(() => props.record.meta?.total ?? props.record.dat
 const representedParents = computed(() => new Set(props.record.data.map((record) => record[config.value.parentField]).filter(Boolean)).size);
 const drawerTitle = computed(() => form.id ? `Editar ${config.value.entityLabel}` : `Nova ${config.value.entityLabel}`);
 const drawerDescription = computed(() => form.id
-  ? "Atualize o conteúdo mantendo a associação temática existente."
+  ? "Actualize o conteúdo mantendo a associação temática existente."
   : `Adicione uma ${config.value.entityLabel} à base de conhecimento controlada.`);
 const confirmationDialogTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${actionId.value}`));
 const confirmationDialogDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${actionId.value}`));
@@ -232,7 +232,7 @@ function confirmAction() {
           <button type="button" class="ds-button ds-button-secondary" @click="closeDrawer">Cancelar</button>
           <button type="button" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty" @click="submit">
             <CheckIcon class="h-4 w-4" aria-hidden="true" />
-            {{ form.processing ? "A guardar..." : (form.id ? "Atualizar conteúdo" : "Guardar conteúdo") }}
+            {{ form.processing ? "A guardar..." : (form.id ? "Actualizar conteúdo" : "Guardar conteúdo") }}
           </button>
         </div>
       </template>

@@ -1,6 +1,6 @@
 <template>
     <div>
-      <h2>Uncertainty Calculator with Confirmation Uncertainty</h2>
+      <h2>Calculadora de incerteza com confirmação</h2>
       <div v-for="(value, index) in data" :key="index">
         <BaseInput
           type="number"
@@ -8,29 +8,29 @@
           @input="updateMeasurement(index, data[index])"
         />
       </div>
-      <button @click="addMeasurement">Add Measurement</button>
+      <button @click="addMeasurement">Adicionar medição</button>
       <BaseInput
         type="number"
         v-model.number="distributionalUncertainty"
-        placeholder="Distributional Uncertainty"
+        placeholder="Incerteza da distribuição"
       />
       <BaseInput
         type="number"
         v-model.number="technicalUncertainty"
-        placeholder="Technical Uncertainty"
+        placeholder="Incerteza técnica"
       />
       <BaseInput
         type="number"
         v-model.number="confirmationUncertainty"
-        placeholder="Confirmation Uncertainty"
+        placeholder="Incerteza de confirmação"
       />
-      <p>Combined Uncertainty: {{ calculateCombinedUncertainty() }}</p>
+      <p>Incerteza combinada: {{ calculateCombinedUncertainty() }}</p>
     </div>
   </template>
-  
+
   <script setup>
   import { useConfirmationUncertainty } from '@/Composables/Uncertainties/useConfirmationUncertainty.js';
-  
+
   const {
         data,
         distributionalUncertainty,
@@ -40,5 +40,5 @@
         updateMeasurement,
         calculateCombinedUncertainty,
       } = useConfirmationUncertainty();
-      
-  </script>  
+
+  </script>

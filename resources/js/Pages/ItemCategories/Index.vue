@@ -8,5 +8,5 @@ defineProps({ record: { type: Object, default: () => ({ data: [], meta: {} }) },
 </script>
 
 <template>
-  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="itemcategories" route-parameter="parent" permission-key="item_categories" title="Categorias de inventario" kicker="Governanca de stock" description="Classificacao reutilizavel para materiais, consumiveis, reagentes e equipamentos." entity-label="Categoria de inventario" new-entity-label="Nova categoria" name-label="Nome" code-label="Codigo" description-label="Escopo da categoria" :supports-name="true" :icon="ArchiveBoxIcon" />
+  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="itemcategories" route-parameter="parent" permission-key="item_categories" title="Categorias de inventário" kicker="Governação de existências" description="Classificação reutilizável para materiais, consumíveis, reagentes e equipamentos." entity-label="Categoria de inventário" new-entity-label="Nova categoria" name-label="Nome" code-label="Código" description-label="Âmbito da categoria" :supports-name="true" :icon="ArchiveBoxIcon" />
 </template>

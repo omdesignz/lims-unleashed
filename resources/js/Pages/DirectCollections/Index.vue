@@ -162,9 +162,9 @@ function executeAction() {
             <BeakerIcon class="h-5 w-5" />
           </span>
           <div>
-            <p class="ds-kicker">Receção e cadeia de custódia</p>
-            <h1 class="ds-heading mt-1 text-2xl">Colheitas diretas</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Fila técnica de amostras recebidas diretamente, com escopo analítico, condicionamento e documentos operacionais.</p>
+            <p class="ds-kicker">Recepção e cadeia de custódia</p>
+            <h1 class="ds-heading mt-1 text-2xl">Colheitas directas</h1>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Fila técnica de amostras recebidas directamente, com âmbito analítico, condicionamento e documentos operacionais.</p>
           </div>
         </div>
         <div class="flex flex-wrap gap-3">
@@ -177,7 +177,7 @@ function executeAction() {
             </button>
           </div>
           <Link :href="entrypoint.create_sample_url || route('vap_samples.index', { collection_type: 'direct' })" class="ds-button ds-button-primary">
-            <PlusIcon class="h-4 w-4" /> Nova Sample Entry
+            <PlusIcon class="h-4 w-4" /> Nova entrada de amostra
           </Link>
         </div>
       </div>
@@ -200,7 +200,7 @@ function executeAction() {
         <div>
           <p class="ds-kicker">Bancada</p>
           <h2 class="ds-heading mt-1 text-base">Folha de parâmetros</h2>
-          <p class="ds-copy mt-1 text-sm">{{ selectedCount ? `${selectedCount} registo(s) prontos para exportação.` : "Selecione colheitas na tabela para preparar a folha XLSX." }}</p>
+          <p class="ds-copy mt-1 text-sm">{{ selectedCount ? `${selectedCount} registo(s) prontos para exportação.` : "Seleccione colheitas na tabela para preparar a folha XLSX." }}</p>
         </div>
         <button type="button" class="ds-button ds-button-secondary" :disabled="!selectedCount" @click="exportSelectedAnalysisSheet">
           <ArrowDownTrayIcon class="h-4 w-4" /> Exportar XLSX
@@ -211,11 +211,11 @@ function executeAction() {
     <section v-if="scopeDashboard.scopedCount" class="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(19rem,0.7fr)]">
       <div class="ds-panel overflow-hidden">
         <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
-          <p class="ds-kicker">Escopo controlado</p>
+          <p class="ds-kicker">Âmbito controlado</p>
           <h2 class="ds-heading mt-1 text-base">Estado da fila técnica</h2>
         </div>
         <dl class="grid bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
-          <div class="border-b border-r border-[var(--ds-border)] p-4"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Com escopo</dt><dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ scopeDashboard.scopedCount }}</dd></div>
+          <div class="border-b border-r border-[var(--ds-border)] p-4"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Com âmbito</dt><dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ scopeDashboard.scopedCount }}</dd></div>
           <div class="border-b border-[var(--ds-border)] p-4 xl:border-r"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Com restrições</dt><dd class="mt-2 text-xl font-bold text-amber-700 dark:text-amber-300">{{ scopeDashboard.restrictedCount }}</dd></div>
           <div class="border-r border-[var(--ds-border)] p-4"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Parâmetros</dt><dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ scopeDashboard.requiredParameterTotal }}</dd></div>
           <div class="p-4"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Pendentes</dt><dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ scopeDashboard.pendingScopedCount }}</dd></div>

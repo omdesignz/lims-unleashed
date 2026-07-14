@@ -421,6 +421,9 @@ const masks = ref({
               <Link
                 v-if="!item.deleted && hasPermission('add_' + props.model) && !item?.placed_analysis && item.links.collection_type === 'programmed'"
                 :href="item.links.place_analysis_path"
+                method="post"
+                as="button"
+                preserve-scroll
                 class="ds-table-action"
               >
                 {{ $t("gestlab.actions.insert") }}
@@ -543,6 +546,9 @@ const masks = ref({
                     <Link
                       v-if="!row.deleted && hasPermission('add_' + props.model) && !row?.placed_analysis && row.links.collection_type === 'programmed'"
                       :href="row.links.place_analysis_path"
+                      method="post"
+                      as="button"
+                      preserve-scroll
                       class="ds-table-action"
                     >
                       {{ $t("gestlab.actions.insert") }}

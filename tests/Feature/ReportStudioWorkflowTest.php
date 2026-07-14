@@ -73,7 +73,7 @@ class ReportStudioWorkflowTest extends TestCase
                 ->where('systemPresets.0.layout_schema.canvas_blocks.0.block_kind', 'qr_code')
                 ->where('systemPresets.0.layout_schema.canvas_blocks.1.block_kind', 'signature')
                 ->where('systemPresets.0.layout_schema.canvas_blocks.2.id', 'analysis-decision-rule-note')
-                ->where('systemPresets.0.layout_schema.page_background_color', '#fffdf7')
+                ->where('systemPresets.0.layout_schema.page_background_color', '#f8fafc')
                 ->where('systemPresets.0.layout_schema.body_html', fn (string $bodyHtml): bool => str_contains($bodyHtml, '{results_table}'))
                 ->where('systemPresets.0.export_settings.paper_size', 'A4')
             );
@@ -144,8 +144,8 @@ class ReportStudioWorkflowTest extends TestCase
         $this->assertTrue((bool) collect(data_get($presets->get('analysis'), 'layout_schema.canvas_blocks'))->firstWhere('id', 'analysis-results-chart')['is_hidden']);
         $this->assertTrue((bool) collect(data_get($presets->get('executive'), 'layout_schema.canvas_blocks'))->firstWhere('id', 'executive-studio-chart')['is_hidden']);
         $this->assertTrue((bool) collect(data_get($presets->get('invoice'), 'layout_schema.canvas_blocks'))->firstWhere('id', 'invoice-banking-details')['is_hidden']);
-        $this->assertSame('#fffdf7', data_get($presets->get('analysis'), 'layout_schema.page_background_color'));
-        $this->assertSame('#fffdf7', data_get($presets->get('invoice'), 'layout_schema.page_background_color'));
+        $this->assertSame('#f8fafc', data_get($presets->get('analysis'), 'layout_schema.page_background_color'));
+        $this->assertSame('#f8fafc', data_get($presets->get('invoice'), 'layout_schema.page_background_color'));
     }
 
     public function test_system_presets_include_backend_body_templates_for_generated_documents(): void
@@ -169,7 +169,12 @@ class ReportStudioWorkflowTest extends TestCase
         $this->assertStringContainsString('Factura {document_number}', data_get($presets->get('invoice'), 'layout_schema.body_html'));
         $this->assertStringContainsString('Recibo {document_number}', data_get($presets->get('receipt'), 'layout_schema.body_html'));
         $this->assertStringContainsString('Nota de crédito {document_number}', data_get($presets->get('credit_note'), 'layout_schema.body_html'));
-        $this->assertStringNotContainsString('border:1px solid #cbd5e1', json_encode($presets->values()->all(), JSON_THROW_ON_ERROR));
+        $this->assertStringContainsString('style="margin-top:12px;">{signature_block}', data_get($presets->get('invoice'), 'layout_schema.body_html'));
+        $this->assertSame(26, data_get($presets->get('invoice'), 'export_settings.first_page_margin_top'));
+        $this->assertStringContainsString('background-color:#0f766e', data_get($presets->get('invoice'), 'layout_schema.body_html'));
+        $this->assertStringContainsString('border:1px solid #cbd5e1', json_encode($presets->values()->all(), JSON_THROW_ON_ERROR));
+        $this->assertStringNotContainsString('linear-gradient', json_encode($presets->values()->all(), JSON_THROW_ON_ERROR));
+        $this->assertStringNotContainsString('body { color:#17202a; background:', json_encode($presets->values()->all(), JSON_THROW_ON_ERROR));
     }
 
     public function test_studio_preview_payloads_use_production_language_instead_of_demo_names(): void
@@ -819,7 +824,8 @@ CSS,
             $this->assertStringContainsString('PREVAOLU', $combinedHtml);
             $this->assertStringContainsString('Referenciar sempre o número da proforma.', $combinedHtml);
             $this->assertStringContainsString('PP 05/2026/0048', $combinedHtml);
-            $this->assertStringContainsString('Palavras-chave / Keywords:', $combinedHtml);
+            $this->assertStringContainsString('Palavras-chave:', $combinedHtml);
+            $this->assertStringNotContainsString('Keywords', $combinedHtml);
             $this->assertStringNotContainsString('{banking_details}', $combinedHtml);
             $this->assertStringNotContainsString('{{bank_name}}', $combinedHtml);
             $this->assertStringNotContainsString('{bank_account_name}', $combinedHtml);
@@ -856,7 +862,8 @@ CSS,
         $this->assertStringContainsString('document-summary-cell', $bodyHtml);
         $this->assertStringContainsString('class="report-table studio-avoid-break"', $bodyHtml);
         $this->assertStringContainsString('document-financial-summary', $bodyHtml);
-        $this->assertStringContainsString('Pagamento / Banking', $bodyHtml);
+        $this->assertStringContainsString('Pagamento', $bodyHtml);
+        $this->assertStringNotContainsString('Banking', $bodyHtml);
         $this->assertStringNotContainsString('border:1px solid #cbd5e1', $bodyHtml);
         $this->assertStringNotContainsString('border-bottom:1px solid #cbd5e1', $bodyHtml);
         $this->assertStringNotContainsString('{items_table}', $bodyHtml);
@@ -1671,6 +1678,7 @@ CSS,
         $this->assertStringContainsString('.report-chart-svg', $letterHtml);
         $this->assertStringContainsString('.commercial-record-evidence', $letterHtml);
         $this->assertStringContainsString('break-inside: avoid;', $letterHtml);
+        $this->assertMatchesRegularExpression('/\.studio-first-page-shell\s*\{[^}]*min-height: 215mm;/s', $letterHtml);
         $this->assertStringNotContainsString('size: 320mm 180mm;', $letterHtml);
         $this->assertStringContainsString('size: 320mm 180mm;', $customHtml);
         $this->assertStringContainsString('margin: 10mm 8mm 12mm 8mm;', $customHtml);
@@ -1826,6 +1834,9 @@ CSS,
         $this->assertStringContainsString($blockBackgroundDataUri, $bodyHtml);
         $this->assertStringContainsString('stamp.png', $bodyHtml);
         $this->assertStringContainsString('data:image/svg+xml;base64', $bodyHtml);
+        $this->assertStringContainsString('<svg role="img" aria-label="QR code"', $bodyHtml);
+        $this->assertStringContainsString('data-canvas-block-kind="qr_code"', $bodyHtml);
+        $this->assertStringNotContainsString('data:image/png;base64', $bodyHtml);
         $this->assertStringContainsString('report-chart', $bodyHtml);
         $this->assertStringContainsString('Tendência de ensaios', $bodyHtml);
         $this->assertStringContainsString('Snapshot ApexCharts', $bodyHtml);
@@ -1833,14 +1844,15 @@ CSS,
         $this->assertStringContainsString('transform: rotate(-12deg); transform-origin: center center;', $bodyHtml);
         $this->assertStringContainsString('box-shadow: 0 10px 22px rgba(20, 61, 55, 0.22);', $bodyHtml);
         $this->assertStringNotContainsString('SHOULD_NOT_RENDER', $bodyHtml);
-        preg_match_all('/data:image\/svg\+xml;base64,([^"\']+)/', $bodyHtml, $svgDataUris);
-        $this->assertTrue(collect($svgDataUris[1])->contains(function (string $encodedSvg): bool {
-            $svg = base64_decode($encodedSvg, true);
-
-            return is_string($svg)
-                && str_contains($svg, 'fill="#143d37"')
-                && str_contains($svg, 'fill="#f7f1e7"');
-        }));
+        preg_match('/<svg role="img" aria-label="QR code"[\s\S]*?<\/svg>/', $bodyHtml, $qrMarkup);
+        $this->assertStringContainsString('viewBox="0 0', $qrMarkup[0] ?? '');
+        $this->assertStringContainsString('fill="#143d37"', $qrMarkup[0] ?? '');
+        $this->assertStringContainsString('fill="#f7f1e7"', $qrMarkup[0] ?? '');
+        $mpdfMethod = new ReflectionMethod(ReportStudioPdfRenderer::class, 'dataForMpdf');
+        $mpdfMethod->setAccessible(true);
+        $mpdfData = $mpdfMethod->invoke(app(ReportStudioPdfRenderer::class), $payload);
+        $this->assertStringNotContainsString('data-canvas-block-kind="qr_code"', $mpdfData['bodyHtml']);
+        $this->assertStringNotContainsString('aria-label="QR code"', $mpdfData['bodyHtml']);
         $this->assertLessThan(
             strpos($bodyHtml, 'stamp.png'),
             strpos($bodyHtml, $signatureDataUri)
@@ -2340,14 +2352,9 @@ CSS,
             $this->assertStringNotContainsString('{brand_primary_color}', $bodyHtml);
             $this->assertStringNotContainsString('brand_secondary_color', $bodyHtml);
 
-            preg_match_all('/data:image\/svg\+xml;base64,([^"\']+)/', $bodyHtml, $svgDataUris);
-            $this->assertTrue(collect($svgDataUris[1])->contains(function (string $encodedSvg): bool {
-                $svg = base64_decode($encodedSvg, true);
-
-                return is_string($svg)
-                    && str_contains($svg, 'fill="#245f4a"')
-                    && str_contains($svg, 'fill="#fff4d6"');
-            }));
+            preg_match('/<svg role="img" aria-label="QR code"[\s\S]*?<\/svg>/', $bodyHtml, $qrMarkup);
+            $this->assertStringContainsString('fill="#245f4a"', $qrMarkup[0] ?? '');
+            $this->assertStringContainsString('fill="#fff4d6"', $qrMarkup[0] ?? '');
         } finally {
             $settings->fill($originalSettings);
             $settings->save();
@@ -2983,7 +2990,7 @@ CSS,
         $this->assertStringContainsString('@page{background-color:#fff8e7;}', (string) data_get($payload, 'data.styles'));
         $this->assertStringContainsString('background-color:#fff8e7 !important;', (string) data_get($payload, 'data.styles'));
         $this->assertStringContainsString('Identificação da amostra', $bodyHtml);
-        $this->assertStringContainsString('Receção e cadeia de custódia', $bodyHtml);
+        $this->assertStringContainsString('Recepção e cadeia de custódia', $bodyHtml);
         $this->assertStringContainsString('Âmbito analítico', $bodyHtml);
         $this->assertStringNotContainsString('{sample_details}', $bodyHtml);
         $this->assertStringNotContainsString('{collection_details}', $bodyHtml);
@@ -3069,7 +3076,7 @@ CSS,
         $this->assertStringContainsString('Contra-análise', $bodyHtml);
         $this->assertStringContainsString('class="report-table studio-avoid-break"', $bodyHtml);
         $this->assertStringContainsString('Método', $bodyHtml);
-        $this->assertStringContainsString('Method', $bodyHtml);
+        $this->assertStringNotContainsString('Method', $bodyHtml);
         $this->assertStringContainsString('Incerteza', $bodyHtml);
         $this->assertStringContainsString('1.20 × 10^-5', $bodyHtml);
         $this->assertStringContainsString('Ausência', $bodyHtml);

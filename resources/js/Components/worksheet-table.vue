@@ -2,9 +2,9 @@
   <div>
     <!-- Display a message if no data exists -->
     <div v-if="!worksheets.length || !worksheets[activeSheetIndex]?.data">
-      <p>No data to display. Add a new sheet or load saved worksheets.</p>
+      <p>Não existem dados para apresentar. Adicione uma folha ou carregue folhas guardadas.</p>
       <button @click="addWorksheet" class="bg-blue-500 text-white px-4 py-2 rounded">
-        Add Worksheet
+        Adicionar folha
       </button>
     </div>
 

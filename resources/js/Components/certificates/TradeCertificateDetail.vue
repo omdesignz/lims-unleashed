@@ -62,7 +62,7 @@ const status = computed(() => {
   }
 
   if (certificate.value.invoiced) {
-    return { label: "Faturado", className: "ds-badge-success" };
+    return { label: "Facturado", className: "ds-badge-success" };
   }
 
   return { label: "Controlado", className: "ds-badge-info" };
@@ -203,7 +203,7 @@ function openInvoice() {
           <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ formatQuantity(totalQuantity) }} un.</dd>
         </div>
         <div class="px-4 py-3">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Faturação</dt>
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Facturação</dt>
           <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ certificate.invoiced ? "Associada" : "Pendente" }}</dd>
         </div>
       </dl>
@@ -345,7 +345,7 @@ function openInvoice() {
             </button>
             <button type="button" class="ds-button w-full justify-start" :class="certificate.invoice_id ? 'ds-button-secondary' : 'ds-button-primary'" @click="openInvoice">
               <BanknotesIcon class="h-4 w-4" />
-              {{ certificate.invoice_id ? "Abrir fatura" : "Emitir fatura" }}
+              {{ certificate.invoice_id ? "Abrir factura" : "Emitir factura" }}
             </button>
             <button v-if="certificate.file" type="button" class="ds-button ds-button-secondary w-full justify-start" @click="downloadAttachment">
               <PaperClipIcon class="h-4 w-4" />

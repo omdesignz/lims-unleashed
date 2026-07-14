@@ -60,7 +60,7 @@ const deleteNotification = () => {
   <div class="space-y-5">
     <NotificationAdminHeader
       title="Detalhe da notificacao"
-      :description="`Registo auditavel ${notification.id} e respetivo estado de leitura.`"
+      :description="`Registo auditável ${notification.id} e respectivo estado de leitura.`"
     >
       <template #actions>
         <Link :href="route('admin.notifications.index')" class="ds-button ds-button-secondary">
@@ -92,17 +92,17 @@ const deleteNotification = () => {
 
       <div class="grid lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,0.75fr)]">
         <div class="border-b border-[var(--ds-border)] p-5 sm:p-6 lg:border-b-0 lg:border-r">
-          <p class="ds-kicker">Conteudo enviado</p>
+          <p class="ds-kicker">Conteúdo enviado</p>
           <div class="mt-4 whitespace-pre-wrap text-sm leading-7 text-[var(--ds-text)]">{{ notification.message }}</div>
 
           <div class="mt-8 grid gap-4 border-t border-[var(--ds-border)] pt-5 sm:grid-cols-2">
             <article class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
               <div class="flex items-center gap-2 text-[var(--ds-text-soft)]"><UserIcon class="h-4 w-4" /><p class="text-xs font-bold uppercase">Emissor</p></div>
               <p class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ notification.sender_name || 'Sistema' }}</p>
-              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ notification.sender_email || 'Emissao automatica' }}</p>
+              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ notification.sender_email || 'Emissão automática' }}</p>
             </article>
             <article class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
-              <div class="flex items-center gap-2 text-[var(--ds-text-soft)]"><EnvelopeIcon class="h-4 w-4" /><p class="text-xs font-bold uppercase">Destinatario</p></div>
+              <div class="flex items-center gap-2 text-[var(--ds-text-soft)]"><EnvelopeIcon class="h-4 w-4" /><p class="text-xs font-bold uppercase">Destinatário</p></div>
               <p class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ notification.user_name }}</p>
               <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ notification.user_email }}</p>
             </article>
@@ -117,12 +117,12 @@ const deleteNotification = () => {
               <dd class="mt-1 break-all text-sm font-bold text-[var(--ds-text)]">{{ notification.id }}</dd>
             </div>
             <div class="py-3">
-              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Data de emissao</dt>
+              <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Data de emissão</dt>
               <dd class="mt-1 text-sm font-semibold text-[var(--ds-text)]">{{ formatNotificationDate(notification.created_at) }}</dd>
             </div>
             <div class="py-3">
               <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Leitura</dt>
-              <dd class="mt-1 text-sm font-semibold text-[var(--ds-text)]">{{ notification.read_at ? formatNotificationDate(notification.read_at) : 'Ainda nao confirmada' }}</dd>
+              <dd class="mt-1 text-sm font-semibold text-[var(--ds-text)]">{{ notification.read_at ? formatNotificationDate(notification.read_at) : 'Ainda não confirmada' }}</dd>
               <dd v-if="notification.read_by?.user" class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">Por {{ notification.read_by.user }}</dd>
             </div>
             <div class="py-3">
@@ -132,7 +132,7 @@ const deleteNotification = () => {
           </dl>
 
           <button type="button" class="ds-button ds-button-ghost mt-4 w-full" @click="showRawData = !showRawData">
-            <CodeBracketIcon class="h-4 w-4" /> {{ showRawData ? 'Ocultar dados tecnicos' : 'Ver dados tecnicos' }}
+            <CodeBracketIcon class="h-4 w-4" /> {{ showRawData ? 'Ocultar dados técnicos' : 'Ver dados técnicos' }}
           </button>
         </aside>
       </div>
@@ -158,7 +158,7 @@ const deleteNotification = () => {
     <ConfirmDialog
       v-if="showDeleteConfirmation"
       title="Eliminar esta notificacao?"
-      description="O registo sera removido do historico do destinatario. Esta acao nao pode ser anulada."
+      description="O registo será removido do histórico do destinatário. Esta acção não pode ser anulada."
       confirm="Eliminar"
       cancel="Cancelar"
       variant="danger"

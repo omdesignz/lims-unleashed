@@ -71,7 +71,7 @@
                Data de Colheita:
             </td>
             <td class="tg-0lax" style="text-align:right;padding:5px 5px;font-size:11px;">
-               {!! ($model->collection->collection_date ? $model->collection?->collection_date : 'N/A') !!}
+               {!! ($model->collection->collection_date ? $model->collection?->collection_date : 'N/D') !!}
             </td>
         </tr>
     </table>
@@ -124,7 +124,7 @@
             Data de Expiração:
             </td>
             <td class="tg-s268" style="padding:5px 5px;font-weight:bold;font-size:11px;">
-            {!! ( $model->collection->expiry_date ? Carbon\Carbon::parse($model?->collection->expiry_date)->format('d/m/Y') : 'N/A' ) !!}
+            {!! ( $model->collection->expiry_date ? Carbon\Carbon::parse($model?->collection->expiry_date)->format('d/m/Y') : 'N/D' ) !!}
             </td>
         </tr>
         <tr>

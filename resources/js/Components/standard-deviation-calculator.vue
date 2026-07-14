@@ -1,6 +1,6 @@
 <template>
     <div>
-      <h2>Standard Deviation Calculator</h2>
+      <h2>Calculadora de desvio-padrão</h2>
       <div v-for="(value, index) in data" :key="index">
         <BaseInput
           type="number"
@@ -8,15 +8,15 @@
           @input="updateMeasurement(index, data[index])"
         />
       </div>
-      <button @click="addMeasurement">Add Measurement</button>
-      <p>Standard Deviation: {{ calculateStandardDeviation() }}</p>
+      <button @click="addMeasurement">Adicionar medição</button>
+      <p>Desvio-padrão: {{ calculateStandardDeviation() }}</p>
     </div>
   </template>
-  
+
   <script setup>
   import { useStandardDeviation } from '@/Composables/Uncertainties/useStandardDeviation.js';
 
   const { data, addMeasurement, updateMeasurement, calculateStandardDeviation } = useStandardDeviation();
 
   </script>
-  
+

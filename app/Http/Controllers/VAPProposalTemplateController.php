@@ -689,7 +689,7 @@ class VAPProposalTemplateController extends Controller
                 'is_active' => ! $proposalTemplate->is_active,
             ]);
 
-            $status = $proposalTemplate->is_active ? 'ativado' : 'desativado';
+            $status = $proposalTemplate->is_active ? 'activado' : 'desactivado';
 
             try {
                 activity()

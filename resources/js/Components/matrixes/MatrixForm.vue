@@ -58,7 +58,7 @@ const governanceIssues = computed(() => {
   }
 
   if (profilesWithoutActiveParameters.value.length) {
-    issues.push(`Perfis sem parametros ativos: ${profilesWithoutActiveParameters.value.join(", ")}.`);
+    issues.push(`Perfis sem parâmetros activos: ${profilesWithoutActiveParameters.value.join(", ")}.`);
   }
 
   if (props.form.profiles.some((profile) => profile.profile_id && !profile.profile_id.department_id)) {
@@ -66,7 +66,7 @@ const governanceIssues = computed(() => {
   }
 
   if (!props.form.profiles.length) {
-    issues.push("Adicione pelo menos um perfil para definir o escopo da matriz.");
+    issues.push("Adicione pelo menos um perfil para definir o âmbito da matriz.");
   }
 
   return issues;
@@ -152,41 +152,41 @@ function formatCurrency(value) {
       <div class="mb-5 flex items-start gap-3">
         <IdentificationIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
         <div>
-          <p class="ds-kicker">Identidade e catalogo</p>
-          <h2 class="ds-heading mt-1 text-base">Matriz de servico</h2>
+          <p class="ds-kicker">Identidade e catálogo</p>
+          <h2 class="ds-heading mt-1 text-base">Matriz de serviço</h2>
           <p class="ds-copy mt-1 text-sm">Defina a matriz comercial usada para agrupar perfis compativeis no registo de produtos e amostras.</p>
         </div>
       </div>
 
       <div class="grid gap-5 lg:grid-cols-2">
         <div class="ds-field-group">
-          <label for="matrix-code" class="ds-field-label">Codigo <span class="ds-field-required">*</span></label>
+          <label for="matrix-code" class="ds-field-label">Código <span class="ds-field-required">*</span></label>
           <BaseInput id="matrix-code" v-model="form.code" type="text" class="ds-field font-mono" :aria-invalid="Boolean(form.errors.code)" placeholder="Ex.: MAT-AGUA" />
           <p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p>
         </div>
         <div class="ds-field-group">
-          <label for="matrix-fixed-price" class="ds-field-label">Preco fixo <span class="ds-field-required">*</span></label>
+          <label for="matrix-fixed-price" class="ds-field-label">Preço fixo <span class="ds-field-required">*</span></label>
           <BaseInput id="matrix-fixed-price" v-model.number="form.fixed_price" type="number" min="0" step="0.01" class="ds-field" :aria-invalid="Boolean(form.errors.fixed_price)" />
           <p v-if="form.errors.fixed_price" class="ds-field-error">{{ form.errors.fixed_price }}</p>
         </div>
         <div class="ds-field-group lg:col-span-2">
-          <label for="matrix-description" class="ds-field-label">Descricao operacional</label>
-          <textarea id="matrix-description" v-model="form.description" class="ds-field min-h-28 resize-y" :aria-invalid="Boolean(form.errors.description)" placeholder="Tipo de amostra, aplicacao ou restricoes de utilizacao" />
+          <label for="matrix-description" class="ds-field-label">Descrição operacional</label>
+          <textarea id="matrix-description" v-model="form.description" class="ds-field min-h-28 resize-y" :aria-invalid="Boolean(form.errors.description)" placeholder="Tipo de amostra, aplicação ou restricoes de utilização" />
           <p v-if="form.errors.description" class="ds-field-error">{{ form.errors.description }}</p>
         </div>
       </div>
 
       <dl class="mt-5 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
         <div class="border-b border-[var(--ds-border)] p-4 sm:border-b-0 sm:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Preco composto</dt>
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Preço composto</dt>
           <dd class="mt-2 text-lg font-bold text-[var(--ds-text)]">{{ formatCurrency(totalPrice) }}</dd>
         </div>
         <div class="border-b border-[var(--ds-border)] p-4 sm:border-b-0 sm:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Preco fixo</dt>
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Preço fixo</dt>
           <dd class="mt-2 text-lg font-bold text-[var(--ds-text)]">{{ formatCurrency(form.fixed_price) }}</dd>
         </div>
         <div class="p-4">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Diferenca comercial</dt>
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Diferença comercial</dt>
           <dd :class="['mt-2 text-lg font-bold', commercialVariance < 0 ? 'text-rose-700 dark:text-rose-200' : 'text-[var(--ds-text)]']">{{ formatCurrency(commercialVariance) }}</dd>
         </div>
       </dl>
@@ -198,19 +198,19 @@ function formatCurrency(value) {
         <div>
           <p class="ds-kicker">Fiscalidade</p>
           <h2 class="ds-heading mt-1 text-base">Imposto e isencao</h2>
-          <p class="ds-copy mt-1 text-sm">Mantenha a regra fiscal explicita para propostas, cotacoes e faturacao.</p>
+          <p class="ds-copy mt-1 text-sm">Mantenha a regra fiscal explícita para propostas, cotações e facturação.</p>
         </div>
       </div>
 
       <div class="overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] divide-y divide-[var(--ds-border)]">
-        <ToggleField v-model="form.charge_tax" id="matrix-charge-tax" label="Aplicar imposto" description="Usa uma categoria fiscal e a respetiva percentagem na comercializacao desta matriz." />
-        <ToggleField v-model="form.withhold_tax" id="matrix-withhold-tax" label="Sujeito a retencao" description="Indica que a matriz participa no calculo de retencao aplicavel ao documento comercial." />
+        <ToggleField v-model="form.charge_tax" id="matrix-charge-tax" label="Aplicar imposto" description="Usa uma categoria fiscal e a respectiva percentagem na comercialização desta matriz." />
+        <ToggleField v-model="form.withhold_tax" id="matrix-withhold-tax" label="Sujeito a retencao" description="Indica que a matriz participa no cálculo de retencao aplicavel ao documento comercial." />
       </div>
 
       <div class="mt-5 grid gap-5 lg:grid-cols-2">
         <div v-if="form.charge_tax" class="ds-field-group">
           <label class="ds-field-label">Categoria fiscal <span class="ds-field-required">*</span></label>
-          <Combobox :model-value="form.tax_id" :load-options="loadTaxTypes" :has-error="Boolean(form.errors.tax_id)" placeholder="Selecione o imposto" @update:model-value="selectTaxType" />
+          <Combobox :model-value="form.tax_id" :load-options="loadTaxTypes" :has-error="Boolean(form.errors.tax_id)" placeholder="Seleccione o imposto" @update:model-value="selectTaxType" />
           <p v-if="form.errors.tax_id" class="ds-field-error">{{ form.errors.tax_id }}</p>
         </div>
         <div v-if="form.charge_tax" class="ds-field-group">
@@ -219,7 +219,7 @@ function formatCurrency(value) {
         </div>
         <div v-else class="ds-field-group lg:col-span-2">
           <label class="ds-field-label">Motivo de isencao <span class="ds-field-required">*</span></label>
-          <Combobox v-model="form.exemption_id" :load-options="loadExemptions" :has-error="Boolean(form.errors.exemption_id)" placeholder="Selecione a isencao" />
+          <Combobox v-model="form.exemption_id" :load-options="loadExemptions" :has-error="Boolean(form.errors.exemption_id)" placeholder="Seleccione a isencao" />
           <p v-if="form.errors.exemption_id" class="ds-field-error">{{ form.errors.exemption_id }}</p>
         </div>
       </div>
@@ -230,9 +230,9 @@ function formatCurrency(value) {
         <div class="flex items-start gap-3">
           <ClipboardDocumentListIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
           <div>
-            <p class="ds-kicker">Escopo analitico</p>
+            <p class="ds-kicker">Âmbito analítico</p>
             <h2 class="ds-heading mt-1 text-base">Perfis da matriz</h2>
-            <p class="ds-copy mt-1 text-sm">Agrupe apenas perfis do mesmo departamento e com cobertura analitica ativa.</p>
+            <p class="ds-copy mt-1 text-sm">Agrupe apenas perfis do mesmo departamento e com cobertura analítica activa.</p>
           </div>
         </div>
         <button type="button" class="ds-button ds-button-secondary" @click="addProfile">
@@ -245,7 +245,7 @@ function formatCurrency(value) {
         <span class="ds-chip">{{ form.profiles.length }} perfil(is)</span>
         <span class="ds-chip">{{ departmentNames.length || 0 }} departamento(s)</span>
         <span :class="['ds-chip', governanceIssues.length ? 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20' : 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20']">
-          {{ governanceIssues.length ? `${governanceIssues.length} ponto(s) a rever` : "Escopo coerente" }}
+          {{ governanceIssues.length ? `${governanceIssues.length} ponto(s) a rever` : "Âmbito coerente" }}
         </span>
       </div>
 
@@ -267,12 +267,12 @@ function formatCurrency(value) {
           <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_11rem_auto] lg:items-start">
             <div class="ds-field-group">
               <label class="ds-field-label">Perfil {{ index + 1 }} <span class="ds-field-required">*</span></label>
-              <Combobox :model-value="profile.profile_id" :load-options="loadProfiles" :has-error="Boolean(form.errors[`profiles.${index}.profile_id`])" placeholder="Pesquisar por codigo ou nome" @update:model-value="selectProfile(profile, $event)" />
+              <Combobox :model-value="profile.profile_id" :load-options="loadProfiles" :has-error="Boolean(form.errors[`profiles.${index}.profile_id`])" placeholder="Pesquisar por código ou nome" @update:model-value="selectProfile(profile, $event)" />
               <p v-if="form.errors[`profiles.${index}.profile_id`]" class="ds-field-error">{{ form.errors[`profiles.${index}.profile_id`] }}</p>
               <div v-if="profile.profile_id" class="mt-2 flex flex-wrap gap-2">
                 <span v-if="profile.profile_id.category_name" class="ds-chip">{{ profile.profile_id.category_name }}</span>
                 <span v-if="profile.profile_id.department_name" class="ds-chip"><BuildingOffice2Icon class="h-3.5 w-3.5" /> {{ profile.profile_id.department_name }}</span>
-                <span class="ds-chip">{{ profile.profile_id.active_parameter_count || 0 }}/{{ profile.profile_id.total_parameter_count || 0 }} parametros ativos</span>
+                <span class="ds-chip">{{ profile.profile_id.active_parameter_count || 0 }}/{{ profile.profile_id.total_parameter_count || 0 }} parâmetros activos</span>
               </div>
             </div>
             <div>
@@ -290,7 +290,7 @@ function formatCurrency(value) {
       <div v-else class="mt-5 rounded-lg border border-dashed border-[var(--ds-border-strong)] px-5 py-10 text-center">
         <CheckBadgeIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
         <p class="mt-3 text-sm font-bold text-[var(--ds-text)]">Nenhum perfil adicionado</p>
-        <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">A matriz precisa de pelo menos um perfil analitico controlado.</p>
+        <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">A matriz precisa de pelo menos um perfil analítico controlado.</p>
         <button type="button" class="ds-button ds-button-secondary mt-4" @click="addProfile">
           <PlusIcon class="h-4 w-4" />
           Adicionar primeiro perfil

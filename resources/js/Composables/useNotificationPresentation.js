@@ -23,7 +23,7 @@ export const notificationTypeLabel = (value) => ({
   error: 'Erro',
   warning: 'Aviso',
   alert: 'Alerta',
-  info: 'Informacao',
+  info: 'Informação',
 }[normalizeNotificationType(value)])
 
 export const notificationTypeClasses = (value) => ({

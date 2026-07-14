@@ -1,6 +1,6 @@
 <template>
     <div>
-      <h2>Uncertainty Calculator with Environmental Uncertainty</h2>
+      <h2>Calculadora de incerteza ambiental</h2>
       <div v-for="(value, index) in data" :key="index">
         <BaseInput
           type="number"
@@ -8,31 +8,31 @@
           @input="updateMeasurement(index, data[index])"
         />
       </div>
-      <button @click="addMeasurement">Add Measurement</button>
+      <button @click="addMeasurement">Adicionar medição</button>
       <BaseInput
         type="number"
         v-model.number="distributionalUncertainty"
-        placeholder="Distributional Uncertainty"
+        placeholder="Incerteza da distribuição"
       />
       <BaseInput
         type="number"
         v-model.number="technicalUncertainty"
-        placeholder="Technical Uncertainty"
+        placeholder="Incerteza técnica"
       />
       <BaseInput
         type="number"
         v-model.number="confirmationUncertainty"
-        placeholder="Confirmation Uncertainty"
+        placeholder="Incerteza de confirmação"
       />
       <BaseInput
         type="number"
         v-model.number="environmentalUncertainty"
-        placeholder="Environmental Uncertainty"
+        placeholder="Incerteza ambiental"
       />
-      <p>Combined Uncertainty: {{ calculateCombinedUncertainty() }}</p>
+      <p>Incerteza combinada: {{ calculateCombinedUncertainty() }}</p>
     </div>
   </template>
-  
+
   <script setup>
   import { useEnvironmentalUncertainty } from '@/Composables/Uncertainties/useEnvironmentalUncertainty.js';
 
@@ -46,5 +46,5 @@
         updateMeasurement,
         calculateCombinedUncertainty,
       } = useEnvironmentalUncertainty();
-  
-  </script>  
+
+  </script>

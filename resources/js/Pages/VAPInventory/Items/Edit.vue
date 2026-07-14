@@ -2,7 +2,7 @@
   <InventoryItemFormSurface
     mode="edit"
     :title="'Editar item: ' + item.name"
-    description="Atualize dados técnicos, stock por armazém, anexos e controlos metrológicos mantendo a rastreabilidade do item."
+    description="Actualize dados técnicos, existências por armazém, anexos e controlos metrológicos mantendo a rastreabilidade do item."
     :back-href="route('vap-inventory.items.show', item.id)"
     back-label="Voltar ao item"
     submit-label="Guardar alterações"

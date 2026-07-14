@@ -87,7 +87,7 @@
 </div>
 
   </template>
-  
+
   <script setup>
   import { ref } from 'vue';
   import { useUncertaintyCalculator } from '@/Composables/useWaterUncertaintyCalculator';
@@ -96,29 +96,29 @@
   const series1 = ref([0]);
       const series2 = ref([0]);
       const results = ref(null);
-      
+
       // Configurable constants
       const constantDvar = ref(0.1886);
       const constantUncertainty = ref(5.302);
-  
+
       const { calculateUncertainty } = useUncertaintyCalculator();
-  
+
       const addSeries1Value = () => {
         series1.value.push(0);
       };
-  
+
       const removeSeries1Value = (index) => {
         series1.value.splice(index, 1);
       };
-  
+
       const addSeries2Value = () => {
         series2.value.push(0);
       };
-  
+
       const removeSeries2Value = (index) => {
         series2.value.splice(index, 1);
       };
-  
+
       const performCalculation = () => {
         if (series1.value.length && series2.value.length && series1.value.length === series2.value.length) {
           results.value = calculateUncertainty(
@@ -128,12 +128,12 @@
             constantUncertainty.value
           );
         } else {
-          alert('Please ensure both series have the same number of values.');
+          alert('Confirme que as duas séries têm o mesmo número de valores.');
         }
       };
-  
+
   </script>
-  
+
   <style scoped>
   .input-field {
     width: 100%;
@@ -142,7 +142,7 @@
     border-radius: 4px;
     font-family: monospace;
   }
-  
+
   .btn {
     background-color: #007bff;
     color: white;
@@ -152,21 +152,21 @@
     cursor: pointer;
     transition: background-color 0.3s;
   }
-  
+
   .btn:hover {
     background-color: #0056b3;
   }
-  
+
   .btn-secondary {
     background-color: #dc3545;
   }
-  
+
   .btn-secondary:hover {
     background-color: #c82333;
   }
-  
+
   .results {
     margin-top: 16px;
   }
   </style>
-  
+

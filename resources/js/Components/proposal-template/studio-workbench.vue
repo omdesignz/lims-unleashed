@@ -235,7 +235,7 @@ const canvasLayoutPresets = [
   {
     key: 'badge',
     label: 'Selo',
-    description: 'Chip ou badge destacado no canto.',
+    description: 'Indicador destacado no canto.',
     values: { x: 68, y: 6, width: 26, min_height: 24, padding: 10, border_radius: 999 },
   },
   {
@@ -834,7 +834,7 @@ const snippetLibrary = [
   },
   {
     label: 'Quebra de página',
-    description: 'Inicia explicitamente uma nova página no preview e no PDF.',
+    description: 'Inicia explicitamente uma nova página na pré-visualização e no PDF.',
     html: '<pagebreak />',
   },
 ]
@@ -935,7 +935,7 @@ function addSignatureCanvasBlock(type = 'lab') {
       title: 'Assinatura do laboratório',
       signature_label: 'Assinatura do laboratório',
       signature_name: '{{lab_name}}',
-      signature_title: 'Direção técnica',
+      signature_title: 'Direcção técnica',
     },
     client: {
       title: 'Aceitação do cliente',
@@ -1327,7 +1327,7 @@ function canvasBlockContentHtml(block) {
     const imageUrl = safePreviewMediaUrl(interpolatePreviewHtml(block.image_url || block.background_image || ''))
 
     if (!imageUrl) {
-      return '<div class="flex h-full min-h-24 items-center justify-center rounded-2xl border border-dashed border-slate-300 text-xs text-slate-500">Selecione uma imagem da galeria</div>'
+      return '<div class="flex h-full min-h-24 items-center justify-center rounded-2xl border border-dashed border-slate-300 text-xs text-slate-500">Seleccione uma imagem da galeria</div>'
     }
 
     return `<img src="${escapePreviewHtmlAttribute(imageUrl)}" alt="${escapePreviewHtmlAttribute(interpolatePreviewHtml(block.image_alt || block.title || 'Imagem'))}" style="display:block; width:100%; height:100%; min-height:inherit; object-fit:${imageObjectFit(block)}; object-position:${imageObjectPosition(block)};" />`
@@ -2269,7 +2269,7 @@ function submit() {
 
     <div v-if="props.presets.length" class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
       <h2 class="text-lg font-black text-[#10221d] dark:text-white">Modelos base</h2>
-      <p class="mt-1 text-sm font-medium text-[#59665f] dark:text-slate-300">Escolha uma estrutura inicial e refine o canvas abaixo sem sair da página.</p>
+      <p class="mt-1 text-sm font-medium text-[#59665f] dark:text-slate-300">Escolha uma estrutura inicial e refine a área de desenho abaixo sem sair da página.</p>
       <div class="mt-5 grid gap-4 lg:grid-cols-3">
         <article
           v-for="preset in props.presets"
@@ -2342,7 +2342,7 @@ function submit() {
                 @click="applyThemePreset(props.form.theme_preset)"
                 class="inline-flex items-center justify-center rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-white dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-900"
               >
-                Aplicar tema ao layout
+                Aplicar tema à composição
               </button>
             </div>
             <div class="mt-5 grid gap-4 lg:grid-cols-4">
@@ -2372,7 +2372,7 @@ function submit() {
             </div>
             <div class="inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700 dark:bg-primary-900/20 dark:text-primary-300">
               <SparklesIcon class="h-4 w-4" />
-              Studio interno multi-página
+              Estúdio interno multi-página
             </div>
           </div>
 
@@ -2462,7 +2462,7 @@ function submit() {
                   @click="addQrCanvasBlock"
                   class="inline-flex items-center rounded-2xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-white dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-900"
                 >
-                  QR code
+                  Código QR
                 </button>
                 <button
                   type="button"
@@ -2509,7 +2509,7 @@ function submit() {
 
           <div class="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
             <div>
-              <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Imagem do layout</label>
+              <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Imagem da composição</label>
               <BaseInput
                 v-model="mediaAssetUrl"
                 type="text"
@@ -2521,7 +2521,7 @@ function submit() {
                 class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 @change="mediaAssetUrl = $event.target.value"
               >
-                <option value="">Selecionar da galeria ou assinaturas</option>
+                <option value="">Seleccionar da galeria ou assinaturas</option>
                 <option v-for="asset in assetLibraryItems" :key="asset.id" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
               </BaseSelect>
               <button
@@ -2530,7 +2530,7 @@ function submit() {
                 class="mt-2 inline-flex items-center gap-2 rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200"
               >
                 <PhotoIcon class="h-4 w-4" />
-                Galeria / upload
+                Galeria / carregamento
               </button>
             </div>
             <div class="flex flex-wrap items-end gap-3">
@@ -2651,7 +2651,7 @@ function submit() {
                 <div class="flex items-center justify-between gap-3">
                   <div>
                     <div class="text-sm font-semibold text-slate-900 dark:text-slate-100">Editar bloco</div>
-                    <div class="text-xs text-slate-500 dark:text-slate-400">Posicionamento, âmbito e estilo persistidos no layout.</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400">Posicionamento, âmbito e estilo persistidos na composição.</div>
                   </div>
                   <div class="flex items-center gap-2">
                     <button
@@ -2752,7 +2752,7 @@ function submit() {
                       <option value="image">Imagem</option>
                       <option value="stamp">Carimbo / selo</option>
                       <option value="signature">Assinatura</option>
-                      <option value="qr_code">QR code</option>
+                      <option value="qr_code">Código QR</option>
                       <option value="chart_snapshot">Gráfico / captura</option>
                     </BaseSelect>
                   </label>
@@ -2791,7 +2791,7 @@ function submit() {
                       <option value="">Aplicar imagem como fundo do bloco</option>
                       <option v-for="asset in assetLibraryItems" :key="`bg-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </BaseSelect>
-                    <button type="button" @click="openMediaPicker('selected-block', 'background_image')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Galeria / upload</button>
+                    <button type="button" @click="openMediaPicker('selected-block', 'background_image')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Galeria / carregamento</button>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Ajuste da imagem
                     <BaseSelect v-model="selectedCanvasBlock.background_image_fit" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
@@ -2883,18 +2883,18 @@ function submit() {
                       <option value="">Usar assinatura/imagem guardada</option>
                       <option v-for="asset in assetLibraryItems" :key="`sig-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </BaseSelect>
-                    <button type="button" @click="openMediaPicker('selected-block', 'signature_image')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Galeria / upload</button>
+                    <button type="button" @click="openMediaPicker('selected-block', 'signature_image')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Galeria / carregamento</button>
                   </label>
                   <div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-900/70 sm:col-span-2">
                     <div class="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Imagem impressa da assinatura</p>
-                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Controla a imagem no preview e no PDF final da proposta.</p>
+                        <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Controla a imagem na pré-visualização e no PDF final da proposta.</p>
                       </div>
                       <div v-if="selectedCanvasBlock.signature_image" class="rounded-2xl bg-white p-2 shadow-sm ring-1 ring-slate-200 dark:bg-slate-950 dark:ring-slate-700">
                         <img
                           :src="selectedCanvasBlock.signature_image"
-                          alt="Preview da assinatura"
+                          alt="Pré-visualização da assinatura"
                           :style="{
                             width: `${clamp(Number(selectedCanvasBlock.signature_image_width || 180), 24, 360)}px`,
                             maxWidth: '220px',
@@ -2950,10 +2950,10 @@ function submit() {
                   <label class="text-sm text-slate-700 dark:text-slate-300">Imagem / carimbo
                     <BaseInput v-model="selectedCanvasBlock.image_url" type="text" placeholder="/storage/media/stamp.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     <BaseSelect v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'image_url')">
-                      <option value="">Selecionar da galeria/assinaturas</option>
+                      <option value="">Seleccionar da galeria/assinaturas</option>
                       <option v-for="asset in assetLibraryItems" :key="`image-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </BaseSelect>
-                    <button type="button" @click="openMediaPicker('selected-block', 'image_url')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Galeria / upload</button>
+                    <button type="button" @click="openMediaPicker('selected-block', 'image_url')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Galeria / carregamento</button>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Texto alternativo
                     <BaseInput v-model="selectedCanvasBlock.image_alt" type="text" placeholder="Carimbo de aprovação" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
@@ -3046,7 +3046,7 @@ function submit() {
                   <label class="text-sm text-slate-700 dark:text-slate-300">Margem de segurança
                     <BaseInput v-model.number="selectedCanvasBlock.qr_margin" type="number" min="0" max="32" step="1" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
-                  <p class="text-xs leading-relaxed text-slate-500 dark:text-slate-400 sm:col-span-2">O preview usa o mesmo conteúdo, cores, margem e tolerância de leitura aplicados ao PDF final.</p>
+                  <p class="text-xs leading-relaxed text-slate-500 dark:text-slate-400 sm:col-span-2">A pré-visualização usa o mesmo conteúdo, cores, margem e tolerância de leitura aplicados ao PDF final.</p>
                 </div>
 
                 <div v-if="selectedCanvasBlock.block_kind === 'chart_snapshot'" class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -3086,10 +3086,10 @@ function submit() {
                   <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Imagem do gráfico
                     <BaseInput v-model="selectedCanvasBlock.chart_image_url" type="text" placeholder="/storage/proposals/charts/scope.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     <BaseSelect v-if="assetLibraryItems.length" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" @change="applyAssetToSelectedBlock($event.target.value, 'chart_image_url')">
-                      <option value="">Selecionar captura da galeria</option>
+                      <option value="">Seleccionar captura da galeria</option>
                       <option v-for="asset in assetLibraryItems" :key="`chart-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </BaseSelect>
-                    <button type="button" @click="openMediaPicker('selected-block', 'chart_image_url')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Escolher no media picker</button>
+                    <button type="button" @click="openMediaPicker('selected-block', 'chart_image_url')" class="mt-2 inline-flex items-center rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200">Escolher no selector de multimédia</button>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Legenda
                     <BaseInput v-model="selectedCanvasBlock.chart_caption" type="text" placeholder="Inclui somente itens acordados nesta proposta." class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
@@ -3111,7 +3111,7 @@ function submit() {
 
       <aside class="space-y-6">
         <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
-          <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Layout multi-página</h2>
+          <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Composição multipágina</h2>
           <div class="mt-4 space-y-4">
             <label class="block text-sm text-slate-700 dark:text-slate-300">Fonte do documento
               <BaseSelect v-model="props.layoutSchema.document_font_family" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
@@ -3146,7 +3146,7 @@ function submit() {
                   @click="openMediaPicker('document-background')"
                   class="inline-flex flex-1 items-center justify-center rounded-2xl bg-primary-700 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-primary-700/15 transition hover:bg-primary-800 dark:bg-primary-500 dark:hover:bg-primary-400"
                 >
-                  Galeria / upload
+                  Galeria / carregamento
                 </button>
                 <button
                   type="button"
@@ -3330,7 +3330,7 @@ function submit() {
               <div class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ previewMeta.title }}</div>
               <p class="mt-1 text-xs text-slate-600 dark:text-slate-400">{{ previewMeta.subtitle }}</p>
               <div class="mt-2 text-xs font-medium text-primary-700 dark:text-primary-300">
-                {{ previewPages.length }} página<span v-if="previewPages.length !== 1">s</span> no preview
+                {{ previewPages.length }} página<span v-if="previewPages.length !== 1">s</span> na pré-visualização
               </div>
               <div class="mt-2 inline-flex rounded-full border border-[#ded2bb] bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#475a53] dark:border-white/10 dark:bg-white/10 dark:text-[#cbd8cf]">
                 {{ previewPageFormatLabel }}
@@ -3386,7 +3386,7 @@ function submit() {
           </label>
           <label class="inline-flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
             <CheckboxInput v-model="showSafeArea" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />
-            Mostrar safe area
+            Mostrar área segura
           </label>
           <label class="inline-flex items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
             <CheckboxInput v-model="snapToGrid" type="checkbox" class="rounded border-slate-300 text-primary-700 focus:ring-primary-500 dark:border-slate-600" />

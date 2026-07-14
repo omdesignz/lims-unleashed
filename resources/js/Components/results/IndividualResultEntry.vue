@@ -272,7 +272,7 @@ function saveIndividualResult() {
         <div class="ds-field-group">
           <label class="ds-field-label" for="individual-parameter">Parâmetro</label>
           <BaseSelect id="individual-parameter" v-model="selectedParameterId" class="ds-field mt-2">
-            <option value="">Selecione um parâmetro</option>
+            <option value="">Seleccione um parâmetro</option>
             <option
               v-for="parameter in filteredParameters"
               :key="getParameterUniqueId(parameter)"

@@ -78,7 +78,7 @@
             <option value="last_calibration_date">Última calibração</option>
             <option value="name">Nome</option>
           </BaseSelect>
-          <BaseSelect v-model="filters.sort_direction" label="Direção">
+          <BaseSelect v-model="filters.sort_direction" label="Direcção">
             <option value="asc">Ascendente</option>
             <option value="desc">Descendente</option>
           </BaseSelect>
@@ -131,7 +131,7 @@
       <section class="ds-table-shell">
         <div class="ds-table-summary px-5 py-4">
           <div>
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Instrument calibration ledger</p>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Registo de calibração de instrumentos</p>
             <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Equipamentos por prioridade metrológica</h2>
           </div>
           <span class="ds-chip">{{ items.total || itemRows.length }} registos</span>
@@ -204,7 +204,7 @@
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Calendário</th>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Rastreabilidade</th>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Estado</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Ações</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Acções</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
@@ -282,7 +282,7 @@
       <aside class="space-y-6">
         <section class="ds-panel overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-5 py-4">
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Metrology hold review</p>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Revisão de bloqueios metrológicos</p>
             <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Equipamentos em contenção</h2>
           </div>
           <ol v-if="holdRows.length" class="divide-y divide-[var(--ds-border)]">
@@ -318,7 +318,7 @@
             <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Execução e evidência</h2>
           </div>
           <div class="space-y-3 p-5">
-            <p class="text-sm font-semibold leading-6 text-[var(--ds-text-muted)]">Registe execução através de tarefas de manutenção/calibração ou atualize o dossiê do equipamento.</p>
+            <p class="text-sm font-semibold leading-6 text-[var(--ds-text-muted)]">Registe execução através de tarefas de manutenção/calibração ou actualize o dossiê do equipamento.</p>
             <Link :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-primary w-full">
               <ClipboardDocumentListIcon class="h-4 w-4" />
               Criar tarefa
@@ -390,7 +390,7 @@ const summaryCards = computed(() => [
   {
     label: 'Até 30 dias',
     value: props.stats?.due_soon || 0,
-    detail: 'Execução no ciclo atual',
+    detail: 'Execução no ciclo actual',
     icon: ClockIcon,
     tone: 'text-amber-700 dark:text-amber-300',
   },
@@ -416,7 +416,7 @@ const calibrationWindows = computed(() => {
     { label: 'Atrasado', count: Number(props.stats?.total_due || 0), detail: 'Retirar de uso até revisão', dot: 'bg-rose-500', bar: 'bg-rose-500' },
     { label: '0-30 dias', count: Number(props.stats?.due_soon || 0), detail: 'Executar ou confirmar fornecedor', dot: 'bg-amber-500', bar: 'bg-amber-500' },
     { label: '31-90 dias', count: Number(props.stats?.due_31_90 || 0), detail: 'Preparar tarefa e evidência', dot: 'bg-violet-500', bar: 'bg-violet-500' },
-    { label: 'Total', count: Number(props.stats?.total_scheduled || 0), detail: 'Equipamentos com agenda ativa', dot: 'bg-cyan-600', bar: 'bg-cyan-600' },
+    { label: 'Total', count: Number(props.stats?.total_scheduled || 0), detail: 'Equipamentos com agenda activa', dot: 'bg-cyan-600', bar: 'bg-cyan-600' },
   ].map((window) => ({ ...window, percentage: (window.count / total) * 100 }))
 })
 

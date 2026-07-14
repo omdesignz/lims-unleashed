@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -37,9 +36,9 @@ class FolderDownloadReadyNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-                    ->line('Your folder download is ready.')
-                    ->action('Download Now', $this->zipUrl)
-                    ->line('Thank you for using our application!');
+            ->line('A transferência da sua pasta está pronta.')
+            ->action('Transferir agora', $this->zipUrl)
+            ->line('Obrigado por utilizar a nossa aplicação.');
     }
 
     /**

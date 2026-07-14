@@ -188,7 +188,7 @@ class WorksheetController extends Controller
             ->all();
 
         $worksheet = Worksheet::query()->create([
-            'name' => 'Worksheet - '.($analysis->code?->code ?? ('Análise #'.$analysis->id)),
+            'name' => 'Folha de trabalho - '.($analysis->code?->code ?? ('Análise #'.$analysis->id)),
             'worksheets' => [
                 'analysis_id' => $analysis->id,
                 'collection_product_id' => $analysis->code?->collection_id,
@@ -199,19 +199,19 @@ class WorksheetController extends Controller
                 'sheets' => [
                     [
                         'id' => 'scope-control',
-                        'name' => 'Scope Control',
+                        'name' => 'Controlo do âmbito',
                         'data' => array_merge([
-                            ['Sample Code', $analysis->code?->code],
-                            ['Department', $analysis->department?->name],
-                            ['Profile', $analysis->profile?->name],
-                            ['Product', $analysis->product?->name],
-                            ['Reception Conditioning', data_get($analysis->sample?->collection?->collection?->extra_data, 'submitted_payload.conditioning_status', 'not_evaluated')],
-                            ['Scope Status', $scopeControl['status_label']],
-                            ['Expected Parameters', $scopeControl['expected_count']],
-                            ['Completed Results', $scopeControl['completed_count']],
-                            ['Missing Parameters', $scopeControl['missing_count']],
+                            ['Código da amostra', $analysis->code?->code],
+                            ['Departamento', $analysis->department?->name],
+                            ['Perfil', $analysis->profile?->name],
+                            ['Produto', $analysis->product?->name],
+                            ['Condicionamento na recepção', data_get($analysis->sample?->collection?->collection?->extra_data, 'submitted_payload.conditioning_status', 'not_evaluated')],
+                            ['Estado do âmbito', $scopeControl['status_label']],
+                            ['Parâmetros previstos', $scopeControl['expected_count']],
+                            ['Resultados concluídos', $scopeControl['completed_count']],
+                            ['Parâmetros em falta', $scopeControl['missing_count']],
                             [''],
-                            ['#', 'Code', 'Parameter', 'Unit', 'Type', 'Min Ref', 'Max Ref', 'Current Value', 'Workflow Status', 'Notes'],
+                            ['#', 'Código', 'Parâmetro', 'Unidade', 'Tipo', 'Referência mínima', 'Referência máxima', 'Valor actual', 'Estado do fluxo', 'Notas'],
                         ], $parameterRows),
                     ],
                 ],
@@ -222,7 +222,7 @@ class WorksheetController extends Controller
         return redirect()->route('worksheets.show', $worksheet)->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
-                'message' => 'Worksheet analítica criada com base no escopo controlado da análise.',
+                'message' => 'Folha de trabalho analítica criada com base no âmbito controlado da análise.',
             ],
         ]);
     }

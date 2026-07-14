@@ -5,8 +5,8 @@ namespace App\Support;
 use App\Models\VAPProposal;
 use App\Notifications\GlobalNotification;
 use App\Notifications\ProposalSentNotification;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 
 class ProposalWorkflowNotifier
 {
@@ -36,7 +36,7 @@ class ProposalWorkflowNotifier
                 $proposal->warehouse,
                 $proposal->user ?? $proposal->warehouse,
                 'Proposta revista',
-                "A proposta {$proposal->proposal_number} foi revista. Consulte a versão atualizada no portal."
+                "A proposta {$proposal->proposal_number} foi revista. Consulte a versão actualizada no portal."
             );
         }
 
@@ -100,13 +100,13 @@ class ProposalWorkflowNotifier
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, object>
+     * @return Collection<int, object>
      */
     private function internalRecipients(VAPProposal $proposal)
     {
         return collect([$proposal->user])
             ->filter()
-            ->unique(fn (object $recipient) => get_class($recipient) . ':' . $recipient->getKey())
+            ->unique(fn (object $recipient) => get_class($recipient).':'.$recipient->getKey())
             ->values();
     }
 

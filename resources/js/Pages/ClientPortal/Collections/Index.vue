@@ -32,10 +32,10 @@ const filters = reactive({
 
 const collections = computed(() => props.record?.data || []);
 const metrics = computed(() => [
-  { label: "Colheitas", value: props.summary.total || 0, detail: "historico da conta", icon: TruckIcon },
-  { label: "Ultimos 30 dias", value: props.summary.recent || 0, detail: "atividade recente", icon: ClockIcon },
+  { label: "Colheitas", value: props.summary.total || 0, detail: "histórico da conta", icon: TruckIcon },
+  { label: "Últimos 30 dias", value: props.summary.recent || 0, detail: "actividade recente", icon: ClockIcon },
   { label: "Certificado emitido", value: props.summary.certificate_ready || 0, detail: "pronto para consulta", icon: CheckBadgeIcon },
-  { label: "Em analise", value: props.summary.in_progress || 0, detail: `${props.summary.analysis_pending || 0} em fila`, icon: BeakerIcon },
+  { label: "Em análise", value: props.summary.in_progress || 0, detail: `${props.summary.analysis_pending || 0} em fila`, icon: BeakerIcon },
 ]);
 const exportUrl = computed(() => {
   const query = new URLSearchParams();
@@ -57,7 +57,7 @@ watch(filters, debounce((value) => {
 }, 350), { deep: true });
 
 function formatDate(value) {
-  return value ? new Intl.DateTimeFormat("pt-PT", { dateStyle: "medium" }).format(new Date(value)) : "Nao definida";
+  return value ? new Intl.DateTimeFormat("pt-PT", { dateStyle: "medium" }).format(new Date(value)) : "Não definida";
 }
 
 function trackingClass(status) {
@@ -72,7 +72,7 @@ function trackingClass(status) {
 }
 
 function collectionTypeLabel(type) {
-  return type === "programmed" ? "Programada" : type === "direct" ? "Direta" : type || "Nao definido";
+  return type === "programmed" ? "Programada" : type === "direct" ? "Directa" : type || "Não definido";
 }
 </script>
 
@@ -81,7 +81,7 @@ function collectionTypeLabel(type) {
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div class="flex min-w-0 items-start gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><TruckIcon class="h-5 w-5" /></span><div><p class="ds-kicker">Rastreabilidade de amostras</p><h1 class="ds-heading mt-1 text-2xl">Colheitas e analises</h1><p class="ds-copy mt-1 max-w-3xl text-sm">Acompanhe recolha, entrada, execucao analitica e disponibilidade do certificado.</p></div></div>
+          <div class="flex min-w-0 items-start gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><TruckIcon class="h-5 w-5" /></span><div><p class="ds-kicker">Rastreabilidade de amostras</p><h1 class="ds-heading mt-1 text-2xl">Colheitas e análises</h1><p class="ds-copy mt-1 max-w-3xl text-sm">Acompanhe recolha, entrada, execução analítica e disponibilidade do certificado.</p></div></div>
           <div class="flex flex-wrap gap-2"><a :href="exportUrl" class="ds-button ds-button-secondary"><ArrowDownTrayIcon class="h-4 w-4" />Exportar folha</a><Link :href="route('portal.requests.index', { new: 1, request_type: 'collection_request' })" class="ds-button ds-button-primary"><PlusIcon class="h-4 w-4" />Solicitar colheita</Link></div>
         </div>
       </div>
@@ -89,12 +89,12 @@ function collectionTypeLabel(type) {
     </section>
 
     <section class="ds-card overflow-hidden">
-      <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6"><h2 class="text-base font-bold text-[var(--ds-text)]">Pesquisa e filtros</h2><p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Encontre uma colheita por codigo, produto, marca ou lote.</p></header>
+      <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6"><h2 class="text-base font-bold text-[var(--ds-text)]">Pesquisa e filtros</h2><p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Encontre uma colheita por código, produto, marca ou lote.</p></header>
       <div class="grid gap-4 px-5 py-5 sm:grid-cols-2 sm:px-6 xl:grid-cols-4">
-        <div class="ds-field-group sm:col-span-2 xl:col-span-1"><label class="ds-field-label">Pesquisa</label><div class="relative"><MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--ds-text-soft)]" /><BaseInput v-model="filters.search" type="search" class="ds-field pl-10" placeholder="Codigo, produto, marca ou lote" /></div></div>
-        <div class="ds-field-group"><label class="ds-field-label">Estado</label><BaseSelect v-model="filters.status_filter" class="ds-field"><option value="">Todos</option><option value="certificate_ready">Certificado emitido</option><option value="analysis_pending">Aguarda analise</option><option value="in_progress">Em analise</option></BaseSelect></div>
-        <div class="ds-field-group"><label class="ds-field-label">Tipo</label><BaseSelect v-model="filters.type_filter" class="ds-field"><option value="">Todos</option><option value="direct">Direta</option><option value="programmed">Programada</option></BaseSelect></div>
-        <div class="ds-field-group"><label class="ds-field-label">Periodo</label><BaseSelect v-model="filters.date_filter" class="ds-field"><option value="all">Todo o historico</option><option value="last_week">Ultima semana</option><option value="last_month">Ultimo mes</option><option value="last_quarter">Ultimo trimestre</option></BaseSelect></div>
+        <div class="ds-field-group sm:col-span-2 xl:col-span-1"><label class="ds-field-label">Pesquisa</label><div class="relative"><MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--ds-text-soft)]" /><BaseInput v-model="filters.search" type="search" class="ds-field pl-10" placeholder="Código, produto, marca ou lote" /></div></div>
+        <div class="ds-field-group"><label class="ds-field-label">Estado</label><BaseSelect v-model="filters.status_filter" class="ds-field"><option value="">Todos</option><option value="certificate_ready">Certificado emitido</option><option value="analysis_pending">Aguarda análise</option><option value="in_progress">Em análise</option></BaseSelect></div>
+        <div class="ds-field-group"><label class="ds-field-label">Tipo</label><BaseSelect v-model="filters.type_filter" class="ds-field"><option value="">Todos</option><option value="direct">Directa</option><option value="programmed">Programada</option></BaseSelect></div>
+        <div class="ds-field-group"><label class="ds-field-label">Período</label><BaseSelect v-model="filters.date_filter" class="ds-field"><option value="all">Todo o histórico</option><option value="last_week">Última semana</option><option value="last_month">Último mes</option><option value="last_quarter">Último trimestre</option></BaseSelect></div>
       </div>
     </section>
 
@@ -107,15 +107,15 @@ function collectionTypeLabel(type) {
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2"><h3 class="break-words font-mono text-sm font-bold text-[var(--ds-text)]">{{ collection.cl || `#${collection.id}` }}</h3><span :class="['ds-chip', trackingClass(collection.tracking?.status)]">{{ collection.tracking?.label || "Pendente" }}</span><span class="ds-chip">{{ collectionTypeLabel(collection.type) }}</span></div>
               <dl class="mt-5 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div><dt class="ds-field-label">Produto</dt><dd class="mt-1.5 break-words text-sm font-bold text-[var(--ds-text)]">{{ collection.product || "Nao definido" }}</dd><p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ collection.comercial_brand || "Sem marca" }}</p></div>
+                <div><dt class="ds-field-label">Produto</dt><dd class="mt-1.5 break-words text-sm font-bold text-[var(--ds-text)]">{{ collection.product || "Não definido" }}</dd><p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ collection.comercial_brand || "Sem marca" }}</p></div>
                 <div><dt class="ds-field-label">Lote / quantidade</dt><dd class="mt-1.5 break-words text-sm font-bold text-[var(--ds-text)]">{{ collection.lot || "Sem lote" }}</dd><p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ collection.qty || 0 }} unidade(s)</p></div>
                 <div><dt class="ds-field-label">Data de colheita</dt><dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ formatDate(collection.collection_date) }}</dd><p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ collection.tracking?.total_samples || 0 }} amostra(s)</p></div>
-                <div><dt class="ds-field-label">Progresso analitico</dt><dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ collection.tracking?.completed_analysis || 0 }} concluida(s)</dd><p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ collection.tracking?.pending_analysis || 0 }} pendente(s) / {{ collection.tracking?.in_progress_analysis || 0 }} em curso</p></div>
+                <div><dt class="ds-field-label">Progresso analítico</dt><dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ collection.tracking?.completed_analysis || 0 }} concluída(s)</dd><p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ collection.tracking?.pending_analysis || 0 }} pendente(s) / {{ collection.tracking?.in_progress_analysis || 0 }} em curso</p></div>
               </dl>
             </div>
             <div class="flex flex-wrap gap-2 xl:w-64 xl:justify-end">
               <a v-if="collection.links?.pdf_quality_certificate" :href="collection.links.pdf_quality_certificate" target="_blank" rel="noopener" class="ds-button ds-button-secondary"><CheckBadgeIcon class="h-4 w-4" />Certificado</a>
-              <a v-if="collection.links?.pdf_path" :href="collection.links.pdf_path" target="_blank" rel="noopener" class="ds-button ds-button-secondary"><DocumentArrowDownIcon class="h-4 w-4" />PDF analitico</a>
+              <a v-if="collection.links?.pdf_path" :href="collection.links.pdf_path" target="_blank" rel="noopener" class="ds-button ds-button-secondary"><DocumentArrowDownIcon class="h-4 w-4" />PDF analítico</a>
               <a v-if="collection.links?.xlsx_path" :href="collection.links.xlsx_path" class="ds-button ds-button-secondary"><ArrowDownTrayIcon class="h-4 w-4" />XLSX</a>
               <Link :href="route('portal.requests.index', { new: 1, request_type: 'certificate_support', title: `Seguimento ${collection.cl || ''}`.trim() })" class="ds-button ds-button-secondary">Pedir apoio</Link>
             </div>

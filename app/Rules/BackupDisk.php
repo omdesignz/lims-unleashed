@@ -4,13 +4,14 @@ namespace App\Rules;
 
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Translation\PotentiallyTranslatedString;
 
 class BackupDisk implements ValidationRule
 {
     /**
      * Run the validation rule.
      *
-     * @param  \Closure(string): \Illuminate\Translation\PotentiallyTranslatedString  $fail
+     * @param  Closure(string): PotentiallyTranslatedString  $fail
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
@@ -20,11 +21,11 @@ class BackupDisk implements ValidationRule
 
         $result = in_array($value, $configuredBackupDisks);
 
-        !$result ? $fail('The disk is invalid.') : '';
+        ! $result ? $fail('O disco indicado não é válido.') : '';
     }
 
     public function message()
     {
-        return 'This disk is not configured as a backup disk.';
+        return 'Este disco não está configurado para cópias de segurança.';
     }
 }

@@ -20,7 +20,7 @@ class signCreditNoteWithHash extends Command
      *
      * @var string
      */
-    protected $description = 'Sign Credit Note with hash and save to DB';
+    protected $description = 'Assinar a nota de crédito com um resumo criptográfico e guardá-la na base de dados';
 
     /**
      * Execute the console command.
@@ -31,13 +31,13 @@ class signCreditNoteWithHash extends Command
 
         if (CreditNote::whereNoteMonth(now()->format('Y'))->count() !== 1) {
             $prev_hash = CreditNote::where('id', '<', $note->id)->orderBy('id', 'desc')->first()->unique_hash;
-            $data = $note->date . ';' . $note->created_at->toDateTimeLocalString() . ';' . $note->note_no . ';' . $note->total . ';' . $prev_hash;
+            $data = $note->date.';'.$note->created_at->toDateTimeLocalString().';'.$note->note_no.';'.$note->total.';'.$prev_hash;
 
             $note->unique_hash = $documentSignature->sign($data);
         }
 
         if (CreditNote::whereNoteMonth(now()->format('Y'))->count() == 1) {
-            $data = $note->date . ';' . $note->created_at->toDateTimeLocalString() . ';' . $note->note_no . ';' . $note->total . ';';
+            $data = $note->date.';'.$note->created_at->toDateTimeLocalString().';'.$note->note_no.';'.$note->total.';';
 
             $note->unique_hash = $documentSignature->sign($data);
         }

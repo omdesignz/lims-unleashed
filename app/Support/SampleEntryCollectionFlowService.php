@@ -185,9 +185,9 @@ class SampleEntryCollectionFlowService
     private function resolveTrackingProgress(VAPSampleEntry $sampleEntry): string
     {
         return match ($sampleEntry->status) {
-            'EN_PROGRESO' => 'Analysis in progress',
-            'COMPLETADO' => 'Analysis completed',
-            default => 'Pending analysis',
+            'EN_PROGRESO' => 'Análise em curso',
+            'COMPLETADO' => 'Análise concluída',
+            default => 'Análise pendente',
         };
     }
 }

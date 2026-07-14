@@ -35,7 +35,7 @@ class VAPSampleDiscardController extends Controller
             // Check if sample can be discarded
             if (! in_array($sample->status, ['COMPLETADO', 'CANCELADO'])) {
                 return redirect()->back()->with([
-                    'message' => 'Only completed or canceled samples can be discarded.',
+                    'message' => 'Apenas podem ser descartadas amostras concluídas ou canceladas.',
                     'type' => 'error',
                 ]);
             }
@@ -57,7 +57,7 @@ class VAPSampleDiscardController extends Controller
             DB::commit();
 
             return redirect()->back()->with([
-                'message' => 'Sample discard recorded successfully.',
+                'message' => 'Descarte da amostra registado com êxito.',
                 'type' => 'success',
                 'discard_id' => $discard->id,
             ]);
@@ -65,7 +65,7 @@ class VAPSampleDiscardController extends Controller
             DB::rollBack();
 
             return redirect()->back()->with([
-                'message' => 'Error recording sample discard: '.$e->getMessage(),
+                'message' => 'Erro ao registar o descarte da amostra: '.$e->getMessage(),
                 'type' => 'error',
             ]);
         }

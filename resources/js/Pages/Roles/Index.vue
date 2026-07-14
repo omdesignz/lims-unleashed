@@ -192,7 +192,7 @@ function executeBulkAction() {
     <SlideOver
       v-if="editorOpen"
       title="Nova função"
-      description="Defina a identidade da função antes de associar as respetivas permissões."
+      description="Defina a identidade da função antes de associar as respectivas permissões."
       @close="closeEditor"
     >
       <template #content>

@@ -141,11 +141,11 @@ const showDeleteConfirmation = ref(false);
       <section class="flex flex-col p-4 mb-4 space-y-4 bg-white shadow sm:rounded lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:p-2">
         <div class="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-2">
 
-          <BaseSelect v-model="query.fileType" aria-label="Media type" id="type" class="pr-10 pl-3 w-full h-11 rounded border-gray-300 shadow-sm lg:h-9 lg:text-sm sm:w-44 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          <BaseSelect v-model="query.fileType" aria-label="Tipo de ficheiro" id="type" class="pr-10 pl-3 w-full h-11 rounded border-gray-300 shadow-sm lg:h-9 lg:text-sm sm:w-44 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
             <option v-for="type in allFileTypes" :value="type.value"> {{ type.label }} </option>
           </BaseSelect>
  
-          <BaseSelect v-model="query.month" aria-label="Media date" id="date" class="pr-10 pl-3 w-full h-11 rounded border-gray-300 shadow-sm lg:h-9 lg:text-sm sm:w-44 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          <BaseSelect v-model="query.month" aria-label="Data do ficheiro" id="date" class="pr-10 pl-3 w-full h-11 rounded border-gray-300 shadow-sm lg:h-9 lg:text-sm sm:w-44 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
             <option v-for="month in allMonths" :value="month.value">{{ month.label }}</option>
           </BaseSelect>
  
@@ -160,7 +160,7 @@ const showDeleteConfirmation = ref(false);
         </div>
  
         <div class="flex flex-col">
-          <label for="search" class="text-sm font-medium text-gray-700 sr-only">Search</label>
+          <label for="search" class="text-sm font-medium text-gray-700 sr-only">Pesquisar</label>
           <BaseInput v-model="query.term" @keydown.enter="filter()" type="search" id="search" class="w-full h-11 rounded border-gray-300 shadow-sm lg:h-9 lg:text-sm lg:w-64 focus:ring-blue-500 focus:border-blue-500" :placeholder="$t('gestlab.general.search_input_placeholder')" autocomplete="off"/>
         </div>
       </section>
@@ -260,7 +260,7 @@ const showDeleteConfirmation = ref(false);
  
           <tr class="align-top" v-if="!props.record.data.length">
             <td colspan="4" class="p-2 text-sm text-gray-700">
-                <empty-state class="pb-5" @create-record="() => router.get(route('media.create'))" name="Sem registros para apresentar." description="Comece por adicionar um novo clicando no botão abaixo." />
+                <empty-state class="pb-5" @create-record="() => router.get(route('media.create'))" name="Sem registos para apresentar." description="Comece por adicionar um novo através do botão abaixo." />
             </td>
           </tr>
           </tbody>

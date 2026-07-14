@@ -59,8 +59,8 @@ class ProgrammedCollectionController extends Controller
             ),
             'slideOverEdit' => false,
             'entrypoint' => [
-                'label' => 'A entrada canónica é Sample Entry',
-                'description' => 'Use a receção de amostra para iniciar novos fluxos. A colheita programada fica como planeamento ligado ao código da amostra.',
+                'label' => 'A entrada canónica é a entrada de amostra',
+                'description' => 'Use a recepção de amostra para iniciar novos fluxos. A colheita programada fica como planeamento ligado ao código da amostra.',
                 'create_sample_url' => route('vap_samples.index', ['collection_type' => 'programmed']),
             ],
             'fields' => [
@@ -132,8 +132,8 @@ class ProgrammedCollectionController extends Controller
 
         return Inertia::render('ProgrammedCollections/Create', [
             'entrypoint' => [
-                'label' => 'Use Sample Entry para novos fluxos',
-                'description' => 'Esta página permanece disponível para operações legadas ou correções manuais. Para novos processos programados, comece pela receção da amostra para manter produto, matriz, local, equipa, lab code e análises ligados.',
+                'label' => 'Use a entrada de amostra para novos fluxos',
+                'description' => 'Esta página permanece disponível para operações legadas ou correcções manuais. Para novos processos programados, comece pela recepção da amostra para manter o produto, a matriz, o local, a equipa, o código laboratorial e as análises ligados.',
                 'create_sample_url' => route('vap_samples.index', ['collection_type' => 'programmed']),
             ],
         ]);
@@ -198,7 +198,7 @@ class ProgrammedCollectionController extends Controller
             'collectionPresentation' => [
                 'type' => 'programmed',
                 'title' => 'Colheita programada',
-                'description' => 'Planeamento de colheita ligado à Sample Entry, lab code e fluxo analítico.',
+                'description' => 'Planeamento de colheita ligado à entrada de amostra, ao código laboratorial e ao fluxo analítico.',
                 'index_url' => route('programmedcollections.index'),
                 'edit_url' => route('programmedcollections.edit', ['collection' => $id]),
             ],
@@ -302,17 +302,21 @@ class ProgrammedCollectionController extends Controller
      *
      * @return Response
      */
-    public function PlaceProductsInAnalysis(Request $request, DuplicateSubmissionGuard $duplicateSubmissionGuard)
-    {
+    public function placeProductsInAnalysis(
+        Request $request,
+        CollectionProduct $collectionProduct,
+        DuplicateSubmissionGuard $duplicateSubmissionGuard
+    ) {
         abort_if(! auth()->user()->can('add_analysis'), 403, '');
 
-        $validated = $request->validate([
-            'collection_product_id' => ['required', 'exists:collection_product,id'],
-        ]);
+        $collectionProduct->load('code.samples', 'collection');
+        abort_unless($collectionProduct->collection?->collectionable_type === 'programmed', 404);
 
-        $collectionProduct = CollectionProduct::with('code.samples', 'collection')->findOrFail($validated['collection_product_id']);
+        $submissionIdentity = [
+            'collection_product_id' => $collectionProduct->id,
+        ];
 
-        if ($collectionProduct->code->samples->count() > 0) {
+        if ($collectionProduct->code?->samples->isNotEmpty()) {
             return redirect()->back()->with([
                 'toast' => [
                     'title' => trans('gestlab.toasts.notification'),
@@ -321,7 +325,7 @@ class ProgrammedCollectionController extends Controller
             ]);
 
         } else {
-            if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'programmed-collection-place-analysis', $validated, 60)) {
+            if (! $duplicateSubmissionGuard->acquireFromRequest($request, 'programmed-collection-place-analysis', $submissionIdentity, 60)) {
                 return redirect()->back()->with([
                     'toast' => [
                         'title' => trans('gestlab.toasts.notification'),

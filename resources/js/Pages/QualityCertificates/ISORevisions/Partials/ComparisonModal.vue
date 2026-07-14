@@ -53,11 +53,9 @@ function openComparison() {
             <ArrowsRightLeftIcon class="h-5 w-5" />
           </div>
           <div>
-            <p class="ds-kicker">Analise lado a lado</p>
-            <h2 class="ds-heading mt-2 text-lg">Comparar revisoes</h2>
-            <p class="ds-copy mt-1 text-xs">
-              O resultado abre numa pagina dedicada com a matriz completa de diferencas.
-            </p>
+            <p class="ds-kicker">Análise lado a lado</p>
+            <h2 class="ds-heading mt-2 text-lg">Comparar revisões</h2>
+            <p class="ds-copy mt-1 text-xs"> O resultado abre numa página dedicada com a matriz completa de diferenças. </p>
           </div>
         </div>
         <button type="button" class="ds-icon-button" title="Fechar" @click="closeModal">
@@ -69,7 +67,7 @@ function openComparison() {
       <div class="space-y-5 px-5 py-5 sm:px-6">
         <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center">
           <article class="ds-command-surface p-4">
-            <p class="ds-kicker">Revisao A</p>
+            <p class="ds-kicker">Revisão A</p>
             <p class="ds-heading mt-2 font-mono text-lg">
               #{{ revisionIds[0] || "-" }}
             </p>
@@ -78,7 +76,7 @@ function openComparison() {
           <ArrowsRightLeftIcon class="mx-auto h-5 w-5 text-[var(--ds-text-muted)]" />
 
           <article class="ds-command-surface p-4">
-            <p class="ds-kicker">Revisao B</p>
+            <p class="ds-kicker">Revisão B</p>
             <p class="ds-heading mt-2 font-mono text-lg">
               #{{ revisionIds[1] || "-" }}
             </p>
@@ -89,11 +87,8 @@ function openComparison() {
           <div class="flex items-start gap-3">
             <DocumentMagnifyingGlassIcon class="h-5 w-5 shrink-0 text-[var(--ds-text-muted)]" />
             <div>
-              <h3 class="ds-heading text-sm">Conteudo da comparacao</h3>
-              <p class="ds-copy mt-1 text-xs">
-                Inclui dados do certificado, relacoes laboratoriais, metadados
-                da revisao e classificacao ISO.
-              </p>
+              <h3 class="ds-heading text-sm">Conteúdo da comparação</h3>
+              <p class="ds-copy mt-1 text-xs"> Inclui dados do certificado, relações laboratoriais, metadados da revisão e classificação ISO. </p>
             </div>
           </div>
         </div>
@@ -110,7 +105,7 @@ function openComparison() {
           @click="openComparison"
         >
           <ArrowsRightLeftIcon class="h-4 w-4" />
-          Abrir comparacao
+          Abrir comparação
         </button>
       </footer>
     </div>

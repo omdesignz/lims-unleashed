@@ -31,9 +31,7 @@ function submit() {
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <nav aria-label="Breadcrumb" class="mb-5">
         <Link :href="route('parameters.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ds-text-muted)] hover:text-[rgb(var(--primary-700-rgb))]">
-          <ArrowLeftIcon class="h-4 w-4" />
-          Parametros analiticos
-        </Link>
+          <ArrowLeftIcon class="h-4 w-4" /> Parâmetros analíticos </Link>
       </nav>
 
       <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -43,15 +41,15 @@ function submit() {
           </span>
           <div class="min-w-0">
             <p class="ds-kicker">Novo mensurando</p>
-            <h1 class="ds-heading mt-1 text-2xl">Adicionar parametro analitico</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Configure identidade, prazo, preco, tipo de resultado e calculo numa definicao controlada.</p>
+            <h1 class="ds-heading mt-1 text-2xl">Adicionar parâmetro analítico</h1>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Configure identidade, prazo, preço, tipo de resultado e cálculo numa definição controlada.</p>
           </div>
         </div>
 
         <div class="flex flex-wrap gap-2 lg:justify-end">
           <Link :href="route('parameters.index')" class="ds-button ds-button-secondary">Cancelar</Link>
           <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-            {{ form.processing ? "A guardar..." : "Adicionar parametro" }}
+            {{ form.processing ? "A guardar..." : "Adicionar parâmetro" }}
           </button>
         </div>
       </div>
@@ -62,7 +60,7 @@ function submit() {
       <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
         <Link :href="route('parameters.index')" class="ds-button ds-button-secondary">Cancelar</Link>
         <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-          {{ form.processing ? "A guardar..." : "Adicionar parametro" }}
+          {{ form.processing ? "A guardar..." : "Adicionar parâmetro" }}
         </button>
       </footer>
     </section>

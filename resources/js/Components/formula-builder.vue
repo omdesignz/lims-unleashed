@@ -49,7 +49,7 @@
         <h4 class="font-medium mb-3">Variáveis da Fórmula</h4>
         <div v-for="(varName, index) in detectedVariables" :key="index"
              class="flex items-center gap-4 mb-2">
-          <BaseInput v-model="variables[varName].label" placeholder="Nome para exibir"
+          <BaseInput v-model="variables[varName].label" placeholder="Nome a apresentar"
                  class="flex-1 border-gray-300 rounded-md shadow-sm" />
           <BaseInput v-model="variables[varName].unit" placeholder="Unidade (opcional)"
                  class="w-32 border-gray-300 rounded-md shadow-sm" />

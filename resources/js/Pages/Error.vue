@@ -81,7 +81,7 @@
                 clip-rule="evenodd"
               />
             </svg>
-            <span>Voltar ao Dashboard</span>
+            <span>Voltar ao painel</span>
         </Link>
         </div>
         <!-- END Error Content -->
@@ -179,7 +179,7 @@
                   type="text"
                   id="search"
                   name="search"
-                  placeholder="Search.."
+                  placeholder="Pesquisar..."
                   class="block w-full rounded-lg border border-gray-200 py-3 pl-12 pr-5 leading-6 placeholder-gray-500 focus:border-rose-500 focus:ring focus:ring-rose-500 focus:ring-opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:placeholder-gray-400 dark:focus:border-rose-500"
                 />
               </div>
@@ -202,7 +202,7 @@
                 clip-rule="evenodd"
               />
             </svg>
-            <span>Voltar ao Dashboard</span>
+            <span>Voltar ao painel</span>
         </Link>
         </div>
         <!-- END Error Content -->
@@ -297,7 +297,7 @@
               clip-rule="evenodd"
             />
           </svg>
-          <span>Tente Atualizar</span>
+          <span>Tente actualizar</span>
         </Link>
       </div>
       <!-- END Error Content -->
@@ -390,7 +390,7 @@
                 clip-rule="evenodd"
               />
             </svg>
-            <span>Voltar ao Dashboard</span>
+            <span>Voltar ao painel</span>
         </Link> -->
         </div>
         <!-- END Error Content -->
@@ -484,7 +484,7 @@
                 clip-rule="evenodd"
               />
             </svg>
-            <span>Tente Atualizar</span>
+          <span>Tente actualizar</span>
         </Link>
         </div>
         <!-- END Error Content -->
@@ -578,7 +578,7 @@
                 clip-rule="evenodd"
               />
             </svg>
-            <span>Voltar ao Dashboard</span>
+            <span>Voltar ao painel</span>
         </Link>
         </div>
         <!-- END Error Content -->
@@ -617,7 +617,7 @@ const title = computed(() => {
 
 const description = computed(() => {
     return {
-        400: 'Ufa! Sua solicitação está um pouco errada',
+        400: 'O pedido não é válido',
         404: 'Bem, isto é constrangedor...',
         403: 'Não é seu dia de sorte.',
         401: 'Espere aí, amigo',
@@ -628,11 +628,11 @@ const description = computed(() => {
 
 const paragraph = computed(() => {
     return {
-        400: 'Parece que nosso servidor não consegue entender sua solicitação. Verifique seu URL ou volte para o Dashboard',
-        404: 'Parece que não conseguimos encontrar a página que você procura. Talvez tenha sido movido ou excluído. Desculpe por isso! Por favor, tente pesquisar em nosso aplicativo da web.',
-        403: 'Desculpe, mas parece que hoje não é seu dia de sorte. Você não tem permissão para acessar esta página. Por favor, tente novamente amanhã.',
-        401: 'Desculpe, mas você não tem permissão para acessar esta página. Entre em contacto connosco se achar que isso é um erro.',
-        500: 'Nosso servidor está tendo um colapso. Não se preocupe, nossa equipe de especialistas está cuidando disso. Por favor, tente novamente mais tarde.',
+        400: 'O servidor não conseguiu interpretar o pedido. Verifique o endereço ou regresse ao painel.',
+        404: 'Não foi possível encontrar a página que procura. A página pode ter sido movida ou eliminada. Utilize a pesquisa da aplicação ou regresse à página anterior.',
+        403: 'Não tem permissão para aceder a esta página.',
+        401: 'Não tem autorização para aceder a esta página. Contacte-nos se considerar que se trata de um erro.',
+        500: 'O servidor encontrou um erro inesperado. Tente novamente mais tarde.',
         503: 'Nossos servidores estão sobrecarregados e precisamos de um pouco de tempo para recuperar o atraso. Pedimos desculpas pelo inconveniente e agradecemos sua paciência.'
     }[props.status]
 });

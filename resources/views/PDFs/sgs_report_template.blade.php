@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-AO">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Laboratory Report</title>
+  <title>Relatório laboratorial</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 p-8">
@@ -13,9 +13,9 @@
       <img src="logo-placeholder.png" alt="SGS Logo" class="w-24">
       <div class="text-right text-sm">
         <p>RELATÓRIO DE ENSAIO Nº PT24-39166.001</p>
-        <p class="italic">(Test Report Nº)</p>
+        <p class="italic">(Relatório de ensaio n.º)</p>
         <p class="mt-2">DATA DE EMISSÃO: 31 / 07 / 2024</p>
-        <p class="italic">(Issue Date)</p>
+        <p class="italic">(Data de emissão)</p>
       </div>
     </div>
 
@@ -23,16 +23,16 @@
     <table class="w-full border-collapse border border-gray-300 mb-8 text-sm">
       <thead class="bg-gray-200">
         <tr>
-          <th class="border border-gray-300 px-2 py-1">ENSAIO <br><span class="italic">(Parameter)</span></th>
-          <th class="border border-gray-300 px-2 py-1">MÉTODO <br><span class="italic">(Method)</span></th>
-          <th class="border border-gray-300 px-2 py-1">Resultados e U <br><span class="italic">(Results and U)</span></th>
-          <th class="border border-gray-300 px-2 py-1">Unidades <br><span class="italic">(Units)</span></th>
-          <th class="border border-gray-300 px-2 py-1">Limites <br><span class="italic">(Limits)</span></th>
+          <th class="border border-gray-300 px-2 py-1">ENSAIO</th>
+          <th class="border border-gray-300 px-2 py-1">MÉTODO</th>
+          <th class="border border-gray-300 px-2 py-1">RESULTADOS E U</th>
+          <th class="border border-gray-300 px-2 py-1">UNIDADES</th>
+          <th class="border border-gray-300 px-2 py-1">LIMITES</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td class="border px-2 py-1">Pesquisa de Salmonella / Detection of Salmonella</td>
+          <td class="border px-2 py-1">Pesquisa de Salmonella</td>
           <td class="border px-2 py-1">Rapid Salmonella - AFNOR BRD</td>
           <td class="border px-2 py-1">Não Detectado</td>
           <td class="border px-2 py-1">25 g</td>
@@ -57,9 +57,9 @@
 
     <!-- Analysis Notes -->
     <div class="text-sm mb-4">
-      <p>** Fim dos resultados analíticos ** <br> ** End of analytical results **</p>
+      <p>** Fim dos resultados analíticos **</p>
       <p class="mt-4">Os resultados aplicam-se à amostra conforme recebida.</p>
-      <p class="italic">(Results apply to the sample as received.)</p>
+      <p class="italic">Os resultados aplicam-se à amostra conforme recebida.</p>
     </div>
 
     <!-- Footer Section -->

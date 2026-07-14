@@ -164,7 +164,7 @@
           Submeter para revisão
         </button>
         <button class="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50" :disabled="busy || !canApprove" @click="approveDocument">
-          Aprovar e efetivar
+          Aprovar e efectivar
         </button>
         <button class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200 dark:hover:bg-rose-950/60" :disabled="busy || !canApprove" @click="markObsolete">
           Marcar obsoleto

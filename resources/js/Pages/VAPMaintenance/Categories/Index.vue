@@ -11,12 +11,8 @@
               <TagIcon class="h-5 w-5" />
             </span>
             <div class="min-w-0">
-              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">
-                Categorias de manutencao
-              </h1>
-              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                Controle os tipos de manutencao, calibracao e verificacao usados nos planos de equipamento.
-              </p>
+              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]"> Categorias de manutenção </h1>
+              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]"> Controle os tipos de manutenção, calibração e verificação usados nos planos de equipamento. </p>
             </div>
           </div>
         </div>
@@ -62,7 +58,7 @@
             <BaseInput
               v-model="search"
               type="search"
-              placeholder="Nome, codigo ou descricao"
+              placeholder="Nome, código ou descrição"
               class="ds-field pl-10"
               @input="applySearch"
             />
@@ -77,7 +73,7 @@
             v-if="hasSearch"
             class="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-cyan-800 dark:border-cyan-400/30 dark:bg-cyan-400/10 dark:text-cyan-100"
           >
-            Pesquisa ativa
+            Pesquisa activa
           </span>
         </div>
       </div>
@@ -91,9 +87,7 @@
       >
         <div class="flex items-start justify-between gap-4">
           <div class="min-w-0">
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">
-              Tipo de servico
-            </p>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]"> Tipo de serviço </p>
             <h2 class="mt-2 truncate text-base font-black text-[var(--ds-text)]">
               {{ category.name }}
             </h2>
@@ -105,10 +99,10 @@
 
         <div class="mt-5 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
           <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">
-            Descricao operacional
+            Descrição operacional
           </p>
           <p class="mt-2 line-clamp-3 min-h-16 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-            {{ category.description || 'Sem descricao operacional definida.' }}
+            {{ category.description || 'Sem descrição operacional definida.' }}
           </p>
         </div>
 
@@ -159,9 +153,7 @@
       <h2 class="mt-4 text-base font-black text-[var(--ds-text)]">
         Nenhuma categoria encontrada
       </h2>
-      <p class="mx-auto mt-2 max-w-md text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-        Crie categorias para separar calibracao interna, calibracao externa, manutencao preventiva e verificacoes.
-      </p>
+      <p class="mx-auto mt-2 max-w-md text-sm font-medium leading-6 text-[var(--ds-text-muted)]"> Crie categorias para separar calibração interna, calibração externa, manutenção preventiva e verificacoes. </p>
       <button
         type="button"
         class="ds-button ds-button-primary mt-6"
@@ -173,9 +165,7 @@
     </section>
 
     <section v-if="categoryItems.length > 0" class="ds-table-summary flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-      <p class="text-sm font-semibold text-[var(--ds-text-muted)]">
-        Biblioteca de manutencao pronta para planos preventivos e calibracoes.
-      </p>
+      <p class="text-sm font-semibold text-[var(--ds-text-muted)]"> Biblioteca de manutenção pronta para planos preventivos e calibracoes. </p>
       <Pagination :links="categories.links" />
     </section>
 
@@ -187,7 +177,7 @@
               Biblioteca metrologica
             </p>
             <h2 class="mt-2 text-lg font-black text-[var(--ds-text)]">
-              {{ editingCategory ? 'Editar categoria' : 'Nova categoria de manutencao' }}
+              {{ editingCategory ? 'Editar categoria' : 'Nova categoria de manutenção' }}
             </h2>
           </div>
           <button
@@ -210,13 +200,13 @@
               required
               :class="fieldClass('name')"
               :aria-invalid="Boolean(form.errors.name)"
-              placeholder="Ex: Calibracao interna"
+              placeholder="Ex: Calibração interna"
             />
             <span v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</span>
           </label>
 
           <label class="ds-field-group">
-            <span class="ds-field-label">Codigo</span>
+            <span class="ds-field-label">Código</span>
             <BaseInput
               v-model="form.code"
               type="text"
@@ -225,11 +215,11 @@
               placeholder="Ex: CAL_INT"
             />
             <span v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</span>
-            <span v-else class="ds-field-hint">Use um codigo curto para filtros, relatórios e planos recorrentes.</span>
+            <span v-else class="ds-field-hint">Use um código curto para filtros, relatórios e planos recorrentes.</span>
           </label>
 
           <label class="ds-field-group">
-            <span class="ds-field-label">Descricao</span>
+            <span class="ds-field-label">Descrição</span>
             <textarea
               v-model="form.description"
               rows="3"
@@ -252,7 +242,7 @@
               :disabled="form.processing"
             >
               <CheckIcon class="h-4 w-4" />
-              {{ form.processing ? 'A processar...' : (editingCategory ? 'Atualizar' : 'Criar') }}
+              {{ form.processing ? 'A processar...' : (editingCategory ? 'Actualizar' : 'Criar') }}
             </button>
           </div>
         </form>
@@ -304,12 +294,12 @@ const statsCards = computed(() => [
   {
     label: 'Categorias',
     value: categoryTotal.value,
-    detail: 'Tipos disponiveis',
+    detail: 'Tipos disponíveis',
     icon: TagIcon,
     tone: 'text-cyan-700 dark:text-cyan-200',
   },
   {
-    label: 'Com codigo',
+    label: 'Com código',
     value: codedCategoryCount.value,
     detail: 'Prontas para filtros',
     icon: HashtagIcon,
@@ -317,7 +307,7 @@ const statsCards = computed(() => [
   },
   {
     label: 'Plano',
-    value: hasSearch.value ? 'Filtro' : 'Ativo',
+    value: hasSearch.value ? 'Filtro' : 'Activo',
     detail: 'Uso em tarefas',
     icon: WrenchScrewdriverIcon,
     tone: 'text-amber-700 dark:text-amber-200',
@@ -356,7 +346,7 @@ const editCategory = (category) => {
 }
 
 const deleteCategory = (category) => {
-  if (confirm('Tem a certeza que deseja eliminar esta categoria? Esta acao nao pode ser revertida.')) {
+  if (confirm('Tem a certeza que deseja eliminar esta categoria? Esta acção não pode ser revertida.')) {
     router.delete(route('vap-maintenance.categories.destroy', category.id))
   }
 }

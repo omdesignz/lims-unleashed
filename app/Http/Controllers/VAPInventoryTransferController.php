@@ -135,7 +135,7 @@ class VAPInventoryTransferController extends Controller
 
         if (! $sourceInventory || $sourceInventory->qty_available < $request->qty) {
             return redirect()->back()
-                ->with('error', 'Stock insuficiente no armazém de origem.')
+                ->with('error', 'Existências insuficientes no armazém de origem.')
                 ->withInput();
         }
 
@@ -175,7 +175,7 @@ class VAPInventoryTransferController extends Controller
             DB::commit();
 
             return redirect()->route('vap-inventory.transfers.show', $transfer)
-                ->with('success', 'Transferência criada com sucesso. O stock ficou reservado no armazém de origem.');
+                ->with('success', 'Transferência criada com sucesso. As existências ficaram reservadas no armazém de origem.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -218,7 +218,7 @@ class VAPInventoryTransferController extends Controller
             'canCancel' => ! $transfer->received_date,
             'charts' => [
                 'quantity_flow' => [
-                    'labels' => ['Quantidade transferida', 'Stock origem', 'Stock destino'],
+                    'labels' => ['Quantidade transferida', 'Existências na origem', 'Existências no destino'],
                     'series' => [
                         (int) $transfer->qty,
                         (int) ($sourceStock?->qty_available ?? 0),
@@ -249,7 +249,7 @@ class VAPInventoryTransferController extends Controller
     {
         if ($transfer->received_date) {
             return redirect()->back()
-                ->with('error', 'A transferência já foi rececionada.');
+                ->with('error', 'A transferência já foi recepcionada.');
         }
 
         $validator = Validator::make($request->all(), [
@@ -339,13 +339,13 @@ class VAPInventoryTransferController extends Controller
             DB::commit();
 
             return redirect()->route('vap-inventory.transfers.show', $transfer)
-                ->with('success', 'Transferência rececionada com sucesso. O stock foi atualizado no armazém de destino.');
+                ->with('success', 'Transferência recepcionada com sucesso. As existências foram actualizadas no armazém de destino.');
 
         } catch (\Exception $e) {
             DB::rollBack();
 
             return redirect()->back()
-                ->with('error', 'Não foi possível registar a receção da transferência.');
+                ->with('error', 'Não foi possível registar a recepção da transferência.');
         }
     }
 
@@ -376,8 +376,8 @@ class VAPInventoryTransferController extends Controller
                     'item_id' => $transfer->item_id,
                     'type_id' => $adjType->id,
                     'qty' => $transfer->qty,
-                    'reason' => 'Transfer cancelled',
-                    'notes' => $request->notes ?? 'Transfer #'.$transfer->id.' cancelled',
+                    'reason' => 'Transferência cancelada',
+                    'notes' => $request->notes ?? 'Transferência n.º '.$transfer->id.' cancelada',
                     'batch_id' => $request->batch_id ?? null,
                 ]);
             }
@@ -385,14 +385,14 @@ class VAPInventoryTransferController extends Controller
             // Mark transfer as cancelled
             $transfer->update([
                 'obs' => ($transfer->obs ? $transfer->obs."\n" : '').
-                         'CANCELLED: '.($request->notes ?? 'No reason provided'),
+                         'CANCELADA: '.($request->notes ?? 'Sem motivo indicado'),
                 'deleted_at' => now(),
             ]);
 
             DB::commit();
 
             return redirect()->route('vap-inventory.transfers.index')
-                ->with('success', 'Transferência cancelada com sucesso. O stock foi devolvido ao armazém de origem.');
+                ->with('success', 'Transferência cancelada com sucesso. As existências foram devolvidas ao armazém de origem.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -456,7 +456,7 @@ class VAPInventoryTransferController extends Controller
                     $errors[] = [
                         'index' => $index,
                         'item' => $item->name,
-                        'error' => 'Insufficient stock',
+                        'error' => 'Existências insuficientes',
                     ];
 
                     continue;
@@ -568,7 +568,7 @@ class VAPInventoryTransferController extends Controller
             ['code' => $code],
             [
                 'name' => ucfirst(str_replace('_', ' ', $code)),
-                'description' => 'Automatically registered inventory transaction type.',
+                'description' => 'Tipo de transacção de inventário registado automaticamente.',
             ]
         );
     }

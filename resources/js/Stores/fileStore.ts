@@ -208,9 +208,8 @@ export const useFileStore = defineStore('files', () => {
       const response = await axios.get('/api/files')
       const loadedFiles = unwrapCollection(response.data)
 
-      if (loadedFiles.length) {
-        files.value = loadedFiles.map((file) => mapFileRecord(file))
-        filesLoaded.value = true
+      files.value = loadedFiles.map((file) => mapFileRecord(file))
+      filesLoaded.value = true
 
       // Validate current folder exists
       if (currentFolder.value) {
@@ -223,8 +222,6 @@ export const useFileStore = defineStore('files', () => {
           // await loadBreadcrumbs(currentFolder.value)
           await loadBreadcrumbs(currentFolder.value)
         }
-      }
-
       }
     } catch (error) {
       reportDevError('Error loading files:', error)
@@ -590,6 +587,10 @@ async function confirmOverride() {
 
       const newFolder = mapFileRecord(response.data)
       replaceFileRecord(newFolder)
+      toast.success(translatedMessage(
+        'gestlab.general.labels.vap_filemanager.notifications.folder_created',
+        `Pasta "${name}" criada com sucesso.`
+      ))
 
       return newFolder
     } catch (error: any) {

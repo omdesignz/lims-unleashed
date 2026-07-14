@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-AO">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chemical Analysis Worksheet</title>
+    <title>Folha de trabalho de análise química</title>
     <style>
         @include('PDFs.partials.premium-document-style')
 
@@ -61,18 +61,18 @@
 
 <div class="document-header">
     <div class="document-title">Folha de Trabalho de Análises Químicas</div>
-    <div class="bilingual-label">Chemical analysis worksheet</div>
+    <div class="bilingual-label">Folha de trabalho de análise química</div>
 </div>
 
 <table>
     <thead>
         <tr>
-            <th>Código de Laboratório<br><span class="bilingual-label">Laboratory code</span></th>
-            <th>Área Responsável<br><span class="bilingual-label">Responsible area</span></th>
-            <th>Parâmetro<br><span class="bilingual-label">Parameter</span></th>
-            <th>Diluição<br><span class="bilingual-label">Dilution</span></th>
-            <th>Resultado<br><span class="bilingual-label">Result</span></th>
-            <th>Resultado Final<br><span class="bilingual-label">Final result</span></th>
+            <th>Código do laboratório</th>
+            <th>Área responsável</th>
+            <th>Parâmetro</th>
+            <th>Diluição</th>
+            <th>Resultado</th>
+            <th>Resultado final</th>
         </tr>
     </thead>
     <tbody>

@@ -153,7 +153,7 @@ class CollectionProductResource extends JsonResource
                 'collection_type' => $collectionType,
                 'sample_entry_show_path' => $sampleEntryId ? route('vap_samples.show', $sampleEntryId) : null,
                 'place_analysis_path' => $collectionType == 'programmed' ? route('programmedcollections.PlaceProductsInAnalysis', [
-                    'collection_product_id' => $this->id,
+                    'collectionProduct' => $this->id,
                 ]) : null,
                 'pdf_quality_certificate' => $this->quality_certificate ? route('qualitycertificates.getPDF', ['id' => $this->quality_certificate->id]) : null,
                 'pdf_path' => route("{$collectionType}collections.getParametersToAnalyzePDF", ['id' => $this->id]),

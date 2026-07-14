@@ -102,7 +102,7 @@ class CreditNoteController extends Controller
                 ];
             }),
 
-            'invoice_record' => Inertia::lazy(fn () => collect(Invoice::with('items.itemable.code', 'customer', 'warehouse', 'user', 'invoice_category')->whereId(request()->id)->get())->map(function ($item) {
+            'invoice_record' => Inertia::optional(fn () => collect(Invoice::with('items.itemable.code', 'customer', 'warehouse', 'user', 'invoice_category')->whereId(request()->id)->get())->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'date' => $item->date,

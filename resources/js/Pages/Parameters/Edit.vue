@@ -36,9 +36,7 @@ function submit() {
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <nav aria-label="Breadcrumb" class="mb-5">
         <Link :href="route('parameters.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ds-text-muted)] hover:text-[rgb(var(--primary-700-rgb))]">
-          <ArrowLeftIcon class="h-4 w-4" />
-          Parametros analiticos
-        </Link>
+          <ArrowLeftIcon class="h-4 w-4" /> Parâmetros analíticos </Link>
       </nav>
 
       <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -47,9 +45,9 @@ function submit() {
             <BeakerIcon class="h-5 w-5" />
           </span>
           <div class="min-w-0">
-            <p class="ds-kicker">Parametro #{{ parameter.id }}</p>
+            <p class="ds-kicker">Parâmetro #{{ parameter.id }}</p>
             <h1 class="ds-heading mt-1 break-words text-2xl">{{ parameter.name }}</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Atualize a definicao controlada usada nos perfis, worksheets e resultados laboratoriais.</p>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Actualize a definição controlada usada nos perfis, worksheets e resultados laboratoriais.</p>
             <div class="mt-3 flex flex-wrap gap-2">
               <span v-if="parameter.code" class="ds-chip font-mono">{{ parameter.code }}</span>
               <span class="ds-chip">{{ parameter.result_is_qualitative ? "Qualitativo" : "Quantitativo" }}</span>
@@ -61,7 +59,7 @@ function submit() {
         <div class="flex flex-wrap gap-2 lg:justify-end">
           <Link :href="route('parameters.index')" class="ds-button ds-button-secondary">Cancelar</Link>
           <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-            {{ form.processing ? "A guardar..." : "Guardar alteracoes" }}
+            {{ form.processing ? "A guardar..." : "Guardar alterações" }}
           </button>
         </div>
       </div>
@@ -72,7 +70,7 @@ function submit() {
       <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
         <Link :href="route('parameters.index')" class="ds-button ds-button-secondary">Cancelar</Link>
         <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-          {{ form.processing ? "A guardar..." : "Guardar alteracoes" }}
+          {{ form.processing ? "A guardar..." : "Guardar alterações" }}
         </button>
       </footer>
     </section>

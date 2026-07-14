@@ -7,15 +7,16 @@ use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\Traits\CausesActivity;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\Activitylog\Traits\CausesActivity;
 
 class Result extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes, ISO17025Revisionable, CausesActivity, InteractsWithMedia;
+    use CausesActivity, HasFactory, InteractsWithMedia, ISO17025Revisionable, SoftDeletes;
 
     public const MENU_NAME = 'results';
+
     public const ABILITIES = ['view', 'add', 'edit', 'delete', 'restore', 'insert', 'verify', 'approve'];
 
     /**
@@ -83,9 +84,11 @@ class Result extends Model implements HasMedia
         'cfu1',
         'cfu2',
         'calculated_at',
+        'insertion_method',
     ];
 
     protected $table = 'results';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     /**
@@ -103,7 +106,6 @@ class Result extends Model implements HasMedia
         'is_override' => 'boolean',
     ];
 
-
     /**
      * Collection
      *
@@ -113,7 +115,6 @@ class Result extends Model implements HasMedia
     {
         return $this->belongsTo(CollectionProduct::class, 'collection_id')->withTrashed();
     }
-
 
     /**
      * Parameter
@@ -125,7 +126,6 @@ class Result extends Model implements HasMedia
         return $this->belongsTo(Parameter::class, 'parameter_id')->withTrashed();
     }
 
-
     /**
      * Profile
      *
@@ -135,7 +135,6 @@ class Result extends Model implements HasMedia
     {
         return $this->belongsTo(Profile::class, 'profile_id')->withTrashed();
     }
-
 
     /**
      * Matrix
@@ -252,7 +251,6 @@ class Result extends Model implements HasMedia
         return $this->belongsTo(Unit::class)->withDefault();
     }
 
-
     /**
      * Protocol
      *
@@ -263,7 +261,6 @@ class Result extends Model implements HasMedia
         return $this->belongsTo(Protocol::class)->withDefault();
     }
 
-
     /**
      * Standard
      *
@@ -273,7 +270,6 @@ class Result extends Model implements HasMedia
     {
         return $this->belongsTo(Standard::class)->withDefault();
     }
-
 
     /**
      * Normative Work Procedure

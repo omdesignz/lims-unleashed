@@ -52,7 +52,7 @@ class PasskeyController extends Controller
         );
 
         return response()->json([
-            'message' => 'Passkey registada com sucesso.',
+            'message' => 'Chave de acesso registada com êxito.',
         ]);
     }
 
@@ -67,7 +67,7 @@ class PasskeyController extends Controller
         $passkey->delete();
 
         return response()->json([
-            'message' => 'Passkey removida com sucesso.',
+            'message' => 'Chave de acesso removida com êxito.',
         ]);
     }
 

@@ -2,68 +2,68 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\QualityCertificate;
 use App\Models\ISOActivityLog;
+use App\Models\QualityCertificate;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
 
 class ISOComplianceAudit extends Command
 {
     protected $signature = 'iso:audit 
-        {--certificate= : Specific certificate ID}
-        {--days=30 : Lookback period in days}';
-    
-    protected $description = 'Audit ISO 17025 compliance for Quality Certificates';
-    
+        {--certificate= : Identificador específico do certificado}
+        {--days=30 : Período retrospectivo em dias}';
+
+    protected $description = 'Auditar a conformidade dos certificados de qualidade com a ISO/IEC 17025';
+
     public function handle()
     {
         $certificateId = $this->option('certificate');
         $days = $this->option('days');
-        
+
         $query = QualityCertificate::query();
-        
+
         if ($certificateId) {
             $query->where('id', $certificateId);
         }
-        
+
         $certificates = $query->with(['revisions', 'currentRevision'])->get();
-        
-        $this->info("Auditing ISO 17025 compliance for {$certificates->count()} certificates...");
-        
+
+        $this->info("A auditar a conformidade de {$certificates->count()} certificados com a ISO/IEC 17025...");
+
         foreach ($certificates as $certificate) {
             $this->auditCertificate($certificate, $days);
         }
-        
-        $this->info('Audit complete.');
+
+        $this->info('Auditoria concluída.');
     }
-    
+
     private function auditCertificate(QualityCertificate $certificate, int $days)
     {
-        $logs = IsoActivityLog::where('subject_type', QualityCertificate::class)
+        $logs = ISOActivityLog::where('subject_type', QualityCertificate::class)
             ->where('subject_id', $certificate->id)
             ->where('created_at', '>=', Carbon::now()->subDays($days))
             ->get();
-        
-        $compliantLogs = $logs->filter(fn($log) => $log->iso_compliant);
-        
-        $complianceRate = $logs->count() > 0 
-            ? ($compliantLogs->count() / $logs->count()) * 100 
+
+        $compliantLogs = $logs->filter(fn ($log) => $log->iso_compliant);
+
+        $complianceRate = $logs->count() > 0
+            ? ($compliantLogs->count() / $logs->count()) * 100
             : 100;
-        
-        $this->line("Certificate #{$certificate->id} ({$certificate->code}):");
-        $this->line("  Total revisions: {$certificate->revisions->count()}");
-        $this->line("  Activity logs: {$logs->count()}");
-        $this->line("  Compliance rate: " . number_format($complianceRate, 2) . "%");
-        
+
+        $this->line("Certificado n.º {$certificate->id} ({$certificate->code}):");
+        $this->line("  Total de revisões: {$certificate->revisions->count()}");
+        $this->line("  Registos de actividade: {$logs->count()}");
+        $this->line('  Taxa de conformidade: '.number_format($complianceRate, 2).'%');
+
         if ($complianceRate < 100) {
-            $nonCompliant = $logs->reject(fn($log) => $log->iso_compliant);
-            $this->warn("  Non-compliant logs found:");
-            
+            $nonCompliant = $logs->reject(fn ($log) => $log->iso_compliant);
+            $this->warn('  Foram encontrados registos não conformes:');
+
             foreach ($nonCompliant as $log) {
-                $this->warn("    - Log #{$log->id}: {$log->description}");
+                $this->warn("    - Registo n.º {$log->id}: {$log->description}");
             }
         }
-        
+
         $this->line('');
     }
 }

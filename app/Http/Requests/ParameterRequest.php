@@ -3,13 +3,14 @@
 namespace App\Http\Requests;
 
 use App\Models\Formula;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class ParameterRequest extends FormRequest
 {
-     /**
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
@@ -20,7 +21,7 @@ class ParameterRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
@@ -84,7 +85,7 @@ class ParameterRequest extends FormRequest
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
+     * @param  Validator  $validator
      * @return void
      */
     public function prepareForValidation()
@@ -125,20 +126,20 @@ class ParameterRequest extends FormRequest
             'result_type' => $resultIsQualitative ? 'qualitative' : 'quantitative',
         ];
 
-        if(request()->boolean('charge_tax')) {
+        if (request()->boolean('charge_tax')) {
             $this->merge([
                 'exemption_id' => null,
                 'exemption_code' => null,
-                'tax_id' => !is_null(request()->tax_id) ? request()->tax_id['value'] : null,
-                'tax_percentage' => !is_null(request()->tax_id) ? request()->tax_id['percent'] : 0,
+                'tax_id' => ! is_null(request()->tax_id) ? request()->tax_id['value'] : null,
+                'tax_percentage' => ! is_null(request()->tax_id) ? request()->tax_id['percent'] : 0,
                 ...$baseData,
             ]);
         } else {
             $this->merge([
-                'exemption_id' => !is_null(request()->exemption_id) ? request()->exemption_id['value'] : null,
-                'exemption_code' => !is_null(request()->exemption_id) ? request()->exemption_id['label'] : null,
-                'tax_id' => !is_null(request()->tax_id) ? request()->tax_id['value'] ?? null : null,
-                'tax_percentage' => !is_null(request()->tax_id) ? request()->tax_id['percent'] : 0,
+                'exemption_id' => ! is_null(request()->exemption_id) ? request()->exemption_id['value'] : null,
+                'exemption_code' => ! is_null(request()->exemption_id) ? request()->exemption_id['label'] : null,
+                'tax_id' => ! is_null(request()->tax_id) ? request()->tax_id['value'] ?? null : null,
+                'tax_percentage' => ! is_null(request()->tax_id) ? request()->tax_id['percent'] : 0,
                 ...$baseData,
             ]);
         }
@@ -175,7 +176,7 @@ class ParameterRequest extends FormRequest
                     : null;
 
                 if ($this->filled('formula_id') && (! $formula || ! $formula->is_active)) {
-                    $validator->errors()->add('formula_id', 'A fórmula selecionada deve estar ativa.');
+                    $validator->errors()->add('formula_id', 'A fórmula seleccionada deve estar activa.');
                 }
 
                 $formulaExpression = trim((string) $this->input('formula_expression', ''));
@@ -186,7 +187,7 @@ class ParameterRequest extends FormRequest
                 if ($resolvedExpression === '') {
                     $validator->errors()->add(
                         'formula_expression',
-                        'Parâmetros calculados precisam de uma fórmula ativa ou de uma expressão personalizada.'
+                        'Parâmetros calculados precisam de uma fórmula activa ou de uma expressão personalizada.'
                     );
                 }
 
@@ -218,14 +219,14 @@ class ParameterRequest extends FormRequest
                     if ($missingVariables->isNotEmpty()) {
                         $validator->errors()->add(
                             'calculation_parameters',
-                            'Faltam parâmetros declarados para a expressão: ' . $missingVariables->implode(', ')
+                            'Faltam parâmetros declarados para a expressão: '.$missingVariables->implode(', ')
                         );
                     }
 
                     if ($extraVariables->isNotEmpty()) {
                         $validator->errors()->add(
                             'calculation_parameters',
-                            'Existem parâmetros declarados que não aparecem na expressão: ' . $extraVariables->implode(', ')
+                            'Existem parâmetros declarados que não aparecem na expressão: '.$extraVariables->implode(', ')
                         );
                     }
                 }

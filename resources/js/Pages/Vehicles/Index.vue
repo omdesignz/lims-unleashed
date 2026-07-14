@@ -32,7 +32,7 @@ const totalRecords = computed(() => props.record.meta?.total ?? props.record.dat
 const representedDepartments = computed(() => new Set(props.record.data.map((vehicle) => vehicle.department_id).filter(Boolean)).size);
 const drawerTitle = computed(() => form.id ? `Editar viatura ${form.number_plate}` : "Nova viatura");
 const drawerDescription = computed(() => form.id
-  ? "Atualize a afetação operacional e a classificação da viatura."
+  ? "Actualize a afectação operacional e a classificação da viatura."
   : "Registe uma viatura usada em recolhas, transporte de amostras ou operações de campo.");
 const confirmationDialogTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${actionId.value}`));
 const confirmationDialogDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${actionId.value}`));
@@ -182,7 +182,7 @@ function confirmAction() {
         <div class="space-y-7 px-6 py-6">
           <div>
             <p class="ds-kicker">Identificação da frota</p>
-            <h2 class="ds-heading mt-1 text-base">Matrícula e afetação</h2>
+            <h2 class="ds-heading mt-1 text-base">Matrícula e afectação</h2>
           </div>
 
           <div>
@@ -226,7 +226,7 @@ function confirmAction() {
 
           <div class="flex items-start gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3 text-sm text-[var(--ds-text-muted)]">
             <BuildingOffice2Icon class="mt-0.5 h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" aria-hidden="true" />
-            A afetação departamental identifica a unidade responsável pela disponibilidade e utilização da viatura.
+            A afectação departamental identifica a unidade responsável pela disponibilidade e utilização da viatura.
           </div>
         </div>
       </template>
@@ -236,7 +236,7 @@ function confirmAction() {
           <button type="button" class="ds-button ds-button-secondary" @click="closeDrawer">Cancelar</button>
           <button type="button" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty" @click="submit">
             <CheckIcon class="h-4 w-4" aria-hidden="true" />
-            {{ form.processing ? "A guardar..." : (form.id ? "Atualizar viatura" : "Guardar viatura") }}
+            {{ form.processing ? "A guardar..." : (form.id ? "Actualizar viatura" : "Guardar viatura") }}
           </button>
         </div>
       </template>

@@ -90,14 +90,14 @@ class ExecutiveDashboardController extends Controller
                         'hint' => 'Pedidos pendentes de resposta ou validação',
                     ],
                     [
-                        'label' => 'Amostras ativas',
+                        'label' => 'Amostras activas',
                         'value' => VAPSampleEntry::query()->whereIn('status', ['POR_INICIAR', 'EN_PROGRESO', 'EN_PAUSA'])->count(),
                         'hint' => 'Fluxo operacional ainda em curso',
                     ],
                     [
                         'label' => 'Recebível em aberto',
                         'value' => number_format((float) Invoice::query()->sum('amount_due'), 2, '.', ' '),
-                        'hint' => 'Montante agregado de faturas por liquidar',
+                        'hint' => 'Montante agregado de facturas por liquidar',
                     ],
                     [
                         'label' => 'Fornecedores de alto risco',
@@ -117,7 +117,7 @@ class ExecutiveDashboardController extends Controller
                     [
                         'label' => 'NCs de recepção abertas',
                         'value' => VAPNonConformity::query()->where('occurrence_area', 'procurement_receipt')->whereNotIn('status', ['closed', 'resolved'])->count(),
-                        'hint' => 'Desvios formais registados no recebimento de encomendas',
+                        'hint' => 'Desvios formais registados na recepção de encomendas',
                     ],
                 ],
                 'top_customers' => Customer::query()
@@ -260,14 +260,14 @@ class ExecutiveDashboardController extends Controller
                     'hint' => 'Pedidos pendentes de resposta ou validação',
                 ],
                 [
-                    'label' => 'Amostras ativas',
+                    'label' => 'Amostras activas',
                     'value' => VAPSampleEntry::query()->whereIn('status', ['POR_INICIAR', 'EN_PROGRESO', 'EN_PAUSA'])->count(),
                     'hint' => 'Fluxo operacional ainda em curso',
                 ],
                 [
                     'label' => 'Recebível em aberto',
                     'value' => number_format((float) Invoice::query()->sum('amount_due'), 2, '.', ' '),
-                    'hint' => 'Montante agregado de faturas por liquidar',
+                    'hint' => 'Montante agregado de facturas por liquidar',
                 ],
                 [
                     'label' => 'Fornecedores de alto risco',
@@ -287,7 +287,7 @@ class ExecutiveDashboardController extends Controller
                 [
                     'label' => 'NCs de recepção abertas',
                     'value' => VAPNonConformity::query()->where('occurrence_area', 'procurement_receipt')->whereNotIn('status', ['closed', 'resolved'])->count(),
-                    'hint' => 'Desvios formais registados no recebimento de encomendas',
+                    'hint' => 'Desvios formais registados na recepção de encomendas',
                 ],
             ],
             'top_customers' => Customer::query()

@@ -69,7 +69,7 @@ const loadCategories = (query, setOptions) => loadOptions("/occurrencecategories
               class="mt-2"
               :has-error="Boolean(form.errors.category_id)"
               :load-options="loadCategories"
-              placeholder="Selecionar categoria"
+              placeholder="Seleccionar categoria"
             />
             <p v-if="form.errors.category_id" class="ds-field-error mt-2">{{ form.errors.category_id }}</p>
           </div>
@@ -82,7 +82,7 @@ const loadCategories = (query, setOptions) => loadOptions("/occurrencecategories
               class="mt-2"
               :has-error="Boolean(form.errors.origin_id)"
               :load-options="loadOrigins"
-              placeholder="Selecionar origem"
+              placeholder="Seleccionar origem"
             />
             <p v-if="form.errors.origin_id" class="ds-field-error mt-2">{{ form.errors.origin_id }}</p>
           </div>
@@ -95,7 +95,7 @@ const loadCategories = (query, setOptions) => loadOptions("/occurrencecategories
               class="mt-2"
               :has-error="Boolean(form.errors.department_id)"
               :load-options="loadDepartments"
-              placeholder="Selecionar departamento"
+              placeholder="Seleccionar departamento"
             />
             <p v-if="form.errors.department_id" class="ds-field-error mt-2">{{ form.errors.department_id }}</p>
           </div>
@@ -108,7 +108,7 @@ const loadCategories = (query, setOptions) => loadOptions("/occurrencecategories
               class="mt-2"
               :has-error="Boolean(form.errors.user_id)"
               :load-options="loadUsers"
-              placeholder="Selecionar colaborador"
+              placeholder="Seleccionar colaborador"
             />
             <p v-if="form.errors.user_id" class="ds-field-error mt-2">{{ form.errors.user_id }}</p>
           </div>
@@ -171,14 +171,14 @@ const loadCategories = (query, setOptions) => loadOptions("/occurrencecategories
           <WrenchScrewdriverIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
           <div>
             <p class="ds-kicker">CAPA</p>
-            <h2 class="ds-heading mt-2 text-lg">Ação corretiva e eficácia</h2>
-            <p class="ds-copy mt-1 text-sm">Defina a ação, o prazo de implementação e a verificação de eficácia.</p>
+            <h2 class="ds-heading mt-2 text-lg">Acção correctiva e eficácia</h2>
+            <p class="ds-copy mt-1 text-sm">Defina a acção, o prazo de implementação e a verificação de eficácia.</p>
           </div>
         </div>
 
         <div class="mt-6 grid gap-6 sm:grid-cols-2">
           <div class="sm:col-span-2">
-            <label for="occurrence-corrective-action" class="ds-field-label">Ação corretiva</label>
+            <label for="occurrence-corrective-action" class="ds-field-label">Acção correctiva</label>
             <textarea id="occurrence-corrective-action" v-model="form.corrective_action" class="ds-field mt-2 min-h-28 resize-y" />
             <p v-if="form.errors.corrective_action" class="ds-field-error mt-2">{{ form.errors.corrective_action }}</p>
           </div>
@@ -257,7 +257,7 @@ const loadCategories = (query, setOptions) => loadOptions("/occurrencecategories
               class="mt-2"
               :has-error="Boolean(form.errors.status_id)"
               :load-options="loadStatuses"
-              placeholder="Selecionar estado"
+              placeholder="Seleccionar estado"
             />
             <p v-if="form.errors.status_id" class="ds-field-error mt-2">{{ form.errors.status_id }}</p>
           </div>
@@ -291,7 +291,7 @@ const loadCategories = (query, setOptions) => loadOptions("/occurrencecategories
           <ToggleField
             id="occurrence-budget"
             v-model="form.has_risk_correction_budget"
-            label="Orçamento de correção"
+            label="Orçamento de correcção"
             description="Existe verba aprovada para mitigar o risco."
           />
           <ToggleField
@@ -303,7 +303,7 @@ const loadCategories = (query, setOptions) => loadOptions("/occurrencecategories
           <ToggleField
             id="occurrence-risk-matrix"
             v-model="form.update_risk_matrix"
-            label="Atualizar matriz de risco"
+            label="Actualizar matriz de risco"
             description="A avaliação de risco precisa de revisão."
           />
         </div>

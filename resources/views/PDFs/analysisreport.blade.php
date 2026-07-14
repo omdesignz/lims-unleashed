@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-AO">
 <head>
 <meta charset="UTF-8" />
     <!-- <link href="http://app.mediagagroalimentar.com/public/css/bootstrap.min.css"/> -->

@@ -101,7 +101,7 @@
         <label class="ds-field-group">
           <span class="ds-field-label">
             <ArrowsUpDownIcon class="mr-1 inline h-4 w-4" />
-            Direção
+            Direcção
           </span>
           <BaseSelect v-model="filterState.sort_direction" class="ds-field" @change="applyFilters">
             <option value="asc">Ascendente</option>
@@ -136,7 +136,7 @@
               <th class="ds-table-heading px-5 py-3 text-left">Equipamento</th>
               <th class="ds-table-heading px-5 py-3 text-left">Datas</th>
               <th class="ds-table-heading px-5 py-3 text-left">Estado</th>
-              <th class="ds-table-heading px-5 py-3 text-right">Ações</th>
+              <th class="ds-table-heading px-5 py-3 text-right">Acções</th>
             </tr>
           </thead>
           <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
@@ -219,7 +219,7 @@
           <ClipboardDocumentListIcon class="mx-auto h-10 w-10 text-[var(--ds-text-soft)]" />
           <h3 class="mt-4 text-sm font-bold text-[var(--ds-text)]">Nenhuma tarefa encontrada</h3>
           <p class="mt-2 text-sm font-medium text-[var(--ds-text-muted)]">
-            Não foram encontradas tarefas correspondentes aos filtros ativos.
+            Não foram encontradas tarefas correspondentes aos filtros activos.
           </p>
           <Link :href="route('vap-maintenance.tasks.create')" class="ds-button ds-button-primary mt-5">
             <PlusIcon class="h-4 w-4" />
@@ -271,7 +271,7 @@
       <article class="ds-card p-5">
         <h3 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
           <BoltIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb)/1)]" />
-          Ações rápidas
+          Acções rápidas
         </h3>
         <div class="mt-5 grid gap-3">
           <button type="button" class="ds-card flex items-center justify-between gap-4 p-4 text-left transition hover:border-[rgb(var(--primary-300-rgb)/0.8)]" @click="generateReport('overdue')">
@@ -624,7 +624,7 @@ const markAsExecuted = async (task) => {
   if (confirm('Marcar esta tarefa como concluída?')) {
     await router.put(route('vap-maintenance.tasks.update', task.id), {
       is_executed: true,
-      result: 'Concluído via dashboard',
+      result: 'Concluído através do painel',
     })
   }
 }

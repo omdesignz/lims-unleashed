@@ -7,8 +7,8 @@
         :stencil-props="{ handlers: true }"
         @change="onCropChange"
       />
-      <button type="button" @click="applyCrop">Crop</button>
-      <button type="button" @click="closeModal">Cancel</button>
+      <button type="button" @click="applyCrop">Recortar</button>
+      <button type="button" @click="closeModal">Cancelar</button>
     </div>
   </template>
   

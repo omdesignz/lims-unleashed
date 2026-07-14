@@ -26,7 +26,7 @@
           <comboboxEnhanced v-model="selectedDepartment" title-label="Departamento" placeholder="Seleccione um departamento" :options="departmentOptions" />
           <comboboxEnhanced v-model="selectedLab" title-label="Laboratório" placeholder="Seleccione um laboratório" :options="labOptions" />
           <BaseInput v-model="form.process_area" type="text" placeholder="Área de processo" class="ds-field" />
-          <BaseInput v-model="form.activity" type="text" placeholder="Atividade" class="ds-field" />
+          <BaseInput v-model="form.activity" type="text" placeholder="Actividade" class="ds-field" />
           <comboboxEnhanced v-model="selectedResponsibleUser" title-label="Responsável" placeholder="Seleccione o responsável" :options="userOptions" />
           <comboboxEnhanced v-model="selectedAccountableUser" title-label="Aprovador / accountable" placeholder="Seleccione o aprovador" :options="userOptions" />
           <BaseInput v-model="form.consulted_roles" type="text" placeholder="Funções consultadas" class="ds-field" />
@@ -37,17 +37,17 @@
         <textarea v-model="form.evidence_requirement" rows="4" class="ds-field" placeholder="Evidência esperada para demonstrar execução e controlo."></textarea>
         <label class="inline-flex items-center gap-3 text-sm font-semibold text-[var(--ds-text-muted)]">
           <CheckboxInput v-model="form.is_active" type="checkbox" class="ds-checkbox" />
-          Entrada ativa
+          Entrada activa
         </label>
         <div class="flex flex-wrap gap-3">
-          <button type="submit" class="ds-button ds-button-primary">{{ editingId ? 'Atualizar' : 'Guardar' }}</button>
+          <button type="submit" class="ds-button ds-button-primary">{{ editingId ? 'Actualizar' : 'Guardar' }}</button>
           <button v-if="editingId" type="button" class="ds-button ds-button-secondary" @click="resetForm">Cancelar</button>
         </div>
       </form>
 
       <section class="ds-card overflow-hidden">
         <div class="border-b border-[var(--ds-border)] px-5 py-4">
-          <h2 class="text-base font-semibold text-[var(--ds-text)]">Entradas ativas</h2>
+          <h2 class="text-base font-semibold text-[var(--ds-text)]">Entradas activas</h2>
           <p class="mt-1 text-sm text-[var(--ds-text-muted)]">Responsabilidade, prestação de contas, consulta e informação por processo.</p>
         </div>
 
@@ -57,7 +57,7 @@
               <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="rounded-full bg-[var(--ds-panel-muted)] px-2.5 py-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ entry.process_area }}</span>
-                  <span v-if="entry.is_active" class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Ativa</span>
+                  <span v-if="entry.is_active" class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Activa</span>
                 </div>
                 <h2 class="mt-2 text-base font-semibold text-[var(--ds-text)]">{{ entry.activity }}</h2>
                 <p class="mt-2 text-sm text-[var(--ds-text-muted)]">{{ entry.evidence_requirement || 'Sem requisito adicional de evidência.' }}</p>

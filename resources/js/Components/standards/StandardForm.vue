@@ -15,9 +15,9 @@ defineProps({
       <div class="mb-5 flex items-start gap-3">
         <BookOpenIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
         <div>
-          <p class="ds-kicker">Identificacao normativa</p>
-          <h2 class="ds-heading mt-1 text-base">Codigo de referencia</h2>
-          <p class="ds-copy mt-1 text-sm">Use a designacao oficial que sera citada em perfis, metodos e resultados.</p>
+          <p class="ds-kicker">Identificação normativa</p>
+          <h2 class="ds-heading mt-1 text-base">Código de referência</h2>
+          <p class="ds-copy mt-1 text-sm">Use a designação oficial que será citada em perfis, métodos e resultados.</p>
         </div>
       </div>
 
@@ -36,7 +36,7 @@ defineProps({
           placeholder="Ex.: ISO 17025:2017"
         />
         <p v-if="form.errors.code" class="ds-field-error">{{ form.errors.code }}</p>
-        <p v-else class="ds-field-hint">Inclua o ano ou a versao quando fizer parte da referencia oficial.</p>
+        <p v-else class="ds-field-hint">Inclua o ano ou a versão quando fizer parte da referência oficial.</p>
       </div>
     </section>
 
@@ -45,8 +45,8 @@ defineProps({
         <DocumentTextIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
         <div>
           <p class="ds-kicker">Contexto</p>
-          <h2 class="ds-heading mt-1 text-base">Descricao e aplicabilidade</h2>
-          <p class="ds-copy mt-1 text-sm">Resuma o escopo para facilitar a selecao correta durante a configuracao analitica.</p>
+          <h2 class="ds-heading mt-1 text-base">Descrição e aplicabilidade</h2>
+          <p class="ds-copy mt-1 text-sm">Resuma o âmbito para facilitar a selecção correcta durante a configuração analítica.</p>
         </div>
       </div>
 
@@ -59,10 +59,10 @@ defineProps({
           v-model="form.description"
           class="ds-field min-h-40 resize-y"
           :aria-invalid="Boolean(form.errors.description)"
-          placeholder="Objeto, setor, matriz ou procedimento ao qual a norma se aplica"
+          placeholder="Objecto, sector, matriz ou procedimento ao qual a norma se aplica"
         />
         <p v-if="form.errors.description" class="ds-field-error">{{ form.errors.description }}</p>
-        <p v-else class="ds-field-hint">Evite repetir o codigo; descreva como a norma e usada no laboratorio.</p>
+        <p v-else class="ds-field-hint">Evite repetir o código; descreva como a norma e usada no laboratório.</p>
       </div>
     </section>
   </div>

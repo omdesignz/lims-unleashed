@@ -29,7 +29,7 @@ const showActionConfirmation = ref(false);
 const totalRecords = computed(() => props.record.meta?.total ?? props.record.data.length);
 const drawerTitle = computed(() => form.id ? "Editar fornecedor" : "Novo fornecedor");
 const drawerDescription = computed(() => form.id
-  ? "Atualize os dados cadastrais usados na qualificação e na rastreabilidade de compras."
+  ? "Actualize os dados de registo utilizados na qualificação e na rastreabilidade de compras."
   : "Registe um fornecedor antes de o associar a itens, encomendas ou avaliações de risco.");
 const confirmationDialogTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${actionId.value}`));
 const confirmationDialogDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${actionId.value}`));
@@ -184,7 +184,7 @@ function confirmAction() {
           <button type="button" class="ds-button ds-button-secondary" @click="closeDrawer">Cancelar</button>
           <button type="button" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty" @click="submit">
             <CheckIcon class="h-4 w-4" aria-hidden="true" />
-            {{ form.processing ? "A guardar..." : (form.id ? "Atualizar fornecedor" : "Guardar fornecedor") }}
+            {{ form.processing ? "A guardar..." : (form.id ? "Actualizar fornecedor" : "Guardar fornecedor") }}
           </button>
         </div>
       </template>

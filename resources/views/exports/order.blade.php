@@ -426,13 +426,13 @@
                         case 'PARTIALLY_RECEIVED': $statusText = 'Parcial'; break;
                         case 'RECEIVED': $statusText = 'Recebido'; break;
                         case 'CANCELLED': $statusText = 'Cancelado'; break;
-                        default: $statusText = $itemStatus ?: 'N/A';
+                        default: $statusText = $itemStatus ?: 'N/D';
                     }
                 @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td>
-                        <div class="item-name">{{ $item->item->name ?? 'N/A' }}</div>
+                        <div class="item-name">{{ $item->item->name ?? 'N/D' }}</div>
                         <div class="item-code">{{ $item->item->code ?? '' }}</div>
                     </td>
                     <td class="text-center">{{ $item->qty }}</td>

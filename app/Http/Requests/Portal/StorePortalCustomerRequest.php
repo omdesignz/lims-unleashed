@@ -80,7 +80,7 @@ class StorePortalCustomerRequest extends FormRequest
                 $details = $this->input('details', []);
 
                 if ($requestType === 'analysis_request' && blank($details['requested_profiles'] ?? null)) {
-                    $validator->errors()->add('details.requested_profiles', 'Selecione pelo menos uma análise solicitada.');
+                    $validator->errors()->add('details.requested_profiles', 'Seleccione pelo menos uma análise solicitada.');
                 }
 
                 if ($requestType === 'analysis_request') {

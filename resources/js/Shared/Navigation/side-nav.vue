@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import {
   ArchiveBoxIcon,
+  ArrowsRightLeftIcon,
   BeakerIcon,
   ChartBarSquareIcon,
   ClipboardDocumentCheckIcon,
@@ -37,7 +38,7 @@ const navigation = computed(() => [
     show: hasPermission('view_samples'),
   },
   {
-    label: 'Analises e resultados',
+    label: 'Análises e resultados',
     href: route('analysis.index'),
     path: '/analysis',
     icon: ClipboardDocumentCheckIcon,
@@ -58,6 +59,13 @@ const navigation = computed(() => [
     show: hasPermission('view_inventory'),
   },
   {
+    label: 'Integration Hub',
+    href: route('integration-hub.index'),
+    path: '/integration-hub',
+    icon: ArrowsRightLeftIcon,
+    show: hasPermission('view_iequipments') || hasPermission('view_settings'),
+  },
+  {
     label: 'Qualidade',
     href: route('qms.index'),
     path: '/qms',
@@ -65,7 +73,7 @@ const navigation = computed(() => [
     show: hasPermission('view_activity_log'),
   },
   {
-    label: 'Relatorios',
+    label: 'Relatórios',
     href: route('report-studios.index'),
     path: '/report-studios',
     icon: ChartBarSquareIcon,
@@ -77,7 +85,7 @@ const isActive = (path) => page.url === path || page.url.startsWith(`${path}/`) 
 </script>
 
 <template>
-  <nav class="flex min-h-0 flex-1 flex-col" aria-label="Navegacao principal">
+  <nav class="flex min-h-0 flex-1 flex-col" aria-label="Navegação principal">
     <div class="px-3 pb-2" :class="props.collapsed ? 'text-center' : ''">
       <p v-if="!props.collapsed" class="font-mono text-[0.65rem] font-semibold uppercase text-[var(--ds-text-soft)]">Trabalho</p>
       <span v-else class="mx-auto block h-px w-7 bg-[var(--ds-border)]" aria-hidden="true" />

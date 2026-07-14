@@ -95,13 +95,7 @@ export function studioThemeColorReplacements(settings = {}) {
 
 const reportTable = (columns, rows, emptyMessage = 'Sem dados registados.') => {
   const headerHtml = columns
-    .map(({ label, translation = '', align = 'left' }) => {
-      const translationHtml = translation
-        ? `<br><span class="bilingual-label">${translation}</span>`
-        : ''
-
-      return `<th style="text-align:${align};">${label}${translationHtml}</th>`
-    })
+    .map(({ label, align = 'left' }) => `<th style="text-align:${align};">${label}</th>`)
     .join('')
 
   const bodyHtml = rows.length
@@ -204,18 +198,18 @@ export const previewReplacementsByType = {
     '{collection_date}': '03/05/2026',
     '{received_at}': '03/05/2026 09:40',
     '{sample_details}': summaryCards([
-      { label: 'Produto / Product', value: 'Farinha de trigo', hint: 'Produto recebido com rastreio de lote e origem.' },
-      { label: 'Matriz / Matrix', value: 'Cereais e derivados', hint: 'Matriz associada ao âmbito analítico.' },
-      { label: 'Lote / Lot', value: 'LT-2026-044', hint: 'Código usado para rastreabilidade e emissão.' },
-      { label: 'Sample Entry', value: 'SE-2026-0142', hint: 'Entrada vinculada ao fluxo de análise.' },
+      { label: 'Produto', value: 'Farinha de trigo', hint: 'Produto recebido com rastreio de lote e origem.' },
+      { label: 'Matriz', value: 'Cereais e derivados', hint: 'Matriz associada ao âmbito analítico.' },
+      { label: 'Lote', value: 'LT-2026-044', hint: 'Código usado para rastreabilidade e emissão.' },
+      { label: 'Entrada de amostra', value: 'SE-2026-0142', hint: 'Entrada vinculada ao fluxo de análise.' },
     ]),
     '{collection_details}': summaryCards([
-      { label: 'Receção / Reception', value: '03/05/2026 · embalagem íntegra', hint: 'Triagem registada na cadeia de custódia.' },
-      { label: 'Plano / Sampling plan', value: 'PL-AM-2026-09', hint: 'Plano usado para recolha e validação.' },
+      { label: 'Recepção', value: '03/05/2026 · embalagem íntegra', hint: 'Triagem registada na cadeia de custódia.' },
+      { label: 'Plano de amostragem', value: 'PL-AM-2026-09', hint: 'Plano usado para recolha e validação.' },
     ]),
     '{analytical_scope}': summaryCards([
-      { label: 'Perfis / Profiles', value: 'Físico-química · Segurança alimentar', hint: 'Âmbito técnico aprovado para a amostra.' },
-      { label: 'Decisão / Decision rule', value: 'Critério contratual ISO/IEC 17025', hint: 'Regra aplicada na interpretação.' },
+      { label: 'Perfis', value: 'Físico-química · Segurança alimentar', hint: 'Âmbito técnico aprovado para a amostra.' },
+      { label: 'Regra de decisão', value: 'Critério contratual ISO/IEC 17025', hint: 'Regra aplicada na interpretação.' },
     ]),
     '{validated_by}': 'Direcção Técnica',
     '{results_table}': reportTable(
@@ -373,7 +367,7 @@ export const previewReplacementsByType = {
     '{summary_table}': financialSummary([{ label: 'Total recebido', value: 'AOA 59.850,00', emphasis: true }]),
     '{banking_details}': bankingDetails,
     ...bankPlaceholders,
-    '{observations}': 'Recibo preparado com rastreabilidade de recebimento e validação financeira.',
+    '{observations}': 'Recibo preparado com rastreabilidade da liquidação e validação financeira.',
     '{signature_block}': signatureBlock('Tesouraria', 'Cliente'),
   },
   credit_note: {
@@ -422,7 +416,7 @@ export const previewReplacementsByType = {
     ...bankPlaceholders,
     '{decision_rule}': 'Regra de decisão definida na proposta e aceite pelo cliente.',
     '{observations}': 'Proposta preparada com âmbito, condições comerciais, dados bancários e aceite.',
-    '{document_keywords}': '<div style="font-size:9px; color:#6b7b74;"><strong style="color:#143d37;">Palavras-chave / Keywords:</strong> proposta, laboratório, ISO 17025</div>',
+    '{document_keywords}': '<div style="font-size:9px; color:#6b7b74;"><strong style="color:#143d37;">Palavras-chave:</strong> proposta, laboratório, ISO 17025</div>',
     '{verification_url}': 'https://lims-unleashed.test/vap-proposals/proposal/preview-prop-2026-001',
     '{proposal_authenticity}': '<section class="document-callout studio-avoid-break"><div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#9a7a2f; font-weight:800;">Verificação da proposta</div><p style="margin:8px 0 0; color:#475a53;">Documento verificável por QR e ligação pública segura.</p><p style="margin:8px 0 0; font-size:9px; color:#6b7b74;">https://lims-unleashed.test/vap-proposals/proposal/preview-prop-2026-001</p></section>',
     '{proposal_acceptance_evidence}': '<section class="document-callout studio-avoid-break"><div style="font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:#9a7a2f; font-weight:800;">Evidência de aceite</div><div style="margin-top:8px; font-weight:800; color:#9a7a2f;">Aceite pendente</div><p style="margin:6px 0 0; color:#475a53;">A proposta aguarda validação do cliente no portal.</p></section>',

@@ -46,6 +46,7 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FormulaController;
 use App\Http\Controllers\ImportCertificateController;
+use App\Http\Controllers\IntegrationHubController;
 use App\Http\Controllers\InventoryBatchController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InventoryDeliveryController;
@@ -67,6 +68,7 @@ use App\Http\Controllers\ISORevisionController;
 use App\Http\Controllers\ItemCategoryController;
 use App\Http\Controllers\ItemStatusController;
 use App\Http\Controllers\LabCodeController;
+use App\Http\Controllers\LaboratoryWorkflowController;
 use App\Http\Controllers\LanguageStoreController;
 use App\Http\Controllers\MaintenanceCategoryController;
 use App\Http\Controllers\MaintenanceTaskController;
@@ -317,6 +319,8 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
 
     Route::get('/dashboard', [ExecutiveDashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/export', [ExecutiveDashboardController::class, 'export'])->name('dashboard.export');
+    Route::get('/laboratory-workflow', [LaboratoryWorkflowController::class, 'index'])->name('laboratory-workflow.index');
+    Route::post('/laboratory-workflow/{proposal}/reports', [LaboratoryWorkflowController::class, 'storeReports'])->name('laboratory-workflow.reports.store');
     Route::get('/report-studios', [ReportStudioController::class, 'index'])->name('report-studios.index');
     Route::post('/report-studios/preview-pdf', [ReportStudioController::class, 'previewDraftPdf'])->name('report-studios.preview-draft-pdf');
     Route::post('/report-studios', [ReportStudioController::class, 'store'])->name('report-studios.store');
@@ -1178,7 +1182,7 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('programmedcollections/exportParametersToAnalyzeSheet', 'exportParametersToAnalyzeSheet')->name('programmedcollections.exportParametersToAnalyzeSheet');
         Route::get('programmedcollections/getCollectionTermPDF', 'getCollectionTermPDF')->name('programmedcollections.getCollectionTermPDF');
         Route::get('programmedcollections/getCollectionLabels', 'getCollectionLabels')->name('programmedcollections.getCollectionLabels');
-        Route::get('programmedcollections/PlaceProductsInAnalysis', 'PlaceProductsInAnalysis')->name('programmedcollections.PlaceProductsInAnalysis');
+        Route::post('programmedcollections/{collectionProduct}/place-in-analysis', 'placeProductsInAnalysis')->name('programmedcollections.PlaceProductsInAnalysis');
         Route::get('programmedcollections/{collection}', 'show')->name('programmedcollections.show');
     });
 
@@ -2152,10 +2156,20 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('itransfers/getInventoryItemTransfer', 'getInventoryItemTransfer')->name('itransfers.getInventoryItemTransfer');
     });
 
-    // Equipment Connection Testing
-    Route::get('/equipment-connection-test', function () {
-        return inertia('EquipmentConnectionTest', []);
-    })->name('equipment-connection-test');
+    Route::controller(IntegrationHubController::class)->prefix('integration-hub')->name('integration-hub.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/connectors', 'store')->name('connectors.store');
+        Route::put('/connectors/{connector}', 'update')->name('connectors.update');
+        Route::post('/connectors/{connector}/mappings', 'storeMapping')->name('mappings.store');
+        Route::post('/connectors/{connector}/mapping-test', 'testMapping')->name('mappings.test');
+        Route::post('/connectors/{connector}/rotate-token', 'rotateToken')->name('connectors.rotate-token');
+        Route::post('/connectors/{connector}/test', 'test')->name('connectors.test');
+        Route::post('/transmissions/{transmission}/import', 'import')->name('transmissions.import');
+        Route::post('/transmissions/{transmission}/reject', 'reject')->name('transmissions.reject');
+        Route::post('/deliveries/{delivery}/retry', 'retry')->name('deliveries.retry');
+    });
+
+    Route::redirect('/equipment-connection-test', '/integration-hub')->name('equipment-connection-test');
 
     // Worksheets
     Route::controller(WorksheetController::class)->group(function () {

@@ -171,7 +171,7 @@ defineOptions({
         <article class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h2 class="text-lg font-semibold text-gray-900">Pulso do workflow</h2>
+              <h2 class="text-lg font-semibold text-gray-900">Pulso do fluxo de trabalho</h2>
               <p class="mt-1 text-sm text-gray-500">Revisões, tolerância, volume de itens e tempo útil restante.</p>
             </div>
           </div>
@@ -199,7 +199,7 @@ defineOptions({
         <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
           <dt class="text-sm font-medium leading-6 text-gray-900">Código QR</dt>
           <dd class="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-            <img :src="props.record.data?.qr" alt="QR Code" class="w-16 h-16" />
+            <img :src="props.record.data?.qr" alt="Código QR" class="w-16 h-16" />
           </dd>
         </div>
         <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">

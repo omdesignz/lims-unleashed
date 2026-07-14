@@ -12,7 +12,7 @@
           </div>
           <h1 class="ds-heading mt-3 text-2xl">{{ title || 'Relatórios de Amostras' }}</h1>
           <p class="ds-copy mt-2 text-sm">
-            Consolidação de receção, ciclo analítico, descartes, tempos de resposta e controlo interno para gestão e auditoria laboratorial.
+            Consolidação de recepção, ciclo analítico, descartes, tempos de resposta e controlo interno para gestão e auditoria laboratorial.
           </p>
         </div>
 
@@ -65,14 +65,14 @@
           <FunnelIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
           <div>
             <h2 class="ds-heading text-base">Filtros operacionais</h2>
-            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Refine período, origem, decisão CQ, estado e escopo laboratorial.</p>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Refine período, origem, decisão CQ, estado e âmbito laboratorial.</p>
           </div>
         </div>
         <span class="ds-chip">{{ samples.total || 0 }} amostras no recorte</span>
       </div>
 
       <div class="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-5">
-        <combobox-enhanced v-model="sampleScopeSelection" title-label="Escopo" placeholder="Todas as origens" :options="sampleScopeFilterOptions" :load-options="loadSampleScopes" />
+        <combobox-enhanced v-model="sampleScopeSelection" title-label="Âmbito" placeholder="Todas as origens" :options="sampleScopeFilterOptions" :load-options="loadSampleScopes" />
         <combobox-enhanced v-model="qcReleaseSelection" title-label="Decisão CQ" placeholder="Todas as decisões" :options="qcReleaseFilterOptions" :load-options="loadQcReleaseStatuses" />
         <date-picker-enhanced v-model="form.date_from" label="Data inicial" :is-dark="isDark" />
         <date-picker-enhanced v-model="form.date_to" label="Data final" :is-dark="isDark" />
@@ -110,7 +110,7 @@
       <article class="ds-panel overflow-hidden">
         <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
           <div>
-            <h2 class="ds-heading text-base">Receção no período</h2>
+            <h2 class="ds-heading text-base">Recepção no período</h2>
             <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Evolução de entradas e capacidade.</p>
           </div>
           <span class="ds-chip">{{ sampleTimeline.length }} pontos</span>
@@ -148,7 +148,7 @@
             </div>
             <h2 class="ds-heading mt-2 text-lg">Matéria-prima em controlo interno</h2>
             <p class="ds-copy mt-2 text-xs">
-              Amostras internas seguem o mesmo ciclo de receção, código, análise, verificação e aprovação, preservando rastreabilidade sem exigir proposta comercial.
+              Amostras internas seguem o mesmo ciclo de recepção, código, análise, verificação e aprovação, preservando rastreabilidade sem exigir proposta comercial.
             </p>
           </div>
         </div>
@@ -245,7 +245,7 @@
         </dl>
         <div v-else class="p-5">
           <div class="ds-empty-state p-5 text-center">
-            <p class="text-xs text-[color:var(--ds-text-soft)]">Sem dados para o filtro atual.</p>
+            <p class="text-xs text-[color:var(--ds-text-soft)]">Sem dados para o filtro actual.</p>
           </div>
         </div>
       </article>
@@ -254,8 +254,8 @@
     <section class="ds-panel overflow-hidden">
       <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
         <div>
-          <h2 class="ds-heading text-base">Linha temporal de recebimento</h2>
-          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Volume diário no período selecionado.</p>
+          <h2 class="ds-heading text-base">Linha temporal da recepção</h2>
+          <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Volume diário no período seleccionado.</p>
         </div>
         <span class="ds-chip">{{ sampleTimeline.length }} pontos</span>
       </div>
@@ -267,7 +267,7 @@
       </div>
       <div v-else class="p-5">
         <div class="ds-empty-state p-6 text-center">
-          <p class="text-xs text-[color:var(--ds-text-soft)]">Sem movimentação no período selecionado.</p>
+          <p class="text-xs text-[color:var(--ds-text-soft)]">Sem movimentação no período seleccionado.</p>
         </div>
       </div>
     </section>
@@ -287,7 +287,7 @@
             <thead class="ds-table-head">
               <tr>
                 <th class="ds-table-cell text-left">Amostra</th>
-                <th class="ds-table-cell text-left">Escopo</th>
+                <th class="ds-table-cell text-left">Âmbito</th>
                 <th class="ds-table-cell text-left">Cliente</th>
                 <th class="ds-table-cell text-left">Estado</th>
                 <th class="ds-table-cell text-left">Recebida</th>
@@ -354,7 +354,7 @@
                 <th class="ds-table-cell text-left">Amostra</th>
                 <th class="ds-table-cell text-left">Método</th>
                 <th class="ds-table-cell text-left">Qtd.</th>
-                <th class="ds-table-cell text-left">Responsável / escopo</th>
+                <th class="ds-table-cell text-left">Responsável / âmbito</th>
                 <th class="ds-table-cell text-left">Data</th>
               </tr>
             </thead>
@@ -962,7 +962,7 @@ function disciplineLabel(value) {
 
 function qcPurposeLabel(value) {
   const map = {
-    raw_material_release: 'Liberação de matéria-prima',
+    raw_material_release: 'Libertação de matéria-prima',
     supplier_qualification: 'Qualificação de fornecedor',
     process_validation: 'Validação de processo',
     stability_follow_up: 'Seguimento de estabilidade',
@@ -975,7 +975,7 @@ function qcPurposeLabel(value) {
 
 function qcDecisionLabel(value) {
   const map = {
-    hold_until_release: 'Reter até liberação',
+    hold_until_release: 'Reter até libertação',
     release_if_compliant: 'Liberar se conforme',
     investigate_before_release: 'Investigar antes de liberar',
     trend_only: 'Apenas tendência',

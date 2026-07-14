@@ -6,7 +6,7 @@
           <p class="ds-kicker">Metrologia e manutenção</p>
           <h1 class="ds-heading mt-2 text-2xl">Nova tarefa de manutenção</h1>
           <p class="ds-copy mt-2 max-w-3xl text-sm">
-            Registe uma atividade de calibração, verificação ou manutenção com equipamento, agenda, fornecedor e custo rastreáveis.
+            Registe uma actividade de calibração, verificação ou manutenção com equipamento, agenda, fornecedor e custo rastreáveis.
           </p>
         </div>
 
@@ -43,7 +43,7 @@
             <label class="ds-field-group">
               <span class="ds-field-label">Categoria <span class="ds-field-required">*</span></span>
               <BaseSelect v-model="form.category_id" required :class="fieldClass('category_id')">
-                <option value="">Selecione uma categoria</option>
+                <option value="">Seleccione uma categoria</option>
                 <option v-for="category in categories" :key="category.id" :value="category.id">
                   {{ category.name }}
                 </option>
@@ -54,7 +54,7 @@
             <label class="ds-field-group">
               <span class="ds-field-label">Equipamento <span class="ds-field-required">*</span></span>
               <BaseSelect v-model="form.equipment_id" required :class="fieldClass('equipment_id')">
-                <option value="">Selecione um equipamento</option>
+                <option value="">Seleccione um equipamento</option>
                 <option v-for="equipment in equipmentList" :key="equipment.id" :value="equipment.id">
                   {{ equipment.name }} ({{ equipment.internal_code || equipment.code || 'N/A' }})
                 </option>
@@ -119,7 +119,7 @@
               <div class="grid gap-3 sm:grid-cols-[8rem_1fr]">
                 <BaseInput v-model="form.periodicity" type="number" min="1" class="ds-field" placeholder="1" />
                 <BaseSelect v-model="form.periodicity_unit" class="ds-field">
-                  <option value="">Selecione unidade</option>
+                  <option value="">Seleccione unidade</option>
                   <option value="hours">Horas</option>
                   <option value="days">Dias</option>
                   <option value="weeks">Semanas</option>
@@ -174,7 +174,7 @@
             <label class="ds-field-group">
               <span class="ds-field-label">Fornecedor</span>
               <BaseSelect v-model="form.supplier_id" class="ds-field">
-                <option value="">Selecione um fornecedor</option>
+                <option value="">Seleccione um fornecedor</option>
                 <option v-for="supplier in suppliers" :key="supplier.id" :value="supplier.id">
                   {{ supplier.name }}
                 </option>
@@ -200,7 +200,7 @@
         </section>
 
         <section class="ds-command-surface p-5">
-          <h3 class="text-base font-bold text-[var(--ds-text)]">Ações</h3>
+          <h3 class="text-base font-bold text-[var(--ds-text)]">Acções</h3>
           <div class="mt-4 space-y-3">
             <button type="submit" class="ds-button ds-button-primary w-full" :disabled="form.processing">
               <CheckCircleIcon class="h-4 w-4" />

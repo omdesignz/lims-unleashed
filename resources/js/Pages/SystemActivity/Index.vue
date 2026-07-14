@@ -391,7 +391,7 @@ function confirmDelete() {
           </span>
           <div>
             <p class="ds-kicker">Auditoria do sistema</p>
-            <h1 class="ds-heading mt-1 text-2xl">Registo de atividade</h1>
+            <h1 class="ds-heading mt-1 text-2xl">Registo de actividade</h1>
             <p class="ds-copy mt-1 max-w-3xl text-sm">Eventos técnicos e administrativos para investigação, segurança e rastreabilidade.</p>
           </div>
         </div>
@@ -479,7 +479,7 @@ function confirmDelete() {
         </div>
         <div class="md:col-span-2">
           <label for="activity-batch" class="ds-field-label">UUID do lote</label>
-          <BaseInput id="activity-batch" v-model="filters.batch_uuid" type="text" class="ds-field mt-2 font-mono" placeholder="Identificador exato do lote" />
+          <BaseInput id="activity-batch" v-model="filters.batch_uuid" type="text" class="ds-field mt-2 font-mono" placeholder="Identificador exacto do lote" />
         </div>
         <div>
           <label for="activity-page-size" class="ds-field-label">Registos por página</label>
@@ -522,7 +522,7 @@ function confirmDelete() {
               <th class="ds-table-heading px-4 py-3 text-left">Ator</th>
               <th class="ds-table-heading px-4 py-3 text-left">Entidade</th>
               <th class="ds-table-heading px-4 py-3 text-left">Data</th>
-              <th class="ds-table-heading px-5 py-3 text-right"><span class="sr-only">Ações</span></th>
+              <th class="ds-table-heading px-5 py-3 text-right"><span class="sr-only">Acções</span></th>
             </tr>
           </thead>
           <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
@@ -654,7 +654,7 @@ function confirmDelete() {
                   </section>
 
                   <section v-if="detailedActivity.subject">
-                    <p class="ds-kicker">Objeto afetado</p>
+                    <p class="ds-kicker">Objecto afectado</p>
                     <pre class="mt-3 max-h-64 overflow-auto rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 text-xs leading-6 text-[var(--ds-text)]">{{ formatProperties(detailedActivity.subject) }}</pre>
                   </section>
 
@@ -672,8 +672,8 @@ function confirmDelete() {
 
     <ConfirmDialog
       v-if="showDeleteConfirmation"
-      :title="deleteMode === 'all' ? 'Eliminar todo o registo de atividade?' : 'Eliminar este evento?'"
-      :description="deleteMode === 'all' ? 'Esta ação remove permanentemente todos os eventos de auditoria disponíveis.' : selectedActivity?.description"
+      :title="deleteMode === 'all' ? 'Eliminar todo o registo de actividade?' : 'Eliminar este evento?'"
+      :description="deleteMode === 'all' ? 'Esta acção remove permanentemente todos os eventos de auditoria disponíveis.' : selectedActivity?.description"
       variant="danger"
       confirm="Eliminar"
       cancel="Cancelar"

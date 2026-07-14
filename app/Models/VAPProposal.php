@@ -79,7 +79,13 @@ class VAPProposal extends Model
             ->logOnly(['status', 'obs', 'total', 'sub_total'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn (string $eventName) => "Proposta {$this->proposal_number} foi {$eventName}");
+            ->setDescriptionForEvent(fn (string $eventName) => "Proposta {$this->proposal_number} ".match ($eventName) {
+                'created' => 'criada',
+                'updated' => 'actualizada',
+                'deleted' => 'eliminada',
+                'restored' => 'restaurada',
+                default => $eventName,
+            });
     }
 
     public function getProposalNumberAttribute(): string
@@ -184,6 +190,11 @@ class VAPProposal extends Model
     public function items(): HasMany
     {
         return $this->hasMany(VAPProposalItem::class, 'proposal_id');
+    }
+
+    public function sampleEntries(): HasMany
+    {
+        return $this->hasMany(VAPSampleEntry::class, 'proposal_id');
     }
 
     public function complianceAgreement(): HasOne

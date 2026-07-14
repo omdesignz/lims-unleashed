@@ -199,7 +199,7 @@ async function loadItems(query, setOptions) {
                   <p v-if="form.errors[`items.${index}.expected_date`]" class="ds-field-error mt-2">{{ form.errors[`items.${index}.expected_date`] }}</p>
                 </div>
                 <div>
-                  <label :for="`delivery-actual-date-${index}`" class="ds-field-label mb-2 block">Data efetiva</label>
+                  <label :for="`delivery-actual-date-${index}`" class="ds-field-label mb-2 block">Data efectiva</label>
                   <DateTimePicker :id="`delivery-actual-date-${index}`" v-model="item.actual_date" type="date" class="ds-field" />
                   <p v-if="form.errors[`items.${index}.actual_date`]" class="ds-field-error mt-2">{{ form.errors[`items.${index}.actual_date`] }}</p>
                 </div>
@@ -224,13 +224,13 @@ async function loadItems(query, setOptions) {
     <section class="ds-panel flex flex-col-reverse gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <p class="flex items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
         <UserGroupIcon class="h-4 w-4" aria-hidden="true" />
-        {{ form.customer_id?.label || "Destinatário por selecionar" }}
+        {{ form.customer_id?.label || "Destinatário por seleccionar" }}
       </p>
       <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Link :href="route('ideliveries.index')" class="ds-button ds-button-secondary">Cancelar</Link>
         <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
           <CheckIcon class="h-4 w-4" aria-hidden="true" />
-          {{ form.processing ? "A guardar..." : (isEditing ? "Atualizar entrega" : "Registar entrega") }}
+          {{ form.processing ? "A guardar..." : (isEditing ? "Actualizar entrega" : "Registar entrega") }}
         </button>
       </div>
     </section>

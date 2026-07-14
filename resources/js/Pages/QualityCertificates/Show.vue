@@ -41,7 +41,7 @@ const laboratoryReference = computed(() => {
     return `Registo #${certificate.value.cl_id}`;
   }
 
-  return "Nao associado";
+  return "Não associado";
 });
 
 const pdfUrl = computed(() => {
@@ -62,24 +62,24 @@ const certificateMetrics = computed(() => [
   },
   {
     label: "Cliente",
-    value: certificate.value.customer || "Nao definido",
-    note: certificate.value.warehouse || "local nao definido",
+    value: certificate.value.customer || "Não definido",
+    note: certificate.value.warehouse || "local não definido",
   },
   {
-    label: "Codigo laboratorial",
+    label: "Código laboratorial",
     value: laboratoryReference.value,
     note: "rastreabilidade da amostra",
   },
   {
     label: "Criado em",
     value: formatDate(certificate.value.created_at),
-    note: certificate.value.user?.name || "utilizador nao identificado",
+    note: certificate.value.user?.name || "utilizador não identificado",
   },
 ]);
 
 const certificateDetails = computed(() => [
   {
-    label: "Numero do certificado",
+    label: "Número do certificado",
     value: certificate.value.code || "-",
     monospaced: true,
   },
@@ -88,25 +88,25 @@ const certificateDetails = computed(() => [
     value: certificate.value.customer || "-",
   },
   {
-    label: "Armazem / local",
+    label: "Armazém / local",
     value: certificate.value.warehouse || "-",
   },
   {
-    label: "Referencia laboratorial",
+    label: "Referência laboratorial",
     value: laboratoryReference.value,
     monospaced: true,
   },
   {
-    label: "Responsavel pelo registo",
+    label: "Responsável pelo registo",
     value: certificate.value.user?.name || "-",
   },
   {
-    label: "Ultima atualizacao",
+    label: "Última atualizacao",
     value: formatDate(certificate.value.updated_at),
   },
   {
-    label: "Observacoes",
-    value: certificate.value.obs || "Sem observacoes registadas.",
+    label: "Observações",
+    value: certificate.value.obs || "Sem observações registadas.",
     wide: true,
   },
 ]);
@@ -121,7 +121,7 @@ const releaseChecks = computed(() => [
     ready: Boolean(certificate.value.warehouse_id || certificate.value.warehouse),
   },
   {
-    label: "Codigo laboratorial",
+    label: "Código laboratorial",
     ready: Boolean(
       certificate.value.cl_id ||
       certificate.value.lab_code ||
@@ -129,7 +129,7 @@ const releaseChecks = computed(() => [
     ),
   },
   {
-    label: "Validacao final",
+    label: "Validação final",
     ready: Boolean(certificate.value.validated_at),
   },
 ]);
@@ -161,7 +161,7 @@ const activityHistory = computed(() => {
     history.push({
       type: "validated",
       title: "Certificado validado",
-      description: "Documento revisto e libertado para distribuicao.",
+      description: "Documento revisto e libertado para distribuição.",
       timestamp: certificate.value.validated_at,
       user: certificate.value.validated_by_user || "Sistema",
     });
@@ -173,7 +173,7 @@ const activityHistory = computed(() => {
   ) {
     history.push({
       type: "updated",
-      title: "Dados atualizados",
+      title: "Dados actualizados",
       description: "O contexto comercial ou laboratorial foi revisto.",
       timestamp: certificate.value.updated_at,
       user: "Sistema",
@@ -302,12 +302,9 @@ function openRevisionHistory() {
             </span>
           </div>
           <h1 class="ds-heading mt-2 break-words text-2xl">
-            Certificado {{ certificate.code ? `#${certificate.code}` : "sem codigo" }}
+            Certificado {{ certificate.code ? `#${certificate.code}` : "sem código" }}
           </h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm">
-            Registo final para revisao, assinatura, controlo de versoes e
-            distribuicao do certificado de qualidade.
-          </p>
+          <p class="ds-copy mt-2 max-w-2xl text-sm"> Registo final para revisão, assinatura, controlo de versões e distribuição do certificado de qualidade. </p>
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row lg:justify-end">
@@ -352,11 +349,9 @@ function openRevisionHistory() {
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
       <section class="ds-panel overflow-hidden">
         <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
-          <p class="ds-kicker">Informacao controlada</p>
-          <h2 class="ds-heading mt-2 text-lg">Identificacao e contexto</h2>
-          <p class="ds-copy mt-1 text-sm">
-            Dados que acompanham o documento ao longo da cadeia de emissao.
-          </p>
+          <p class="ds-kicker">Informação controlada</p>
+          <h2 class="ds-heading mt-2 text-lg">Identificação e contexto</h2>
+          <p class="ds-copy mt-1 text-sm"> Dados que acompanham o documento ao longo da cadeia de emissão. </p>
         </div>
 
         <dl class="grid sm:grid-cols-2">
@@ -384,7 +379,7 @@ function openRevisionHistory() {
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p class="ds-kicker">Documentos</p>
-              <h2 class="ds-heading mt-2 text-base">Pacote de emissao</h2>
+              <h2 class="ds-heading mt-2 text-base">Pacote de emissão</h2>
             </div>
             <span class="ds-chip">
               {{ additionalDocuments.length + 1 }} ficheiro(s)
@@ -465,7 +460,7 @@ function openRevisionHistory() {
             <div class="flex items-start justify-between gap-3">
               <div>
                 <p class="ds-kicker">Gate de qualidade</p>
-                <h2 class="ds-heading mt-2 text-base">Prontidao para emissao</h2>
+                <h2 class="ds-heading mt-2 text-base">Prontidao para emissão</h2>
               </div>
               <span class="font-mono text-sm font-bold text-[var(--ds-text)]">
                 {{ completedReleaseChecks }}/{{ releaseChecks.length }}
@@ -488,7 +483,7 @@ function openRevisionHistory() {
                     check.ready ? 'lims-status-dot-release' : 'lims-status-dot-hold',
                   ]"
                 />
-                {{ check.ready ? "Concluido" : "Pendente" }}
+                {{ check.ready ? "Concluído" : "Pendente" }}
               </span>
             </li>
           </ul>
@@ -496,7 +491,7 @@ function openRevisionHistory() {
 
         <section class="ds-card p-5">
           <p class="ds-kicker">Comandos</p>
-          <h2 class="ds-heading mt-2 text-base">Acoes do dossier</h2>
+          <h2 class="ds-heading mt-2 text-base">Acções do dossier</h2>
           <div class="mt-4 grid gap-2">
             <button
               v-if="hasPermission('edit_qualitycertificate') && !certificate.validated_at"

@@ -96,8 +96,8 @@ class DirectCollectionController extends Controller
             'per_page' => request()->query('per_page', 2),
             'slideOverEdit' => false,
             'entrypoint' => [
-                'label' => 'A entrada canónica é Sample Entry',
-                'description' => 'Use a receção de amostra para iniciar novos fluxos. A colheita direta fica como etapa operacional ligada ao código da amostra.',
+                'label' => 'A entrada canónica é a entrada de amostra',
+                'description' => 'Use a recepção de amostra para iniciar novos fluxos. A colheita directa fica como etapa operacional ligada ao código da amostra.',
                 'create_sample_url' => route('vap_samples.index', ['collection_type' => 'direct']),
             ],
             'trashedFilter' => true,
@@ -122,8 +122,8 @@ class DirectCollectionController extends Controller
 
         return Inertia::render('DirectCollections/Create', [
             'entrypoint' => [
-                'label' => 'Use Sample Entry para novos fluxos',
-                'description' => 'Esta página permanece disponível para operações legadas ou correções manuais. Para novos processos, comece pela receção da amostra para manter produto, matriz, lab code, análises e evidências ligados.',
+                'label' => 'Use a entrada de amostra para novos fluxos',
+                'description' => 'Esta página permanece disponível para operações legadas ou correcções manuais. Para novos processos, comece pela recepção da amostra para manter o produto, a matriz, o código laboratorial, as análises e as evidências ligados.',
                 'create_sample_url' => route('vap_samples.index', ['collection_type' => 'direct']),
             ],
         ]);
@@ -187,8 +187,8 @@ class DirectCollectionController extends Controller
             ),
             'collectionPresentation' => [
                 'type' => 'direct',
-                'title' => 'Colheita direta',
-                'description' => 'Etapa operacional ligada à Sample Entry e ao lab code.',
+                'title' => 'Colheita directa',
+                'description' => 'Etapa operacional ligada à entrada de amostra e ao código laboratorial.',
                 'index_url' => route('directcollections.index'),
                 'edit_url' => route('directcollections.edit', ['collection' => $id]),
             ],

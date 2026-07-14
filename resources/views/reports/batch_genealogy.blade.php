@@ -37,9 +37,9 @@
         <table class="report-table">
             <thead>
                 <tr>
-                    <th>Data<br><span class="bilingual-label">Date</span></th>
+                    <th>Data</th>
                     <th>Utilizador<br><span class="bilingual-label">User</span></th>
-                    <th>Ação<br><span class="bilingual-label">Action</span></th>
+                    <th>Acção<br><span class="bilingual-label">Action</span></th>
                     <th>Variação<br><span class="bilingual-label">Qty change</span></th>
                     <th>Notas<br><span class="bilingual-label">Notes</span></th>
                 </tr>

@@ -12,10 +12,10 @@
             </span>
             <div class="min-w-0">
               <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">
-                Transferências de stock
+                Transferências de existências
               </h1>
               <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                Coordene movimentos entre armazéns, confirme receções e preserve a rastreabilidade de cada unidade movimentada.
+                Coordene movimentos entre armazéns, confirme recepções e preserve a rastreabilidade de cada unidade movimentada.
               </p>
             </div>
           </div>
@@ -159,7 +159,7 @@
                 <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ formatDate(transfer.sent_date) || 'Por expedir' }}</dd>
               </div>
               <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
-                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Receção</dt>
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Recepção</dt>
                 <dd class="mt-2 text-sm font-bold text-[var(--ds-text)]">{{ formatDate(transfer.received_date) || 'Pendente' }}</dd>
               </div>
             </dl>
@@ -190,7 +190,7 @@
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Quantidade</th>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Prazos</th>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Estado</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Ações</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Acções</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
@@ -338,7 +338,7 @@
                 <form @submit.prevent="submitReceive">
                   <div class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] p-5">
                     <div>
-                      <DialogTitle class="text-lg font-black text-[var(--ds-text)]">Confirmar receção</DialogTitle>
+                      <DialogTitle class="text-lg font-black text-[var(--ds-text)]">Confirmar recepção</DialogTitle>
                       <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Registe a quantidade física verificada no destino.</p>
                     </div>
                     <button type="button" class="ds-table-action" title="Fechar" @click="closeReceiveModal">
@@ -366,7 +366,7 @@
                         <span v-if="receiveForm.errors.actual_qty" class="ds-field-error">{{ receiveForm.errors.actual_qty }}</span>
                       </label>
                       <label class="ds-field-group">
-                        <span class="ds-field-label">Data de receção <span class="ds-field-required">*</span></span>
+                        <span class="ds-field-label">Data de recepção <span class="ds-field-required">*</span></span>
                         <DateTimePicker v-model="receiveForm.received_date" type="date" class="ds-field" required />
                         <span v-if="receiveForm.errors.received_date" class="ds-field-error">{{ receiveForm.errors.received_date }}</span>
                       </label>
@@ -374,7 +374,7 @@
 
                     <label class="ds-field-group">
                       <span class="ds-field-label">Observações</span>
-                      <textarea v-model="receiveForm.notes" rows="3" class="ds-field" placeholder="Condição da carga, divergências ou evidências de receção"></textarea>
+                      <textarea v-model="receiveForm.notes" rows="3" class="ds-field" placeholder="Condição da carga, divergências ou evidências de recepção"></textarea>
                       <span v-if="receiveForm.errors.notes" class="ds-field-error">{{ receiveForm.errors.notes }}</span>
                     </label>
                   </div>
@@ -383,7 +383,7 @@
                     <button type="button" class="ds-button ds-button-secondary" @click="closeReceiveModal">Voltar</button>
                     <button type="submit" class="ds-button ds-button-primary" :disabled="receiveForm.processing || !canSubmitReceive">
                       <CheckCircleIcon class="h-4 w-4" />
-                      {{ receiveForm.processing ? 'A registar...' : 'Confirmar receção' }}
+                      {{ receiveForm.processing ? 'A registar...' : 'Confirmar recepção' }}
                     </button>
                   </div>
                 </form>
@@ -407,7 +407,7 @@
                   <div class="border-b border-[var(--ds-border)] p-5">
                     <DialogTitle class="text-lg font-black text-[var(--ds-text)]">Cancelar transferência</DialogTitle>
                     <p class="mt-1 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                      O stock reservado será devolvido ao armazém de origem. Registe o motivo para a trilha de auditoria.
+                      O existências reservado será devolvido ao armazém de origem. Registe o motivo para a trilha de auditoria.
                     </p>
                   </div>
                   <div class="p-5">
@@ -543,7 +543,7 @@ const workflowSteps = [
   },
   {
     label: 'Confirmar no destino',
-    detail: 'A receção física atualiza o stock e encerra o movimento auditável.',
+    detail: 'A recepção física actualiza o existências e encerra o movimento auditável.',
     tone: 'bg-emerald-600',
   },
 ]

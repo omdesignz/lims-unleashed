@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 use App\Rules\BackupDisk;
 use App\Rules\PathToZip;
+use Illuminate\Http\Request;
 use Spatie\Backup\BackupDestination\Backup;
 use Spatie\Backup\BackupDestination\BackupDestination;
 // use Symfony\Component\HttpFoundation\Request;
@@ -16,11 +15,11 @@ class DownloadBackupController extends Controller
 {
     public function __invoke(Request $request)
     {
-        abort_if( !auth()->user()->can('view_settings'), 403, '');
+        abort_if(! auth()->user()->can('view_settings'), 403, '');
 
         $validated = $request->validate([
-            'disk' => new BackupDisk(),
-            'path' => ['required', new PathToZip()],
+            'disk' => new BackupDisk,
+            'path' => ['required', new PathToZip],
         ]);
 
         $backupDestination = BackupDestination::create($validated['disk'], config('backup.backup.name'));
@@ -30,7 +29,7 @@ class DownloadBackupController extends Controller
         });
 
         if (! $backup) {
-            return response('Backup not found', Response::HTTP_UNPROCESSABLE_ENTITY);
+            return response('Cópia de segurança não encontrada.', Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         return $this->respondWithBackupStream($backup);

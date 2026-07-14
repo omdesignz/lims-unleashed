@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-AO">
 <head>
   <meta charset="UTF-8">
   <style>
@@ -76,7 +76,7 @@
       height: calc(100% - 25mm);
     }
     
-    /* QR Code Section */
+    /* Código QR Section */
     .qr-section {
       flex-shrink: 0;
       width: 35mm;
@@ -275,10 +275,10 @@
       
       <!-- Label Content -->
       <div class="label-content">
-        <!-- QR Code Section -->
+        <!-- Código QR Section -->
         <div class="qr-section">
           <div class="qr-container">
-            <img src="{{ $model->collection->qr }}" alt="QR Code" class="qr-code">
+            <img src="{{ $model->collection->qr }}" alt="Código QR" class="qr-code">
           </div>
           <div class="qr-label">
             SCAN ME
@@ -307,7 +307,7 @@
             
             <div class="info-item">
               <div class="info-label">Lote</div>
-              <div class="info-value">{{ $model->collection->lot ?? 'N/A' }}</div>
+              <div class="info-value">{{ $model->collection->lot ?? 'N/D' }}</div>
             </div>
           </div>
           
@@ -364,7 +364,7 @@
       A amostra ainda não foi colocada em análise ou não possui dados de parâmetros associados.
     </div>
     <div class="status-badge status-pending" style="margin-top: 20px;">
-      STATUS: AGUARDANDO ANÁLISE
+      ESTADO: A AGUARDAR ANÁLISE
     </div>
   </div>
   @endif

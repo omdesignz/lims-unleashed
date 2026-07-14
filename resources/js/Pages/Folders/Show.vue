@@ -2,23 +2,23 @@
     <div :class="commercialDocumentThemeClasses">
       <h2>{{ folder.name }}</h2>
       <!-- <button @click="newFolder">New Folder</button> -->
-      <button @click="toggleNewFolderForm">New Folder</button>
+      <button @click="toggleNewFolderForm">Nova pasta</button>
 
-      <button @click="toggleRenameFolderForm">Rename Folder</button>
+      <button @click="toggleRenameFolderForm">Mudar o nome da pasta</button>
 
       <div v-if="showRenameFolderForm">
         <form @submit.prevent="renameFolder">
-            <BaseInput v-model="renameFolderName" placeholder="New Folder Name" />
-            <button type="submit">Rename</button>
-            <button @click="toggleRenameFolderForm">Cancel</button>
+            <BaseInput v-model="renameFolderName" placeholder="Novo nome da pasta" />
+            <button type="submit">Mudar o nome</button>
+            <button @click="toggleRenameFolderForm">Cancelar</button>
         </form>
       </div>
 
       <div v-if="showNewFolderForm">
         <form @submit.prevent="createFolder">
-            <BaseInput v-model="newFolderName" placeholder="Folder Name" />
-            <button type="submit">Create</button>
-            <button @click="toggleNewFolderForm">Cancel</button>
+            <BaseInput v-model="newFolderName" placeholder="Nome da pasta" />
+            <button type="submit">Criar</button>
+            <button @click="toggleNewFolderForm">Cancelar</button>
         </form>
       </div>
 
@@ -35,17 +35,17 @@
         <li v-for="file in folder.files" :key="file.id">
         <a :href="`/storage/${file.path}`">{{ file.name }}</a>
 
-        <button @click="toggleRenameFileForm(file)">Rename</button>
+        <button @click="toggleRenameFileForm(file)">Mudar o nome</button>
 
         <div v-if="showRenameFileForm && renamingFileId === file.id">
             <form @submit.prevent="renameFile(file)">
             <BaseInput v-model="renameFileName" :placeholder="file.name" />
-            <button type="submit">Rename</button>
-            <button @click="toggleRenameFileForm(file)">Cancel</button>
+            <button type="submit">Mudar o nome</button>
+            <button @click="toggleRenameFileForm(file)">Cancelar</button>
             </form>
         </div>
 
-        <button @click="toggleVersionHistory(file)">View Versions</button>
+        <button @click="toggleVersionHistory(file)">Ver versões</button>
 
         <div v-if="file.showVersions">
             <ul>
@@ -56,18 +56,18 @@
             </ul>
         </div>
 
-        <button @click="toggleMoveFileForm(file)">Move</button>
+        <button @click="toggleMoveFileForm(file)">Mover</button>
 
         <div v-if="showMoveFileForm && movingFileId === file.id">
           <form @submit.prevent="moveFile(file)">
             <BaseSelect v-model="destinationFolderId">
-              <option value="" disabled>Select Destination Folder</option>
+              <option value="" disabled>Seleccionar pasta de destino</option>
               <option v-for="folder in availableFolders" :key="folder.id" :value="folder.id">
                 {{ folder.name }}
               </option>
             </BaseSelect>
-            <button type="submit">Move</button>
-            <button @click="toggleMoveFileForm(file)">Cancel</button>
+            <button type="submit">Mover</button>
+            <button @click="toggleMoveFileForm(file)">Cancelar</button>
           </form>
         </div>
 

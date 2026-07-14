@@ -120,7 +120,7 @@ const auditPeriod = computed(() => {
     .filter((date) => !Number.isNaN(date.getTime()));
 
   if (!dates.length) {
-    return "Sem periodo";
+    return "Sem período";
   }
 
   const oldest = new Date(Math.min(...dates));
@@ -132,7 +132,7 @@ const auditMetrics = computed(() => [
   {
     label: "Eventos no trilho",
     value: props.logs?.total ?? logRows.value.length,
-    note: "registos auditaveis",
+    note: "registos auditáveis",
   },
   {
     label: "Conformidade",
@@ -142,10 +142,10 @@ const auditMetrics = computed(() => [
   {
     label: "Utilizadores",
     value: uniqueUsers.value.length,
-    note: "intervenientes nesta pagina",
+    note: "intervenientes nesta página",
   },
   {
-    label: "Periodo visivel",
+    label: "Período visível",
     value: auditPeriod.value,
     note: "intervalo carregado",
   },
@@ -154,13 +154,13 @@ const auditMetrics = computed(() => [
 function actionLabel(action) {
   const labels = {
     CREATED: "Criado",
-    UPDATED: "Atualizado",
+    UPDATED: "Actualizado",
     DELETED: "Eliminado",
     RESTORED: "Reposto",
     APPROVED: "Aprovado",
     REJECTED: "Rejeitado",
-    REVISION_CREATED: "Revisao criada",
-    REVISION_RESTORE: "Revisao reposta",
+    REVISION_CREATED: "Revisão criada",
+    REVISION_RESTORE: "Revisão reposta",
   };
 
   return labels[action] || action || "Evento";
@@ -184,7 +184,7 @@ function actionDot(action) {
 function entityLabel(subjectType) {
   const entities = {
     "App\\Models\\QualityCertificate": "Certificado",
-    "App\\Models\\QualityCertificateRevision": "Revisao",
+    "App\\Models\\QualityCertificateRevision": "Revisão",
     "App\\Models\\CollectionProduct": "Colheita",
     "App\\Models\\Result": "Resultado",
   };
@@ -194,7 +194,7 @@ function entityLabel(subjectType) {
 
 function formatDate(date) {
   if (!date) {
-    return "Nao registada";
+    return "Não registada";
   }
 
   return new Date(date).toLocaleDateString("pt-PT", {
@@ -206,7 +206,7 @@ function formatDate(date) {
 
 function formatDateTime(date) {
   if (!date) {
-    return "Nao registada";
+    return "Não registada";
   }
 
   return new Date(date).toLocaleString("pt-PT", {
@@ -222,11 +222,11 @@ function formatDateTime(date) {
 function formatFieldLabel(field) {
   const labels = {
     status: "Estado",
-    obs: "Observacoes",
+    obs: "Observações",
     validated_by: "Validado por",
-    validated_at: "Data de validacao",
+    validated_at: "Data de validação",
     change_reason: "Motivo da mudanca",
-    iso_section: "Secao ISO",
+    iso_section: "Secção ISO",
     risk_assessment: "Avaliacao de risco",
   };
 
@@ -240,11 +240,11 @@ function formatFieldLabel(field) {
 
 function formatValue(value) {
   if (value === null || value === undefined || value === "") {
-    return "Nao registado";
+    return "Não registado";
   }
 
   if (typeof value === "boolean") {
-    return value ? "Sim" : "Nao";
+    return value ? "Sim" : "Não";
   }
 
   if (typeof value === "object") {
@@ -296,32 +296,25 @@ function resetFilters() {
             :href="route('qualitycertificates.iso-revisions.index', certificate.id)"
             class="ds-table-action -ml-2 mb-3"
           >
-            <ArrowLeftIcon class="h-4 w-4" />
-            Voltar ao historico
-          </Link>
+            <ArrowLeftIcon class="h-4 w-4" /> Voltar ao histórico </Link>
           <div class="flex flex-wrap items-center gap-2">
-            <p class="ds-kicker">Evidencia ISO/IEC 17025</p>
-            <span class="ds-chip font-mono">{{ certificate.code || "Sem codigo" }}</span>
+            <p class="ds-kicker">Evidência ISO/IEC 17025</p>
+            <span class="ds-chip font-mono">{{ certificate.code || "Sem código" }}</span>
           </div>
           <h1 class="ds-heading mt-2 text-2xl">Trilho de auditoria</h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm">
-            Sequencia cronologica de alteracoes, utilizadores e metadados que
-            sustentam a integridade do certificado.
-          </p>
+          <p class="ds-copy mt-2 max-w-2xl text-sm"> Sequencia cronologica de alterações, utilizadores e metadados que sustentam a integridade do certificado. </p>
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row">
           <button type="button" class="ds-button ds-button-secondary" @click="router.reload()">
             <ArrowPathIcon class="h-4 w-4" />
-            Atualizar
+            Actualizar
           </button>
           <a
             :href="route('qualitycertificates.iso-revisions.export', certificate.id)"
             class="ds-button ds-button-primary"
           >
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            Exportar historico
-          </a>
+            <ArrowDownTrayIcon class="h-4 w-4" /> Exportar histórico </a>
         </div>
       </div>
 
@@ -346,8 +339,7 @@ function resetFilters() {
           <p class="ds-kicker">Filtros locais</p>
           <h2 class="ds-heading mt-2 text-lg">Refinar eventos carregados</h2>
           <p class="ds-copy mt-1 text-sm">
-            {{ filteredLogs.length }} de {{ logRows.length }} evento(s) visivel(is)
-          </p>
+            {{ filteredLogs.length }} de {{ logRows.length }} evento(s) visível(is) </p>
         </div>
         <div class="flex items-center gap-2">
           <span v-if="activeFilterCount" class="ds-chip">
@@ -372,7 +364,7 @@ function resetFilters() {
           <DateTimePicker id="audit-date-from" v-model="localFilters.date_from" type="date" class="ds-field" />
         </div>
         <div class="ds-field-group">
-          <label class="ds-field-label" for="audit-date-to">Ate</label>
+          <label class="ds-field-label" for="audit-date-to">Até</label>
           <DateTimePicker id="audit-date-to" v-model="localFilters.date_to" type="date" class="ds-field" />
         </div>
         <div class="ds-field-group">
@@ -385,7 +377,7 @@ function resetFilters() {
           </BaseSelect>
         </div>
         <div class="ds-field-group">
-          <label class="ds-field-label" for="audit-action">Acao</label>
+          <label class="ds-field-label" for="audit-action">Acção</label>
           <BaseSelect id="audit-action" v-model="localFilters.change_type" class="ds-field">
             <option value="">Todas</option>
             <option v-for="action in uniqueActions" :key="action" :value="action">
@@ -409,7 +401,7 @@ function resetFilters() {
       <div class="ds-table-summary px-5 py-4 sm:px-6">
         <div>
           <p class="ds-kicker">Sequencia de eventos</p>
-          <h2 class="ds-heading mt-2 text-base">Atividade auditavel</h2>
+          <h2 class="ds-heading mt-2 text-base">Actividade auditável</h2>
         </div>
         <span class="ds-chip">{{ filteredLogs.length }} evento(s)</span>
       </div>

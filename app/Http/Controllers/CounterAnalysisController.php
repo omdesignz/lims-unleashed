@@ -89,7 +89,7 @@ class CounterAnalysisController extends Controller
             'query' => request()->only(['search', 'trashed']),
             'entrypoint' => [
                 'label' => 'Contra-análises nascem de resultados existentes',
-                'description' => 'Solicite uma contra-análise a partir do ecrã de gestão de resultados para preservar o resultado original, incerteza, amostra, lab code e decisão técnica.',
+                'description' => 'Solicite uma contra-análise a partir do ecrã de gestão de resultados para preservar o resultado original, a incerteza, a amostra, o código laboratorial e a decisão técnica.',
                 'analysis_url' => route('analysis.index', ['category' => 'insert']),
             ],
         ]);

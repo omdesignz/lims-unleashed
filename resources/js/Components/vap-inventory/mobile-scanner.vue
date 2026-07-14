@@ -2,7 +2,7 @@
   <div class="mx-auto min-h-screen max-w-md bg-[var(--ds-canvas)] p-4">
     <header class="mb-5 flex items-center justify-between">
       <div>
-        <p class="ds-kicker">Mobile stock control</p>
+        <p class="ds-kicker">Controlo móvel de existências</p>
         <h1 class="ds-heading mt-1 text-xl">VAP LabScan</h1>
       </div>
       <span class="ds-chip">
@@ -75,7 +75,7 @@
           </button>
           <button type="button" class="ds-button ds-button-secondary w-full" :disabled="loading" @click="submitAudit">
             <CheckBadgeIcon class="h-4 w-4" />
-            Auditar stock
+            Auditar existências
           </button>
         </div>
       </div>
@@ -140,10 +140,10 @@ async function submitAction(type) {
       method: 'POST',
       body: JSON.stringify({ ...form, type }),
     })
-    toast.success('Transação registada.')
+    toast.success('Transacção registada.')
     resetScan()
   } catch {
-    toast.error('Não foi possível processar a transação.')
+    toast.error('Não foi possível processar a transacção.')
   } finally {
     loading.value = false
   }

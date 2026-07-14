@@ -457,7 +457,7 @@ class ReportStudioPdfBuilder
                     $surfaceContext
                 ),
                 'defaultHeader' => $this->buildSurfaceHtml(
-                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · Template de proposta</div>',
+                    data_get($layout, 'default_header_html') ?: '<div style="font-size:10px;">{{document_code}} · Modelo de proposta</div>',
                     data_get($layout, 'canvas_blocks', []),
                     'default_header_html',
                     $surfaceContext
@@ -1018,7 +1018,7 @@ class ReportStudioPdfBuilder
                 ['label' => 'Total', 'value' => 'AOA 111.150,00', 'emphasis' => true],
             ]),
             '{observations}' => 'Pré-visualização de proforma com composição comercial, paginação, resumo financeiro e assinatura.',
-            '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>Direcção Comercial</strong><br />Validação e emissão da proforma</div>',
+            '{signature_block}' => '<div style="border-top:1px solid #0f172a; padding-top:8px;"><strong>Direcção Comercial</strong><br />Validação e emissão da proforma</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente industrial de referência, Lda.'),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
@@ -1329,7 +1329,7 @@ class ReportStudioPdfBuilder
                     ['label' => 'Total', 'value' => 'AOA 59.850,00', 'emphasis' => true],
                 ]),
                 '{observations}' => 'Pré-visualização de factura com narrativa comercial, resumo financeiro e paginação.',
-                '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>Direcção Financeira</strong><br />Emissão da factura</div>',
+                '{signature_block}' => '<div style="border-top:1px solid #0f172a; padding-top:8px;"><strong>Direcção Financeira</strong><br />Emissão da factura</div>',
                 '{lab_details}' => $this->labDetailsHtml($settings),
                 '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente industrial de referência, Lda.'),
                 '{banking_details}' => $this->bankingDetailsHtml($settings),
@@ -1366,7 +1366,7 @@ class ReportStudioPdfBuilder
                     ['label' => 'Total recebido', 'value' => 'AOA 59.850,00', 'emphasis' => true],
                 ]),
                 '{observations}' => 'Pré-visualização de recibo com rastreio de liquidação e confirmação financeira.',
-                '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>Tesouraria</strong><br />Confirmação do recebimento</div>',
+                '{signature_block}' => '<div style="border-top:1px solid #0f172a; padding-top:8px;"><strong>Tesouraria</strong><br />Confirmação da liquidação</div>',
                 '{lab_details}' => $this->labDetailsHtml($settings),
                 '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente industrial de referência, Lda.'),
                 '{banking_details}' => $this->bankingDetailsHtml($settings),
@@ -1403,7 +1403,7 @@ class ReportStudioPdfBuilder
                     ['label' => 'Total da nota', 'value' => 'AOA 7.500,00', 'emphasis' => true],
                 ]),
                 '{observations}' => 'Pré-visualização de nota de crédito com motivo, impacto financeiro e validação.',
-                '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>Direcção Financeira</strong><br />Emissão da nota de crédito</div>',
+                '{signature_block}' => '<div style="border-top:1px solid #0f172a; padding-top:8px;"><strong>Direcção Financeira</strong><br />Emissão da nota de crédito</div>',
                 '{lab_details}' => $this->labDetailsHtml($settings),
                 '{customer_details}' => $this->customerDetailsHtml(null, 'Cliente industrial de referência, Lda.'),
                 '{banking_details}' => $this->bankingDetailsHtml($settings),
@@ -1689,12 +1689,12 @@ class ReportStudioPdfBuilder
     <table class="document-summary-table studio-avoid-break">
         <tr>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Cliente / Customer</span>
+                <span class="label">Cliente</span>
                 <span class="value">{customer_name}</span>
                 <div class="muted" style="margin-top:6px;">{service_location}</div>
             </td>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Condições / Terms</span>
+                <span class="label">Condições</span>
                 <span class="value">Válida até {expiry_date}</span>
                 <div class="muted" style="margin-top:6px;">Tolerância: {tolerance_days} dias<br>Regra de decisão conforme proposta aprovada.</div>
             </td>
@@ -1721,7 +1721,7 @@ HTML;
         return <<<'HTML'
 <section style="margin-bottom:18px;">
     <div class="document-hero studio-avoid-break" style="padding:22px 24px;">
-        <div class="document-kicker">Relatório analítico / Analysis report</div>
+        <div class="document-kicker">Relatório analítico</div>
         <h1 style="margin:8px 0 8px;">{report_title} {certificate_code}</h1>
         <p class="studio-lead">Resultados emitidos para <strong>{customer_name}</strong>, com rastreabilidade ao código laboratorial <strong>{lab_code}</strong> e à entrada de amostra <strong>{sample_entry_code}</strong>.</p>
     </div>
@@ -1731,24 +1731,24 @@ HTML;
     <table class="document-summary-table studio-avoid-break">
         <tr>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Cliente / Customer</span>
+                <span class="label">Cliente</span>
                 <span class="value">{customer_name}</span>
                 <div class="muted" style="margin-top:6px;">{customer_details}</div>
             </td>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Laboratório / Laboratory</span>
+                <span class="label">Laboratório</span>
                 <span class="value">{lab_name}</span>
                 <div class="muted" style="margin-top:6px;">{lab_details}</div>
             </td>
         </tr>
         <tr>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Amostra / Sample</span>
+                <span class="label">Amostra</span>
                 <span class="value">{sample_name}</span>
                 <div class="muted" style="margin-top:6px;">Produto: {sample_product}<br>Matriz: {sample_matrix}<br>Lote: {sample_lot}<br>Origem: {sample_origin}</div>
             </td>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Validação / Validation</span>
+                <span class="label">Validação</span>
                 <span class="value">{validated_by}</span>
                 <div class="muted" style="margin-top:6px;">Emissão: {issue_date}<br>Regra de decisão: {decision_rule}</div>
             </td>
@@ -1839,7 +1839,7 @@ HTML;
             $settings->app_client_nif ? 'NIF: '.$settings->app_client_nif : ($settings->app_nif ? 'NIF: '.$settings->app_nif : null),
             $settings->app_client_contact ?: $settings->app_contact,
             $settings->app_client_email ?: $settings->app_email,
-            $settings->app_client_lab_director ? 'Direção técnica: '.$settings->app_client_lab_director : null,
+            $settings->app_client_lab_director ? 'Direcção técnica: '.$settings->app_client_lab_director : null,
             $settings->app_client_lab_province ? 'Província: '.$settings->app_client_lab_province : null,
         ]);
 
@@ -1955,7 +1955,7 @@ HTML;
             : '<span>Assinatura completa pendente.</span>';
 
         return <<<HTML
-<section class="commercial-record-evidence studio-avoid-break" style="margin-top:10px; border-top:1px solid #ded3bf; padding-top:6px; font-size:8.5px; color:#475a53; line-height:1.45;">
+<section class="commercial-record-evidence studio-avoid-break" style="margin-top:6px; border-top:1px solid #ded3bf; padding-top:4px; font-size:8px; color:#475a53; line-height:1.35;">
     <strong style="color:#143d37;">Evidência do registo:</strong> {$statusHtml} · Extracto {$hashExcerptHtml}{$validationHtml}<br>
     {$signatureHtml}
 </section>
@@ -1984,7 +1984,7 @@ HTML;
     {
         $keywords = $settings->app_document_keywords ?: $fallback;
 
-        return '<div style="font-size:9px; color:#6b7b74;"><strong style="color:#143d37;">Palavras-chave / Keywords:</strong> '.e($keywords).'</div>';
+        return '<div style="font-size:9px; color:#6b7b74;"><strong style="color:#143d37;">Palavras-chave:</strong> '.e($keywords).'</div>';
     }
 
     /**
@@ -2014,12 +2014,8 @@ HTML;
         $headerHtml = collect($columns)
             ->map(function (array $column): string {
                 $alignment = $this->pdfTableAlignment($column['align'] ?? 'left');
-                $translation = trim((string) ($column['translation'] ?? ''));
-                $translationHtml = $translation !== ''
-                    ? '<br><span class="bilingual-label">'.e($translation).'</span>'
-                    : '';
 
-                return '<th style="text-align:'.$alignment.';">'.e($column['label']).$translationHtml.'</th>';
+                return '<th style="text-align:'.$alignment.';">'.e($column['label']).'</th>';
             })
             ->implode('');
         $bodyHtml = collect($rows)
@@ -2115,23 +2111,23 @@ HTML;
     <table class="document-summary-table studio-avoid-break">
         <tr>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Exportador / Exporter</span>
+                <span class="label">Exportador</span>
                 <span class="value">{exporter_name}</span>
                 <div class="muted" style="margin-top:6px;">{customer_details}</div>
             </td>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Laboratório / Laboratory</span>
+                <span class="label">Laboratório</span>
                 <div class="muted" style="margin-top:6px;">{lab_details}</div>
             </td>
         </tr>
         <tr>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Origem / Origin</span>
+                <span class="label">Origem</span>
                 <span class="value">{origin_city}, {origin_country}</span>
                 <div class="muted" style="margin-top:6px;">Expedidor: {exporter_name}</div>
             </td>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Destino / Destination</span>
+                <span class="label">Destino</span>
                 <span class="value">{destination_city}, {destination_country}</span>
                 <div class="muted" style="margin-top:6px;">Transporte: {transport_type}</div>
             </td>
@@ -2171,23 +2167,23 @@ HTML;
     <table class="document-summary-table studio-avoid-break">
         <tr>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Importador / Importer</span>
+                <span class="label">Importador</span>
                 <span class="value">{importer_name}</span>
                 <div class="muted" style="margin-top:6px;">{customer_details}</div>
             </td>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Laboratório / Laboratory</span>
+                <span class="label">Laboratório</span>
                 <div class="muted" style="margin-top:6px;">{lab_details}</div>
             </td>
         </tr>
         <tr>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Importação / Import</span>
+                <span class="label">Importação</span>
                 <span class="value">{destination_country}</span>
                 <div class="muted" style="margin-top:6px;">Exportador: {exporter_name}</div>
             </td>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Logística / Logistics</span>
+                <span class="label">Logística</span>
                 <span class="value">{transport_type}</span>
                 <div class="muted" style="margin-top:6px;">Porto de saída: {port_exit}<br>Porto de entrada: {port_entry}</div>
             </td>
@@ -2225,7 +2221,7 @@ HTML;
         return <<<'HTML'
 <section style="margin-bottom:18px;">
     <div class="document-hero studio-avoid-break" style="padding:22px 24px;">
-        <div class="document-kicker">Proposta comercial · Commercial proposal</div>
+        <div class="document-kicker">Proposta comercial</div>
         <h1 style="margin:8px 0 8px;">Proforma {quote_number}</h1>
         <p class="studio-lead">Preparada para <strong>{customer_name}</strong>, com âmbito, condições e valores sujeitos à aceitação formal do cliente.</p>
     </div>
@@ -2235,22 +2231,22 @@ HTML;
     <table class="document-summary-table studio-avoid-break">
         <tr>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Cliente / Customer</span>
+                <span class="label">Cliente</span>
                 <span class="value">{customer_name}</span>
                 <div class="muted" style="margin-top:6px;">{customer_details}</div>
             </td>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Laboratório / Laboratory</span>
+                <span class="label">Laboratório</span>
                 <div class="muted" style="margin-top:6px;">{lab_details}</div>
             </td>
         </tr>
         <tr>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Condições / Terms</span>
+                <span class="label">Condições</span>
                 <div class="muted" style="margin-top:6px;">Emissão: {issue_date}<br>Validade: {expiry_date}<br>Local: {service_location}</div>
             </td>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Pagamento / Banking</span>
+                <span class="label">Pagamento</span>
                 <div class="muted" style="margin-top:6px;">{banking_details}</div>
             </td>
         </tr>
@@ -2290,18 +2286,18 @@ HTML;
             $settings,
             'Recibo {{document_code}}',
             '{{customer_name}} · Recebido em {{issue_date}}',
-            'Comprovativo de recebimento com rastreabilidade financeira.'
+            'Comprovativo de pagamento com rastreabilidade financeira.'
         );
     }
 
     private function defaultReceiptFooter(): string
     {
-        return '<table style="width:100%; border-top:1px solid #ded3bf; padding-top:6px; font-size:9px; color:#475a53;"><tr><td>Comprovativo de recebimento</td><td style="text-align:right;">Página {PAGENO}/{nbpg}</td></tr></table>';
+        return '<table style="width:100%; border-top:1px solid #ded3bf; padding-top:6px; font-size:9px; color:#475a53;"><tr><td>Comprovativo de pagamento</td><td style="text-align:right;">Página {PAGENO}/{nbpg}</td></tr></table>';
     }
 
     private function defaultReceiptBodyHtml(): string
     {
-        return $this->defaultCommercialDocumentBodyHtml('Recebimento / Payment', 'Data: {issue_date}<br>Forma de pagamento: {payment_type}<br>Local: {service_location}');
+        return $this->defaultCommercialDocumentBodyHtml('Recepção', 'Data: {issue_date}<br>Forma de pagamento: {payment_type}<br>Local: {service_location}');
     }
 
     private function defaultCreditNoteFirstPageHeader(GeneralSettings $settings): string
@@ -2321,11 +2317,11 @@ HTML;
 
     private function defaultCreditNoteBodyHtml(): string
     {
-        return $this->defaultCommercialDocumentBodyHtml('Motivo / Reason', '{reason_label}<br>Data: {issue_date}<br>Local: {service_location}');
+        return $this->defaultCommercialDocumentBodyHtml('Motivo', '{reason_label}<br>Data: {issue_date}<br>Local: {service_location}');
     }
 
     private function defaultCommercialDocumentBodyHtml(
-        string $termsTitle = 'Condições / Terms',
+        string $termsTitle = 'Condições',
         string $termsBody = 'Emissão: {issue_date}<br>Vencimento: {due_date}<br>Local: {service_location}'
     ): string {
         return <<<HTML
@@ -2333,12 +2329,12 @@ HTML;
     <table class="document-summary-table studio-avoid-break">
         <tr>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Cliente / Customer</span>
+                <span class="label">Cliente</span>
                 <span class="value">{customer_name}</span>
                 <div class="muted" style="margin-top:6px;">{customer_details}</div>
             </td>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Laboratório / Laboratory</span>
+                <span class="label">Laboratório</span>
                 <div class="muted" style="margin-top:6px;">{lab_details}</div>
             </td>
         </tr>
@@ -2348,7 +2344,7 @@ HTML;
                 <div class="muted" style="margin-top:6px;">{$termsBody}</div>
             </td>
             <td class="document-summary-cell" style="width:50%;">
-                <span class="label">Pagamento / Banking</span>
+                <span class="label">Pagamento</span>
                 <div class="muted" style="margin-top:6px;">{banking_details}</div>
             </td>
         </tr>
@@ -2474,7 +2470,7 @@ HTML;
             '{items_table}' => $itemsTable,
             '{summary_table}' => $summaryTable,
             '{observations}' => $quote->obs ?: 'Proforma preparada com base no âmbito e nas condições comerciais acordadas.',
-            '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>'.e($quote->user?->name ?: 'Direcção Comercial').'</strong><br />Validação e emissão da proforma</div>',
+            '{signature_block}' => '<div style="border-top:1px solid #0f172a; padding-top:8px;"><strong>'.e($quote->user?->name ?: 'Direcção Comercial').'</strong><br />Validação e emissão da proforma</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($quote->customer, $quote->customer?->name ?: 'Cliente'),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
@@ -2516,7 +2512,7 @@ HTML;
                 ['label' => 'Total', 'value' => number_format((float) ($invoice->total ?? 0), 2, ',', '.'), 'emphasis' => true],
             ]),
             '{observations}' => $invoice->obs ?: 'Factura emitida com base no documento comercial aprovado e no âmbito executado.',
-            '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>'.e($invoice->user?->name ?: 'Direcção Financeira').'</strong><br />Emissão da factura</div>',
+            '{signature_block}' => '<div style="border-top:1px solid #0f172a; padding-top:8px;"><strong>'.e($invoice->user?->name ?: 'Direcção Financeira').'</strong><br />Emissão da factura</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($invoice->customer, $invoice->customer?->name ?: 'Cliente'),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
@@ -2555,8 +2551,8 @@ HTML;
             '{summary_table}' => $this->financialSummaryTableHtml([
                 ['label' => 'Total recebido', 'value' => number_format((float) $totalPaid, 2, ',', '.'), 'emphasis' => true],
             ]),
-            '{observations}' => $receipt->obs ?: 'Recibo emitido como comprovativo do recebimento financeiro.',
-            '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>'.e($receipt->user?->name ?: 'Tesouraria').'</strong><br />Confirmação do recebimento</div>',
+            '{observations}' => $receipt->obs ?: 'Recibo emitido como comprovativo da liquidação financeira.',
+            '{signature_block}' => '<div style="border-top:1px solid #0f172a; padding-top:8px;"><strong>'.e($receipt->user?->name ?: 'Tesouraria').'</strong><br />Confirmação da liquidação</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($receipt->customer, $receipt->customer?->name ?: 'Cliente'),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
@@ -2594,7 +2590,7 @@ HTML;
                 ['label' => 'Total da nota', 'value' => number_format((float) ($creditNote->total ?? 0), 2, ',', '.'), 'emphasis' => true],
             ]),
             '{observations}' => $creditNote->obs ?: 'Nota de crédito emitida para rectificação financeira/documental.',
-            '{signature_block}' => '<div style="margin-top:28px; border-top:1px solid #0f172a; padding-top:10px;"><strong>'.e($creditNote->user?->name ?: 'Direcção Financeira').'</strong><br />Emissão da nota de crédito</div>',
+            '{signature_block}' => '<div style="border-top:1px solid #0f172a; padding-top:8px;"><strong>'.e($creditNote->user?->name ?: 'Direcção Financeira').'</strong><br />Emissão da nota de crédito</div>',
             '{lab_details}' => $this->labDetailsHtml($settings),
             '{customer_details}' => $this->customerDetailsHtml($creditNote->customer, $creditNote->customer?->name ?: 'Cliente'),
             '{banking_details}' => $this->bankingDetailsHtml($settings),
@@ -2705,7 +2701,7 @@ HTML;
             ?: data_get($clientInfo, 'matrix_description')
             ?: data_get($clientInfo, 'matrix')
             ?: 'Matriz não declarada';
-        $sampleEntryCode = $sampleEntry?->code ?: data_get($collectionProduct?->extra_data, 'sample_entry_code', 'Sem Sample Entry');
+        $sampleEntryCode = $sampleEntry?->code ?: data_get($collectionProduct?->extra_data, 'sample_entry_code', 'Sem entrada de amostra');
         $sampleDetails = $this->analysisSampleDetailsHtml($certificate);
         $collectionDetails = $this->analysisCollectionDetailsHtml($certificate);
         $analyticalScope = $this->analysisScopeDetailsHtml($certificate);
@@ -2731,7 +2727,7 @@ HTML;
             '{sample_origin}' => (string) ($collectionProduct?->origin ?: data_get($clientInfo, 'origin', 'Sem origem declarada')),
             '{sampling_plan_ref}' => (string) ($collectionProduct?->sampling_plan_ref ?: data_get($clientInfo, 'sampling_plan_ref', 'Sem plano declarado')),
             '{collection_date}' => $this->analysisDateValue($collectionProduct?->collection_date) ?: (string) data_get($clientInfo, 'received_at', 'Sem data'),
-            '{received_at}' => $this->analysisDateValue($sampleEntry?->received_at) ?: (string) data_get($clientInfo, 'received_at', 'Sem receção'),
+            '{received_at}' => $this->analysisDateValue($sampleEntry?->received_at) ?: (string) data_get($clientInfo, 'received_at', 'Sem recepção'),
             '{validated_by}' => $validation,
             '{sample_details}' => $sampleDetails,
             '{collection_details}' => $collectionDetails,
@@ -2757,21 +2753,21 @@ HTML;
         $labName = $settings->app_client_lab_name ?: $settings->app_name ?: 'Laboratório';
         $issueDate = now()->format('d/m/Y');
         $sampleDetails = $this->analysisDetailTableHtml([
-            ['Código da Sample Entry', 'Sample entry code', 'SE-2026-001'],
+            ['Código da entrada de amostra', 'Código da entrada de amostra', 'SE-2026-001'],
             ['Nome da amostra', 'Sample name', 'Farinha de trigo para controlo de qualidade'],
-            ['Tipo de amostra', 'Sample type', 'Matéria-prima / Raw material'],
+            ['Tipo de amostra', 'Sample type', 'Matéria-prima'],
             ['Produto', 'Product', 'Farinha de trigo tipo 65'],
             ['Matriz', 'Matrix', 'Cereais e derivados'],
             ['Lote', 'Lot', 'LT-26-041'],
-            ['Batch / OP', 'Batch', 'OP-2026-019'],
+            ['Lote / OP', 'Batch', 'OP-2026-019'],
             ['Origem', 'Origin', 'Recepção interna'],
             ['Fornecedor', 'Supplier', 'Fornecedor homologado'],
             ['Quantidade recebida', 'Received quantity', '2 kg'],
-            ['Data de receção', 'Reception date', now()->subDays(2)->format('d/m/Y')],
+            ['Data de recepção', 'Data de recepção', now()->subDays(2)->format('d/m/Y')],
             ['Data de colheita', 'Sampling date', now()->subDay()->format('d/m/Y')],
-        ], 'Identificação da amostra / Sample identification');
+        ], 'Identificação da amostra');
         $collectionDetails = $this->analysisDetailTableHtml([
-            ['Lab code', 'Laboratory code', 'LAB-2026-042'],
+            ['Código laboratorial', 'Laboratory code', 'LAB-2026-042'],
             ['Armazém / local', 'Warehouse / site', 'Laboratório central'],
             ['Local de colheita', 'Sampling location', 'Armazém de matéria-prima'],
             ['Plano de amostragem', 'Sampling plan', 'PA-ISO17025-MP-01'],
@@ -2779,15 +2775,15 @@ HTML;
             ['Condição térmica', 'Thermal condition', 'Ambiente controlado'],
             ['Cadeia de custódia', 'Chain of custody', 'Recepção, triagem, validação técnica e emissão registadas no SGQ.'],
             ['Observações de integridade', 'Integrity observations', 'Sem sinais de violação ou contaminação visível.'],
-        ], 'Receção e cadeia de custódia / Reception and chain of custody');
+        ], 'Recepção e cadeia de custódia');
         $analyticalScope = $this->analysisDetailTableHtml([
             ['Perfis analíticos', 'Analytical profiles', 'Microbiologia; Físico-química'],
             ['Parâmetros previstos', 'Expected parameters', 'Humidade; Cinzas; Salmonella spp.; Bolores e leveduras'],
             ['Total de parâmetros', 'Parameter count', '4'],
             ['Serviços solicitados', 'Requested services', 'Controlo interno de matéria-prima'],
             ['Regra de decisão', 'Decision rule', 'Aplicar critério definido no método validado e no plano de controlo interno.'],
-            ['Observações', 'Observations', 'Pré-visualização técnica para validar estrutura, campos e paginação do template.'],
-        ], 'Âmbito analítico / Analytical scope');
+            ['Observações', 'Observações', 'Pré-visualização técnica para validar estrutura, campos e paginação do modelo.'],
+        ], 'Âmbito analítico');
         $resultsTable = $this->reportTableHtml(
             [
                 ['label' => 'Parâmetro', 'translation' => 'Parameter'],
@@ -2835,7 +2831,7 @@ HTML;
             '{analysis_chart_values}' => implode(', ', $analysisChart['values']),
             '{analysis_chart_caption}' => $analysisChart['caption'],
             '{analysis_chart_card}' => $this->analysisChartCardHtml($analysisChart),
-            '{uncertainty_statement}' => 'As incertezas de medição apresentadas são estimativas de pré-visualização para validar o template. Na emissão real, o valor vem do método, cálculo ou fonte de incerteza configurada.',
+            '{uncertainty_statement}' => 'As incertezas de medição apresentadas são estimativas de pré-visualização para validar o modelo. Na emissão real, o valor vem do método, cálculo ou fonte de incerteza configurada.',
             '{decision_rule}' => 'A decisão de conformidade segue a regra definida no método validado e no contrato/proposta aprovada.',
             '{conclusion}' => 'Pré-visualização controlada para confirmar que amostra, cadeia de custódia, resultados, incerteza, decisão e assinatura permanecem legíveis no PDF final.',
             '{signature_block}' => '<div style="margin-top:24px; border-top:1px solid #0f172a; padding-top:10px; font-size:11px;"><strong>Direcção técnica</strong><br />Validação da pré-visualização do relatório</div>',
@@ -2920,20 +2916,20 @@ HTML;
         $clientInfo = $sampleEntry?->client_submitted_info ?? data_get($collectionProduct?->extra_data, 'submitted_payload', []);
 
         return $this->analysisDetailTableHtml([
-            ['Código da Sample Entry', 'Sample entry code', $sampleEntry?->code ?: data_get($collectionProduct?->extra_data, 'sample_entry_id')],
+            ['Código da entrada de amostra', 'Código da entrada de amostra', $sampleEntry?->code ?: data_get($collectionProduct?->extra_data, 'sample_entry_id')],
             ['Nome da amostra', 'Sample name', $sampleEntry?->name ?: $collectionProduct?->comercial_brand],
             ['Tipo de amostra', 'Sample type', $sampleEntry?->sample_type ?: data_get($clientInfo, 'sample_type')],
             ['Produto', 'Product', $collectionProduct?->product?->name ?: data_get($clientInfo, 'product_name')],
             ['Matriz', 'Matrix', $collectionProduct?->product?->matrix?->description ?: data_get($clientInfo, 'matrix_description', data_get($clientInfo, 'matrix'))],
             ['Lote', 'Lot', $collectionProduct?->lot ?: data_get($clientInfo, 'lot')],
-            ['Batch / OP', 'Batch', data_get($clientInfo, 'batch')],
+            ['Lote / OP', 'Batch', data_get($clientInfo, 'batch')],
             ['Origem', 'Origin', $collectionProduct?->origin ?: data_get($clientInfo, 'origin')],
             ['Fornecedor', 'Supplier', data_get($clientInfo, 'supplier_name')],
             ['Quantidade recebida', 'Received quantity', $collectionProduct?->qty ?: data_get($clientInfo, 'quantity')],
             ['Quantidade colhida', 'Collected quantity', $collectionProduct?->collected_qty ?: data_get($clientInfo, 'collected_qty')],
-            ['Data de receção', 'Reception date', $this->analysisDateValue($sampleEntry?->received_at)],
+            ['Data de recepção', 'Data de recepção', $this->analysisDateValue($sampleEntry?->received_at)],
             ['Data de colheita', 'Sampling date', $this->analysisDateValue($collectionProduct?->collection_date ?: $sampleEntry?->collected_at)],
-        ], 'Identificação da amostra / Sample identification');
+        ], 'Identificação da amostra');
     }
 
     private function analysisCollectionDetailsHtml(QualityCertificate $certificate): string
@@ -2943,7 +2939,7 @@ HTML;
         $clientInfo = $sampleEntry?->client_submitted_info ?? data_get($collectionProduct?->extra_data, 'submitted_payload', []);
 
         return $this->analysisDetailTableHtml([
-            ['Lab code', 'Laboratory code', $certificate->lab_code?->code ?: $collectionProduct?->code?->code],
+            ['Código laboratorial', 'Laboratory code', $certificate->lab_code?->code ?: $collectionProduct?->code?->code],
             ['Armazém / local', 'Warehouse / site', $certificate->warehouse?->name ?: $certificate->warehouse?->address],
             ['Local de colheita', 'Sampling location', $collectionProduct?->location ?: data_get($clientInfo, 'location', data_get($clientInfo, 'collection_location'))],
             ['Plano de amostragem', 'Sampling plan', $collectionProduct?->sampling_plan_ref ?: data_get($clientInfo, 'sampling_plan_ref')],
@@ -2957,7 +2953,7 @@ HTML;
             ['Validade', 'Expiry date', $this->analysisDateValue($collectionProduct?->expiry_date ?: data_get($clientInfo, 'expiry_date'))],
             ['Cadeia de custódia', 'Chain of custody', data_get($clientInfo, 'chain_of_custody_notes')],
             ['Observações de integridade', 'Integrity observations', data_get($clientInfo, 'integrity_observations')],
-        ], 'Receção e cadeia de custódia / Reception and chain of custody');
+        ], 'Recepção e cadeia de custódia');
     }
 
     private function analysisScopeDetailsHtml(QualityCertificate $certificate): string
@@ -2984,7 +2980,7 @@ HTML;
             ['Serviços solicitados', 'Requested services', is_array($sampleEntry?->requested_services) ? implode('; ', $sampleEntry->requested_services) : $sampleEntry?->requested_services],
             ['Regra de decisão', 'Decision rule', data_get($clientInfo, 'decision_rule')],
             ['Observações', 'Observations', $sampleEntry?->obs ?: $collectionProduct?->obs],
-        ], 'Âmbito analítico / Analytical scope');
+        ], 'Âmbito analítico');
     }
 
     private function analysisResultsTableHtml(QualityCertificate $certificate, mixed $resultId): string
@@ -3017,7 +3013,7 @@ HTML;
                 'Resultado associado #'.(string) $resultId,
                 'Método registado',
                 'Conforme o método registado',
-                'N/A',
+                'N/D',
                 'Consultar método / cálculo',
                 'Pendente',
             ]];
@@ -3065,7 +3061,7 @@ HTML;
             ->filter(fn (array $row) => filled($row[2] ?? null))
             ->map(function (array $row): string {
                 return '<tr>'
-                    .'<th style="width:34%; text-align:left; padding:7px; border-bottom:1px solid #e2e8f0; color:#334155;">'.e($row[0]).'<br><span class="bilingual-label">'.e($row[1]).'</span></th>'
+                    .'<th style="width:34%; text-align:left; padding:7px; border-bottom:1px solid #e2e8f0; color:#334155;">'.e($row[0]).'</th>'
                     .'<td style="padding:7px; border-bottom:1px solid #e2e8f0;">'.nl2br(e((string) $row[2]), false).'</td>'
                     .'</tr>';
             })
@@ -3254,7 +3250,7 @@ HTML;
             }
 
             return <<<HTML
-<div style="position:absolute; left: {$x}%; top: {$y}%; width: {$width}%; min-height: {$minHeight}px; z-index: {$zIndex}; padding: {$padding}px; border-radius: {$borderRadius}px; {$backgroundStyle} {$backgroundImageStyle} {$textColorStyle} {$borderStyle} {$fontSizeStyle} {$lineHeightStyle} {$textAlignStyle} {$opacityStyle} {$transformStyle} {$shadowStyle} {$mediaFrameStyle}">
+<div data-canvas-block-kind="{$blockKind}" style="position:absolute; left: {$x}%; top: {$y}%; width: {$width}%; min-height: {$minHeight}px; z-index: {$zIndex}; padding: {$padding}px; border-radius: {$borderRadius}px; {$backgroundStyle} {$backgroundImageStyle} {$textColorStyle} {$borderStyle} {$fontSizeStyle} {$lineHeightStyle} {$textAlignStyle} {$opacityStyle} {$transformStyle} {$shadowStyle} {$mediaFrameStyle}">
     {$overlayHtml}
     <div style="position:relative; z-index:1; min-height:inherit;">
         {$content}
@@ -3826,7 +3822,18 @@ SVG;
             ),
         );
 
-        $qrDataUri = (new SvgWriter)->write($qrCode)->getDataUri();
+        $qrSvg = (new SvgWriter)->write(
+            $qrCode,
+            options: [
+                SvgWriter::WRITER_OPTION_EXCLUDE_XML_DECLARATION => true,
+                SvgWriter::WRITER_OPTION_EXCLUDE_SVG_WIDTH_AND_HEIGHT => true,
+            ]
+        )->getString();
+        $qrSvg = str_replace(
+            '<svg ',
+            '<svg role="img" aria-label="QR code" style="display:block; width:100%; max-width:148px; height:auto;" ',
+            $qrSvg
+        );
         $label = $this->interpolate((string) ($block['qr_label'] ?? ''), $data);
         $labelHtml = $label !== ''
             ? sprintf('<div style="margin-top:6px; font-size:10px; color:#475569; text-align:center;">%s</div>', e($label))
@@ -3834,7 +3841,7 @@ SVG;
 
         return <<<HTML
 <div style="display:flex; min-height:100%; flex-direction:column; align-items:center; justify-content:center;">
-    <img src="{$qrDataUri}" alt="QR code" style="display:block; width:100%; max-width:148px; height:auto;" />
+    {$qrSvg}
     {$labelHtml}
 </div>
 HTML;

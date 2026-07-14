@@ -52,9 +52,7 @@ function submit() {
           <div class="min-w-0">
             <p class="ds-kicker">Pedido #{{ request.id }}</p>
             <h1 class="ds-heading mt-1 text-2xl">Editar pedido de cliente</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">
-              Atualize a classificacao, o local e os dados usados no acompanhamento deste pedido.
-            </p>
+            <p class="ds-copy mt-1 max-w-3xl text-sm"> Actualize a classificação, o local e os dados usados no acompanhamento deste pedido. </p>
             <div class="mt-3 flex flex-wrap gap-2">
               <span v-if="request.reference" class="ds-chip">{{ request.reference }}</span>
               <span class="ds-chip">{{ request.status || "pending" }}</span>
@@ -66,7 +64,7 @@ function submit() {
         <div class="flex flex-wrap gap-2 lg:justify-end">
           <Link :href="route('customerrequests.index')" class="ds-button ds-button-secondary">Cancelar</Link>
           <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-            {{ form.processing ? "A guardar..." : "Guardar alteracoes" }}
+            {{ form.processing ? "A guardar..." : "Guardar alterações" }}
           </button>
         </div>
       </div>
@@ -77,7 +75,7 @@ function submit() {
       <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
         <Link :href="route('customerrequests.index')" class="ds-button ds-button-secondary">Cancelar</Link>
         <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-          {{ form.processing ? "A guardar..." : "Guardar alteracoes" }}
+          {{ form.processing ? "A guardar..." : "Guardar alterações" }}
         </button>
       </footer>
     </section>

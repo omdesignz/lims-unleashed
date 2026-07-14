@@ -273,19 +273,7 @@ class VAPInventoryOrderController extends Controller
 
         // Calculate received quantity for each item from both field and transactions
         $order->items->each(function ($item) {
-            // Get total received quantity from inventory transactions
-            $receivedQtyFromTransactions = InventoryTransaction::where('item_id', $item->item_id)
-                ->whereHas('type', function ($query) {
-                    $query->where('code', 'RECEIPT');
-                })
-                ->whereHas('inventory', function ($query) use ($item) {
-                    $query->where('warehouse_id', $item->warehouse_id);
-                })
-                ->where('notes', 'LIKE', '%Order #'.$item->order_id.'%')
-                ->sum('qty');
-
-            // Use the maximum between stored value and calculated value
-            $item->received_qty = max((int) $item->received_qty, (int) $receivedQtyFromTransactions);
+            $item->received_qty = $this->getReceivedQuantity($item);
 
             // Update item status based on received quantity
             if ($item->received_qty >= $item->qty) {
@@ -410,7 +398,7 @@ class VAPInventoryOrderController extends Controller
         // Only allow editing of pending or approved orders
         if (! in_array($order->status, [InventoryOrderTrackingStatus::PENDING, InventoryOrderTrackingStatus::APPROVED])) {
             return redirect()->route('vap-inventory.orders.show', $order->id)
-                ->with('error', 'Only pending or approved orders can be edited.');
+                ->with('error', 'Apenas os pedidos pendentes ou aprovados podem ser editados.');
         }
 
         $order->load(['items' => function ($query) {
@@ -419,17 +407,7 @@ class VAPInventoryOrderController extends Controller
 
         // Get received quantity for each item
         $order->items->each(function ($item) {
-            $receivedQty = InventoryTransaction::where('item_id', $item->item_id)
-                ->whereHas('type', function ($query) {
-                    $query->where('code', 'RECEIPT');
-                })
-                ->whereHas('inventory', function ($query) use ($item) {
-                    $query->where('warehouse_id', $item->warehouse_id);
-                })
-                ->where('notes', 'LIKE', '%Order #'.$item->order_id.'%')
-                ->sum('qty');
-
-            $item->received_qty = (int) $receivedQty;
+            $item->received_qty = $this->getReceivedQuantity($item);
         });
 
         $items = InventoryItem::active()->with(['category', 'unit'])
@@ -457,7 +435,7 @@ class VAPInventoryOrderController extends Controller
         // Only allow updating of pending or approved orders
         if (! in_array($order->status, [InventoryOrderTrackingStatus::PENDING, InventoryOrderTrackingStatus::APPROVED])) {
             return redirect()->route('vap-inventory.orders.show', $order->id)
-                ->with('error', 'Only pending or approved orders can be updated.');
+                ->with('error', 'Apenas os pedidos pendentes ou aprovados podem ser actualizados.');
         }
 
         $request->validate([
@@ -512,31 +490,20 @@ class VAPInventoryOrderController extends Controller
                     // Update existing item
                     $item = InventoryOrderDetail::find($itemData['id']);
 
-                    // Get received quantity from transactions
-                    $receivedQty = InventoryTransaction::where('item_id', $item->item_id)
-                        ->whereHas('type', function ($query) {
-                            $query->where('code', 'RECEIPT');
-                        })
-                        ->whereHas('inventory', function ($query) use ($item) {
-                            $query->where('warehouse_id', $item->warehouse_id);
-                        })
-                        ->where('notes', 'LIKE', '%Order #'.$item->order_id.'%')
-                        ->sum('qty');
-
-                    $receivedQty = (int) $receivedQty;
+                    $receivedQty = $this->getReceivedQuantity($item);
 
                     // Check if item has been received
                     if ($receivedQty > 0) {
                         // Can't change item if it has been received
                         if ($item->item_id != $itemData['item_id'] ||
                             $item->warehouse_id != $itemData['warehouse_id']) {
-                            throw new \Exception('Cannot change item or warehouse for received items.');
+                            throw new \Exception('Não é possível alterar o artigo ou o armazém de artigos já recebidos.');
                         }
                     }
 
                     // Check quantity is not less than received quantity
                     if ($itemData['qty'] < $receivedQty) {
-                        throw new \Exception('Quantity cannot be less than received quantity.');
+                        throw new \Exception('A quantidade não pode ser inferior à quantidade recebida.');
                     }
 
                     $unitPrice = $itemData['unit_price'];
@@ -587,18 +554,10 @@ class VAPInventoryOrderController extends Controller
                 // Check if any of these items have been received
                 foreach ($itemsToDelete as $itemId) {
                     $item = InventoryOrderDetail::find($itemId);
-                    $receivedQty = InventoryTransaction::where('item_id', $item->item_id)
-                        ->whereHas('type', function ($query) {
-                            $query->where('code', 'RECEIPT');
-                        })
-                        ->whereHas('inventory', function ($query) use ($item) {
-                            $query->where('warehouse_id', $item->warehouse_id);
-                        })
-                        ->where('notes', 'LIKE', '%Order #'.$item->order_id.'%')
-                        ->sum('qty');
+                    $receivedQty = $this->getReceivedQuantity($item);
 
                     if ($receivedQty > 0) {
-                        throw new \Exception('Cannot delete items that have been received.');
+                        throw new \Exception('Não é possível eliminar artigos já recebidos.');
                     }
                 }
 
@@ -614,7 +573,7 @@ class VAPInventoryOrderController extends Controller
             DB::commit();
 
             $response = redirect()->route('vap-inventory.orders.show', $order->id)
-                ->with('success', 'Pedido de compra atualizado com sucesso.');
+                ->with('success', 'Pedido de compra actualizado com sucesso.');
 
             if ($warning = $this->supplierAssessmentWarning($supplier)) {
                 $response->with('warning', $warning);
@@ -626,7 +585,7 @@ class VAPInventoryOrderController extends Controller
             Log::error('Failed to update order: '.$e->getMessage());
 
             return redirect()->back()
-                ->with('error', 'Não foi possível atualizar o pedido de compra.');
+                ->with('error', 'Não foi possível actualizar o pedido de compra.');
         }
     }
 
@@ -690,11 +649,11 @@ class VAPInventoryOrderController extends Controller
         }
 
         if (in_array($assessment->status, ['rejected', 'suspended'], true)) {
-            return 'O fornecedor selecionado está bloqueado por avaliação de desempenho. Atualize a avaliação antes de emitir a encomenda.';
+            return 'O fornecedor seleccionado está bloqueado por avaliação de desempenho. Actualize a avaliação antes de emitir a encomenda.';
         }
 
         if ($assessment->risk_level === 'critical' && ! $assessment->approved_supplier) {
-            return 'O fornecedor selecionado está com risco crítico e sem aprovação ativa. Reavalie o fornecedor antes de prosseguir.';
+            return 'O fornecedor seleccionado está com risco crítico e sem aprovação activa. Reavalie o fornecedor antes de prosseguir.';
         }
 
         return null;
@@ -733,15 +692,7 @@ class VAPInventoryOrderController extends Controller
         // Check if any items have been received
         $hasReceivedItems = false;
         foreach ($order->items as $item) {
-            $receivedQty = InventoryTransaction::where('item_id', $item->item_id)
-                ->whereHas('type', function ($query) {
-                    $query->where('code', 'RECEIPT');
-                })
-                ->whereHas('inventory', function ($query) use ($item) {
-                    $query->where('warehouse_id', $item->warehouse_id);
-                })
-                ->where('notes', 'LIKE', '%Order #'.$item->order_id.'%')
-                ->sum('qty');
+            $receivedQty = $this->getReceivedQuantity($item);
 
             if ($receivedQty > 0) {
                 $hasReceivedItems = true;
@@ -751,7 +702,7 @@ class VAPInventoryOrderController extends Controller
 
         if ($hasReceivedItems) {
             return redirect()->route('vap-inventory.orders.show', $order->id)
-                ->with('error', 'Não é possível eliminar um pedido com itens já rececionados.');
+                ->with('error', 'Não é possível eliminar um pedido com artigos já recepcionados.');
         }
 
         DB::beginTransaction();
@@ -786,7 +737,7 @@ class VAPInventoryOrderController extends Controller
         // Only allow receiving of ordered or partially_received orders
         if (! in_array($order->status, [InventoryOrderTrackingStatus::ORDERED, InventoryOrderTrackingStatus::PARTIALLY_RECEIVED])) {
             return redirect()->route('vap-inventory.orders.show', $order->id)
-                ->with('error', 'Only ordered or partially received orders can be received.');
+                ->with('error', 'Apenas os pedidos encomendados ou parcialmente recebidos podem ser recepcionados.');
         }
 
         $request->validate([
@@ -813,7 +764,7 @@ class VAPInventoryOrderController extends Controller
 
                 // Check if item belongs to this order
                 if ($orderItem->order_id !== $order->id) {
-                    throw new \Exception('Invalid order item.');
+                    throw new \Exception('O artigo do pedido não é válido.');
                 }
 
                 // Use provided unit price or fallback to order price
@@ -825,7 +776,7 @@ class VAPInventoryOrderController extends Controller
                 $totalReceived = $alreadyReceived + $newReceivedQty;
 
                 if ($totalReceived > $orderItem->qty) {
-                    throw new \Exception("Cannot receive more than ordered quantity for item: {$orderItem->item->name}");
+                    throw new \Exception("Não é possível receber uma quantidade superior à encomendada para o artigo: {$orderItem->item->name}");
                 }
 
                 // Update inventory stock with cost
@@ -877,7 +828,7 @@ class VAPInventoryOrderController extends Controller
             DB::commit();
 
             $response = redirect()->route('vap-inventory.orders.show', $order->id)
-                ->with('success', 'Itens do pedido rececionados com sucesso.');
+                ->with('success', 'Artigos do pedido recepcionados com sucesso.');
 
             if ($createdNonConformity !== null) {
                 $response->with('warning', 'Foi registada uma não conformidade de recepção: '.$createdNonConformity->nc_number.'.');
@@ -888,7 +839,7 @@ class VAPInventoryOrderController extends Controller
             DB::rollBack();
 
             return redirect()->back()
-                ->with('error', 'Não foi possível registar a receção dos itens do pedido.');
+                ->with('error', 'Não foi possível registar a recepção dos itens do pedido.');
         }
     }
     // public function receive(Request $request, InventoryOrder $order)
@@ -974,7 +925,7 @@ class VAPInventoryOrderController extends Controller
         // Only allow cancellation of pending, approved, or ordered orders
         if (! in_array($order->status, ['pending', 'approved', 'ordered'])) {
             return redirect()->route('vap-inventory.orders.show', $order->id)
-                ->with('error', 'Only pending, approved, or ordered orders can be cancelled.');
+                ->with('error', 'Apenas os pedidos pendentes, aprovados ou encomendados podem ser cancelados.');
         }
 
         // Check if any items have been received
@@ -989,7 +940,7 @@ class VAPInventoryOrderController extends Controller
 
         if ($hasReceivedItems) {
             return redirect()->route('vap-inventory.orders.show', $order->id)
-                ->with('error', 'Cannot cancel order with received items.');
+                ->with('error', 'Não é possível cancelar um pedido com artigos já recebidos.');
         }
 
         $order->update([
@@ -1000,7 +951,7 @@ class VAPInventoryOrderController extends Controller
         $order->items()->update(['status' => InventoryOrderItemStatus::CANCELLED]);
 
         return redirect()->route('vap-inventory.orders.show', $order->id)
-            ->with('success', 'Order cancelled successfully!');
+            ->with('success', 'Pedido cancelado com sucesso.');
     }
 
     /**
@@ -1012,6 +963,11 @@ class VAPInventoryOrderController extends Controller
         $storedReceivedQty = (int) $orderItem->received_qty;
 
         // Also check from transactions for legacy data
+        $orderIdentifiers = array_values(array_unique(array_filter([
+            (string) $orderItem->order_id,
+            $orderItem->order?->reference,
+        ])));
+
         $transactionReceivedQty = InventoryTransaction::where('item_id', $orderItem->item_id)
             ->whereHas('type', function ($query) {
                 $query->where('code', 'RECEIPT');
@@ -1019,7 +975,12 @@ class VAPInventoryOrderController extends Controller
             ->whereHas('inventory', function ($query) use ($orderItem) {
                 $query->where('warehouse_id', $orderItem->warehouse_id);
             })
-            ->where('notes', 'LIKE', '%Order #'.$orderItem->order_id.'%')
+            ->where(function ($query) use ($orderIdentifiers) {
+                foreach ($orderIdentifiers as $orderIdentifier) {
+                    $query->orWhere('notes', 'LIKE', '%Order #'.$orderIdentifier.'%')
+                        ->orWhere('notes', 'LIKE', '%pedido #'.$orderIdentifier.'%');
+                }
+            })
             ->sum('qty');
 
         // Return the maximum between stored value and transaction value
@@ -1066,9 +1027,9 @@ class VAPInventoryOrderController extends Controller
 
         if (! $receiptType) {
             $receiptType = InventoryTransactionType::create([
-                'name' => 'Receipt',
+                'name' => 'Recepção',
                 'code' => 'RECEIPT',
-                'description' => 'Stock receipt from purchase orders',
+                'description' => 'Recepção de existências provenientes de pedidos de compra',
             ]);
         }
 
@@ -1083,8 +1044,8 @@ class VAPInventoryOrderController extends Controller
             'item_id' => $orderItem->item_id,
             'type_id' => $receiptType->id,
             'qty' => $receivedQty,
-            'reason' => $reason ?: 'Order Receipt',
-            'notes' => $notes ?: "Received {$receivedQty} units from Order #{$orderItem->order->reference} at {$unitPrice} {$orderItem->currency} each (Total: {$totalCost})",
+            'reason' => $reason ?: 'Recepção do pedido',
+            'notes' => $notes ?: "Recebidas {$receivedQty} unidades do pedido #{$orderItem->order->reference}, ao preço unitário de {$unitPrice} {$orderItem->currency} (total: {$totalCost})",
             'created_at' => $receiveDate,
             'updated_at' => $receiveDate,
         ]);
@@ -1346,18 +1307,7 @@ class VAPInventoryOrderController extends Controller
 
         // Calculate received quantity for each item
         $order->items->each(function ($item) {
-            // Get received quantity from both field and transactions
-            $receivedQtyFromTransactions = InventoryTransaction::where('item_id', $item->item_id)
-                ->whereHas('type', function ($query) {
-                    $query->where('code', 'RECEIPT');
-                })
-                ->whereHas('inventory', function ($query) use ($item) {
-                    $query->where('warehouse_id', $item->warehouse_id);
-                })
-                ->where('notes', 'LIKE', '%Order #'.$item->id.'%')
-                ->sum('qty');
-
-            $item->received_qty = max((int) $item->received_qty, (int) $receivedQtyFromTransactions);
+            $item->received_qty = $this->getReceivedQuantity($item);
             $item->pending_qty = $item->qty - $item->received_qty;
         });
 

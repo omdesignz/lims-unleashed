@@ -436,7 +436,7 @@ class VAPInventoryAnalyticsController extends Controller
             default:
                 // For PNG, you would need a server-side chart generation library
                 // This is a placeholder - you might want to use something like mPDF with charts
-                return response()->json(['message' => 'PNG export not implemented'], 501);
+                return response()->json(['message' => 'A exportação para PNG ainda não está disponível.'], 501);
         }
     }
 
@@ -763,7 +763,7 @@ class VAPInventoryAnalyticsController extends Controller
             ->get();
 
         if ($lowStockInventory->isEmpty()) {
-            return back()->with('error', 'No items require restocking at this time.');
+            return back()->with('error', 'Não existem artigos que necessitem de reposição neste momento.');
         }
 
         // 2. Group by Supplier to create separate orders
@@ -798,7 +798,7 @@ class VAPInventoryAnalyticsController extends Controller
             }
         });
 
-        return back()->with('success', 'Procurement drafts created successfully.');
+        return back()->with('success', 'Rascunhos de aquisição criados com sucesso.');
     }
 
     private function getSupplierPerformanceData()

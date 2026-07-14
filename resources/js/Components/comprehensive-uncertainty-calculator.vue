@@ -1,52 +1,52 @@
 <template>
     <div>
-      <h2>Comprehensive Uncertainty Calculator</h2>
+      <h2>Calculadora completa de incerteza</h2>
       <!-- Inputs for Measurements -->
       <div v-for="(value, index) in data" :key="index">
         <BaseInput
           type="number"
           v-model.number="data[index]"
           @input="updateMeasurement(index, data[index])"
-          placeholder="Measurement"
+          placeholder="Medição"
         />
       </div>
-      <button @click="addMeasurement">Add Measurement</button>
-  
+      <button @click="addMeasurement">Adicionar medição</button>
+
       <!-- Inputs for Each Uncertainty Type -->
       <BaseInput
         type="number"
         v-model.number="distributionalUncertainty"
-        placeholder="Distributional Uncertainty"
+        placeholder="Incerteza da distribuição"
       />
       <BaseInput
         type="number"
         v-model.number="technicalUncertainty"
-        placeholder="Technical Uncertainty"
+        placeholder="Incerteza técnica"
       />
       <BaseInput
         type="number"
         v-model.number="confirmationUncertainty"
-        placeholder="Confirmation Uncertainty"
+        placeholder="Incerteza de confirmação"
       />
       <BaseInput
         type="number"
         v-model.number="environmentalUncertainty"
-        placeholder="Environmental Uncertainty"
+        placeholder="Incerteza ambiental"
       />
       <BaseInput
         type="number"
         v-model.number="matrixUncertainty"
-        placeholder="Matrix Uncertainty"
+        placeholder="Incerteza da matriz"
       />
-  
+
       <!-- Displaying the Calculated Combined Uncertainty -->
-      <p>Combined Uncertainty: {{ calculateCombinedUncertainty() }}</p>
+      <p>Incerteza combinada: {{ calculateCombinedUncertainty() }}</p>
     </div>
   </template>
-  
+
   <script setup>
   import { useMatrixUncertainty } from '@/Composables/Uncertainties/useMatrixUncertainty';
-  
+
   const {
         data,
         distributionalUncertainty,
@@ -59,4 +59,4 @@
         calculateCombinedUncertainty,
       } = useMatrixUncertainty();
   </script>
-  
+

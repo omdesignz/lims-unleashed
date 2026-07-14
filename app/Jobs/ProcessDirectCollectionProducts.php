@@ -8,7 +8,6 @@ use App\Models\ColCollab;
 use App\Models\Collection;
 use App\Models\CollectionProduct;
 use App\Models\ColReason;
-use App\Models\Department;
 use App\Models\DirectCollection;
 use App\Models\LabCode;
 use App\Models\Profile;
@@ -26,13 +25,21 @@ class ProcessDirectCollectionProducts implements ShouldBeUnique, ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $customer_id;
+
     public $warehouse_id;
+
     public $products;
+
     public $col_date;
+
     public $collaborations;
+
     public $collectionreasons;
+
     public $user;
+
     public $customer;
+
     public int $uniqueFor = 300;
 
     /**
@@ -55,14 +62,14 @@ class ProcessDirectCollectionProducts implements ShouldBeUnique, ShouldQueue
      */
     public function handle(): void
     {
-          
-        $obj = new DirectCollection();
-    
-        $obj->description = '';      
+
+        $obj = new DirectCollection;
+
+        $obj->description = '';
         $obj->col_date = $this->col_date;
 
-        $obj->save();  
-        
+        $obj->save();
+
         $subject = DirectCollection::findOrFail($obj->id);
 
         $col = new Collection([
@@ -72,8 +79,8 @@ class ProcessDirectCollectionProducts implements ShouldBeUnique, ShouldQueue
 
         $col = $subject->collection()->save($col);
 
-        foreach($this->products as $product) {
-           
+        foreach ($this->products as $product) {
+
             $obj = new CollectionProduct;
 
             $obj->collection_id = $col->id;
@@ -93,6 +100,9 @@ class ProcessDirectCollectionProducts implements ShouldBeUnique, ShouldQueue
             $obj->invoice_id = $product['invoice_id'];
             $obj->vehicle_id = $product['vehicle_id'];
             $obj->obs = $product['obs'];
+            $obj->sample_status = $product['sample_status'] ?? null;
+            $obj->sampling_plan_ref = $product['sampling_plan_ref'] ?? null;
+            $obj->customer_submitted_info = $product['customer_submitted_info'] ?? null;
             $obj->qty = $product['qty'];
             $obj->lot = $product['lot'];
             $obj->bl = $product['bl'];
@@ -103,43 +113,40 @@ class ProcessDirectCollectionProducts implements ShouldBeUnique, ShouldQueue
             $obj->collection_date = $product['collection_date'];
             $obj->recollection = $product['recollection'];
             $obj->processed = $product['processed'];
-            $obj->collected_by_lab = $product['collected_by_lab'] ?? false;   
-            $obj->invoiced = $product['invoiced'];   
+            $obj->collected_by_lab = $product['collected_by_lab'] ?? false;
+            $obj->invoiced = $product['invoiced'];
             $obj->collected_qty = $product['collected_qty'];
 
             $obj->save();
 
             $colpro = CollectionProduct::find($obj->id);
-        
 
-
-            //Create Lab Code for each Product
+            // Create Lab Code for each Product
 
             $code = LabCode::Create([
                 'code' => '',
                 'codeable_type' => 'analysis',
                 'cl_month' => Carbon::now()->format('y/m'),
-                'collection_id' => $obj['id']
+                'collection_id' => $obj['id'],
             ]);
 
             // Log product creation
             activity()
                 ->by($this->user)
                 ->performedOn($colpro)
-                ->log('cadastrou a colheita directa com a CL ' . $code->description);
+                ->log('registou a colheita directa com a CL '.$code->description);
 
             // Initiate Analysis
-            foreach($colpro->product->matrix->profiles as $d) {
+            foreach ($colpro->product->matrix->profiles as $d) {
 
                 $sample = Sample::create([
                     'code' => '',
                     'sample_month' => Carbon::now()->format('y/m'),
                     'cl_id' => $code->id,
                 ]);
-                
 
                 // $s = Sample::findOrFail($sample->id);
-                
+
                 $analysis = Analysis::create([
                     'department_id' => Profile::findOrFail($d->id)->type->department_id,
                     'sample_id' => $sample->id,
@@ -155,15 +162,15 @@ class ProcessDirectCollectionProducts implements ShouldBeUnique, ShouldQueue
 
                 // Log analysis creation
                 activity()
-                ->by($this->user)
-                ->performedOn($colpro)
-                ->log('Colocou em analise a CL ' . $code->description);
+                    ->by($this->user)
+                    ->performedOn($colpro)
+                    ->log('Colocou em análise a CL '.$code->description);
             }
         }
 
-        if(count($this->collaborations)) {
-            foreach($this->collaborations as $collab) {
-                $obj = new ColCollab();
+        if (count($this->collaborations)) {
+            foreach ($this->collaborations as $collab) {
+                $obj = new ColCollab;
 
                 $obj->collection_id = $col->id;
                 $obj->collaboration_id = $collab['collaboration_id'];
@@ -172,9 +179,9 @@ class ProcessDirectCollectionProducts implements ShouldBeUnique, ShouldQueue
             }
         }
 
-        if(count($this->collectionreasons)) {
-            foreach($this->collectionreasons as $reason) {
-                $obj = new ColReason();
+        if (count($this->collectionreasons)) {
+            foreach ($this->collectionreasons as $reason) {
+                $obj = new ColReason;
 
                 $obj->collection_id = $col->id;
                 $obj->reason_id = $reason['reason_id'];
@@ -189,7 +196,7 @@ class ProcessDirectCollectionProducts implements ShouldBeUnique, ShouldQueue
 
     public function uniqueId(): string
     {
-        return 'direct-collection:' . md5(json_encode([
+        return 'direct-collection:'.md5(json_encode([
             'customer_id' => $this->customer_id,
             'warehouse_id' => $this->warehouse_id,
             'col_date' => $this->col_date,

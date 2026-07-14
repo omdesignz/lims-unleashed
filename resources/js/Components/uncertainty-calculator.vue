@@ -1,13 +1,13 @@
 <template>
     <div>
-      <h2>Dynamic Uncertainty Calculator</h2>
+      <h2>Calculadora dinâmica de incerteza</h2>
 
-      <p>Series List:</p>
+      <p>Lista de séries:</p>
       <pre>{{ seriesList }}</pre>
-  
+
       <!-- Dynamic Series Input -->
       <div v-for="(series, seriesIndex) in seriesList" :key="seriesIndex">
-        <h3>Series {{ seriesIndex + 1 }}</h3>
+        <h3>Série {{ seriesIndex + 1 }}</h3>
         <div v-for="(value, dataIndex) in series.data" :key="dataIndex">
           <BaseInput
             type="number"
@@ -15,22 +15,22 @@
             @input="updateSeriesData(seriesIndex, dataIndex, series.data[dataIndex])"
           />
         </div>
-        <button @click="addMeasurementToSeries(seriesIndex)">Add Measurement to Series {{ seriesIndex + 1 }}</button>
+        <button @click="addMeasurementToSeries(seriesIndex)">Adicionar medição à série {{ seriesIndex + 1 }}</button>
       </div>
-      <button @click="addNewSeries">Add New Series</button>
-  
+      <button @click="addNewSeries">Adicionar série</button>
+
       <!-- Calculate Combined Uncertainty -->
       <div>
-        <button @click="calculateCombinedUncertainty">Calculate Combined Uncertainty</button>
+        <button @click="calculateCombinedUncertainty">Calcular incerteza combinada</button>
       </div>
-  
+
       <!-- Display Combined Uncertainty -->
       <div v-if="combinedUncertainty !== null">
-        <p>Combined Uncertainty: {{ combinedUncertainty }}</p>
+        <p>Incerteza combinada: {{ combinedUncertainty }}</p>
       </div>
     </div>
   </template>
-  
+
   <script setup>
   import { ref } from 'vue';
   import { useDynamicSeriesUncertainty } from '@/Composables/Uncertainties/useDynamicSeriesUncertainty.js';
@@ -42,9 +42,9 @@
         updateSeriesData,
         addMeasurementToSeries,
       } = useDynamicSeriesUncertainty();
-  
+
       const { combinedUncertainty, calculateCombinedUncertainty } = useCombinedUncertainty();
-  
+
 //   export default {
 //     setup() {
 //       const {
@@ -53,9 +53,9 @@
 //         updateSeriesData,
 //         addMeasurementToSeries,
 //       } = useDynamicSeriesUncertainty();
-  
+
 //       const { combinedUncertainty, calculateCombinedUncertainty } = useCombinedUncertainty();
-  
+
 //       return {
 //         seriesList,
 //         combinedUncertainty,
@@ -67,4 +67,4 @@
 //     },
 //   };
   </script>
-  
+

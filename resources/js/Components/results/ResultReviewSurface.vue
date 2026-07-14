@@ -56,7 +56,7 @@ const title = computed(() => {
 const description = computed(() => {
   return isApproval.value
     ? "Confirme a decisão final, referências e incerteza antes de libertar o resultado."
-    : "Compare cada valor com a entrada original e documente qualquer correção técnica.";
+    : "Compare cada valor com a entrada original e documente qualquer correcção técnica.";
 });
 
 const groupedResults = computed(() => [
@@ -270,7 +270,7 @@ function submitReview() {
   errorMessage.value = "";
 
   if (isLoading.value || !props.form.results?.length) {
-    errorMessage.value = "Aguarde pelo carregamento dos resultados.";
+    errorMessage.value = "Aguarde pelo upload dos resultados.";
     return;
   }
 
@@ -540,7 +540,7 @@ function submitReview() {
                   class="ds-button ds-button-primary"
                   @click="saveEdit(getResultUniqueId(result))"
                 >
-                  Guardar correção
+                  Guardar correcção
                 </button>
               </div>
             </div>

@@ -11,9 +11,9 @@
             : $fallback;
     };
 
-    $documentPrimaryColor = $resolveDocumentColor($documentBrandSettings?->app_primary_color, '#143d37');
-    $documentSecondaryColor = $resolveDocumentColor($documentBrandSettings?->app_secondary_color, '#07110f');
-    $documentAccentColor = $resolveDocumentColor($documentBrandSettings?->app_accent_color, '#d9b05f');
+    $documentPrimaryColor = $resolveDocumentColor($documentBrandSettings?->app_primary_color, '#0f766e');
+    $documentSecondaryColor = $resolveDocumentColor($documentBrandSettings?->app_secondary_color, '#17202a');
+    $documentAccentColor = $resolveDocumentColor($documentBrandSettings?->app_accent_color, '#0e7490');
 @endphp
 
 body.pdf-document {
@@ -56,16 +56,16 @@ body.pdf-document {
 }
 
 .pdf-document h1 {
-    font-size: 23pt;
+    font-size: 21pt;
     font-weight: 900;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     line-height: 1.05;
 }
 
 .pdf-document h2 {
     font-size: 14pt;
     font-weight: 900;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     line-height: 1.18;
 }
 
@@ -84,31 +84,37 @@ body.pdf-document {
 }
 
 .pdf-document .document-shell {
-    border: 0.28mm solid #d8cbb8;
-    border-radius: 7mm;
-    background: #fffdf7;
-    padding: 10mm;
+    border: 0.25mm solid #cbd5e1;
+    border-radius: 2.2mm;
+    background: #ffffff;
+    padding: 8mm;
 }
 
 .pdf-document .document-hero {
-    border: 0.28mm solid #d8cbb8;
-    border-radius: 7mm;
+    border: 0.25mm solid {{ $documentPrimaryColor }};
+    border-radius: 2.6mm;
     background: {{ $documentPrimaryColor }};
-    color: #fffdf7;
-    padding: 10mm;
+    color: #ffffff;
+    padding: 7mm;
 }
 
 .pdf-document .document-hero h1,
 .pdf-document .document-hero h2,
 .pdf-document .document-hero h3,
 .pdf-document .document-hero .value {
-    color: #fffdf7;
+    color: #ffffff;
 }
 
 .pdf-document .document-hero .muted,
 .pdf-document .document-hero .small-text,
 .pdf-document .document-hero .label {
-    color: #dbe8df;
+    color: #dbeafe;
+}
+
+.pdf-document .document-hero .document-kicker,
+.pdf-document .document-hero .manual-eyebrow,
+.pdf-document .document-hero .studio-kicker {
+    color: #a7f3d0;
 }
 
 .pdf-document .document-kicker,
@@ -124,7 +130,7 @@ body.pdf-document {
 .pdf-document .document-subtitle,
 .pdf-document .manual-lead,
 .pdf-document .studio-lead {
-    color: #475a53;
+    color: #475569;
     font-size: 10pt;
     line-height: 1.58;
 }
@@ -132,7 +138,7 @@ body.pdf-document {
 .pdf-document .document-hero .document-subtitle,
 .pdf-document .document-hero .manual-lead,
 .pdf-document .document-hero .studio-lead {
-    color: #e7efe8;
+    color: #e2e8f0;
 }
 
 .pdf-document .pdf-card,
@@ -140,10 +146,9 @@ body.pdf-document {
 .pdf-document .report-card,
 .pdf-document .metric-card,
 .pdf-document .manual-card {
-    background: #fffdf7;
-    border: 0.25mm solid #ded3bf;
-    border-radius: 4.5mm;
-    box-shadow: 0 1mm 3mm rgba(16, 33, 58, 0.08);
+    background: #ffffff;
+    border: 0.25mm solid #cbd5e1;
+    border-radius: 2.2mm;
 }
 
 .pdf-document .metric-card {
@@ -163,13 +168,13 @@ body.pdf-document {
 .pdf-document .document-title {
     color: {{ $documentPrimaryColor }};
     font-weight: 900;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
 }
 
 .pdf-document .small-text,
 .pdf-document .muted,
 .pdf-document .label {
-    color: #6b7b74;
+    color: #64748b;
     overflow-wrap: anywhere;
 }
 
@@ -185,15 +190,15 @@ body.pdf-document {
 .pdf-document .signature-table {
     width: 100%;
     border-collapse: separate;
-    border-spacing: 2.2mm;
-    margin-left: -2.2mm;
-    margin-right: -2.2mm;
+    border-spacing: 2mm;
+    margin-left: 0;
+    margin-right: 0;
 }
 
 .pdf-document .document-meta-cell,
 .pdf-document .document-summary-cell {
-    border: 0.22mm solid #ded3bf;
-    border-radius: 4mm;
+    border: 0.22mm solid #cbd5e1;
+    border-radius: 2mm;
     background: #ffffff;
     padding: 3.2mm;
     vertical-align: top;
@@ -256,7 +261,7 @@ body.pdf-document {
 .pdf-document .tg {
     width: 100%;
     border-collapse: collapse;
-    border: 0.25mm solid #d8cbb8;
+    border: 0.25mm solid #cbd5e1;
     margin-top: 3mm;
 }
 
@@ -293,10 +298,10 @@ body.pdf-document {
 .pdf-document .worksheet-table td,
 .pdf-document .report-table td,
 .pdf-document .tg td {
-    border: 0.2mm solid #ded3bf !important;
+    border: 0.2mm solid #cbd5e1 !important;
     padding: 2.2mm 2.1mm !important;
     font-size: 8.3pt !important;
-    color: #243c36 !important;
+    color: #1e293b !important;
     vertical-align: top;
 }
 
@@ -304,13 +309,13 @@ body.pdf-document {
 .pdf-document .worksheet-table tbody tr:nth-child(even) td,
 .pdf-document .report-table tbody tr:nth-child(even) td,
 .pdf-document .tg tbody tr:nth-child(even) td {
-    background: #fbf7ef !important;
+    background: #f8fafc !important;
 }
 
 .pdf-document .tg thead tr:nth-child(2) th {
-    background: #f4efe4 !important;
-    color: #6b7b74 !important;
-    border-color: #ded3bf !important;
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border-color: #cbd5e1 !important;
     font-size: 7.2pt !important;
     font-style: italic;
     font-weight: 650 !important;
@@ -319,15 +324,15 @@ body.pdf-document {
 }
 
 .pdf-document .tg thead tr:nth-child(3) td {
-    background: #fffdf7 !important;
-    color: #475a53 !important;
+    background: #ffffff !important;
+    color: #475569 !important;
     font-size: 7.4pt !important;
 }
 
 .pdf-document .bilingual-label,
 .pdf-document .tg small {
     display: block;
-    color: #6b7b74;
+    color: #64748b;
     font-size: 7.1pt;
     font-weight: 500;
     font-style: italic;
@@ -338,19 +343,19 @@ body.pdf-document {
 .pdf-document .signature-box,
 .pdf-document .authenticity-box,
 .pdf-document .document-callout {
-    border: 0.25mm solid #ded3bf;
-    border-radius: 4mm;
-    background: #fffaf0;
+    border: 0.25mm solid #cbd5e1;
+    border-radius: 2mm;
+    background: #f8fafc;
 }
 
 .pdf-document .document-callout {
     border-left: 1.3mm solid {{ $documentAccentColor }};
     padding: 4mm 5mm;
-    color: #475a53;
+    color: #475569;
 }
 
 .pdf-document .status-badge {
-    border-radius: 10mm;
+    border-radius: 2mm;
     padding: 1mm 2.5mm;
     font-size: 7.3pt;
     font-weight: 900;
@@ -365,7 +370,7 @@ body.pdf-document {
     border-top: 0.22mm solid #8fa096;
     margin-top: 12mm;
     padding-top: 2mm;
-    color: #475a53;
+    color: #475569;
     font-size: 7.8pt;
 }
 

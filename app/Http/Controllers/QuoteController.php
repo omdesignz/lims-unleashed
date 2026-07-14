@@ -441,7 +441,7 @@ class QuoteController extends Controller
         // return redirect()->back()->with([
         //     'toast' => [
         //         'title' => trans('gestlab.toasts.notification'),
-        //         'message' => 'Registro armazenado com êxito'
+        //         'message' => 'Registo guardado com êxito'
         //     ]
         // ]);
 
@@ -449,14 +449,14 @@ class QuoteController extends Controller
             return redirect()->route('invoices.show', $quote->invoice_id)->with([
                 'toast' => [
                     'title' => trans('gestlab.toasts.notification'),
-                    'message' => 'Registro armazenado com êxito',
+                    'message' => 'Registo guardado com êxito',
                 ],
             ]);
         } else {
             return redirect()->route('quotes.show', $quote->id)->with([
                 'toast' => [
                     'title' => trans('gestlab.toasts.notification'),
-                    'message' => 'Registro Não Foi Convertido Para Fatura',
+                    'message' => 'Não foi possível converter o registo em factura',
                 ],
             ]);
         }

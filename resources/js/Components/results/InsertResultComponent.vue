@@ -280,7 +280,7 @@ function removeResult(index) {
       <div class="flex flex-col gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p class="ds-kicker">Modo individual</p>
-          <h2 class="ds-heading mt-2 text-base">Selecione um parâmetro</h2>
+          <h2 class="ds-heading mt-2 text-base">Seleccione um parâmetro</h2>
           <p class="ds-copy mt-1 text-xs">Abra apenas o resultado que pretende inserir ou corrigir.</p>
         </div>
         <span v-if="hasIndividualEntries" class="ds-chip">

@@ -25,9 +25,9 @@
           <BaseInput v-model="filters.endDate" type="date" label="Fim" />
         </div>
         <div v-else class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Âmbito ativo</p>
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Âmbito activo</p>
           <p class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ periodLabel }}</p>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">Atualização automática dos indicadores.</p>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">Actualização automática dos indicadores.</p>
         </div>
       </div>
 
@@ -37,7 +37,7 @@
             <p class="text-sm font-bold text-[var(--ds-text)]">{{ consumptionHistory.length }} eventos de consumo na amostra</p>
             <span v-if="isLoading" class="ds-chip">
               <ArrowPathIcon class="h-3.5 w-3.5 animate-spin" />
-              A atualizar
+              A actualizar
             </span>
           </div>
           <div v-if="activeFilterPills.length" class="mt-2 flex flex-wrap gap-2">
@@ -116,7 +116,7 @@
         <article class="min-w-0 p-5">
           <div class="flex items-start justify-between gap-4">
             <div>
-              <h3 class="text-sm font-black text-[var(--ds-text)]">Stock por categoria</h3>
+              <h3 class="text-sm font-black text-[var(--ds-text)]">Existências por categoria</h3>
               <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Distribuição das unidades disponíveis.</p>
             </div>
             <span class="ds-chip">{{ stockDistribution.length }} categorias</span>
@@ -127,7 +127,7 @@
           <div v-else class="ds-empty-state mt-4 grid min-h-72 place-items-center p-6 text-center">
             <div>
               <CircleStackIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
-              <p class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem stock distribuído</p>
+              <p class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem existências distribuído</p>
             </div>
           </div>
         </article>
@@ -136,7 +136,7 @@
           <div class="flex items-start justify-between gap-4">
             <div>
               <h3 class="text-sm font-black text-[var(--ds-text)]">Comparação mensal</h3>
-              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Ano atual comparado com o período homólogo.</p>
+              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Ano actual comparado com o período homólogo.</p>
             </div>
             <ArrowsRightLeftIcon class="h-5 w-5 text-violet-700 dark:text-violet-300" />
           </div>
@@ -238,7 +238,7 @@
                 <dd class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ event.used_by || 'N/D' }}</dd>
               </div>
               <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
-                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Stock atual</dt>
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Existências actual</dt>
                 <dd :class="['mt-2 text-sm font-black', stockTone(event)]">{{ formatNumber(event.current_stock) }} un.</dd>
               </div>
             </dl>
@@ -255,7 +255,7 @@
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
                 <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Consumo</th>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Operador</th>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Saúde do stock</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Saúde do existências</th>
                 <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Cobertura</th>
               </tr>
             </thead>
@@ -346,7 +346,7 @@
                     <ShoppingCartIcon class="h-5 w-5" />
                   </span>
                   <DialogTitle class="mt-4 text-lg font-black text-[var(--ds-text)]">Criar rascunho de reposição?</DialogTitle>
-                  <p class="mt-2 text-sm font-semibold leading-6 text-[var(--ds-text-muted)]">Será criado um rascunho para os itens atualmente sem stock. A ordem continuará sujeita a revisão e aprovação.</p>
+                  <p class="mt-2 text-sm font-semibold leading-6 text-[var(--ds-text-muted)]">Será criado um rascunho para os itens atualmente sem existências. A ordem continuará sujeita a revisão e aprovação.</p>
                 </div>
                 <div class="flex flex-col-reverse gap-3 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
                   <button type="button" class="ds-button ds-button-secondary" :disabled="creatingDrafts" @click="restockDialogOpen = false">Cancelar</button>
@@ -471,9 +471,9 @@ const metricCards = computed(() => [
     tone: totalAlerts.value ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-300',
   },
   {
-    label: 'Valor em stock',
+    label: 'Valor em existências',
     value: formatCurrency(metrics.value.inventoryValue),
-    detail: 'Âmbito selecionado',
+    detail: 'Âmbito seleccionado',
     icon: BanknotesIcon,
     tone: 'text-emerald-700 dark:text-emerald-300',
   },
@@ -481,15 +481,15 @@ const metricCards = computed(() => [
 
 const alertGroups = computed(() => [
   {
-    kicker: 'Critical control',
-    label: 'Sem stock ou expirado',
+    kicker: 'Controlo crítico',
+    label: 'Sem existências ou expirado',
     count: Number(metrics.value.criticalAlerts || 0),
     items: arrayValue(metrics.value.alertDetails?.critical),
     tone: 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300',
     dot: 'bg-rose-500',
   },
   {
-    kicker: 'Replenishment',
+    kicker: 'Reposição',
     label: 'Abaixo do nível mínimo',
     count: Number(metrics.value.reorderAlerts || 0),
     items: arrayValue(metrics.value.alertDetails?.reorder),
@@ -497,7 +497,7 @@ const alertGroups = computed(() => [
     dot: 'bg-amber-500',
   },
   {
-    kicker: 'Expiry control',
+    kicker: 'Controlo de validade',
     label: 'Validade próxima',
     count: Number(metrics.value.expiringAlerts || 0),
     items: arrayValue(metrics.value.alertDetails?.expiring),
@@ -553,7 +553,7 @@ const stockChartOptions = computed(() => ({
 }))
 
 const monthlyChartSeries = computed(() => [
-  { name: 'Ano atual', data: monthlyComparison.value.map((month) => Number(month.current || 0)) },
+  { name: 'Ano actual', data: monthlyComparison.value.map((month) => Number(month.current || 0)) },
   { name: 'Ano anterior', data: monthlyComparison.value.map((month) => Number(month.previous || 0)) },
 ])
 const monthlyChartOptions = computed(() => ({
@@ -687,11 +687,11 @@ async function loadAnalytics() {
       headers: { Accept: 'application/json' },
       signal: requestController.signal,
     })
-    if (!response.ok) throw new Error('Não foi possível atualizar os indicadores de inventário.')
+    if (!response.ok) throw new Error('Não foi possível actualizar os indicadores de inventário.')
     analyticsData.value = normalizeData(await response.json())
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') return
-    requestError.value = error instanceof Error ? error.message : 'Não foi possível atualizar os indicadores.'
+    requestError.value = error instanceof Error ? error.message : 'Não foi possível actualizar os indicadores.'
   } finally {
     isLoading.value = false
   }
@@ -703,8 +703,8 @@ function stockPercentage(event) {
 }
 
 function stockLabel(event) {
-  if (Number(event.current_stock || 0) <= 0) return 'Sem stock'
-  if (Number(event.current_stock || 0) <= Number(event.min_level || 0)) return 'Stock baixo'
+  if (Number(event.current_stock || 0) <= 0) return 'Sem existências'
+  if (Number(event.current_stock || 0) <= Number(event.min_level || 0)) return 'Existências baixo'
   return 'Saudável'
 }
 

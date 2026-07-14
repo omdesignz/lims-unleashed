@@ -135,7 +135,7 @@ class FolderController extends Controller
         // Update the paths of files inside this folder and its subfolders
         $this->updateFilePaths($folder, $oldFolderPath, $newFolderPath);
 
-        return redirect()->back()->with('success', 'Folder renamed successfully!');
+        return redirect()->back()->with('success', 'Pasta renomeada com sucesso.');
     }
 
     public function show(Folder $folder)
@@ -236,7 +236,7 @@ class FolderController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Folder and its contents deleted successfully!',
+            'message' => 'A pasta e o respectivo conteúdo foram eliminados com sucesso.',
         ]);
     }
 

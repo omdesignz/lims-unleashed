@@ -66,15 +66,15 @@
                {{ \Settings::get('qcertfood_warehouse_label') }}:
             </td>
             <td class="tg-0lax" style="padding:5px 5px;font-size:11px;">
-               
+
                 {!! $model->collection->collection->warehouse->suburb !!}
-                
+
             </td>
             <td class="tg-0lax" style="padding:5px 5px;padding-left:210px;font-size:11px;">
-               {{ \Settings::get('qcertfood_collectiondate_label') }}:    
+               {{ \Settings::get('qcertfood_collectiondate_label') }}:
             </td>
             <td class="tg-0lax" style="text-align:right;padding:5px 5px;font-size:11px;">
-                {!! ($model->collection->extra_data->col_date ? $model->collection->extra_data->col_date : 'N/A') !!}    
+                {!! ($model->collection->extra_data->col_date ? $model->collection->extra_data->col_date : 'N/D') !!}
             </td>
         </tr>
     </table>

@@ -141,14 +141,14 @@ const queueMetrics = computed(() => [
     note: selectedResultAction.value.description,
   },
   {
-    label: "Etapa ativa",
+    label: "Etapa activa",
     value: selectedResultAction.value.value.toUpperCase(),
     note: "estado do fluxo",
   },
   {
     label: "Departamento",
     value: selectedDepartmentLabel.value,
-    note: "escopo operacional",
+    note: "âmbito operacional",
   },
   {
     label: "Nesta página",
@@ -219,7 +219,7 @@ const confirmationDialogDescription = computed(() => {
     return "A análise regressará à fila operacional e ficará novamente disponível para trabalho.";
   }
 
-  return "A análise será removida da fila ativa. O registo permanece recuperável no arquivo.";
+  return "A análise será removida da fila activa. O registo permanece recuperável no arquivo.";
 });
 
 function changeAnalysisCategory(category = "insert") {
@@ -324,7 +324,7 @@ function handleBulkAction(event) {
           </div>
           <h1 class="ds-heading mt-2 text-2xl">Fila de análises</h1>
           <p class="ds-copy mt-2 max-w-2xl text-sm">
-            Registe, verifique e aprove resultados com o departamento, a origem da amostra e a decisão atual sempre visíveis.
+            Registe, verifique e aprove resultados com o departamento, a origem da amostra e a decisão actual sempre visíveis.
           </p>
         </div>
 
@@ -445,7 +445,7 @@ function handleBulkAction(event) {
                 class="lims-status-dot"
                 :class="row.status ? 'lims-status-dot-release' : 'lims-status-dot-hold'"
               />
-              {{ row.status ? "Ativa" : "Pendente" }}
+              {{ row.status ? "Activa" : "Pendente" }}
             </span>
           </template>
 

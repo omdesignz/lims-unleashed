@@ -39,7 +39,7 @@ function mapReceipt(receipt) {
     download-route="portal.receipts.getReceiptPDF"
     support-type="billing_support"
     support-title="Apoio sobre recibos"
-    value-metric-label="Recebido nesta pagina"
+    value-metric-label="Recebido nesta página"
     :map-record="mapReceipt"
   />
 </template>

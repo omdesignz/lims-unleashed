@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\VAPLab;
-use App\Models\User;
 use App\Models\Department;
-use Inertia\Inertia;
+use App\Models\User;
+use App\Models\VAPLab;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Inertia\Inertia;
 
 class VAPLabController extends Controller
 {
@@ -18,7 +18,7 @@ class VAPLabController extends Controller
     public function index(Request $request)
     {
         // Gate::authorize('view-any', VAPLab::class);
-        
+
         $query = VAPLab::with(['supervisor', 'technicalHead', 'department'])
             // ->byTenant()
             ->latest();
@@ -28,9 +28,9 @@ class VAPLabController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%")
-                  ->orWhere('room_no', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('room_no', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
@@ -43,7 +43,7 @@ class VAPLabController extends Controller
                 'total' => VAPLab::count(),
                 'active' => VAPLab::active()->count(),
                 'with_supervisor' => VAPLab::whereNotNull('supervisor_id')->count(),
-            ]
+            ],
         ]);
     }
 
@@ -53,16 +53,16 @@ class VAPLabController extends Controller
     public function create()
     {
         Gate::authorize('create', VAPLab::class);
-        
+
         $supervisors = User::whereHas('roles', function ($q) {
-                $q->whereIn('name', ['supervisor', 'admin']);
-            })
+            $q->whereIn('name', ['supervisor', 'admin']);
+        })
             ->select('id', 'name', 'email')
             ->get();
 
         $technicalHeads = User::whereHas('roles', function ($q) {
-                $q->whereIn('name', ['technical_head', 'admin']);
-            })
+            $q->whereIn('name', ['technical_head', 'admin']);
+        })
             ->select('id', 'name', 'email')
             ->get();
 
@@ -85,7 +85,7 @@ class VAPLabController extends Controller
     public function store(Request $request)
     {
         // Gate::authorize('create', VAPLab::class);
-        
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:255|unique:labs,code',
@@ -104,7 +104,7 @@ class VAPLabController extends Controller
         VAPLab::create($validated);
 
         return redirect()->route('vap-labs.labs.index')
-            ->with('success', 'Lab created successfully.');
+            ->with('success', 'Laboratório criado com sucesso.');
     }
 
     /**
@@ -113,7 +113,7 @@ class VAPLabController extends Controller
     public function show(VAPLab $lab)
     {
         Gate::authorize('view', $lab);
-        
+
         $lab->load(['supervisor', 'technicalHead', 'department', 'parentLab', 'subLabs']);
 
         return Inertia::render('VAPLabs/Show', [
@@ -122,7 +122,7 @@ class VAPLabController extends Controller
                 'total_equipment' => 0,
                 'active_tests' => 0,
                 'staff_count' => 0,
-            ]
+            ],
         ]);
     }
 
@@ -132,16 +132,16 @@ class VAPLabController extends Controller
     public function edit(VAPLab $lab)
     {
         // Gate::authorize('update', $lab);
-        
+
         $supervisors = User::whereHas('roles', function ($q) {
-                $q->whereIn('name', ['supervisor', 'admin']);
-            })
+            $q->whereIn('name', ['supervisor', 'admin']);
+        })
             ->select('id', 'name', 'email')
             ->get();
 
         $technicalHeads = User::whereHas('roles', function ($q) {
-                $q->whereIn('name', ['technical_head', 'admin']);
-            })
+            $q->whereIn('name', ['technical_head', 'admin']);
+        })
             ->select('id', 'name', 'email')
             ->get();
 
@@ -165,15 +165,15 @@ class VAPLabController extends Controller
     public function update(Request $request, VAPLab $lab)
     {
         // Gate::authorize('update', $lab);
-        
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:255|unique:labs,code,' . $lab->id,
+            'code' => 'required|string|max:255|unique:labs,code,'.$lab->id,
             'room_no' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'contact' => 'nullable|string|max:255',
             'extension' => 'nullable|string|max:255',
-            'email' => 'nullable|email|unique:labs,email,' . $lab->id,
+            'email' => 'nullable|email|unique:labs,email,'.$lab->id,
             'supervisor_id' => 'nullable|exists:users,id',
             'technical_head_id' => 'nullable|exists:users,id',
             'department_id' => 'nullable|exists:departments,id',
@@ -182,7 +182,7 @@ class VAPLabController extends Controller
         $lab->update($validated);
 
         return redirect()->route('vap-labs.labs.index')
-            ->with('success', 'Lab updated successfully.');
+            ->with('success', 'Laboratório actualizado com sucesso.');
     }
 
     /**
@@ -191,11 +191,11 @@ class VAPLabController extends Controller
     public function destroy(VAPLab $lab)
     {
         // Gate::authorize('delete', $lab);
-        
+
         $lab->delete();
 
         return redirect()->route('vap-labs.labs.index')
-            ->with('success', 'Lab deleted successfully.');
+            ->with('success', 'Laboratório eliminado com sucesso.');
     }
 
     /**
@@ -205,11 +205,11 @@ class VAPLabController extends Controller
     {
         $lab = VAPLab::withTrashed()->findOrFail($id);
         // Gate::authorize('restore', $lab);
-        
+
         $lab->restore();
 
         return redirect()->route('vap-labs.labs.index')
-            ->with('success', 'Lab restored successfully.');
+            ->with('success', 'Laboratório restaurado com sucesso.');
     }
 
     /**
@@ -218,7 +218,7 @@ class VAPLabController extends Controller
     public function getLabOptions()
     {
         // Gate::authorize('view-any', VAPLab::class);
-        
+
         $labs = VAPLab::active()
             ->select('id', 'name', 'code')
             ->get()

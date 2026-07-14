@@ -148,7 +148,7 @@ class CustomerController extends Controller
             'record' => CustomerResource::make($customer),
             'charts' => [
                 'commercial_health' => [
-                    'labels' => ['Propostas aceites', 'Faturas em aberto', 'Pedidos do portal', 'Notas de crédito'],
+                    'labels' => ['Propostas aceites', 'Facturas em aberto', 'Pedidos do portal', 'Notas de crédito'],
                     'series' => [
                         (int) ($summary['accepted_proposals'] ?? 0),
                         (int) ($summary['open_invoices'] ?? 0),

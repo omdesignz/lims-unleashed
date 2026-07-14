@@ -1,37 +1,37 @@
 @component('mail::message')
-# ⚠️ Overdue Maintenance Tasks - Immediate Attention Required!
+# ⚠️ Tarefas de manutenção em atraso - atenção imediata necessária
 
-You have **{{ $tasks->count() }}** maintenance tasks that are **OVERDUE**.
+Existem **{{ $tasks->count() }}** tarefas de manutenção **EM ATRASO**.
 
 @component('mail::table')
-| Task Number | Equipment | Category | Overdue Since | Days Overdue |
+| Número da tarefa | Equipamento | Categoria | Em atraso desde | Dias de atraso |
 |-------------|-----------|----------|---------------|--------------|
 @foreach($tasks as $task)
 @php
     $daysOverdue = now()->diffInDays($task->due_date);
 @endphp
-| {{ $task->maintenance_task_no }} | {{ $task->equipment->name }} | {{ $task->category->name }} | {{ $task->due_date->format('d/m/Y') }} | {{ $daysOverdue }} days |
+| {{ $task->maintenance_task_no }} | {{ $task->equipment->name }} | {{ $task->category->name }} | {{ $task->due_date->format('d/m/Y') }} | {{ $daysOverdue }} dias |
 @endforeach
 @endcomponent
 
-## 🚨 Critical Impact:
-- Equipment may be out of calibration
-- Test results may be invalid
-- Regulatory compliance at risk
-- Potential safety hazards
+## 🚨 Impacto crítico
+- O equipamento pode estar fora de calibração
+- Os resultados dos ensaios podem ser inválidos
+- A conformidade regulamentar pode estar em risco
+- Podem existir riscos para a segurança
 
 @component('mail::button', ['url' => url('/maintenance/dashboard?status=overdue'), 'color' => 'red'])
-Review Overdue Tasks Now
+Rever tarefas em atraso
 @endcomponent
 
-**Required Actions:**
-1. Immediately schedule these maintenance tasks
-2. Notify relevant department heads
-3. Place equipment on hold if necessary
-4. Update maintenance schedule
+**Acções necessárias:**
+1. Agendar imediatamente estas tarefas de manutenção
+2. Notificar os responsáveis dos departamentos envolvidos
+3. Suspender a utilização do equipamento, se necessário
+4. Actualizar o plano de manutenção
 
-This requires **immediate attention** to ensure compliance and safety.
+Esta situação exige **atenção imediata** para garantir a conformidade e a segurança.
 
-Thanks,<br>
-{{ config('app.name') }} Maintenance System
+Obrigado,<br>
+Sistema de manutenção {{ config('app.name') }}
 @endcomponent

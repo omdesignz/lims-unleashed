@@ -58,21 +58,21 @@ const form = useForm({
 const editMetrics = computed(() => [
   {
     label: "Certificado",
-    value: certificate.code || "Sem codigo",
+    value: certificate.code || "Sem código",
   },
   {
-    label: "Cliente atual",
-    value: form.customer_id?.label || "Nao definido",
+    label: "Cliente actual",
+    value: form.customer_id?.label || "Não definido",
   },
   {
     label: "Estado operacional",
-    value: form.status ? "Ativo" : "Inativo",
+    value: form.status ? "Activo" : "Inactivo",
   },
 ]);
 
 const releaseContext = computed(() => [
   {
-    label: "Codigo",
+    label: "Código",
     value: certificate.code || "-",
   },
   {
@@ -84,7 +84,7 @@ const releaseContext = computed(() => [
     value: form.warehouse_id?.label || "-",
   },
   {
-    label: "Validacao",
+    label: "Validação",
     value: certificate.validated_at || "Pendente",
   },
 ]);
@@ -138,14 +138,11 @@ function loadLabCodes(query, setOptions) {
             <ArrowLeftIcon class="h-4 w-4" />
             Voltar ao certificado
           </Link>
-          <p class="ds-kicker">Edicao controlada</p>
+          <p class="ds-kicker">Edição controlada</p>
           <h1 class="ds-heading mt-2 break-words text-2xl">
             Editar certificado {{ certificate.code ? `#${certificate.code}` : "" }}
           </h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm">
-            Atualize apenas os dados de contexto antes da assinatura final. As
-            alteracoes ficam ligadas ao dossier de emissao.
-          </p>
+          <p class="ds-copy mt-2 max-w-2xl text-sm"> Actualize apenas os dados de contexto antes da assinatura final. As alterações ficam ligadas ao dossier de emissão. </p>
         </div>
 
         <button
@@ -181,10 +178,7 @@ function loadLabCodes(query, setOptions) {
         <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
           <p class="ds-kicker">Dados do certificado</p>
           <h2 class="ds-heading mt-2 text-lg">Contexto comercial e laboratorial</h2>
-          <p class="ds-copy mt-1 text-sm">
-            Mantenha o destinatario e a referencia laboratorial alinhados com a
-            amostra aprovada.
-          </p>
+          <p class="ds-copy mt-1 text-sm"> Mantenha o destinatário e a referência laboratorial alinhados com a amostra aprovada. </p>
         </div>
 
         <div class="grid gap-5 px-5 py-5 sm:px-6 lg:grid-cols-2">
@@ -226,7 +220,7 @@ function loadLabCodes(query, setOptions) {
               v-model="form.cl_id"
               :has-error="Boolean(form.errors.cl_id)"
               :load-options="loadLabCodes"
-              placeholder="Pesquisar codigo laboratorial"
+              placeholder="Pesquisar código laboratorial"
             />
             <p v-if="form.errors.cl_id" class="ds-field-error">
               {{ form.errors.cl_id }}
@@ -246,7 +240,7 @@ function loadLabCodes(query, setOptions) {
               type="button"
               role="switch"
               :aria-checked="form.status"
-              :aria-label="form.status ? 'Desativar certificado' : 'Ativar certificado'"
+              :aria-label="form.status ? 'Desactivar certificado' : 'Activar certificado'"
               :class="[
                 'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--ds-focus)]',
                 form.status
@@ -275,11 +269,9 @@ function loadLabCodes(query, setOptions) {
             rows="8"
             class="ds-field"
             :aria-invalid="Boolean(form.errors.obs)"
-            placeholder="Observacoes tecnicas ou comerciais relevantes para o certificado"
+            placeholder="Observações técnicas ou comerciais relevantes para o certificado"
           />
-          <p class="ds-field-hint">
-            Registe apenas informacao que deva acompanhar a cadeia documental.
-          </p>
+          <p class="ds-field-hint"> Registe apenas informação que deva acompanhar a cadeia documental. </p>
           <p v-if="form.errors.obs" class="ds-field-error">
             {{ form.errors.obs }}
           </p>
@@ -298,7 +290,7 @@ function loadLabCodes(query, setOptions) {
             :disabled="form.processing || !form.isDirty"
           >
             <CheckBadgeIcon class="h-4 w-4" />
-            {{ form.processing ? "A guardar..." : "Guardar alteracoes" }}
+            {{ form.processing ? "A guardar..." : "Guardar alterações" }}
           </button>
         </div>
       </section>
@@ -309,8 +301,8 @@ function loadLabCodes(query, setOptions) {
             <div class="grid h-10 w-10 place-items-center rounded-lg bg-[var(--ds-panel-raised)] text-[var(--ds-text-muted)]">
               <ShieldCheckIcon class="h-5 w-5" />
             </div>
-            <p class="ds-kicker mt-4">Cadeia de emissao</p>
-            <h2 class="ds-heading mt-2 text-base">Contexto atual</h2>
+            <p class="ds-kicker mt-4">Cadeia de emissão</p>
+            <h2 class="ds-heading mt-2 text-base">Contexto actual</h2>
           </div>
           <dl class="divide-y divide-[var(--ds-border)]">
             <div
@@ -332,11 +324,8 @@ function loadLabCodes(query, setOptions) {
           <div class="flex items-start gap-3">
             <span class="lims-status-dot lims-status-dot-hold mt-1" />
             <div>
-              <h2 class="ds-heading text-sm">Revisao obrigatoria</h2>
-              <p class="ds-copy mt-1 text-xs">
-                Alteracoes afetam o documento final. Confirme cliente, local e
-                codigo laboratorial antes de solicitar validacao.
-              </p>
+              <h2 class="ds-heading text-sm">Revisão obrigatória</h2>
+              <p class="ds-copy mt-1 text-xs"> Alterações afetam o documento final. Confirme cliente, local e código laboratorial antes de solicitar validação. </p>
             </div>
           </div>
         </section>

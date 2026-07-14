@@ -73,8 +73,8 @@ class Handler extends ExceptionHandler
         if ($response->status() === 419) {
             return back()->with([
                 'toast' => [
-                    'title' => 'Session Expired',
-                    'message' => 'Your session has expired! Please try again.',
+                    'title' => 'Sessão expirada',
+                    'message' => 'A sua sessão expirou. Tente novamente.',
                 ],
             ]);
         }

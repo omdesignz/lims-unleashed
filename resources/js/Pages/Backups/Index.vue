@@ -10,7 +10,7 @@
             </span>
             <div class="min-w-0">
               <h1 class="ds-heading text-xl sm:text-2xl">Cópias de segurança</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Monitorize a proteção dos dados do laboratório e execute cópias controladas por âmbito.</p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">Monitorize a protecção dos dados do laboratório e execute cópias controladas por âmbito.</p>
             </div>
           </div>
         </div>
@@ -22,7 +22,7 @@
             : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300'"
         >
           <span class="h-2 w-2 rounded-full" :class="loadError ? 'bg-red-500' : 'bg-emerald-500'" />
-          {{ loadError ? 'Monitorização indisponível' : 'Monitorização ativa' }}
+          {{ loadError ? 'Monitorização indisponível' : 'Monitorização activa' }}
         </span>
       </div>
 
@@ -32,7 +32,7 @@
           <dd class="mt-1 text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ disks.length }}</dd>
         </div>
         <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Cópias no destino ativo</dt>
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Cópias no destino activo</dt>
           <dd class="mt-1 text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ activeDiskBackups.length }}</dd>
         </div>
         <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
@@ -45,7 +45,7 @@
     <div v-if="loadError" role="alert" class="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-200">
       <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 shrink-0" />
       <div>
-        <p class="font-bold">Não foi possível atualizar o estado das cópias.</p>
+        <p class="font-bold">Não foi possível actualizar o estado das cópias.</p>
         <p class="mt-1 font-medium">Os últimos dados disponíveis permanecem visíveis. A próxima tentativa será automática.</p>
       </div>
     </div>
@@ -66,7 +66,7 @@
           <div>
             <CircleStackIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
             <h2 class="ds-heading mt-3 text-base">Nenhum destino configurado</h2>
-            <p class="ds-copy mt-1 text-sm">Configure pelo menos um disco de backup para iniciar a proteção operacional.</p>
+            <p class="ds-copy mt-1 text-sm">Configure pelo menos um disco de cópia de segurança para iniciar a protecção operacional.</p>
           </div>
         </div>
       </div>
@@ -76,7 +76,7 @@
           <div class="border-b border-[var(--ds-border)] px-4 py-3">
             <p class="ds-kicker">Execução manual</p>
             <h2 class="ds-heading mt-1 text-sm">Criar cópia</h2>
-            <p class="ds-copy mt-1 text-xs">Selecione o âmbito necessário para a verificação ou recuperação planeada.</p>
+            <p class="ds-copy mt-1 text-xs">Seleccione o âmbito necessário para a verificação ou recuperação planeada.</p>
           </div>
 
           <div class="grid gap-2 p-4">
@@ -109,11 +109,11 @@
 
           <dl class="mt-4 divide-y divide-[var(--ds-border)] border-y border-[var(--ds-border)]">
             <div class="flex items-center justify-between gap-3 py-3">
-              <dt class="text-xs font-semibold text-[var(--ds-text-muted)]">Destino ativo</dt>
+              <dt class="text-xs font-semibold text-[var(--ds-text-muted)]">Destino activo</dt>
               <dd class="truncate font-mono text-xs font-bold text-[var(--ds-text)]">{{ activeDisk || '—' }}</dd>
             </div>
             <div class="flex items-center justify-between gap-3 py-3">
-              <dt class="text-xs font-semibold text-[var(--ds-text-muted)]">Atualização</dt>
+              <dt class="text-xs font-semibold text-[var(--ds-text-muted)]">Actualização</dt>
               <dd class="text-xs font-bold text-[var(--ds-text)]">30 segundos</dd>
             </div>
           </dl>
@@ -163,7 +163,7 @@ async function getJson(url) {
   })
 
   if (!response.ok) {
-    throw new Error(`Backup status request failed with ${response.status}`)
+    throw new Error(`Cópia de segurança estado request failed with ${response.status}`)
   }
 
   return response.json()

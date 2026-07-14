@@ -79,8 +79,8 @@ class CollectionEndResultController extends Controller
 
         return redirect()->back()->with([
             'toast' => [
-                'title' => 'Notificção',
-                'message' => 'Registro armazenado com êxito',
+                'title' => 'Notificação',
+                'message' => 'Registo guardado com êxito',
             ],
         ]);
 
@@ -124,8 +124,8 @@ class CollectionEndResultController extends Controller
 
         return redirect()->back()->with([
             'toast' => [
-                'title' => 'Notificção',
-                'message' => 'Registro actualizado com êxito',
+                'title' => 'Notificação',
+                'message' => 'Registo actualizado com êxito',
             ],
         ]);
     }
@@ -148,7 +148,7 @@ class CollectionEndResultController extends Controller
         return redirect()->back()->with([
             'toast' => [
                 'title' => '',
-                'message' => 'Registro removido com sucesso',
+                'message' => 'Registo removido com êxito',
             ],
         ]);
     }
@@ -171,7 +171,7 @@ class CollectionEndResultController extends Controller
         return redirect()->back()->with([
             'toast' => [
                 'title' => '',
-                'message' => 'Registro restaurado com sucesso',
+                'message' => 'Registo restaurado com êxito',
             ],
         ]);
     }

@@ -96,7 +96,7 @@ class ISORevisionController extends Controller
 
         return redirect()
             ->route('qualitycertificates.iso-revisions.index', $certificate)
-            ->with('success', 'Revision created successfully with ISO 17025 compliance.');
+            ->with('success', 'Revisão criada com sucesso em conformidade com a ISO 17025.');
     }
 
     /**
@@ -250,7 +250,7 @@ class ISORevisionController extends Controller
 
         return redirect()
             ->route('qualitycertificates.iso-revisions.index', $certificate)
-            ->with('success', 'Certificate restored to revision '.$revision->version);
+            ->with('success', 'Certificado restaurado para a revisão '.$revision->version.'.');
     }
 
     /**
@@ -309,7 +309,7 @@ class ISORevisionController extends Controller
             'exportDate' => Carbon::now(),
         ]);
 
-        return $pdf->download("revision-history-{$certificate->code}.pdf");
+        return $pdf->download("historico-revisoes-{$certificate->code}.pdf");
     }
 
     /**
@@ -327,7 +327,7 @@ class ISORevisionController extends Controller
             'differences' => $this->compareRevisions($revisionA, $revisionB),
         ]);
 
-        return $pdf->download("comparison-{$certificate->code}-{$revisionA->version}-vs-{$revisionB->version}.pdf");
+        return $pdf->download("comparacao-{$certificate->code}-{$revisionA->version}-{$revisionB->version}.pdf");
     }
 
     /**
@@ -380,10 +380,10 @@ class ISORevisionController extends Controller
     private function getUpdatableFields(): array
     {
         return [
-            ['name' => 'status', 'label' => 'Certificate Status'],
-            ['name' => 'obs', 'label' => 'Observations'],
-            ['name' => 'validated_by', 'label' => 'Validated By'],
-            ['name' => 'extra_data', 'label' => 'Additional Data'],
+            ['name' => 'status', 'label' => 'Estado do certificado'],
+            ['name' => 'obs', 'label' => 'Observações'],
+            ['name' => 'validated_by', 'label' => 'Validado por'],
+            ['name' => 'extra_data', 'label' => 'Dados adicionais'],
         ];
     }
 
@@ -423,7 +423,7 @@ class ISORevisionController extends Controller
         if (! empty($certificateDiff)) {
             $differences[] = [
                 'category' => 'certificate',
-                'label' => 'Certificate Data',
+                'label' => 'Dados do certificado',
                 'items' => $certificateDiff,
                 'count' => count($certificateDiff),
             ];
@@ -438,7 +438,7 @@ class ISORevisionController extends Controller
         if (! empty($relatedDiff)) {
             $differences[] = [
                 'category' => 'related',
-                'label' => 'Related Data',
+                'label' => 'Dados relacionados',
                 'items' => $relatedDiff,
                 'count' => count($relatedDiff),
             ];
@@ -453,7 +453,7 @@ class ISORevisionController extends Controller
         if (! empty($isoDiff)) {
             $differences[] = [
                 'category' => 'iso',
-                'label' => 'ISO Compliance',
+                'label' => 'Conformidade ISO',
                 'items' => $isoDiff,
                 'count' => count($isoDiff),
             ];
@@ -465,7 +465,7 @@ class ISORevisionController extends Controller
         if (! empty($metadataDiff)) {
             $differences[] = [
                 'category' => 'metadata',
-                'label' => 'Revision Metadata',
+                'label' => 'Metadados da revisão',
                 'items' => $metadataDiff,
                 'count' => count($metadataDiff),
             ];
@@ -488,17 +488,17 @@ class ISORevisionController extends Controller
 
         // Define important fields with labels
         $fieldLabels = [
-            'status' => 'Certificate Status',
-            'obs' => 'Observations',
-            'validated_by' => 'Validated By',
-            'validated_at' => 'Validation Date',
-            'file_path' => 'File Path',
-            'code' => 'Certificate Code',
-            'validated_on_behalf_of' => 'Validated On Behalf Of',
-            'extra_data' => 'Additional Data',
-            'deleted_at' => 'Deleted At',
-            'created_at' => 'Created At',
-            'updated_at' => 'Updated At',
+            'status' => 'Estado do certificado',
+            'obs' => 'Observações',
+            'validated_by' => 'Validado por',
+            'validated_at' => 'Data de validação',
+            'file_path' => 'Caminho do ficheiro',
+            'code' => 'Código do certificado',
+            'validated_on_behalf_of' => 'Validado em nome de',
+            'extra_data' => 'Dados adicionais',
+            'deleted_at' => 'Eliminado em',
+            'created_at' => 'Criado em',
+            'updated_at' => 'Actualizado em',
         ];
 
         foreach ($allKeys as $field) {
@@ -596,14 +596,14 @@ class ISORevisionController extends Controller
         if ($collectionA && ! $collectionB) {
             $differences[] = [
                 'field' => 'collection_product',
-                'label' => 'Collection Product',
-                'valueA' => 'Present',
-                'valueB' => 'Missing',
+                'label' => 'Produto da recolha',
+                'valueA' => 'Presente',
+                'valueB' => 'Em falta',
                 'change_type' => 'REMOVED',
                 'impact' => 'HIGH',
                 'category' => 'related',
-                'description' => 'Collection product data was removed',
-                'notes' => 'This is a significant change affecting traceability',
+                'description' => 'Os dados do produto da recolha foram removidos',
+                'notes' => 'Esta é uma alteração significativa que afecta a rastreabilidade',
             ];
 
             return $differences;
@@ -612,14 +612,14 @@ class ISORevisionController extends Controller
         if (! $collectionA && $collectionB) {
             $differences[] = [
                 'field' => 'collection_product',
-                'label' => 'Collection Product',
-                'valueA' => 'Missing',
-                'valueB' => 'Present',
+                'label' => 'Produto da recolha',
+                'valueA' => 'Em falta',
+                'valueB' => 'Presente',
                 'change_type' => 'ADDED',
                 'impact' => 'HIGH',
                 'category' => 'related',
-                'description' => 'Collection product data was added',
-                'notes' => 'This is a significant change affecting traceability',
+                'description' => 'Foram adicionados dados do produto da recolha',
+                'notes' => 'Esta é uma alteração significativa que afecta a rastreabilidade',
             ];
 
             return $differences;
@@ -631,14 +631,14 @@ class ISORevisionController extends Controller
 
         // Compare specific fields
         $importantFields = [
-            'comercial_brand' => 'Commercial Brand',
-            'lot' => 'Lot Number',
-            'bl' => 'BL Number',
-            'qty' => 'Quantity',
-            'collection_date' => 'Collection Date',
-            'expiry_date' => 'Expiry Date',
-            'sample_status' => 'Sample Status',
-            'status' => 'Status',
+            'comercial_brand' => 'Marca comercial',
+            'lot' => 'Número do lote',
+            'bl' => 'Número do BL',
+            'qty' => 'Quantidade',
+            'collection_date' => 'Data de recolha',
+            'expiry_date' => 'Data de validade',
+            'sample_status' => 'Estado da amostra',
+            'status' => 'Estado',
         ];
 
         foreach ($importantFields as $field => $label) {
@@ -651,13 +651,13 @@ class ISORevisionController extends Controller
             if ($formattedValueA !== $formattedValueB) {
                 $differences[] = [
                     'field' => "collection.{$field}",
-                    'label' => "Collection: {$label}",
+                    'label' => "Recolha: {$label}",
                     'valueA' => $formattedValueA,
                     'valueB' => $formattedValueB,
                     'change_type' => $this->determineChangeType($valueA, $valueB),
                     'impact' => $field === 'lot' || $field === 'bl' ? 'HIGH' : 'MEDIUM',
                     'category' => 'related',
-                    'description' => "Collection {$label} changed",
+                    'description' => "O campo {$label} da recolha foi alterado",
                     'notes' => $this->getCollectionChangeNotes($field, $valueA, $valueB),
                 ];
             }
@@ -691,13 +691,13 @@ class ISORevisionController extends Controller
                 $addedResult = $resultsBForParam[0];
                 $differences[] = [
                     'field' => "result.{$paramId}",
-                    'label' => 'Test Result: '.($addedResult['parameter_label'] ?? "Parameter {$paramId}"),
-                    'valueA' => 'Not Tested',
+                    'label' => 'Resultado de ensaio: '.($addedResult['parameter_label'] ?? "Parâmetro {$paramId}"),
+                    'valueA' => 'Não ensaiado',
                     'valueB' => $this->formatResultValue($addedResult),
                     'change_type' => 'ADDED',
                     'impact' => 'MEDIUM',
                     'category' => 'related',
-                    'description' => 'New test result added',
+                    'description' => 'Foi adicionado um novo resultado de ensaio',
                     'notes' => $addedResult['approval_notes'] ?? $addedResult['verification_notes'] ?? null,
                 ];
 
@@ -708,14 +708,14 @@ class ISORevisionController extends Controller
                 $removedResult = $resultsAForParam[0];
                 $differences[] = [
                     'field' => "result.{$paramId}",
-                    'label' => 'Test Result: '.($removedResult['parameter_label'] ?? "Parameter {$paramId}"),
+                    'label' => 'Resultado de ensaio: '.($removedResult['parameter_label'] ?? "Parâmetro {$paramId}"),
                     'valueA' => $this->formatResultValue($removedResult),
-                    'valueB' => 'Not Tested',
+                    'valueB' => 'Não ensaiado',
                     'change_type' => 'REMOVED',
                     'impact' => 'HIGH',
                     'category' => 'related',
-                    'description' => 'Test result removed',
-                    'notes' => 'This affects the completeness of test data',
+                    'description' => 'O resultado de ensaio foi removido',
+                    'notes' => 'Esta alteração afecta a integridade dos dados do ensaio',
                 ];
 
                 continue;
@@ -732,23 +732,23 @@ class ISORevisionController extends Controller
                 if ($valueA !== $valueB) {
                     $differences[] = [
                         'field' => "result.{$paramId}.value",
-                        'label' => 'Test Result: '.($resultA['parameter_label'] ?? "Parameter {$paramId}"),
+                        'label' => 'Resultado de ensaio: '.($resultA['parameter_label'] ?? "Parâmetro {$paramId}"),
                         'valueA' => $this->formatResultValue($resultA),
                         'valueB' => $this->formatResultValue($resultB),
                         'change_type' => 'MODIFIED',
                         'impact' => $this->determineResultImpact($resultA, $resultB),
                         'category' => 'related',
-                        'description' => 'Test result value changed',
+                        'description' => 'O valor do resultado de ensaio foi alterado',
                         'notes' => $this->getResultChangeNotes($resultA, $resultB),
                     ];
                 }
 
                 // Compare other important result fields
                 $resultFields = [
-                    'status' => 'Result Status',
-                    'verification_notes' => 'Verification Notes',
-                    'approval_notes' => 'Approval Notes',
-                    'insertion_notes' => 'Insertion Notes',
+                    'status' => 'Estado do resultado',
+                    'verification_notes' => 'Notas de verificação',
+                    'approval_notes' => 'Notas de aprovação',
+                    'insertion_notes' => 'Notas de inserção',
                 ];
 
                 foreach ($resultFields as $field => $label) {
@@ -758,13 +758,13 @@ class ISORevisionController extends Controller
                     if ($fieldValueA !== $fieldValueB) {
                         $differences[] = [
                             'field' => "result.{$paramId}.{$field}",
-                            'label' => "Test Result {$label}: ".($resultA['parameter_label'] ?? "Parameter {$paramId}"),
+                            'label' => "Resultado de ensaio - {$label}: ".($resultA['parameter_label'] ?? "Parâmetro {$paramId}"),
                             'valueA' => $this->formatValueForComparison($fieldValueA),
                             'valueB' => $this->formatValueForComparison($fieldValueB),
                             'change_type' => $this->determineChangeType($fieldValueA, $fieldValueB),
                             'impact' => 'LOW',
                             'category' => 'related',
-                            'description' => "Test result {$label} changed",
+                            'description' => "O campo {$label} do resultado de ensaio foi alterado",
                             'notes' => null,
                         ];
                     }
@@ -788,11 +788,11 @@ class ISORevisionController extends Controller
         ));
 
         $metadataLabels = [
-            'iso_section' => 'ISO Section Reference',
-            'change_category' => 'Change Category',
-            'risk_assessment' => 'Risk Assessment',
-            'review_required' => 'Review Required',
-            'approval_workflow' => 'Approval Workflow',
+            'iso_section' => 'Referência da secção ISO',
+            'change_category' => 'Categoria da alteração',
+            'risk_assessment' => 'Avaliação de risco',
+            'review_required' => 'Revisão necessária',
+            'approval_workflow' => 'Fluxo de aprovação',
         ];
 
         foreach ($allKeys as $key) {
@@ -811,7 +811,7 @@ class ISORevisionController extends Controller
                     'change_type' => $this->determineChangeType($valueA, $valueB),
                     'impact' => $key === 'risk_assessment' ? 'MEDIUM' : 'LOW',
                     'category' => 'iso',
-                    'description' => 'ISO compliance metadata changed',
+                    'description' => 'Os metadados de conformidade ISO foram alterados',
                     'notes' => $this->getIsoMetadataNotes($key, $valueA, $valueB),
                 ];
             }
@@ -828,13 +828,13 @@ class ISORevisionController extends Controller
         $differences = [];
 
         $fields = [
-            'change_type' => 'Change Type',
-            'change_reason' => 'Change Reason',
-            'version' => 'Version',
-            'revision_number' => 'Revision Number',
-            'effective_date' => 'Effective Date',
-            'created_by_id' => 'Created By',
-            'approved_by_id' => 'Approved By',
+            'change_type' => 'Tipo de alteração',
+            'change_reason' => 'Motivo da alteração',
+            'version' => 'Versão',
+            'revision_number' => 'Número da revisão',
+            'effective_date' => 'Data de entrada em vigor',
+            'created_by_id' => 'Criada por',
+            'approved_by_id' => 'Aprovada por',
         ];
 
         foreach ($fields as $field => $label) {
@@ -849,8 +849,8 @@ class ISORevisionController extends Controller
 
                 // Special handling for user IDs
                 if (in_array($field, ['created_by_id', 'approved_by_id'])) {
-                    $formattedValueA = $revisionA->{$field === 'created_by_id' ? 'createdBy' : 'approvedBy'}->name ?? "User ID: {$valueA}";
-                    $formattedValueB = $revisionB->{$field === 'created_by_id' ? 'createdBy' : 'approvedBy'}->name ?? "User ID: {$valueB}";
+                    $formattedValueA = $revisionA->{$field === 'created_by_id' ? 'createdBy' : 'approvedBy'}->name ?? "ID do utilizador: {$valueA}";
+                    $formattedValueB = $revisionB->{$field === 'created_by_id' ? 'createdBy' : 'approvedBy'}->name ?? "ID do utilizador: {$valueB}";
                     $impact = 'LOW';
                 }
 
@@ -862,8 +862,8 @@ class ISORevisionController extends Controller
                     'change_type' => $this->determineChangeType($valueA, $valueB),
                     'impact' => $impact,
                     'category' => 'metadata',
-                    'description' => 'Revision metadata changed',
-                    'notes' => $field === 'change_reason' ? 'Change reason indicates purpose of revision' : null,
+                    'description' => 'Os metadados da revisão foram alterados',
+                    'notes' => $field === 'change_reason' ? 'O motivo da alteração indica o objectivo da revisão' : null,
                 ];
             }
         }
@@ -877,23 +877,23 @@ class ISORevisionController extends Controller
     private function formatValueForComparison($value): string
     {
         if ($value === null) {
-            return '[null]';
+            return '[nulo]';
         }
 
         if ($value === '') {
-            return '[empty]';
+            return '[vazio]';
         }
 
         if (is_bool($value)) {
-            return $value ? 'Yes' : 'No';
+            return $value ? 'Sim' : 'Não';
         }
 
         if (is_array($value)) {
-            return empty($value) ? '[]' : '[array]';
+            return empty($value) ? '[]' : '[matriz]';
         }
 
         if (is_object($value)) {
-            return '[object]';
+            return '[objecto]';
         }
 
         if ($value instanceof Carbon) {
@@ -975,7 +975,7 @@ class ISORevisionController extends Controller
         $unit = $result['unit_label'] ?? null;
 
         if ($value === null) {
-            return 'No value';
+            return 'Sem valor';
         }
 
         if ($unit) {
@@ -988,16 +988,16 @@ class ISORevisionController extends Controller
     private function getFieldDescription(string $field): ?string
     {
         $descriptions = [
-            'status' => 'Overall certificate status',
-            'obs' => 'Observations and notes',
-            'validated_by' => 'Person who validated the certificate',
-            'validated_at' => 'Date and time of validation',
-            'lot' => 'Product lot/batch number',
-            'bl' => 'Bill of Lading number',
-            'approved_value' => 'Approved test result value',
-            'change_reason' => 'Reason for the revision',
-            'iso_section' => 'ISO 17025 section reference',
-            'risk_assessment' => 'Risk level of the change',
+            'status' => 'Estado geral do certificado',
+            'obs' => 'Observações e notas',
+            'validated_by' => 'Pessoa que validou o certificado',
+            'validated_at' => 'Data e hora da validação',
+            'lot' => 'Número do lote do produto',
+            'bl' => 'Número do conhecimento de embarque',
+            'approved_value' => 'Valor aprovado do resultado do ensaio',
+            'change_reason' => 'Motivo da revisão',
+            'iso_section' => 'Referência da secção ISO 17025',
+            'risk_assessment' => 'Nível de risco da alteração',
         ];
 
         return $descriptions[$field] ?? null;
@@ -1007,20 +1007,20 @@ class ISORevisionController extends Controller
     {
         if ($field === 'status') {
             $statusLabels = [
-                0 => 'Draft',
-                1 => 'Validated',
-                2 => 'Withdrawn',
-                3 => 'Reissued',
+                0 => 'Rascunho',
+                1 => 'Validado',
+                2 => 'Retirado',
+                3 => 'Reemitido',
             ];
 
             $oldLabel = $statusLabels[$oldValue] ?? $oldValue;
             $newLabel = $statusLabels[$newValue] ?? $newValue;
 
-            return "Status changed from '{$oldLabel}' to '{$newLabel}'";
+            return "O estado foi alterado de '{$oldLabel}' para '{$newLabel}'";
         }
 
         if ($field === 'validated_at') {
-            return 'Validation timestamp updated';
+            return 'A data e hora da validação foram actualizadas';
         }
 
         return null;
@@ -1029,11 +1029,11 @@ class ISORevisionController extends Controller
     private function getCollectionChangeNotes($field, $oldValue, $newValue): ?string
     {
         if (in_array($field, ['lot', 'bl'])) {
-            return 'Traceability identifier changed';
+            return 'O identificador de rastreabilidade foi alterado';
         }
 
         if (in_array($field, ['collection_date', 'expiry_date'])) {
-            return 'Date field updated';
+            return 'O campo de data foi actualizado';
         }
 
         return null;
@@ -1045,7 +1045,7 @@ class ISORevisionController extends Controller
         $notesB = $resultB['approval_notes'] ?? $resultB['verification_notes'] ?? null;
 
         if ($notesA && $notesB && $notesA !== $notesB) {
-            return 'Notes updated in newer revision';
+            return 'As notas foram actualizadas na revisão mais recente';
         }
 
         return null;
@@ -1060,9 +1060,9 @@ class ISORevisionController extends Controller
 
             if ($oldIndex !== false && $newIndex !== false) {
                 if ($newIndex > $oldIndex) {
-                    return 'Risk level increased';
+                    return 'O nível de risco aumentou';
                 } elseif ($newIndex < $oldIndex) {
-                    return 'Risk level decreased';
+                    return 'O nível de risco diminuiu';
                 }
             }
         }

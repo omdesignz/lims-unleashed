@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-AO">
 <head>
     <meta charset="UTF-8">
     <style>
@@ -278,7 +278,7 @@
             page-break-before: always;
         }
         
-        /* QR Code Styling */
+        /* Código QR Styling */
         .qr-container {
             text-align: center;
             padding: 10px;
@@ -428,7 +428,7 @@
                     <!-- Left Column: Origin -->
                     <td class="column-cell left-column">
                         <div class="info-row">
-                            <div class="label">Origem / Origin</div>
+                            <div class="label">Origem</div>
                             <div class="value highlight-value">
                                 {{ $model->country_origin?->name }}
                             </div>
@@ -439,14 +439,14 @@
                             <div class="value">
                                 {{ $model->city_origin }}
                             </div>
-                            <div class="muted small-text">City of Origin</div>
+                            <div class="muted small-text">Cidade de origem</div>
                         </div>
                     </td>
                     
                     <!-- Right Column: Destination -->
                     <td class="column-cell right-column">
                         <div class="info-row">
-                            <div class="label">Destino / Destination</div>
+                            <div class="label">Destino</div>
                             <div class="value highlight-value">
                                 {{ $model->country_destination?->name }}
                             </div>
@@ -457,7 +457,7 @@
                             <div class="value">
                                 {{ $model->city_destination }}
                             </div>
-                            <div class="muted small-text">City of Destination</div>
+                            <div class="muted small-text">Cidade de destino</div>
                         </div>
                     </td>
                 </tr>
@@ -482,13 +482,13 @@
                             <div class="value highlight-value">
                                 {{ $model->exporter->name }}
                             </div>
-                            <div class="muted small-text">Company Name</div>
+                            <div class="muted small-text">Nome da empresa</div>
                         </div>
                         
                         <div class="info-row">
-                            <div class="label">NIF / Tax ID</div>
+                            <div class="label">NIF</div>
                             <div class="value">
-                                {{ $model->exporter_warehouse->nif ?? 'N/A' }}
+                                {{ $model->exporter_warehouse->nif ?? 'N/D' }}
                             </div>
                         </div>
                     </td>
@@ -501,7 +501,7 @@
                                 {{ $model->exporter_warehouse->address }}<br>
                                 {{ $model->exporter_warehouse->municipality }}
                             </div>
-                            <div class="muted small-text">Address</div>
+                            <div class="muted small-text">Endereço</div>
                         </div>
                         
                         <div class="info-row">
@@ -509,7 +509,7 @@
                             <div class="value highlight-value">
                                 {{ $model->trans_type->name }}
                             </div>
-                            <div class="muted small-text">Transportation Type</div>
+                            <div class="muted small-text">Tipo de transporte</div>
                         </div>
                     </td>
                 </tr>
@@ -528,9 +528,9 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Produto / Product</th>
-                        <th>Quantidade (kg/l)<br><span class="muted">Quantity</span></th>
-                        <th>Observações<br><span class="muted">Observations</span></th>
+                        <th>Produto</th>
+                        <th>Quantidade (kg/l)</th>
+                        <th>Observações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -554,7 +554,7 @@
             <div class="total-summary">
                 <div class="total-label">TOTAL GERAL (kg/l)</div>
                 <div class="total-value">{{ number_format($model->items->sum('qty'), 2) }}</div>
-                <div class="muted small-text" style="margin-top: 4px;">Total Quantity</div>
+                <div class="muted small-text" style="margin-top: 4px;">Quantidade total</div>
             </div>
         </div>
     </div>
@@ -569,7 +569,6 @@
                 <div class="h3" style="margin-bottom: 10px; color: #1e3a8a;">Declaração de Autorização</div>
                 <div class="body-text">
                     <p><strong>O Ministério da Agricultura e Florestas autoriza o portador deste documento a exportar os produtos acima citados, nas quantidades especificadas, sendo que a quantidade total não poderá exceder os 15 kg (quinze quilogramas).</strong></p>
-                    <p><em>The Ministry of Agriculture and Forests authorizes the bearer of this document to export the aforementioned products, in the specified quantities, with the total quantity not exceeding 15 kg (fifteen kilograms).</em></p>
                 </div>
                 
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
@@ -592,7 +591,7 @@
                         <div class="value highlight-value" style="font-size: 13px;">
                             {!! Carbon\Carbon::parse($model->expedition_date)->format('d/m/Y') !!}
                         </div>
-                        <div class="muted small-text">Expedition Date</div>
+                        <div class="muted small-text">Data de expedição</div>
                     </div>
                     
                     <div class="info-row">
@@ -600,21 +599,21 @@
                         <div class="value highlight-value" style="font-size: 13px;">
                             Luanda, Angola
                         </div>
-                        <div class="muted small-text">Expedition Location</div>
+                        <div class="muted small-text">Local de expedição</div>
                     </div>
                 </td>
                 
                 <!-- Right Column: Operator Information -->
                 <td class="column-cell right-column">
                     <div class="info-row">
-                        <div class="label">Operador / Operator</div>
+                        <div class="label">Operador</div>
                         <div class="value">{!! $model->user->full_name !!}</div>
                     </div>
                     
                     <div class="info-row">
                         <div class="label">Data de Processamento</div>
                         <div class="value">{!! Carbon\Carbon::now()->format('d/m/Y H:i') !!}</div>
-                        <div class="muted small-text">Processing Date & Time</div>
+                        <div class="muted small-text">Data e hora de processamento</div>
                     </div>
                 </td>
             </tr>
@@ -623,19 +622,19 @@
         <!-- Signatures -->
         <div style="text-align: center; margin-top: 30px;">
             <div class="h3" style="margin-bottom: 25px; color: #1e3a8a;">
-                Assinatura Autorizada / Authorized Signature
+                Assinatura autorizada
             </div>
             
             <div style="display: flex; justify-content: center; align-items: flex-start; margin-top: 20px;">
                 <div style="text-align: center; width: 250px;">
                     <div class="signature-line"></div>
-                    <div class="small-text" style="margin-top: 5px;">Assinatura / Signature</div>
+                    <div class="small-text" style="margin-top: 5px;">Assinatura</div>
                     
                     <div style="margin-top: 25px;">
-                        <img src="{!! public_path() . '/images/stamp_wgaspar.svg' !!}" style="width: 80px; height: auto;" alt="Official Stamp">
+                        <img src="{!! public_path() . '/images/stamp_wgaspar.svg' !!}" style="width: 80px; height: auto;" alt="Carimbo oficial">
                         <div class="small-text" style="margin-top: 5px;">
                             <strong>Wladimira Gaspar</strong><br>
-                            Autorizado por / Authorized by
+                            Autorizado por
                         </div>
                     </div>
                 </div>

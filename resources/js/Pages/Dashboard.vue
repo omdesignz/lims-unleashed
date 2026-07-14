@@ -12,20 +12,20 @@
           </div>
           <h1 class="ds-heading mt-4 text-2xl sm:text-3xl">Visão geral do laboratório</h1>
           <p class="ds-copy mt-2 max-w-2xl text-sm">
-            Acompanhe a carga técnica, a liberação de resultados, o controlo documental e os sinais de qualidade que exigem decisão.
+            Acompanhe a carga técnica, a libertação de resultados, o controlo documental e os sinais de qualidade que exigem decisão.
           </p>
         </div>
 
         <div class="flex min-w-0 items-center gap-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3 lg:w-64">
           <UserCircleIcon class="h-6 w-6 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
           <div class="min-w-0">
-            <p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Sessão ativa</p>
+            <p class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Sessão activa</p>
             <p class="mt-1 truncate text-sm font-bold text-[var(--ds-text)]">{{ $page?.props?.auth?.user?.name || "Utilizador" }}</p>
           </div>
         </div>
       </div>
 
-      <nav class="grid border-t border-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4" aria-label="Ações principais">
+      <nav class="grid border-t border-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4" aria-label="Acções principais">
         <a
           v-for="action in dashboardPrimaryActions"
           :key="action.label"
@@ -103,11 +103,11 @@
           </div>
           <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-r sm:border-t-0">
             <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Horizonte</dt>
-            <dd class="mt-1 text-sm font-bold text-[var(--ds-text)]">Últimos 6 meses e risco atual</dd>
+            <dd class="mt-1 text-sm font-bold text-[var(--ds-text)]">Últimos 6 meses e risco actual</dd>
           </div>
           <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0">
             <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Referencial</dt>
-            <dd class="mt-1 text-sm font-bold text-[var(--ds-text)]">Direção e coordenação técnica</dd>
+            <dd class="mt-1 text-sm font-bold text-[var(--ds-text)]">Direcção e coordenação técnica</dd>
           </div>
         </dl>
       </section>
@@ -150,7 +150,7 @@
             <div>
               <p class="ds-kicker">Carga técnica</p>
               <h2 class="ds-heading mt-2 text-lg">Pipeline laboratorial</h2>
-              <p class="ds-copy mt-1 text-sm">Distribuição atual das amostras por estado.</p>
+              <p class="ds-copy mt-1 text-sm">Distribuição actual das amostras por estado.</p>
             </div>
             <span class="ds-badge ds-badge-warning">{{ sampleStatusTotal }} amostras</span>
           </div>
@@ -191,7 +191,7 @@
           <div class="flex items-start justify-between gap-3">
             <div>
               <p class="ds-kicker">Risco externo</p>
-              <h2 class="ds-heading mt-2 text-base">Fornecedores e receção</h2>
+              <h2 class="ds-heading mt-2 text-base">Fornecedores e recepção</h2>
             </div>
             <span class="ds-badge ds-badge-danger">{{ supplierRiskTotal }}</span>
           </div>
@@ -206,7 +206,7 @@
         <div class="ds-table-summary px-5 py-4 sm:px-6">
           <div>
             <p class="ds-kicker">Carteira</p>
-            <h2 class="ds-heading mt-2 text-lg">Clientes com atividade recente</h2>
+            <h2 class="ds-heading mt-2 text-lg">Clientes com actividade recente</h2>
           </div>
           <span class="ds-badge ds-badge-neutral">{{ props.executive.top_customers?.length || 0 }} clientes</span>
         </div>
@@ -226,7 +226,7 @@
                 <td class="ds-table-cell px-5 py-4 text-right tabular-nums">{{ customer.warehouses_count }}</td>
               </tr>
               <tr v-if="!props.executive.top_customers?.length">
-                <td colspan="3" class="px-5 py-10 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem atividade recente de clientes.</td>
+                <td colspan="3" class="px-5 py-10 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Sem actividade recente de clientes.</td>
               </tr>
             </tbody>
           </DataTable>
@@ -331,9 +331,9 @@
       <section class="ds-table-shell">
         <div class="ds-table-summary px-5 py-4 sm:px-6">
           <div>
-            <p class="ds-kicker">Controlo de receção</p>
-            <h2 class="ds-heading mt-2 text-lg">Receções com desvio formal</h2>
-            <p class="ds-copy mt-1 text-sm">Não conformidades abertas registadas no recebimento de encomendas.</p>
+            <p class="ds-kicker">Controlo de recepção</p>
+            <h2 class="ds-heading mt-2 text-lg">Recepções com desvio formal</h2>
+            <p class="ds-copy mt-1 text-sm">Não conformidades abertas registadas na recepção de encomendas.</p>
           </div>
           <a :href="route('vap_non_conformities.index', { category: 'quality' })" class="ds-button ds-button-secondary">
             Abrir NCs
@@ -365,7 +365,7 @@
                 <td class="ds-table-cell whitespace-nowrap px-5 py-4 text-right">{{ record.reported_at ? formatShortDate(record.reported_at) : "—" }}</td>
               </tr>
               <tr v-if="!props.executive.receiving_non_conformities?.length">
-                <td colspan="6" class="px-5 py-10 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Nenhuma receção tem não conformidade aberta.</td>
+                <td colspan="6" class="px-5 py-10 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Nenhuma recepção tem não conformidade aberta.</td>
               </tr>
             </tbody>
           </DataTable>
@@ -646,7 +646,7 @@ const supplierRiskChartOptions = computed(() => ({
   },
   legend: { show: false },
   title: {
-    text: "Fornecedores ativos por risco",
+    text: "Fornecedores activos por risco",
     align: "left",
     style: {
       fontSize: "13px",

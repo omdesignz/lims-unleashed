@@ -335,11 +335,11 @@ function submit() {
           <p class="ds-kicker">Disponibilidade</p>
           <div class="mt-4 space-y-3">
             <label class="flex items-start justify-between gap-4 rounded-lg border border-[var(--ds-border)] p-3">
-              <span><span class="block text-sm font-bold text-[var(--ds-text)]">Modelo ativo</span><span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">Disponível no editor de etiquetas.</span></span>
+              <span><span class="block text-sm font-bold text-[var(--ds-text)]">Modelo activo</span><span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">Disponível no editor de etiquetas.</span></span>
               <CheckboxInput v-model="form.is_active" type="checkbox" class="ds-checkbox mt-0.5" />
             </label>
             <label class="flex items-start justify-between gap-4 rounded-lg border border-[var(--ds-border)] p-3">
-              <span><span class="block text-sm font-bold text-[var(--ds-text)]">Modelo em destaque</span><span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">Priorizado na seleção de modelos.</span></span>
+              <span><span class="block text-sm font-bold text-[var(--ds-text)]">Modelo em destaque</span><span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">Priorizado na selecção de modelos.</span></span>
               <CheckboxInput v-model="form.is_featured" type="checkbox" class="ds-checkbox mt-0.5" />
             </label>
           </div>

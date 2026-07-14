@@ -8,5 +8,5 @@ defineProps({ record: { type: Object, default: () => ({ data: [], meta: {} }) },
 </script>
 
 <template>
-  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="occurrenceorigins" route-parameter="category" permission-key="occurrence_origins" title="Origens de ocorrencia" kicker="Sistema de qualidade" description="Pontos de origem controlados para analise de causa, tendencia e responsabilidade." entity-label="Origem de ocorrencia" new-entity-label="Nova origem" name-label="Nome" code-label="Codigo" description-label="Contexto de origem" :supports-name="true" :icon="MapPinIcon" />
+  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="occurrenceorigins" route-parameter="category" permission-key="occurrence_origins" title="Origens de ocorrência" kicker="Sistema de qualidade" description="Pontos de origem controlados para análise de causa, tendência e responsabilidade." entity-label="Origem de ocorrência" new-entity-label="Nova origem" name-label="Nome" code-label="Código" description-label="Contexto de origem" :supports-name="true" :icon="MapPinIcon" />
 </template>

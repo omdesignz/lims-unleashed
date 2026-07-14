@@ -28,7 +28,7 @@
                   </span>
                 </Link>
                 <button type="button" class="grid h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]" @click="sidebarOpen = false">
-                  <span class="sr-only">Fechar navegacao</span>
+                  <span class="sr-only">Fechar navegação</span>
                   <XMarkIcon class="h-5 w-5" aria-hidden="true" />
                 </button>
               </div>
@@ -69,9 +69,9 @@
     <div :class="desktopSidebarOpen ? 'lg:pl-64' : 'lg:pl-[4.5rem]'" class="min-h-dvh transition-[padding] duration-200">
       <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-[var(--ds-border)] bg-[var(--ds-panel)] px-4 sm:px-6 lg:px-5">
         <button type="button" class="grid h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)] lg:hidden" @click="sidebarOpen = true">
-          <span class="sr-only">Abrir navegacao</span><Bars3Icon class="h-5 w-5" aria-hidden="true" />
+          <span class="sr-only">Abrir navegação</span><Bars3Icon class="h-5 w-5" aria-hidden="true" />
         </button>
-        <button type="button" class="hidden h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)] lg:grid" :title="desktopSidebarOpen ? 'Recolher navegacao' : 'Expandir navegacao'" @click="toggleDesktopSidebar">
+        <button type="button" class="hidden h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)] lg:grid" :title="desktopSidebarOpen ? 'Recolher navegação' : 'Expandir navegação'" @click="toggleDesktopSidebar">
           <Bars3Icon class="h-5 w-5" aria-hidden="true" />
         </button>
 
@@ -88,7 +88,7 @@
         <button type="button" class="grid h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)] md:hidden" @click="openCommandPalette"><span class="sr-only">Pesquisar</span><MagnifyingGlassIcon class="h-5 w-5" aria-hidden="true" /></button>
 
         <Link prefetch :href="route('notifications.index')" class="relative grid h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]">
-          <span class="sr-only">Ver notificacoes</span><BellIcon class="h-5 w-5" aria-hidden="true" />
+          <span class="sr-only">Ver notificações</span><BellIcon class="h-5 w-5" aria-hidden="true" />
           <span v-if="auth?.user?.unread_notifications?.length" class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-[var(--ds-panel)]" />
         </Link>
 
@@ -112,7 +112,7 @@
               <div v-if="$page.props.languages?.data?.length > 1" class="border-y border-[var(--ds-border)] py-2">
                 <button v-for="language in $page.props.languages.data" :key="language.value" type="button" :class="[language.value === $page.props.language ? 'bg-[rgb(var(--primary-50-rgb))] text-[rgb(var(--primary-900-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)] dark:text-white' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-panel-subtle)]', 'block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold']" @click="switchLanguage(language.value)">{{ language.label }}</button>
               </div>
-              <div class="pt-2"><Link :href="route('logout')" method="post" as="button" class="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10">Terminar sessao</Link></div>
+              <div class="pt-2"><Link :href="route('logout')" method="post" as="button" class="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10">Terminar sessão</Link></div>
             </MenuItems>
           </transition>
         </Menu>
@@ -193,6 +193,7 @@ import {
   SwatchIcon,
   Cog6ToothIcon,
   BeakerIcon,
+  ArrowsRightLeftIcon,
   ChevronRightIcon,
   MagnifyingGlassIcon,
   XMarkIcon,
@@ -219,7 +220,7 @@ const page = usePage()
 const settings = computed(() => page.props?.settings ?? {})
 const brandingCssVariables = computed(() => buildBrandingCssVariables(settings.value))
 const themePreset = computed(() => settings.value.theme_preset || 'corporate')
-const brandInitials = computed(() => String(settings.value.app_name || settings.value.lab_name || 'Laboratory workspace')
+const brandInitials = computed(() => String(settings.value.app_name || settings.value.lab_name || 'Espaço laboratorial')
   .split(/\s+/)
   .filter(Boolean)
   .slice(0, 2)
@@ -231,6 +232,10 @@ const profileHref = computed(() => props.auth?.user?.id
   : route('dashboard'))
 const moduleFamily = computed(() => {
   const url = page.url || ''
+
+  if (url.startsWith('/integration-hub')) {
+    return 'integrations'
+  }
 
   if (
     url.startsWith('/vap-inventory')
@@ -250,7 +255,8 @@ const moduleFamily = computed(() => {
   }
 
   if (
-    url.startsWith('/samples')
+    url.startsWith('/laboratory-workflow')
+    || url.startsWith('/samples')
     || url.startsWith('/vap-samples')
     || url.startsWith('/directcollections')
     || url.startsWith('/programmedcollections')
@@ -329,12 +335,13 @@ const moduleFamily = computed(() => {
 })
 
 const moduleFamilyLabels = {
-  inventory: 'Inventory control',
-  'sample-lifecycle': 'Sample lifecycle',
+  integrations: 'Integrações laboratoriais',
+  inventory: 'Controlo de inventário',
+  'sample-lifecycle': 'Ciclo de vida das amostras',
   commercial: 'Commercial ops',
   operations: 'Field operations',
-  admin: 'System control',
-  general: 'Laboratory ops',
+  admin: 'Controlo do sistema',
+  general: 'Operações laboratoriais',
 }
 
 const moduleFamilyLabel = computed(() => moduleFamilyLabels[moduleFamily.value] || moduleFamilyLabels.general)
@@ -440,6 +447,7 @@ const navigation = [
   {
     title: 'gestlab.menu.analytical_processes', name: 'Processos Analíticos', icon: Square3Stack3DIcon, show: true,
     children: [
+      { title: 'Fluxo laboratorial', name: '/laboratory-workflow', href: route('laboratory-workflow.index'), show: hasPermission('view_proposals') || hasPermission('view_samples') || hasPermission('view_analysis') || hasPermission('view_quality_certificates') },
       { title: 'gestlab.menu.parameters', name: '/parameters', href: route('parameters.index'), show: hasPermission('view_parameters') },
       { title: 'gestlab.menu.analysis', name: '/analysis', href: route('analysis.index'), show: hasPermission('view_analysis') },
       { title: 'gestlab.menu.analysis_categories', name: '/analysiscategories', href: route('analysiscategories.index'), show: hasPermission('view_analysis_categories') },
@@ -482,6 +490,7 @@ const navigation = [
       { title: 'gestlab.menu.inventory', name: '/vap-inventory/items', href: route('vap-inventory.items.index'), show: hasPermission('view_inventory') },
       { title: 'gestlab.menu.reagent_consumption', name: '/vap-inventory/reagents/consumption', href: route('vap-inventory.reagents.consumption.index'), show: hasPermission('view_inventory') },
       { title: 'gestlab.menu.iequipments', name: '/vap-inventory/items', href: route('vap-inventory.items.index', { category_id: 1 }), show: hasPermission('view_iequipments') },
+      { title: 'Integration Hub', name: '/integration-hub', href: route('integration-hub.index'), icon: ArrowsRightLeftIcon, show: hasPermission('view_iequipments') || hasPermission('view_settings') },
       { title: 'gestlab.menu.iitems', name: '/vap-inventory/items', href: route('vap-inventory.items.index', { category_id: 2 }), show: hasPermission('view_inventory') },
       { title: 'gestlab.menu.item_categories', name: '/itemcategories', href: route('itemcategories.index'), show: hasPermission('view_item_categories') },
       { title: 'gestlab.menu.equipment_categories', name: '/equipmentcategories', href: route('equipmentcategories.index'), show: hasPermission('view_equipment_categories') },

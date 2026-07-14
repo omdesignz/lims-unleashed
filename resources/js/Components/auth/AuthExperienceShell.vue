@@ -7,9 +7,9 @@ import { buildBrandingCssVariables } from '@/Utils/brandingPalette'
 const props = defineProps({
   title: { type: String, required: true },
   eyebrow: { type: String, default: 'Acesso seguro' },
-  description: { type: String, default: 'Acesso controlado a operacoes laboratoriais e registos auditaveis.' },
+  description: { type: String, default: 'Acesso controlado a operações laboratoriais e registos auditáveis.' },
   contextTitle: { type: String, default: 'Conformidade operacional' },
-  contextDescription: { type: String, default: 'A autenticacao protege dados tecnicos, aprovacoes e documentos emitidos.' },
+  contextDescription: { type: String, default: 'A autenticação protege dados técnicos, aprovações e documentos emitidos.' },
   mode: { type: String, default: 'staff' },
 })
 
@@ -18,7 +18,7 @@ const brandSettings = computed(() => page.props.settings ?? {})
 const brandingCssVariables = computed(() => buildBrandingCssVariables(brandSettings.value))
 const themePreset = computed(() => brandSettings.value.theme_preset || brandSettings.value.app_theme_preset || 'corporate')
 const brandLogoUrl = computed(() => brandSettings.value.logo_url || brandSettings.value.app_logo_url || null)
-const brandAppName = computed(() => brandSettings.value.app_name || 'Laboratory workspace')
+const brandAppName = computed(() => brandSettings.value.app_name || 'Espaço laboratorial')
 const brandLabName = computed(() => brandSettings.value.lab_name || brandAppName.value)
 const brandSlogan = computed(() => brandSettings.value.app_slogan || 'Rastreabilidade, qualidade e conformidade laboratorial.')
 const brandInitials = computed(() => brandAppName.value
@@ -27,7 +27,7 @@ const brandInitials = computed(() => brandAppName.value
   .slice(0, 2)
   .map((word) => word.charAt(0).toUpperCase())
   .join('') || 'LW')
-const modeLabel = computed(() => props.mode === 'portal' ? 'Portal do cliente' : 'Area interna')
+const modeLabel = computed(() => props.mode === 'portal' ? 'Portal do cliente' : 'Área interna')
 const currentYear = new Date().getFullYear()
 </script>
 

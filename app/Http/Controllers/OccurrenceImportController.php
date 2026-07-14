@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ImportOccurrencesChunk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
-use App\Jobs\ImportOccurrencesChunk;
 use Illuminate\Support\LazyCollection;
 use League\Csv\Reader;
 
@@ -25,7 +24,7 @@ class OccurrenceImportController extends Controller
         ]);
 
         // Store uploaded file in storage/app/imports
-        $path = $request->file('file')->storeAs('imports', now()->format('Y-m-d') . '_' . now()->format('H-i-s') . '.csv');
+        $path = $request->file('file')->storeAs('imports', now()->format('Y-m-d').'_'.now()->format('H-i-s').'.csv');
 
         $filePath = Storage::path($path);
 
@@ -69,7 +68,7 @@ class OccurrenceImportController extends Controller
             'status_id',
             'date_closed',
             'was_effective',
-            'client_acceptance_comments'
+            'client_acceptance_comments',
         ];
 
         // if ($header !== $expectedColumns) {
@@ -87,8 +86,9 @@ class OccurrenceImportController extends Controller
 
         if ($header !== $expectedColumns) {
             Storage::delete($path);
+
             return back()->withErrors([
-                'file' => 'Os dados não correspondem ao formato esperado. Por favor, use o modelo correto.',
+                'file' => 'Os dados não correspondem ao formato esperado. Por favor, use o modelo correcto.',
             ]);
         }
 
@@ -141,7 +141,6 @@ class OccurrenceImportController extends Controller
             })
             ->dispatch();
 
-
         return redirect()->route('occurrences.import.progress', ['batchId' => $batch->id]);
 
         // Return Inertia response with batch ID for frontend progress tracking
@@ -150,9 +149,8 @@ class OccurrenceImportController extends Controller
         // ]);
     }
 
-
     public function progress($batchId)
     {
-        return inertia()->render('ImportProgress', ['batchId' => $batchId]); 
+        return inertia()->render('ImportProgress', ['batchId' => $batchId]);
     }
 }

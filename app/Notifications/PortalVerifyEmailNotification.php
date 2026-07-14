@@ -20,10 +20,10 @@ class PortalVerifyEmailNotification extends Notification
     public function toMail(mixed $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject(Lang::get('Verify Email Address'))
-            ->line(Lang::get('Please click the button below to verify your email address.'))
-            ->action(Lang::get('Verify Email Address'), $this->verificationUrl($notifiable))
-            ->line(Lang::get('If you did not create an account, no further action is required.'));
+            ->subject(Lang::get('Verificar o endereço de correio electrónico'))
+            ->line(Lang::get('Seleccione o botão abaixo para verificar o seu endereço de correio electrónico.'))
+            ->action(Lang::get('Verificar endereço'), $this->verificationUrl($notifiable))
+            ->line(Lang::get('Se não criou uma conta, não é necessária qualquer acção.'));
     }
 
     private function verificationUrl(mixed $notifiable): string

@@ -1,6 +1,6 @@
 <template>
     <div>
-      <h2>Uncertainty Calculator with Distributional Uncertainty</h2>
+      <h2>Calculadora de incerteza da distribuição</h2>
       <div v-for="(value, index) in data" :key="index">
         <BaseInput
           type="number"
@@ -8,16 +8,16 @@
           @input="updateMeasurement(index, data[index])"
         />
       </div>
-      <button @click="addMeasurement">Add Measurement</button>
+      <button @click="addMeasurement">Adicionar medição</button>
       <BaseInput
         type="number"
         v-model.number="distributionalUncertainty"
-        placeholder="Distributional Uncertainty"
+        placeholder="Incerteza da distribuição"
       />
-      <p>Combined Uncertainty: {{ calculateCombinedUncertainty() }}</p>
+      <p>Incerteza combinada: {{ calculateCombinedUncertainty() }}</p>
     </div>
   </template>
-  
+
   <script setup>
   import { useDistributionalUncertainty } from '@/Composables/Uncertainties/useDistributionalUncertainty.js';
 
@@ -28,6 +28,6 @@
         updateMeasurement,
         calculateCombinedUncertainty,
       } = useDistributionalUncertainty();
-  
+
   </script>
-  
+

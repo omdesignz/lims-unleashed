@@ -2,14 +2,13 @@
 
 namespace App\Exports;
 
-use App\Models\SystemActivity;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Carbon\Carbon;
 
 class ActivityLogExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle
 {
@@ -29,17 +28,17 @@ class ActivityLogExport implements FromCollection, WithHeadings, WithMapping, Wi
     {
         return [
             'ID',
-            'Log Name',
-            'Description',
-            'Event',
-            'Causer',
-            'Causer Email',
-            'Subject Type',
-            'Subject ID',
-            'Properties',
-            'Batch UUID',
-            'Created At',
-            'Updated At',
+            'Nome do registo',
+            'Descrição',
+            'Evento',
+            'Responsável',
+            'Correio electrónico do responsável',
+            'Tipo de registo',
+            'ID do registo',
+            'Propriedades',
+            'UUID do lote',
+            'Criado em',
+            'Actualizado em',
         ];
     }
 
@@ -47,10 +46,10 @@ class ActivityLogExport implements FromCollection, WithHeadings, WithMapping, Wi
     {
         return [
             $activity->id,
-            $activity->log_name ?? 'System',
+            $activity->log_name ?? 'Sistema',
             $activity->description,
             $activity->event ?? 'N/A',
-            $activity->causer->name ?? 'System',
+            $activity->causer->name ?? 'Sistema',
             $activity->causer->email ?? 'N/A',
             class_basename($activity->subject_type) ?? 'N/A',
             $activity->subject_id ?? 'N/A',
@@ -66,7 +65,7 @@ class ActivityLogExport implements FromCollection, WithHeadings, WithMapping, Wi
         return [
             // Style the first row as bold text
             1 => ['font' => ['bold' => true]],
-            
+
             // Auto-size columns
             'A' => ['width' => 10],
             'B' => ['width' => 15],
@@ -85,6 +84,6 @@ class ActivityLogExport implements FromCollection, WithHeadings, WithMapping, Wi
 
     public function title(): string
     {
-        return 'Activity Logs';
+        return 'Registos de actividade';
     }
 }

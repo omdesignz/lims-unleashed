@@ -67,7 +67,7 @@ class SupplierAssessmentController extends Controller
         $supplierAssessment->load('supplier');
         $notifier->notifySensitiveAssessment($supplierAssessment, auth()->user());
 
-        return back()->with('success', 'Avaliação de fornecedor atualizada.');
+        return back()->with('success', 'Avaliação de fornecedor actualizada.');
     }
 
     public function destroy(InventorySupplierAssessment $supplierAssessment): RedirectResponse

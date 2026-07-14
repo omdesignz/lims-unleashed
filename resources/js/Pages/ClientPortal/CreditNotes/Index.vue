@@ -22,8 +22,8 @@ function mapCreditNote(note) {
     tone: isCancellation ? "warning" : "info",
     description: note.description || note.obs,
     details: [
-      { label: "Fatura associada", value: note.invoice_id?.inv_no || note.invoice_id?.data?.inv_no },
-      { label: "Referencia interna", value: note.internal_ref },
+      { label: "Factura associada", value: note.invoice_id?.inv_no || note.invoice_id?.data?.inv_no },
+      { label: "Referência interna", value: note.internal_ref },
     ],
   };
 }
@@ -33,15 +33,15 @@ function mapCreditNote(note) {
   <PortalDocumentLibrary
     :record="record"
     :query="query"
-    title="Notas de credito"
-    kicker="Ajustes de faturacao"
+    title="Notas de crédito"
+    kicker="Ajustes de facturação"
     description="Consulte anulacoes e retificacoes emitidas sobre documentos da sua conta."
-    entity-label="nota de credito"
+    entity-label="nota de crédito"
     :icon="ReceiptRefundIcon"
     download-route="portal.creditnotes.getCreditNotePDF"
     support-type="billing_support"
-    support-title="Apoio sobre nota de credito"
-    value-metric-label="Credito nesta pagina"
+    support-title="Apoio sobre nota de crédito"
+    value-metric-label="Crédito nesta página"
     :map-record="mapCreditNote"
   />
 </template>

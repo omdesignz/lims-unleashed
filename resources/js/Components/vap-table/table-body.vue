@@ -163,8 +163,8 @@ const getBadgeClass = (value) => {
 
 const getBadgeText = (value) => {
   const badgeTexts = {
-    active: trans('Ativo'),
-    inactive: trans('Inativo'),
+    active: trans('Activo'),
+    inactive: trans('Inactivo'),
     pending: trans('Pendente'),
     completed: trans('Concluído'),
     cancelled: trans('Cancelado'),

@@ -93,7 +93,7 @@ class WarehouseController extends Controller
     {
         return [
             'account_health' => [
-                'labels' => ['Faturas pagas', 'Faturas pendentes', 'Pedidos respondidos', 'Pedidos pendentes'],
+                'labels' => ['Facturas pagas', 'Facturas pendentes', 'Pedidos respondidos', 'Pedidos pendentes'],
                 'series' => [
                     (int) data_get($stats, 'invoices.paid', 0),
                     (int) data_get($stats, 'invoices.pending', 0),
@@ -143,8 +143,8 @@ class WarehouseController extends Controller
                     'id' => 'invoice-'.$latestInvoice->id,
                     'type' => 'invoice',
                     'icon' => 'invoice',
-                    'title' => 'Fatura atualizada',
-                    'description' => 'Última fatura emitida para este armazém.',
+                    'title' => 'Factura actualizada',
+                    'description' => 'Última factura emitida para este armazém.',
                     'time' => optional($latestInvoice->date)->diffForHumans(),
                     'sort_at' => optional($latestInvoice->date)?->timestamp,
                 ]
@@ -176,8 +176,8 @@ class WarehouseController extends Controller
                     'id' => 'request-'.$latestRequest->id,
                     'type' => 'request',
                     'icon' => 'request',
-                    'title' => 'Pedido do portal atualizado',
-                    'description' => 'Interação mais recente do portal do cliente para este armazém.',
+                    'title' => 'Pedido do portal actualizado',
+                    'description' => 'Interacção mais recente do portal do cliente para este armazém.',
                     'time' => optional($latestRequest->submitted_at ?? $latestRequest->created_at)->diffForHumans(),
                     'sort_at' => optional($latestRequest->submitted_at ?? $latestRequest->created_at)?->timestamp,
                 ]

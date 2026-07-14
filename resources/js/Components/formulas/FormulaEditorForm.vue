@@ -34,7 +34,7 @@
       <dl class="grid border-t border-[var(--ds-border)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--ds-border)]">
         <div class="px-5 py-4 sm:px-6">
           <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Estado</dt>
-          <dd class="mt-2"><span class="ds-badge" :class="form.is_active ? 'ds-badge-success' : 'ds-badge-neutral'">{{ form.is_active ? 'Ativa' : 'Inativa' }}</span></dd>
+          <dd class="mt-2"><span class="ds-badge" :class="form.is_active ? 'ds-badge-success' : 'ds-badge-neutral'">{{ form.is_active ? 'Activa' : 'Inactiva' }}</span></dd>
         </div>
         <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
           <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Categoria</dt>

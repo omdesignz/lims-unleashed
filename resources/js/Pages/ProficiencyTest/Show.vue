@@ -84,7 +84,7 @@
           <div class="flex flex-wrap gap-2">
             <a :href="route('proficiency_tests.results.template', test.id)" class="ds-button ds-button-secondary">
               <DocumentArrowDownIcon class="h-4 w-4" />
-              Template Excel
+              Modelo Excel
             </a>
             <button type="button" class="ds-button ds-button-secondary" @click="triggerImport">
               <ArrowUpTrayIcon class="h-4 w-4" />
@@ -195,7 +195,7 @@
           v-model="selectedOutcome"
           :options="outcomeOptions"
           title-label="Resultado global"
-          placeholder="Selecionar resultado"
+          placeholder="Seleccionar resultado"
           :has-error="Boolean(form.errors.outcome)"
         />
         <div class="space-y-2">
@@ -203,7 +203,7 @@
           <BaseInput v-model="form.z_score" type="number" step="0.01" class="ds-field" />
           <p v-if="form.errors.z_score" class="ds-field-error">{{ form.errors.z_score }}</p>
         </div>
-        <BaseTextarea v-model="form.corrective_actions" label="Ações corretivas" :rows="4" :error="form.errors.corrective_actions" />
+        <BaseTextarea v-model="form.corrective_actions" label="Acções correctivas" :rows="4" :error="form.errors.corrective_actions" />
         <BaseTextarea v-model="form.notes" label="Notas e evidências" :rows="4" :error="form.errors.notes" />
       </section>
 
@@ -324,8 +324,8 @@ const zScoreChartOptions = computed(() => ({
     yaxis: [
       { y: 2, borderColor: '#f59e0b', label: { text: '+2 alerta', style: { background: '#f59e0b', color: '#fff' } } },
       { y: -2, borderColor: '#f59e0b', label: { text: '-2 alerta', style: { background: '#f59e0b', color: '#fff' } } },
-      { y: 3, borderColor: '#ef4444', label: { text: '+3 ação', style: { background: '#ef4444', color: '#fff' } } },
-      { y: -3, borderColor: '#ef4444', label: { text: '-3 ação', style: { background: '#ef4444', color: '#fff' } } },
+      { y: 3, borderColor: '#ef4444', label: { text: '+3 acção', style: { background: '#ef4444', color: '#fff' } } },
+      { y: -3, borderColor: '#ef4444', label: { text: '-3 acção', style: { background: '#ef4444', color: '#fff' } } },
     ],
   },
 }))
@@ -382,7 +382,7 @@ function participantStatusLabel(value) {
     enrolled: 'Inscrito',
     submitted: 'Submetido',
     reviewed: 'Revisto',
-    requires_action: 'Requer ação',
+    requires_action: 'Requer acção',
   }[value] || 'Pendente'
 }
 

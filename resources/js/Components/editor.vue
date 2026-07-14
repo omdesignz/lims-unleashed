@@ -7,27 +7,27 @@
     <div class="min-w-0 flex-1">
       <form action="#">
         <div class="border-b border-gray-200 pb-px focus-within:border-b-2 focus-within:border-indigo-600 focus-within:pb-0">
-          <label for="comment" class="sr-only">Add your comment</label>
+          <label for="comment" class="sr-only">Adicionar comentário</label>
             <!-- <editor-content :editor="editor" /> -->
-          <textarea rows="3" name="comment" id="comment" class="block w-full resize-none text-base text-gray-900 placeholder:text-gray-400 focus:outline focus:outline-0 sm:text-sm/6" placeholder="Add your comment..." />
+          <textarea rows="3" name="comment" id="comment" class="block w-full resize-none text-base text-gray-900 placeholder:text-gray-400 focus:outline focus:outline-0 sm:text-sm/6" placeholder="Adicionar comentário..." />
         </div>
         <div class="flex justify-between pt-2">
           <div class="flex items-center space-x-5">
             <div class="flow-root">
               <button type="button" class="-m-2 inline-flex size-10 items-center justify-center rounded-full text-gray-400 hover:text-gray-500">
                 <PaperClipIcon class="size-6" aria-hidden="true" />
-                <span class="sr-only">Attach a file</span>
+                <span class="sr-only">Anexar ficheiro</span>
               </button>
             </div>
             <div class="flow-root">
               <Listbox as="div" v-model="selected">
-                <ListboxLabel class="sr-only">Your mood</ListboxLabel>
+                <ListboxLabel class="sr-only">Estado de espírito</ListboxLabel>
                 <div class="relative">
                   <ListboxButton class="relative -m-2 inline-flex size-10 items-center justify-center rounded-full text-gray-400 hover:text-gray-500">
                     <span class="flex items-center justify-center">
                       <span v-if="selected.value === null">
                         <FaceSmileIconOutline class="size-6 shrink-0" aria-hidden="true" />
-                        <span class="sr-only">Add your mood</span>
+                        <span class="sr-only">Adicionar estado de espírito</span>
                       </span>
                       <span v-if="!(selected.value === null)">
                         <span :class="[selected.bgColor, 'flex size-8 items-center justify-center rounded-full']">
@@ -57,7 +57,7 @@
             </div>
           </div>
           <div class="shrink-0">
-            <button type="submit" class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Post</button>
+            <button type="submit" class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Publicar</button>
           </div>
         </div>
       </form>
@@ -65,7 +65,7 @@
   </div>
 
   </template>
-  
+
   <script setup>
   import {ref} from 'vue'
   import Layout from "@/Shared/Layouts/Layout.vue";
@@ -85,20 +85,20 @@
     defineOptions({
   layout: Layout
 });
-  
+
     const editor = useEditor({
-      content: '<p>I’m running Tiptap with Vue.js. 🎉</p>',
+      content: '<p>Escreva aqui o seu comentário.</p>',
       extensions: [StarterKit],
     })
 
     const moods = [
-        { name: 'Excited', value: 'excited', icon: FireIcon, iconColor: 'text-white', bgColor: 'bg-red-500' },
-        { name: 'Loved', value: 'loved', icon: HeartIcon, iconColor: 'text-white', bgColor: 'bg-pink-400' },
-        { name: 'Happy', value: 'happy', icon: FaceSmileIconMini, iconColor: 'text-white', bgColor: 'bg-green-400' },
-        { name: 'Sad', value: 'sad', icon: FaceFrownIcon, iconColor: 'text-white', bgColor: 'bg-yellow-400' },
-        { name: 'Thumbsy', value: 'thumbsy', icon: HandThumbUpIcon, iconColor: 'text-white', bgColor: 'bg-blue-500' },
-        { name: 'I feel nothing', value: null, icon: XMarkIcon, iconColor: 'text-gray-400', bgColor: 'bg-transparent' },
+        { name: 'Entusiasmado', value: 'excited', icon: FireIcon, iconColor: 'text-white', bgColor: 'bg-red-500' },
+        { name: 'Grato', value: 'loved', icon: HeartIcon, iconColor: 'text-white', bgColor: 'bg-pink-400' },
+        { name: 'Feliz', value: 'happy', icon: FaceSmileIconMini, iconColor: 'text-white', bgColor: 'bg-green-400' },
+        { name: 'Triste', value: 'sad', icon: FaceFrownIcon, iconColor: 'text-white', bgColor: 'bg-yellow-400' },
+        { name: 'Concordo', value: 'thumbsy', icon: HandThumbUpIcon, iconColor: 'text-white', bgColor: 'bg-blue-500' },
+        { name: 'Sem estado definido', value: null, icon: XMarkIcon, iconColor: 'text-gray-400', bgColor: 'bg-transparent' },
     ]
 
     const selected = ref(moods[5])
-  </script>  
+  </script>

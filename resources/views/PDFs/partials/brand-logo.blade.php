@@ -2,7 +2,7 @@
     try {
         $brandSettings = $settings ?? app(\App\Settings\GeneralSettings::class);
         $brandLogoSource = $brandSettings->app_logo_url ?: null;
-        $brandLogoAlt = $alt ?? ($brandSettings->app_client_lab_name ?: $brandSettings->app_name ?: config('app.name', 'Laboratory workspace'));
+        $brandLogoAlt = $alt ?? ($brandSettings->app_client_lab_name ?: $brandSettings->app_name ?: config('app.name', 'Espaço laboratorial'));
     } catch (\Throwable) {
         $brandLogoSource = null;
         $brandLogoAlt = $alt ?? config('app.name', 'LIMS Unleashed');

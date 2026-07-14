@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -11,12 +10,12 @@ class ZipReadyNotification extends Notification
 {
     use Queueable;
 
-    protected $zipFileName;
+    protected string $zipFileName;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($zipFileName)
+    public function __construct(string $zipFileName)
     {
         $this->zipFileName = $zipFileName;
     }
@@ -34,15 +33,15 @@ class ZipReadyNotification extends Notification
     /**
      * Get the mail representation of the notification.
      */
-    public function toMail($notifiable)
+    public function toMail(object $notifiable): MailMessage
     {
-        $url = url('/storage/' . $this->zipFileName);
+        $url = url('/storage/'.$this->zipFileName);
 
         return (new MailMessage)
-                    ->subject('Your ZIP file is ready for download')
-                    ->line('The ZIP file containing your selected files is ready.')
-                    ->action('Download ZIP', $url)
-                    ->line('Thank you for using our application!');
+            ->subject('O seu ficheiro ZIP está pronto')
+            ->line('O ficheiro ZIP com os ficheiros seleccionados está pronto para ser transferido.')
+            ->action('Transferir ZIP', $url)
+            ->line('Obrigado por utilizar a nossa aplicação.');
     }
 
     /**
@@ -53,7 +52,7 @@ class ZipReadyNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'url' => url('/storage/' . $this->zipFileName),
+            'url' => url('/storage/'.$this->zipFileName),
         ];
     }
 }

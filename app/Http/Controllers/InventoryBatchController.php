@@ -30,7 +30,7 @@ class InventoryBatchController extends Controller
             'qty_remaining' => $batch->qty_remaining,
             'expiry_date' => $batch->expiry_date?->format('d M Y'),
             'is_expired' => (bool) $batch->expiry_date?->isPast(),
-            'unit' => $item?->unit?->name ?? 'units',
+            'unit' => $item?->unit?->name ?? 'unidades',
         ]);
     }
 
@@ -49,7 +49,7 @@ class InventoryBatchController extends Controller
                 'warehouse_id' => $batch->inventory->warehouse_id,
                 'type_id' => ($request->type === 'consumption') ? 1 : 2,
                 'qty' => $request->qty,
-                'reason' => 'Mobile Scan: '.$request->type,
+                'reason' => 'Leitura móvel: '.$request->type,
             ]);
 
             // If consumption, also log to reagent_consumption
@@ -105,7 +105,7 @@ class InventoryBatchController extends Controller
             $delta = $request->physical_qty - $request->system_qty;
 
             if ($delta == 0) {
-                return response()->json(['message' => 'Inventory is accurate. No change needed.']);
+                return response()->json(['message' => 'O inventário está correcto. Não é necessária qualquer alteração.']);
             }
 
             // 1. Record the adjustment in itransactions
@@ -117,8 +117,8 @@ class InventoryBatchController extends Controller
                 'warehouse_id' => $batch->inventory->warehouse_id,
                 'type_id' => 3, // Assuming '3' is your "Inventory Adjustment" type
                 'qty' => abs($delta),
-                'reason' => $delta > 0 ? 'Audit: Physical Surplus' : 'Audit: Physical Shortage',
-                'notes' => "System: {$request->system_qty}, Physical: {$request->physical_qty}",
+                'reason' => $delta > 0 ? 'Auditoria: excedente físico' : 'Auditoria: falta física',
+                'notes' => "Sistema: {$request->system_qty}, físico: {$request->physical_qty}",
             ]);
 
             // 2. Update the batch to reflect the truth
@@ -135,6 +135,6 @@ class InventoryBatchController extends Controller
 
         $pdf = PDF::loadView('reports.batch_genealogy', compact('batch'));
 
-        return $pdf->download("Genealogy-Batch-{$batch->batch_number}.pdf");
+        return $pdf->download("genealogia-lote-{$batch->batch_number}.pdf");
     }
 }

@@ -23,7 +23,7 @@ const pageTitle = computed(() => isEditing.value ? "Editar produto analítico" :
 const effectivePrice = computed(() => Number(props.form.fixed_price || props.form.price || 0));
 const taxLabel = computed(() => props.form.charge_tax
   ? `${Number(props.form.tax_percentage || 0)}% de imposto`
-  : props.form.exemption_id?.label || "Isenção por selecionar");
+  : props.form.exemption_id?.label || "Isenção por seleccionar");
 
 watch(() => props.form.charge_tax, (chargesTax) => {
   if (chargesTax) {
@@ -121,7 +121,7 @@ function formatMoney(value) {
       <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-3">
         <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
           <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[var(--ds-text-soft)]"><BeakerIcon class="h-4 w-4" aria-hidden="true" /> Matriz</dt>
-          <dd class="mt-2 truncate text-sm font-semibold text-[var(--ds-text)]">{{ form.matrix_id?.label || "Por selecionar" }}</dd>
+          <dd class="mt-2 truncate text-sm font-semibold text-[var(--ds-text)]">{{ form.matrix_id?.label || "Por seleccionar" }}</dd>
         </div>
         <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
           <dt class="flex items-center gap-2 text-xs font-bold uppercase text-[var(--ds-text-soft)]"><BanknotesIcon class="h-4 w-4" aria-hidden="true" /> Preço</dt>
@@ -136,7 +136,7 @@ function formatMoney(value) {
 
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
-        <p class="ds-kicker">Escopo do serviço</p>
+        <p class="ds-kicker">Âmbito do serviço</p>
         <h2 class="ds-heading mt-1 text-base">Identificação e matriz</h2>
       </div>
 
@@ -197,7 +197,7 @@ function formatMoney(value) {
         <div class="space-y-5 px-5 py-5 sm:px-6">
           <div class="grid gap-3 sm:grid-cols-2">
             <ToggleField id="product-charge-tax" v-model="form.charge_tax" label="Cobrar imposto" description="Aplica uma categoria fiscal ao produto." />
-            <ToggleField id="product-withhold-tax" v-model="form.withhold_tax" label="Sujeito a retenção" description="Assinala retenção fiscal na faturação." />
+            <ToggleField id="product-withhold-tax" v-model="form.withhold_tax" label="Sujeito a retenção" description="Assinala retenção fiscal na facturação." />
           </div>
 
           <div v-if="form.charge_tax" class="grid gap-5 sm:grid-cols-2">
@@ -239,7 +239,7 @@ function formatMoney(value) {
       <Link :href="route('products.index')" class="ds-button ds-button-secondary">Cancelar</Link>
       <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
         <CheckIcon class="h-4 w-4" aria-hidden="true" />
-        {{ form.processing ? "A guardar..." : (isEditing ? "Atualizar produto" : "Guardar produto") }}
+        {{ form.processing ? "A guardar..." : (isEditing ? "Actualizar produto" : "Guardar produto") }}
       </button>
     </section>
   </form>

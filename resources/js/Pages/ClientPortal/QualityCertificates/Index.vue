@@ -22,7 +22,7 @@ function mapCertificate(certificate) {
     tone: released ? "success" : "warning",
     description: certificate.product,
     details: [
-      { label: "Codigo laboratorial", value: certificate.lab_code },
+      { label: "Código laboratorial", value: certificate.lab_code },
       { label: "Validado por", value: certificate.validated_by_user },
     ],
   };
@@ -35,7 +35,7 @@ function mapCertificate(certificate) {
     :query="query"
     title="Certificados de qualidade"
     kicker="Resultados libertados"
-    description="Aceda aos certificados associados às suas amostras e confirme o estado de validacao."
+    description="Aceda aos certificados associados às suas amostras e confirme o estado de validação."
     entity-label="certificado"
     :icon="BeakerIcon"
     download-route="portal.qualitycertificates.getQualityCertificatePDF"

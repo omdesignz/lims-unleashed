@@ -119,7 +119,7 @@ class VAPMaintenanceController extends Controller
         MaintenanceCategory::create($request->all());
 
         return redirect()->route('vap-maintenance.categories')
-            ->with('success', 'Maintenance category created successfully.');
+            ->with('success', 'Categoria de manutenção criada com sucesso.');
     }
 
     /**
@@ -136,7 +136,7 @@ class VAPMaintenanceController extends Controller
         $category->update($request->all());
 
         return redirect()->route('vap-maintenance.categories')
-            ->with('success', 'Maintenance category updated successfully.');
+            ->with('success', 'Categoria de manutenção actualizada com sucesso.');
     }
 
     /**
@@ -147,7 +147,7 @@ class VAPMaintenanceController extends Controller
         $category->delete();
 
         return redirect()->route('vap-maintenance.categories')
-            ->with('success', 'Maintenance category deleted successfully.');
+            ->with('success', 'Categoria de manutenção eliminada com sucesso.');
     }
 
     /**
@@ -299,7 +299,7 @@ class VAPMaintenanceController extends Controller
         $task->update($data);
 
         return redirect()->route('vap-maintenance.tasks.show', $task)
-            ->with('success', 'Tarefa de manutenção atualizada com sucesso.');
+            ->with('success', 'Tarefa de manutenção actualizada com sucesso.');
     }
 
     /**
@@ -384,7 +384,7 @@ class VAPMaintenanceController extends Controller
                     $payload = [
                         'is_executed' => true,
                         'previous_date' => $task->due_date,
-                        'result' => $task->result ?: 'Concluída em ação em massa.',
+                        'result' => $task->result ?: 'Concluída em acção em massa.',
                     ];
 
                     if (! empty($task->periodicity) && ! empty($task->periodicity_unit) && $task->due_date) {
@@ -421,7 +421,7 @@ class VAPMaintenanceController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'A ação em massa foi concluída com sucesso.',
+            'message' => 'A acção em massa foi concluída com sucesso.',
         ]);
     }
 

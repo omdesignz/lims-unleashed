@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between mb-6">
       <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
         <ChartBarIcon class="h-5 w-5 text-blue-900" />
-        Task Status Distribution
+        Distribuição do estado das tarefas
       </h3>
       <slot name="controls"></slot>
     </div>
@@ -16,7 +16,7 @@
     />
     <div v-else class="h-64 flex items-center justify-center text-gray-400">
       <Spinner class="h-8 w-8 text-blue-900" />
-      <span class="ml-2">Loading chart data...</span>
+      <span class="ml-2">A carregar os dados do gráfico...</span>
     </div>
   </div>
 </template>
@@ -39,7 +39,7 @@ const props = defineProps({
   },
   title: {
     type: String,
-    default: 'Task Status Distribution'
+    default: 'Distribuição dos estados das tarefas'
   },
   showAnnotations: {
     type: Boolean,
@@ -48,7 +48,7 @@ const props = defineProps({
 })
 
 const series = computed(() => [{
-  name: 'Tasks',
+  name: 'Tarefas',
   data: [
     props.data.overdue || 0,
     props.data.due_soon || 0,
@@ -89,7 +89,7 @@ const options = computed(() => ({
     }
   },
   xaxis: {
-    categories: ['Overdue', 'Due Soon', 'Scheduled', 'Executed'],
+    categories: ['Em atraso', 'Prazo próximo', 'Agendadas', 'Executadas'],
     labels: {
       style: {
         fontSize: '12px',
@@ -105,7 +105,7 @@ const options = computed(() => ({
   },
   yaxis: {
     title: {
-      text: 'Number of Tasks',
+      text: 'Número de tarefas',
       style: {
         fontSize: '12px',
         fontWeight: 400
@@ -127,7 +127,7 @@ const options = computed(() => ({
   },
   annotations: props.showAnnotations ? {
     xaxis: [{
-      x: 'Overdue',
+      x: 'Em atraso',
       borderColor: '#dc2626',
       label: {
         borderColor: '#dc2626',
@@ -137,7 +137,7 @@ const options = computed(() => ({
           fontSize: '10px',
           fontWeight: 'bold'
         },
-        text: 'Requires Attention'
+        text: 'Requer atenção'
       }
     }]
   } : {},

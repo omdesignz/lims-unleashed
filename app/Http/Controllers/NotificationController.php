@@ -3,16 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\NotificationRequest;
-use App\Http\Resources\NotificationResource;
-use App\Models\User;
+use App\Models\BroadcastNotification;
 use App\Models\Notification;
+use App\Models\User;
 use App\Notifications\GlobalNotification;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Spatie\QueryBuilder\QueryBuilder;
 
 class NotificationController extends Controller
 {
@@ -21,17 +19,16 @@ class NotificationController extends Controller
         $notifications = auth()->user()->notifications()
             ->latest()
             ->paginate(20);
-        
+
         if ($request->expectsJson()) {
             return response()->json($notifications);
         }
-        
+
         return inertia('Notifications/Index', [
             'notifications' => $notifications->items(),
             'pagination' => $notifications->toArray(),
         ]);
     }
-
 
     public function show($id)
     {
@@ -69,44 +66,44 @@ class NotificationController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', 'Notification sent successfully.');
+        return redirect()->back()->with('success', 'Notificação enviada com sucesso.');
     }
 
     public function markAsRead(DatabaseNotification $notification)
     {
         $notification = $this->ownedNotification($notification);
         $notification->markAsRead();
-        
+
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
-    
+
     public function markAsUnread(DatabaseNotification $notification)
     {
         $notification = $this->ownedNotification($notification);
         $notification->markAsUnread();
-        
+
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
     public function markAllAsRead()
     {
         auth()->user()->unreadNotifications->markAsRead();
-        
+
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
@@ -114,46 +111,46 @@ class NotificationController extends Controller
     {
         $notification = $this->ownedNotification($notification);
         $notification->delete();
-        
+
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
-    
+
     public function clearAll()
     {
         auth()->user()->notifications()->delete();
-        
+
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
-    
+
     public function clearRead()
     {
         auth()->user()->readNotifications()->delete();
-        
+
         return redirect()->back()->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
     public function enableSMSNotifications()
     {
-        #
+        //
         DB::transaction(function (): void {
 
             auth()->user()->update([
-                'is_active_sms' => true
+                'is_active_sms' => true,
             ]);
 
         });
@@ -162,17 +159,17 @@ class NotificationController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
     public function disableSMSNotifications()
     {
-        #
+        //
         DB::transaction(function (): void {
 
             auth()->user()->update([
-                'is_active_sms' => false
+                'is_active_sms' => false,
             ]);
 
         });
@@ -181,17 +178,17 @@ class NotificationController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
     public function enableWhatsAppNotifications()
     {
-        #
+        //
         DB::transaction(function (): void {
 
             auth()->user()->update([
-                'is_active_whatsapp' => true
+                'is_active_whatsapp' => true,
             ]);
 
         });
@@ -200,17 +197,17 @@ class NotificationController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
     public function disableWhatsAppNotifications()
     {
-        #
+        //
         DB::transaction(function (): void {
 
             auth()->user()->update([
-                'is_active_whatsapp' => false
+                'is_active_whatsapp' => false,
             ]);
 
         });
@@ -219,7 +216,7 @@ class NotificationController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
@@ -228,8 +225,8 @@ class NotificationController extends Controller
      */
     public function adminDashboard(Request $request)
     {
-        abort_if(!auth()->user()->hasRole('admin'), 403);
-        
+        abort_if(! auth()->user()->hasRole('admin'), 403);
+
         $stats = $this->getNotificationStats();
         $recentNotifications = $this->getRecentNotifications();
         $users = User::select('id', 'name', 'email', 'created_at')
@@ -237,6 +234,7 @@ class NotificationController extends Controller
             ->get()
             ->map(function ($user) {
                 $user->unread_count = $user->unreadNotifications()->count();
+
                 return $user;
             });
 
@@ -259,14 +257,13 @@ class NotificationController extends Controller
         return $notification;
     }
 
-
     /**
      * Admin notifications index with filtering
      */
     public function adminIndex(Request $request)
     {
-        abort_if(!auth()->user()->hasRole('admin'), 403);
-        
+        abort_if(! auth()->user()->hasRole('admin'), 403);
+
         $query = DatabaseNotification::with('notifiable')
             ->select('notifications.*')
             ->join('users', 'users.id', '=', 'notifications.notifiable_id')
@@ -276,7 +273,7 @@ class NotificationController extends Controller
         if ($request->filled('type')) {
             $query->where('notifications.type', $request->type);
         }
-        
+
         if ($request->filled('read_status')) {
             if ($request->read_status === 'read') {
                 $query->whereNotNull('notifications.read_at');
@@ -284,25 +281,25 @@ class NotificationController extends Controller
                 $query->whereNull('notifications.read_at');
             }
         }
-        
+
         if ($request->filled('user_id')) {
             $query->where('notifications.notifiable_id', $request->user_id);
         }
-        
+
         if ($request->filled('date_from')) {
             $query->whereDate('notifications.created_at', '>=', $request->date_from);
         }
-        
+
         if ($request->filled('date_to')) {
             $query->whereDate('notifications.created_at', '<=', $request->date_to);
         }
-        
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('users.name', 'like', "%{$search}%")
-                  ->orWhere('users.email', 'like', "%{$search}%")
-                  ->orWhere('notifications.data', 'like', "%{$search}%");
+                    ->orWhere('users.email', 'like', "%{$search}%")
+                    ->orWhere('notifications.data', 'like', "%{$search}%");
             });
         }
 
@@ -310,13 +307,14 @@ class NotificationController extends Controller
             ->paginate(25)
             ->through(function ($notification) {
                 $data = $notification->data;
+
                 return [
                     'id' => $notification->id,
                     'user_id' => $notification->notifiable_id,
                     'user_name' => $notification->user_name,
                     'user_email' => $notification->user_email,
                     'type' => $notification->type,
-                    'title' => $data['title'] ?? 'No Title',
+                    'title' => $data['title'] ?? 'Sem título',
                     'message' => $data['message'] ?? $data['body'] ?? '',
                     'priority' => $data['priority'] ?? 'normal',
                     'read_at' => $notification->read_at,
@@ -340,13 +338,14 @@ class NotificationController extends Controller
      */
     public function adminCreate()
     {
-        abort_if(!auth()->user()->hasRole('admin'), 403);
-        
+        abort_if(! auth()->user()->hasRole('admin'), 403);
+
         $users = User::select('id', 'name', 'email', 'created_at')
             ->orderBy('name')
             ->get()
             ->map(function ($user) {
                 $user->unread_count = $user->unreadNotifications()->count();
+
                 return $user;
             });
 
@@ -360,14 +359,13 @@ class NotificationController extends Controller
         ]);
     }
 
-
     /**
      * Store new notification
      */
     public function adminStore(Request $request)
     {
-        abort_if(!auth()->user()->hasRole('admin'), 403);
-        
+        abort_if(! auth()->user()->hasRole('admin'), 403);
+
         $request->validate([
             'title' => 'required|string|max:255',
             'message' => 'required|string',
@@ -398,15 +396,15 @@ class NotificationController extends Controller
         }
 
         $recipients = $this->getRecipients($request);
-        
+
         if ($recipients->isEmpty()) {
-            return back()->withErrors(['recipients' => 'No recipients selected.']);
+            return back()->withErrors(['recipients' => 'Nenhum destinatário seleccionado.']);
         }
 
         // If scheduled, store for later sending
         if ($request->schedule_send && $request->filled('scheduled_at')) {
             return back()->withErrors([
-                'scheduled_at' => 'Scheduled notifications are not available yet. Please send this notification immediately.',
+                'scheduled_at' => 'As notificações agendadas ainda não estão disponíveis. Envie esta notificação imediatamente.',
             ])->withInput();
         }
 
@@ -422,12 +420,12 @@ class NotificationController extends Controller
                 $sentCount++;
             } catch (\Exception $e) {
                 // Log error but continue with other users
-                \Log::error('Failed to send notification to user ' . $user->id . ': ' . $e->getMessage());
+                \Log::error('Failed to send notification to user '.$user->id.': '.$e->getMessage());
             }
         }
 
         // Create a record of this broadcast
-        \App\Models\BroadcastNotification::create([
+        BroadcastNotification::create([
             'sender_id' => $sender->id,
             'title' => $request->title,
             'message' => $request->message,
@@ -442,26 +440,25 @@ class NotificationController extends Controller
         return redirect()->route('admin.notifications.index')->with([
             'toast' => [
                 'type' => 'success',
-                'title' => 'Notification Sent',
-                'message' => "Notification sent to {$sentCount} users successfully.",
-            ]
+                'title' => 'Notificação enviada',
+                'message' => "Notificação enviada com sucesso a {$sentCount} utilizadores.",
+            ],
         ]);
     }
-
 
     /**
      * Show notification details
      */
     public function adminShow($id)
     {
-        abort_if(!auth()->user()->hasRole('admin'), 403);
-        
+        abort_if(! auth()->user()->hasRole('admin'), 403);
+
         $notification = DatabaseNotification::with(['notifiable'])
             ->findOrFail($id);
-            
+
         $data = $notification->data;
         $readBy = $notification->read_at ? [
-            'user' => $notification->notifiable->name ?? 'Unknown',
+            'user' => $notification->notifiable->name ?? 'Desconhecido',
             'read_at' => $notification->read_at,
             'read_at_human' => Carbon::parse($notification->read_at)->diffForHumans(),
         ] : null;
@@ -470,13 +467,13 @@ class NotificationController extends Controller
             'notification' => [
                 'id' => $notification->id,
                 'user_id' => $notification->notifiable_id,
-                'user_name' => $notification->notifiable->name ?? 'Unknown',
-                'user_email' => $notification->notifiable->email ?? 'Unknown',
+                'user_name' => $notification->notifiable->name ?? 'Desconhecido',
+                'user_email' => $notification->notifiable->email ?? 'Desconhecido',
                 'type' => $notification->type,
-                'title' => $data['title'] ?? 'No Title',
+                'title' => $data['title'] ?? 'Sem título',
                 'message' => $data['message'] ?? $data['body'] ?? '',
                 'priority' => $data['priority'] ?? 'normal',
-                'sender_name' => $data['sender_name'] ?? 'System',
+                'sender_name' => $data['sender_name'] ?? 'Sistema',
                 'sender_email' => $data['sender_email'] ?? 'system@example.com',
                 'read_at' => $notification->read_at,
                 'read_by' => $readBy,
@@ -487,35 +484,34 @@ class NotificationController extends Controller
         ]);
     }
 
-
     /**
      * Get notification analytics
      */
     public function adminAnalytics(Request $request)
     {
-        abort_if(!auth()->user()->hasRole('admin'), 403);
-        
+        abort_if(! auth()->user()->hasRole('admin'), 403);
+
         $period = $request->get('period', 'week');
         $dateRange = $this->getDateRange($period);
-        
+
         // Fix for delivery_trend query
         $deliveryTrend = [];
-        $startDate = \Carbon\Carbon::parse($dateRange[0]);
-        $endDate = \Carbon\Carbon::parse($dateRange[1]);
-        
+        $startDate = Carbon::parse($dateRange[0]);
+        $endDate = Carbon::parse($dateRange[1]);
+
         // Get aggregated data first
         $sentData = DatabaseNotification::whereBetween('created_at', $dateRange)
             ->selectRaw('DATE(created_at) as date, COUNT(*) as sent')
             ->groupBy('date')
             ->get()
             ->keyBy('date');
-            
+
         $readData = DatabaseNotification::whereBetween('read_at', $dateRange)
             ->selectRaw('DATE(read_at) as date, COUNT(*) as read')
             ->groupBy('date')
             ->get()
             ->keyBy('date');
-        
+
         // Build trend data
         $currentDate = $startDate->copy();
         while ($currentDate <= $endDate) {
@@ -526,7 +522,7 @@ class NotificationController extends Controller
             ];
             $currentDate->addDay();
         }
-        
+
         $stats = [
             'total_sent' => DatabaseNotification::whereBetween('created_at', $dateRange)->count(),
             'total_read' => DatabaseNotification::whereBetween('read_at', $dateRange)->count(),
@@ -536,7 +532,7 @@ class NotificationController extends Controller
             'notification_types' => $this->getNotificationTypeDistribution($dateRange),
             'delivery_trend' => $deliveryTrend,
         ];
-        
+
         if ($stats['total_sent'] > 0) {
             $stats['read_rate'] = round(($stats['total_read'] / $stats['total_sent']) * 100, 2);
         }
@@ -548,14 +544,13 @@ class NotificationController extends Controller
         ]);
     }
 
-
     /**
      * Export notifications
      */
     public function adminExport(Request $request)
     {
-        abort_if(!auth()->user()->hasRole('admin'), 403);
-        
+        abort_if(! auth()->user()->hasRole('admin'), 403);
+
         $query = DatabaseNotification::with('notifiable')
             ->join('users', 'users.id', '=', 'notifications.notifiable_id')
             ->select(
@@ -571,7 +566,7 @@ class NotificationController extends Controller
         if ($request->filled('start_date')) {
             $query->whereDate('notifications.created_at', '>=', $request->start_date);
         }
-        
+
         if ($request->filled('end_date')) {
             $query->whereDate('notifications.created_at', '<=', $request->end_date);
         }
@@ -579,7 +574,7 @@ class NotificationController extends Controller
         $notifications = $query->orderBy('notifications.created_at', 'desc')->get();
 
         $csvData = [];
-        $csvData[] = ['ID', 'User', 'Email', 'Type', 'Title', 'Message', 'Priority', 'Status', 'Read At', 'Created At'];
+        $csvData[] = ['ID', 'Utilizador', 'Correio electrónico', 'Tipo', 'Título', 'Mensagem', 'Prioridade', 'Estado', 'Lida em', 'Criada em'];
 
         foreach ($notifications as $notification) {
             $data = $notification->data;
@@ -588,23 +583,23 @@ class NotificationController extends Controller
                 $notification->user_name,
                 $notification->user_email,
                 $notification->type,
-                $data['title'] ?? 'No Title',
+                $data['title'] ?? 'Sem título',
                 $data['message'] ?? $data['body'] ?? '',
                 $data['priority'] ?? 'normal',
-                $notification->read_at ? 'Read' : 'Unread',
+                $notification->read_at ? 'Lida' : 'Não lida',
                 $notification->read_at ? Carbon::parse($notification->read_at)->format('Y-m-d H:i:s') : '',
                 $notification->created_at->format('Y-m-d H:i:s'),
             ];
         }
 
-        $filename = 'notifications_export_' . date('Y-m-d_H-i-s') . '.csv';
-        
+        $filename = 'exportacao_notificacoes_'.date('Y-m-d_H-i-s').'.csv';
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
-        $callback = function() use ($csvData) {
+        $callback = function () use ($csvData) {
             $file = fopen('php://output', 'w');
             foreach ($csvData as $row) {
                 fputcsv($file, $row);
@@ -614,7 +609,6 @@ class NotificationController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
-
 
     private function getNotificationStats()
     {
@@ -633,7 +627,6 @@ class NotificationController extends Controller
         ];
     }
 
-
     private function getRecentNotifications($limit = 10)
     {
         return DatabaseNotification::with('notifiable')
@@ -642,10 +635,11 @@ class NotificationController extends Controller
             ->get()
             ->map(function ($notification) {
                 $data = $notification->data;
+
                 return [
                     'id' => $notification->id,
-                    'user_name' => $notification->notifiable->name ?? 'Unknown',
-                    'title' => $data['title'] ?? 'No Title',
+                    'user_name' => $notification->notifiable->name ?? 'Desconhecido',
+                    'title' => $data['title'] ?? 'Sem título',
                     'type' => $data['type'] ?? 'info',
                     'read_at' => $notification->read_at,
                     'created_at' => $notification->created_at->diffForHumans(),
@@ -653,45 +647,42 @@ class NotificationController extends Controller
             });
     }
 
-
     private function getNotificationTypes()
     {
         return [
-            'info' => ['label' => 'Information', 'color' => 'blue', 'icon' => 'information-circle'],
-            'success' => ['label' => 'Success', 'color' => 'green', 'icon' => 'check-circle'],
-            'warning' => ['label' => 'Warning', 'color' => 'yellow', 'icon' => 'exclamation-triangle'],
-            'error' => ['label' => 'Error', 'color' => 'red', 'icon' => 'x-circle'],
-            'alert' => ['label' => 'Alert', 'color' => 'orange', 'icon' => 'bell-alert'],
+            'info' => ['label' => 'Informação', 'color' => 'blue', 'icon' => 'information-circle'],
+            'success' => ['label' => 'Sucesso', 'color' => 'green', 'icon' => 'check-circle'],
+            'warning' => ['label' => 'Aviso', 'color' => 'yellow', 'icon' => 'exclamation-triangle'],
+            'error' => ['label' => 'Erro', 'color' => 'red', 'icon' => 'x-circle'],
+            'alert' => ['label' => 'Alerta', 'color' => 'orange', 'icon' => 'bell-alert'],
         ];
     }
-
 
     private function getNotificationTemplates()
     {
         return [
             'welcome' => [
-                'title' => 'Welcome to Our Platform!',
-                'message' => 'Welcome {name}! We are excited to have you on board. Get started by exploring our features.',
+                'title' => 'Bem-vindo à nossa plataforma',
+                'message' => 'Bem-vindo, {name}. Comece por explorar as funcionalidades disponíveis.',
                 'type' => 'success',
             ],
             'maintenance' => [
-                'title' => 'Scheduled Maintenance',
-                'message' => 'We will be performing scheduled maintenance on {date}. The system may be temporarily unavailable.',
+                'title' => 'Manutenção agendada',
+                'message' => 'Será realizada uma manutenção agendada em {date}. O sistema poderá ficar temporariamente indisponível.',
                 'type' => 'warning',
             ],
             'update' => [
-                'title' => 'System Update Available',
-                'message' => 'A new update is available for the system. Please check the updates section.',
+                'title' => 'Actualização do sistema disponível',
+                'message' => 'Está disponível uma nova actualização do sistema. Consulte a secção de actualizações.',
                 'type' => 'info',
             ],
             'security' => [
-                'title' => 'Security Alert',
-                'message' => 'Important security update required. Please update your password immediately.',
+                'title' => 'Alerta de segurança',
+                'message' => 'É necessária uma actualização de segurança importante. Altere imediatamente a sua palavra-passe.',
                 'type' => 'alert',
             ],
         ];
     }
-
 
     private function getUserGroups()
     {
@@ -700,14 +691,13 @@ class NotificationController extends Controller
         $newUsers = User::where('created_at', '>=', Carbon::now()->subWeek())->count();
 
         return [
-            ['id' => 'all', 'name' => 'All Users', 'count' => $totalUsers, 'description' => 'All registered users'],
-            ['id' => 'active', 'name' => 'Active Users', 'count' => $activeUsers, 'description' => 'Users active in the last 30 days'],
-            ['id' => 'new', 'name' => 'New Users', 'count' => $newUsers, 'description' => 'Users registered in the last 7 days'],
-            ['id' => 'admins', 'name' => 'Administrators', 'count' => User::role('admin')->count(), 'description' => 'All admin users'],
-            ['id' => 'unverified', 'name' => 'Unverified Users', 'count' => User::whereNull('email_verified_at')->count(), 'description' => 'Users with unverified email'],
+            ['id' => 'all', 'name' => 'Todos os utilizadores', 'count' => $totalUsers, 'description' => 'Todos os utilizadores registados'],
+            ['id' => 'active', 'name' => 'Utilizadores activos', 'count' => $activeUsers, 'description' => 'Utilizadores activos nos últimos 30 dias'],
+            ['id' => 'new', 'name' => 'Novos utilizadores', 'count' => $newUsers, 'description' => 'Utilizadores registados nos últimos 7 dias'],
+            ['id' => 'admins', 'name' => 'Administradores', 'count' => User::role('admin')->count(), 'description' => 'Todos os administradores'],
+            ['id' => 'unverified', 'name' => 'Utilizadores não verificados', 'count' => User::whereNull('email_verified_at')->count(), 'description' => 'Utilizadores com correio electrónico não verificado'],
         ];
     }
-
 
     private function getRecipients(Request $request)
     {
@@ -722,7 +712,6 @@ class NotificationController extends Controller
                 return collect();
         }
     }
-
 
     private function getUsersByGroup($group)
     {
@@ -740,15 +729,13 @@ class NotificationController extends Controller
         }
     }
 
-
     private function calculateReadRate()
     {
         $total = DatabaseNotification::count();
         $read = DatabaseNotification::whereNotNull('read_at')->count();
-        
+
         return $total > 0 ? round(($read / $total) * 100, 2) : 0;
     }
-
 
     private function getTopSenders($limit = 5)
     {
@@ -760,19 +747,19 @@ class NotificationController extends Controller
             ->get()
             ->map(function ($item) {
                 $user = User::find($item->sender_id);
+
                 return [
-                    'name' => $user->name ?? 'Unknown',
+                    'name' => $user->name ?? 'Desconhecido',
                     'count' => $item->count,
                 ];
             });
     }
 
-
     private function getDateRange($period)
     {
         $now = Carbon::now();
-        
-        return match($period) {
+
+        return match ($period) {
             'day' => [$now->copy()->subDay(), $now],
             'week' => [$now->copy()->subWeek(), $now],
             'month' => [$now->copy()->subMonth(), $now],
@@ -782,7 +769,6 @@ class NotificationController extends Controller
         };
     }
 
-
     private function getAverageReadTime($dateRange)
     {
         $notifications = DatabaseNotification::whereBetween('created_at', $dateRange)
@@ -790,7 +776,7 @@ class NotificationController extends Controller
             ->get();
 
         if ($notifications->isEmpty()) {
-            return 'N/A';
+            return 'N/D';
         }
 
         $totalSeconds = 0;
@@ -806,14 +792,13 @@ class NotificationController extends Controller
         $averageSeconds = $totalSeconds / $count;
 
         if ($averageSeconds < 60) {
-            return round($averageSeconds) . ' seconds';
+            return round($averageSeconds).' segundos';
         } elseif ($averageSeconds < 3600) {
-            return round($averageSeconds / 60) . ' minutes';
+            return round($averageSeconds / 60).' minutos';
         } else {
-            return round($averageSeconds / 3600, 1) . ' hours';
+            return round($averageSeconds / 3600, 1).' horas';
         }
     }
-
 
     private function getTopUsersWithNotifications($dateRange)
     {
@@ -826,19 +811,19 @@ class NotificationController extends Controller
             ->get()
             ->map(function ($item) {
                 $user = User::find($item->notifiable_id);
+
                 return [
                     'user_id' => $item->notifiable_id,
-                    'user_name' => $user->name ?? 'Unknown',
-                    'user_email' => $user->email ?? 'Unknown',
+                    'user_name' => $user->name ?? 'Desconhecido',
+                    'user_email' => $user->email ?? 'Desconhecido',
                     'notification_count' => $item->notification_count,
                     'read_count' => $item->read_count,
-                    'read_rate' => $item->notification_count > 0 
-                        ? round(($item->read_count / $item->notification_count) * 100, 2) 
+                    'read_rate' => $item->notification_count > 0
+                        ? round(($item->read_count / $item->notification_count) * 100, 2)
                         : 0,
                 ];
             });
     }
-
 
     private function getNotificationTypeDistribution($dateRange)
     {
@@ -852,15 +837,14 @@ class NotificationController extends Controller
             })->toArray();
     }
 
-
     private function getDeliveryTrend($dateRange)
     {
         $startDate = Carbon::parse($dateRange[0]);
         $endDate = Carbon::parse($dateRange[1]);
-        
+
         $trendData = [];
         $currentDate = $startDate->copy();
-        
+
         while ($currentDate <= $endDate) {
             $dateString = $currentDate->format('Y-m-d');
             $trendData[$dateString] = [
@@ -869,7 +853,7 @@ class NotificationController extends Controller
             ];
             $currentDate->addDay();
         }
-        
+
         return $trendData;
     }
 }

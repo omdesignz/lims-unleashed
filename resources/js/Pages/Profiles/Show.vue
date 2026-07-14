@@ -41,17 +41,17 @@ const metrics = computed(() => [
   {
     label: "Ensaios",
     value: parameters.value.length,
-    detail: `${activeParameters.value} ativos no catalogo`,
+    detail: `${activeParameters.value} activos no catálogo`,
     icon: BeakerIcon,
   },
   {
-    label: "Preco composto",
+    label: "Preço composto",
     value: formatCurrency(profile.value.price),
-    detail: "soma dos ensaios ativos",
+    detail: "soma dos ensaios activos",
     icon: CurrencyDollarIcon,
   },
   {
-    label: "Metodos definidos",
+    label: "Métodos definidos",
     value: configuredMethods.value,
     detail: `${parameters.value.length - configuredMethods.value} por completar`,
     icon: ClipboardDocumentCheckIcon,
@@ -96,14 +96,14 @@ function formatCollection(value) {
   const parsed = parseJsonValue(value, []);
 
   if (Array.isArray(parsed)) {
-    return parsed.filter(Boolean).join(", ") || "Nao definido";
+    return parsed.filter(Boolean).join(", ") || "Não definido";
   }
 
   if (parsed && typeof parsed === "object") {
-    return Object.values(parsed).filter(Boolean).join(", ") || "Nao definido";
+    return Object.values(parsed).filter(Boolean).join(", ") || "Não definido";
   }
 
-  return parsed || "Nao definido";
+  return parsed || "Não definido";
 }
 
 function formatCurrency(value) {
@@ -114,7 +114,7 @@ function formatCurrency(value) {
   }).format(Number(value || 0));
 }
 
-function displayValue(value, fallback = "Nao definido") {
+function displayValue(value, fallback = "Não definido") {
   return value === null || value === undefined || value === "" ? fallback : value;
 }
 
@@ -123,7 +123,7 @@ function referenceRange(parameter) {
   const maximum = parameter.pivot?.max_ref_value;
 
   if (minimum === null || minimum === undefined || minimum === "") {
-    return "Nao definido";
+    return "Não definido";
   }
 
   return maximum === null || maximum === undefined || maximum === ""
@@ -142,9 +142,7 @@ function isCounted(parameter) {
       <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
         <nav aria-label="Breadcrumb">
           <Link :href="route('profiles.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ds-text-muted)] hover:text-[rgb(var(--primary-700-rgb))]">
-            <ArrowLeftIcon class="h-4 w-4" />
-            Perfis analiticos
-          </Link>
+            <ArrowLeftIcon class="h-4 w-4" /> Perfis analíticos </Link>
         </nav>
 
         <div class="mt-5 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -153,11 +151,9 @@ function isCounted(parameter) {
               <ClipboardDocumentCheckIcon class="h-5 w-5" />
             </span>
             <div class="min-w-0">
-              <p class="ds-kicker">Perfil analitico #{{ profile.id }}</p>
+              <p class="ds-kicker">Perfil analítico #{{ profile.id }}</p>
               <h1 class="ds-heading mt-1 break-words text-2xl">{{ profile.name }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">
-                Escopo controlado de ensaios, metodos, criterios de referencia e composicao comercial.
-              </p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm"> Âmbito controlado de ensaios, métodos, critérios de referência e composição comercial. </p>
               <div class="mt-3 flex flex-wrap gap-2">
                 <span v-if="profile.code" class="ds-chip font-mono">{{ profile.code }}</span>
                 <span class="ds-chip">{{ category.code || profile.category || "Sem categoria" }}</span>
@@ -206,12 +202,8 @@ function isCounted(parameter) {
           <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:flex sm:items-start sm:justify-between sm:gap-4 sm:px-6">
             <div>
               <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
-                <BeakerIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
-                Composicao analitica
-              </h2>
-              <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">
-                Metodos, unidades, formulas e criterios aplicados a cada ensaio.
-              </p>
+                <BeakerIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" /> Composição analítica </h2>
+              <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]"> Métodos, unidades, formulas e critérios aplicados a cada ensaio. </p>
             </div>
             <span class="ds-chip mt-3 sm:mt-0">{{ parameters.length }} ensaio(s)</span>
           </div>
@@ -232,12 +224,12 @@ function isCounted(parameter) {
                           ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-400/20'
                           : 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-200 dark:ring-rose-400/20',
                       ]">
-                        {{ parameter.active !== false ? "Ativo" : "Inativo" }}
+                        {{ parameter.active !== false ? "Activo" : "Inactivo" }}
                       </span>
                       <span v-if="isCounted(parameter)" class="ds-chip">Contabilizado</span>
                     </div>
                     <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
-                      <span class="font-mono">{{ parameter.code || "Sem codigo" }}</span>
+                      <span class="font-mono">{{ parameter.code || "Sem código" }}</span>
                       <span class="mx-2 text-[var(--ds-border-strong)]">/</span>
                       {{ formatCurrency(parameter.price) }}
                     </p>
@@ -246,7 +238,7 @@ function isCounted(parameter) {
 
                 <div class="flex items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
                   <ClockIcon class="h-4 w-4" />
-                  {{ displayValue(parameter.pivot?.optimal_analysis_time || parameter.optimal_analysis_time, "Tempo nao definido") }}
+                  {{ displayValue(parameter.pivot?.optimal_analysis_time || parameter.optimal_analysis_time, "Tempo não definido") }}
                 </div>
               </div>
 
@@ -260,11 +252,11 @@ function isCounted(parameter) {
                   <dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ displayValue(parameter.pivot?.category_label) }}</dd>
                 </div>
                 <div>
-                  <dt class="ds-field-label">Faixa de referencia</dt>
+                  <dt class="ds-field-label">Faixa de referência</dt>
                   <dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ referenceRange(parameter) }}</dd>
                 </div>
                 <div>
-                  <dt class="ds-field-label">Origem da referencia</dt>
+                  <dt class="ds-field-label">Origem da referência</dt>
                   <dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ displayValue(parameter.pivot?.ref_val_origin) }}</dd>
                 </div>
                 <div>
@@ -280,7 +272,7 @@ function isCounted(parameter) {
                   <dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ displayValue(parameter.pivot?.nwp_label) }}</dd>
                 </div>
                 <div>
-                  <dt class="ds-field-label">Formula</dt>
+                  <dt class="ds-field-label">Fórmula</dt>
                   <dd class="mt-1.5 text-sm font-bold text-[var(--ds-text)]">{{ displayValue(parameter.pivot?.formula_label) }}</dd>
                 </div>
               </dl>
@@ -305,9 +297,7 @@ function isCounted(parameter) {
           <div v-else class="px-5 py-14 text-center sm:px-6">
             <BeakerIcon class="mx-auto h-9 w-9 text-[var(--ds-text-soft)]" />
             <h3 class="mt-3 text-sm font-bold text-[var(--ds-text)]">Sem ensaios configurados</h3>
-            <p class="mx-auto mt-1 max-w-md text-sm font-medium text-[var(--ds-text-muted)]">
-              Este perfil ainda nao possui parametros analiticos associados.
-            </p>
+            <p class="mx-auto mt-1 max-w-md text-sm font-medium text-[var(--ds-text-muted)]"> Este perfil ainda não possui parâmetros analíticos associados. </p>
           </div>
         </section>
       </main>
@@ -316,22 +306,22 @@ function isCounted(parameter) {
         <section class="ds-card p-5">
           <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
             <BuildingOffice2Icon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
-            Escopo do perfil
+            Âmbito do perfil
           </h2>
           <dl class="mt-5 grid gap-4 text-sm">
             <div>
-              <dt class="ds-field-label">Categoria analitica</dt>
-              <dd class="mt-1.5 font-bold text-[var(--ds-text)]">{{ category.name || profile.category || "Nao definida" }}</dd>
+              <dt class="ds-field-label">Categoria analítica</dt>
+              <dd class="mt-1.5 font-bold text-[var(--ds-text)]">{{ category.name || profile.category || "Não definida" }}</dd>
               <p v-if="category.code" class="mt-1 font-mono text-xs font-semibold text-[var(--ds-text-muted)]">{{ category.code }}</p>
             </div>
             <div>
               <dt class="ds-field-label">Departamento</dt>
-              <dd class="mt-1.5 font-bold text-[var(--ds-text)]">{{ category.department || "Nao definido" }}</dd>
+              <dd class="mt-1.5 font-bold text-[var(--ds-text)]">{{ category.department || "Não definido" }}</dd>
             </div>
             <div>
-              <dt class="ds-field-label">Descricao</dt>
+              <dt class="ds-field-label">Descrição</dt>
               <dd class="mt-1.5 whitespace-pre-line font-medium leading-6 text-[var(--ds-text-muted)]">
-                {{ profile.description || "Sem descricao operacional." }}
+                {{ profile.description || "Sem descrição operacional." }}
               </dd>
             </div>
           </dl>
@@ -339,44 +329,35 @@ function isCounted(parameter) {
 
         <section class="ds-card p-5">
           <h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]">
-            <CheckBadgeIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />
-            Controlo do catalogo
-          </h2>
+            <CheckBadgeIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" /> Controlo do catálogo </h2>
           <div class="mt-4 grid gap-3">
             <p class="flex items-start gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
               <span :class="['lims-status-dot mt-1', parameters.length ? 'lims-status-dot-release' : 'lims-status-dot-critical']" />
-              {{ parameters.length ? "Composicao analitica definida" : "Composicao analitica em falta" }}
+              {{ parameters.length ? "Composição analítica definida" : "Composição analítica em falta" }}
             </p>
             <p class="flex items-start gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
               <span :class="['lims-status-dot mt-1', configuredMethods === parameters.length ? 'lims-status-dot-release' : 'lims-status-dot-hold']" />
-              {{ configuredMethods }} de {{ parameters.length }} ensaios com metodo associado
-            </p>
+              {{ configuredMethods }} de {{ parameters.length }} ensaios com método associado </p>
             <p class="flex items-start gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
               <span :class="['lims-status-dot mt-1', category.department_id ? 'lims-status-dot-release' : 'lims-status-dot-critical']" />
-              {{ category.department_id ? "Departamento responsavel definido" : "Departamento responsavel em falta" }}
+              {{ category.department_id ? "Departamento responsável definido" : "Departamento responsável em falta" }}
             </p>
             <p v-if="parameters.some((parameter) => parameter.active === false)" class="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm font-semibold text-amber-800 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-200 dark:ring-amber-400/20">
-              <ExclamationTriangleIcon class="mt-0.5 h-4 w-4 shrink-0" />
-              O perfil inclui parametros inativos e deve ser revisto antes de nova utilizacao.
-            </p>
+              <ExclamationTriangleIcon class="mt-0.5 h-4 w-4 shrink-0" /> O perfil inclui parâmetros inactivos e deve ser revisto antes de nova utilização. </p>
           </div>
         </section>
 
         <section class="ds-command-surface p-5">
-          <h2 class="text-base font-bold text-[var(--ds-text)]">Acoes</h2>
+          <h2 class="text-base font-bold text-[var(--ds-text)]">Acções</h2>
           <div class="mt-4 grid gap-2">
             <Link v-if="hasPermission('edit_profiles')" :href="route('profiles.edit', { profile: profile.id })" class="ds-button ds-button-primary w-full">
-              <PencilSquareIcon class="h-4 w-4" />
-              Editar composicao
-            </Link>
+              <PencilSquareIcon class="h-4 w-4" /> Editar composição </Link>
             <Link v-if="hasPermission('add_profiles')" :href="route('profiles.create')" class="ds-button ds-button-secondary w-full">
               <DocumentDuplicateIcon class="h-4 w-4" />
               Criar novo perfil
             </Link>
             <Link :href="route('profiles.index')" class="ds-button ds-button-secondary w-full">
-              <ArrowLeftIcon class="h-4 w-4" />
-              Voltar ao catalogo
-            </Link>
+              <ArrowLeftIcon class="h-4 w-4" /> Voltar ao catálogo </Link>
           </div>
         </section>
 
@@ -386,7 +367,7 @@ function isCounted(parameter) {
             Resumo comercial
           </h2>
           <p class="mt-4 break-words text-2xl font-bold text-[var(--ds-text)]">{{ formatCurrency(profile.price) }}</p>
-          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Preco calculado pelos ensaios ativos.</p>
+          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Preço calculado pelos ensaios activos.</p>
         </section>
       </aside>
     </div>

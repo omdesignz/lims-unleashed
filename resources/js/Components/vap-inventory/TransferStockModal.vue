@@ -4,7 +4,7 @@
       <div class="flex items-center justify-between gap-4 border-b border-[var(--ds-border)] pb-5">
         <h3 class="ds-heading flex items-center gap-2 text-lg">
           <ArrowsRightLeftIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
-          Movimento de Estoque
+          Movimento de existências
         </h3>
         <button type="button" @click="close" class="ds-icon-button">
           <XMarkIcon class="h-5 w-5" />
@@ -120,7 +120,7 @@
             Disponível: {{ sourceStock.qty_available }} {{ item.unit?.code || 'unidades' }}
             <template v-if="form.qty && form.qty > sourceStock.qty_available">
               <span class="text-red-600 font-semibold ml-2">
-                Sem Estoque Disponível!
+                Sem existências disponíveis!
               </span>
             </template>
           </div>
@@ -136,7 +136,7 @@
               v-model="form.expected_date"
               :has-error="form.errors.expected_date"
               :error-message="form.errors.expected_date"
-              placeholder="Selecione uma Data"
+              placeholder="Seleccione uma Data"
             />
           </div>
           <div class="space-y-2">
@@ -147,7 +147,7 @@
               v-model="form.sent_date"
               :has-error="form.errors.sent_date"
               :error-message="form.errors.sent_date"
-              placeholder="Selecione uma Data"
+              placeholder="Seleccione uma Data"
               />
           </div>
         </div>

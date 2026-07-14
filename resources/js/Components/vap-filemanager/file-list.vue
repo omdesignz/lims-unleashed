@@ -1,95 +1,55 @@
 <template>
-  <!-- Main Container -->
-  <div class="file-list-container vap-document-list overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950/85"
+  <section class="file-list-container vap-document-list ds-panel relative min-w-0 overflow-hidden"
     @dragenter.prevent="handleDragEnter"
     @dragleave.prevent="handleDragLeave">
-    
-    <!-- Header Section -->
-    <div class="bg-gradient-to-r from-blue-900 to-blue-800 px-6 py-4">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div class="flex items-center gap-3">
-          <FolderIcon class="h-6 w-6 text-white" />
-          <div>
-            <h1 class="text-lg font-semibold text-white">
-              {{ $t('gestlab.general.labels.vap_filemanager.page_title') }}
-            </h1>
-            <p class="text-xs text-blue-100">
-              {{ filteredFiles.length }} visíveis / {{ fileStore.currentFiles.length }} no diretório atual
-            </p>
+    <header class="border-b border-[var(--ds-border)] bg-[var(--ds-panel)] p-4 sm:p-5" data-testid="document-library-toolbar">
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div class="min-w-0">
+            <p class="ds-kicker">Biblioteca operacional</p>
+            <div class="mt-1 flex items-baseline gap-3">
+              <h2 class="ds-heading text-base">Documentos e pastas</h2>
+              <span class="text-xs font-bold tabular-nums text-[var(--ds-text-soft)]">
+                {{ filteredFiles.length }} de {{ fileStore.currentFiles.length }} itens
+              </span>
+            </div>
           </div>
-          <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-900">
-            {{ filteredFiles.length }} {{ $t('gestlab.general.labels.vap_filemanager.items') }}
-          </span>
-        </div>
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div class="relative min-w-0 flex-1 sm:min-w-[18rem]">
-            <BaseInput
-              type="text"
-              v-model="searchQuery"
-              @input="debouncedSearch(searchQuery)"
-              :placeholder="$t('gestlab.general.labels.vap_filemanager.search_files') + '...'"
-              class="w-full pl-10 pr-4 py-2 rounded-lg border-0 bg-white/20 placeholder-blue-100 text-sm text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800"
-            />
-            <MagnifyingGlassIcon class="h-4 w-4 text-blue-100 absolute left-3 top-1/2 transform -translate-y-1/2" />
+
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div class="relative min-w-0 sm:w-80">
+              <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
+              <BaseInput
+                v-model="searchQuery"
+                type="search"
+                class="ds-field w-full pl-10"
+                :placeholder="$t('gestlab.general.labels.vap_filemanager.search_files') + '...'"
+                data-testid="document-search"
+                @input="debouncedSearch(searchQuery)"
+              />
+            </div>
+            <button type="button" class="ds-button ds-button-secondary" @click="showFilterDialog = true">
+              <FunnelIcon class="h-4 w-4" />
+              Filtros
+            </button>
+            <button
+              v-if="hasActiveFilters"
+              type="button"
+              class="ds-icon-button"
+              title="Limpar filtros"
+              @click="clearFilters"
+            >
+              <XMarkIcon class="h-5 w-5" />
+            </button>
           </div>
-          <button
-            class="inline-flex items-center gap-2 rounded-lg bg-white/10 hover:bg-white/20 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/30 transition-colors duration-200"
-            @click="showFilterDialog = true"
-          >
-            <FunnelIcon class="h-4 w-4" />
-            {{ $t('gestlab.general.labels.vap_filemanager.filter') }}
-          </button>
-          <button
-            v-if="hasActiveFilters"
-            class="inline-flex items-center gap-2 rounded-lg bg-white/10 hover:bg-white/20 px-4 py-2 text-sm font-medium text-white ring-1 ring-white/30 transition-colors duration-200"
-            @click="clearFilters"
-          >
-            <XMarkIcon class="h-4 w-4" />
-            Limpar
-          </button>
         </div>
-      </div>
-    </div>
 
-    <div
-      v-if="hasActiveFilters"
-      class="border-b border-blue-100 bg-blue-50/70 px-6 py-3"
-    >
-      <div class="flex flex-wrap gap-2">
-        <span
-          v-if="searchQuery"
-          class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-900 ring-1 ring-blue-100 dark:bg-slate-900 dark:text-primary-200 dark:ring-slate-700"
-        >
-          Pesquisa: {{ searchQuery }}
-        </span>
-        <span
-          v-if="filterType.length"
-          class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-900 ring-1 ring-blue-100 dark:bg-slate-900 dark:text-primary-200 dark:ring-slate-700"
-        >
-          Tipo: {{ filterType.join(', ') }}
-        </span>
-        <span
-          v-if="filterDateRange"
-          class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-900 ring-1 ring-blue-100 dark:bg-slate-900 dark:text-primary-200 dark:ring-slate-700"
-        >
-          Data: {{ filterDateRange }}
-        </span>
-        <span
-          v-if="filterSize"
-          class="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-900 ring-1 ring-blue-100 dark:bg-slate-900 dark:text-primary-200 dark:ring-slate-700"
-        >
-          Tamanho: {{ filterSize }}
-        </span>
-      </div>
-    </div>
-
-    <!-- Action Bar -->
-    <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-800 dark:bg-slate-950/70">
-      <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-col gap-3 border-t border-[var(--ds-border)] pt-4 xl:flex-row xl:items-center xl:justify-between">
+          <div class="flex flex-wrap items-center gap-2">
           <button
-            class="inline-flex items-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            type="button"
+            class="ds-button ds-button-primary"
             :disabled="isUploading"
+            data-testid="upload-files-button"
             @click="triggerFileUpload"
           >
             <CloudArrowUpIcon class="h-5 w-5" />
@@ -99,18 +59,18 @@
 
           <Menu as="div" class="relative">
             <MenuButton
-              class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors duration-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus:ring-offset-slate-950"
+              class="ds-button ds-button-secondary"
             >
               <FolderPlusIcon class="h-5 w-5" />
-              Mais ações
+              Mais acções
               <ChevronDownIcon class="h-4 w-4" />
             </MenuButton>
-            <MenuItems class="absolute left-0 z-20 mt-2 w-56 origin-top-left rounded-2xl border border-slate-200 bg-white p-2 shadow-xl ring-1 ring-slate-900/5 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:ring-white/10">
+            <MenuItems class="absolute left-0 z-30 mt-2 w-56 origin-top-left rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-1.5 shadow-xl focus:outline-none">
               <MenuItem v-slot="{ active }">
                 <button
                   type="button"
-                  class="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-700 transition dark:text-slate-200"
-                  :class="active ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white' : ''"
+                  class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-semibold text-[var(--ds-text-muted)] transition"
+                  :class="active ? 'bg-[var(--ds-panel-subtle)] text-[var(--ds-text)]' : ''"
                   :disabled="isUploading"
                   @click="triggerFolderUpload"
                 >
@@ -121,8 +81,8 @@
               <MenuItem v-slot="{ active }">
                 <button
                   type="button"
-                  class="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-700 transition dark:text-slate-200"
-                  :class="active ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white' : ''"
+                  class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-semibold text-[var(--ds-text-muted)] transition"
+                  :class="active ? 'bg-[var(--ds-panel-subtle)] text-[var(--ds-text)]' : ''"
                   @click="startCreateFolder"
                 >
                   <FolderIcon class="h-4 w-4 text-slate-500" />
@@ -133,46 +93,42 @@
           </Menu>
         </div>
 
-        <!-- Breadcrumbs -->
-        <div class="min-w-0">
+          <div class="min-w-0 xl:ml-2">
           <Breadcrumbs />
+          </div>
         </div>
-      </div>
-    </div>
 
-    <div class="border-b border-slate-200 bg-slate-50/80 px-6 py-4 dark:border-slate-800 dark:bg-slate-900/80">
-      <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div class="flex flex-wrap gap-2">
+        <div class="inline-flex max-w-full overflow-x-auto rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-1" role="tablist" aria-label="Estado documental">
           <button
             v-for="filter in quickFilters"
             :key="filter.value"
             type="button"
-            class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition"
+            role="tab"
+            class="inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-xs font-bold transition"
+            :aria-selected="statusFilter === filter.value"
             :class="statusFilter === filter.value
-              ? 'bg-blue-900 text-white shadow-sm'
-              : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-800'"
+              ? 'bg-[var(--ds-panel-raised)] text-[var(--ds-text)] shadow-sm'
+              : 'text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'"
             @click="statusFilter = filter.value"
           >
             <span>{{ filter.label }}</span>
-            <span
-              class="rounded-full px-2 py-0.5 text-[11px]"
-              :class="statusFilter === filter.value ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300'"
-            >
-              {{ filter.count }}
-            </span>
+            <span class="tabular-nums text-[11px] text-[var(--ds-text-soft)]">{{ filter.count }}</span>
           </button>
         </div>
+      </div>
+    </header>
 
-        <div
-          v-if="selectedCount"
-          class="flex flex-wrap items-center gap-2 rounded-2xl border border-blue-200 bg-white px-3 py-2 shadow-sm dark:border-blue-900/50 dark:bg-slate-900"
-        >
-          <span class="text-sm font-medium text-slate-700 dark:text-slate-200">
-            {{ selectedCount }} {{ selectedCount > 1 ? 'itens selecionados' : 'item selecionado' }}
-          </span>
+    <div
+      v-if="selectedCount"
+      class="flex flex-wrap items-center gap-2 border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3"
+      data-testid="document-selection-toolbar"
+    >
+      <span class="mr-auto text-sm font-bold text-[var(--ds-text)]">
+        {{ selectedCount }} {{ selectedCount > 1 ? 'itens seleccionados' : 'item seleccionado' }}
+      </span>
           <button
             type="button"
-            class="rounded-lg bg-blue-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-800"
+            class="ds-button ds-button-secondary min-h-8 px-3 py-1 text-xs"
             @click="archiveSelected"
           >
             Arquivar
@@ -180,27 +136,26 @@
           <button
             v-if="singleSelectedFile?.type === 'file'"
             type="button"
-            class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            class="ds-button ds-button-secondary min-h-8 px-3 py-1 text-xs"
             @click="fileStore.downloadFile(singleSelectedFile.id)"
           >
             Transferir
           </button>
           <button
             type="button"
-            class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-50"
+            class="ds-button ds-button-danger min-h-8 px-3 py-1 text-xs"
             @click="deleteSelected"
           >
             Eliminar
           </button>
           <button
             type="button"
-            class="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+            class="ds-icon-button h-8 w-8"
+            title="Limpar selecção"
             @click="clearSelection"
           >
-            Limpar
+            <XMarkIcon class="h-4 w-4" />
           </button>
-        </div>
-      </div>
     </div>
 
     <!-- Root Drop Area Indicator -->
@@ -222,12 +177,12 @@
       </div>
     </div>
 
-    <div class="divide-y divide-slate-200 dark:divide-slate-800 md:hidden">
+    <div class="divide-y divide-[var(--ds-border)] md:hidden" data-testid="document-mobile-list">
       <article
         v-for="file in filteredFiles"
         :key="`mobile-${file.id}`"
-        class="space-y-4 px-5 py-4 transition"
-        :class="fileStore.selectedItems.has(file.id) ? 'bg-blue-50/70 dark:bg-primary-500/10' : ''"
+        class="space-y-4 px-4 py-4 transition"
+        :class="fileStore.selectedItems.has(file.id) ? 'bg-[var(--ds-panel-subtle)]' : ''"
       >
         <div class="flex items-start justify-between gap-3">
           <div class="flex min-w-0 items-center gap-3">
@@ -237,7 +192,7 @@
               :checked="fileStore.selectedItems.has(file.id)"
               @change="toggleSelection(file.id)"
             />
-            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 dark:bg-primary-500/10">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--ds-panel-subtle)]">
               <FolderIcon
                 v-if="file.type === 'folder'"
                 class="h-5 w-5 text-blue-900"
@@ -250,12 +205,12 @@
             <div class="min-w-0">
               <button
                 type="button"
-                class="truncate text-left text-sm font-semibold text-gray-900 transition hover:text-blue-900 dark:text-slate-100 dark:hover:text-primary-200"
+                class="block max-w-full truncate text-left text-sm font-bold text-[var(--ds-text)] transition hover:text-[rgb(var(--primary-700-rgb))]"
                 @click="file.type === 'folder' ? navigateToFolder(file.id) : handleItemClick(file, $event)"
               >
                 {{ file.name }}
               </button>
-              <p class="mt-1 text-xs text-gray-500 dark:text-slate-400">
+              <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">
                 {{ file.type === 'folder' ? 'Pasta' : (file.document_type || 'Ficheiro') }}
               </p>
             </div>
@@ -271,7 +226,7 @@
         </div>
 
         <dl class="grid grid-cols-2 gap-3">
-          <div class="rounded-xl bg-gray-50 px-3 py-2 dark:bg-slate-900">
+          <div class="rounded-lg bg-[var(--ds-panel-subtle)] px-3 py-2">
             <dt class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
               {{ $t('gestlab.general.labels.vap_filemanager.size') }}
             </dt>
@@ -279,7 +234,7 @@
               {{ formatSize(file.size) || '—' }}
             </dd>
           </div>
-          <div class="rounded-xl bg-gray-50 px-3 py-2 dark:bg-slate-900">
+          <div class="rounded-lg bg-[var(--ds-panel-subtle)] px-3 py-2">
             <dt class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
               {{ $t('gestlab.general.labels.vap_filemanager.modified') }}
             </dt>
@@ -394,9 +349,9 @@
     </div>
 
     <!-- File Table -->
-    <div class="hidden overflow-x-auto md:block">
-      <DataTable class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-        <thead class="bg-slate-50 dark:bg-slate-900">
+    <div class="hidden overflow-x-auto md:block" data-testid="document-register">
+      <DataTable class="ds-data-table min-w-full">
+        <thead class="ds-table-head">
           <tr>
             <th scope="col" class="w-12 px-4 py-3">
               <CheckboxInput
@@ -409,10 +364,10 @@
             </th>
             <th 
               scope="col" 
-              class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-600 dark:text-slate-300"
+              class="ds-table-heading px-4 py-3 text-left"
             >
               <button 
-                class="flex items-center gap-1 hover:text-blue-900 transition-colors duration-200"
+                class="flex items-center gap-1 transition hover:text-[var(--ds-text)]"
                 @click="sortField = 'name'; sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'"
               >
                 <span>{{ $t('gestlab.general.labels.vap_filemanager.name') }}</span>
@@ -422,10 +377,10 @@
             </th>
             <th 
               scope="col" 
-              class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-600 dark:text-slate-300"
+              class="ds-table-heading px-4 py-3 text-left"
             >
               <button 
-                class="flex items-center gap-1 hover:text-blue-900 transition-colors duration-200"
+                class="flex items-center gap-1 transition hover:text-[var(--ds-text)]"
                 @click="sortField = 'size'; sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'"
               >
                 <span>{{ $t('gestlab.general.labels.vap_filemanager.size') }}</span>
@@ -435,10 +390,10 @@
             </th>
             <th 
               scope="col" 
-              class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-600 dark:text-slate-300"
+              class="ds-table-heading px-4 py-3 text-left"
             >
               <button 
-                class="flex items-center gap-1 hover:text-blue-900 transition-colors duration-200"
+                class="flex items-center gap-1 transition hover:text-[var(--ds-text)]"
                 @click="sortField = 'modifiedAt'; sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'"
               >
                 <span>{{ $t('gestlab.general.labels.vap_filemanager.modified') }}</span>
@@ -446,19 +401,19 @@
                 <ChevronDownIcon v-if="sortField === 'modifiedAt' && sortDirection === 'desc'" class="h-4 w-4" />
               </button>
             </th>
-            <th scope="col" class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-600 dark:text-slate-300">
+            <th scope="col" class="ds-table-heading px-4 py-3 text-right">
               {{ $t('gestlab.general.labels.vap_filemanager.actions') }}
             </th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+        <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
           <tr 
             v-for="file in filteredFiles" 
             :key="file.id" 
-            class="group relative transition-colors duration-200 hover:bg-blue-50/30 dark:hover:bg-slate-800/70"
+            class="ds-table-row group relative"
             :class="{
-              'bg-blue-50 dark:bg-primary-500/10': dragOverItem === file.id && file.type === 'folder',
-              'bg-blue-50/70 ring-1 ring-inset ring-blue-200 dark:bg-primary-500/10 dark:ring-primary-400/20': fileStore.selectedItems.has(file.id),
+              'bg-[var(--ds-panel-subtle)]': dragOverItem === file.id && file.type === 'folder',
+              'bg-[var(--ds-panel-subtle)] ring-1 ring-inset ring-[rgb(var(--primary-300-rgb))]': fileStore.selectedItems.has(file.id),
               'cursor-move': !isUploading
             }"
             draggable="true"
@@ -496,71 +451,74 @@
             </td>
 
             <!-- Name Column -->
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="ds-table-cell min-w-80 px-4 py-3">
               <div class="flex items-center gap-3">
-                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 transition-colors duration-200 group-hover:bg-blue-100 dark:bg-primary-500/10 dark:group-hover:bg-primary-500/15">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--ds-panel-subtle)]">
                   <FolderIcon
                     v-if="file.type === 'folder'"
-                    class="h-5 w-5 text-blue-900"
+                    class="h-5 w-5 text-[rgb(var(--primary-800-rgb))]"
                   />
                   <DocumentIcon
                     v-else
-                    class="h-5 w-5 text-blue-700"
+                    class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]"
                   />
                 </div>
-                <span 
-                  class="cursor-pointer text-sm font-medium text-slate-900 transition-colors duration-200 hover:text-blue-900 dark:text-slate-100 dark:hover:text-primary-200"
-                  @click="file.type === 'folder' ? navigateToFolder(file.id) : handleItemClick(file, $event)"
-                >
-                  {{ file.name }}
-                </span>
-                <div class="mt-1 flex flex-wrap gap-2">
+                <div class="min-w-0">
+                  <button
+                    type="button"
+                    class="block max-w-md truncate text-left text-sm font-bold text-[var(--ds-text)] transition hover:text-[rgb(var(--primary-700-rgb))]"
+                    @click="file.type === 'folder' ? navigateToFolder(file.id) : handleItemClick(file, $event)"
+                  >
+                    {{ file.name }}
+                  </button>
+                  <div class="mt-1 flex flex-wrap gap-1.5">
                   <span
                     v-if="file.status"
-                    class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide"
+                    class="ds-badge px-2 py-0.5 text-[11px]"
                     :class="statusBadgeClass(file)"
                   >
                     {{ formatStatusLabel(file.status) }}
                   </span>
                   <span
                     v-if="file.revision_code"
-                    class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                    class="ds-badge ds-badge-neutral px-2 py-0.5 text-[11px]"
                   >
                     {{ file.revision_code }}
                   </span>
                   <span
                     v-if="isReviewOverdue(file)"
-                    class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700"
+                    class="ds-badge ds-badge-warning px-2 py-0.5 text-[11px]"
                   >
                     Revisão em atraso
                   </span>
+                  </div>
                 </div>
               </div>
             </td>
 
             <!-- Size Column -->
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span class="text-sm text-slate-600 dark:text-slate-300">
+            <td class="ds-table-cell whitespace-nowrap px-4 py-3">
+              <span class="text-sm tabular-nums">
                 {{ formatSize(file.size) }}
               </span>
             </td>
 
             <!-- Modified Date Column -->
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="ds-table-cell whitespace-nowrap px-4 py-3">
               <div class="flex items-center gap-2">
                 <ClockIcon class="h-4 w-4 text-gray-400" />
-                <span class="text-sm text-slate-600 dark:text-slate-300">
+                <span class="text-sm tabular-nums">
                   {{ formatDate(file.modifiedAt) }}
                 </span>
               </div>
             </td>
 
             <!-- Actions Column -->
-            <td class="px-6 py-4 whitespace-nowrap text-right">
-              <div class="flex items-center justify-end gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <td class="whitespace-nowrap px-4 py-3 text-right">
+              <div class="flex items-center justify-end gap-1">
                 <button
                   v-if="canPreview(file)"
-                  class="inline-flex items-center gap-2 rounded-lg border border-purple-100 bg-purple-50 px-3 py-2 text-xs font-semibold text-purple-700 transition hover:bg-purple-100"
+                  class="ds-table-action"
                   @click="previewItem(file.id)"
                   :title="$t('gestlab.general.labels.vap_filemanager.preview')"
                 >
@@ -570,7 +528,7 @@
 
                 <button
                   v-if="file.type === 'file'"
-                  class="inline-flex items-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                  class="ds-table-action"
                   @click.stop="fileStore.downloadFile(file.id)"
                   :title="$t('gestlab.general.labels.vap_filemanager.download')"
                 >
@@ -579,10 +537,10 @@
                 </button>
 
                 <Menu as="div" class="relative">
-                  <MenuButton class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white">
+                  <MenuButton class="ds-icon-button h-9 w-9" title="Mais opções">
                     <EllipsisHorizontalIcon class="h-5 w-5" />
                   </MenuButton>
-                  <MenuItems class="absolute right-0 z-20 mt-2 w-56 origin-top-right rounded-2xl border border-slate-200 bg-white p-2 shadow-xl ring-1 ring-slate-900/5 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:ring-white/10">
+                  <MenuItems class="absolute right-0 z-30 mt-2 w-56 origin-top-right rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-1.5 shadow-xl focus:outline-none">
                     <MenuItem v-slot="{ active }">
                       <button type="button" class="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-700 transition dark:text-slate-200" :class="active ? 'bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-white' : ''" @click="startMove(file.id)">
                         <ArrowsRightLeftIcon class="h-4 w-4 text-slate-500" />
@@ -633,9 +591,9 @@
 
           <!-- Empty State -->
           <tr v-if="filteredFiles.length === 0">
-            <td colspan="5" class="px-6 py-8 text-center">
-              <div class="flex flex-col items-center gap-3">
-                <FolderIcon class="h-12 w-12 text-gray-300" />
+            <td colspan="5" class="px-6 py-10 text-center">
+              <div class="ds-empty-state mx-auto flex max-w-lg flex-col items-center gap-3 px-6 py-8">
+                <FolderIcon class="h-10 w-10 text-[var(--ds-text-soft)]" />
                 <div>
                   <h3 class="text-sm font-semibold text-gray-900 dark:text-slate-100">
                     {{ $t('gestlab.general.labels.vap_filemanager.no_files_found') }}
@@ -672,7 +630,7 @@
         <div v-if="Object.keys(uploadProgress).length > 0" class="w-64">
           <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div 
-              class="h-full bg-gradient-to-r from-blue-900 to-blue-800 transition-all duration-300"
+              class="h-full bg-[rgb(var(--primary-700-rgb))] transition-all duration-300"
               :style="{ width: `${totalProgress}%` }"
             ></div>
           </div>
@@ -732,7 +690,7 @@
             </button>
             <button
               type="button"
-              class="rounded-lg bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="ds-button ds-button-primary"
               @click="confirmMove"
             >
               {{ $t('gestlab.general.buttons.move') }}
@@ -853,7 +811,7 @@
               {{ $t('gestlab.general.labels.vap_filemanager.filter_reset') }}
             </button>
             <button
-              class="rounded-lg bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-all duration-200"
+              class="ds-button ds-button-primary"
               @click="showFilterDialog = false"
             >
               {{ $t('gestlab.general.labels.vap_filemanager.filter_apply') }}
@@ -893,7 +851,7 @@
               {{ $t('gestlab.general.labels.vap_filemanager.buttons.cancel') }}
             </button>
             <button
-              class="rounded-lg bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="ds-button ds-button-primary"
               @click="confirmRename"
               :disabled="!newItemName.trim()"
             >
@@ -948,7 +906,7 @@
               {{ $t('gestlab.general.labels.vap_filemanager.buttons.cancel') }}
             </button>
             <button
-              class="rounded-lg bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="ds-button ds-button-primary"
               @click="confirmShare"
               :disabled="!selectedShareRecipientId"
             >
@@ -1025,7 +983,7 @@
               {{ $t('gestlab.general.labels.vap_filemanager.buttons.cancel') }}
             </button>
             <button
-              class="rounded-lg bg-gradient-to-r from-blue-900 to-blue-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-blue-800 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="ds-button ds-button-primary"
               @click="confirmCreateFolder"
               :disabled="!newFolderName.trim()"
             >
@@ -1040,7 +998,7 @@
     <!-- Other dialogs (Move, Filter, Tag Manager, Version History, File Preview, Override) -->
     <!-- Keep them as they were, just make sure they follow the same styling pattern if you want consistency -->
 
-  </div>
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -1169,7 +1127,7 @@ const quickFilters = computed(() => {
     { value: 'all', label: 'Todos', count: visibleFiles.length },
     { value: 'draft', label: 'Rascunhos', count: visibleFiles.filter((file) => file.status === 'draft').length },
     { value: 'in_review', label: 'Em revisão', count: visibleFiles.filter((file) => file.status === 'in_review').length },
-    { value: 'effective', label: 'Efetivos', count: visibleFiles.filter((file) => file.status === 'effective').length },
+    { value: 'effective', label: 'Efectivos', count: visibleFiles.filter((file) => file.status === 'effective').length },
     { value: 'controlled', label: 'Controlados', count: visibleFiles.filter((file) => file.is_controlled).length },
     { value: 'review_due', label: 'Revisão vencida', count: visibleFiles.filter((file) => isReviewOverdue(file)).length },
   ]
@@ -1257,7 +1215,8 @@ const hasActiveFilters = computed(() => {
     searchQuery.value ||
       filterType.value.length ||
       filterDateRange.value ||
-      filterSize.value,
+      filterSize.value ||
+      statusFilter.value !== 'all',
   )
 })
 
@@ -1810,7 +1769,7 @@ async function handleFolderUpload(event: Event) {
             headers: { 'Content-Type': 'multipart/form-data' },
           });
         } catch (error: any) {
-          reportDevError(`Failed to upload file ${file.name}:`, error)
+          reportDevError(`Failed to carregamento file ${file.name}:`, error)
         //   toast.error(`Failed to upload ${file.name}`);
           toast.error(trans('gestlab.general.labels.vap_filemanager.notifications.error_uploading_file') + ' - ' + file.name);
         }

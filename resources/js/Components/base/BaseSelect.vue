@@ -107,7 +107,7 @@ const props = defineProps({
   },
   placeholder: {
     type: String,
-    default: 'Selecione uma opção',
+    default: 'Seleccione uma opção',
   },
   emptyText: {
     type: String,

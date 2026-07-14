@@ -50,7 +50,7 @@ const metrics = computed(() => [
   {
     label: 'Este mes',
     value: props.stats.this_month ?? 0,
-    context: 'Acumulado do periodo',
+    context: 'Acumulado do período',
     icon: CalendarDaysIcon,
   },
 ])
@@ -62,7 +62,7 @@ const readRate = computed(() => Math.min(Number(props.stats.read_rate ?? 0), 100
   <div class="space-y-5">
     <NotificationAdminHeader
       title="Visao geral"
-      description="Acompanhe alcance, leitura e distribuicao das mensagens operacionais do laboratorio."
+      description="Acompanhe alcance, leitura e distribuição das mensagens operacionais do laboratório."
     >
       <template #actions>
         <Link :href="route('admin.notifications.create')" class="ds-button ds-button-primary">
@@ -102,8 +102,8 @@ const readRate = computed(() => Math.min(Number(props.stats.read_rate ?? 0), 100
       <section class="ds-panel overflow-hidden">
         <header class="flex items-center justify-between gap-4 border-b border-[var(--ds-border)] px-5 py-4">
           <div>
-            <p class="ds-kicker">Atividade recente</p>
-            <h2 class="ds-heading mt-1 text-base">Ultimas mensagens emitidas</h2>
+            <p class="ds-kicker">Actividade recente</p>
+            <h2 class="ds-heading mt-1 text-base">Últimas mensagens emitidas</h2>
           </div>
           <Link :href="route('admin.notifications.index')" class="ds-button ds-button-ghost">
             Ver registo
@@ -136,8 +136,8 @@ const readRate = computed(() => Math.min(Number(props.stats.read_rate ?? 0), 100
 
         <div v-else class="px-5 py-12 text-center">
           <BellAlertIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
-          <p class="mt-3 text-sm font-bold text-[var(--ds-text)]">Sem notificacoes recentes</p>
-          <p class="ds-copy mt-1 text-sm">As mensagens emitidas serao apresentadas aqui.</p>
+          <p class="mt-3 text-sm font-bold text-[var(--ds-text)]">Sem notificações recentes</p>
+          <p class="ds-copy mt-1 text-sm">As mensagens emitidas serão apresentadas aqui.</p>
         </div>
       </section>
 
@@ -161,8 +161,8 @@ const readRate = computed(() => Math.min(Number(props.stats.read_rate ?? 0), 100
 
         <section class="ds-panel overflow-hidden">
           <header class="border-b border-[var(--ds-border)] px-5 py-4">
-            <p class="ds-kicker">Fluxos rapidos</p>
-            <h2 class="ds-heading mt-1 text-base">Operacoes</h2>
+            <p class="ds-kicker">Fluxos rápidos</p>
+            <h2 class="ds-heading mt-1 text-base">Operações</h2>
           </header>
           <div class="divide-y divide-[var(--ds-border)]">
             <Link :href="route('admin.notifications.create')" class="flex items-center gap-3 px-5 py-4 text-sm font-bold text-[var(--ds-text)] hover:bg-[var(--ds-panel-subtle)]">

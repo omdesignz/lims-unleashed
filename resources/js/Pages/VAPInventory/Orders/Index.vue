@@ -4,15 +4,15 @@
       <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
         <div class="max-w-3xl">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Procurement control</span>
+            <span class="ds-kicker">Controlo de aprovisionamento</span>
             <span class="ds-chip">
               <span class="lims-status-dot lims-status-dot-instrument" />
-              Pedidos e receções
+              Pedidos e recepções
             </span>
           </div>
           <h1 class="ds-heading mt-3 text-2xl">Pedidos de inventário e compra</h1>
           <p class="ds-copy mt-2 text-sm">
-            Gerencie pedidos de compra, receções parciais, avaliação de fornecedores e evidências de não conformidade na receção.
+            Faça a gestão de pedidos de compra, recepções parciais, avaliação de fornecedores e evidências de não conformidade na recepção.
           </p>
         </div>
 
@@ -40,7 +40,7 @@
           <FunnelIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
           <div>
             <h2 class="ds-heading text-base">Filtros de procurement</h2>
-            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Refine por estado, fornecedor, datas e referência antes de executar receções ou revisões.</p>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Refine por estado, fornecedor, datas e referência antes de executar recepções ou revisões.</p>
           </div>
         </div>
         <span class="ds-chip">
@@ -107,7 +107,7 @@
               <div>
                 <h2 class="ds-heading text-base">Lista de pedidos</h2>
                 <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">
-                  {{ orders.total || 0 }} pedidos com fornecedor, receção e risco associados.
+                  {{ orders.total || 0 }} pedidos com fornecedor, recepção e risco associados.
                 </p>
               </div>
             </div>
@@ -257,7 +257,7 @@
         <article class="ds-panel overflow-hidden">
           <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
             <h2 class="ds-heading text-base">Fila operacional</h2>
-            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Sinais de receção, risco e itens em aberto.</p>
+            <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Sinais de recepção, risco e itens em aberto.</p>
           </div>
           <div class="grid gap-3 p-5">
             <div v-for="signal in procurementSignals" :key="signal.label" class="ds-card p-4">
@@ -409,7 +409,7 @@ const statsCards = computed(() => [
 
 const procurementSignals = computed(() => [
   {
-    label: 'Receção aberta',
+    label: 'Recepção aberta',
     value: formatQuantity(receivableOrdersCount.value),
     caption: 'Pedidos ordenados ou parciais',
     dotClass: receivableOrdersCount.value ? 'lims-status-dot-hold' : 'lims-status-dot-release',
@@ -418,7 +418,7 @@ const procurementSignals = computed(() => [
   {
     label: 'Não conformidades',
     value: formatQuantity(openReceptionNonConformities.value),
-    caption: 'NCs de receção em aberto',
+    caption: 'NCs de recepção em aberto',
     dotClass: openReceptionNonConformities.value ? 'lims-status-dot-critical' : 'lims-status-dot-release',
     valueClass: openReceptionNonConformities.value ? 'text-rose-700 dark:text-rose-300' : 'text-[color:var(--ds-text)]',
   },

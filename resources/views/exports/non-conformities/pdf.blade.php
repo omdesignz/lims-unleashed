@@ -161,7 +161,7 @@
         <h3>Filtros Aplicados:</h3>
         <ul>
             @if(!empty($filters['status']))
-                <li>Status: {{ $filters['status'] }}</li>
+                <li>Estado: {{ $filters['status'] }}</li>
             @endif
             @if(!empty($filters['severity']))
                 <li>Severidade: {{ $filters['severity'] }}</li>
@@ -181,7 +181,7 @@
     
     <div class="summary">
         <h3>Resumo:</h3>
-        <p>Total de registros: {{ $nonConformities->count() }}</p>
+        <p>Total de registos: {{ $nonConformities->count() }}</p>
     </div>
     
     <table class="table">
@@ -189,7 +189,7 @@
             <tr>
                 <th>Número NC</th>
                 <th>Título</th>
-                <th>Status</th>
+                <th>Estado</th>
                 <th>Severidade</th>
                 <th>Reportado por</th>
                 <th>Data do Relato</th>

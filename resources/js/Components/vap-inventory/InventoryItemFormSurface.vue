@@ -23,10 +23,10 @@
       <dl class="grid grid-cols-2 divide-x divide-y divide-[color:var(--ds-border)] sm:grid-cols-4 sm:divide-y-0">
         <div class="px-5 py-4">
           <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Categoria</dt>
-          <dd class="mt-2 truncate text-sm font-bold text-[color:var(--ds-text)]">{{ selectedCategory?.label || 'Por selecionar' }}</dd>
+          <dd class="mt-2 truncate text-sm font-bold text-[color:var(--ds-text)]">{{ selectedCategory?.label || 'Por seleccionar' }}</dd>
         </div>
         <div class="px-5 py-4">
-          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Stock distribuído</dt>
+          <dt class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Existências distribuídas</dt>
           <dd class="mt-2 text-2xl font-bold text-[color:var(--ds-text)]">{{ totalStock }}</dd>
         </div>
         <div class="px-5 py-4">
@@ -70,25 +70,25 @@
 
                 <div class="ds-field-group">
                   <label class="ds-field-label">Categoria <span class="ds-field-required">*</span></label>
-                  <comboboxEnhanced v-model="selectedCategory" :has-error="Boolean(errorFor('category_id'))" :options="categoryOptions" placeholder="Selecione a categoria" />
+                  <comboboxEnhanced v-model="selectedCategory" :has-error="Boolean(errorFor('category_id'))" :options="categoryOptions" placeholder="Seleccione a categoria" />
                   <p v-if="errorFor('category_id')" class="ds-field-error">{{ errorFor('category_id') }}</p>
                 </div>
 
                 <div v-if="isEquipment" class="ds-field-group">
                   <label class="ds-field-label">Tipo de equipamento</label>
-                  <comboboxEnhanced v-model="selectedType" :has-error="Boolean(errorFor('type_id'))" :options="typeOptions" placeholder="Selecione o tipo" />
+                  <comboboxEnhanced v-model="selectedType" :has-error="Boolean(errorFor('type_id'))" :options="typeOptions" placeholder="Seleccione o tipo" />
                   <p v-if="errorFor('type_id')" class="ds-field-error">{{ errorFor('type_id') }}</p>
                 </div>
 
                 <div class="ds-field-group">
                   <label class="ds-field-label">Unidade</label>
-                  <comboboxEnhanced v-model="selectedUnit" :has-error="Boolean(errorFor('unit_id'))" :options="unitOptions" placeholder="Selecione a unidade" />
+                  <comboboxEnhanced v-model="selectedUnit" :has-error="Boolean(errorFor('unit_id'))" :options="unitOptions" placeholder="Seleccione a unidade" />
                   <p v-if="errorFor('unit_id')" class="ds-field-error">{{ errorFor('unit_id') }}</p>
                 </div>
 
                 <div class="ds-field-group">
                   <label class="ds-field-label">Estado</label>
-                  <comboboxEnhanced v-model="selectedStatus" :has-error="Boolean(errorFor('status_id'))" :options="statusOptions" placeholder="Selecione o estado" />
+                  <comboboxEnhanced v-model="selectedStatus" :has-error="Boolean(errorFor('status_id'))" :options="statusOptions" placeholder="Seleccione o estado" />
                   <p v-if="errorFor('status_id')" class="ds-field-error">{{ errorFor('status_id') }}</p>
                 </div>
 
@@ -199,12 +199,12 @@
               <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <div class="ds-field-group md:col-span-2 xl:col-span-3">
                   <label class="ds-field-label">Fornecedor principal</label>
-                  <comboboxEnhanced v-model="selectedSupplier" :has-error="Boolean(errorFor('supplier_id'))" :options="supplierOptions" placeholder="Selecione o fornecedor" />
+                  <comboboxEnhanced v-model="selectedSupplier" :has-error="Boolean(errorFor('supplier_id'))" :options="supplierOptions" placeholder="Seleccione o fornecedor" />
                   <p v-if="errorFor('supplier_id')" class="ds-field-error">{{ errorFor('supplier_id') }}</p>
                 </div>
                 <div class="ds-field-group md:col-span-2 xl:col-span-3">
                   <label class="ds-field-label" for="inventory-acceptance">Critérios de aceitação</label>
-                  <textarea id="inventory-acceptance" v-model="form.acceptance_criteria" rows="3" class="ds-field" :aria-invalid="Boolean(errorFor('acceptance_criteria'))" placeholder="Condições mínimas para receção e liberação"></textarea>
+                  <textarea id="inventory-acceptance" v-model="form.acceptance_criteria" rows="3" class="ds-field" :aria-invalid="Boolean(errorFor('acceptance_criteria'))" placeholder="Condições mínimas para recepção e libertação"></textarea>
                   <p v-if="errorFor('acceptance_criteria')" class="ds-field-error">{{ errorFor('acceptance_criteria') }}</p>
                 </div>
                 <div class="ds-field-group">
@@ -317,7 +317,7 @@
             <div class="flex items-start gap-3">
               <BuildingLibraryIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
               <div>
-                <h2 class="ds-heading text-base">Stock por armazém</h2>
+                <h2 class="ds-heading text-base">Existências por armazém</h2>
                 <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Defina o saldo, mínimo e ponto de reposição em cada localização.</p>
               </div>
             </div>
@@ -332,7 +332,7 @@
               <div class="flex items-start justify-between gap-3">
                 <div>
                   <p class="text-xs font-bold uppercase text-[color:var(--ds-text-soft)]">Localização {{ index + 1 }}</p>
-                  <h3 class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ warehouseInfo[index]?.name || warehouse.id_obj?.label || 'Armazém por selecionar' }}</h3>
+                  <h3 class="mt-1 text-sm font-bold text-[color:var(--ds-text)]">{{ warehouseInfo[index]?.name || warehouse.id_obj?.label || 'Armazém por seleccionar' }}</h3>
                 </div>
                 <button type="button" class="ds-table-action ds-table-action-danger" title="Remover armazém" @click="emit('remove-warehouse', index)">
                   <TrashIcon class="h-4 w-4" />
@@ -347,7 +347,7 @@
                     :model-value="warehouse.id_obj"
                     :has-error="Boolean(warehouseErrors[index]?.id)"
                     :options="warehouseOptions"
-                    placeholder="Selecione o armazém"
+                    placeholder="Seleccione o armazém"
                     @update:model-value="updateWarehouseSelection(index, $event)"
                   />
                   <p v-if="warehouseErrors[index]?.id" class="ds-field-error">{{ warehouseErrors[index].id }}</p>
@@ -358,7 +358,7 @@
                   <p v-if="warehouseErrors[index]?.qty_available" class="ds-field-error">{{ warehouseErrors[index].qty_available }}</p>
                 </div>
                 <div class="ds-field-group">
-                  <label class="ds-field-label" :for="'warehouse-min-' + index">Stock mínimo</label>
+                  <label class="ds-field-label" :for="'warehouse-min-' + index">Existências mínimo</label>
                   <BaseInput :id="'warehouse-min-' + index" v-model="warehouse.min_stock_level" type="number" min="0" step="0.01" class="ds-field" />
                 </div>
                 <div class="ds-field-group">
@@ -388,7 +388,7 @@
             <div class="ds-empty-state px-5 py-10 text-center">
               <BuildingLibraryIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
               <h3 class="ds-heading mt-3 text-sm">Nenhum armazém configurado</h3>
-              <p class="ds-copy mt-1 text-xs">Adicione pelo menos uma localização para controlar o stock.</p>
+              <p class="ds-copy mt-1 text-xs">Adicione pelo menos uma localização para controlar o existências.</p>
             </div>
           </div>
         </section>
@@ -412,7 +412,7 @@
               @drop.prevent="onDroppedFiles"
             >
               <DocumentPlusIcon class="h-8 w-8 text-primary-700 dark:text-primary-300" />
-              <span class="mt-3 text-sm font-bold text-[color:var(--ds-text)]">Selecione ou arraste ficheiros</span>
+              <span class="mt-3 text-sm font-bold text-[color:var(--ds-text)]">Seleccione ou arraste ficheiros</span>
               <span class="mt-1 text-xs text-[color:var(--ds-text-soft)]">PDF, imagens e documentos técnicos.</span>
               <FileInput type="file" multiple class="sr-only" @change="onSelectedFiles" />
             </label>
@@ -452,7 +452,7 @@
               <dd class="text-xs font-bold" :class="requiredReady ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'">{{ requiredReady ? 'Prontos' : 'Incompletos' }}</dd>
             </div>
             <div class="flex items-center justify-between gap-3 py-3">
-              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Stock total</dt>
+              <dt class="text-xs font-semibold text-[color:var(--ds-text-muted)]">Existências total</dt>
               <dd class="text-sm font-bold text-[color:var(--ds-text)]">{{ totalStock }}</dd>
             </div>
             <div class="flex items-center justify-between gap-3 py-3">

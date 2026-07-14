@@ -8,5 +8,5 @@ defineProps({ record: { type: Object, default: () => ({ data: [], meta: {} }) },
 </script>
 
 <template>
-  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="paymentcategories" route-parameter="category" permission-key="payment_categories" title="Categorias de pagamento" kicker="Controlo financeiro" description="Meios de liquidacao normalizados para recebimentos e reconciliacao comercial." entity-label="Categoria de pagamento" new-entity-label="Nova categoria" name-label="Nome" code-label="Codigo" description-label="Condicoes de utilizacao" :supports-name="true" :icon="BanknotesIcon" />
+  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="paymentcategories" route-parameter="category" permission-key="payment_categories" title="Categorias de pagamento" kicker="Controlo financeiro" description="Meios de liquidação normalizados para pagamentos recebidos e reconciliação comercial." entity-label="Categoria de pagamento" new-entity-label="Nova categoria" name-label="Nome" code-label="Código" description-label="Condições de utilização" :supports-name="true" :icon="BanknotesIcon" />
 </template>

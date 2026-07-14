@@ -22,7 +22,7 @@ class SupplierAssessmentNotifier
         $title = 'Fornecedor sob monitorização reforçada';
         $message = sprintf(
             'O fornecedor %s foi classificado como %s com risco %s.',
-            $assessment->supplier?->name ?? ('Fornecedor #' . $assessment->inventory_item_supplier_id),
+            $assessment->supplier?->name ?? ('Fornecedor #'.$assessment->inventory_item_supplier_id),
             $assessment->status,
             $assessment->risk_level
         );
@@ -32,7 +32,7 @@ class SupplierAssessmentNotifier
             $message,
             $sender,
             $this->stakeholders(),
-            'supplier-assessment-sensitive:' . $assessment->id . ':' . $assessment->updated_at?->format('YmdHi')
+            'supplier-assessment-sensitive:'.$assessment->id.':'.$assessment->updated_at?->format('YmdHi')
         );
     }
 
@@ -42,12 +42,12 @@ class SupplierAssessmentNotifier
             'Avaliação de fornecedor próxima da revisão',
             sprintf(
                 'A avaliação do fornecedor %s deve ser revista até %s.',
-                $assessment->supplier?->name ?? ('Fornecedor #' . $assessment->inventory_item_supplier_id),
+                $assessment->supplier?->name ?? ('Fornecedor #'.$assessment->inventory_item_supplier_id),
                 $assessment->next_review_at?->format('d/m/Y') ?? 'data em aberto'
             ),
             $sender,
             $this->stakeholders(),
-            'supplier-assessment-due-soon:' . $assessment->id . ':' . now()->format('Ymd')
+            'supplier-assessment-due-soon:'.$assessment->id.':'.now()->format('Ymd')
         );
     }
 
@@ -56,12 +56,12 @@ class SupplierAssessmentNotifier
         $this->sendNotification(
             'Avaliação de fornecedor vencida',
             sprintf(
-                'A avaliação do fornecedor %s ultrapassou o prazo de revisão e requer ação imediata.',
-                $assessment->supplier?->name ?? ('Fornecedor #' . $assessment->inventory_item_supplier_id)
+                'A avaliação do fornecedor %s ultrapassou o prazo de revisão e requer acção imediata.',
+                $assessment->supplier?->name ?? ('Fornecedor #'.$assessment->inventory_item_supplier_id)
             ),
             $sender,
             $this->stakeholders(),
-            'supplier-assessment-overdue:' . $assessment->id . ':' . now()->format('Ymd')
+            'supplier-assessment-overdue:'.$assessment->id.':'.now()->format('Ymd')
         );
     }
 
@@ -71,11 +71,11 @@ class SupplierAssessmentNotifier
             'Fornecedor com risco crítico',
             sprintf(
                 'O fornecedor %s permanece com risco crítico e deve ser revisto antes de novas aquisições.',
-                $assessment->supplier?->name ?? ('Fornecedor #' . $assessment->inventory_item_supplier_id)
+                $assessment->supplier?->name ?? ('Fornecedor #'.$assessment->inventory_item_supplier_id)
             ),
             $sender,
             $this->stakeholders(),
-            'supplier-assessment-critical:' . $assessment->id . ':' . now()->format('Ymd')
+            'supplier-assessment-critical:'.$assessment->id.':'.now()->format('Ymd')
         );
     }
 
@@ -109,14 +109,14 @@ class SupplierAssessmentNotifier
         Collection $recipients,
         string $cacheKey
     ): void {
-        if (! Cache::add('supplier-assessment-notification:' . $cacheKey, true, now()->addHours(12))) {
+        if (! Cache::add('supplier-assessment-notification:'.$cacheKey, true, now()->addHours(12))) {
             return;
         }
 
         $targets = $recipients
             ->filter()
             ->reject(fn ($recipient) => $recipient instanceof User && $recipient->is($sender))
-            ->unique(fn ($recipient) => get_class($recipient) . ':' . $recipient->getKey())
+            ->unique(fn ($recipient) => get_class($recipient).':'.$recipient->getKey())
             ->values();
 
         if ($targets->isEmpty()) {

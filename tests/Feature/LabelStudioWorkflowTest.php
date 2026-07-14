@@ -635,8 +635,53 @@ class LabelStudioWorkflowTest extends TestCase
         $this->assertSame(18, data_get($template->template_data, 'logo_size'));
     }
 
+    public function test_labels_are_isolated_by_tenant_across_index_and_document_routes(): void
+    {
+        $user = $this->verifiedAdmin();
+        $attributes = [
+            'user_id' => $user->id,
+            'type' => 'sample',
+            'content' => 'Amostra controlada',
+            'width' => 60,
+            'height' => 30,
+            'background_color' => '#ffffff',
+            'text_color' => '#111827',
+            'font_size' => 12,
+            'border_width' => 1,
+            'border_color' => '#111827',
+            'text_alignment' => 'center',
+            'is_active' => true,
+        ];
+
+        VAPLabel::query()->create(array_merge($attributes, [
+            'tenant_id' => $user->tenant_id,
+            'name' => 'Tenant scope marker local',
+        ]));
+        $foreignLabel = VAPLabel::query()->create(array_merge($attributes, [
+            'tenant_id' => 999999,
+            'name' => 'Tenant scope marker foreign',
+        ]));
+
+        $this->actingAs($user)
+            ->get(route('vap_labels.labels.index', ['search' => 'Tenant scope marker']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('labels.data', 1)
+                ->where('labels.data.0.name', 'Tenant scope marker local'));
+
+        $this->actingAs($user)
+            ->get(route('vap_labels.labels.show', $foreignLabel))
+            ->assertNotFound();
+
+        $this->actingAs($user)
+            ->get(route('vap_labels.preview-pdf', $foreignLabel))
+            ->assertNotFound();
+    }
+
     public function test_label_preview_pdf_uses_production_renderer_contract(): void
     {
+        config()->set('laravel-pdf.chrome.chrome_binary', '/missing/chrome');
+
         $user = $this->verifiedAdmin();
         $label = VAPLabel::query()->create([
             'tenant_id' => $user->tenant_id,
@@ -667,8 +712,21 @@ class LabelStudioWorkflowTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('Content-Type', 'application/pdf');
-        $response->assertHeader('X-Label-Pdf-Renderer');
+        $response->assertHeader('X-Label-Pdf-Renderer', 'mpdf');
         $this->assertStringStartsWith('%PDF-', (string) $response->baseResponse->getContent());
+
+        foreach (['pdf.blade.php', 'preview.blade.php', 'generate.blade.php', 'batch.blade.php'] as $view) {
+            $source = file_get_contents(resource_path('views/PDFs/labels/'.$view));
+
+            $this->assertIsString($source);
+            $this->assertStringNotContainsString('would go here', $source);
+            $this->assertStringNotContainsString('>LOGO<', $source);
+        }
+
+        $this->assertStringContainsString(
+            'qr_code_image',
+            (string) file_get_contents(resource_path('views/PDFs/labels/batch.blade.php'))
+        );
     }
 
     public function test_label_generation_pdf_embeds_real_qr_and_barcode_payloads(): void
@@ -727,6 +785,8 @@ class LabelStudioWorkflowTest extends TestCase
 
     public function test_label_batch_pdf_uses_same_renderer_contract(): void
     {
+        config()->set('laravel-pdf.chrome.chrome_binary', '/missing/chrome');
+
         $user = $this->verifiedAdmin();
         $label = VAPLabel::query()->create([
             'tenant_id' => $user->tenant_id,
@@ -767,7 +827,7 @@ class LabelStudioWorkflowTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('Content-Type', 'application/pdf');
-        $response->assertHeader('X-Label-Pdf-Renderer');
+        $response->assertHeader('X-Label-Pdf-Renderer', 'mpdf');
         $this->assertStringStartsWith('%PDF-', (string) $response->baseResponse->getContent());
 
         $label->refresh();

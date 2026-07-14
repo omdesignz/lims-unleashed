@@ -116,14 +116,14 @@ function executeBulkAction() {
           <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">catálogo completo</p>
         </div>
         <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Ativos nesta página</dt>
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Activos nesta página</dt>
           <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ activeRecords }}</dd>
           <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">em circulação</p>
         </div>
         <div class="px-4 py-3">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Selecionados</dt>
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Seleccionados</dt>
           <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ selectedRecordIds.length }}</dd>
-          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">para ação em lote</p>
+          <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">para acção em lote</p>
         </div>
       </dl>
     </section>

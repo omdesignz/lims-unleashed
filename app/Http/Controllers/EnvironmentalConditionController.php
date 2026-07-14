@@ -10,7 +10,7 @@ class EnvironmentalConditionController extends Controller
 {
     public function index(Request $request)
     {
-        abort_if( !auth()->user()->can('view_temperatures'), 403, '');
+        abort_if(! auth()->user()->can('view_temperatures'), 403, '');
 
         $query = EnvironmentalCondition::query()
             ->with('recordedBy:id,name')
@@ -40,7 +40,7 @@ class EnvironmentalConditionController extends Controller
 
     public function store(Request $request)
     {
-        abort_if( !auth()->user()->can('add_temperatures'), 403, '');
+        abort_if(! auth()->user()->can('add_temperatures'), 403, '');
 
         $validated = $this->validatePayload($request);
         $condition = new EnvironmentalCondition($validated);
@@ -56,7 +56,7 @@ class EnvironmentalConditionController extends Controller
 
     public function update(Request $request, EnvironmentalCondition $environmentalCondition)
     {
-        abort_if( !auth()->user()->can('edit_temperatures'), 403, '');
+        abort_if(! auth()->user()->can('edit_temperatures'), 403, '');
 
         $validated = $this->validatePayload($request);
         $environmentalCondition->fill($validated);
@@ -65,13 +65,13 @@ class EnvironmentalConditionController extends Controller
 
         return to_route('environmental-conditions.index')->with('toast', [
             'title' => trans('gestlab.toasts.notification'),
-            'message' => 'Condição ambiental atualizada com sucesso.',
+            'message' => 'Condição ambiental actualizada com sucesso.',
         ]);
     }
 
     public function destroy(EnvironmentalCondition $environmentalCondition)
     {
-        abort_if( !auth()->user()->can('delete_temperatures'), 403, '');
+        abort_if(! auth()->user()->can('delete_temperatures'), 403, '');
 
         $environmentalCondition->delete();
 

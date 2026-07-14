@@ -410,7 +410,7 @@ const markAsExecuted = () => {
 }
 
 const confirmDelete = () => {
-  if (confirm('Tem certeza que deseja excluir esta tarefa de manutenção?')) {
+  if (confirm('Tem certeza que deseja eliminar esta tarefa de manutenção?')) {
     router.delete(route('maintenance-tasks.destroy', props.task.id))
   }
 }

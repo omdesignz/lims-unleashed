@@ -22,15 +22,25 @@ class ProcessProgrammedCollectionProducts implements ShouldBeUnique, ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $customer_id;
+
     public $warehouse_id;
+
     public $products;
+
     public $col_date;
+
     public $collection_location;
+
     public $collaborations;
+
     public $collectionreasons;
+
     public $user;
+
     public $customer;
+
     public $vehicle_reference;
+
     public int $uniqueFor = 300;
 
     /**
@@ -55,7 +65,7 @@ class ProcessProgrammedCollectionProducts implements ShouldBeUnique, ShouldQueue
      */
     public function handle(): void
     {
-        $programmedCollection = new ProgrammedCollection();
+        $programmedCollection = new ProgrammedCollection;
         $programmedCollection->user_id = $this->user->id;
         $programmedCollection->col_date = $this->col_date;
         $programmedCollection->collection_location = $this->collection_location;
@@ -67,7 +77,7 @@ class ProcessProgrammedCollectionProducts implements ShouldBeUnique, ShouldQueue
             'warehouse_id' => $this->warehouse_id,
         ]));
 
-        foreach($this->products as $product) {
+        foreach ($this->products as $product) {
             $collectionProduct = new CollectionProduct;
 
             $collectionProduct->collection_id = $collection->id;
@@ -87,6 +97,9 @@ class ProcessProgrammedCollectionProducts implements ShouldBeUnique, ShouldQueue
             $collectionProduct->invoice_id = $product['invoice_id'];
             $collectionProduct->vehicle_id = $product['vehicle_id'];
             $collectionProduct->obs = $product['obs'];
+            $collectionProduct->sample_status = $product['sample_status'] ?? null;
+            $collectionProduct->sampling_plan_ref = $product['sampling_plan_ref'] ?? null;
+            $collectionProduct->customer_submitted_info = $product['customer_submitted_info'] ?? null;
             $collectionProduct->qty = $product['qty'];
             $collectionProduct->lot = $product['lot'];
             $collectionProduct->bl = $product['bl'];
@@ -103,26 +116,26 @@ class ProcessProgrammedCollectionProducts implements ShouldBeUnique, ShouldQueue
             $collectionProduct->save();
 
             $colpro = CollectionProduct::find($collectionProduct->id);
-        
-            //Create Lab Code for each Product
+
+            // Create Lab Code for each Product
 
             $code = LabCode::Create([
                 'code' => '',
                 'codeable_type' => 'analysis',
                 'cl_month' => Carbon::now()->format('y/m'),
-                'collection_id' => $collectionProduct->id
+                'collection_id' => $collectionProduct->id,
             ]);
 
             // Log product creation
             activity()
                 ->by($this->user)
                 ->performedOn($colpro)
-                ->log('cadastrou a colheita programada com a CL ' . $code->description);
+                ->log('registou a colheita programada com a CL '.$code->description);
         }
 
-        if(count($this->collaborations)) {
-            foreach($this->collaborations as $collab) {
-                $obj = new ColCollab();
+        if (count($this->collaborations)) {
+            foreach ($this->collaborations as $collab) {
+                $obj = new ColCollab;
 
                 $obj->collection_id = $collection->id;
                 $obj->collaboration_id = $collab['collaboration_id'];
@@ -131,9 +144,9 @@ class ProcessProgrammedCollectionProducts implements ShouldBeUnique, ShouldQueue
             }
         }
 
-        if(count($this->collectionreasons)) {
-            foreach($this->collectionreasons as $reason) {
-                $obj = new ColReason();
+        if (count($this->collectionreasons)) {
+            foreach ($this->collectionreasons as $reason) {
+                $obj = new ColReason;
 
                 $obj->collection_id = $collection->id;
                 $obj->reason_id = $reason['reason_id'];
@@ -143,12 +156,12 @@ class ProcessProgrammedCollectionProducts implements ShouldBeUnique, ShouldQueue
         }
 
         // Notify User
-        broadcast(new CollectionProcessed($this->user,$this->customer));
+        broadcast(new CollectionProcessed($this->user, $this->customer));
     }
 
     public function uniqueId(): string
     {
-        return 'programmed-collection:' . md5(json_encode([
+        return 'programmed-collection:'.md5(json_encode([
             'customer_id' => $this->customer_id,
             'warehouse_id' => $this->warehouse_id,
             'col_date' => $this->col_date,

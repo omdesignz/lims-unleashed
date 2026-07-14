@@ -20,7 +20,7 @@ defineOptions({
         <div>
           <button class="inline-flex items-center bg-white/10 hover:bg-white/20 px-3 py-2 font-medium text-sm text-white rounded-md">
             <EllipsisHorizontalIcon class="w-5 h-5"/>
-            <span class="ml-1">Settings</span>
+            <span class="ml-1">Definições</span>
           </button>
         </div>
       </div>
@@ -58,14 +58,14 @@ defineOptions({
                         :class="{'bg-gray-100': active}"
                         class="block px-4 py-2 text-sm text-gray-700"
                         href="#"
-                      >Add card</a>
+                      >Adicionar cartão</a>
                     </MenuItem>
                     <MenuItem v-slot="{active}">
                       <a
                         :class="{'bg-gray-100': active}"
                         class="block px-4 py-2 text-sm text-red-600"
                         href="#"
-                      >Delete list</a>
+                      >Eliminar lista</a>
                     </MenuItem>
                   </MenuItems>
                 </transition>
@@ -81,7 +81,7 @@ defineOptions({
                     <a
                       class="text-sm"
                       href="#"
-                    >card item</a>
+                    >Item do cartão</a>
                     <button class="hidden absolute top-1 right-1 w-8 h-8 bg-gray-50 group-hover:grid place-content-center rounded-md text-gray-600 hover:text-black hover:bg-gray-200">
                       <PencilSquareIcon class="w-5 h-5"/>
                     </button>
@@ -92,7 +92,7 @@ defineOptions({
               <div class="px-3 mt-3">
                 <button class="flex items-center p-2 text-sm font-medium text-gray-600 hover:text-black hover:bg-gray-300 w-full rounded-md">
                   <PlusCircleIcon class="h-5 w-5"></PlusCircleIcon>
-                  <span class="ml-1">Add card</span>
+                  <span class="ml-1">Adicionar cartão</span>
                 </button>
               </div>
             </div>

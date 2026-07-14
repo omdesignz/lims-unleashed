@@ -7,7 +7,7 @@
             <span class="ds-kicker">Quality assurance</span>
             <span class="ds-chip">
               <span class="lims-status-dot lims-status-dot-hold"></span>
-              CAPA workflow
+              CAPA fluxo de trabalho
             </span>
           </div>
           <div class="mt-3 flex flex-wrap items-center gap-3">

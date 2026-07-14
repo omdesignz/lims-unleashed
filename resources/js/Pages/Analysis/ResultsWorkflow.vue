@@ -171,13 +171,13 @@ const storeResultsUrl = computed(() => {
 
 const workflowOriginLabel = computed(() => {
   return props.record?.entry_origin?.is_sample_entry_first
-    ? "Sample Entry controlada"
+    ? "Entrada de amostra controlada"
     : "Registo legado";
 });
 
 const sampleEntryMetaCards = computed(() => [
   {
-    label: "Sample Entry",
+    label: "Entrada de amostra",
     value: props.record?.sample_entry?.code || props.record?.sample_entry?.name || "Não vinculada",
   },
   {
@@ -225,7 +225,7 @@ const conditioningLabels = {
 
 const scopeSummaryCards = computed(() => [
   { label: "Perfil analítico", value: props.scope_audit?.expected_count ?? 0 },
-  { label: "Planeado na receção", value: props.scope_audit?.reception_count ?? 0 },
+  { label: "Planeado na recepção", value: props.scope_audit?.reception_count ?? 0 },
   { label: "Resultados lançados", value: props.scope_audit?.results_count ?? 0 },
   { label: "Faltam no fluxo", value: props.scope_audit?.missing_from_results?.length ?? 0 },
 ]);
@@ -240,11 +240,11 @@ const hasScopeDrift = computed(() => {
 
 const scopeDriftSummary = computed(() => [
   {
-    label: "Na receção, fora do perfil",
+    label: "Na recepção, fora do perfil",
     items: props.scope_audit?.scope_drift?.reception_only ?? [],
   },
   {
-    label: "No perfil, fora da receção",
+    label: "No perfil, fora da recepção",
     items: props.scope_audit?.scope_drift?.profile_only ?? [],
   },
   {
@@ -455,12 +455,12 @@ defineExpose({
                 class="lims-status-dot"
                 :class="hasScopeDrift ? 'lims-status-dot-hold' : 'lims-status-dot-release'"
               />
-              {{ hasScopeDrift ? "Rever escopo" : "Escopo consistente" }}
+              {{ hasScopeDrift ? "Rever âmbito" : "Âmbito consistente" }}
             </span>
           </div>
           <h1 class="ds-heading mt-2 text-2xl">{{ workflowTitle }}</h1>
           <p class="ds-copy mt-2 max-w-2xl text-sm">
-            Execute a decisão analítica com rastreabilidade da receção, do perfil, dos cálculos e da worksheet.
+            Execute a decisão analítica com rastreabilidade da recepção, do perfil, dos cálculos e da folha de trabalho.
           </p>
           <p class="mt-3 font-mono text-xs font-bold text-[var(--ds-text-muted)]">
             {{ record?.cl_id?.label || "Sem código" }} / {{ record?.department_id?.label || "Sem departamento" }}
@@ -483,7 +483,7 @@ defineExpose({
             class="ds-button ds-button-secondary"
           >
             <ClipboardDocumentCheckIcon class="h-4 w-4" />
-            Sample Entry
+            Entrada de amostra
           </Link>
         </div>
       </div>
@@ -527,7 +527,7 @@ defineExpose({
             <span class="min-w-0">
               <span class="ds-heading block truncate text-sm">{{ step.label }}</span>
               <span class="mt-0.5 block text-[11px] font-semibold text-[var(--ds-text-soft)]">
-                {{ step.state === "current" ? "Etapa atual" : step.permission ? "Disponível" : "Sem permissão" }}
+                {{ step.state === "current" ? "Etapa actual" : step.permission ? "Disponível" : "Sem permissão" }}
               </span>
             </span>
           </div>
@@ -635,15 +635,15 @@ defineExpose({
         <section class="ds-panel overflow-hidden">
           <div class="flex flex-col gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p class="ds-kicker">Escopo controlado</p>
-              <h2 class="ds-heading mt-2 text-base">Conferência entre perfil, receção e resultados</h2>
+              <p class="ds-kicker">Âmbito controlado</p>
+              <h2 class="ds-heading mt-2 text-base">Conferência entre perfil, recepção e resultados</h2>
             </div>
             <span class="ds-chip">
               <span
                 class="lims-status-dot"
                 :class="hasScopeDrift ? 'lims-status-dot-hold' : 'lims-status-dot-release'"
               />
-              {{ hasScopeDrift ? "Deriva detetada" : "Escopo consistente" }}
+              {{ hasScopeDrift ? "Deriva detectada" : "Âmbito consistente" }}
             </span>
           </div>
 
@@ -674,7 +674,7 @@ defineExpose({
             </div>
 
             <div class="p-5">
-              <h3 class="ds-table-heading">Deriva de escopo</h3>
+              <h3 class="ds-table-heading">Deriva de âmbito</h3>
               <div v-if="hasScopeDrift" class="mt-3 space-y-4">
                 <div v-for="bucket in scopeDriftSummary" :key="bucket.label">
                   <p class="text-xs font-bold text-[var(--ds-text)]">{{ bucket.label }}</p>
@@ -689,7 +689,7 @@ defineExpose({
                   </ul>
                 </div>
               </div>
-              <p v-else class="ds-copy mt-3 text-xs">Receção, perfil e resultados coincidem.</p>
+              <p v-else class="ds-copy mt-3 text-xs">Recepção, perfil e resultados coincidem.</p>
             </div>
           </div>
         </section>
@@ -771,21 +771,21 @@ defineExpose({
 
         <section class="ds-command-surface overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-4 py-3">
-            <p class="ds-kicker">Worksheet</p>
+            <p class="ds-kicker">Folha de trabalho</p>
             <h2 class="ds-heading mt-2 text-sm">
-              {{ worksheet_brief?.exists ? worksheet_brief.name : "Sem worksheet" }}
+              {{ worksheet_brief?.exists ? worksheet_brief.name : "Sem folha de trabalho" }}
             </h2>
           </div>
           <div class="p-4">
             <template v-if="worksheet_brief?.exists">
-              <p class="ds-copy text-xs">Atualizada {{ formatDateTime(worksheet_brief.updated_at) }}</p>
+              <p class="ds-copy text-xs">Actualizada {{ formatDateTime(worksheet_brief.updated_at) }}</p>
               <Link :href="route('worksheets.show', worksheet_brief.id)" class="ds-button ds-button-secondary mt-4 w-full">
                 <DocumentTextIcon class="h-4 w-4" />
-                Abrir worksheet
+                Abrir folha de trabalho
               </Link>
             </template>
             <template v-else>
-              <p class="ds-copy text-xs">Nenhuma worksheet foi vinculada a esta análise.</p>
+              <p class="ds-copy text-xs">Nenhuma folha de trabalho foi vinculada a esta análise.</p>
               <button
                 v-if="allow_worksheet_draft"
                 type="button"
@@ -793,7 +793,7 @@ defineExpose({
                 @click="createWorksheetDraft"
               >
                 <DocumentTextIcon class="h-4 w-4" />
-                Criar worksheet
+                Criar folha de trabalho
               </button>
             </template>
           </div>
@@ -806,7 +806,7 @@ defineExpose({
           </div>
           <div class="p-4">
             <p class="ds-copy text-xs">
-              {{ report_studio?.description || "Ative um template para padronizar a emissão final." }}
+              {{ report_studio?.description || "Active um modelo para padronizar a emissão final." }}
             </p>
             <div v-if="report_studio" class="mt-3 flex flex-wrap gap-2">
               <span class="ds-chip">{{ report_studio.renderer === "canva" ? "Canva" : "Interno" }}</span>
@@ -821,7 +821,7 @@ defineExpose({
                 class="ds-button ds-button-secondary w-full"
               >
                 <ArrowTopRightOnSquareIcon class="h-4 w-4" />
-                Abrir template
+                Abrir modelo
               </a>
               <Link
                 v-if="$page.props.auth?.user?.roles?.includes?.('admin')"
@@ -838,7 +838,7 @@ defineExpose({
           <div class="flex items-start gap-3">
             <BeakerIcon class="h-5 w-5 shrink-0 text-[var(--lims-instrument)]" />
             <div>
-              <h2 class="ds-heading text-sm">Etapa atual: {{ workflowLabel }}</h2>
+              <h2 class="ds-heading text-sm">Etapa actual: {{ workflowLabel }}</h2>
               <p class="ds-copy mt-1 text-xs">
                 {{ props.results_summary?.total ?? form.results.length }} parâmetros no fluxo.
               </p>

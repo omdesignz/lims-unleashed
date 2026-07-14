@@ -4,7 +4,7 @@
       <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
         <div class="min-w-0">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Stock assurance</span>
+            <span class="ds-kicker">Existências assurance</span>
             <span class="ds-chip">
               <span class="lims-status-dot lims-status-dot-hold"></span>
               Fila de reabastecimento
@@ -15,7 +15,7 @@
               <ExclamationTriangleIcon class="h-5 w-5" />
             </span>
             <div class="min-w-0">
-              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Relatório de stock baixo</h1>
+              <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Relatório de existências baixo</h1>
               <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
                 Priorize ruturas, gaps de reposição e exposição por armazém antes de abrir pedidos de compra.
               </p>
@@ -63,13 +63,13 @@
 
         <BaseSelect v-model="filters.severity" label="Severidade">
           <option value="">Todos os níveis</option>
-          <option value="critical">Crítico / sem stock</option>
+          <option value="critical">Crítico / sem existências</option>
           <option value="low">Abaixo do ponto de reposição</option>
         </BaseSelect>
 
         <BaseSelect v-model="filters.sort_by" label="Ordenar por">
           <option value="severity">Severidade</option>
-          <option value="current_stock">Stock atual</option>
+          <option value="current_stock">Existências actual</option>
           <option value="reorder_point">Ponto de reposição</option>
           <option value="item_name">Nome do item</option>
         </BaseSelect>
@@ -81,7 +81,7 @@
           <div v-if="activeFilterPills.length" class="mt-2 flex flex-wrap gap-2">
             <span v-for="pill in activeFilterPills" :key="pill" class="ds-chip">{{ pill }}</span>
           </div>
-          <p v-else class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">A mostrar toda a exposição de stock baixo.</p>
+          <p v-else class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">A mostrar toda a exposição de existências baixo.</p>
         </div>
         <button type="button" class="ds-button ds-button-secondary" :disabled="!hasActiveFilters" @click="clearFilters">
           <FunnelIcon class="h-4 w-4" />
@@ -104,7 +104,7 @@
           <div class="flex items-start justify-between gap-4">
             <div>
               <h3 class="text-sm font-black text-[var(--ds-text)]">Severidade da fila</h3>
-              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Itens sem stock, críticos e abaixo do ponto de reposição.</p>
+              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Itens sem existências, críticos e abaixo do ponto de reposição.</p>
             </div>
             <span class="text-xl font-black text-[var(--ds-text)]">{{ severityMixTotal }}</span>
           </div>
@@ -148,7 +148,7 @@
         <div class="ds-table-summary px-5 py-4">
           <div>
             <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Fila de reabastecimento</p>
-            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Itens com stock baixo</h2>
+            <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Itens com existências baixo</h2>
           </div>
           <button type="button" class="ds-button ds-button-primary" :disabled="!recommendedOrders.length" @click="generateOrder">
             <ShoppingCartIcon class="h-4 w-4" />
@@ -172,7 +172,7 @@
 
             <dl class="grid gap-3 sm:grid-cols-3">
               <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
-                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Atual</dt>
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Actual</dt>
                 <dd class="mt-2 text-lg font-black text-[var(--ds-text)]">{{ item.qty_available }}</dd>
               </div>
               <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
@@ -212,9 +212,9 @@
               <tr>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Item</th>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Postura de stock</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Postura de existências</th>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Estado</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Ações</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Acções</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
@@ -230,7 +230,7 @@
                 </td>
                 <td class="min-w-64 px-5 py-4 align-top">
                   <div class="grid grid-cols-3 gap-3">
-                    <div><p class="text-xs font-bold text-[var(--ds-text-soft)]">Atual</p><p class="mt-1 font-black text-[var(--ds-text)]">{{ item.qty_available }}</p></div>
+                    <div><p class="text-xs font-bold text-[var(--ds-text-soft)]">Actual</p><p class="mt-1 font-black text-[var(--ds-text)]">{{ item.qty_available }}</p></div>
                     <div><p class="text-xs font-bold text-[var(--ds-text-soft)]">Reposição</p><p class="mt-1 font-black text-[var(--ds-text)]">{{ item.reorder_point }}</p></div>
                     <div><p class="text-xs font-bold text-[var(--ds-text-soft)]">Gap</p><p class="mt-1 font-black text-rose-700 dark:text-rose-300">{{ reorderGap(item) }}</p></div>
                   </div>
@@ -251,7 +251,7 @@
                       <EyeIcon class="h-4 w-4" />
                       <span class="sr-only">Abrir {{ item.item?.name }}</span>
                     </Link>
-                    <Link :href="route('vap-inventory.items.edit', item.item_id)" class="ds-table-action" title="Ajustar stock">
+                    <Link :href="route('vap-inventory.items.edit', item.item_id)" class="ds-table-action" title="Ajustar existências">
                       <PencilSquareIcon class="h-4 w-4" />
                       <span class="sr-only">Ajustar {{ item.item?.name }}</span>
                     </Link>
@@ -268,8 +268,8 @@
 
         <div v-if="!inventoryRows.length" class="ds-empty-state p-10 text-center">
           <CheckCircleIcon class="mx-auto h-9 w-9 text-emerald-600 dark:text-emerald-300" />
-          <h3 class="mt-4 text-base font-black text-[var(--ds-text)]">Sem itens com stock baixo</h3>
-          <p class="mx-auto mt-2 max-w-md text-sm font-medium text-[var(--ds-text-muted)]">Nenhuma rutura ou nível abaixo do ponto de reposição foi encontrado para os filtros atuais.</p>
+          <h3 class="mt-4 text-base font-black text-[var(--ds-text)]">Sem itens com existências baixo</h3>
+          <p class="mx-auto mt-2 max-w-md text-sm font-medium text-[var(--ds-text-muted)]">Nenhuma rutura ou nível abaixo do ponto de reposição foi encontrado para os filtros actuais.</p>
         </div>
 
         <div v-if="inventoryRows.length" class="border-t border-[var(--ds-border)] px-5 py-4">
@@ -398,21 +398,21 @@ const inventoryRows = computed(() => props.inventory?.data || [])
 
 const summaryCards = computed(() => [
   {
-    label: 'Stock crítico',
+    label: 'Existências crítico',
     value: props.stats?.critical_stock || 0,
     detail: 'No mínimo ou abaixo dele',
     icon: ExclamationTriangleIcon,
     tone: 'text-rose-700 dark:text-rose-300',
   },
   {
-    label: 'Stock baixo',
+    label: 'Existências baixo',
     value: Math.max(Number(props.stats?.total_low_stock || 0) - Number(props.stats?.critical_stock || 0), 0),
     detail: 'Abaixo do ponto de reposição',
     icon: ExclamationCircleIcon,
     tone: 'text-amber-600 dark:text-amber-300',
   },
   {
-    label: 'Sem stock',
+    label: 'Sem existências',
     value: props.stats?.out_of_stock || 0,
     detail: 'Rutura confirmada',
     icon: XCircleIcon,
@@ -526,7 +526,7 @@ function syncDarkMode() {
 }
 
 function statusText(item) {
-  if (Number(item.qty_available) <= 0) return 'Sem stock'
+  if (Number(item.qty_available) <= 0) return 'Sem existências'
   if (Number(item.qty_available) <= Number(item.min_stock_level)) return 'Crítico'
   return 'Baixo'
 }
@@ -564,7 +564,7 @@ function categoryName(id) {
 
 function sortLabel(sortBy) {
   return {
-    current_stock: 'Stock atual',
+    current_stock: 'Existências actuais',
     reorder_point: 'Ponto de reposição',
     item_name: 'Nome do item',
   }[sortBy] || 'Severidade'

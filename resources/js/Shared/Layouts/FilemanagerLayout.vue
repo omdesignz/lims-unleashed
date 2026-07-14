@@ -42,14 +42,14 @@
         <div class="flex flex-1 justify-between px-4 sm:px-6">
           <div class="flex flex-1">
             <form class="flex w-full md:ml-0" action="#" method="GET">
-              <label for="desktop-search-field" class="sr-only">Search all files</label>
-              <label for="mobile-search-field" class="sr-only">Search all files</label>
+              <label for="desktop-search-field" class="sr-only">Pesquisar todos os ficheiros</label>
+              <label for="mobile-search-field" class="sr-only">Pesquisar todos os ficheiros</label>
               <div class="relative w-full text-gray-400 focus-within:text-gray-600">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center">
                   <MagnifyingGlassIcon class="h-5 w-5 flex-shrink-0" aria-hidden="true" />
                 </div>
-                <BaseInput name="mobile-search-field" id="mobile-search-field" class="h-full w-full border-0 py-2 pl-8 pr-3 text-base text-gray-900 focus:outline-none focus:ring-0 focus:placeholder:text-gray-400 sm:hidden" placeholder="Search" type="search" />
-                <BaseInput name="desktop-search-field" id="desktop-search-field" class="hidden h-full w-full border-0 py-2 pl-8 pr-3 text-sm text-gray-900 focus:outline-none focus:ring-0 focus:placeholder:text-gray-400 sm:block" placeholder="Search all files" type="search" />
+                <BaseInput name="mobile-search-field" id="mobile-search-field" class="h-full w-full border-0 py-2 pl-8 pr-3 text-base text-gray-900 focus:outline-none focus:ring-0 focus:placeholder:text-gray-400 sm:hidden" placeholder="Pesquisar" type="search" />
+                <BaseInput name="desktop-search-field" id="desktop-search-field" class="hidden h-full w-full border-0 py-2 pl-8 pr-3 text-sm text-gray-900 focus:outline-none focus:ring-0 focus:placeholder:text-gray-400 sm:block" placeholder="Pesquisar todos os ficheiros" type="search" />
               </div>
             </form>
           </div>
@@ -58,7 +58,7 @@
               <div>
                 <MenuButton class="relative flex rounded-full bg-blue-900 p-1.5 text-white text-sm ffocus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-900">
                   <span class="absolute -inset-1.5" />
-                  <span class="sr-only">Open file menu</span>
+                  <span class="sr-only">Abrir menu do ficheiro</span>
                   <PlusIcon class="h-5 w-5" aria-hidden="true" />
                 </MenuButton>
               </div>
@@ -93,11 +93,11 @@
             <div class="ml-6 flex items-center rounded-lg bg-gray-100 p-0.5 sm:hidden">
               <button type="button" class="rounded-md p-1.5 text-gray-400 hover:bg-white hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-900">
                 <Bars4Icon class="h-5 w-5" aria-hidden="true" />
-                <span class="sr-only">Use list view</span>
+                <span class="sr-only">Usar vista em lista</span>
               </button>
               <button type="button" class="ml-0.5 rounded-md bg-white p-1.5 text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-900">
                 <Squares2X2IconMini class="h-5 w-5" aria-hidden="true" />
-                <span class="sr-only">Use grid view</span>
+                <span class="sr-only">Usar vista em grelha</span>
               </button>
             </div>
           </div>
@@ -105,11 +105,11 @@
           <!-- Tabs -->
           <div class="mt-3 sm:mt-2">
             <div class="sm:hidden">
-              <label for="tabs" class="sr-only">Select a tab</label>
+              <label for="tabs" class="sr-only">Seleccionar um separador</label>
               <!-- Use an "onChange" listener to redirect the user to the selected tab URL. -->
               <BaseSelect id="tabs" name="tabs" class="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
-                <option selected="">Recently Viewed</option>
-                <option>Recently Added</option>
+                <option selected="">Vistos recentemente</option>
+                <option>Adicionados recentemente</option>
                 <option>Favorited</option>
               </BaseSelect>
             </div>
@@ -123,11 +123,11 @@
                 <div class="ml-6 hidden items-center rounded-lg bg-gray-100 p-0.5 sm:flex">
                   <button type="button" class="rounded-md p-1.5 text-white hover:bg-blue-900 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
                     <Bars4Icon class="h-5 w-5" aria-hidden="true" />
-                    <span class="sr-only">Use list view</span>
+                    <span class="sr-only">Usar vista em lista</span>
                   </button>
                   <button type="button" class="ml-0.5 rounded-md bg-blue-900 p-1.5 text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
                     <Squares2X2IconMini class="h-5 w-5" aria-hidden="true" />
-                    <span class="sr-only">Use grid view</span>
+                    <span class="sr-only">Usar vista em grelha</span>
                   </button>
                 </div>
               </div>
@@ -136,7 +136,7 @@
 
           <!-- Gallery -->
           <section class="mt-8 pb-16" aria-labelledby="gallery-heading">
-            <h2 id="gallery-heading" class="sr-only">Recently viewed</h2>
+            <h2 id="gallery-heading" class="sr-only">Vistos recentemente</h2>
 
               <!-- Divider: With Label Left -->
             <div class="my-6 flex items-center">
@@ -201,7 +201,7 @@
                         <CheckCircleIcon :class="[selectedFiles.includes(file.id) ? 'text-white' : 'invisible', 'h-5 w-5']" aria-hidden="true" />
                       </button>
                       <MenuButton class="-m-2.5 block p-2.5 text-gray-400 hover:text-gray-500" v-else>
-                        <span class="sr-only">Open options</span>
+                        <span class="sr-only">Abrir opções</span>
                         <EllipsisVerticalIcon class="h-5 w-5" aria-hidden="true" />
                       </MenuButton>
                       <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95" v-if="!selectedFiles.includes(file.id)">
@@ -355,15 +355,15 @@
   </div>
 </upload>
 
-<upload v-if="showCreateFolderForm" :title="trans('gestlab.general.labels.files.create_folder')" :description="trans('gestlab.general.labels.files.create_folder_description')" @canceled="showCreateFolderForm = false" @confirmed="createFolder" confirm="Create" cancel="Cancelar">
+<upload v-if="showCreateFolderForm" :title="trans('gestlab.general.labels.files.create_folder')" :description="trans('gestlab.general.labels.files.create_folder_description')" @canceled="showCreateFolderForm = false" @confirmed="createFolder" confirm="Criar" cancel="Cancelar">
   <BaseInput type="text" v-model="name" placeholder="nome" class="block mt-2 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
 </upload>
 
-<upload v-if="showRenameFolderForm" :title="trans('gestlab.general.labels.files.update_folder')" :description="trans('gestlab.general.labels.files.update_folder_description')" @canceled="showRenameFolderForm = false, name=''" @confirmed="renameFolderForm" confirm="Rename" cancel="Cancelar">
+<upload v-if="showRenameFolderForm" :title="trans('gestlab.general.labels.files.update_folder')" :description="trans('gestlab.general.labels.files.update_folder_description')" @canceled="showRenameFolderForm = false, name=''" @confirmed="renameFolderForm" confirm="Mudar o nome" cancel="Cancelar">
   <BaseInput type="text" v-model="name" placeholder="nome" class="block mt-2 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
 </upload>
 
-<upload v-if="showRenameFileForm" :title="trans('gestlab.general.labels.files.update_file')" :description="trans('gestlab.general.labels.files.update_file_description')" @canceled="showRenameFileForm = false, name='', file_id=null" @confirmed="renameFileForm" confirm="Rename" cancel="Cancelar">
+<upload v-if="showRenameFileForm" :title="trans('gestlab.general.labels.files.update_file')" :description="trans('gestlab.general.labels.files.update_file_description')" @canceled="showRenameFileForm = false, name='', file_id=null" @confirmed="renameFileForm" confirm="Mudar o nome" cancel="Cancelar">
   <BaseInput type="text" v-model="name" placeholder="nome" class="block mt-2 w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-900 sm:text-sm sm:leading-6" />
 </upload>
 
@@ -379,12 +379,12 @@
 </div>
 </upload>
 
-<upload v-if="showShareFolderForm" :title="trans('gestlab.general.labels.files.share_folder')" :description="trans('gestlab.general.labels.files.share_folder_description')" @canceled="showShareFolderForm = false" @confirmed="shareFolder" confirm="Share" cancel="Cancelar" size="sm:max-w-xl">
+<upload v-if="showShareFolderForm" :title="trans('gestlab.general.labels.files.share_folder')" :description="trans('gestlab.general.labels.files.share_folder_description')" @canceled="showShareFolderForm = false" @confirmed="shareFolder" confirm="Partilhar" cancel="Cancelar" size="sm:max-w-xl">
   
   <!-- Share with Users -->
   <div class="mt-4">
       <label for="email" class="block text-gray-700 font-medium mb-2">
-        Add people and groups
+        Adicionar pessoas e grupos
       </label>
       <div class="flex items-center gap-2">
         <!-- <BaseInput
@@ -439,7 +439,7 @@
 
   <!-- List of Shared Users -->
   <div v-if="sharedUsers.length" class="mt-6">
-      <h4 class="text-gray-700 font-medium">Shared with:</h4>
+      <h4 class="text-gray-700 font-medium">Partilhado com:</h4>
       <ul class="mt-2 space-y-2">
         <li
           v-for="(user, index) in sharedUsers"

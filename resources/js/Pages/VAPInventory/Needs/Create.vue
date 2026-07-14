@@ -17,7 +17,7 @@
             <div class="min-w-0">
               <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Nova necessidade operacional</h1>
               <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                Consolide materiais, reagentes e equipamentos numa requisição com escopo, prazo, armazém alvo e estimativa financeira.
+                Consolide materiais, reagentes e equipamentos numa requisição com âmbito, prazo, armazém alvo e estimativa financeira.
               </p>
             </div>
           </div>
@@ -42,10 +42,10 @@
             <div>
               <div class="flex items-center gap-2 text-[var(--ds-text)]">
                 <BuildingOffice2Icon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
-                <h3 class="font-black">Escopo responsável</h3>
+                <h3 class="font-black">Âmbito responsável</h3>
               </div>
               <p class="mt-2 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                O laboratório disponível acompanha o departamento selecionado para evitar requisições fora do escopo organizacional.
+                O laboratório disponível acompanha o departamento seleccionado para evitar requisições fora do âmbito organizacional.
               </p>
             </div>
 
@@ -57,7 +57,7 @@
                 :error="form.errors.department_id"
                 required
               >
-                <option value="">Selecione o departamento</option>
+                <option value="">Seleccione o departamento</option>
                 <option v-for="department in departments" :key="department.id" :value="department.id">{{ department.name }}</option>
               </BaseSelect>
 
@@ -108,7 +108,7 @@
         <section class="ds-panel overflow-hidden">
           <div class="ds-table-summary px-5 py-4">
             <div>
-              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Escopo de aquisição</p>
+              <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Âmbito de aquisição</p>
               <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Itens solicitados</h2>
               <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">Especificação, quantidade, destino e preço unitário estimado.</p>
             </div>
@@ -231,7 +231,7 @@
           <dl class="mt-6 divide-y divide-[var(--ds-border)] border-y border-[var(--ds-border)]">
             <div class="flex items-start justify-between gap-4 py-3">
               <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Departamento</dt>
-              <dd class="max-w-[11rem] text-right text-sm font-black text-[var(--ds-text)]">{{ selectedDepartment?.name || 'Por selecionar' }}</dd>
+              <dd class="max-w-[11rem] text-right text-sm font-black text-[var(--ds-text)]">{{ selectedDepartment?.name || 'Por seleccionar' }}</dd>
             </div>
             <div class="flex items-start justify-between gap-4 py-3">
               <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Laboratório</dt>
@@ -366,8 +366,8 @@ const urgencyTone = computed(() => ({
 
 const readinessSteps = computed(() => [
   {
-    label: 'Escopo definido',
-    detail: selectedDepartment.value?.name || 'Selecione o departamento responsável.',
+    label: 'Âmbito definido',
+    detail: selectedDepartment.value?.name || 'Seleccione o departamento responsável.',
     complete: Boolean(form.department_id),
   },
   {
@@ -401,7 +401,7 @@ function newNeedItem(clientId = nextClientId++) {
 
 function inventoryItemName(itemId) {
   const item = props.items.find((candidate) => String(candidate.id) === String(itemId))
-  return item?.name || 'Item por selecionar'
+  return item?.name || 'Item por seleccionar'
 }
 
 function selectInventoryItem(item, option) {

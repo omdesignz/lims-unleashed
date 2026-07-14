@@ -107,16 +107,14 @@ function formatDate(date) {
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div class="min-w-0">
-          <p class="ds-kicker">Execucao analitica</p>
+          <p class="ds-kicker">Execução analítica</p>
           <div class="mt-3 flex items-start gap-3">
             <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
               <DocumentTextIcon class="h-5 w-5" />
             </span>
             <div class="min-w-0">
               <h1 class="ds-heading text-2xl">Worksheets laboratoriais</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">
-                Folhas de bancada geradas a partir do escopo analitico, com progresso e lacunas tecnicas visiveis.
-              </p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm"> Folhas de bancada geradas a partir do âmbito analítico, com progresso e lacunas técnicas visíveis. </p>
             </div>
           </div>
         </div>
@@ -157,7 +155,7 @@ function formatDate(date) {
       <div class="ds-table-summary flex-col items-stretch px-4 py-4 lg:flex-row lg:items-center">
         <div>
           <p class="ds-kicker">Fila de worksheets</p>
-          <h2 class="ds-heading mt-1 text-base">Escopo e progresso operacional</h2>
+          <h2 class="ds-heading mt-1 text-base">Âmbito e progresso operacional</h2>
         </div>
 
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -167,7 +165,7 @@ function formatDate(date) {
               v-model="searchTerm"
               type="search"
               class="ds-field min-h-10 pl-9"
-              placeholder="Pesquisar nome, ID ou analise"
+              placeholder="Pesquisar nome, ID ou análise"
               aria-label="Pesquisar worksheets"
             />
           </div>
@@ -193,21 +191,21 @@ function formatDate(date) {
         <DataTable class="min-w-full divide-y divide-[var(--ds-border)]">
           <thead class="ds-table-head">
             <tr>
-              <th class="ds-table-heading px-4 py-3 text-left">Worksheet</th>
+              <th class="ds-table-heading px-4 py-3 text-left">Folha de trabalho</th>
               <th class="ds-table-heading px-4 py-3 text-left">Estado</th>
-              <th class="ds-table-heading px-4 py-3 text-left">Escopo</th>
-              <th class="ds-table-heading px-4 py-3 text-left">Sheets</th>
+              <th class="ds-table-heading px-4 py-3 text-left">Âmbito</th>
+              <th class="ds-table-heading px-4 py-3 text-left">Folhas</th>
               <th class="ds-table-heading px-4 py-3 text-left">Origem</th>
               <th class="ds-table-heading px-4 py-3 text-left">Atualizacao</th>
-              <th class="ds-table-heading px-4 py-3 text-right"><span class="sr-only">Acoes</span></th>
+              <th class="ds-table-heading px-4 py-3 text-right"><span class="sr-only">Acções</span></th>
             </tr>
           </thead>
           <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
             <tr v-for="worksheet in filteredWorksheets" :key="worksheet.id" class="ds-table-row">
               <td class="px-4 py-4">
-                <p class="text-sm font-black text-[var(--ds-text)]">{{ worksheet.name || "Worksheet sem nome" }}</p>
+                <p class="text-sm font-black text-[var(--ds-text)]">{{ worksheet.name || "Folha de trabalho sem nome" }}</p>
                 <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">
-                  #{{ worksheet.id }}<template v-if="worksheet.analysisId"> · Analise #{{ worksheet.analysisId }}</template>
+                  #{{ worksheet.id }}<template v-if="worksheet.analysisId"> · Análise #{{ worksheet.analysisId }}</template>
                 </p>
               </td>
               <td class="px-4 py-4">
@@ -221,7 +219,7 @@ function formatDate(date) {
               </td>
               <td class="ds-table-cell px-4 py-4">{{ worksheet.sheetCount }}</td>
               <td class="ds-table-cell px-4 py-4">
-                {{ worksheet.generatedFrom === "analysis_scope" ? "Analise controlada" : "Manual" }}
+                {{ worksheet.generatedFrom === "analysis_scope" ? "Análise controlada" : "Manual" }}
               </td>
               <td class="ds-table-cell px-4 py-4">
                 <span class="inline-flex items-center gap-1.5 whitespace-nowrap">
@@ -242,7 +240,7 @@ function formatDate(date) {
 
       <div v-else class="ds-empty-state m-4 px-6 py-12 text-center">
         <DocumentTextIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
-        <h3 class="ds-heading mt-3 text-sm">Nenhuma worksheet encontrada</h3>
+        <h3 class="ds-heading mt-3 text-sm">Nenhuma folha de trabalho encontrada</h3>
         <p class="ds-copy mt-1 text-sm">
           Ajuste a pesquisa ou o filtro de estado para voltar a ver a fila operacional.
         </p>

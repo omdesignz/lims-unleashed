@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-AO">
 <head>
     <meta charset="UTF-8">
     <style>
@@ -120,7 +120,7 @@
                         </td>
                         <td width="25%" valign="top">
                             <div style="font-size: 11px; font-weight: 500; color: #374151; margin-bottom: 3px;">LOTE</div>
-                            <div style="font-size: 12px; font-weight: 600; color: #111827;">{!! $model->internal_ref ?? 'N/A' !!}</div>
+                            <div style="font-size: 12px; font-weight: 600; color: #111827;">{!! $model->internal_ref ?? 'N/D' !!}</div>
                         </td>
                         <td width="25%" valign="top">
                             <div style="font-size: 11px; font-weight: 500; color: #374151; margin-bottom: 3px;">Data</div>

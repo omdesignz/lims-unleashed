@@ -265,7 +265,9 @@ class ReportStudioPdfRenderer
 
         foreach (['firstPageHeader', 'defaultHeader', 'footerHtml', 'bodyHtml'] as $htmlKey) {
             if (is_string($data[$htmlKey] ?? null)) {
-                $data[$htmlKey] = $this->normalizeMpdfAssetReferences($data[$htmlKey]);
+                $data[$htmlKey] = $this->removeMpdfUnsupportedCanvasBlocks(
+                    $this->normalizeMpdfAssetReferences($data[$htmlKey])
+                );
             }
         }
 
@@ -274,6 +276,48 @@ class ReportStudioPdfRenderer
         }
 
         return $data;
+    }
+
+    private function removeMpdfUnsupportedCanvasBlocks(string $html): string
+    {
+        if (! str_contains($html, 'data-canvas-block-kind="qr_code"')) {
+            return $html;
+        }
+
+        $document = new \DOMDocument('1.0', 'UTF-8');
+        $previousErrors = libxml_use_internal_errors(true);
+        $wrapperId = 'report-studio-mpdf-fragment';
+        $wrappedHtml = '<div id="'.$wrapperId.'">'.$html.'</div>';
+
+        try {
+            $document->loadHTML(
+                '<?xml encoding="UTF-8">'.$wrappedHtml,
+                LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+            );
+
+            $xpath = new \DOMXPath($document);
+
+            foreach ($xpath->query('//*[@data-canvas-block-kind="qr_code"]') ?: [] as $node) {
+                $node->parentNode?->removeChild($node);
+            }
+
+            $wrapper = $document->getElementById($wrapperId);
+
+            if (! $wrapper) {
+                return $html;
+            }
+
+            $normalizedHtml = '';
+
+            foreach ($wrapper->childNodes as $childNode) {
+                $normalizedHtml .= $document->saveHTML($childNode) ?: '';
+            }
+
+            return $normalizedHtml;
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previousErrors);
+        }
     }
 
     /**

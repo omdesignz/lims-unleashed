@@ -4,8 +4,8 @@
       <div class="border-b border-[var(--ds-border)] px-5 py-5 sm:px-6">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p class="ds-kicker">QMS</p>
-            <h1 class="mt-2 text-2xl font-semibold tracking-tight text-[var(--ds-text)] sm:text-3xl">Quality Management System</h1>
+            <p class="ds-kicker">SGQ</p>
+            <h1 class="mt-2 text-2xl font-semibold tracking-tight text-[var(--ds-text)] sm:text-3xl">Sistema de gestão da qualidade</h1>
             <p class="mt-3 max-w-3xl text-sm leading-6 text-[var(--ds-text-muted)]">
               Consolida competência técnica, revisões, não conformidades, reclamações, responsabilidades e fontes de incerteza num único painel operacional.
             </p>
@@ -29,7 +29,7 @@
 
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
-        <h2 class="text-base font-semibold text-[var(--ds-text)]">Indicadores QMS</h2>
+        <h2 class="text-base font-semibold text-[var(--ds-text)]">Indicadores do SGQ</h2>
         <p class="mt-1 text-sm text-[var(--ds-text-muted)]">Resumo compacto para revisão técnica e gestão ISO 17025.</p>
       </div>
       <dl class="grid divide-y divide-[var(--ds-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-5">
@@ -85,7 +85,7 @@
               </span>
             </div>
             <div class="mt-3 text-sm text-[var(--ds-text-muted)]">
-              Próxima ação até <span class="font-semibold text-[var(--ds-text)]">{{ formatDate(qualification.follow_up_due_at) }}</span>
+              Próxima acção até <span class="font-semibold text-[var(--ds-text)]">{{ formatDate(qualification.follow_up_due_at) }}</span>
             </div>
             <div :class="['mt-3 inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-medium', readinessTone(qualification.renewal_readiness)]">
               {{ readinessLabel(qualification.renewal_readiness) }}
@@ -93,7 +93,7 @@
           </article>
         </div>
         <div v-else class="mt-5 rounded-lg border border-dashed border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-8 text-center text-sm font-medium text-[var(--ds-text-muted)]">
-          Nenhum follow-up de competência com ação imediata.
+          Nenhum follow-up de competência com acção imediata.
         </div>
       </div>
 
@@ -119,7 +119,7 @@
           </article>
         </div>
         <div v-else class="mt-5 rounded-lg border border-dashed border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-8 text-center text-sm font-medium text-[var(--ds-text-muted)]">
-          Nenhuma renovação requer ação adicional neste momento.
+          Nenhuma renovação requer acção adicional neste momento.
         </div>
       </div>
     </section>
@@ -232,8 +232,8 @@ const cards = computed(() => [
   { label: 'Prontas para renovação', value: props.summary.renewal_ready_qualifications },
   { label: 'Follow-ups em aberto', value: props.summary.qualification_followups_due },
   { label: 'Sem evidência', value: props.summary.qualifications_missing_evidence },
-  { label: 'Responsabilidades ativas', value: props.summary.responsibility_assignments },
-  { label: 'Fontes de incerteza ativas', value: props.summary.uncertainty_sources },
+  { label: 'Responsabilidades activas', value: props.summary.responsibility_assignments },
+  { label: 'Fontes de incerteza activas', value: props.summary.uncertainty_sources },
   { label: 'Avaliações de fornecedores em revisão', value: props.summary.supplier_assessments_due },
   { label: 'Fornecedores de alto risco', value: props.summary.suppliers_high_risk },
   { label: 'NCs de recepção abertas', value: props.summary.receiving_non_conformities_open },
@@ -248,9 +248,9 @@ const statusLabel = (status) => ({
   expired: 'Expirada',
   expiring_critical: 'Urgente',
   expiring_soon: 'A vencer',
-  active: 'Ativa',
+  active: 'Activa',
   scheduled: 'Programada',
-  inactive: 'Inativa',
+  inactive: 'Inactiva',
 }[status] || 'Acompanhar')
 const statusTone = (status) => ({
   expired: 'bg-rose-100 text-rose-800',

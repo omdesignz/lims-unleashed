@@ -91,30 +91,25 @@
 </head>
 <body>
     <div class="label-container">
-        @if($label->has_qr_code)
+        @if($label->has_qr_code && ($qr_code_image ?? null))
         <div class="qr-code">
-            <!-- QR Code placeholder - you'd use a QR code library in production -->
-            <div style="border: 1px solid #000; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 8px;">
-                QR: {{ $sample_qr }}
-            </div>
+            <img src="{{ $qr_code_image }}" alt="Código QR" style="width: 100%; height: 100%;">
         </div>
         @endif
         
         @if($label->has_barcode)
         <div class="barcode">
-            <!-- Barcode placeholder -->
-            <div style="border: 1px solid #000; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 8px;">
-                BAR: {{ $sample_barcode }}
-            </div>
+            @if($barcode_image ?? null)
+                <img src="{{ $barcode_image }}" alt="{{ $sample_barcode }}" style="width: 100%; height: 100%;">
+            @else
+                {{ $sample_barcode }}
+            @endif
         </div>
         @endif
         
-        @if($label->logo_path)
+        @if($logo_src ?? null)
         <div class="logo">
-            <!-- Logo placeholder -->
-            <div style="border: 1px dashed #ccc; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 8px;">
-                LOGO
-            </div>
+            <img src="{{ $logo_src }}" alt="Logótipo do laboratório" style="width: 100%; height: 100%; object-fit: contain;">
         </div>
         @endif
         
@@ -123,7 +118,7 @@
         </div>
         
         <div class="debug-info">
-            {{ $label->name }} | {{ $label->width }}x{{ $label->height }}mm | Preview
+            {{ $label->name }} | {{ $label->width }}x{{ $label->height }}mm | Pré-visualização
         </div>
     </div>
 </body>

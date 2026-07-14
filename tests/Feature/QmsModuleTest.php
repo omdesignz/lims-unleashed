@@ -40,11 +40,11 @@ class QmsModuleTest extends TestCase
         $user = $this->verifiedAdmin();
 
         $checks = [
-            route('qms.index') => 'QMS',
-            route('supplier-assessments.index') => 'Supplier Assessments',
-            route('responsibility-matrix.index') => 'Responsibility Matrix',
-            route('uncertainty-sources.index') => 'Sources of Uncertainty',
-            route('report-studios.index') => 'Report Studios',
+            route('qms.index') => 'SGQ',
+            route('supplier-assessments.index') => 'Avaliações de fornecedores',
+            route('responsibility-matrix.index') => 'Matriz de responsabilidades',
+            route('uncertainty-sources.index') => 'Fontes de incerteza',
+            route('report-studios.index') => 'Estúdios de relatórios',
         ];
 
         foreach ($checks as $url => $expectedTitle) {

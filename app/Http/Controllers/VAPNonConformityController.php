@@ -134,7 +134,7 @@ class VAPNonConformityController extends Controller
         app(QualityModuleNotifier::class)->notifyNonConformityCreated($nonConformity);
 
         return redirect()->route('vap_non_conformities.index')
-            ->with('success', 'Non-conformity created successfully.');
+            ->with('success', 'Não conformidade criada com sucesso.');
     }
 
     /**
@@ -239,7 +239,7 @@ class VAPNonConformityController extends Controller
         app(QualityModuleNotifier::class)->notifyNonConformityUpdated($nonConformity, $before);
 
         return redirect()->route('vap_non_conformities.show', $nonConformity)
-            ->with('success', 'Non-conformity updated successfully.');
+            ->with('success', 'Não conformidade actualizada com sucesso.');
     }
 
     private function storeAttachments(Request $request, VAPNonConformity $nonConformity): void
@@ -282,7 +282,7 @@ class VAPNonConformityController extends Controller
         $nonConformity->delete();
 
         return redirect()->route('vap_non_conformities.index')
-            ->with('success', 'Non-conformity deleted successfully.');
+            ->with('success', 'Não conformidade eliminada com sucesso.');
     }
 
     /**

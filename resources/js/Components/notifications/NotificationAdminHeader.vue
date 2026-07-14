@@ -23,7 +23,7 @@ const navigation = [
   { label: 'Visao geral', route: 'admin.notifications.dashboard', icon: Squares2X2Icon },
   { label: 'Registo', route: 'admin.notifications.index', icon: ListBulletIcon },
   { label: 'Nova mensagem', route: 'admin.notifications.create', icon: PaperAirplaneIcon },
-  { label: 'Analitica', route: 'admin.notifications.analytics', icon: ChartBarSquareIcon },
+  { label: 'Analítica', route: 'admin.notifications.analytics', icon: ChartBarSquareIcon },
 ]
 </script>
 
@@ -35,7 +35,7 @@ const navigation = [
           <BellAlertIcon class="h-5 w-5" />
         </span>
         <div class="min-w-0">
-          <p class="ds-kicker">Centro de notificacoes</p>
+          <p class="ds-kicker">Centro de notificações</p>
           <h1 class="ds-heading mt-1 text-xl sm:text-2xl">{{ title }}</h1>
           <p class="ds-copy mt-1 max-w-3xl text-sm">{{ description }}</p>
         </div>
@@ -46,7 +46,7 @@ const navigation = [
       </div>
     </header>
 
-    <nav class="overflow-x-auto px-3" aria-label="Navegacao de notificacoes">
+    <nav class="overflow-x-auto px-3" aria-label="Navegação de notificações">
       <div class="flex min-w-max gap-1 py-2">
         <Link
           v-for="item in navigation"

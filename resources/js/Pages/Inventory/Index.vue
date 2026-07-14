@@ -37,16 +37,16 @@ const totalRecords = computed(() => props.record?.meta?.total ?? rows.value.leng
 const lowStockCount = computed(() => rows.value.filter((row) => Number(row.qty_available) <= Number(row.reorder_point)).length);
 const outOfStockCount = computed(() => rows.value.filter((row) => Number(row.qty_available) <= 0).length);
 const tracksThresholds = computed(() => Number(form.category_id) !== 1);
-const editorTitle = computed(() => form.id ? "Editar posição de stock" : "Nova posição de stock");
+const editorTitle = computed(() => form.id ? "Editar posição de existências" : "Nova posição de existências");
 const editorDescription = computed(() => form.id
-  ? "Atualize os limites de reposição desta combinação de item e armazém."
+  ? "Actualize os limites de reposição desta combinação de item e armazém."
   : "Associe um item a um local de armazenamento e defina os limites operacionais.");
 const confirmationDialogTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${selectedAction.value}`));
 const confirmationDialogDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${selectedAction.value}`));
 const metrics = computed(() => [
   { label: "Posições", value: totalRecords.value, detail: "item por localização", icon: CubeIcon },
   { label: "Em reposição", value: lowStockCount.value, detail: "nesta página", icon: ExclamationTriangleIcon },
-  { label: "Sem stock", value: outOfStockCount.value, detail: "ação imediata", icon: BuildingStorefrontIcon },
+  { label: "Sem existências", value: outOfStockCount.value, detail: "acção imediata", icon: BuildingStorefrontIcon },
 ]);
 const actions = [
   { id: null, label: "gestlab.actions.bulk_actions_text" },
@@ -181,7 +181,7 @@ function executeBulkAction() {
           </span>
           <div>
             <p class="ds-kicker">Materiais e consumíveis</p>
-            <h1 class="ds-heading mt-1 text-2xl">Stock por armazém</h1>
+            <h1 class="ds-heading mt-1 text-2xl">Existências por armazém</h1>
             <p class="ds-copy mt-1 max-w-3xl text-sm">Saldo disponível, níveis mínimos e pontos de reposição por item e localização controlada.</p>
           </div>
         </div>
@@ -272,7 +272,7 @@ function executeBulkAction() {
 
           <section class="space-y-5 px-6 py-6">
             <div>
-              <p class="ds-kicker">Controlo de stock</p>
+              <p class="ds-kicker">Controlo de existências</p>
               <h2 class="ds-heading mt-1 text-base">Saldo e reposição</h2>
             </div>
             <div>
@@ -304,7 +304,7 @@ function executeBulkAction() {
         <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button type="button" class="ds-button ds-button-secondary" @click="closeEditor">Cancelar</button>
           <button type="submit" form="inventory-position-form" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-            {{ form.processing ? "A guardar..." : (form.id ? "Atualizar posição" : "Criar posição") }}
+            {{ form.processing ? "A guardar..." : (form.id ? "Actualizar posição" : "Criar posição") }}
           </button>
         </div>
       </template>

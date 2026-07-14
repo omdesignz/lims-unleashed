@@ -33,7 +33,7 @@
           <dd class="mt-1 text-2xl font-bold tabular-nums text-[var(--ds-text)]">{{ totalRecords }}</dd>
         </div>
         <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
-          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Ativas nesta página</dt>
+          <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Activas nesta página</dt>
           <dd class="mt-1 text-2xl font-bold tabular-nums text-emerald-700 dark:text-emerald-300">{{ activeRecords }}</dd>
         </div>
         <div class="border-t border-[var(--ds-border)] px-5 py-4 sm:border-t-0 sm:px-6">
@@ -83,7 +83,7 @@
             <div class="ds-field-group">
               <label for="variable-formula" class="ds-field-label">Fórmula associada <span class="ds-field-required">*</span></label>
               <BaseSelect id="variable-formula" v-model="form.formula_id" class="ds-field" :aria-invalid="Boolean(form.errors.formula_id)">
-                <option :value="null">Selecione uma fórmula</option>
+                <option :value="null">Seleccione uma fórmula</option>
                 <option v-for="formula in formulas" :key="formula.value" :value="formula.value">{{ formula.label }}</option>
               </BaseSelect>
               <p class="ds-field-help">A associação documenta o contexto de cálculo e evita constantes sem utilização conhecida.</p>
@@ -155,7 +155,7 @@ const activeRecords = computed(() => pageRecords.value.filter((record) => !recor
 const representedFormulas = computed(() => new Set(pageRecords.value.map((record) => record.formula_id?.value).filter(Boolean)).size)
 const panelTitle = computed(() => form.id ? `Editar variável ${form.name}` : 'Nova variável')
 const panelDescription = computed(() => form.id
-  ? 'Atualize o valor ou a associação da variável controlada.'
+  ? 'Actualize o valor ou a associação da variável controlada.'
   : 'Registe uma constante reutilizável para os cálculos laboratoriais.')
 const confirmationTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${selectedAction.value}`))
 const confirmationDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${selectedAction.value}`))

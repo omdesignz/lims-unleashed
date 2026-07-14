@@ -36,8 +36,8 @@ const config = computed(() => isScheduled.value
       icon: CalendarDaysIcon,
     }
   : {
-      title: "Colheita direta",
-      kicker: "Receção e cadeia de custódia",
+      title: "Colheita directa",
+      kicker: "Recepção e cadeia de custódia",
       routePrefix: "directcollections",
       icon: ClipboardDocumentCheckIcon,
     });
@@ -101,7 +101,7 @@ const form = useForm(isEditing.value
 
 const loadingWarehouses = ref(false);
 const specimens = computed(() => isEditing.value ? [form] : form.products);
-const selectedCustomer = computed(() => form.customer_id?.label || "Cliente não selecionado");
+const selectedCustomer = computed(() => form.customer_id?.label || "Cliente não seleccionado");
 const totalRequestedQuantity = computed(() => specimens.value.reduce((total, product) => total + (Number.parseFloat(product.qty) || 0), 0));
 const entrypointUrl = computed(() => props.entrypoint?.create_sample_url
   || route("vap_samples.index", { collection_type: props.kind }));
@@ -247,7 +247,7 @@ function submit() {
         <div class="flex flex-wrap gap-2">
           <Link v-if="!isEditing" :href="entrypointUrl" class="ds-button ds-button-secondary">
             <BeakerIcon class="h-4 w-4" />
-            Abrir Sample Entry
+            Abrir entrada de amostra
           </Link>
           <span class="ds-badge" :class="form.isDirty ? 'ds-badge-warning' : 'ds-badge-neutral'">
             {{ form.isDirty ? "Alterações por guardar" : "Sem alterações" }}
@@ -289,12 +289,12 @@ function submit() {
         </div>
         <div class="ds-field-group">
           <label class="ds-field-label">Cliente <span class="ds-field-required">*</span></label>
-          <ComboboxEnhanced v-model="form.customer_id" :has-error="form.errors.customer_id" :load-options="loadCustomers" placeholder="Selecionar cliente" />
+          <ComboboxEnhanced v-model="form.customer_id" :has-error="form.errors.customer_id" :load-options="loadCustomers" placeholder="Seleccionar cliente" />
           <p v-if="form.errors.customer_id" class="ds-field-error">{{ form.errors.customer_id }}</p>
         </div>
         <div class="ds-field-group">
           <label class="ds-field-label">Instalação <span class="ds-field-required">*</span></label>
-          <ComboboxEnhanced v-model="form.warehouse_id" :disable-input="!form.customer_id || loadingWarehouses" :loading="loadingWarehouses" :has-error="form.errors.warehouse_id" :load-options="loadWarehouses" placeholder="Selecionar instalação" />
+          <ComboboxEnhanced v-model="form.warehouse_id" :disable-input="!form.customer_id || loadingWarehouses" :loading="loadingWarehouses" :has-error="form.errors.warehouse_id" :load-options="loadWarehouses" placeholder="Seleccionar instalação" />
           <p v-if="form.errors.warehouse_id" class="ds-field-error">{{ form.errors.warehouse_id }}</p>
         </div>
         <div v-if="isScheduled" class="ds-field-group">
@@ -304,7 +304,7 @@ function submit() {
         </div>
         <div v-if="isScheduled && !isEditing" class="ds-field-group">
           <label class="ds-field-label">Viatura planeada</label>
-          <ComboboxEnhanced v-model="form.vehicle_id" :has-error="form.errors.vehicle_id" :load-options="loadVehicles" placeholder="Selecionar viatura" />
+          <ComboboxEnhanced v-model="form.vehicle_id" :has-error="form.errors.vehicle_id" :load-options="loadVehicles" placeholder="Seleccionar viatura" />
           <p v-if="form.errors.vehicle_id" class="ds-field-error">{{ form.errors.vehicle_id }}</p>
         </div>
         <div v-if="isScheduled && !isEditing" class="ds-field-group">
@@ -368,17 +368,17 @@ function submit() {
               <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div class="ds-field-group sm:col-span-2">
                   <label class="ds-field-label">Produto <span class="ds-field-required">*</span></label>
-                  <ComboboxEnhanced v-model="product.product_id" :has-error="fieldError(index, 'product_id')" :load-options="loadProducts" placeholder="Selecionar produto" />
+                  <ComboboxEnhanced v-model="product.product_id" :has-error="fieldError(index, 'product_id')" :load-options="loadProducts" placeholder="Seleccionar produto" />
                   <p v-if="fieldError(index, 'product_id')" class="ds-field-error">{{ fieldError(index, "product_id") }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label">Resultado final <span class="ds-field-required">*</span></label>
-                  <ComboboxEnhanced v-model="product.result_id" :has-error="fieldError(index, 'result_id')" :load-options="loadEndResults" placeholder="Selecionar resultado" />
+                  <ComboboxEnhanced v-model="product.result_id" :has-error="fieldError(index, 'result_id')" :load-options="loadEndResults" placeholder="Seleccionar resultado" />
                   <p v-if="fieldError(index, 'result_id')" class="ds-field-error">{{ fieldError(index, "result_id") }}</p>
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label">Embalagem <span v-if="isEditing && !isScheduled" class="ds-field-required">*</span></label>
-                  <ComboboxEnhanced v-model="product.pack_id" :has-error="fieldError(index, 'pack_id')" :load-options="loadPackagingCategories" placeholder="Selecionar embalagem" />
+                  <ComboboxEnhanced v-model="product.pack_id" :has-error="fieldError(index, 'pack_id')" :load-options="loadPackagingCategories" placeholder="Seleccionar embalagem" />
                   <p v-if="fieldError(index, 'pack_id')" class="ds-field-error">{{ fieldError(index, "pack_id") }}</p>
                 </div>
                 <div class="ds-field-group">
@@ -423,11 +423,11 @@ function submit() {
               <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div class="ds-field-group">
                   <label class="ds-field-label">Viatura</label>
-                  <ComboboxEnhanced v-model="product.vehicle_id" :has-error="fieldError(index, 'vehicle_id')" :load-options="loadVehicles" placeholder="Selecionar viatura" />
+                  <ComboboxEnhanced v-model="product.vehicle_id" :has-error="fieldError(index, 'vehicle_id')" :load-options="loadVehicles" placeholder="Seleccionar viatura" />
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label">Condição de temperatura</label>
-                  <ComboboxEnhanced v-model="product.temperature_id" :has-error="fieldError(index, 'temperature_id')" :load-options="loadTemperatures" placeholder="Selecionar condição" />
+                  <ComboboxEnhanced v-model="product.temperature_id" :has-error="fieldError(index, 'temperature_id')" :load-options="loadTemperatures" placeholder="Seleccionar condição" />
                 </div>
                 <div class="ds-field-group">
                   <label :for="`sample-temperature-${index}`" class="ds-field-label">Temperatura observada</label>
@@ -435,7 +435,7 @@ function submit() {
                 </div>
                 <div class="ds-field-group">
                   <label class="ds-field-label">Responsável</label>
-                  <ComboboxEnhanced v-model="product.owner_id" :has-error="fieldError(index, 'owner_id')" :load-options="loadUsers" placeholder="Selecionar responsável" />
+                  <ComboboxEnhanced v-model="product.owner_id" :has-error="fieldError(index, 'owner_id')" :load-options="loadUsers" placeholder="Seleccionar responsável" />
                 </div>
                 <label class="sm:col-span-2 xl:col-span-4 flex items-start gap-3 border-t border-[var(--ds-border)] pt-4 text-sm font-semibold text-[var(--ds-text-muted)]">
                   <CheckboxInput v-model="product.collected_by_lab" type="checkbox" class="ds-checkbox mt-0.5" />

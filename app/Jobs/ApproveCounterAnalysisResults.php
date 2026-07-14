@@ -2,17 +2,12 @@
 
 namespace App\Jobs;
 
-use App\Events\AnalysisResultsValidated;
 use App\Events\CounterAnalysisResultsApproved;
 use App\Models\CounterAnalysis;
-use App\Models\CollectionProduct;
-use App\Models\QualityCertificate;
 use App\Models\Result;
 use App\Models\User;
 use App\Support\LaboratoryWorkflowNotifier;
-use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -23,8 +18,11 @@ class ApproveCounterAnalysisResults implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $results;
+
     public $analysis_id;
+
     public $user;
+
     public $signature;
 
     /**
@@ -48,10 +46,10 @@ class ApproveCounterAnalysisResults implements ShouldQueue
         // Aprove The Results
         $lastResult = null;
         foreach ($this->results as $result) {
-            
+
             $obj = Result::with('code')->find($result['result_id']);
             $lastResult = $obj;
-                            
+
             $obj->update($result);
 
             // Log result aproval
@@ -60,14 +58,14 @@ class ApproveCounterAnalysisResults implements ShouldQueue
             activity()
                 ->by($u)
                 ->performedOn($obj)
-                ->log('Validou o resultado ' .$obj->approved_value . ' no parâmetro: ' . $obj->parameter_label . ' da CA: ' . $obj->code->code);
+                ->log('Validou o resultado '.$obj->approved_value.' no parâmetro: '.$obj->parameter_label.' da CA: '.$obj->code->code);
 
             if ($this->signature) {
                 $obj->addMediaFromBase64($this->signature)
-                    ->usingFileName('approval-signature-' . $obj->id . '.png')
+                    ->usingFileName('approval-signature-'.$obj->id.'.png')
                     ->toMediaCollection('approval_signature');
-            } elseif ($u?->getFirstMedia('signature')) {
-                $obj->copyMedia($u->getFirstMedia('signature'))
+            } elseif (($signatureMedia = $u?->getFirstMedia('signature')) && is_file($signatureMedia->getPath())) {
+                $obj->copyMedia($signatureMedia->getPath())
                     ->toMediaCollection('approval_signature');
             }
         }
@@ -75,15 +73,15 @@ class ApproveCounterAnalysisResults implements ShouldQueue
         // Update Status of Analysis
         CounterAnalysis::find($this->analysis_id)->update([
             'end_date' => now(),
-            'status' => true
+            'status' => true,
         ]);
 
         Result::where('sample_id', $analysis->analysis->sample_id)->update([
-            'requested_counter_analysis' => false
+            'requested_counter_analysis' => false,
         ]);
 
         // Notify User
-        broadcast(new CounterAnalysisResultsApproved($this->user,$analysis->sample->collection));
+        broadcast(new CounterAnalysisResultsApproved($this->user, $analysis->sample->collection));
 
         if ($lastResult) {
             $workflowNotifier->notifyResultsApproved($lastResult->fresh(['sample.collection.collection.warehouse', 'inserted_by', 'verified_by', 'approved_by']), User::find($this->user->id));

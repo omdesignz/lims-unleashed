@@ -63,8 +63,8 @@ const editorDescription = computed(() => selectedSite.value?.id
 
 const confirmationTitle = computed(() => actionId.value === 'restore' ? 'Restaurar locais seleccionados?' : 'Arquivar locais seleccionados?')
 const confirmationDescription = computed(() => actionId.value === 'restore'
-  ? 'Os locais voltam a ficar disponiveis nas operacoes e pesquisas do laboratorio.'
-  : 'Os locais ficam inactivos, mas o historico e a rastreabilidade sao preservados.')
+  ? 'Os locais voltam a ficar disponíveis nas operações e pesquisas do laboratório.'
+  : 'Os locais ficam inactivos, mas o histórico e a rastreabilidade são preservados.')
 
 function emptySite() {
   return {
@@ -138,7 +138,7 @@ function executeBulkAction() {
             <div>
               <p class="ds-kicker">Rede de clientes</p>
               <h1 class="ds-heading mt-1 text-2xl">Locais operacionais</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Registo controlado dos enderecos usados na recepcao, recolha, faturacao e acesso ao portal do cliente.</p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">Registo controlado dos endereços usados na recepcao, recolha, facturação e acesso ao portal do cliente.</p>
             </div>
           </div>
           <div class="flex flex-wrap gap-2 lg:justify-end">
@@ -150,7 +150,7 @@ function executeBulkAction() {
 
       <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
         <div class="bg-[var(--ds-panel)] p-5"><div class="flex items-start justify-between gap-3"><div><dt class="ds-field-label">Total registado</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ totalSites }}</dd></div><BuildingOffice2Icon class="h-5 w-5 text-[var(--ds-text-soft)]" /></div></div>
-        <div class="bg-[var(--ds-panel)] p-5"><div class="flex items-start justify-between gap-3"><div><dt class="ds-field-label">Activos nesta pagina</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ activeSites }}</dd></div><CheckCircleIcon class="h-5 w-5 text-emerald-600 dark:text-emerald-300" /></div></div>
+        <div class="bg-[var(--ds-panel)] p-5"><div class="flex items-start justify-between gap-3"><div><dt class="ds-field-label">Activos nesta página</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ activeSites }}</dd></div><CheckCircleIcon class="h-5 w-5 text-emerald-600 dark:text-emerald-300" /></div></div>
         <div class="bg-[var(--ds-panel)] p-5"><div class="flex items-start justify-between gap-3"><div><dt class="ds-field-label">Locais principais</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ primarySites }}</dd></div><MapPinIcon class="h-5 w-5 text-[var(--ds-text-soft)]" /></div></div>
         <div class="bg-[var(--ds-panel)] p-5"><div class="flex items-start justify-between gap-3"><div><dt class="ds-field-label">Portal configurado</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ portalReadySites }}</dd></div><KeyIcon class="h-5 w-5 text-[var(--ds-text-soft)]" /></div></div>
       </dl>

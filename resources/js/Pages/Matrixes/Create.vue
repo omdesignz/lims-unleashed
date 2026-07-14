@@ -32,9 +32,9 @@ function submit() {
             <RectangleGroupIcon class="h-5 w-5" />
           </span>
           <div>
-            <p class="ds-kicker">Novo escopo comercial</p>
+            <p class="ds-kicker">Novo âmbito comercial</p>
             <h1 class="ds-heading mt-1 text-2xl">Adicionar matriz</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Agrupe perfis analiticos compativeis e configure preco, imposto e controlo departamental.</p>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Agrupe perfis analíticos compativeis e configure preço, imposto e controlo departamental.</p>
           </div>
         </div>
         <div class="flex flex-wrap gap-2 lg:justify-end">

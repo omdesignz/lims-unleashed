@@ -9,7 +9,6 @@ use App\Models\LabCode;
 use App\Models\Profile;
 use App\Models\ProgrammedCollection;
 use App\Models\Sample;
-use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -22,9 +21,13 @@ class PlaceProductsInAnalysis implements ShouldBeUnique, ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $programmed_collection_id;
+
     public $collection_product_id;
+
     public $user;
+
     public $customer;
+
     public int $uniqueFor = 300;
 
     /**
@@ -43,26 +46,26 @@ class PlaceProductsInAnalysis implements ShouldBeUnique, ShouldQueue
      */
     public function handle(): void
     {
-        // Update Placed Analysis Value   
+        // Update Placed Analysis Value
         $obj = ProgrammedCollection::with('collection.products')->find($this->programmed_collection_id);
         $obj->placed_analysis = true;
         $obj->status = true;
         $obj->entry_date = now()->format('Y-m-d');
         $obj->save();
-        
-        
+
         $colpro = CollectionProduct::find($this->collection_product_id);
         $colpro->processed = true;
+        $colpro->sample_status = 'Aceite para análise';
         $colpro->save();
 
-        foreach($colpro->product->matrix->profiles as $d) {
+        foreach ($colpro->product->matrix->profiles as $d) {
 
             $sample = Sample::create([
                 'description' => '',
                 'sample_month' => now()->format('y/m'),
                 'cl_id' => $colpro->code->id,
             ]);
-            
+
             $analysis = Analysis::create([
                 'department_id' => Profile::findOrFail($d->id)->type->department_id,
                 'sample_id' => $sample->id,
@@ -78,17 +81,17 @@ class PlaceProductsInAnalysis implements ShouldBeUnique, ShouldQueue
 
             // Log analysis creation
             activity()
-            ->by($this->user)
-            ->performedOn($colpro)
-            ->log('colocou em analise a colheita programada CL ' . $colpro->code->description);
+                ->by($this->user)
+                ->performedOn($colpro)
+                ->log('colocou em análise a colheita programada CL '.$colpro->code->description);
         }
 
         // Notify User
-        broadcast(new CollectionProcessed($this->user,$this->customer));
+        broadcast(new CollectionProcessed($this->user, $this->customer));
     }
 
     public function uniqueId(): string
     {
-        return 'place-programmed-collection-product:' . $this->collection_product_id;
+        return 'place-programmed-collection-product:'.$this->collection_product_id;
     }
 }

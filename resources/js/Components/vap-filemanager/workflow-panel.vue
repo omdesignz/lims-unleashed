@@ -3,7 +3,7 @@
     <div class="border-b border-slate-200 bg-slate-50 px-5 py-5 dark:border-slate-700 dark:bg-slate-800/90">
       <div class="flex items-start justify-between gap-4">
         <div>
-          <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Workflow</p>
+          <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">Fluxo de trabalho</p>
           <h2 class="mt-2 text-xl font-semibold text-slate-900 dark:text-slate-100">{{ $t('gestlab.general.labels.vap_filemanager.workflow_tasks') }}</h2>
           <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
             Distribua revisão, aprovação e publicação com responsáveis, prazos e histórico de comentários.

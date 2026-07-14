@@ -84,7 +84,7 @@ class VAPLabelPdfRenderer
                 'include_cutouts' => true,
                 'debug_label' => $label->name.' | '.$label->width.'x'.$label->height.'mm | Pré-visualização',
             ],
-            fn () => $this->renderLegacyPreview($label, $sampleText, $sampleQr, $sampleBarcode)
+            fn () => $this->renderLegacyPreview($label, $items[0])
         );
     }
 
@@ -161,7 +161,7 @@ class VAPLabelPdfRenderer
                 'spacing' => (float) data_get($options, 'spacing', 5),
                 'include_cutouts' => (bool) data_get($options, 'include_cutouts', true),
             ],
-            fn () => $this->renderLegacyBatch($label, $data, $options)
+            fn () => $this->renderLegacyBatch($label, $items, $options)
         );
     }
 
@@ -341,7 +341,10 @@ class VAPLabelPdfRenderer
         return is_file($publicPath) ? 'file://'.$publicPath : $path;
     }
 
-    private function renderLegacyPreview(VAPLabel $label, string $sampleText, string $sampleQr, string $sampleBarcode): string
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    private function renderLegacyPreview(VAPLabel $label, array $item): string
     {
         $mpdf = new Mpdf([
             'mode' => 'utf-8',
@@ -358,9 +361,12 @@ class VAPLabelPdfRenderer
         $mpdf->WriteHTML(view('PDFs.labels.preview', [
             'label' => $label,
             'show_cutouts' => true,
-            'sample_text' => $sampleText,
-            'sample_qr' => $sampleQr,
-            'sample_barcode' => $sampleBarcode,
+            'sample_text' => $item['content'],
+            'sample_qr' => $item['qr_content'],
+            'qr_code_image' => $item['qr_code_image'],
+            'sample_barcode' => $item['barcode_content'],
+            'barcode_image' => $item['barcode_image'],
+            'logo_src' => $this->resolveAssetSource($label->logo_path),
         ])->render());
 
         return $mpdf->Output('', 'S');
@@ -376,7 +382,8 @@ class VAPLabelPdfRenderer
         $margin = (float) data_get($options, 'margin', 5);
         $mpdf = new Mpdf([
             'mode' => 'utf-8',
-            'format' => 'A4',
+            'format' => $this->legacyPaperFormat($options),
+            'orientation' => data_get($options, 'orientation') === 'landscape' ? 'L' : 'P',
             'default_font_size' => $label->font_size,
             'margin_left' => $margin,
             'margin_right' => $margin,
@@ -393,6 +400,8 @@ class VAPLabelPdfRenderer
                 'qr_content' => $item['qr_content'],
                 'qr_code_image' => $item['qr_code_image'],
                 'barcode_content' => $item['barcode_content'],
+                'barcode_image' => $item['barcode_image'],
+                'logo_src' => $this->resolveAssetSource($label->logo_path),
                 'include_cutouts' => (bool) data_get($options, 'include_cutouts', true),
                 'item_index' => $index,
                 'labels_per_page' => $labelsPerPage,
@@ -408,14 +417,15 @@ class VAPLabelPdfRenderer
     }
 
     /**
-     * @param  array<int, array<string, mixed>>  $data
+     * @param  array<int, array<string, mixed>>  $items
      * @param  array<string, mixed>  $options
      */
-    private function renderLegacyBatch(VAPLabel $label, array $data, array $options): string
+    private function renderLegacyBatch(VAPLabel $label, array $items, array $options): string
     {
         $mpdf = new Mpdf([
             'mode' => 'utf-8',
-            'format' => 'A4',
+            'format' => $this->legacyPaperFormat($options),
+            'orientation' => data_get($options, 'orientation') === 'landscape' ? 'L' : 'P',
             'default_font_size' => $label->font_size,
             'margin_left' => 10,
             'margin_right' => 10,
@@ -427,13 +437,27 @@ class VAPLabelPdfRenderer
 
         $mpdf->WriteHTML(view('PDFs.labels.batch', [
             'label' => $label,
-            'data' => $data,
+            'data' => $items,
             'columns' => max(1, min(10, (int) data_get($options, 'columns', 2))),
             'rows' => max(1, min(50, (int) data_get($options, 'rows', 4))),
             'spacing' => (float) data_get($options, 'spacing', 5),
             'include_cutouts' => (bool) data_get($options, 'include_cutouts', true),
+            'logo_src' => $this->resolveAssetSource($label->logo_path),
         ])->render());
 
         return $mpdf->Output('', 'S');
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     */
+    private function legacyPaperFormat(array $options): string
+    {
+        return match (strtoupper((string) data_get($options, 'page_size', 'A4'))) {
+            'A3' => 'A3',
+            'LETTER' => 'Letter',
+            'LEGAL' => 'Legal',
+            default => 'A4',
+        };
     }
 }

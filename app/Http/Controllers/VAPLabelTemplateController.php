@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\VAPLab;
 use App\Models\VAPLabelTemplate;
-use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class VAPLabelTemplateController extends Controller
 {
@@ -48,7 +48,7 @@ class VAPLabelTemplateController extends Controller
     public function create()
     {
         $labs = VAPLab::active()->get(['id', 'name']);
-        
+
         return Inertia::render('VAPLabelTemplates/Create', [
             'categories' => [
                 'equipment' => 'Equipamento',
@@ -150,7 +150,7 @@ class VAPLabelTemplateController extends Controller
         $labelTemplate->update($validated);
 
         return redirect()->route('vap_labels.label-templates.index')
-            ->with('success', 'Modelo atualizado com sucesso.');
+            ->with('success', 'Modelo actualizado com sucesso.');
     }
 
     public function destroy(VAPLabelTemplate $labelTemplate)
@@ -163,15 +163,15 @@ class VAPLabelTemplateController extends Controller
 
     public function toggleStatus(VAPLabelTemplate $labelTemplate)
     {
-        $labelTemplate->update(['is_active' => !$labelTemplate->is_active]);
+        $labelTemplate->update(['is_active' => ! $labelTemplate->is_active]);
 
-        return back()->with('success', 'Estado do modelo atualizado.');
+        return back()->with('success', 'Estado do modelo actualizado.');
     }
 
     public function toggleFeatured(VAPLabelTemplate $labelTemplate)
     {
-        $labelTemplate->update(['is_featured' => !$labelTemplate->is_featured]);
+        $labelTemplate->update(['is_featured' => ! $labelTemplate->is_featured]);
 
-        return back()->with('success', 'Estado de destaque atualizado.');
+        return back()->with('success', 'Estado de destaque actualizado.');
     }
 }

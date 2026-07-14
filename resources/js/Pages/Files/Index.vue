@@ -1,15 +1,15 @@
 <template>
     <div :class="commercialDocumentThemeClasses">
-      <h2>File and Folder Manager</h2>
+      <h2>Gestor de ficheiros e pastas</h2>
   
       <!-- Folder Navigation -->
       <div v-if="currentFolder !== 'uploads/'">
-        <button @click="navigateToParent">Go Back</button>
+        <button @click="navigateToParent">Voltar</button>
       </div>
   
       <!-- Display Folders -->
       <div>
-        <h3>Folders</h3>
+        <h3>Pastas</h3>
         <ul>
           <li v-for="folder in folders" :key="folder">
             <button @click="navigateToFolder(folder)">
@@ -21,11 +21,11 @@
   
       <!-- Display Files -->
       <div>
-        <h3>Files</h3>
+        <h3>Ficheiros</h3>
         <ul>
           <li v-for="file in files" :key="file">
             {{ file.split('/').pop() }}
-            <button @click="downloadFile(file)">Download</button>
+            <button @click="downloadFile(file)">Descarregar</button>
           </li>
         </ul>
       </div>

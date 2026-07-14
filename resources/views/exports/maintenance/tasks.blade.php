@@ -152,7 +152,7 @@
                     <td>
                         <div class="eyebrow">{{ $labName }}</div>
                         <h1>Relatório de Manutenção</h1>
-                        <div>Maintenance tasks report · Equipamentos, calibração e rastreabilidade</div>
+                        <div>Relatório de tarefas de manutenção · Equipamentos, calibração e rastreabilidade</div>
                     </td>
                     <td class="meta">
                         Emitido em {{ $generated_at->format('d/m/Y H:i') }}<br>
@@ -193,7 +193,7 @@
             @forelse($tasks as $task)
                 @php
                     $isOverdue = ! $task->is_executed && $task->due_date && $task->due_date->lt(now());
-                    $statusLabel = $task->is_executed ? 'Executada / Executed' : ($isOverdue ? 'Vencida / Overdue' : 'Pendente / Pending');
+                    $statusLabel = $task->is_executed ? 'Executada' : ($isOverdue ? 'Vencida' : 'Pendente');
                     $statusClass = $task->is_executed ? 'executed' : ($isOverdue ? 'overdue' : 'pending');
                 @endphp
                 <tr>
@@ -206,11 +206,11 @@
                     <td>{{ $task->due_date?->format('d/m/Y') ?? 'N/A' }}</td>
                     <td class="status-{{ $statusClass }}">{{ $statusLabel }}</td>
                     <td style="text-align: right;">AOA {{ number_format((float) $task->cost, 2, ',', '.') }}</td>
-                    <td>{{ $task->supplier->name ?? 'Interno / Internal' }}</td>
+                    <td>{{ $task->supplier->name ?? 'Interno' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" style="text-align: center;">Sem tarefas para os filtros selecionados.</td>
+                    <td colspan="7" style="text-align: center;">Sem tarefas para os filtros seleccionados.</td>
                 </tr>
             @endforelse
         </tbody>

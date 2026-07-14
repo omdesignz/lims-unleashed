@@ -89,7 +89,7 @@ function formatDate(value) {
           <dd class="text-sm font-semibold text-[var(--ds-text)]">{{ movement.user || "—" }}</dd>
         </div>
         <div class="grid gap-2 px-5 py-4 sm:grid-cols-[14rem_1fr] sm:px-6">
-          <dt class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]"><CalendarDaysIcon class="h-4 w-4" /> Última atualização</dt>
+          <dt class="flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]"><CalendarDaysIcon class="h-4 w-4" /> Última actualização</dt>
           <dd class="text-sm font-semibold text-[var(--ds-text)]">{{ formatDate(movement.updated_at) }}</dd>
         </div>
       </dl>

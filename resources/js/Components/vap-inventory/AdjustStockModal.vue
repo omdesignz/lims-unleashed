@@ -4,7 +4,7 @@
       <div class="flex items-center justify-between gap-4 border-b border-[var(--ds-border)] pb-5">
         <h3 class="ds-heading flex items-center gap-2 text-lg">
           <ArrowsUpDownIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
-          Ajustar Estoque
+          Ajustar existências
         </h3>
         <button type="button" @click="close" class="ds-icon-button">
           <XMarkIcon class="h-5 w-5" />
@@ -49,7 +49,7 @@
               :key="inv.id"
               :value="inv.warehouse_id"
             >
-              {{ inv.warehouse?.name }} (Atual: {{ inv.qty_available }} {{ item.unit?.code || 'unidades' }})
+              {{ inv.warehouse?.name }} (Actual: {{ inv.qty_available }} {{ item.unit?.code || 'unidades' }})
             </option>
           </BaseSelect>
           <p v-if="form.errors.warehouse_id" class="text-xs text-red-600">
@@ -76,7 +76,7 @@
             >
               <div class="flex items-center justify-center gap-2">
                 <PlusIcon class="h-4 w-4" />
-                Adicionar Estoque
+                Adicionar existências
               </div>
             </button>
             <button
@@ -91,7 +91,7 @@
             >
               <div class="flex items-center justify-center gap-2">
                 <MinusIcon class="h-4 w-4" />
-                Remover Estoque
+                Remover existências
               </div>
             </button>
           </div>
@@ -130,7 +130,7 @@
             Máximo: {{ selectedInventory.qty_available }} {{ item.unit?.code || 'unidades' }} disponíveis
           </div>
           <div v-if="form.quantity && selectedInventory" class="text-xs text-gray-500">
-            Novo nível de estoque:
+            Novo nível de existências:
             <span :class="form.adjustment_type === 'add' ? 'text-green-900 font-semibold' : 'text-red-900 font-semibold'">
               {{ calculateNewStock() }} {{ item.unit?.code || 'unidades' }}
             </span>
@@ -154,7 +154,7 @@
             <option value="">Seleccione um Motivo</option>
             <option value="physical_count">Ajuste de Contagem Física</option>
             <option value="damaged">Itens Danificados/Perdidos</option>
-            <option value="found_extra">Encontrado Estoque Extra</option>
+            <option value="found_extra">Existências excedentes encontradas</option>
             <option value="quality_control">Rejeição de Controle de Qualidade</option>
             <option value="expired">Itens Expirados</option>
             <option value="calibration">Ajuste de Calibração</option>
@@ -204,7 +204,7 @@
             ]"
           >
             <span v-if="form.processing">Processando...</span>
-            <span v-else>{{ form.adjustment_type === 'add' ? 'Adicionar Estoque' : 'Remover Estoque' }}</span>
+            <span v-else>{{ form.adjustment_type === 'add' ? 'Adicionar existências' : 'Remover existências' }}</span>
           </button>
         </div>
       </div>

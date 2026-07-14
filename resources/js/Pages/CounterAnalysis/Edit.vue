@@ -230,7 +230,7 @@ let submitResults = () => {
         <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary-700 dark:text-primary-300">Fluxo controlado</p>
         <h3 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Contra-análises</h3>
         <p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-          Ajuste o escopo da contra-análise, lance os resultados e mantenha a rastreabilidade desta repetição analítica.
+          Ajuste o âmbito da contra-análise, lance os resultados e mantenha a rastreabilidade desta repetição analítica.
         </p>
       </div>
       <div class="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-right shadow-sm dark:border-slate-600 dark:bg-slate-900/80">
@@ -287,7 +287,7 @@ let submitResults = () => {
           </div>
 
           <div class="sm:col-span-full inline-flex items-center justify-end">
-            <button v-if="form.isDirty" @click="submit" class="inline-flex justify-center rounded-2xl bg-primary-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-700/20 transition hover:bg-primary-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400">Atualizar contra-análise</button>
+            <button v-if="form.isDirty" @click="submit" class="inline-flex justify-center rounded-2xl bg-primary-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-700/20 transition hover:bg-primary-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400">Actualizar contra-análise</button>
           </div>
         </div>
         </section>

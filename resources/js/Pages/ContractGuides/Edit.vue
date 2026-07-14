@@ -75,7 +75,7 @@ function submit() {
         <div>
           <p class="ds-kicker">Controlo de circulação</p>
           <h1 class="ds-heading mt-1 text-2xl">Editar guia {{ guide.guide_no }}</h1>
-          <p class="ds-copy mt-1 max-w-3xl text-sm">Atualize a guia e os produtos numa única transação rastreável.</p>
+          <p class="ds-copy mt-1 max-w-3xl text-sm">Actualize a guia e os produtos numa única transacção rastreável.</p>
         </div>
       </div>
     </section>

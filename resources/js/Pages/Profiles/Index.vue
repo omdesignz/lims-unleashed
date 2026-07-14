@@ -36,10 +36,10 @@ const categories = computed(() => new Set(pageRecords.value.map((record) => reco
 const pageValue = computed(() => pageRecords.value.reduce((total, record) => total + Number(record.price || 0), 0));
 
 const metrics = computed(() => [
-  { label: "Perfis", value: totalRecords.value, detail: "catalogo total", icon: ClipboardDocumentCheckIcon },
-  { label: "Ativos nesta pagina", value: activeRecords.value, detail: "disponiveis para amostras", icon: BeakerIcon },
-  { label: "Categorias", value: categories.value, detail: "escopos analiticos", icon: BuildingOffice2Icon },
-  { label: "Valor nesta pagina", value: `${pageValue.value.toLocaleString('pt-PT')} AOA`, detail: "composicao dos ensaios", icon: CurrencyDollarIcon },
+  { label: "Perfis", value: totalRecords.value, detail: "catálogo total", icon: ClipboardDocumentCheckIcon },
+  { label: "Activos nesta página", value: activeRecords.value, detail: "disponíveis para amostras", icon: BeakerIcon },
+  { label: "Categorias", value: categories.value, detail: "âmbitos analíticos", icon: BuildingOffice2Icon },
+  { label: "Valor nesta página", value: `${pageValue.value.toLocaleString('pt-PT')} AOA`, detail: "composição dos ensaios", icon: CurrencyDollarIcon },
 ]);
 
 const actions = [
@@ -79,14 +79,14 @@ function executeBulkAction() {
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div class="min-w-0">
-          <p class="ds-kicker">Catalogo de servicos</p>
+          <p class="ds-kicker">Catálogo de serviços</p>
           <div class="mt-3 flex items-start gap-3">
             <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
               <ClipboardDocumentCheckIcon class="h-5 w-5" />
             </span>
             <div class="min-w-0">
               <h1 class="ds-heading text-2xl">{{ $t('gestlab.general.labels.profiles.page_title') }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Pacotes analiticos controlados por categoria, departamento, metodos, faixas de referencia e preco composto.</p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">Pacotes analíticos controlados por categoria, departamento, métodos, faixas de referência e preço composto.</p>
             </div>
           </div>
         </div>
@@ -137,7 +137,7 @@ function executeBulkAction() {
       :description="confirmationDialogDescription"
       :variant="selectedAction === 'restore' ? 'question' : 'danger'"
       confirm="Sim"
-      cancel="Nao"
+      cancel="Não"
       @canceled="showActionConfirmation = false"
       @confirmed="executeBulkAction"
     />

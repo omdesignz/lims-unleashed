@@ -69,7 +69,7 @@ function applyFilter() {
         <div>
           <p class="ds-kicker">Governança do SGQ</p>
           <h1 class="ds-heading mt-1 text-2xl">Revisões pela gestão</h1>
-          <p class="ds-copy mt-1 max-w-3xl text-sm">Planeamento, decisões, riscos, oportunidades e melhoria acompanhados pela direção.</p>
+          <p class="ds-copy mt-1 max-w-3xl text-sm">Planeamento, decisões, riscos, oportunidades e melhoria acompanhados pela direcção.</p>
         </div>
       </div>
 
@@ -130,7 +130,7 @@ function applyFilter() {
               <td colspan="5" class="px-5 py-12 text-center">
                 <ClipboardDocumentListIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
                 <p class="ds-heading mt-3 text-sm">Nenhuma revisão encontrada</p>
-                <p class="ds-copy mt-1 text-sm">Não existem revisões para o estado selecionado.</p>
+                <p class="ds-copy mt-1 text-sm">Não existem revisões para o estado seleccionado.</p>
               </td>
             </tr>
           </tbody>

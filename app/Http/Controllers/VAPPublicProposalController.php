@@ -75,7 +75,7 @@ class VAPPublicProposalController extends Controller
         $proposal = VAPProposal::where('unique_hash', $hash)->firstOrFail();
 
         if (! $proposal->file_path || ! Storage::exists($proposal->file_path)) {
-            abort(404, 'Proposal PDF not found.');
+            abort(404, 'PDF da proposta não encontrado.');
         }
 
         return Storage::download($proposal->file_path);

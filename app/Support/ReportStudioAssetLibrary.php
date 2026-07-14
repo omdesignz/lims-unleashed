@@ -29,13 +29,13 @@ class ReportStudioAssetLibrary
     public static function sourceForKind(string $kind): string
     {
         return match ($kind) {
-            'uploaded_asset' => 'Upload de ficheiro',
+            'uploaded_asset' => 'Carregamento de ficheiro',
             'uploaded_background' => 'Fundos carregados',
             'uploaded_chart' => 'Gráficos carregados',
             'uploaded_signature' => 'Assinaturas carregadas',
             'uploaded_stamp' => 'Carimbos carregados',
             'uploaded_image' => 'Imagens carregadas',
-            default => 'Upload do studio',
+            default => 'Carregamento do estúdio',
         };
     }
 

@@ -2,8 +2,8 @@
 
 namespace App\Notifications;
 
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class ImportCompletedNotification extends Notification
 {
@@ -15,15 +15,15 @@ class ImportCompletedNotification extends Notification
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->subject('Import Completed')
-            ->line('Your CSV import has completed successfully.');
+            ->subject('Importação concluída')
+            ->line('A importação do ficheiro CSV foi concluída com sucesso.');
     }
 
     public function toArray($notifiable)
     {
         return [
-            'title' => 'Import Completed',
-            'message' => 'Your CSV import has completed successfully.',
+            'title' => 'Importação concluída',
+            'message' => 'A importação do ficheiro CSV foi concluída com sucesso.',
             'sender_id' => $notifiable->id,
             'sender_name' => $notifiable->name,
         ];

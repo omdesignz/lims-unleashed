@@ -170,7 +170,7 @@
                 <span class="info-value">{{ $nonConformity->title }}</span>
             </div>
             <div class="info-item">
-                <span class="info-label">Status:</span>
+                <span class="info-label">Estado:</span>
                 <span class="badge status-badge">
                     @switch($nonConformity->status)
                         @case('opened')
@@ -315,7 +315,7 @@
             @endif
             @if($nonConformity->preventive_actions)
             <div class="info-item">
-                <span class="info-label">Ações Preventivas:</span>
+                <span class="info-label">Acções Preventivas:</span>
                 <div class="text-box mt-3">
                     <div class="long-text">{{ $nonConformity->preventive_actions }}</div>
                 </div>
@@ -336,14 +336,14 @@
     @if($nonConformity->actions && $nonConformity->actions->count() > 0)
     <div class="actions-section">
         <div class="info-card">
-            <h3>Ações Corretivas</h3>
+            <h3>Acções Corretivas</h3>
             @foreach($nonConformity->actions as $index => $action)
             <div class="action-card">
-                <div class="action-header">AÇÃO #{{ $index + 1 }}</div>
+                <div class="action-header">ACÇÃO #{{ $index + 1 }}</div>
                 <div class="info-grid">
                     @if($action->correction)
                     <div class="info-item full-width">
-                        <span class="info-label">Correção:</span>
+                        <span class="info-label">Correcção:</span>
                         <div class="text-box mt-3">
                             <div class="long-text">{{ $action->correction }}</div>
                         </div>
@@ -351,7 +351,7 @@
                     @endif
                     @if($action->corrective_action)
                     <div class="info-item full-width">
-                        <span class="info-label">Ação Corretiva:</span>
+                        <span class="info-label">Acção Corretiva:</span>
                         <div class="text-box mt-3">
                             <div class="long-text">{{ $action->corrective_action }}</div>
                         </div>
@@ -366,7 +366,7 @@
                         <span class="info-value">{{ $action->approved_at ? $action->approved_at->format('d/m/Y H:i') : 'N/A' }}</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">Efetiva:</span>
+                        <span class="info-label">Efectiva:</span>
                         <span class="info-value">{{ $action->was_effective ? 'Sim' : 'Não' }}</span>
                     </div>
                 </div>

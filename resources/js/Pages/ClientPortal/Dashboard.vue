@@ -33,15 +33,15 @@ const warehouse = computed(() => props.auth?.user?.data ?? props.auth?.user ?? {
 const requests = computed(() => props.recentRequests?.data ?? props.recentRequests ?? []);
 const metricCards = computed(() => [
   { label: "Pedidos em aberto", value: props.stats.open_requests || 0, detail: "em triagem ou tratamento", icon: ClockIcon },
-  { label: "Colheitas", value: props.stats.collections || 0, detail: "historico visivel no portal", icon: TruckIcon },
+  { label: "Colheitas", value: props.stats.collections || 0, detail: "histórico visível no portal", icon: TruckIcon },
   { label: "Certificados", value: props.stats.qualitycertificates || 0, detail: "documentos de qualidade", icon: BeakerIcon },
-  { label: "Saldo vencido", value: props.stats.overdue || "AOA 0,00", detail: "faturacao por regularizar", icon: BanknotesIcon },
+  { label: "Saldo vencido", value: props.stats.overdue || "AOA 0,00", detail: "facturação por regularizar", icon: BanknotesIcon },
 ]);
 
 const documentLinks = computed(() => [
-  { label: "Faturas", value: props.stats.invoices || 0, href: route("portal.invoices"), icon: BanknotesIcon },
+  { label: "Facturas", value: props.stats.invoices || 0, href: route("portal.invoices"), icon: BanknotesIcon },
   { label: "Recibos", value: props.stats.receipts || 0, href: route("portal.receipts"), icon: ReceiptPercentIcon },
-  { label: "Notas de credito", value: props.stats.creditnotes || 0, href: route("portal.creditnotes"), icon: DocumentTextIcon },
+  { label: "Notas de crédito", value: props.stats.creditnotes || 0, href: route("portal.creditnotes"), icon: DocumentTextIcon },
   { label: "Guias contratuais", value: props.stats.contractguides || 0, href: route("portal.contractguides"), icon: ClipboardDocumentCheckIcon },
 ]);
 
@@ -58,7 +58,7 @@ function serviceIcon(service) {
 }
 
 function statusLabel(status) {
-  return { pending: "Pendente", in_progress: "Em tratamento", completed: "Concluido", cancelled: "Cancelado" }[status] || "Pendente";
+  return { pending: "Pendente", in_progress: "Em tratamento", completed: "Concluído", cancelled: "Cancelado" }[status] || "Pendente";
 }
 
 function statusClass(status) {
@@ -85,9 +85,9 @@ function formatDate(value) {
               <BuildingOffice2Icon class="h-5 w-5" />
             </span>
             <div class="min-w-0">
-              <p class="ds-kicker">Area do cliente</p>
+              <p class="ds-kicker">Área do cliente</p>
               <h1 class="ds-heading mt-1 break-words text-2xl">{{ warehouse.name || warehouse.customer || "Resumo da conta" }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Acompanhe pedidos, amostras, documentos de qualidade e conta corrente num unico espaco.</p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">Acompanhe pedidos, amostras, documentos de qualidade e conta corrente num único espaco.</p>
               <div class="mt-3 flex flex-wrap gap-2">
                 <span v-if="warehouse.email" class="ds-chip">{{ warehouse.email }}</span>
                 <span v-if="warehouse.code" class="ds-chip font-mono">{{ warehouse.code }}</span>
@@ -97,9 +97,7 @@ function formatDate(value) {
           </div>
 
           <Link :href="route('portal.requests.index', { new: 1 })" class="ds-button ds-button-primary">
-            <PlusIcon class="h-4 w-4" />
-            Nova solicitacao
-          </Link>
+            <PlusIcon class="h-4 w-4" /> Nova pedido </Link>
         </div>
       </div>
 
@@ -115,7 +113,7 @@ function formatDate(value) {
 
     <section class="ds-card overflow-hidden">
       <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:flex sm:items-start sm:justify-between sm:gap-4 sm:px-6">
-        <div><h2 class="text-base font-bold text-[var(--ds-text)]">Solicitacoes recentes</h2><p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Ultimos pedidos submetidos e respetivo estado.</p></div>
+        <div><h2 class="text-base font-bold text-[var(--ds-text)]">Pedidos recentes</h2><p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Últimos pedidos submetidos e respectivo estado.</p></div>
         <Link :href="route('portal.requests.index')" class="ds-button ds-button-secondary mt-3 sm:mt-0">Ver todos <ArrowRightIcon class="h-4 w-4" /></Link>
       </header>
       <div v-if="requests.length" class="divide-y divide-[var(--ds-border)]">
@@ -124,12 +122,12 @@ function formatDate(value) {
           <span class="ds-chip">{{ request.category || request.request_type }}</span>
         </article>
       </div>
-      <div v-else class="ds-empty-state m-5 py-10 text-center sm:m-6"><ClipboardDocumentCheckIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" /><p class="mt-3 text-sm font-bold text-[var(--ds-text)]">Sem solicitacoes recentes</p></div>
+      <div v-else class="ds-empty-state m-5 py-10 text-center sm:m-6"><ClipboardDocumentCheckIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" /><p class="mt-3 text-sm font-bold text-[var(--ds-text)]">Sem pedidos recentes</p></div>
     </section>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
       <section>
-        <div class="mb-4"><p class="ds-kicker">Atalhos de servico</p><h2 class="ds-heading mt-1 text-xl">Como podemos ajudar?</h2></div>
+        <div class="mb-4"><p class="ds-kicker">Atalhos de serviço</p><h2 class="ds-heading mt-1 text-xl">Como podemos ajudar?</h2></div>
         <div class="grid gap-4 sm:grid-cols-2">
           <Link v-for="service in services" :key="service.type" :href="route('portal.requests.index', { request_type: service.type, new: 1, title: service.title })" class="ds-card group p-5 transition hover:border-[rgb(var(--primary-300-rgb))]">
             <div class="flex items-start gap-3"><span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))] ring-1 ring-[var(--ds-border)]"><component :is="serviceIcon(service)" class="h-5 w-5" /></span><div class="min-w-0"><h3 class="text-sm font-bold text-[var(--ds-text)]">{{ service.title }}</h3><p class="ds-copy mt-1 text-sm">{{ service.description }}</p></div></div>

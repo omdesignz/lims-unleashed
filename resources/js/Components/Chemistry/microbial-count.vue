@@ -36,7 +36,7 @@ const removeSample = (index) => {
 
 <template>
   <div class="container">
-    <h2 class="title">Microbial Count Calculator</h2>
+    <h2 class="title">Calculadora de contagem microbiana</h2>
 
     <DataTable>
       <thead>
@@ -47,7 +47,7 @@ const removeSample = (index) => {
           <th>Ufc 2</th>
           <th>Σ ufc</th>
           <th>N (CFU/mL)</th>
-          <th>Actions</th>
+          <th>Acções</th>
         </tr>
       </thead>
       <tbody>
@@ -65,7 +65,7 @@ const removeSample = (index) => {
       </tbody>
     </DataTable>
 
-    <button class="add-btn" @click="addSample">➕ Add Sample</button>
+    <button class="add-btn" @click="addSample">➕ Adicionar amostra</button>
   </div>
 </template>
 

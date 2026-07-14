@@ -26,7 +26,7 @@ import { i18nVue } from "laravel-vue-i18n";
 import { register } from "swiper/element/bundle";
 
 const appName =
-  window.document.getElementsByTagName("title")[0]?.innerText || "Laboratory workspace";
+  window.document.getElementsByTagName("title")[0]?.innerText || "Espaço laboratorial";
 
 const ApexChart = defineAsyncComponent(async () => (await import("vue3-apexcharts")).default);
 
@@ -104,7 +104,7 @@ createInertiaApp({
       .use(ZiggyVue, ziggyConfig)
       .use(i18nVue, {
         lang: props.initialPage.props?.language ?? "pt",
-        fallbackLang: "en",
+        fallbackLang: "pt",
         resolve: async (lang) => {
           const langs = import.meta.glob("../../lang/*.json");
           return await langs[`../../lang/${lang}.json`]();

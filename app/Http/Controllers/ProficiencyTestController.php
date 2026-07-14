@@ -208,7 +208,7 @@ class ProficiencyTestController extends Controller
         return redirect()->route('proficiency_tests.show', $test)->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
-                'message' => 'Resultados do ensaio de proficiência atualizados.',
+                'message' => 'Resultados do ensaio de proficiência actualizados.',
             ],
         ]);
     }
@@ -357,7 +357,7 @@ class ProficiencyTestController extends Controller
                 ],
             ],
             'participant_status' => [
-                'labels' => ['Pendente', 'Inscrito', 'Submetido', 'Revisto', 'Requer ação'],
+                'labels' => ['Pendente', 'Inscrito', 'Submetido', 'Revisto', 'Requer acção'],
                 'series' => collect(['pending', 'enrolled', 'submitted', 'reviewed', 'requires_action'])
                     ->map(fn (string $key) => (int) ($test->participantStatusCounts()[$key] ?? 0))
                     ->values()

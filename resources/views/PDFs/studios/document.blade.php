@@ -101,10 +101,6 @@
     </style>
 </head>
 <body class="pdf-document studio-document">
-    <sethtmlpageheader name="first-page-header" value="on" show-this-page="1" />
-    <sethtmlpageheader name="default-header" value="on" show-this-page="1" />
-    <sethtmlpagefooter name="default-footer" value="on" show-this-page="1" />
-
     <htmlpageheader name="first-page-header">
         {!! $firstPageHeader !!}
     </htmlpageheader>

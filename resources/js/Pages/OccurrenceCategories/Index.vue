@@ -8,5 +8,5 @@ defineProps({ record: { type: Object, default: () => ({ data: [], meta: {} }) },
 </script>
 
 <template>
-  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="occurrencecategories" route-parameter="category" permission-key="occurrence_categories" title="Categorias de ocorrencia" kicker="Sistema de qualidade" description="Classificacao controlada para desvios, incidentes, reclamacoes e nao conformidades." entity-label="Categoria de ocorrencia" new-entity-label="Nova categoria" name-label="Nome" code-label="Codigo" description-label="Escopo da categoria" :supports-name="true" :icon="ExclamationTriangleIcon" />
+  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="occurrencecategories" route-parameter="category" permission-key="occurrence_categories" title="Categorias de ocorrência" kicker="Sistema de qualidade" description="Classificação controlada para desvios, incidentes, reclamações e não conformidades." entity-label="Categoria de ocorrência" new-entity-label="Nova categoria" name-label="Nome" code-label="Código" description-label="Âmbito da categoria" :supports-name="true" :icon="ExclamationTriangleIcon" />
 </template>

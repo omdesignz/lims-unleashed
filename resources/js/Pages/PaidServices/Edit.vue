@@ -27,10 +27,10 @@ const submit = () => form.put(route('paidservices.update', { service: service.id
   <div class="space-y-5">
     <section class="ds-panel overflow-hidden">
       <header class="flex flex-col gap-4 border-b border-[var(--ds-border)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div class="flex items-start gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><CubeIcon class="h-5 w-5" /></span><div><p class="ds-kicker">Catalogo comercial</p><h1 class="ds-heading mt-1 text-xl sm:text-2xl">Editar servico</h1><p class="ds-copy mt-1 text-sm">Atualize a configuracao usada em novas propostas e documentos.</p></div></div>
-        <Link :href="route('paidservices.index')" class="ds-button ds-button-secondary"><ArrowLeftIcon class="h-4 w-4" />Catalogo</Link>
+        <div class="flex items-start gap-3"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200"><CubeIcon class="h-5 w-5" /></span><div><p class="ds-kicker">Catálogo comercial</p><h1 class="ds-heading mt-1 text-xl sm:text-2xl">Editar serviço</h1><p class="ds-copy mt-1 text-sm">Actualize a configuração usada em novas propostas e documentos.</p></div></div>
+        <Link :href="route('paidservices.index')" class="ds-button ds-button-secondary"><ArrowLeftIcon class="h-4 w-4" />Catálogo</Link>
       </header>
     </section>
-    <PaidServiceForm :form="form" submit-label="Guardar alteracoes" @submit="submit" />
+    <PaidServiceForm :form="form" submit-label="Guardar alterações" @submit="submit" />
   </div>
 </template>

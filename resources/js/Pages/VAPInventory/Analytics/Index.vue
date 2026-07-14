@@ -52,10 +52,10 @@
     <section class="ds-command-surface overflow-hidden">
       <div class="ds-table-summary px-5 py-4">
         <div>
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Assurance queue</p>
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Fila de controlo</p>
           <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Áreas que exigem acompanhamento</h2>
         </div>
-        <span class="ds-chip">{{ totalAlerts }} alertas ativos</span>
+        <span class="ds-chip">{{ totalAlerts }} alertas activos</span>
       </div>
 
       <div class="grid divide-y divide-[var(--ds-border)] md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-4">
@@ -134,7 +134,7 @@
                     <BaseSelect v-model="report.type" label="Conteúdo">
                       <option value="comprehensive">Relatório integrado</option>
                       <option value="consumption">Consumo de reagentes</option>
-                      <option value="stock">Disponibilidade de stock</option>
+                      <option value="stock">Disponibilidade de existências</option>
                       <option value="expiry">Validade de reagentes</option>
                       <option value="calibration">Agenda de calibração</option>
                     </BaseSelect>
@@ -225,7 +225,7 @@ const report = reactive({
 
 const summaryCards = computed(() => [
   {
-    label: 'Posições de stock',
+    label: 'Posições de existências',
     value: formatNumber(metrics.value.total_items),
     detail: 'Registos monitorizados',
     icon: BeakerIcon,
@@ -246,7 +246,7 @@ const summaryCards = computed(() => [
     tone: 'text-emerald-700 dark:text-emerald-300',
   },
   {
-    label: 'Alertas ativos',
+    label: 'Alertas activos',
     value: totalAlerts.value,
     detail: `${metrics.value.criticalAlerts || 0} críticos`,
     icon: ExclamationTriangleIcon,
@@ -256,9 +256,9 @@ const summaryCards = computed(() => [
 
 const assuranceQueues = computed(() => [
   {
-    label: 'Reposição de stock',
+    label: 'Reposição de existências',
     value: metrics.value.reorderAlerts || 0,
-    detail: `${metrics.value.criticalAlerts || 0} posições críticas ou sem stock`,
+    detail: `${metrics.value.criticalAlerts || 0} posições críticas ou sem existências`,
     href: route('vap-inventory.reports.low-stock'),
     icon: ExclamationTriangleIcon,
     iconSurface: 'bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300',
@@ -352,7 +352,7 @@ async function generateReport() {
       }),
     })
 
-    if (!response.ok) throw new Error('Não foi possível gerar o relatório com os filtros selecionados.')
+    if (!response.ok) throw new Error('Não foi possível gerar o relatório com os filtros seleccionados.')
 
     const blob = await response.blob()
     const objectUrl = URL.createObjectURL(blob)

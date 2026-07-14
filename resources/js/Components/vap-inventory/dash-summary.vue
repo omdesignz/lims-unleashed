@@ -54,7 +54,7 @@ const cards = computed(() => [
     type: 'reorder',
     label: 'Pedidos pendentes',
     value: summary.value.toOrder ?? 0,
-    unit: 'Stock baixo',
+    unit: 'Existências reduzidas',
     caption: 'Gerar rascunhos agora',
     icon: ShoppingCartIcon,
     borderClass: 'border-amber-500',

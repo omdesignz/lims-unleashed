@@ -28,12 +28,12 @@ const props = defineProps({
   routeParameter: { type: String, required: true },
   permissionKey: { type: String, required: true },
   title: { type: String, required: true },
-  kicker: { type: String, default: "Configuracao analitica" },
+  kicker: { type: String, default: "Configuração analítica" },
   description: { type: String, required: true },
   entityLabel: { type: String, required: true },
   newEntityLabel: { type: String, default: "" },
-  codeLabel: { type: String, default: "Codigo" },
-  descriptionLabel: { type: String, default: "Descricao" },
+  codeLabel: { type: String, default: "Código" },
+  descriptionLabel: { type: String, default: "Descrição" },
   nameLabel: { type: String, default: "Nome" },
   departmentLabel: { type: String, default: "Departamento" },
   supportsName: { type: Boolean, default: false },
@@ -41,9 +41,9 @@ const props = defineProps({
   codeRequired: { type: Boolean, default: true },
   supportsDepartment: { type: Boolean, default: false },
   extraFields: { type: Array, default: () => [] },
-  createDescription: { type: String, default: "Adicione um registo ao catalogo controlado usado pelos fluxos operacionais." },
-  editDescription: { type: String, default: "Atualize a identificacao e o contexto de utilizacao deste registo controlado." },
-  formDescription: { type: String, default: "Use identificadores reconheciveis e uma descricao que torne o contexto de utilizacao explicito." },
+  createDescription: { type: String, default: "Adicione um registo ao catálogo controlado usado pelos fluxos operacionais." },
+  editDescription: { type: String, default: "Actualize a identificação e o contexto de utilização deste registo controlado." },
+  formDescription: { type: String, default: "Use identificadores reconhecíveis e uma descrição que torne o contexto de utilização explícito." },
   icon: { type: [Object, Function], required: true },
 });
 
@@ -70,12 +70,12 @@ const describedRecords = computed(() => pageRecords.value.filter((record) => rec
 const governedRecords = computed(() => pageRecords.value.filter((record) => record.department_id).length);
 
 const metrics = computed(() => [
-  { label: "Registos", value: totalRecords.value, detail: "catalogo total", icon: props.icon },
-  { label: "Ativos nesta pagina", value: activeRecords.value, detail: "disponiveis para uso", icon: CheckBadgeIcon },
+  { label: "Registos", value: totalRecords.value, detail: "catálogo total", icon: props.icon },
+  { label: "Activos nesta página", value: activeRecords.value, detail: "disponíveis para uso", icon: CheckBadgeIcon },
   props.supportsDepartment
     ? { label: "Com departamento", value: governedRecords.value, detail: "responsabilidade definida", icon: DocumentTextIcon }
-    : { label: "Com descricao", value: describedRecords.value, detail: "contexto documentado", icon: DocumentTextIcon },
-  { label: "Arquivados nesta pagina", value: archivedRecords.value, detail: "fora da selecao ativa", icon: ArchiveBoxIcon },
+    : { label: "Com descrição", value: describedRecords.value, detail: "contexto documentado", icon: DocumentTextIcon },
+  { label: "Arquivados nesta página", value: archivedRecords.value, detail: "fora da selecção activa", icon: ArchiveBoxIcon },
 ]);
 
 const panelTitle = computed(() => form.id
@@ -221,7 +221,7 @@ function executeBulkAction() {
       <template #content>
         <form id="reference-catalog-form" class="divide-y divide-[var(--ds-border)]" @submit.prevent="submit">
           <section class="px-5 py-5 sm:px-6">
-            <p class="ds-kicker">Identificacao</p>
+            <p class="ds-kicker">Identificação</p>
             <h2 class="ds-heading mt-1 text-base">Dados do registo</h2>
             <p class="ds-copy mt-1 text-sm">{{ formDescription }}</p>
 
@@ -241,7 +241,7 @@ function executeBulkAction() {
               </div>
               <div v-if="supportsDepartment" class="ds-field-group sm:col-span-2">
                 <label class="ds-field-label">{{ departmentLabel }} <span class="ds-field-required">*</span></label>
-                <Combobox v-model="form.department_id" :load-options="loadDepartments" :has-error="Boolean(form.errors.department_id)" placeholder="Selecione o departamento responsavel" />
+                <Combobox v-model="form.department_id" :load-options="loadDepartments" :has-error="Boolean(form.errors.department_id)" placeholder="Seleccione o departamento responsável" />
                 <p v-if="form.errors.department_id" class="ds-field-error">{{ form.errors.department_id }}</p>
               </div>
               <div v-for="field in extraFields" :key="field.key" class="ds-field-group" :class="field.fullWidth ? 'sm:col-span-2' : ''">
@@ -289,7 +289,7 @@ function executeBulkAction() {
 
           <section class="px-5 py-5 sm:px-6">
             <label for="reference-description" class="ds-field-label">{{ descriptionLabel }}</label>
-            <textarea id="reference-description" v-model="form.description" rows="7" class="ds-field mt-2 min-h-40 resize-y" :aria-invalid="Boolean(form.errors.description)" placeholder="Aplicabilidade, origem documental ou restricoes de utilizacao" />
+            <textarea id="reference-description" v-model="form.description" rows="7" class="ds-field mt-2 min-h-40 resize-y" :aria-invalid="Boolean(form.errors.description)" placeholder="Aplicabilidade, origem documental ou restricoes de utilização" />
             <p v-if="form.errors.description" class="ds-field-error">{{ form.errors.description }}</p>
           </section>
         </form>
@@ -299,7 +299,7 @@ function executeBulkAction() {
         <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button type="button" class="ds-button ds-button-secondary" @click="closePanel">Cancelar</button>
           <button type="submit" form="reference-catalog-form" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-            {{ form.processing ? "A guardar..." : form.id ? "Guardar alteracoes" : "Adicionar registo" }}
+            {{ form.processing ? "A guardar..." : form.id ? "Guardar alterações" : "Adicionar registo" }}
           </button>
         </div>
       </template>
@@ -311,7 +311,7 @@ function executeBulkAction() {
       :description="confirmationDialogDescription"
       :variant="selectedAction === 'restore' ? 'question' : 'danger'"
       confirm="Sim"
-      cancel="Nao"
+      cancel="Não"
       @canceled="showActionConfirmation = false"
       @confirmed="executeBulkAction"
     />

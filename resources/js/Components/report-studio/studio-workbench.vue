@@ -157,7 +157,7 @@ const canvasZoomOptions = [
 ]
 
 const studioPanes = [
-  { value: 'setup', label: studioCopy('panes.setup.label', {}, 'Configurar'), description: studioCopy('panes.setup.description', {}, 'Modelo, preset, tipo e tema') },
+  { value: 'setup', label: studioCopy('panes.setup.label', {}, 'Configurar'), description: studioCopy('panes.setup.description', {}, 'Modelo, predefinição, tipo e tema') },
   { value: 'compose', label: studioCopy('panes.compose.label', {}, 'Compor'), description: studioCopy('panes.compose.description', {}, 'Conteúdo, blocos e multimédia') },
   { value: 'pdf', label: studioCopy('panes.pdf.label', {}, 'PDF'), description: studioCopy('panes.pdf.description', {}, 'Páginas, margens e saída') },
   { value: 'preview', label: studioCopy('panes.preview.label', {}, 'Pré-visualizar'), description: studioCopy('panes.preview.description', {}, 'Conferir saída antes de guardar') },
@@ -187,52 +187,52 @@ const studioLabels = computed(() => ({
   analysis: {
     singular: studioCopy('document_labels.analysis.singular', {}, 'relatório analítico'),
     plural: studioCopy('document_labels.analysis.plural', {}, 'relatórios analíticos'),
-    badge: studioCopy('document_labels.analysis.badge', {}, 'Studio analítico multi-página'),
+    badge: studioCopy('document_labels.analysis.badge', {}, 'Estúdio analítico multi-página'),
   },
   executive: {
     singular: studioCopy('document_labels.executive.singular', {}, 'relatório executivo'),
     plural: studioCopy('document_labels.executive.plural', {}, 'relatórios executivos'),
-    badge: studioCopy('document_labels.executive.badge', {}, 'Studio executivo multi-página'),
+    badge: studioCopy('document_labels.executive.badge', {}, 'Estúdio executivo multi-página'),
   },
   export_certificate: {
     singular: studioCopy('document_labels.export_certificate.singular', {}, 'certificado de exportação'),
     plural: studioCopy('document_labels.export_certificate.plural', {}, 'certificados de exportação'),
-    badge: studioCopy('document_labels.export_certificate.badge', {}, 'Studio de exportação multi-página'),
+    badge: studioCopy('document_labels.export_certificate.badge', {}, 'Estúdio de exportação multi-página'),
   },
   import_certificate: {
     singular: studioCopy('document_labels.import_certificate.singular', {}, 'certificado de importação'),
     plural: studioCopy('document_labels.import_certificate.plural', {}, 'certificados de importação'),
-    badge: studioCopy('document_labels.import_certificate.badge', {}, 'Studio de importação multi-página'),
+    badge: studioCopy('document_labels.import_certificate.badge', {}, 'Estúdio de importação multi-página'),
   },
   quote: {
     singular: studioCopy('document_labels.quote.singular', {}, 'proforma'),
     plural: studioCopy('document_labels.quote.plural', {}, 'proformas'),
-    badge: studioCopy('document_labels.quote.badge', {}, 'Studio comercial multi-página'),
+    badge: studioCopy('document_labels.quote.badge', {}, 'Estúdio comercial multi-página'),
   },
   invoice: {
     singular: studioCopy('document_labels.invoice.singular', {}, 'factura'),
     plural: studioCopy('document_labels.invoice.plural', {}, 'facturas'),
-    badge: studioCopy('document_labels.invoice.badge', {}, 'Studio fiscal multi-página'),
+    badge: studioCopy('document_labels.invoice.badge', {}, 'Estúdio fiscal multi-página'),
   },
   receipt: {
     singular: studioCopy('document_labels.receipt.singular', {}, 'recibo'),
     plural: studioCopy('document_labels.receipt.plural', {}, 'recibos'),
-    badge: studioCopy('document_labels.receipt.badge', {}, 'Studio de recebimento multi-página'),
+    badge: studioCopy('document_labels.receipt.badge', {}, 'Estúdio de recibos multipágina'),
   },
   credit_note: {
     singular: studioCopy('document_labels.credit_note.singular', {}, 'nota de crédito'),
     plural: studioCopy('document_labels.credit_note.plural', {}, 'notas de crédito'),
-    badge: studioCopy('document_labels.credit_note.badge', {}, 'Studio de rectificação multi-página'),
+    badge: studioCopy('document_labels.credit_note.badge', {}, 'Estúdio de rectificação multi-página'),
   },
   proposal: {
     singular: studioCopy('document_labels.proposal.singular', {}, 'proposta'),
     plural: studioCopy('document_labels.proposal.plural', {}, 'propostas'),
-    badge: studioCopy('document_labels.proposal.badge', {}, 'Studio interno multi-página'),
+    badge: studioCopy('document_labels.proposal.badge', {}, 'Estúdio interno multi-página'),
   },
 }[props.form.studio_type] || {
   singular: studioCopy('document_labels.default.singular', {}, 'documento'),
   plural: studioCopy('document_labels.default.plural', {}, 'documentos'),
-  badge: studioCopy('document_labels.default.badge', {}, 'Studio multi-página'),
+  badge: studioCopy('document_labels.default.badge', {}, 'Estúdio multi-página'),
 }))
 
 function studioTypeLabel(type) {
@@ -367,14 +367,14 @@ const rendererOptions = computed(() => [
     label: studioCopy('renderers.internal.label', {}, 'mPDF interno'),
     badge: 'CSS 2.1',
     available: true,
-    description: studioCopy('renderers.internal.description', {}, 'Seguro para documentos clássicos, cabeçalhos, rodapés e tabelas. Não é 1:1 com o browser quando usa grid, flex avançado, filtros, transformações, sombras complexas ou CSS moderno.'),
+    description: studioCopy('renderers.internal.description', {}, 'Seguro para documentos clássicos, cabeçalhos, rodapés e tabelas. Não é 1:1 com o navegador quando usa grid, flex avançado, filtros, transformações, sombras complexas ou CSS moderno.'),
   },
   {
     value: 'chrome',
     label: studioCopy('renderers.chrome.label', {}, 'Spatie Laravel PDF · Chrome'),
     badge: props.rendererCapabilities?.chrome?.available ? studioCopy('renderers.badges.available', {}, 'Disponível') : studioCopy('renderers.badges.check_server', {}, 'Verificar servidor'),
     available: Boolean(props.rendererCapabilities?.chrome?.available),
-    description: props.rendererCapabilities?.chrome?.description || studioCopy('renderers.chrome.description', {}, 'Renderização Chromium para maior fidelidade ao canvas. Requer chrome-php/chrome e Chrome/Chromium no servidor.'),
+    description: props.rendererCapabilities?.chrome?.description || studioCopy('renderers.chrome.description', {}, 'Renderização Chromium para maior fidelidade à área de desenho. Requer chrome-php/chrome e Chrome/Chromium no servidor.'),
     binaryPath: props.rendererCapabilities?.chrome?.binary_path || '',
     binaryConfigured: Boolean(props.rendererCapabilities?.chrome?.binary_configured),
     binaryExecutable: Boolean(props.rendererCapabilities?.chrome?.binary_executable),
@@ -382,7 +382,7 @@ const rendererOptions = computed(() => [
   {
     value: 'browsershot',
     label: studioCopy('renderers.browsershot.label', {}, 'Spatie Laravel PDF · Browsershot'),
-    badge: props.rendererCapabilities?.browsershot?.available ? studioCopy('renderers.badges.available', {}, 'Disponível') : studioCopy('renderers.badges.requires_driver', {}, 'Requer driver'),
+    badge: props.rendererCapabilities?.browsershot?.available ? studioCopy('renderers.badges.available', {}, 'Disponível') : studioCopy('renderers.badges.requires_driver', {}, 'Requer motor'),
     available: Boolean(props.rendererCapabilities?.browsershot?.available),
     description: props.rendererCapabilities?.browsershot?.description || studioCopy('renderers.browsershot.description', {}, 'Renderização Chromium via Puppeteer/Browsershot. Requer spatie/browsershot, Node e Chrome/Chromium no servidor.'),
   },
@@ -391,7 +391,7 @@ const rendererOptions = computed(() => [
     label: studioCopy('renderers.canva.label', {}, 'Ligado ao Canva'),
     badge: studioCopy('renderers.badges.reference', {}, 'Referência'),
     available: true,
-    description: studioCopy('renderers.canva.description', {}, 'Mantém uma referência externa de design. Não substitui a geração PDF interna do studio.'),
+    description: studioCopy('renderers.canva.description', {}, 'Mantém uma referência externa de design. Não substitui a geração PDF interna do estúdio.'),
   },
 ])
 
@@ -527,7 +527,7 @@ const canvasLayoutPresets = [
   {
     key: 'badge',
     label: studioCopy('canvas_layout_presets.badge.label', {}, 'Selo'),
-    description: studioCopy('canvas_layout_presets.badge.description', {}, 'Chip ou badge destacado no canto.'),
+    description: studioCopy('canvas_layout_presets.badge.description', {}, 'Indicador destacado no canto.'),
     values: { x: 68, y: 6, width: 26, min_height: 24, padding: 10, border_radius: 999 },
   },
   {
@@ -702,9 +702,9 @@ const placeholderLabels = {
   '{sample_origin}': 'Origem da amostra',
   '{sampling_plan_ref}': 'Plano de amostragem',
   '{collection_date}': 'Data de recolha',
-  '{received_at}': 'Data de receção',
+  '{received_at}': 'Data de recepção',
   '{sample_details}': 'Detalhes da amostra',
-  '{collection_details}': 'Receção e cadeia de custódia',
+  '{collection_details}': 'Recepção e cadeia de custódia',
   '{analytical_scope}': 'Âmbito analítico',
   '{validated_by}': 'Responsável pela validação',
   '{conclusion}': 'Conclusão técnica',
@@ -1708,7 +1708,7 @@ const previewMeta = computed(() => {
   return previewPageKind.value === 'first-page'
     ? {
         title: studioCopy('preview_meta.first_page.title', {}, 'Primeira página'),
-        subtitle: studioCopy('preview_meta.first_page.subtitle', {}, 'Capa, hero e enquadramento inicial.'),
+        subtitle: studioCopy('preview_meta.first_page.subtitle', {}, 'Capa, destaque e enquadramento inicial.'),
       }
     : {
         title: studioCopy('preview_meta.following_pages.title', {}, 'Páginas seguintes'),
@@ -1811,21 +1811,21 @@ const snippetLibraries = {
     { label: 'Incerteza e decisão', description: 'Insere a incerteza expandida e a regra de decisão.', html: '<section style="margin:20px 0;">{uncertainty_statement}<br />{decision_rule}</section>' },
     { label: 'Conclusão', description: 'Bloco para interpretação final ou conclusão técnica.', html: '<section style="border-left:4px solid #d9b05f; background:#fffaf0; padding:18px 20px; border-radius:18px; margin:20px 0;">{conclusion}</section>' },
     { label: 'Assinatura técnica', description: 'Insere a assinatura técnica do relatório.', html: '<section style="margin-top:24px;">{signature_block}</section>' },
-    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página no preview e no PDF.', html: '<pagebreak />' },
+    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página na pré-visualização e no PDF.', html: '<pagebreak />' },
   ],
   executive: [
-    { label: 'Hero executivo', description: 'Capa com título e narrativa de gestão.', html: '<section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:24px;"><h1 style="margin:0; font-size:28px;">Resumo Executivo</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">KPIs, risco, capacidade e contexto operacional.</p></section>' },
+    { label: 'Destaque executivo', description: 'Capa com título e narrativa de gestão.', html: '<section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:24px;"><h1 style="margin:0; font-size:28px;">Resumo executivo</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">Indicadores, risco, capacidade e contexto operacional.</p></section>' },
     { label: 'Resumo KPI', description: 'Quadro de indicadores principais.', html: '<section style="margin:20px 0;"><DataTable style="width:100%; border-collapse:collapse;"><tr><th style="border:1px solid #cbd5e1; padding:6px;">Indicador</th><th style="border:1px solid #cbd5e1; padding:6px;">Valor</th></tr><tr><td style="border:1px solid #cbd5e1; padding:6px;">Receita</td><td style="border:1px solid #cbd5e1; padding:6px;">AOA 12.500.000</td></tr></DataTable></section>' },
-    { label: 'Callout de risco', description: 'Área destacada para risco e observações.', html: '<section style="border-left:4px solid #d9b05f; background:#fffaf0; padding:18px 20px; border-radius:18px; margin:20px 0;"><p style="margin:0;">Use este espaço para risco, desvios e decisões executivas.</p></section>' },
-    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página no preview e no PDF.', html: '<pagebreak />' },
+    { label: 'Destaque de risco', description: 'Área destacada para risco e observações.', html: '<section style="border-left:4px solid #d9b05f; background:#fffaf0; padding:18px 20px; border-radius:18px; margin:20px 0;"><p style="margin:0;">Use este espaço para risco, desvios e decisões executivas.</p></section>' },
+    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página na pré-visualização e no PDF.', html: '<pagebreak />' },
   ],
   proposal: [
-    { label: 'Hero institucional', description: 'Capa editorial com proposta, cliente e subtítulo.', html: '<section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:24px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.8;">{{lab_name}}</div><h1 style="margin:12px 0 0; font-size:28px;">Proposta {{proposal_number}}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">Âmbito preparado para {{customer_name}} com enquadramento técnico, comercial e documental.</p></section>' },
+    { label: 'Destaque institucional', description: 'Capa editorial com proposta, cliente e subtítulo.', html: '<section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:24px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.8;">{{lab_name}}</div><h1 style="margin:12px 0 0; font-size:28px;">Proposta {{proposal_number}}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">Âmbito preparado para {{customer_name}} com enquadramento técnico, comercial e documental.</p></section>' },
     { label: 'Resumo executivo', description: 'Quadro com cliente, local e validade.', html: '<section style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:20px;"><div style="border:1px solid #cbd5e1; border-radius:18px; padding:14px;"><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#64748b;">Cliente</div><div style="margin-top:6px; font-weight:700;">{{customer_name}}</div></div><div style="border:1px solid #cbd5e1; border-radius:18px; padding:14px;"><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#64748b;">Local</div><div style="margin-top:6px; font-weight:700;">{{service_location}}</div></div><div style="border:1px solid #cbd5e1; border-radius:18px; padding:14px;"><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#64748b;">Validade</div><div style="margin-top:6px; font-weight:700;">{{expiry_date}}</div></div></section>' },
     { label: 'Tabela de serviços', description: 'Insere a tabela dinâmica de itens da proposta.', html: '<section style="margin:20px 0;">{items_table}</section>' },
     { label: 'Resumo financeiro', description: 'Insere a tabela de subtotal, desconto, imposto e total.', html: '<section style="margin:20px 0;">{summary_table}</section>' },
     { label: 'Assinaturas', description: 'Linhas de validação para laboratório e cliente.', html: '<section style="margin-top:36px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px;"><div><div style="border-top:1px solid #0f172a; padding-top:10px; font-size:11px; color:#475569;">Assinatura do laboratório</div></div><div><div style="border-top:1px solid #0f172a; padding-top:10px; font-size:11px; color:#475569;">Aceitação do cliente</div></div></section>' },
-    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página no preview e no PDF.', html: '<pagebreak />' },
+    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página na pré-visualização e no PDF.', html: '<pagebreak />' },
   ],
   export_certificate: [
     { label: 'Capa de exportação', description: 'Abertura do certificado com exportador e contexto logístico.', html: '<section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:24px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.8;">{origin_country} → {destination_country}</div><h1 style="margin:12px 0 0; font-size:28px;">Certificado de Exportação {certificate_number}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">{exporter_name} · {transport_type}</p></section>' },
@@ -1833,7 +1833,7 @@ const snippetLibraries = {
     { label: 'Tabela de produtos', description: 'Insere os produtos e quantidades exportadas.', html: '<section style="margin:20px 0;">{products_table}</section>' },
     { label: 'Observações de expedição', description: 'Callout para remarks e conformidade logística.', html: '<section style="border-left:4px solid #d9b05f; background:#fffaf0; padding:18px 20px; border-radius:18px; margin:20px 0;">{remarks}</section>' },
     { label: 'Assinatura técnica', description: 'Insere o bloco de validação final.', html: '<section style="margin-top:24px;">{signature_block}</section>' },
-    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página no preview e no PDF.', html: '<pagebreak />' },
+    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página na pré-visualização e no PDF.', html: '<pagebreak />' },
   ],
   import_certificate: [
     { label: 'Capa de importação', description: 'Abertura do certificado com importador e contexto logístico.', html: '<section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:24px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.8;">Destino {destination_country}</div><h1 style="margin:12px 0 0; font-size:28px;">Certificado de Importação {certificate_number}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">{importer_name} · {transport_type}</p></section>' },
@@ -1841,7 +1841,7 @@ const snippetLibraries = {
     { label: 'Tabela de lotes', description: 'Insere os produtos, lotes, validade e quantidade.', html: '<section style="margin:20px 0;">{items_table}</section>' },
     { label: 'Observações técnicas', description: 'Callout para remarks e enquadramento da importação.', html: '<section style="border-left:4px solid #d9b05f; background:#fffaf0; padding:18px 20px; border-radius:18px; margin:20px 0;">{remarks}</section>' },
     { label: 'Assinatura técnica', description: 'Insere o bloco de validação final.', html: '<section style="margin-top:24px;">{signature_block}</section>' },
-    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página no preview e no PDF.', html: '<pagebreak />' },
+    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página na pré-visualização e no PDF.', html: '<pagebreak />' },
   ],
   quote: [
     { label: 'Capa comercial', description: 'Abertura editorial da proforma com cliente e validade.', html: '<section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:24px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.8;">Proposta comercial</div><h1 style="margin:12px 0 0; font-size:28px;">Proforma {quote_number}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">{customer_name} · Validade até {expiry_date}</p></section>' },
@@ -1850,7 +1850,7 @@ const snippetLibraries = {
     { label: 'Resumo financeiro', description: 'Subtotal, IVA e total.', html: '<section style="margin:20px 0;">{summary_table}</section>' },
     { label: 'Observações', description: 'Callout com condições comerciais.', html: '<section style="border-left:4px solid #d9b05f; background:#fffaf0; padding:18px 20px; border-radius:18px; margin:20px 0;">{observations}</section>' },
     { label: 'Assinatura comercial', description: 'Validação final da emissão.', html: '<section style="margin-top:24px;">{signature_block}</section>' },
-    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página no preview e no PDF.', html: '<pagebreak />' },
+    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página na pré-visualização e no PDF.', html: '<pagebreak />' },
   ],
   invoice: [
     { label: 'Capa fiscal', description: 'Abertura editorial da factura com cliente e vencimento.', html: '<section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:24px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.8;">Documento fiscal</div><h1 style="margin:12px 0 0; font-size:28px;">Factura {document_number}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">{customer_name} · Vencimento {due_date}</p></section>' },
@@ -1859,16 +1859,16 @@ const snippetLibraries = {
     { label: 'Resumo financeiro', description: 'Subtotal, IVA e total.', html: '<section style="margin:20px 0;">{summary_table}</section>' },
     { label: 'Observações', description: 'Callout com condições fiscais/comerciais.', html: '<section style="border-left:4px solid #d9b05f; background:#fffaf0; padding:18px 20px; border-radius:18px; margin:20px 0;">{observations}</section>' },
     { label: 'Assinatura financeira', description: 'Validação da emissão.', html: '<section style="margin-top:24px;">{signature_block}</section>' },
-    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página no preview e no PDF.', html: '<pagebreak />' },
+    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página na pré-visualização e no PDF.', html: '<pagebreak />' },
   ],
   receipt: [
-    { label: 'Capa de recibo', description: 'Abertura editorial do recibo.', html: '<section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:24px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.8;">Comprovativo de recebimento</div><h1 style="margin:12px 0 0; font-size:28px;">Recibo {document_number}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">{customer_name} · {payment_type}</p></section>' },
-    { label: 'Resumo de recebimento', description: 'Mostra cliente, local e forma de pagamento.', html: '<section style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:20px;"><div style="border:1px solid #cbd5e1; border-radius:18px; padding:14px;"><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#64748b;">Cliente</div><div style="margin-top:6px; font-weight:700;">{customer_name}</div></div><div style="border:1px solid #cbd5e1; border-radius:18px; padding:14px;"><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#64748b;">Local</div><div style="margin-top:6px; font-weight:700;">{service_location}</div></div><div style="border:1px solid #cbd5e1; border-radius:18px; padding:14px;"><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#64748b;">Pagamento</div><div style="margin-top:6px; font-weight:700;">{payment_type}</div></div></section>' },
+    { label: 'Capa de recibo', description: 'Abertura editorial do recibo.', html: '<section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:24px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.8;">Comprovativo de pagamento</div><h1 style="margin:12px 0 0; font-size:28px;">Recibo {document_number}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">{customer_name} · {payment_type}</p></section>' },
+    { label: 'Resumo da liquidação', description: 'Mostra cliente, local e forma de pagamento.', html: '<section style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:20px;"><div style="border:1px solid #cbd5e1; border-radius:18px; padding:14px;"><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#64748b;">Cliente</div><div style="margin-top:6px; font-weight:700;">{customer_name}</div></div><div style="border:1px solid #cbd5e1; border-radius:18px; padding:14px;"><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#64748b;">Local</div><div style="margin-top:6px; font-weight:700;">{service_location}</div></div><div style="border:1px solid #cbd5e1; border-radius:18px; padding:14px;"><div style="font-size:10px; text-transform:uppercase; letter-spacing:0.12em; color:#64748b;">Pagamento</div><div style="margin-top:6px; font-weight:700;">{payment_type}</div></div></section>' },
     { label: 'Tabela de liquidações', description: 'Facturas e valores pagos.', html: '<section style="margin:20px 0;">{items_table}</section>' },
     { label: 'Resumo do recebido', description: 'Total recebido.', html: '<section style="margin:20px 0;">{summary_table}</section>' },
     { label: 'Observações', description: 'Notas de tesouraria.', html: '<section style="border-left:4px solid #d9b05f; background:#fffaf0; padding:18px 20px; border-radius:18px; margin:20px 0;">{observations}</section>' },
-    { label: 'Assinatura de tesouraria', description: 'Confirmação final do recebimento.', html: '<section style="margin-top:24px;">{signature_block}</section>' },
-    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página no preview e no PDF.', html: '<pagebreak />' },
+    { label: 'Assinatura de tesouraria', description: 'Confirmação final da liquidação.', html: '<section style="margin-top:24px;">{signature_block}</section>' },
+    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página na pré-visualização e no PDF.', html: '<pagebreak />' },
   ],
   credit_note: [
     { label: 'Capa de rectificação', description: 'Abertura editorial da nota de crédito.', html: '<section style="padding:32px; border-radius:24px; background:linear-gradient(135deg,#7f1d1d,#dc2626); color:#ffffff; margin-bottom:24px;"><div style="font-size:11px; letter-spacing:0.18em; text-transform:uppercase; opacity:0.8;">Rectificação comercial</div><h1 style="margin:12px 0 0; font-size:28px;">Nota de Crédito {document_number}</h1><p style="margin:12px 0 0; font-size:14px; opacity:0.88;">{customer_name} · {reason_label}</p></section>' },
@@ -1877,7 +1877,7 @@ const snippetLibraries = {
     { label: 'Resumo da nota', description: 'Total da rectificação.', html: '<section style="margin:20px 0;">{summary_table}</section>' },
     { label: 'Observações', description: 'Notas de rectificação.', html: '<section style="border-left:4px solid #dc2626; background:#fef2f2; padding:18px 20px; border-radius:18px; margin:20px 0;">{observations}</section>' },
     { label: 'Assinatura financeira', description: 'Validação da nota.', html: '<section style="margin-top:24px;">{signature_block}</section>' },
-    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página no preview e no PDF.', html: '<pagebreak />' },
+    { label: 'Quebra de página', description: 'Inicia explicitamente uma nova página na pré-visualização e no PDF.', html: '<pagebreak />' },
   ],
 }
 
@@ -2189,7 +2189,7 @@ function addSignatureCanvasBlock(type = 'lab') {
       title: 'Assinatura do laboratório',
       signature_label: 'Assinatura do laboratório',
       signature_name: '{{lab_name}}',
-      signature_title: 'Direção técnica',
+      signature_title: 'Direcção técnica',
     },
     client: {
       title: 'Aceitação do cliente',
@@ -2248,7 +2248,7 @@ function addChartSnapshotCanvasBlock() {
     block_kind: 'chart_snapshot',
     content_html: '',
     chart_title: 'Gráfico do relatório',
-    chart_caption: 'Indicador visual gerado pelo estúdio ou substituído por captura exportada.',
+    chart_caption: 'Indicador visual gerado pelo studio ou substituído por captura exportada.',
     chart_image_url: mediaAssetUrl.value || '',
     chart_type: 'bar',
     chart_labels: ['Recepção', 'Validação', 'Emissão'],
@@ -2971,7 +2971,7 @@ function canvasBlockContentHtml(block) {
     const imageUrl = safePreviewMediaUrl(interpolatePreviewHtml(block.image_url || block.background_image || ''))
 
     if (!imageUrl) {
-      return '<div class="flex h-full min-h-24 items-center justify-center rounded-2xl border border-dashed border-slate-300 text-xs text-slate-500">Selecione uma imagem da galeria</div>'
+      return '<div class="flex h-full min-h-24 items-center justify-center rounded-2xl border border-dashed border-slate-300 text-xs text-slate-500">Seleccione uma imagem da galeria</div>'
     }
 
     return `<img src="${escapePreviewHtmlAttribute(imageUrl)}" alt="${escapePreviewHtmlAttribute(interpolatePreviewHtml(block.image_alt || block.title || 'Imagem'))}" style="display:block; width:100%; height:100%; min-height:inherit; object-fit:${mediaObjectFit(block.image_fit || 'contain')}; object-position:${imageObjectPosition(block)};" />`
@@ -4085,7 +4085,7 @@ function submit() {
             >
               {{ studioQualityIssues[0].title }} · {{ studioQualityIssues.length }} ponto(s) a rever
             </button>
-            <p v-else class="mt-2 text-xs font-bold text-emerald-700 dark:text-emerald-300">Sem bloqueios detectados na configuração atual.</p>
+            <p v-else class="mt-2 text-xs font-bold text-emerald-700 dark:text-emerald-300">Sem bloqueios detectados na configuração actual.</p>
           </div>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -4102,7 +4102,7 @@ function submit() {
 
     <div v-if="props.presets.length" v-show="activeStudioPane === 'setup'" class="ds-panel p-5">
       <h2 class="text-base font-bold text-[var(--ds-text)]">Modelos base</h2>
-      <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Use um preset como ponto de partida e depois refine a composição.</p>
+      <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Use uma predefinição como ponto de partida e depois refine a composição.</p>
       <swiper-container
         class="report-studio-swiper mt-5 block"
         :slides-per-view="1.05"
@@ -4330,7 +4330,7 @@ function submit() {
                     :class="editorRailMode === 'assets' ? 'bg-[rgb(var(--primary-800-rgb))] text-white shadow-sm dark:bg-[rgb(var(--primary-700-rgb))] dark:text-white' : 'text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white'"
                     @click="editorRailMode = 'assets'"
                   >
-                    Media
+                    Multimédia
                   </button>
                 </div>
 
@@ -4427,7 +4427,7 @@ function submit() {
                     class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-500"
                   >
                     <PhotoIcon class="h-4 w-4" />
-                    Criar camada com media
+                    Criar camada com multimédia
                   </button>
 
                   <div v-if="localAssetLibrary.length" class="grid grid-cols-2 gap-3">
@@ -4755,7 +4755,7 @@ function submit() {
                     </BaseSelect>
                   </label>
                   <p class="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                    {{ studioFontOptions.find((option) => option.value === documentFontFamily)?.description || 'Fonte usada no preview e persistida no CSS do PDF.' }}
+                    {{ studioFontOptions.find((option) => option.value === documentFontFamily)?.description || 'Fonte usada na pré-visualização e persistida no CSS do PDF.' }}
                   </p>
                   <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
                     <div class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Fundo activo</div>
@@ -4901,7 +4901,7 @@ function submit() {
                     </div>
                     <button v-show="editorInspectorMode === 'media'" type="button" @click="openSelectedBlockMediaPicker()" class="studio-media-picker-button studio-media-picker-button--wide">
                       <PhotoIcon class="h-4 w-4" />
-                      Aplicar media ao bloco
+                      Aplicar multimédia ao bloco
                     </button>
 
                     <div v-show="editorInspectorMode === 'layout'" class="grid grid-cols-2 gap-2">
@@ -5032,7 +5032,7 @@ function submit() {
                         </div>
                       </div>
                       <details class="studio-advanced-panel">
-                        <summary>Origem avançada da media</summary>
+                        <summary>Origem avançada da multimédia</summary>
                         <div class="mt-3 space-y-2">
                           <BaseInput v-model="selectedCanvasBlock.image_url" type="text" placeholder="URL da imagem principal" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                           <BaseInput v-model="selectedCanvasBlock.background_image" type="text" placeholder="URL do fundo do bloco" class="block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
@@ -5040,7 +5040,7 @@ function submit() {
                       </details>
                     </div>
                   </div>
-                  <p v-else class="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">Selecione um objecto no canvas ou na lista para editar posição, media, assinatura e aparência.</p>
+                  <p v-else class="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">Seleccione um objecto na área de desenho ou na lista para editar posição, multimédia, assinatura e aparência.</p>
                 </div>
               </aside>
             </div>
@@ -5138,7 +5138,7 @@ function submit() {
                   @click="addQrCanvasBlock"
                   class="inline-flex items-center rounded-2xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-white dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-900"
                 >
-                  QR code
+                  Código QR
                 </button>
                 <button
                   type="button"
@@ -5178,7 +5178,7 @@ function submit() {
 
           <div class="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto]">
             <div>
-              <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Imagem / ficheiro do layout</label>
+              <label class="mb-2 block text-sm font-medium text-slate-900 dark:text-slate-100">Imagem / ficheiro da composição</label>
               <BaseInput
                 v-model="mediaAssetUrl"
                 type="text"
@@ -5190,7 +5190,7 @@ function submit() {
                 class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 @change="mediaAssetUrl = $event.target.value"
               >
-                <option value="">Selecionar da galeria ou assinaturas</option>
+                <option value="">Seleccionar da galeria ou assinaturas</option>
                 <option v-for="asset in localAssetLibrary" :key="asset.id" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
               </BaseSelect>
               <button
@@ -5199,7 +5199,7 @@ function submit() {
                 class="mt-2 inline-flex items-center gap-2 rounded-2xl border border-primary-200 bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-800 transition hover:bg-primary-100 dark:border-primary-900/50 dark:bg-primary-950/30 dark:text-primary-200"
               >
                 <PhotoIcon class="h-4 w-4" />
-                Abrir media picker
+                Abrir selector de multimédia
               </button>
             </div>
             <div class="flex flex-wrap items-end gap-3">
@@ -5312,7 +5312,7 @@ function submit() {
                       </div>
                     </template>
                     <div v-if="!canvasBlocks.length" class="rounded-2xl border border-dashed border-slate-300 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                      Ainda não existem blocos posicionáveis neste template.
+                      Ainda não existem blocos posicionáveis neste modelo.
                     </div>
                   </div>
 
@@ -5320,7 +5320,7 @@ function submit() {
                 <div class="flex items-center justify-between gap-3">
                   <div>
                     <div class="text-sm font-semibold text-slate-900 dark:text-slate-100">Editar bloco</div>
-                    <div class="text-xs text-slate-500 dark:text-slate-400">Posicionamento, âmbito e estilo persistidos no layout.</div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400">Posicionamento, âmbito e estilo persistidos na composição.</div>
                   </div>
                   <div class="flex items-center gap-2">
                     <button
@@ -5350,7 +5350,7 @@ function submit() {
 
                 <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-950/40">
                   <div class="text-sm font-semibold text-slate-900 dark:text-slate-100">Presets rápidos</div>
-                  <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Aplique composições típicas para hero, selo, sidebar ou callout.</p>
+                  <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Aplique composições típicas para destaque, selo, barra lateral ou chamada.</p>
                   <div class="mt-3 grid gap-2 md:grid-cols-2">
                     <button
                       v-for="preset in canvasLayoutPresets"
@@ -5547,7 +5547,7 @@ function submit() {
                       <option value="">Usar assinatura/ficheiro guardado</option>
                       <option v-for="asset in localAssetLibrary" :key="`sig-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </BaseSelect>
-                    <button type="button" @click="openMediaPicker('selected-block', 'signature_image')" class="studio-media-picker-button">Escolher no media picker</button>
+                    <button type="button" @click="openMediaPicker('selected-block', 'signature_image')" class="studio-media-picker-button">Escolher no selector de multimédia</button>
                   </label>
                   <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900 sm:col-span-2">
                     <div class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">Imagem impressa da assinatura</div>
@@ -5606,10 +5606,10 @@ function submit() {
                   <label class="text-sm text-slate-700 dark:text-slate-300">Imagem / carimbo
                     <BaseInput v-model="selectedCanvasBlock.image_url" type="text" placeholder="/storage/media/stamp.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     <BaseSelect v-if="localAssetLibrary.length" class="studio-gallery-select" @change="applyAssetToSelectedBlock($event.target.value, 'image_url')">
-                      <option value="">Selecionar da galeria/assinaturas</option>
+                      <option value="">Seleccionar da galeria/assinaturas</option>
                       <option v-for="asset in localAssetLibrary" :key="`image-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </BaseSelect>
-                    <button type="button" @click="openMediaPicker('selected-block', 'image_url')" class="studio-media-picker-button">Escolher no media picker</button>
+                    <button type="button" @click="openMediaPicker('selected-block', 'image_url')" class="studio-media-picker-button">Escolher no selector de multimédia</button>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Texto alternativo
                     <BaseInput v-model="selectedCanvasBlock.image_alt" type="text" placeholder="Carimbo de aprovação" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
@@ -5720,7 +5720,7 @@ function submit() {
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Valores
                     <textarea v-model="selectedCanvasBlock.chart_values" rows="4" placeholder="18, 12, 9" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    <span class="mt-2 block text-xs text-slate-500 dark:text-slate-400">Os valores são convertidos em SVG no preview e no PDF.</span>
+                    <span class="mt-2 block text-xs text-slate-500 dark:text-slate-400">Os valores são convertidos em SVG na pré-visualização e no PDF.</span>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300">Paleta
                     <BaseInput v-model="selectedCanvasBlock.chart_colors" type="text" placeholder="#143d37, #d9b05f, #0f766e" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
@@ -5744,17 +5744,17 @@ function submit() {
                   <label class="text-sm text-slate-700 dark:text-slate-300">Imagem exportada / ficheiro
                     <BaseInput v-model="selectedCanvasBlock.chart_image_url" type="text" placeholder="/storage/report-studios/charts/trend.png" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                     <BaseSelect v-if="localAssetLibrary.length" class="studio-gallery-select" @change="applyAssetToSelectedBlock($event.target.value, 'chart_image_url')">
-                      <option value="">Selecionar gráfico da galeria</option>
+                      <option value="">Seleccionar gráfico da galeria</option>
                       <option v-for="asset in localAssetLibrary" :key="`chart-${asset.id}`" :value="mediaAssetDocumentUrl(asset)">{{ asset.source }} · {{ asset.label }}</option>
                     </BaseSelect>
-                    <button type="button" @click="openMediaPicker('selected-block', 'chart_image_url')" class="studio-media-picker-button">Escolher no media picker</button>
+                    <button type="button" @click="openMediaPicker('selected-block', 'chart_image_url')" class="studio-media-picker-button">Escolher no selector de multimédia</button>
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">Legenda / leitura executiva
-                    <BaseInput v-model="selectedCanvasBlock.chart_caption" type="text" placeholder="Inclui somente resultados validados no período selecionado." class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    <BaseInput v-model="selectedCanvasBlock.chart_caption" type="text" placeholder="Inclui somente resultados validados no período seleccionado." class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
                   </label>
                   <label class="text-sm text-slate-700 dark:text-slate-300 sm:col-span-2">SVG do gráfico
                     <textarea v-model="selectedCanvasBlock.chart_svg" rows="7" placeholder="<svg ...> exportado do ApexCharts</svg>" class="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 font-mono text-xs text-slate-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
-                    <span class="mt-2 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">Opcional. Se colar SVG ou escolher uma imagem, ela substitui o gráfico gerado pelo studio. O driver Chrome preserva melhor gráficos, sombras, cores e paginação.</span>
+                    <span class="mt-2 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">Opcional. Se colar SVG ou escolher uma imagem, ela substitui o gráfico gerado pelo estúdio. O motor Chrome preserva melhor gráficos, sombras, cores e paginação.</span>
                   </label>
                 </div>
 
@@ -5867,7 +5867,7 @@ function submit() {
                 </div>
                 <button type="button" class="studio-output-action" @click="openMediaPicker('document-background')">
                   <PhotoIcon class="h-4 w-4" />
-                  Escolher media
+                  Escolher multimédia
                 </button>
               </div>
               <div class="mt-5 grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
@@ -5964,7 +5964,7 @@ function submit() {
             <div>
               <div class="studio-output-eyebrow">Sistema de tabelas</div>
               <h3 class="studio-output-title">Resultados legíveis, mesmo em documentos densos</h3>
-              <p class="studio-output-description">Aplique um preset profissional e refine cor, densidade e hierarquia. As alterações são persistidas no CSS do PDF.</p>
+              <p class="studio-output-description">Aplique uma predefinição profissional e refine cor, densidade e hierarquia. As alterações são persistidas no CSS do PDF.</p>
             </div>
             <button type="button" class="studio-output-action studio-output-action--primary" @click="syncTableStylesCss">Aplicar ao documento</button>
           </div>
@@ -6043,14 +6043,14 @@ function submit() {
                 </DataTable>
                 <div class="grid gap-3 border-t border-[var(--ds-border)] p-4 dark:border-[var(--ds-border-strong)] sm:grid-cols-2">
                   <div class="rounded-2xl border p-4" :style="tablePreviewSummaryStyle">
-                    <span class="block text-[0.68rem] font-black uppercase tracking-[0.18em]" :style="tablePreviewSummaryMutedStyle">Amostra / Sample</span>
+                    <span class="block text-[0.68rem] font-black uppercase tracking-[0.18em]" :style="tablePreviewSummaryMutedStyle">Amostra</span>
                     <span class="mt-1 block text-sm font-black">SE-2026-0142</span>
                     <span class="mt-2 block text-xs leading-5" :style="tablePreviewSummaryMutedStyle">Cartão de identificação persistido no PDF.</span>
                   </div>
                   <div class="rounded-2xl border p-4" :style="tablePreviewSummaryStyle">
                     <span class="block text-[0.68rem] font-black uppercase tracking-[0.18em]" :style="tablePreviewSummaryMutedStyle">Validação / Validation</span>
                     <span class="mt-1 block text-sm font-black">Direcção Técnica</span>
-                    <span class="mt-2 block text-xs leading-5" :style="tablePreviewSummaryMutedStyle">Mesmas cores no preview e na exportação.</span>
+                    <span class="mt-2 block text-xs leading-5" :style="tablePreviewSummaryMutedStyle">Mesmas cores na pré-visualização e na exportação.</span>
                   </div>
                 </div>
               </div>
@@ -6245,7 +6245,7 @@ function submit() {
           <details class="studio-advanced-panel mt-5">
             <summary>Notas técnicas do renderizador</summary>
             <p class="mt-3 text-xs font-medium leading-6 text-[var(--ds-text-muted)] dark:text-[var(--ds-text-muted)]">
-              O mPDF usa principalmente CSS 2.1. Para flex/grid, filtros, transforms, gráficos exportados como SVG ou imagem e posicionamento moderno, seleccione Chrome PDF. No Chrome, cabeçalhos, rodapés e paginação usam templates nativos.
+              O mPDF utiliza principalmente CSS 2.1. Para flex/grid, filtros, transformações, gráficos exportados como SVG ou imagem e posicionamento moderno, seleccione Chrome PDF. No Chrome, os cabeçalhos, os rodapés e a paginação utilizam modelos nativos.
             </p>
           </details>
         </section>

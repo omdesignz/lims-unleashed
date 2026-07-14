@@ -2,19 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\AllowedSort;
 use App\Filters\GlobalFilter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\QueryBuilder\AllowedFilter;
 
 class ProposalTemplate extends Model
 {
     use HasFactory, SoftDeletes;
 
-    public CONST MENU_NAME = 'proposal_templates';
+    public const MENU_NAME = 'proposal_templates';
 
     /**
      * The attributes that are mass assignable.
@@ -28,6 +27,7 @@ class ProposalTemplate extends Model
     ];
 
     protected $table = 'proposal_templates';
+
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     public function user(): BelongsTo
@@ -57,63 +57,62 @@ class ProposalTemplate extends Model
     public static function getColumns(): array
     {
         return [
-                [
-                    'name' => trans('gestlab.general.labels.proposal_templates.name'),
-                    'value' => 'name'
+            [
+                'name' => trans('gestlab.general.labels.proposal_templates.name'),
+                'value' => 'name',
+            ],
+            [
+                'name' => trans('gestlab.general.labels.proposal_templates.user_id'),
+                'value' => 'user',
+                'filter_field' => 'user_id',
+                'filterable' => true,
+                'type' => 'remote_select',
+                'format' => '',
+                'filter' => '',
+                'options' => [],
+                'config' => [
+                    'url' => route('users.getUser'),
+                    'label' => 'name',
+                    'value' => 'id',
                 ],
-                [
-                    'name' => trans('gestlab.general.labels.proposal_templates.user_id'),
-                    'value' => 'user',
-                    'filter_field' => 'user_id',
-                    'filterable' => true,
-                    'type' => 'remote_select',
-                    'format' => '',
-                    'filter' => '',
-                    'options' => [],
-                    'config' => [
-                        'url' => route('users.getUser'),
-                        'label' => 'name',
-                        'value' => 'id',
-                    ]
-                ],
-                [
-                    'name' => trans('gestlab.actions.edit'),
-                    'value' => 'actions',
-                    'filter_field' => 'actions',
-                    'filterable' => false,
-                    'type' => 'actions',
-                    'format' => '',
-                    'filter' => '',
-                ],
-            ];
+            ],
+            [
+                'name' => trans('gestlab.actions.edit'),
+                'value' => 'actions',
+                'filter_field' => 'actions',
+                'filterable' => false,
+                'type' => 'actions',
+                'format' => '',
+                'filter' => '',
+            ],
+        ];
     }
 
     public static function getTrashedOptions(): array
     {
         return [
             ['value' => 'only', 'text' => trans('gestlab.general.labels.trashed_only')],
-            ['value' => 'with', 'text' => trans('gestlab.general.labels.trashed_with')]
+            ['value' => 'with', 'text' => trans('gestlab.general.labels.trashed_with')],
         ];
     }
-    
 
     public static function defaultTerms()
     {
-        return "
-            ### Confidentiality
-            We ensure all client data and results will be treated with strict confidentiality and will not be disclosed to any third party without prior consent.
+        return '
+            ### Confidencialidade
+            Garantimos que todos os dados e resultados do cliente serão tratados com estrita confidencialidade e não serão divulgados a terceiros sem consentimento prévio.
 
-            ### Impartiality
-            Our laboratory operates with impartiality, integrity, and independence to ensure unbiased results and services.
+            ### Imparcialidade
+            O nosso laboratório actua com imparcialidade, integridade e independência para garantir resultados e serviços isentos.
 
-            ### Agreement Terms
-            By accepting this proposal, you agree to comply with the terms and conditions outlined, including but not limited to:
-            - Payment terms as specified.
-            - Submission of samples in proper condition.
-            - Adherence to ISO 17025 standards.
+            ### Termos do acordo
+            Ao aceitar esta proposta, o cliente concorda em cumprir os termos e condições indicados, incluindo, entre outros:
+            - As condições de pagamento especificadas.
+            - A entrega das amostras em condições adequadas.
+            - O cumprimento dos requisitos da ISO/IEC 17025.
 
-            ### Liability
-            The laboratory will not be held liable for damages caused by improper sample handling by the client.
-        ";
+            ### Responsabilidade
+            O laboratório não poderá ser responsabilizado por danos causados pelo manuseamento inadequado das amostras pelo cliente.
+        ';
     }
 }

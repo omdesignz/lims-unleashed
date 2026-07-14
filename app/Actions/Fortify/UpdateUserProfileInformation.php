@@ -33,7 +33,7 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 'max:255',
                 Rule::unique('users')->ignore($user->id),
             ],
-        ],[],['name' => 'nome', 'email' => 'endereço de email', 'username' => 'usuário', 'id_number' => 'contribuinte', 'primary_phone' => 'contacto', 'dob' => 'data de nascimento', 'gender' => 'gênero sexual']
+        ], [], ['name' => 'nome', 'email' => 'endereço de correio electrónico', 'username' => 'utilizador', 'id_number' => 'número de contribuinte', 'primary_phone' => 'contacto', 'dob' => 'data de nascimento', 'gender' => 'género']
         )->validateWithBag('updateProfileInformation');
 
         if ($input['email'] !== $user->email &&
@@ -51,12 +51,12 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
                 // 'photo' => $input['photo'],
             ])->save();
 
-            if($input['photo']){
+            if ($input['photo']) {
 
-                $user->addMedia($input['photo']) //starting method
-                    ->withCustomProperties(['mime-type' => 'image/jpeg']) //middle method
-                    ->preservingOriginal() //middle method
-                    ->toMediaCollection('avatar'); //finishing method
+                $user->addMedia($input['photo']) // starting method
+                    ->withCustomProperties(['mime-type' => 'image/jpeg']) // middle method
+                    ->preservingOriginal() // middle method
+                    ->toMediaCollection('avatar'); // finishing method
             }
         }
     }

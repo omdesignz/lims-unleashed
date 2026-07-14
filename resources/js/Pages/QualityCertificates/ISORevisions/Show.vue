@@ -64,14 +64,14 @@ const currentRevisionId = computed(() => {
 
 const revisionMetrics = computed(() => [
   {
-    label: "Versao",
+    label: "Versão",
     value: `v${props.revision?.version || "-"}`,
-    note: `revisao ${props.revision?.revision_number ?? "-"}`,
+    note: `revisão ${props.revision?.revision_number ?? "-"}`,
   },
   {
-    label: "Data efetiva",
+    label: "Data efectiva",
     value: formatDate(props.revision?.effective_date),
-    note: props.revision?.is_current ? "versao corrente" : "versao historica",
+    note: props.revision?.is_current ? "versão corrente" : "versão historica",
   },
   {
     label: "Criado por",
@@ -83,7 +83,7 @@ const revisionMetrics = computed(() => [
     value: props.revision?.approved_by?.name || "Pendente",
     note: props.revision?.approved_at
       ? formatDateTime(props.revision.approved_at)
-      : "sem aprovacao registada",
+      : "sem aprovação registada",
   },
 ]);
 
@@ -139,20 +139,20 @@ const activeObjectEntries = computed(() => {
 
 const revisionMetadata = computed(() => [
   {
-    label: "Tipo de alteracao",
+    label: "Tipo de alteração",
     value: changeTypeLabel(props.revision?.change_type),
   },
   {
-    label: "Secao ISO",
-    value: props.revision?.compliance_metadata?.iso_section || "Nao indicada",
+    label: "Secção ISO",
+    value: props.revision?.compliance_metadata?.iso_section || "Não indicada",
   },
   {
     label: "Categoria",
-    value: props.revision?.compliance_metadata?.change_category || "Nao indicada",
+    value: props.revision?.compliance_metadata?.change_category || "Não indicada",
   },
   {
     label: "Risco",
-    value: props.revision?.compliance_metadata?.risk_assessment || "Nao avaliado",
+    value: props.revision?.compliance_metadata?.risk_assessment || "Não avaliado",
   },
 ]);
 
@@ -178,14 +178,14 @@ function hasDataForTab(tabId) {
 
 function changeTypeLabel(changeType) {
   const labels = {
-    CREATED: "Criacao",
+    CREATED: "Criação",
     UPDATED: "Atualizacao",
     CORRECTED: "Correcao",
     REISSUED: "Reemissao",
     WITHDRAWN: "Retirada",
   };
 
-  return labels[changeType] || changeType || "Alteracao";
+  return labels[changeType] || changeType || "Alteração";
 }
 
 function changeTypeDot(changeType) {
@@ -202,7 +202,7 @@ function changeTypeDot(changeType) {
 
 function formatDate(date) {
   if (!date) {
-    return "Nao registada";
+    return "Não registada";
   }
 
   return new Date(date).toLocaleDateString("pt-PT", {
@@ -214,7 +214,7 @@ function formatDate(date) {
 
 function formatDateTime(date) {
   if (!date) {
-    return "Nao registada";
+    return "Não registada";
   }
 
   return new Date(date).toLocaleString("pt-PT", {
@@ -228,13 +228,13 @@ function formatDateTime(date) {
 
 function formatFieldLabel(field) {
   const labels = {
-    code: "Codigo do certificado",
+    code: "Código do certificado",
     status: "Estado",
     validated_by: "Validado por",
-    validated_at: "Data de validacao",
-    obs: "Observacoes",
+    validated_at: "Data de validação",
+    obs: "Observações",
     created_at: "Criado em",
-    updated_at: "Atualizado em",
+    updated_at: "Actualizado em",
   };
 
   return (
@@ -247,11 +247,11 @@ function formatFieldLabel(field) {
 
 function formatValue(value) {
   if (value === null || value === undefined || value === "") {
-    return "Nao registado";
+    return "Não registado";
   }
 
   if (typeof value === "boolean") {
-    return value ? "Sim" : "Nao";
+    return value ? "Sim" : "Não";
   }
 
   if (Array.isArray(value)) {
@@ -294,16 +294,14 @@ function handleRevisionRestored() {
             :href="route('qualitycertificates.iso-revisions.index', certificate.id)"
             class="ds-table-action -ml-2 mb-3"
           >
-            <ArrowLeftIcon class="h-4 w-4" />
-            Voltar ao historico
-          </Link>
+            <ArrowLeftIcon class="h-4 w-4" /> Voltar ao histórico </Link>
           <div class="flex flex-wrap items-center gap-2">
-            <p class="ds-kicker">Snapshot imutavel</p>
+            <p class="ds-kicker">Captura imutável</p>
             <span class="ds-chip">
               <span
                 :class="['lims-status-dot', revision.is_current ? 'lims-status-dot-release' : 'lims-status-dot-instrument']"
               />
-              {{ revision.is_current ? "Versao atual" : "Versao historica" }}
+              {{ revision.is_current ? "Versão actual" : "Versão historica" }}
             </span>
             <span class="ds-chip">
               <span :class="['lims-status-dot', changeTypeDot(revision.change_type)]" />
@@ -311,11 +309,9 @@ function handleRevisionRestored() {
             </span>
           </div>
           <h1 class="ds-heading mt-2 break-words text-2xl">
-            Revisao v{{ revision.version }} - {{ certificate.code || "Certificado" }}
+            Revisão v{{ revision.version }} - {{ certificate.code || "Certificado" }}
           </h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm">
-            Conteudo, relacoes e metadados preservados no momento desta revisao.
-          </p>
+          <p class="ds-copy mt-2 max-w-2xl text-sm"> Conteúdo, relações e metadados preservados no momento desta revisão. </p>
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row">
@@ -326,7 +322,7 @@ function handleRevisionRestored() {
             class="ds-button ds-button-secondary"
           >
             <ArrowDownTrayIcon class="h-4 w-4" />
-            Abrir snapshot JSON
+            Abrir captura JSON
           </a>
           <button
             v-if="currentRevisionId && currentRevisionId !== revision.id"
@@ -335,7 +331,7 @@ function handleRevisionRestored() {
             @click="compareWithCurrent"
           >
             <ArrowsRightLeftIcon class="h-4 w-4" />
-            Comparar com atual
+            Comparar com actual
           </button>
         </div>
       </div>
@@ -361,14 +357,12 @@ function handleRevisionRestored() {
       <div class="space-y-6">
         <section class="ds-panel overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
-            <p class="ds-kicker">Conteudo preservado</p>
-            <h2 class="ds-heading mt-2 text-lg">Dados do snapshot</h2>
-            <p class="ds-copy mt-1 text-sm">
-              Consulte cada grupo sem perder o contexto da versao.
-            </p>
+            <p class="ds-kicker">Conteúdo preservado</p>
+            <h2 class="ds-heading mt-2 text-lg">Dados da captura</h2>
+            <p class="ds-copy mt-1 text-sm"> Consulte cada grupo sem perder o contexto da versão. </p>
           </div>
 
-          <nav class="overflow-x-auto border-b border-[var(--ds-border)]" aria-label="Secoes do snapshot">
+          <nav class="overflow-x-auto border-b border-[var(--ds-border)]" aria-label="Secções da captura">
             <div class="flex min-w-max px-3 sm:px-5">
               <button
                 v-for="tab in snapshotTabs"
@@ -406,7 +400,7 @@ function handleRevisionRestored() {
             </div>
 
             <div v-if="activeTab === 'certificate' && certificateData.obs" class="ds-command-toolbar mt-5 p-4">
-              <p class="ds-table-heading">Observacoes</p>
+              <p class="ds-table-heading">Observações</p>
               <p class="ds-copy mt-2 whitespace-pre-line text-sm">{{ certificateData.obs }}</p>
             </div>
 
@@ -414,7 +408,7 @@ function handleRevisionRestored() {
               <DataTable class="min-w-full">
                 <thead class="ds-table-head">
                   <tr>
-                    <th class="ds-table-heading px-4 py-3 text-left">Parametro</th>
+                    <th class="ds-table-heading px-4 py-3 text-left">Parâmetro</th>
                     <th class="ds-table-heading px-4 py-3 text-left">Resultado</th>
                     <th class="ds-table-heading px-4 py-3 text-left">Unidade</th>
                     <th class="ds-table-heading px-4 py-3 text-left">Tipo</th>
@@ -438,16 +432,14 @@ function handleRevisionRestored() {
 
           <div v-else class="ds-empty-state m-5 p-8 text-center">
             <DocumentDuplicateIcon class="mx-auto h-6 w-6 text-[var(--ds-text-soft)]" />
-            <p class="mt-2 text-sm font-semibold text-[var(--ds-text-muted)]">
-              Sem dados preservados nesta secao.
-            </p>
+            <p class="mt-2 text-sm font-semibold text-[var(--ds-text-muted)]"> Sem dados preservados nesta secção. </p>
           </div>
         </section>
 
         <section v-if="differences.length" class="ds-command-surface overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
-            <p class="ds-kicker">Desvio da versao atual</p>
-            <h2 class="ds-heading mt-2 text-lg">{{ differences.length }} alteracao(oes)</h2>
+            <p class="ds-kicker">Desvio da versão actual</p>
+            <h2 class="ds-heading mt-2 text-lg">{{ differences.length }} alteração(oes)</h2>
           </div>
           <div class="divide-y divide-[var(--ds-border)]">
             <article
@@ -466,13 +458,13 @@ function handleRevisionRestored() {
               </div>
               <div class="mt-3 grid gap-3 sm:grid-cols-2">
                 <div class="ds-command-toolbar p-3">
-                  <p class="ds-table-heading">Nesta revisao</p>
+                  <p class="ds-table-heading">Nesta revisão</p>
                   <p class="mt-2 break-words text-sm font-semibold text-[var(--ds-text)]">
                     {{ formatValue(difference.revision_value ?? difference.old_value) }}
                   </p>
                 </div>
                 <div class="ds-command-toolbar p-3">
-                  <p class="ds-table-heading">Valor atual</p>
+                  <p class="ds-table-heading">Valor actual</p>
                   <p class="mt-2 break-words text-sm font-semibold text-[var(--ds-text)]">
                     {{ formatValue(difference.current_value ?? difference.new_value) }}
                   </p>
@@ -487,7 +479,7 @@ function handleRevisionRestored() {
         <section class="ds-command-surface overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-5 py-4">
             <p class="ds-kicker">Metadados ISO</p>
-            <h2 class="ds-heading mt-2 text-base">Classificacao da revisao</h2>
+            <h2 class="ds-heading mt-2 text-base">Classificação da revisão</h2>
           </div>
           <dl class="divide-y divide-[var(--ds-border)]">
             <div
@@ -503,13 +495,13 @@ function handleRevisionRestored() {
           </dl>
           <div class="border-t border-[var(--ds-border)] px-5 py-4">
             <p class="ds-table-heading">Motivo da mudanca</p>
-            <p class="ds-copy mt-2 text-xs">{{ revision.change_reason || "Nao registado." }}</p>
+            <p class="ds-copy mt-2 text-xs">{{ revision.change_reason || "Não registado." }}</p>
           </div>
         </section>
 
         <section class="ds-card p-5">
           <p class="ds-kicker">Comandos</p>
-          <h2 class="ds-heading mt-2 text-base">Acoes da revisao</h2>
+          <h2 class="ds-heading mt-2 text-base">Acções da revisão</h2>
           <div class="mt-4 grid gap-2">
             <button
               v-if="currentRevisionId && currentRevisionId !== revision.id"
@@ -518,7 +510,7 @@ function handleRevisionRestored() {
               @click="compareWithCurrent"
             >
               <ArrowsRightLeftIcon class="h-4 w-4" />
-              Comparar com atual
+              Comparar com actual
             </button>
             <button
               v-if="!revision.is_current"
@@ -526,15 +518,13 @@ function handleRevisionRestored() {
               class="ds-button ds-button-secondary justify-start"
               @click="restoreModalOpen = true"
             >
-              <ArrowPathIcon class="h-4 w-4" />
-              Repor esta versao
-            </button>
+              <ArrowPathIcon class="h-4 w-4" /> Repor esta versão </button>
             <Link
               :href="route('qualitycertificates.iso-revisions.index', certificate.id)"
               class="ds-button ds-button-secondary justify-start"
             >
               <ClipboardDocumentListIcon class="h-4 w-4" />
-              Historico de revisoes
+              Histórico de revisões
             </Link>
           </div>
         </section>
@@ -542,7 +532,7 @@ function handleRevisionRestored() {
         <section class="ds-card overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-5 py-4">
             <p class="ds-kicker">Rastreabilidade</p>
-            <h2 class="ds-heading mt-2 text-base">Atividade relacionada</h2>
+            <h2 class="ds-heading mt-2 text-base">Actividade relacionada</h2>
           </div>
           <ol v-if="relatedActivityLogs.length" class="divide-y divide-[var(--ds-border)]">
             <li
@@ -564,7 +554,7 @@ function handleRevisionRestored() {
             </li>
           </ol>
           <div v-else class="ds-empty-state m-5 p-5 text-center">
-            <p class="text-xs font-semibold text-[var(--ds-text-muted)]">Sem atividade associada.</p>
+            <p class="text-xs font-semibold text-[var(--ds-text-muted)]">Sem actividade associada.</p>
           </div>
         </section>
       </aside>

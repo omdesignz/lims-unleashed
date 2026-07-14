@@ -60,7 +60,7 @@ const metrics = computed(() => [
     icon: UserCircleIcon,
   },
   {
-    label: "Email configurado",
+    label: "Correio electrónico configurado",
     value: pageRecords.value.filter((department) => department.email).length,
     detail: "contacto institucional",
     icon: EnvelopeIcon,
@@ -68,7 +68,7 @@ const metrics = computed(() => [
   {
     label: "Extensão interna",
     value: pageRecords.value.filter((department) => department.extension).length,
-    detail: "contacto direto",
+    detail: "contacto directo",
     icon: PhoneIcon,
   },
 ]);
@@ -81,8 +81,8 @@ const actions = [
 
 const editorTitle = computed(() => form.id ? "Editar unidade" : "Nova unidade");
 const editorDescription = computed(() => form.id
-  ? `Atualize a estrutura, supervisão e contactos de ${form.name}.`
-  : "Registe uma unidade organizacional e associe a respetiva supervisão técnica.",
+  ? `Actualize a estrutura, supervisão e contactos de ${form.name}.`
+  : "Registe uma unidade organizacional e associe a respectiva supervisão técnica.",
 );
 const confirmationDialogTitle = computed(() =>
   trans(`gestlab.actions.confirmation_dialog_title.${selectedAction.value}`),
@@ -292,7 +292,7 @@ function executeBulkAction() {
 
             <div class="grid gap-5 sm:grid-cols-2">
               <div class="sm:col-span-2">
-                <label for="department-email" class="ds-field-label">Email</label>
+                <label for="department-email" class="ds-field-label">Correio electrónico</label>
                 <BaseInput id="department-email" v-model="form.email" type="email" class="ds-field mt-2" required />
                 <p v-if="form.errors.email" class="ds-field-error mt-2">{{ form.errors.email }}</p>
               </div>

@@ -129,7 +129,7 @@
                     <td>
                         <div class="eyebrow">{{ $labName }}</div>
                         <h1>Calendário de Manutenção</h1>
-                        <div>Maintenance calendar · Planeamento e lembretes operacionais</div>
+                        <div>Calendário de manutenção · Planeamento e lembretes operacionais</div>
                     </td>
                     <td class="meta">
                         Emitido em {{ $generated_at->format('d/m/Y H:i') }}<br>
@@ -168,13 +168,13 @@
                 @endif
             @empty
                 <tr>
-                    <td colspan="2" class="empty">Sem calendário para os filtros selecionados.</td>
+                    <td colspan="2" class="empty">Sem calendário para os filtros seleccionados.</td>
                 </tr>
             @endforelse
 
             @if($totalTasks === 0)
                 <tr>
-                    <td colspan="2" class="empty">Nenhuma tarefa planeada no período selecionado.</td>
+                    <td colspan="2" class="empty">Nenhuma tarefa planeada no período seleccionado.</td>
                 </tr>
             @endif
         </tbody>

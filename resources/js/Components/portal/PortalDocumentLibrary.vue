@@ -26,8 +26,8 @@ const props = defineProps({
   supportType: { type: String, default: "document_request" },
   supportTitle: { type: String, required: true },
   mapRecord: { type: Function, required: true },
-  valueMetricLabel: { type: String, default: "Valor nesta pagina" },
-  valueMetricDetail: { type: String, default: "soma dos documentos visiveis" },
+  valueMetricLabel: { type: String, default: "Valor nesta página" },
+  valueMetricDetail: { type: String, default: "soma dos documentos visíveis" },
 });
 
 const page = usePage();
@@ -46,12 +46,12 @@ const pageValue = computed(() => documents.value.reduce((total, document) => tot
 const hasMonetaryValues = computed(() => documents.value.some((document) => document.total !== null && document.total !== undefined));
 
 const metrics = computed(() => [
-  { label: "Total", value: totalRecords.value, detail: `${props.entityLabel}(s) no historico`, icon: DocumentTextIcon },
-  { label: "Ultimos 30 dias", value: recentRecords.value, detail: "emissoes recentes nesta pagina", icon: CalendarDaysIcon },
-  { label: "Requer atencao", value: attentionRecords.value, detail: "pendente, expirado ou em revisao", icon: ClockIcon },
+  { label: "Total", value: totalRecords.value, detail: `${props.entityLabel}(s) no histórico`, icon: DocumentTextIcon },
+  { label: "Últimos 30 dias", value: recentRecords.value, detail: "emissoes recentes nesta página", icon: CalendarDaysIcon },
+  { label: "Requer atencao", value: attentionRecords.value, detail: "pendente, expirado ou em revisão", icon: ClockIcon },
   hasMonetaryValues.value
     ? { label: props.valueMetricLabel, value: formatCurrency(pageValue.value), detail: props.valueMetricDetail, icon: CurrencyDollarIcon }
-    : { label: "Disponiveis", value: documents.value.length - attentionRecords.value, detail: "prontos para consulta", icon: CheckBadgeIcon },
+    : { label: "Disponíveis", value: documents.value.length - attentionRecords.value, detail: "prontos para consulta", icon: CheckBadgeIcon },
 ]);
 
 watch(() => props.query?.search, (value) => {
@@ -88,7 +88,7 @@ function formatCurrency(value) {
 
 function formatDate(value) {
   if (!value) {
-    return "Data nao definida";
+    return "Data não definida";
   }
 
   return new Intl.DateTimeFormat("pt-PT", { dateStyle: "medium" }).format(new Date(value));
@@ -145,7 +145,7 @@ function toneClass(tone) {
       <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:px-6">
         <div>
           <h2 class="text-base font-bold text-[var(--ds-text)]">Biblioteca</h2>
-          <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Pesquise pela referencia e abra o PDF oficial.</p>
+          <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Pesquise pela referência e abra o PDF oficial.</p>
         </div>
 
         <form class="mt-4 flex min-w-0 gap-2 sm:mt-0 sm:w-full sm:max-w-md" role="search" @submit.prevent="submitSearch">
@@ -171,7 +171,7 @@ function toneClass(tone) {
               <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
                   <h3 class="break-words font-mono text-sm font-bold text-[var(--ds-text)]">{{ document.reference || `#${document.id}` }}</h3>
-                  <span :class="['ds-chip', toneClass(document.tone)]">{{ document.status || "Disponivel" }}</span>
+                  <span :class="['ds-chip', toneClass(document.tone)]">{{ document.status || "Disponível" }}</span>
                 </div>
                 <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">{{ formatDate(document.date) }}</p>
                 <p v-if="document.description" class="mt-2 break-words text-sm font-semibold text-[var(--ds-text-muted)]">{{ document.description }}</p>
@@ -182,7 +182,7 @@ function toneClass(tone) {
               <dl v-if="document.details?.length" class="grid min-w-0 gap-x-5 gap-y-2 sm:grid-cols-2">
                 <div v-for="detail in document.details" :key="detail.label" class="min-w-0">
                   <dt class="text-[0.65rem] font-bold uppercase text-[var(--ds-text-soft)]">{{ detail.label }}</dt>
-                  <dd class="mt-0.5 break-words text-xs font-bold text-[var(--ds-text)]">{{ detail.value || "Nao definido" }}</dd>
+                  <dd class="mt-0.5 break-words text-xs font-bold text-[var(--ds-text)]">{{ detail.value || "Não definido" }}</dd>
                 </div>
               </dl>
               <div v-if="document.total !== null && document.total !== undefined" class="sm:min-w-32 sm:text-right">

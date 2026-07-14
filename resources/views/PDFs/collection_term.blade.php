@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-AO">
 <head>
 <meta charset="UTF-8" />
 <style>
@@ -286,7 +286,7 @@
             </td>
             <td style="border-right: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb; border-left: 1px solid #e5e7eb; padding: 8px; width: 33%;">
                 <div class="h3" style="color: #1e3a8a; font-weight: 700;">
-                    <b>{{ mb_strtoupper(($settings ?? null)?->app_name ?: config('app.name', 'Laboratory workspace')) }}</b>
+                    <b>{{ mb_strtoupper(($settings ?? null)?->app_name ?: config('app.name', 'Espaço laboratorial')) }}</b>
                 </div>
             </td>
             <td rowspan="3" style="border-right: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb; padding: 8px; text-align: left; width: 33%;">
@@ -311,11 +311,11 @@
         <tr>
             <td style="border-bottom: 1px solid #e5e7eb; text-align: center; padding: 8px;">
                 <div class="h3" style="color: #111827;">
-                    <b>{{ mb_strtoupper(($settings ?? null)?->app_client_lab_name ?: ($settings ?? null)?->app_name ?: config('app.name', 'Laboratory workspace')) }}</b>
+                    <b>{{ mb_strtoupper(($settings ?? null)?->app_client_lab_name ?: ($settings ?? null)?->app_name ?: config('app.name', 'Espaço laboratorial')) }}</b>
                 </div>
             </td>
             <td style="border: 1.5px solid #111827; padding: 8px; font-size: 12px; text-align: center; font-weight: 600; color: #1e3a8a;">
-                RECEPÇÃO DE AMOSTRAS E REGISTRO
+                RECEPÇÃO DE AMOSTRAS E REGISTO
             </td>
         </tr>
     </table>
@@ -335,7 +335,7 @@
         </div>
         <div class="section-content">
             <div class="form-field">
-                <div class="form-label">Selecione as razões para a amostragem:</div>
+                <div class="form-label">Seleccione as razões para a amostragem:</div>
                 <div style="margin-top: 10px;">
                     @foreach ($reasons as $reason)
                     <div class="checkbox-container">
@@ -411,7 +411,7 @@
                             <div class="value">
                                 {!! $model->collection->warehouse->address !!}
                             </div>
-                            <div class="muted small-text">Address</div>
+                            <div class="muted small-text">Endereço</div>
                         </div>
                     </td>
                 </tr>
@@ -497,7 +497,6 @@
         <div class="section-content">
             <div class="body-text">
                 <p><strong>A amostragem foi efectuada em triplicado, o qual (<span style="color: #1e3a8a;">2</span>) amostras vão para o laboratório e (<span style="color: #1e3a8a;">1</span>) fica com a entidade requerente como fiel depositário para efeito de contra-análise.</strong></p>
-                <p class="muted"><em>The sampling was carried out in triplicate, of which (<span style="color: #1e3a8a;">2</span>) samples go to the laboratory and (<span style="color: #1e3a8a;">1</span>) remains with the requesting entity as a faithful depository for counter-analysis purposes.</em></p>
             </div>
         </div>
     </div>

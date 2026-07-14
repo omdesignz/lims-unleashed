@@ -47,7 +47,7 @@ class ManagementReviewController extends Controller
         ]));
 
         $review->update([
-            'reference' => 'MR-' . now()->format('Y') . '-' . str_pad((string) $review->id, 6, '0', STR_PAD_LEFT),
+            'reference' => 'MR-'.now()->format('Y').'-'.str_pad((string) $review->id, 6, '0', STR_PAD_LEFT),
         ]);
 
         $targets = User::role('admin')->get()
@@ -101,7 +101,7 @@ class ManagementReviewController extends Controller
                 new ManagementReviewNotification(
                     $managementReview,
                     'Revisão pela gestão concluída',
-                    sprintf('A revisão %s foi concluída com decisões e ações registadas.', $managementReview->reference),
+                    sprintf('A revisão %s foi concluída com decisões e acções registadas.', $managementReview->reference),
                     auth()->user()
                 )
             );
@@ -116,6 +116,6 @@ class ManagementReviewController extends Controller
             ])
             ->log('Atualizou uma revisão pela gestão');
 
-        return redirect()->back()->with('success', 'Revisão pela gestão atualizada com sucesso.');
+        return redirect()->back()->with('success', 'Revisão pela gestão actualizada com sucesso.');
     }
 }

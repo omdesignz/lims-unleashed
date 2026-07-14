@@ -10,7 +10,7 @@
             </span>
             <div class="min-w-0">
               <h1 class="ds-heading text-xl sm:text-2xl">Caixa de notificações</h1>
-              <p class="ds-copy mt-1 text-sm">Alertas de trabalho, decisões pendentes e atualizações do laboratório.</p>
+              <p class="ds-copy mt-1 text-sm">Alertas de trabalho, decisões pendentes e actualizações do laboratório.</p>
             </div>
           </div>
         </div>
@@ -427,7 +427,7 @@ const emptyStateDescription = computed(() => {
   }
 
   if (activeFilter.value !== 'all') {
-    return 'Selecione outro estado para consultar os restantes registos.'
+    return 'Seleccione outro estado para consultar os restantes registos.'
   }
 
   return 'Os novos alertas operacionais serão apresentados aqui.'

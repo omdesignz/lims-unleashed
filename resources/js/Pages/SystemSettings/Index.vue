@@ -182,15 +182,15 @@
               <PhotoIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
               <div>
                 <h2 class="ds-heading text-base">Marca e experiência de entrada</h2>
-                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Logótipo, headline e mensagem apresentados na landing e no login.</p>
+                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Logótipo, headline e mensagem apresentados na landing e no início de sessão.</p>
               </div>
             </div>
 
             <div class="grid gap-5 p-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
               <div class="grid content-start gap-4">
                 <SettingsField v-model="form.app_logo_url" label="URL do logótipo" :editing="editSettings" :display-value="settings.app_logo_url" :error="form.errors.app_logo_url" placeholder="https://.../logo.svg" />
-                <SettingsField v-model="form.app_login_headline" label="Headline do login" :editing="editSettings" :display-value="settings.app_login_headline" :error="form.errors.app_login_headline" />
-                <SettingsField v-model="form.app_login_subheadline" label="Subheadline do login" :editing="editSettings" :display-value="settings.app_login_subheadline" :error="form.errors.app_login_subheadline" multiline :rows="3" />
+                <SettingsField v-model="form.app_login_headline" label="Headline do início de sessão" :editing="editSettings" :display-value="settings.app_login_headline" :error="form.errors.app_login_headline" />
+                <SettingsField v-model="form.app_login_subheadline" label="Subheadline do início de sessão" :editing="editSettings" :display-value="settings.app_login_subheadline" :error="form.errors.app_login_subheadline" multiline :rows="3" />
               </div>
 
               <div class="border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] p-4">
@@ -219,7 +219,7 @@
               <LanguageIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
               <div>
                 <h2 class="ds-heading text-base">Apresentação e modo operacional</h2>
-                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Paleta institucional, preset visual, idioma e alcance do portal.</p>
+                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Paleta institucional, predefinição visual, idioma e alcance do portal.</p>
               </div>
             </div>
 
@@ -260,7 +260,7 @@
               </div>
 
               <div class="ds-field-group">
-                <label class="ds-field-label">Preset visual</label>
+                <label class="ds-field-label">Predefinição visual</label>
                 <BaseSelect v-if="editSettings" v-model="form.app_theme_preset" class="ds-field">
                   <option v-for="preset in themePresets" :key="preset.value" :value="preset.value">{{ preset.label }}</option>
                 </BaseSelect>
@@ -309,14 +309,14 @@
                 <section>
                   <div class="flex items-center gap-2 border-b border-[color:var(--ds-border)] pb-3">
                     <EnvelopeIcon class="h-4 w-4 text-primary-700 dark:text-primary-300" />
-                    <h3 class="ds-heading text-sm">Shell do email</h3>
+                    <h3 class="ds-heading text-sm">Shell do correio electrónico</h3>
                   </div>
                   <div class="mt-4 grid gap-4 md:grid-cols-2">
                     <SettingsField v-model="form.app_mail_greeting" label="Saudação principal" :editing="editSettings" :display-value="settings.app_mail_greeting" :error="form.errors.app_mail_greeting" wide />
                     <SettingsField v-model="form.app_mail_footer" label="Rodapé contextual" :editing="editSettings" :display-value="settings.app_mail_footer" :error="form.errors.app_mail_footer" multiline wide />
-                    <SettingsField v-model="form.app_mail_salutation" label="Fecho do email" :editing="editSettings" :display-value="settings.app_mail_salutation" :error="form.errors.app_mail_salutation" multiline />
+                    <SettingsField v-model="form.app_mail_salutation" label="Fecho do correio electrónico" :editing="editSettings" :display-value="settings.app_mail_salutation" :error="form.errors.app_mail_salutation" multiline />
                     <SettingsField v-model="form.app_mail_signature_name" label="Nome da assinatura" :editing="editSettings" :display-value="settings.app_mail_signature_name" :error="form.errors.app_mail_signature_name" />
-                    <SettingsField v-model="form.app_mail_subcopy" label="Texto auxiliar do botão ou link" :editing="editSettings" :display-value="settings.app_mail_subcopy" :error="form.errors.app_mail_subcopy" multiline wide />
+                    <SettingsField v-model="form.app_mail_subcopy" label="Texto auxiliar do botão ou ligação" :editing="editSettings" :display-value="settings.app_mail_subcopy" :error="form.errors.app_mail_subcopy" multiline wide />
                   </div>
                 </section>
 
@@ -329,21 +329,21 @@
                     <SettingsField v-model="form.app_notification_sender_alias" label="Nome do remetente" :editing="editSettings" :display-value="settings.app_notification_sender_alias" :error="form.errors.app_notification_sender_alias" wide />
                     <SettingsField v-model="form.app_notification_default_title" label="Título padrão" :editing="editSettings" :display-value="settings.app_notification_default_title" :error="form.errors.app_notification_default_title" />
                     <SettingsField v-model="form.app_notification_default_message" label="Mensagem padrão" :editing="editSettings" :display-value="settings.app_notification_default_message" :error="form.errors.app_notification_default_message" multiline />
-                    <SettingsField v-model="form.app_notification_email_intro" label="Introdução do email de notificação" :editing="editSettings" :display-value="settings.app_notification_email_intro" :error="form.errors.app_notification_email_intro" multiline wide />
-                    <SettingsField v-model="form.app_notification_email_outro" label="Fecho do email de notificação" :editing="editSettings" :display-value="settings.app_notification_email_outro" :error="form.errors.app_notification_email_outro" multiline wide />
+                    <SettingsField v-model="form.app_notification_email_intro" label="Introdução do correio electrónico de notificação" :editing="editSettings" :display-value="settings.app_notification_email_intro" :error="form.errors.app_notification_email_intro" multiline wide />
+                    <SettingsField v-model="form.app_notification_email_outro" label="Fecho do correio electrónico de notificação" :editing="editSettings" :display-value="settings.app_notification_email_outro" :error="form.errors.app_notification_email_outro" multiline wide />
                   </div>
                 </section>
               </div>
 
               <aside class="space-y-4">
                 <section class="border border-[color:var(--ds-border)] bg-[color:var(--ds-panel-subtle)] p-4">
-                  <p class="ds-kicker">Pré-visualização do email</p>
+                  <p class="ds-kicker">Pré-visualização do correio electrónico</p>
                   <div class="mt-4 border border-[color:var(--ds-border)] bg-[color:var(--ds-panel)] p-4">
                     <p class="text-lg font-bold text-[color:var(--ds-text)]">{{ form.app_mail_greeting || settings.app_mail_greeting || 'Olá!' }}</p>
                     <p class="ds-copy mt-4 text-xs">{{ form.app_notification_email_intro || settings.app_notification_email_intro || 'Recebeu uma nova notificação no sistema.' }}</p>
                     <div class="ds-command-toolbar mt-4 p-3">
                       <p class="text-sm font-bold text-[color:var(--ds-text)]">{{ form.app_notification_default_title || settings.app_notification_default_title || 'Notificação do sistema' }}</p>
-                      <p class="mt-1 text-xs leading-5 text-[color:var(--ds-text-soft)]">{{ form.app_notification_default_message || settings.app_notification_default_message || 'Existe uma atualização importante disponível para si.' }}</p>
+                      <p class="mt-1 text-xs leading-5 text-[color:var(--ds-text-soft)]">{{ form.app_notification_default_message || settings.app_notification_default_message || 'Existe uma actualização importante disponível para si.' }}</p>
                     </div>
                     <p class="ds-copy mt-4 text-xs">{{ form.app_notification_email_outro || settings.app_notification_email_outro || 'Aceda ao sistema para acompanhar o detalhe completo.' }}</p>
                     <p class="mt-4 whitespace-pre-line text-xs font-semibold text-[color:var(--ds-text)]">
@@ -373,7 +373,7 @@
               <ShieldCheckIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
               <div>
                 <h2 class="ds-heading text-base">Assinatura e validação documental</h2>
-                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Elementos criptográficos usados em faturas, recibos, propostas e documentos oficiais.</p>
+                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Elementos criptográficos usados em facturas, recibos, propostas e documentos oficiais.</p>
               </div>
             </div>
 
@@ -405,7 +405,7 @@
         <div v-if="editSettings" class="ds-command-surface sticky bottom-4 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p class="text-sm font-bold text-[color:var(--ds-text)]">Alterações por publicar</p>
-            <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">Reveja a área ativa e guarde quando terminar.</p>
+            <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">Reveja a área activa e guarde quando terminar.</p>
           </div>
           <div class="flex gap-2">
             <button type="button" class="ds-button ds-button-secondary" @click="toggleEdit">Cancelar</button>
@@ -479,7 +479,7 @@ const tabs = [
   {
     name: 'Mensagens',
     href: '#messaging',
-    description: 'Email, notificações e experiência de entrada.',
+    description: 'Correio electrónico, notificações e experiência de entrada.',
     icon: EnvelopeIcon,
   },
 ]
@@ -490,7 +490,7 @@ const identityFields = [
   { key: 'app_slogan', label: 'Slogan' },
   { key: 'app_nif', label: 'NIF' },
   { key: 'app_contact', label: 'Contacto' },
-  { key: 'app_email', label: 'Email', type: 'email' },
+  { key: 'app_email', label: 'Correio electrónico', type: 'email' },
 ]
 
 const organizationFields = [
@@ -498,15 +498,15 @@ const organizationFields = [
   { key: 'app_client_nif', label: 'NIF da organização' },
   { key: 'app_client_address', label: 'Morada' },
   { key: 'app_client_contact', label: 'Contacto institucional' },
-  { key: 'app_client_email', label: 'Email institucional', type: 'email' },
+  { key: 'app_client_email', label: 'Correio electrónico institucional', type: 'email' },
   { key: 'app_client_lab_name', label: 'Nome do laboratório' },
   { key: 'app_client_lab_province', label: 'Província' },
-  { key: 'app_client_lab_director', label: 'Direção técnica' },
+  { key: 'app_client_lab_director', label: 'Direcção técnica' },
   { key: 'app_client_lab_slogan', label: 'Slogan do laboratório' },
 ]
 
 const bankingFields = [
-  { key: 'app_bank_name', label: 'Banco', placeholder: 'Banco emissor ou banco de recebimento' },
+  { key: 'app_bank_name', label: 'Banco', placeholder: 'Banco emissor ou banco beneficiário' },
   { key: 'app_bank_account_name', label: 'Titular da conta', placeholder: 'Nome legal do titular' },
   { key: 'app_bank_account_number', label: 'Número de conta', placeholder: 'Conta bancária local' },
   { key: 'app_bank_iban', label: 'IBAN', placeholder: 'AO06...' },

@@ -4,10 +4,10 @@
       <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
         <div class="min-w-0">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Reagent lifecycle</span>
+            <span class="ds-kicker">Ciclo de vida dos reagentes</span>
             <span class="ds-chip">
               <span class="lims-status-dot lims-status-dot-hold"></span>
-              FEFO · First expiry, first out
+              FEFO · Primeiro a expirar, primeiro a sair
             </span>
           </div>
           <div class="mt-3 flex flex-wrap items-center gap-3">
@@ -17,7 +17,7 @@
             <div class="min-w-0">
               <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Controlo de validade de reagentes</h1>
               <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                Priorize consumo, segregação e substituição com rastreabilidade de validade, lote, fornecedor e posição de stock.
+                Priorize consumo, segregação e substituição com rastreabilidade de validade, lote, fornecedor e posição de existências.
               </p>
             </div>
           </div>
@@ -77,9 +77,9 @@
           <BaseSelect v-model="filters.sort_by" label="Ordenar por">
             <option value="expiry_date">Validade</option>
             <option value="name">Nome</option>
-            <option value="current_stock">Stock</option>
+            <option value="current_stock">Existências</option>
           </BaseSelect>
-          <BaseSelect v-model="filters.sort_direction" label="Direção">
+          <BaseSelect v-model="filters.sort_direction" label="Direcção">
             <option value="asc">Ascendente</option>
             <option value="desc">Descendente</option>
           </BaseSelect>
@@ -108,7 +108,7 @@
     <section class="ds-command-surface overflow-hidden">
       <div class="ds-table-summary px-5 py-4">
         <div>
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">FEFO control windows</p>
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Janelas de controlo FEFO</p>
           <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Carga de revisão nos próximos 90 dias</h2>
         </div>
         <span class="ds-chip">{{ expiryWindowTotal }} ocorrências</span>
@@ -136,7 +136,7 @@
       <section class="ds-table-shell">
         <div class="ds-table-summary px-5 py-4">
           <div>
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Reagent expiry ledger</p>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Registo de validade dos reagentes</p>
             <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Reagentes por prioridade FEFO</h2>
           </div>
           <span class="ds-chip">{{ reagents.total || reagentRows.length }} registos</span>
@@ -144,7 +144,7 @@
 
         <div v-if="loading" class="ds-empty-state m-5 p-8 text-center">
           <span class="mx-auto block h-7 w-7 animate-spin rounded-full border-2 border-[var(--ds-border)] border-t-[rgb(var(--primary-700-rgb))]"></span>
-          <p class="mt-3 text-sm font-semibold text-[var(--ds-text-muted)]">A atualizar o controlo de validade...</p>
+          <p class="mt-3 text-sm font-semibold text-[var(--ds-text-muted)]">A actualizar o controlo de validade...</p>
         </div>
 
         <div v-else-if="reagentRows.length" class="divide-y divide-[var(--ds-border)] lg:hidden">
@@ -164,7 +164,7 @@
                 <dd :class="['mt-2 text-sm font-black', statusTextClass(reagent)]">{{ formatDate(reagent.reagent_expiry_date) }}</dd>
               </div>
               <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
-                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Stock total</dt>
+                <dt class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Existências total</dt>
                 <dd class="mt-2 text-sm font-black text-[var(--ds-text)]">{{ formatNumber(reagent.total_stock) }} un.</dd>
               </div>
               <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
@@ -213,9 +213,9 @@
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Reagente</th>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Validade</th>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Lote e fornecedor</th>
-                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Posições de stock</th>
+                <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Posições de existências</th>
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Estado</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Ações</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Acções</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
@@ -291,7 +291,7 @@
       <aside class="space-y-6">
         <section class="ds-panel overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-5 py-4">
-            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Quarantine review</p>
+            <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Revisão de quarentena</p>
             <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Expirados no resultado</h2>
           </div>
           <ol v-if="expiredRows.length" class="divide-y divide-[var(--ds-border)]">
@@ -327,7 +327,7 @@
             <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Substituição e abastecimento</h2>
           </div>
           <div class="space-y-3 p-5">
-            <p class="text-sm font-semibold leading-6 text-[var(--ds-text-muted)]">Crie uma necessidade ou ordem apenas após rever stock remanescente, consumo previsto e lotes alternativos.</p>
+            <p class="text-sm font-semibold leading-6 text-[var(--ds-text-muted)]">Crie uma necessidade ou ordem apenas após rever existências remanescente, consumo previsto e lotes alternativos.</p>
             <Link :href="route('vap-inventory.orders.create')" class="ds-button ds-button-primary w-full">
               <ShoppingCartIcon class="h-4 w-4" />
               Preparar ordem
@@ -528,7 +528,7 @@ function shelfLifeBarClass(reagent) {
 
 function warehouseNames(reagent) {
   const names = (reagent.inventory || []).map((position) => position.warehouse?.name).filter(Boolean)
-  return names.length ? [...new Set(names)].join(', ') : 'Sem posição de stock'
+  return names.length ? [...new Set(names)].join(', ') : 'Sem posição de existências'
 }
 
 function formatDate(value) {

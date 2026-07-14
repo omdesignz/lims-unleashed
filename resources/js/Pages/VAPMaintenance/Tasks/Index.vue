@@ -123,7 +123,7 @@
           </button>
 
           <div class="flex flex-wrap items-center gap-2">
-            <span v-if="hasActiveFilters" class="ds-chip">Filtros ativos</span>
+            <span v-if="hasActiveFilters" class="ds-chip">Filtros activos</span>
             <button type="button" class="ds-button ds-button-secondary" @click="resetFilters">
               <XMarkIcon class="h-4 w-4" />
               Limpar filtros
@@ -195,7 +195,7 @@
             <CheckCircleIcon class="h-5 w-5" />
           </span>
           <div>
-            <p class="font-bold text-[var(--ds-text)]">{{ selectedTasks.length }} tarefas selecionadas</p>
+            <p class="font-bold text-[var(--ds-text)]">{{ selectedTasks.length }} tarefas seleccionadas</p>
             <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">Aplique alterações em lote apenas a tarefas verificadas.</p>
           </div>
         </div>
@@ -316,7 +316,7 @@
               <th class="ds-table-heading px-5 py-3 text-left">Datas</th>
               <th class="ds-table-heading px-5 py-3 text-left">Custo</th>
               <th class="ds-table-heading px-5 py-3 text-left">Estado</th>
-              <th class="ds-table-heading px-5 py-3 text-right">Ações</th>
+              <th class="ds-table-heading px-5 py-3 text-right">Acções</th>
             </tr>
           </thead>
           <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
@@ -591,7 +591,7 @@
         <div>
           <p class="ds-kicker">Ajuste de agenda</p>
           <h2 class="ds-heading mt-2 text-lg">Reagendar {{ selectedTasks.length }} tarefas</h2>
-          <p class="ds-copy mt-1 text-sm">Registe uma nova data de vencimento para o conjunto selecionado.</p>
+          <p class="ds-copy mt-1 text-sm">Registe uma nova data de vencimento para o conjunto seleccionado.</p>
         </div>
 
         <div class="mt-6 space-y-6">
@@ -905,7 +905,7 @@ const executeBulkAction = async () => {
       showRescheduleModal.value = true
       break
     case 'delete':
-      if (confirm(`Eliminar ${selectedTaskIds.value.length} tarefas? Esta ação não pode ser revertida.`)) {
+      if (confirm(`Eliminar ${selectedTaskIds.value.length} tarefas? Esta acção não pode ser revertida.`)) {
         await executeDelete()
       }
       break

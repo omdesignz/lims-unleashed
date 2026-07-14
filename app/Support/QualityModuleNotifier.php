@@ -52,7 +52,7 @@ class QualityModuleNotifier
             return;
         }
 
-        $title = $becameCritical ? 'Não conformidade escalada para crítica' : 'Estado de não conformidade atualizado';
+        $title = $becameCritical ? 'Não conformidade escalada para crítica' : 'Estado de não conformidade actualizado';
         $message = $becameCritical
             ? sprintf('%s foi escalada para severidade crítica.', $nonConformity->nc_number)
             : sprintf('%s mudou de %s para %s.', $nonConformity->nc_number, $before['status'] ?? 'n/a', $nonConformity->status);

@@ -18,7 +18,7 @@ defineProps({ status: String })
 const page = usePage()
 const brandSettings = computed(() => page.props.settings ?? {})
 const brandLoginHeadline = computed(() => brandSettings.value.login_headline || 'Bem-vindo de volta')
-const brandLoginSubheadline = computed(() => brandSettings.value.login_subheadline || 'Aceda a operacao e mantenha a rastreabilidade do laboratorio sob controlo.')
+const brandLoginSubheadline = computed(() => brandSettings.value.login_subheadline || 'Aceda a operação e mantenha a rastreabilidade do laboratório sob controlo.')
 const socialProviders = computed(() => page.props.socialAuth?.providers ?? [])
 const portalEnabled = computed(() => brandSettings.value.portal_enabled !== false)
 
@@ -57,7 +57,7 @@ const loginWithPasskey = async () => {
     })
 
     if (!response.ok) {
-      throw new Error('Nao foi possivel iniciar a autenticacao com passkey.')
+      throw new Error('Não foi possível iniciar a autenticação com passkey.')
     }
 
     const options = await response.json()
@@ -67,23 +67,23 @@ const loginWithPasskey = async () => {
     passkeyLoginForm.value?.submit()
   } catch (error) {
     passkeyProcessing.value = false
-    form.setError('email', error?.message || 'Nao foi possivel autenticar com passkey.')
+    form.setError('email', error?.message || 'Não foi possível autenticar com passkey.')
   }
 }
 </script>
 
 <template>
-  <Head title="Login" />
+  <Head title="Início de sessão" />
   <AuthExperienceShell
     :title="brandLoginHeadline"
-    eyebrow="Area interna"
+    eyebrow="Área interna"
     :description="brandLoginSubheadline"
-    context-title="Sessao protegida"
-    context-description="A identificacao do utilizador mantem operacoes, revisoes e documentos associados ao responsavel correto."
+    context-title="Sessão protegida"
+    context-description="A identificação do utilizador mantém operações, revisoes e documentos associados ao responsável correcto."
   >
     <div>
-      <p class="ds-kicker">Autenticacao</p>
-      <h2 class="ds-heading mt-2 text-2xl">Iniciar sessao</h2>
+      <p class="ds-kicker">Autenticação</p>
+      <h2 class="ds-heading mt-2 text-2xl">Iniciar sessão</h2>
       <p class="ds-copy mt-2 text-sm leading-6">Use as credenciais da sua conta interna.</p>
 
       <div

@@ -20,7 +20,7 @@ class DeleteOldZipFiles extends Command
      *
      * @var string
      */
-    protected $description = 'Delete ZIP files older than the specified number of days';
+    protected $description = 'Eliminar ficheiros ZIP anteriores ao número de dias indicado';
 
     public function __construct()
     {
@@ -49,11 +49,11 @@ class DeleteOldZipFiles extends Command
                 // If the file is older than the given number of days, delete it
                 if (now()->diffInDays($lastModified) >= $days) {
                     File::delete($file->getRealPath());
-                    $this->info("Deleted: {$file->getFilename()}");
+                    $this->info("Eliminado: {$file->getFilename()}");
                 }
             }
         }
 
-        $this->info('Old ZIP files cleaned up successfully.');
+        $this->info('Ficheiros ZIP antigos eliminados com sucesso.');
     }
 }

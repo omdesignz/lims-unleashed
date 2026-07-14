@@ -8,11 +8,13 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class MaintenanceCalendarExport implements FromCollection, WithHeadings, WithMapping, WithStyles
 {
     protected $filters;
+
     protected $calendar;
 
     public function __construct($filters = [])
@@ -41,7 +43,7 @@ class MaintenanceCalendarExport implements FromCollection, WithHeadings, WithMap
 
         $calendar = [];
         $currentDate = Carbon::parse($startDate);
-        
+
         while ($currentDate <= Carbon::parse($endDate)) {
             $dateKey = $currentDate->format('Y-m-d');
             $dayTasks = $tasks->filter(function ($task) use ($currentDate) {
@@ -52,22 +54,22 @@ class MaintenanceCalendarExport implements FromCollection, WithHeadings, WithMap
                 foreach ($dayTasks as $task) {
                     $calendar[] = [
                         'date' => $currentDate->format('d/m/Y'),
-                        'day' => $currentDate->format('l'),
+                        'day' => $currentDate->locale('pt')->translatedFormat('l'),
                         'task_number' => $task->maintenance_task_no,
                         'task_name' => $task->name,
                         'category' => $task->category->name,
                         'equipment' => $task->equipment->name,
-                        'status' => $task->is_executed ? 'Executed' : 
-                                   ($task->due_date < now() ? 'Overdue' : 'Scheduled'),
+                        'status' => $task->is_executed ? 'Executada' :
+                                   ($task->due_date < now() ? 'Em atraso' : 'Agendada'),
                         'time' => $task->due_date->format('H:i'),
                     ];
                 }
             } else {
                 $calendar[] = [
                     'date' => $currentDate->format('d/m/Y'),
-                    'day' => $currentDate->format('l'),
+                    'day' => $currentDate->locale('pt')->translatedFormat('l'),
                     'task_number' => '',
-                    'task_name' => 'No tasks scheduled',
+                    'task_name' => 'Sem tarefas agendadas',
                     'category' => '',
                     'equipment' => '',
                     'status' => '',
@@ -84,14 +86,14 @@ class MaintenanceCalendarExport implements FromCollection, WithHeadings, WithMap
     public function headings(): array
     {
         return [
-            'Date',
-            'Day',
-            'Task Number',
-            'Task Name',
-            'Category',
-            'Equipment',
-            'Status',
-            'Time',
+            'Data',
+            'Dia',
+            'Número da tarefa',
+            'Nome da tarefa',
+            'Categoria',
+            'Equipamento',
+            'Estado',
+            'Hora',
         ];
     }
 
@@ -115,9 +117,9 @@ class MaintenanceCalendarExport implements FromCollection, WithHeadings, WithMap
             1 => [
                 'font' => ['bold' => true],
                 'fill' => [
-                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                    'color' => ['argb' => 'FFF0F7FF']
-                ]
+                    'fillType' => Fill::FILL_SOLID,
+                    'color' => ['argb' => 'FFF0F7FF'],
+                ],
             ],
         ];
     }

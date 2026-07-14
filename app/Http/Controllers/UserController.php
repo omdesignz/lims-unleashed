@@ -405,7 +405,7 @@ class UserController extends Controller
             activity()
                 ->performedOn($user)
                 ->causedBy(auth()->user())
-                ->log('Activou o usuário '.$user->name);
+                ->log('Activou o utilizador '.$user->name);
 
             return redirect()->back()->with([
                 'toast' => [
@@ -418,7 +418,7 @@ class UserController extends Controller
             activity()
                 ->performedOn($user)
                 ->causedBy(auth()->user())
-                ->log('Desactivou o usuário '.$user->full_name);
+                ->log('Desactivou o utilizador '.$user->full_name);
 
             return redirect()->back()->with([
                 'toast' => [

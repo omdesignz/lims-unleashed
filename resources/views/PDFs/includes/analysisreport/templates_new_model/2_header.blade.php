@@ -4,7 +4,7 @@
 
 <div style="float: right; width: 54%;">
 <div class="rounded">
-<h3 style="padding-left: 15px;">RELATÓRIO DE ENSAIO <small style="font-weight: normal; font-style: italic;">(Test Report)</small><br>
+<h3 style="padding-left: 15px;">RELATÓRIO DE ENSAIO<br>
     {!! mb_strtoupper($model?->code) !!}
 </h3>
 
@@ -68,7 +68,7 @@
     </tr>
     {{-- <tr>
         <td class="tg-s268" style="padding:5px 5px;font-size:11px;">
-        Boletim Nº <small style="font-weight: normal; font-style: italic;">(Test Report No.)</small>:
+        Boletim n.º:
         </td>
         <td class="tg-s268" style="padding:5px 5px;font-weight:bold;font-size:11px;">
         {!! mb_strtoupper($model?->code) !!}
@@ -96,7 +96,7 @@
     </tr>
     <tr>
         <td class="tg-s268" style="padding:5px 5px;font-size:11px;" width="150px">
-        Data de Emissão <small style="font-weight: normal; font-style: italic;">(Issue Date)</small>:
+        Data de Emissão <small style="font-weight: normal; font-style: italic;">(Data de emissão)</small>:
         </td>
         <td class="tg-s268" style="font-weight:bold;padding:5px 5px;font-size:11px;" width="150px">
         {{ mb_strtoupper($model?->created_at) ?? '--' }}
@@ -245,7 +245,7 @@
         Data de Expiração:
         </td>
         <td class="tg-s268" style="padding:5px 5px;font-weight:bold;font-size:11px;">
-        {!! ( $model->collection->expiry_date ? Carbon\Carbon::parse($model->collection->expiry_date)->format('d/m/Y') : 'N/A' ) !!}
+        {!! ( $model->collection->expiry_date ? Carbon\Carbon::parse($model->collection->expiry_date)->format('d/m/Y') : 'N/D' ) !!}
         </td>
     </tr>
     <tr>

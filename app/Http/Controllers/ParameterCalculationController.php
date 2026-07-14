@@ -13,14 +13,14 @@ class ParameterCalculationController extends Controller
     {
         $request->validate([
             'parameter_id' => 'required|exists:parameters,id',
-            'inputs' => 'required|array'
+            'inputs' => 'required|array',
         ]);
 
         $parameter = Parameter::query()->with('formula')->findOrFail($request->parameter_id);
 
-        if (!$parameter->requires_calculation) {
+        if (! $parameter->requires_calculation) {
             return response()->json([
-                'error' => 'Parameter does not require calculation'
+                'error' => 'O parâmetro não requer cálculo',
             ], 422);
         }
 
@@ -28,7 +28,7 @@ class ParameterCalculationController extends Controller
             $formulaExpression = $parameter->formula?->formula_expression ?? $parameter->formula_expression;
 
             if (! $formulaExpression) {
-                throw new \Exception('No formula defined for this parameter');
+                throw new \Exception('Não existe uma fórmula definida para este parâmetro');
             }
 
             $result = $calculator->evaluateFormula($formulaExpression, $request->inputs);
@@ -46,7 +46,7 @@ class ParameterCalculationController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 422);
         }
     }
@@ -56,20 +56,20 @@ class ParameterCalculationController extends Controller
         $request->validate([
             'sample_id' => 'required|exists:samples,id',
             'results' => 'required|array',
-            'overrides' => 'sometimes|array'
+            'overrides' => 'sometimes|array',
         ]);
 
         $sample = Sample::findOrFail($request->sample_id);
 
         foreach ($request->results as $parameterCode => $value) {
             $parameter = Parameter::query()->with('formula')->where('code', $parameterCode)->first();
-            
-            if (!$parameter) {
+
+            if (! $parameter) {
                 continue;
             }
 
             $isOverride = $request->overrides[$parameterCode] ?? false;
-            $isCalculated = $parameter->requires_calculation && !$isOverride;
+            $isCalculated = $parameter->requires_calculation && ! $isOverride;
 
             $sample->results()->updateOrCreate(
                 ['parameter_code' => $parameterCode],
@@ -81,8 +81,8 @@ class ParameterCalculationController extends Controller
                     'calculation_metadata' => $isCalculated ? [
                         'formula_used' => $parameter->formula?->formula_expression ?? $parameter->formula_expression,
                         'calculated_at' => now(),
-                        'inputs' => $this->getCalculationInputs($parameter, $request->results)
-                    ] : null
+                        'inputs' => $this->getCalculationInputs($parameter, $request->results),
+                    ] : null,
                 ]
             );
         }
@@ -90,7 +90,7 @@ class ParameterCalculationController extends Controller
         // Update sample status
         $sample->update([
             'results_status' => 'completed',
-            'completed_at' => now()
+            'completed_at' => now(),
         ]);
 
         return response()->json(['success' => true]);
@@ -100,13 +100,13 @@ class ParameterCalculationController extends Controller
     {
         $inputs = [];
         $required = $parameter->getCalculationRequirements();
-        
+
         foreach ($required as $inputCode) {
             if (isset($results[$inputCode])) {
                 $inputs[$inputCode] = $results[$inputCode];
             }
         }
-        
+
         return $inputs;
     }
 }

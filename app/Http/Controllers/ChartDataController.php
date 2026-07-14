@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 class ChartDataController extends Controller
 {
     public function getChartData($chartType)
@@ -14,10 +12,10 @@ class ChartDataController extends Controller
         switch ($chartType) {
             case 'line':
                 $data = [
-                    'labels' => ['January', 'February', 'March', 'April'],
+                    'labels' => ['Janeiro', 'Fevereiro', 'Março', 'Abril'],
                     'datasets' => [
                         [
-                            'label' => 'Sales',
+                            'label' => 'Vendas',
                             'data' => [10, 20, 15, 30],
                             'backgroundColor' => '#3B82F6',
                         ],
@@ -26,7 +24,7 @@ class ChartDataController extends Controller
                         'plugins' => [
                             'title' => [
                                 'display' => true,
-                                'text' => 'Sales Over Time',
+                                'text' => 'Evolução das vendas',
                                 'color' => '#374151', // Tailwind gray-700
                                 'font' => [
                                     'size' => 18,
@@ -35,7 +33,7 @@ class ChartDataController extends Controller
                             ],
                             'subtitle' => [
                                 'display' => true,
-                                'text' => 'Quarterly Sales Performance',
+                                'text' => 'Desempenho trimestral das vendas',
                                 'color' => '#6B7280', // Tailwind gray-500
                                 'font' => [
                                     'size' => 14,
@@ -54,13 +52,13 @@ class ChartDataController extends Controller
                     ],
                 ];
                 break;
-                
+
             case 'bar':
                 $data = [
-                    'labels' => ['Red', 'Blue', 'Yellow', 'Green'],
+                    'labels' => ['Vermelho', 'Azul', 'Amarelo', 'Verde'],
                     'datasets' => [
                         [
-                            'label' => 'Votes',
+                            'label' => 'Votos',
                             'data' => [12, 19, 3, 5],
                             'backgroundColor' => '#3B82F6',
                         ],
@@ -69,7 +67,7 @@ class ChartDataController extends Controller
                         'plugins' => [
                             'title' => [
                                 'display' => true,
-                                'text' => 'Sales Over Time',
+                                'text' => 'Evolução das vendas',
                                 'color' => '#374151', // Tailwind gray-700
                                 'font' => [
                                     'size' => 18,
@@ -78,7 +76,7 @@ class ChartDataController extends Controller
                             ],
                             'subtitle' => [
                                 'display' => true,
-                                'text' => 'Quarterly Sales Performance',
+                                'text' => 'Desempenho trimestral das vendas',
                                 'color' => '#6B7280', // Tailwind gray-500
                                 'font' => [
                                     'size' => 14,
@@ -97,11 +95,11 @@ class ChartDataController extends Controller
                     ],
                 ];
                 break;
-                
-            // Add cases for other chart types as needed
+
+                // Add cases for other chart types as needed
 
             default:
-                return response()->json(['error' => 'Invalid chart type'], 400);
+                return response()->json(['error' => 'Tipo de gráfico inválido'], 400);
         }
 
         return response()->json($data);

@@ -527,7 +527,7 @@ const renderedContent = computed(() => {
     <!-- <p class="ml-2 max-w-4xl text-sm text-gray-500">A emitir factura para o cliente: {{ form?.customer_id?.label }}</p> -->
     <p class="ml-2 max-w-4xl text-sm text-gray-500">
         <button type="button" @click="form.use_matrix_price = !form.use_matrix_price" class="bg-blue-900 relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-900 focus:ring-offset-2" role="switch" :aria-checked="form.use_matrix_price" :class="{ 'bg-blue-900': form.use_matrix_price, 'bg-gray-200': !form.use_matrix_price }">
-            <span class="sr-only">Invoice by Matrix</span>
+            <span class="sr-only">Facturar por matriz</span>
             <!-- Enabled: "translate-x-5", Not Enabled: "translate-x-0" -->
             <span class="translate-x-0 pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" :class="{ 'translate-x-5': form.use_matrix_price, 'translate-x-0': !form.use_matrix_price }">
                 <!-- Enabled: "opacity-0 duration-100 ease-out", Not Enabled: "opacity-100 duration-200 ease-in" -->

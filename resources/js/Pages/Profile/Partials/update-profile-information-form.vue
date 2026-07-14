@@ -132,7 +132,7 @@ function deleteSignature() {
 
       <label class="ds-field-group">
         <span class="flex items-center justify-between gap-3">
-          <span class="ds-field-label">Email <span class="ds-field-required">*</span></span>
+          <span class="ds-field-label">Correio electrónico <span class="ds-field-required">*</span></span>
           <span class="inline-flex items-center gap-1 text-xs font-semibold" :class="user.email_verified_at ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'">
             <CheckCircleIcon v-if="user.email_verified_at" class="h-3.5 w-3.5" />
             {{ user.email_verified_at ? 'Verificado' : 'Não verificado' }}
@@ -148,7 +148,7 @@ function deleteSignature() {
         <EnvelopeIcon class="mt-0.5 h-4 w-4 shrink-0" />
         <p>{{ verificationLinkSent ? 'Foi enviado um novo link de verificação.' : 'Confirme este endereço para manter notificações e recuperação de conta disponíveis.' }}</p>
       </div>
-      <button type="button" class="shrink-0 font-bold underline underline-offset-4" @click="sendEmailVerification">Reenviar email</button>
+      <button type="button" class="shrink-0 font-bold underline underline-offset-4" @click="sendEmailVerification">Reenviar correio electrónico</button>
     </div>
 
     <div class="border-t border-[var(--ds-border)] pt-6">

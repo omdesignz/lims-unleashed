@@ -58,7 +58,7 @@ const navigation = computed(() => [
         <div class="flex flex-wrap gap-2" aria-label="Estado da conta">
           <span class="ds-chip" :class="user.email_verified_at ? 'ds-chip-success' : 'ds-chip-warning'">
             <span class="h-1.5 w-1.5 rounded-full bg-current" />
-            Email {{ user.email_verified_at ? 'verificado' : 'por verificar' }}
+            Correio electrónico {{ user.email_verified_at ? 'verificado' : 'por verificar' }}
           </span>
           <span class="ds-chip" :class="confirmsTwoFactorAuthentication ? 'ds-chip-success' : 'ds-chip-neutral'">
             <span class="h-1.5 w-1.5 rounded-full bg-current" />

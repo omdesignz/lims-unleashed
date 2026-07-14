@@ -199,7 +199,7 @@ function submit() {
               <div>
                 <p class="ds-kicker">Matriz de autorização</p>
                 <h2 class="ds-heading mt-2 text-lg">Permissões</h2>
-                <p class="ds-copy mt-1 text-sm">Pesquise e selecione as operações necessárias para esta responsabilidade.</p>
+                <p class="ds-copy mt-1 text-sm">Pesquise e seleccione as operações necessárias para esta responsabilidade.</p>
               </div>
               <button
                 type="button"
@@ -207,7 +207,7 @@ function submit() {
                 :disabled="filteredPermissions.length === 0"
                 @click="toggleVisiblePermissions"
               >
-                {{ areAllVisibleSelected ? "Desmarcar visíveis" : "Selecionar visíveis" }}
+                {{ areAllVisibleSelected ? "Desmarcar visíveis" : "Seleccionar visíveis" }}
               </button>
             </div>
 
@@ -234,7 +234,7 @@ function submit() {
 
             <div class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-[var(--ds-text-muted)]">
               <span>{{ filteredPermissions.length }} resultados</span>
-              <span>{{ selectedVisibleCount }} visíveis selecionados</span>
+              <span>{{ selectedVisibleCount }} visíveis seleccionados</span>
               <span>{{ selectedPermissionsCount }} atribuídos no total</span>
             </div>
           </div>

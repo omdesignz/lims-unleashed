@@ -63,7 +63,7 @@ const form = useForm(emptyForm());
 
 const panelTitle = computed(() => form.id ? `Editar pedido #${form.id}` : "Novo pedido de cliente");
 const panelDescription = computed(() => form.id
-  ? "Atualize a classificacao, o local e os dados de contacto do pedido."
+  ? "Actualize a classificação, o local e os dados de contacto do pedido."
   : "Registe uma nova necessidade para triagem comercial e laboratorial.");
 
 const confirmationDialogTitle = computed(() => {
@@ -82,9 +82,9 @@ const representedCustomers = computed(() => new Set(pageRecords.value.map((recor
 
 const metrics = computed(() => [
   { label: "Pedidos registados", value: totalRecords.value, detail: "volume total", icon: InboxStackIcon },
-  { label: "Ativos nesta pagina", value: activeRecords.value, detail: "em acompanhamento", icon: ClipboardDocumentListIcon },
-  { label: "Clientes representados", value: representedCustomers.value, detail: "nesta pagina", icon: BuildingOffice2Icon },
-  { label: "Arquivados nesta pagina", value: archivedRecords.value, detail: "fora da fila ativa", icon: ArchiveBoxIcon },
+  { label: "Activos nesta página", value: activeRecords.value, detail: "em acompanhamento", icon: ClipboardDocumentListIcon },
+  { label: "Clientes representados", value: representedCustomers.value, detail: "nesta página", icon: BuildingOffice2Icon },
+  { label: "Arquivados nesta página", value: archivedRecords.value, detail: "fora da fila activa", icon: ArchiveBoxIcon },
 ]);
 
 const actions = [
@@ -170,16 +170,14 @@ function executeBulkAction() {
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div class="min-w-0">
-          <p class="ds-kicker">Entrada de servico</p>
+          <p class="ds-kicker">Entrada de serviço</p>
           <div class="mt-3 flex items-start gap-3">
             <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
               <InboxStackIcon class="h-5 w-5" />
             </span>
             <div class="min-w-0">
               <h1 class="ds-heading text-2xl">{{ $t('gestlab.general.labels.customer_requests.page_title') }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">
-                Registo, classificacao e encaminhamento de necessidades comunicadas pelos clientes ao laboratorio.
-              </p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm"> Registo, classificação e encaminhamento de necessidades comunicadas pelos clientes ao laboratório. </p>
             </div>
           </div>
         </div>
@@ -250,7 +248,7 @@ function executeBulkAction() {
             class="ds-button ds-button-primary"
             :disabled="form.processing || !form.isDirty"
           >
-            {{ form.processing ? "A guardar..." : form.id ? "Guardar alteracoes" : "Registar pedido" }}
+            {{ form.processing ? "A guardar..." : form.id ? "Guardar alterações" : "Registar pedido" }}
           </button>
         </div>
       </template>
@@ -262,7 +260,7 @@ function executeBulkAction() {
       :description="confirmationDialogDescription"
       :variant="selectedAction === 'restore' ? 'question' : 'danger'"
       confirm="Sim"
-      cancel="Nao"
+      cancel="Não"
       @canceled="showActionConfirmation = false"
       @confirmed="executeBulkAction"
     />

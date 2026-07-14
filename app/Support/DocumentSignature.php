@@ -18,7 +18,7 @@ class DocumentSignature
         $opensslKey = openssl_pkey_get_private($privateKey);
 
         if ($opensslKey === false) {
-            return $this->fallback($payload, 'invalid private key');
+            return $this->fallback($payload, 'chave privada inválida');
         }
 
         $signature = '';

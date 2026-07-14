@@ -68,8 +68,8 @@ class AnalysisController extends Controller
             'per_page' => request()->query('per_page', 10),
             'slideOverEdit' => false,
             'entrypoint' => [
-                'label' => 'Novas análises começam pela Sample Entry',
-                'description' => 'A criação manual de análises deve ser evitada. Use a receção de amostra para gerar lab code, amostras e análises com rastreabilidade completa.',
+                'label' => 'Novas análises começam pela entrada de amostra',
+                'description' => 'A criação manual de análises deve ser evitada. Use a recepção de amostra para gerar lab code, amostras e análises com rastreabilidade completa.',
                 'create_sample_url' => route('vap_samples.index'),
             ],
             'trashedFilter' => true,
@@ -220,7 +220,7 @@ class AnalysisController extends Controller
         return to_route('vap_samples.index')->with([
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
-                'message' => 'Novas análises devem iniciar pela Sample Entry para manter a rastreabilidade completa.',
+                'message' => 'As novas análises devem começar pela entrada de amostra para manter a rastreabilidade completa.',
             ],
         ]);
     }

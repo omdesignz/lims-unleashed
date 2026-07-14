@@ -50,7 +50,7 @@
       <article class="ds-panel overflow-hidden">
         <div class="flex items-start justify-between gap-3 border-b border-[color:var(--ds-border)] px-5 py-4">
           <div>
-            <h2 class="ds-heading text-base">Escopo quantitativo</h2>
+            <h2 class="ds-heading text-base">Âmbito quantitativo</h2>
             <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Quantidade solicitada, aprovada e pendente.</p>
           </div>
           <span class="ds-chip">{{ formatQuantity(quantityScopeTotal) }} unidades</span>
@@ -138,7 +138,7 @@
 
         <article v-if="managementActionAvailable" class="ds-command-surface overflow-hidden">
           <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
-            <h2 class="ds-heading text-base">Ação de gestão</h2>
+            <h2 class="ds-heading text-base">Acção de gestão</h2>
             <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Aprovação, rejeição ou conversão para pedido de compra.</p>
           </div>
 

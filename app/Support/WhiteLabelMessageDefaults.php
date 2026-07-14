@@ -6,9 +6,7 @@ use App\Settings\GeneralSettings;
 
 class WhiteLabelMessageDefaults
 {
-    public function __construct(private readonly GeneralSettings $settings)
-    {
-    }
+    public function __construct(private readonly GeneralSettings $settings) {}
 
     public static function current(): self
     {
@@ -76,7 +74,7 @@ class WhiteLabelMessageDefaults
     {
         return $this->settings->app_notification_default_message
             ?: $fallback
-            ?: 'Existe uma atualização importante disponível para si no sistema.';
+            ?: 'Existe uma actualização importante disponível para si no sistema.';
     }
 
     public function notificationEmailIntro(?string $fallback = null): string

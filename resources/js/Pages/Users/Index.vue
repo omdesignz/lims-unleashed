@@ -293,13 +293,13 @@ function executeAction() {
           type="button"
           class="ds-table-action"
           :class="{ 'ds-table-action-danger': data.is_active }"
-          :title="data.is_active ? 'Desativar acesso' : 'Reativar acesso'"
-          :aria-label="`${data.is_active ? 'Desativar' : 'Reativar'} acesso de ${data.name}`"
+          :title="data.is_active ? 'Desactivar acesso' : 'Reactivar acesso'"
+          :aria-label="`${data.is_active ? 'Desactivar' : 'Reactivar'} acesso de ${data.name}`"
           @click="requestRecordAction(data.is_active ? 'ban' : 'unban', data.id)"
         >
           <LockClosedIcon v-if="data.is_active" class="h-4 w-4" />
           <LockOpenIcon v-else class="h-4 w-4" />
-          <span class="sr-only">{{ data.is_active ? "Desativar" : "Reativar" }} {{ data.name }}</span>
+          <span class="sr-only">{{ data.is_active ? "Desactivar" : "Reactivar" }} {{ data.name }}</span>
         </button>
       </template>
     </RecordsTable>
@@ -326,7 +326,7 @@ function executeAction() {
               </div>
 
               <div>
-                <label for="user-email" class="ds-field-label">Email</label>
+                <label for="user-email" class="ds-field-label">Correio electrónico</label>
                 <BaseInput id="user-email" v-model="form.email" type="email" autocomplete="email" class="ds-field mt-2" required />
                 <p v-if="form.errors.email" class="ds-field-error">{{ form.errors.email }}</p>
               </div>
@@ -393,7 +393,7 @@ function executeAction() {
       :description="confirmationDialogDescription"
       :variant="confirmationVariant"
       confirm="Sim"
-      cancel="Nao"
+      cancel="Não"
       @canceled="closeActionConfirmation"
       @confirmed="executeAction"
     />

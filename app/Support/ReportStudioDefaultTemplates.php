@@ -132,7 +132,7 @@ class ReportStudioDefaultTemplates
     {
         return match ($studioType) {
             'executive' => 'Pacote executivo com indicadores, gráficos, leitura de risco e capacidade operacional.',
-            'proposal' => 'Proposta técnica-comercial com escopo, condições, dados bancários, assinatura e aceite do cliente.',
+            'proposal' => 'Proposta técnica-comercial com âmbito, condições, dados bancários, assinatura e aceite do cliente.',
             'export_certificate' => 'Certificado de exportação com produto, origem, destino, expedição e validação técnica.',
             'import_certificate' => 'Certificado de importação com importador, portos, lotes, validade e assinatura técnica.',
             'quote' => 'Proforma com itens, condições comerciais, resumo financeiro e validação formal.',
@@ -159,15 +159,15 @@ class ReportStudioDefaultTemplates
     private static function layoutFor(string $studioType): array
     {
         $isCommercial = in_array($studioType, ['proposal', 'quote', 'invoice', 'receipt', 'credit_note'], true);
-        $accent = in_array($studioType, ['export_certificate', 'import_certificate'], true) ? '#3f6f58' : '#143d37';
+        $accent = in_array($studioType, ['export_certificate', 'import_certificate'], true) ? '#166534' : '#0f766e';
         $title = self::titleFor($studioType);
         $subject = self::subjectTokenFor($studioType);
         $number = self::numberTokenFor($studioType);
 
         return [
             'first_page_header_html' => self::firstPageHeaderHtml($title, $number, $subject, $accent),
-            'default_header_html' => '<div style="font-size:10px; color:#475a53; border-bottom:1px solid #ded3bf; padding-bottom:6px;">'.$title.' · {{document_code}} · '.$subject.'</div>',
-            'footer_html' => '<div style="font-size:9px; color:#475a53; border-top:1px solid #ded3bf; padding-top:6px;">Documento controlado · {{document_code}} · Página {PAGENO}/{nbpg}</div>',
+            'default_header_html' => '<div style="font-size:9px; color:#475569; border-bottom:1px solid #cbd5e1; padding-bottom:5px;">'.$title.' · {{document_code}} · '.$subject.'</div>',
+            'footer_html' => '<div style="font-size:8px; color:#64748b; border-top:1px solid #cbd5e1; padding-top:5px;">Documento controlado · {{document_code}} · Página {PAGENO}/{nbpg}</div>',
             'body_html' => self::bodyHtmlFor($studioType),
             'styles_css' => self::stylesCss($accent),
             'sections' => [
@@ -178,18 +178,18 @@ class ReportStudioDefaultTemplates
             'variable_catalog' => self::variableCatalogFor($studioType),
             'canvas_blocks' => self::canvasBlocksFor($studioType, $accent),
             'document_font_family' => 'Manrope, DejaVu Sans, sans-serif',
-            'page_background_color' => '#fffdf7',
+            'page_background_color' => '#f8fafc',
             'background_image_path' => '',
             'background_size' => 'cover',
             'background_position' => 'center center',
             'background_repeat' => 'no-repeat',
             'table_header_background' => $accent,
             'table_header_text_color' => '#ffffff',
-            'table_border_color' => '#ded3bf',
+            'table_border_color' => '#cbd5e1',
             'table_font_size' => 10,
             'table_cell_padding' => 8,
-            'table_summary_background' => '#fffdf7',
-            'table_summary_text_color' => '#15231f',
+            'table_summary_background' => '#f8fafc',
+            'table_summary_text_color' => '#17202a',
             'table_summary_muted_color' => '#64748b',
             'show_canvas_grid' => true,
             'show_canvas_rulers' => true,
@@ -226,7 +226,7 @@ class ReportStudioDefaultTemplates
                 '{certificate_code}' => 'Código do certificado',
                 '{sample_entry_code}' => 'Código de entrada da amostra',
                 '{lab_code}' => 'Código laboratorial',
-                '{warehouse_name}' => 'Local de receção',
+                '{warehouse_name}' => 'Local de recepção',
                 '{sample_code}' => 'Código da amostra',
                 '{sample_name}' => 'Nome da amostra',
                 '{sample_type}' => 'Tipo de amostra',
@@ -236,9 +236,9 @@ class ReportStudioDefaultTemplates
                 '{sample_origin}' => 'Origem',
                 '{sampling_plan_ref}' => 'Plano de amostragem',
                 '{collection_date}' => 'Data de recolha',
-                '{received_at}' => 'Data de receção',
+                '{received_at}' => 'Data de recepção',
                 '{sample_details}' => 'Tabela de detalhes da amostra',
-                '{collection_details}' => 'Receção e cadeia de custódia',
+                '{collection_details}' => 'Recepção e cadeia de custódia',
                 '{analytical_scope}' => 'Âmbito analítico',
                 '{results_table}' => 'Tabela de resultados',
                 '{analysis_chart_title}' => 'Título do gráfico de resultados',
@@ -368,10 +368,10 @@ class ReportStudioDefaultTemplates
     private static function firstPageHeaderHtml(string $title, string $number, string $subject, string $accent): string
     {
         return <<<HTML
-<div style="min-height:92px; border:1px solid #ded3bf; border-radius:22px; padding:16px 116px 16px 18px; background:#fffdf7;">
-    <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:#d9b05f; font-weight:700;">{$title}</div>
-    <div style="margin-top:7px; font-size:18px; color:{$accent}; font-weight:800;">{$number}</div>
-    <div style="margin-top:5px; font-size:11px; color:#475a53;">{$subject} · {{issue_date}}</div>
+<div style="min-height:72px; border:1px solid #cbd5e1; border-top:4px solid {$accent}; border-radius:8px; padding:13px 116px 13px 18px; background:#ffffff;">
+    <div style="font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:#0f766e; font-weight:800;">{$title}</div>
+    <div style="margin-top:6px; font-size:18px; color:#17202a; font-weight:800;">{$number}</div>
+    <div style="margin-top:4px; font-size:10px; color:#475569;">{$subject} · {{issue_date}}</div>
 </div>
 HTML;
     }
@@ -379,22 +379,24 @@ HTML;
     private static function stylesCss(string $accent): string
     {
         return <<<CSS
-body { color:#15231f; font-family: Manrope, DejaVu Sans, sans-serif; }
-h1, h2, h3 { color: {$accent}; letter-spacing: -0.01em; }
-.report-table { border-collapse: collapse; width: 100%; font-size: 10px; }
-.report-table th { background: {$accent}; color: #ffffff; border: 1px solid {$accent}; padding: 7px; text-align: left; }
-.report-table td { border: 1px solid #ded3bf; padding: 7px; vertical-align: top; }
-.document-hero { background: {$accent}; border-radius: 24px; color: #ffffff; }
-.document-kicker { color: #d9b05f; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }
-.studio-lead { color: #e7efe8; font-size: 12px; line-height: 1.65; }
-.document-callout { background: #fffaf0; border: 1px solid #eadfca; border-left: 4px solid #d9b05f; border-radius: 18px; padding: 14px; }
-.document-summary-table { border-collapse: separate; border-spacing: 0; width: 100%; }
-.document-summary-cell { background: #fffdf7; border: 1px solid #ded3bf; border-radius: 18px; padding: 14px; vertical-align: top; }
-.label { color: #64748b; display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
-.value { color: #15231f; display: block; font-size: 12px; font-weight: 800; margin-top: 4px; }
-.muted { color: #64748b; font-size: 10px; line-height: 1.55; }
-.bilingual-label { color:#64748b; display:block; font-size:8px; letter-spacing:0.08em; margin-top:2px; text-transform:uppercase; }
-.studio-avoid-break { page-break-inside: avoid; break-inside: avoid; }
+.pdf-document { color:#17202a; font-family: Manrope, DejaVu Sans, sans-serif; }
+.pdf-document h1, .pdf-document h2, .pdf-document h3 { color: {$accent}; letter-spacing: 0; }
+.pdf-document .report-table { border-collapse: collapse; width: 100%; font-size: 10px; }
+.pdf-document .report-table th { background: {$accent}; color: #ffffff; border: 1px solid {$accent}; padding: 7px; text-align: left; }
+.pdf-document .report-table td { border: 1px solid #cbd5e1; padding: 7px; vertical-align: top; }
+.pdf-document .report-table tbody tr:nth-child(even) td { background:#f8fafc; }
+.pdf-document .document-hero { background: {$accent}; border:1px solid {$accent}; border-radius: 10px; color: #ffffff; }
+.pdf-document .document-hero h1, .pdf-document .document-hero h2, .pdf-document .document-hero h3 { color:#ffffff; }
+.pdf-document .document-kicker { color: #a7f3d0; font-size: 9px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+.pdf-document .studio-lead { color: #e2e8f0; font-size: 11px; line-height: 1.55; }
+.pdf-document .document-callout { background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid {$accent}; border-radius: 8px; padding: 12px 14px; }
+.pdf-document .document-summary-table { border-collapse: separate; border-spacing: 8px; margin:0; width: 100%; }
+.pdf-document .document-summary-cell { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; vertical-align: top; }
+.pdf-document .label { color: #64748b; display: block; font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+.pdf-document .value { color: #17202a; display: block; font-size: 12px; font-weight: 800; margin-top: 4px; }
+.pdf-document .muted { color: #64748b; font-size: 10px; line-height: 1.55; }
+.pdf-document .bilingual-label { color:#64748b; display:block; font-size:8px; letter-spacing:0.08em; margin-top:2px; text-transform:uppercase; }
+.pdf-document .studio-avoid-break { page-break-inside: avoid; break-inside: avoid; }
 CSS;
     }
 
@@ -405,10 +407,10 @@ CSS;
             'proposal' => self::proposalBodyHtml(),
             'export_certificate' => self::exportCertificateBodyHtml(),
             'import_certificate' => self::importCertificateBodyHtml(),
-            'quote' => self::commercialBodyHtml('Proforma {quote_number}', 'Condições / Terms', 'Emissão: {issue_date}<br>Validade: {expiry_date}<br>Local: {service_location}'),
-            'invoice' => self::commercialBodyHtml('Factura {document_number}', 'Condições / Terms', 'Emissão: {issue_date}<br>Vencimento: {due_date}<br>Local: {service_location}'),
-            'receipt' => self::commercialBodyHtml('Recibo {document_number}', 'Recebimento / Payment', 'Data: {issue_date}<br>Forma de pagamento: {payment_type}<br>Local: {service_location}'),
-            'credit_note' => self::commercialBodyHtml('Nota de crédito {document_number}', 'Motivo / Reason', '{reason_label}<br>Data: {issue_date}<br>Local: {service_location}'),
+            'quote' => self::commercialBodyHtml('Proforma {quote_number}', 'Condições', 'Emissão: {issue_date}<br>Validade: {expiry_date}<br>Local: {service_location}'),
+            'invoice' => self::commercialBodyHtml('Factura {document_number}', 'Condições', 'Emissão: {issue_date}<br>Vencimento: {due_date}<br>Local: {service_location}'),
+            'receipt' => self::commercialBodyHtml('Recibo {document_number}', 'Recepção', 'Data: {issue_date}<br>Forma de pagamento: {payment_type}<br>Local: {service_location}'),
+            'credit_note' => self::commercialBodyHtml('Nota de crédito {document_number}', 'Motivo', '{reason_label}<br>Data: {issue_date}<br>Local: {service_location}'),
             default => self::analysisBodyHtml(),
         };
     }
@@ -416,20 +418,20 @@ CSS;
     private static function analysisBodyHtml(): string
     {
         return <<<'HTML'
-<section style="padding:28px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:22px;">
-    <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:#d9b05f; font-weight:800;">Relatório analítico / Analysis report</div>
-    <h1 style="margin:10px 0 0; font-size:28px; line-height:1.08;">{report_title}</h1>
-    <p style="margin:12px 0 0; font-size:13px; color:#e7efe8;">{certificate_code} · {customer_name} · Entrada {sample_entry_code} · Código laboratorial {lab_code}</p>
+<section class="document-hero studio-avoid-break" style="padding:22px 24px; margin-bottom:18px; background-color:#0f766e; border:1px solid #0f766e; color:#ffffff;">
+    <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:#d9b05f; font-weight:800;">Relatório analítico</div>
+    <h1 style="margin:8px 0 0; color:#ffffff; font-size:25px; line-height:1.12;">{report_title}</h1>
+    <p style="margin:9px 0 0; font-size:11px; color:#e2e8f0;">{certificate_code} · {customer_name} · Entrada {sample_entry_code} · Código laboratorial {lab_code}</p>
 </section>
 <section style="margin-bottom:18px;">
     <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Cliente / Customer</div><div class="value">{customer_name}</div><div class="muted">{customer_details}</div></td>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório / Laboratory</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Cliente</div><div class="value">{customer_name}</div><div class="muted">{customer_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
         </tr>
         <tr>
-            <td class="document-summary-cell"><div class="label">Amostra / Sample</div><div class="value">{sample_product}</div><div class="muted">Matriz: {sample_matrix}<br>Lote: {sample_lot}<br>Origem: {sample_origin}</div></td>
-            <td class="document-summary-cell"><div class="label">Receção / Reception</div><div class="value">{warehouse_name}</div><div class="muted">Recebida em: {received_at}<br>Recolha: {collection_date}<br>Plano: {sampling_plan_ref}</div></td>
+            <td class="document-summary-cell"><div class="label">Amostra</div><div class="value">{sample_product}</div><div class="muted">Matriz: {sample_matrix}<br>Lote: {sample_lot}<br>Origem: {sample_origin}</div></td>
+            <td class="document-summary-cell"><div class="label">Recepção</div><div class="value">{warehouse_name}</div><div class="muted">Recebida em: {received_at}<br>Recolha: {collection_date}<br>Plano: {sampling_plan_ref}</div></td>
         </tr>
     </table>
 </section>
@@ -448,10 +450,10 @@ HTML;
     private static function executiveBodyHtml(): string
     {
         return <<<'HTML'
-<section style="padding:30px; border-radius:26px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:22px;">
+<section class="document-hero studio-avoid-break" style="padding:22px 24px; margin-bottom:18px; background-color:#0f766e; border:1px solid #0f766e; color:#ffffff;">
     <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:#d9b05f; font-weight:800;">{{lab_name}} · {{issue_date}}</div>
-    <h1 style="margin:12px 0 0; font-size:30px; line-height:1.08;">Resumo executivo</h1>
-    <p style="margin:12px 0 0; font-size:13px; color:#e7efe8;">{executive_summary}</p>
+    <h1 style="margin:8px 0 0; color:#ffffff; font-size:25px; line-height:1.12;">Resumo executivo</h1>
+    <p style="margin:9px 0 0; font-size:11px; color:#e2e8f0;">{executive_summary}</p>
 </section>
 {executive_kpis}
 <section style="margin:20px 0;">{executive_charts}</section>
@@ -462,20 +464,20 @@ HTML;
     private static function proposalBodyHtml(): string
     {
         return <<<'HTML'
-<section style="padding:30px; border-radius:26px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:22px;">
+<section class="document-hero studio-avoid-break" style="padding:22px 24px; margin-bottom:18px; background-color:#0f766e; border:1px solid #0f766e; color:#ffffff;">
     <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:#d9b05f; font-weight:800;">Proposta técnica-comercial</div>
-    <h1 style="margin:12px 0 0; font-size:30px; line-height:1.08;">Proposta {proposal_number}</h1>
-    <p style="margin:12px 0 0; font-size:13px; color:#e7efe8;">{customer_name} · {service_location} · Válida até {expiry_date}</p>
+    <h1 style="margin:8px 0 0; color:#ffffff; font-size:25px; line-height:1.12;">Proposta {proposal_number}</h1>
+    <p style="margin:9px 0 0; font-size:11px; color:#e2e8f0;">{customer_name} · {service_location} · Válida até {expiry_date}</p>
 </section>
 <section style="margin-bottom:18px;">
     <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Cliente / Customer</div><div class="value">{customer_name}</div><div class="muted">{customer_details}</div></td>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório / Laboratory</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Cliente</div><div class="value">{customer_name}</div><div class="muted">{customer_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
         </tr>
         <tr>
-            <td class="document-summary-cell"><div class="label">Âmbito / Scope</div><div class="value">Serviços laboratoriais propostos</div><div class="muted">O âmbito técnico deve ser aceite antes da execução.</div></td>
-            <td class="document-summary-cell"><div class="label">Condições / Terms</div><div class="value">Validade: {expiry_date}</div><div class="muted">Local: {service_location}<br>Regra de decisão: {decision_rule}</div></td>
+            <td class="document-summary-cell"><div class="label">Âmbito</div><div class="value">Serviços laboratoriais propostos</div><div class="muted">O âmbito técnico deve ser aceite antes da execução.</div></td>
+            <td class="document-summary-cell"><div class="label">Condições</div><div class="value">Validade: {expiry_date}</div><div class="muted">Local: {service_location}<br>Regra de decisão: {decision_rule}</div></td>
         </tr>
     </table>
 </section>
@@ -509,12 +511,12 @@ HTML;
 <section style="margin-bottom:18px;">
     <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Exportador / Exporter</div><div class="value">{exporter_name}</div><div class="muted">{customer_details}</div></td>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório / Laboratory</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Exportador</div><div class="value">{exporter_name}</div><div class="muted">{customer_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
         </tr>
         <tr>
-            <td class="document-summary-cell"><div class="label">Origem / Origin</div><div class="value">{origin_city}, {origin_country}</div><div class="muted">Exportador: {exporter_name}</div></td>
-            <td class="document-summary-cell"><div class="label">Destino / Destination</div><div class="value">{destination_city}, {destination_country}</div><div class="muted">Transporte: {transport_type}</div></td>
+            <td class="document-summary-cell"><div class="label">Origem</div><div class="value">{origin_city}, {origin_country}</div><div class="muted">Exportador: {exporter_name}</div></td>
+            <td class="document-summary-cell"><div class="label">Destino</div><div class="value">{destination_city}, {destination_country}</div><div class="muted">Transporte: {transport_type}</div></td>
         </tr>
     </table>
 </section>
@@ -532,12 +534,12 @@ HTML;
 <section style="margin-bottom:18px;">
     <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Importador / Importer</div><div class="value">{importer_name}</div><div class="muted">{customer_details}</div></td>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório / Laboratory</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Importador</div><div class="value">{importer_name}</div><div class="muted">{customer_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
         </tr>
         <tr>
-            <td class="document-summary-cell"><div class="label">Importação / Import</div><div class="value">{destination_country}</div><div class="muted">Importador: {importer_name}<br>Exportador: {exporter_name}</div></td>
-            <td class="document-summary-cell"><div class="label">Logística / Logistics</div><div class="value">{transport_type}</div><div class="muted">Porto de saída: {port_exit}<br>Porto de entrada: {port_entry}</div></td>
+            <td class="document-summary-cell"><div class="label">Importação</div><div class="value">{destination_country}</div><div class="muted">Importador: {importer_name}<br>Exportador: {exporter_name}</div></td>
+            <td class="document-summary-cell"><div class="label">Logística</div><div class="value">{transport_type}</div><div class="muted">Porto de saída: {port_exit}<br>Porto de entrada: {port_entry}</div></td>
         </tr>
     </table>
 </section>
@@ -552,28 +554,28 @@ HTML;
     private static function commercialBodyHtml(string $title, string $termsTitle, string $termsBody): string
     {
         return <<<HTML
-<section style="padding:28px; border-radius:24px; background:linear-gradient(135deg,#07110f,#143d37); color:#ffffff; margin-bottom:22px;">
+<section class="document-hero studio-avoid-break" style="padding:18px 20px; margin-bottom:12px; background-color:#0f766e; border:1px solid #0f766e; color:#ffffff;">
     <div style="font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:#d9b05f; font-weight:800;">Documento comercial controlado</div>
-    <h1 style="margin:12px 0 0; font-size:28px; line-height:1.08;">{$title}</h1>
-    <p style="margin:12px 0 0; font-size:13px; color:#e7efe8;">{customer_name} · {service_location} · {issue_date}</p>
+    <h1 style="margin:8px 0 0; color:#ffffff; font-size:25px; line-height:1.12;">{$title}</h1>
+    <p style="margin:9px 0 0; font-size:11px; color:#e2e8f0;">{customer_name} · {service_location} · {issue_date}</p>
 </section>
-<section style="margin-bottom:18px;">
+<section style="margin-bottom:10px;">
     <table class="document-summary-table studio-avoid-break">
         <tr>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Cliente / Customer</div><div class="value">{customer_name}</div><div class="muted">{customer_details}</div></td>
-            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório / Laboratory</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Cliente</div><div class="value">{customer_name}</div><div class="muted">{customer_details}</div></td>
+            <td class="document-summary-cell" style="width:50%;"><div class="label">Laboratório</div><div class="value">{lab_name}</div><div class="muted">{lab_details}</div></td>
         </tr>
         <tr>
             <td class="document-summary-cell"><div class="label">{$termsTitle}</div><div class="value">Condições do documento</div><div class="muted">{$termsBody}</div></td>
-            <td class="document-summary-cell"><div class="label">Dados bancários / Banking</div><div class="value">Pagamento</div><div class="muted">{banking_details}</div></td>
+            <td class="document-summary-cell"><div class="label">Dados bancários</div><div class="value">Pagamento</div><div class="muted">{banking_details}</div></td>
         </tr>
     </table>
 </section>
-<section style="margin:20px 0;">{items_table}</section>
-<section style="margin-top:20px; page-break-inside:avoid;">{summary_table}</section>
-<section class="document-callout studio-avoid-break" style="margin-top:20px;">{observations}</section>
-<section style="margin-top:18px;">{document_keywords}</section>
-<section style="margin-top:24px;">{signature_block}</section>
+<section style="margin:12px 0;">{items_table}</section>
+<section style="margin-top:12px; page-break-inside:avoid;">{summary_table}</section>
+<section class="document-callout studio-avoid-break" style="margin-top:12px;">{observations}</section>
+<section style="margin-top:10px;">{document_keywords}</section>
+<section style="margin-top:12px;">{signature_block}</section>
 HTML;
     }
 
@@ -894,10 +896,10 @@ HTML;
             'margin_left' => 14,
             'margin_right' => 14,
             'first_page_margin_top' => match ($studioType) {
-                'analysis' => 58,
-                'executive' => 42,
-                'export_certificate', 'import_certificate' => 52,
-                default => 56,
+                'analysis' => 42,
+                'executive' => 38,
+                'export_certificate', 'import_certificate' => 40,
+                default => 26,
             },
         ];
     }

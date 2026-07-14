@@ -30,7 +30,7 @@
         </thead>
         <tbody>
           <tr v-for="(row, index) in rows" :key="index">
-            <td><button @click="removeRow(index)">Remove</button></td>
+            <td><button @click="removeRow(index)">Remover</button></td>
             <td><BaseInput v-model.number="row.VConv" type="number" /></td>
             <td><BaseInput v-model.number="row.Ind1" type="number" /></td>
             <td><BaseInput v-model.number="row.Ind2" type="number" /></td>
@@ -56,18 +56,18 @@
           </tr>
         </tbody>
       </DataTable>
-      <button @click="addRow">Add Row</button>
+      <button @click="addRow">Adicionar linha</button>
     </div>
   </template>
-  
+
   <script setup>
   import { useScaleCalibrationCalculator } from '@/Composables/Calibrations/useScaleCalibrationCalculator';
 
   const { rows, addRow, removeRow } = useScaleCalibrationCalculator();
-  
+
   </script>
-  
+
   <style scoped>
   /* Add your styling here */
   </style>
-  
+

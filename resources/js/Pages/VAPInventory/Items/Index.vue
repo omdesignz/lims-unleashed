@@ -12,11 +12,9 @@
             </span>
             <div class="min-w-0">
               <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">
-                Itens de inventario
+                Itens de inventário
               </h1>
-              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                Controle reagentes, equipamentos e consumiveis com stock, estado, validade e bloqueios metrologicos em uma unica fila.
-              </p>
+              <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]"> Controle reagentes, equipamentos e consumiveis com existências, estado, validade e bloqueios metrológicos em uma única fila. </p>
             </div>
           </div>
         </div>
@@ -73,7 +71,7 @@
             <BaseInput
               v-model="localFilters.search"
               type="search"
-              placeholder="Nome, codigo ou referencia"
+              placeholder="Nome, código ou referência"
               class="ds-field pl-10"
             />
           </span>
@@ -156,15 +154,14 @@
         <div class="ds-table-summary px-5 py-4">
           <div>
             <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">
-              Registo de stock
+              Registo de existências
             </p>
             <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">
               Itens registados
             </h2>
           </div>
           <span class="ds-chip">
-            {{ itemRows.length }} nesta pagina
-          </span>
+            {{ itemRows.length }} nesta página </span>
         </div>
 
         <div v-if="itemRows.length" class="divide-y divide-[var(--ds-border)] lg:hidden">
@@ -179,7 +176,7 @@
                   {{ item.name }}
                 </h3>
                 <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">
-                  Codigo: {{ item.code || 'N/D' }}
+                  Código: {{ item.code || 'N/D' }}
                 </p>
                 <p v-if="item.internal_code" class="text-sm font-semibold text-[var(--ds-text-muted)]">
                   Interno: {{ item.internal_code }}
@@ -204,7 +201,7 @@
               </div>
               <div class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-3">
                 <p class="text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">
-                  Stock
+                  Existências
                 </p>
                 <p class="mt-2 text-2xl font-black text-[rgb(var(--primary-800-rgb))] dark:text-cyan-100">
                   {{ item.inventory_sum_qty_available || 0 }}
@@ -260,7 +257,7 @@
                 @click="confirmDelete(item)"
               >
                 <TrashIcon class="mr-1 h-4 w-4" />
-                Excluir
+                Eliminar
               </button>
             </div>
           </article>
@@ -272,9 +269,9 @@
               <tr>
                 <th class="px-5 py-3 text-left ds-table-heading">Item</th>
                 <th class="px-5 py-3 text-left ds-table-heading">Categoria</th>
-                <th class="px-5 py-3 text-left ds-table-heading">Stock</th>
+                <th class="px-5 py-3 text-left ds-table-heading">Existências</th>
                 <th class="px-5 py-3 text-left ds-table-heading">Estado</th>
-                <th class="px-5 py-3 text-left ds-table-heading">Acoes</th>
+                <th class="px-5 py-3 text-left ds-table-heading">Acções</th>
               </tr>
             </thead>
             <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
@@ -289,7 +286,7 @@
                         {{ item.name }}
                       </p>
                       <p class="text-xs font-semibold text-[var(--ds-text-muted)]">
-                        Codigo: {{ item.code || 'N/D' }}
+                        Código: {{ item.code || 'N/D' }}
                       </p>
                       <p v-if="item.internal_code" class="text-xs font-semibold text-[var(--ds-text-muted)]">
                         Interno: {{ item.internal_code }}
@@ -363,7 +360,7 @@
                       @click="confirmDelete(item)"
                     >
                       <TrashIcon class="h-4 w-4" />
-                      <span class="sr-only">Excluir</span>
+                      <span class="sr-only">Eliminar</span>
                     </button>
                   </div>
                 </td>
@@ -378,7 +375,7 @@
             Nenhum item encontrado
           </h3>
           <p class="mx-auto mt-2 max-w-md text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-            Ajuste os filtros ou adicione o primeiro item com dados de stock, validade e rastreabilidade.
+            Ajuste os filtros ou adicione o primeiro item com dados de existências, validade e rastreabilidade.
           </p>
           <Link
             :href="route('vap-inventory.items.create')"
@@ -450,9 +447,7 @@
         </section>
 
         <section class="ds-command-surface p-5">
-          <h2 class="text-base font-black text-[var(--ds-text)]">
-            Acoes rapidas
-          </h2>
+          <h2 class="text-base font-black text-[var(--ds-text)]"> Acções rapidas </h2>
           <div class="mt-5 space-y-3">
             <Link
               v-for="action in quickActions"
@@ -477,11 +472,9 @@
     </div>
 
     <ConfirmationModal :show="showDeleteModal" @close="showDeleteModal = false" @confirm="deleteItem">
-      <template #title>Excluir item</template>
+      <template #title>Eliminar item</template>
       <template #content>
-        Tem a certeza que deseja excluir <span class="font-semibold">{{ itemToDelete?.name }}</span>?
-        Esta acao nao pode ser desfeita.
-      </template>
+        Tem a certeza que deseja eliminar <span class="font-semibold">{{ itemToDelete?.name }}</span>? Esta acção não pode ser desfeita. </template>
       <template #confirmButton>
         <button
           type="button"
@@ -489,7 +482,7 @@
           @click="deleteItem"
         >
           <TrashIcon class="h-4 w-4" />
-          Excluir item
+          Eliminar item
         </button>
       </template>
     </ConfirmationModal>
@@ -569,7 +562,7 @@ const statsCards = computed(() => [
   {
     label: 'Equipamentos',
     value: props.stats.equipment_count,
-    detail: 'Ativos sujeitos a controlo',
+    detail: 'Activos sujeitos a controlo',
     icon: CubeIcon,
     tone: 'text-cyan-700 dark:text-cyan-200',
   },
@@ -590,7 +583,7 @@ const statsCards = computed(() => [
   {
     label: 'Bloqueios',
     value: props.stats.items_on_metrology_hold || 0,
-    detail: 'Em revisao metrologica',
+    detail: 'Em revisão metrologica',
     icon: ExclamationTriangleIcon,
     tone: 'text-rose-700 dark:text-rose-200',
   },
@@ -599,7 +592,7 @@ const statsCards = computed(() => [
 const quickAlerts = computed(() => [
   {
     href: route('vap-inventory.items.calibration.schedule'),
-    label: 'Calibracao em breve',
+    label: 'Calibração em breve',
     value: props.stats.items_needing_calibration || 0,
   },
   {
@@ -609,7 +602,7 @@ const quickAlerts = computed(() => [
   },
   {
     href: route('vap-inventory.reports.low-stock'),
-    label: 'Itens com pouco stock',
+    label: 'Itens com pouco existências',
     value: props.stats.low_stock_items || 0,
   },
 ])
@@ -625,7 +618,7 @@ const quickActions = computed(() => [
   {
     href: route('vap-inventory.transfers.create'),
     title: 'Transferir itens',
-    description: 'Mover stock entre armazens.',
+    description: 'Mover existências entre armazens.',
     icon: ArrowsRightLeftIcon,
     tone: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-100',
   },
@@ -701,7 +694,7 @@ const getMetrologyText = (status) => {
   }
 
   if (status === 'review_due') {
-    return 'Revisao metrologica'
+    return 'Revisão metrologica'
   }
 
   return 'Metrologia validada'

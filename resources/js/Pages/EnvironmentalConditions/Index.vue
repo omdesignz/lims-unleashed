@@ -35,7 +35,7 @@ const filterForm = useForm({
 });
 const metricItems = computed(() => [
   { label: "Total", value: props.stats.total ?? 0, detail: "medições registadas", icon: BeakerIcon },
-  { label: "Fora dos limites", value: props.stats.critical ?? 0, detail: "requerem ação", icon: ExclamationTriangleIcon },
+  { label: "Fora dos limites", value: props.stats.critical ?? 0, detail: "requerem acção", icon: ExclamationTriangleIcon },
   { label: "Conformes", value: props.stats.within_limits ?? 0, detail: "dentro dos limites", icon: CheckCircleIcon },
   { label: "Hoje", value: props.stats.today ?? 0, detail: "registos do dia", icon: CalendarDaysIcon },
 ]);
@@ -196,8 +196,8 @@ watch(() => filterForm.status, applyFilters);
     <section class="grid gap-5 xl:grid-cols-[minmax(22rem,0.85fr)_minmax(0,1.45fr)]">
       <form v-if="canEditForm" class="ds-panel overflow-hidden" @submit.prevent="submit">
         <div class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
-          <p class="ds-kicker">{{ isEditing ? "Correção" : "Nova leitura" }}</p>
-          <h2 class="ds-heading mt-1 text-base">{{ isEditing ? "Atualizar condição" : "Registo ambiental" }}</h2>
+          <p class="ds-kicker">{{ isEditing ? "Correcção" : "Nova leitura" }}</p>
+          <h2 class="ds-heading mt-1 text-base">{{ isEditing ? "Actualizar condição" : "Registo ambiental" }}</h2>
           <p class="ds-copy mt-1 text-sm">Defina as leituras e os limites aplicáveis à área monitorizada.</p>
         </div>
 
@@ -227,7 +227,7 @@ watch(() => filterForm.status, applyFilters);
 
         <div class="flex flex-col-reverse gap-3 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
           <button v-if="isEditing" type="button" class="ds-button ds-button-secondary" @click="resetForm">Cancelar</button>
-          <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty"><CheckCircleIcon class="h-4 w-4" /> {{ form.processing ? "A guardar..." : (isEditing ? "Atualizar registo" : "Guardar registo") }}</button>
+          <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty"><CheckCircleIcon class="h-4 w-4" /> {{ form.processing ? "A guardar..." : (isEditing ? "Actualizar registo" : "Guardar registo") }}</button>
         </div>
       </form>
 
@@ -279,7 +279,7 @@ watch(() => filterForm.status, applyFilters);
     <ConfirmDialog
       v-if="pendingDelete"
       title="Remover registo ambiental?"
-      description="A leitura deixa de integrar o histórico de monitorização. Esta ação não deve substituir uma correção documentada."
+      description="A leitura deixa de integrar o histórico de monitorização. Esta acção não deve substituir uma correcção documentada."
       confirm="Remover"
       cancel="Cancelar"
       @canceled="pendingDelete = null"

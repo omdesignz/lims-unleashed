@@ -931,7 +931,7 @@ class ResultController extends Controller
         if (! $analysisId) {
             return $this->missingWorkflowRedirect('analysis.index', [
                 'category' => $this->analysisCategoryForAction($action),
-            ], 'A amostra selecionada ainda não tem uma análise associada.');
+            ], 'A amostra seleccionada ainda não tem uma análise associada.');
         }
 
         $results = $this->prepareResultsForWorkflow(
@@ -1051,7 +1051,7 @@ class ResultController extends Controller
         }
 
         if (! $counterAnalysisId) {
-            return $this->missingWorkflowRedirect('counteranalysis.index', [], 'A amostra selecionada ainda não tem uma contra-análise associada.');
+            return $this->missingWorkflowRedirect('counteranalysis.index', [], 'A amostra seleccionada ainda não tem uma contra-análise associada.');
         }
 
         $results = $this->prepareResultsForWorkflow(
@@ -1207,7 +1207,7 @@ class ResultController extends Controller
         if (! $analysisId) {
             return response()->json([
                 'success' => false,
-                'message' => 'A amostra selecionada ainda não tem uma análise associada.',
+                'message' => 'A amostra seleccionada ainda não tem uma análise associada.',
             ], 422);
         }
         $preparedResult = $this->prepareIndividualResultForWorkflow(
@@ -1272,7 +1272,7 @@ class ResultController extends Controller
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'Ação inválida',
+                'message' => 'Acção inválida',
             ], 400);
         }
 

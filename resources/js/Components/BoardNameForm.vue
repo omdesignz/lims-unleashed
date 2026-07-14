@@ -54,7 +54,7 @@ function onSubmit() {
         ref="input"
         v-model="form.name"
         class="text-2xl max-w-full font-bold placeholder-gray-400 px-3 py-1.5 rounded-md focus:ring-2 focus:ring-blue-900"
-        placeholder="Board name"
+        placeholder="Nome do quadro"
         type="text" />
     </form>
   </div>

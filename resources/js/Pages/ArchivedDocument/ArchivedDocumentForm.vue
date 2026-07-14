@@ -37,7 +37,7 @@ defineProps({
           <label for="archived-document-file" class="ds-field-label">{{ currentFile ? "Substituir ficheiro" : "Ficheiro arquivado" }}</label>
           <FileInput id="archived-document-file" type="file" class="ds-field mt-2 file:mr-3 file:border-0 file:bg-transparent file:text-sm file:font-bold file:text-[var(--ds-text)]" @input="form.file = $event.target.files?.[0] ?? null" />
           <p v-if="form.file" class="ds-field-hint mt-2">Novo ficheiro: {{ form.file.name }}</p>
-          <p v-else-if="currentFile" class="ds-field-hint mt-2 break-all">Ficheiro atual: {{ currentFile }}</p>
+          <p v-else-if="currentFile" class="ds-field-hint mt-2 break-all">Ficheiro actual: {{ currentFile }}</p>
           <p v-if="form.errors.file" class="ds-field-error mt-2">{{ form.errors.file }}</p>
         </div>
       </div>
@@ -64,7 +64,7 @@ defineProps({
           <InformationCircleIcon class="mt-0.5 h-5 w-5 shrink-0 text-[var(--ds-text-soft)]" />
           <div>
             <h2 class="text-sm font-bold text-[var(--ds-text)]">Retenção documental</h2>
-            <p class="mt-1 text-sm leading-6 text-[var(--ds-text-muted)]">Este catálogo preserva documentos fora do circuito ativo sem perder proveniência.</p>
+            <p class="mt-1 text-sm leading-6 text-[var(--ds-text-muted)]">Este catálogo preserva documentos fora do circuito activo sem perder proveniência.</p>
           </div>
         </div>
       </section>

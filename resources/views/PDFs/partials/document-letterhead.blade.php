@@ -7,7 +7,7 @@
 
     $letterheadName = $letterheadSettings?->app_client_lab_name
         ?: $letterheadSettings?->app_name
-        ?: config('app.name', 'Laboratory workspace');
+        ?: config('app.name', 'Espaço laboratorial');
     $letterheadOrganization = $letterheadSettings?->app_client_name;
     $letterheadDetails = array_values(array_filter([
         $letterheadSettings?->app_client_address,

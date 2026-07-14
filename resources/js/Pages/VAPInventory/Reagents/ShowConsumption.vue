@@ -4,7 +4,7 @@
       <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
         <div class="max-w-3xl">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Reagent control</span>
+            <span class="ds-kicker">Controlo de reagentes</span>
             <span class="ds-chip">
               <span class="lims-status-dot lims-status-dot-release" />
               Registado
@@ -13,7 +13,7 @@
           </div>
           <h1 class="ds-heading mt-3 text-2xl">Registo de consumo #{{ consumption.id }}</h1>
           <p class="ds-copy mt-2 text-sm">
-            Reveja material, quantidade, armazém, responsável e impacto de stock associados a este consumo.
+            Reveja material, quantidade, armazém, responsável e impacto de existências associados a este consumo.
           </p>
         </div>
 
@@ -24,7 +24,7 @@
           </button>
           <button type="button" class="ds-button ds-button-danger" @click="showDeleteConfirmation = true">
             <TrashIcon class="h-4 w-4" />
-            Excluir
+            Eliminar
           </button>
         </div>
       </div>
@@ -49,7 +49,7 @@
               <ClipboardDocumentListIcon class="mt-0.5 h-5 w-5 text-primary-700 dark:text-primary-300" />
               <div>
                 <h2 class="ds-heading text-base">Detalhes do consumo</h2>
-                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Rastreabilidade do registo e da saída de stock.</p>
+                <p class="mt-1 text-xs font-semibold text-[color:var(--ds-text-soft)]">Rastreabilidade do registo e da saída de existências.</p>
               </div>
             </div>
           </div>
@@ -145,7 +145,7 @@
 
         <section class="ds-panel overflow-hidden">
           <div class="border-b border-[color:var(--ds-border)] px-5 py-4">
-            <h2 class="ds-heading text-base">Impacto no stock</h2>
+            <h2 class="ds-heading text-base">Impacto no existências</h2>
           </div>
           <div class="grid gap-3 p-5">
             <div v-for="item in stockImpactCards" :key="item.label" class="ds-card p-4">
@@ -172,9 +172,9 @@
 
     <confirm-dialog
       v-if="showDeleteConfirmation"
-      title="Excluir registo de consumo"
-      description="Esta ação restaura o stock associado ao consumo e remove o registo da trilha operacional visível."
-      confirm="Excluir registo"
+      title="Eliminar registo de consumo"
+  description="Esta acção restaura as existências associadas ao consumo e remove o registo do histórico operacional visível."
+      confirm="Eliminar registo"
       cancel="Manter registo"
       variant="danger"
       @confirmed="confirmDeleteConsumption"
@@ -310,7 +310,7 @@ const reagentIdentityFields = computed(() => [
 
 const reagentSupplyFields = computed(() => [
   ['Marca', props.consumption.item?.brand || 'N/A'],
-  ['Modelo', props.consumption.item?.model || 'N/A'],
+  ['Modelo', props.consumption.item?.model || 'N/D'],
   ['Número de série', props.consumption.item?.serial_number || 'N/A'],
   ['Fornecedor', props.consumption.item?.supplier?.name || 'N/A'],
 ].map(([label, value]) => ({ label, value })))
@@ -323,9 +323,9 @@ const timelineItems = computed(() => [
     icon: CheckIcon,
   },
   {
-    label: 'Stock actualizado',
+    label: 'Existências actualizado',
     timestamp: formatDateTime(props.consumption.created_at),
-    caption: `Stock reduzido em ${formatQuantity(props.consumption.quantity_used)}.`,
+    caption: `Existências reduzido em ${formatQuantity(props.consumption.quantity_used)}.`,
     icon: CubeIcon,
   },
 ])
@@ -338,7 +338,7 @@ const stockImpactCards = computed(() => [
     valueClass: 'text-rose-700 dark:text-rose-300',
   },
   {
-    label: 'Stock actual',
+    label: 'Existências actual',
     value: formatQuantity(getCurrentStockInWarehouse()),
     caption: props.consumption.warehouse?.name || 'Armazém N/A',
     valueClass: 'text-[color:var(--ds-text)]',

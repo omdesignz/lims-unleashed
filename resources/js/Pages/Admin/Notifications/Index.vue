@@ -69,8 +69,8 @@ const markAsUnread = (notification) => {
 <template>
   <div class="space-y-5">
     <NotificationAdminHeader
-      title="Registo de notificacoes"
-      :description="`${notifications.total} mensagens auditaveis no historico de comunicacao.`"
+      title="Registo de notificações"
+      :description="`${notifications.total} mensagens auditáveis no histórico de comunicação.`"
     >
       <template #actions>
         <Link :href="route('admin.notifications.export')" :data="filterForm.data()" class="ds-button ds-button-secondary">
@@ -91,7 +91,7 @@ const markAsUnread = (notification) => {
           <h2 class="ds-heading mt-1 flex items-center gap-2 text-base"><FunnelIcon class="h-4 w-4" /> Filtros do registo</h2>
         </div>
         <div class="flex items-center gap-2 text-xs font-bold text-[var(--ds-text-muted)]">
-          <span class="ds-badge bg-[var(--ds-panel-subtle)] text-[var(--ds-text-muted)] ring-1 ring-inset ring-[var(--ds-border)]">{{ notifications.data.length }} nesta pagina</span>
+          <span class="ds-badge bg-[var(--ds-panel-subtle)] text-[var(--ds-text-muted)] ring-1 ring-inset ring-[var(--ds-border)]">{{ notifications.data.length }} nesta página</span>
           <span class="ds-badge bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20 dark:bg-amber-500/10 dark:text-amber-300">{{ unreadOnPage }} por ler</span>
         </div>
       </header>
@@ -102,7 +102,7 @@ const markAsUnread = (notification) => {
             <label for="notification-search" class="ds-field-label">Pesquisar</label>
             <div class="relative">
               <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
-              <BaseInput id="notification-search" v-model="filterForm.search" type="search" class="ds-field pl-9" placeholder="Titulo, mensagem, utilizador ou email" />
+              <BaseInput id="notification-search" v-model="filterForm.search" type="search" class="ds-field pl-9" placeholder="Título, mensagem, utilizador ou correio electrónico" />
             </div>
           </div>
           <div class="ds-field-group">
@@ -121,7 +121,7 @@ const markAsUnread = (notification) => {
             </BaseSelect>
           </div>
           <div class="ds-field-group md:col-span-2">
-            <label for="notification-user" class="ds-field-label">Destinatario</label>
+            <label for="notification-user" class="ds-field-label">Destinatário</label>
             <BaseSelect id="notification-user" v-model="filterForm.user_id" class="ds-field">
               <option value="">Todos os utilizadores</option>
               <option v-for="user in users" :key="user.id" :value="user.id">{{ user.name }} ({{ user.email }})</option>
@@ -132,7 +132,7 @@ const markAsUnread = (notification) => {
             <DateTimePicker id="notification-from" v-model="filterForm.date_from" type="date" class="ds-field" />
           </div>
           <div class="ds-field-group">
-            <label for="notification-to" class="ds-field-label">Ate</label>
+            <label for="notification-to" class="ds-field-label">Até</label>
             <DateTimePicker id="notification-to" v-model="filterForm.date_to" type="date" class="ds-field" />
           </div>
         </div>
@@ -156,11 +156,11 @@ const markAsUnread = (notification) => {
           <thead class="bg-[var(--ds-panel-subtle)]">
             <tr>
               <th class="px-5 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Mensagem</th>
-              <th class="px-4 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Destinatario</th>
-              <th class="px-4 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Classificacao</th>
-              <th class="px-4 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Emissao</th>
+              <th class="px-4 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Destinatário</th>
+              <th class="px-4 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Classificação</th>
+              <th class="px-4 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Emissão</th>
               <th class="px-4 py-3 text-xs font-bold uppercase text-[var(--ds-text-soft)]">Estado</th>
-              <th class="px-5 py-3 text-right text-xs font-bold uppercase text-[var(--ds-text-soft)]">Acoes</th>
+              <th class="px-5 py-3 text-right text-xs font-bold uppercase text-[var(--ds-text-soft)]">Acções</th>
             </tr>
           </thead>
           <tbody v-if="notifications.data.length" class="divide-y divide-[var(--ds-border)]">

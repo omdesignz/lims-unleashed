@@ -84,7 +84,7 @@ function submit() {
             <div class="min-w-0">
               <p class="ds-kicker">Cliente #{{ record.id }}</p>
               <h1 class="ds-heading mt-1 break-words text-2xl">Editar {{ form.name }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Mantenha a identidade da conta e os locais operacionais usados na cadeia de amostras e faturacao.</p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">Mantenha a identidade da conta e os locais operacionais usados na cadeia de amostras e facturação.</p>
               <div class="mt-3 flex flex-wrap gap-2">
                 <span v-if="form.code" class="ds-chip font-mono">{{ form.code }}</span>
                 <span class="ds-chip">{{ form.category_id?.label || "Sem categoria" }}</span>
@@ -141,7 +141,7 @@ function submit() {
         <div>
           <p class="ds-kicker">Rede operacional</p>
           <h2 class="ds-heading mt-1 text-xl">Locais e contactos</h2>
-          <p class="ds-copy mt-1 max-w-3xl text-sm">Cada local mantem a morada, canais de comunicacao, NIF e ponto focal usados nos fluxos do laboratorio.</p>
+          <p class="ds-copy mt-1 max-w-3xl text-sm">Cada local mantém a morada, canais de comunicação, NIF e ponto focal usados nos fluxos do laboratório.</p>
         </div>
         <button type="button" class="ds-button ds-button-secondary" @click="addSite">
           <PlusIcon class="h-4 w-4" />
@@ -162,7 +162,7 @@ function submit() {
       <div v-else class="ds-empty-state py-12 text-center">
         <MapPinIcon class="mx-auto h-9 w-9 text-[var(--ds-text-soft)]" />
         <h3 class="mt-3 text-sm font-bold text-[var(--ds-text)]">Nenhum local registado</h3>
-        <p class="ds-copy mx-auto mt-1 max-w-md text-sm">Adicione o primeiro endereco operacional para completar a conta.</p>
+        <p class="ds-copy mx-auto mt-1 max-w-md text-sm">Adicione o primeiro endereço operacional para completar a conta.</p>
         <button type="button" class="ds-button ds-button-primary mt-5" @click="addSite">
           <PlusIcon class="h-4 w-4" />
           Adicionar primeiro local

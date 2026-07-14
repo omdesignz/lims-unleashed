@@ -2,10 +2,9 @@
 
 namespace App\Notifications;
 
-use App\Models\MaintenanceTask;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Notification;
 
 class MaintenanceOverdue extends Notification
 {
@@ -28,8 +27,8 @@ class MaintenanceOverdue extends Notification
         return (new MailMessage)
             ->subject('Alerta de manutenção em atraso')
             ->greeting('Atenção imediata necessária')
-            ->line('Existem ' . $this->tasks->count() . ' tarefas de manutenção em atraso.')
-            ->line('Estas tarefas exigem ação prioritária:')
+            ->line('Existem '.$this->tasks->count().' tarefas de manutenção em atraso.')
+            ->line('Estas tarefas exigem acção prioritária:')
             ->markdown('emails.maintenance.overdue', [
                 'tasks' => $this->tasks,
             ])
@@ -41,7 +40,7 @@ class MaintenanceOverdue extends Notification
     {
         return [
             'type' => 'maintenance_overdue',
-            'message' => 'Existem ' . $this->tasks->count() . ' tarefas de manutenção em atraso.',
+            'message' => 'Existem '.$this->tasks->count().' tarefas de manutenção em atraso.',
             'task_count' => $this->tasks->count(),
             'url' => route('vap-maintenance.dashboard', ['status' => 'overdue']),
             'priority' => 'high',

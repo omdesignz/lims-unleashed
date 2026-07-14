@@ -15,7 +15,7 @@
         <div class="ds-command-palette overflow-hidden p-2">
           <div class="border-b border-[var(--ds-border)] px-3 py-2">
             <p class="ds-kicker">Navegação rápida</p>
-            <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Áreas críticas do laboratório e QMS.</p>
+            <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Áreas críticas do laboratório e do SGQ.</p>
           </div>
           <div class="grid gap-1 p-2">
             <Link
@@ -79,7 +79,7 @@ const solutions = [
   },
   {
     name: 'Qualidade e conformidade',
-    description: 'QMS, não conformidades, proficiência e evidência ISO 17025.',
+    description: 'SGQ, não conformidades, proficiência e evidência ISO 17025.',
     href: route('qms.index'),
     icon: ShieldCheckIcon,
   },

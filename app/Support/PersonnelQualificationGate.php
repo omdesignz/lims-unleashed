@@ -13,7 +13,7 @@ class PersonnelQualificationGate
             return;
         }
 
-        throw new HttpException(403, 'O utilizador não possui qualificação ativa para executar esta etapa.');
+        throw new HttpException(403, 'O utilizador não possui qualificação activa para executar esta etapa.');
     }
 
     public function allows(User $user, string $capability, ?int $departmentId = null): bool

@@ -16,7 +16,7 @@ function mapGuide(guide) {
     reference: guide.guide_no,
     date: guide.date,
     total: null,
-    status: "Disponivel",
+    status: "Disponível",
     tone: "success",
     description: guide.contact ? `Contacto: ${guide.contact}` : null,
     details: [

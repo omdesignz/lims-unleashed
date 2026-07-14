@@ -106,7 +106,7 @@ onMounted(() => {
         </button>
 
         <Listbox as="div" v-model="selectedStatus" @update:model-value="changeOrderStatus">
-            <ListboxLabel class="sr-only">Change order status</ListboxLabel>
+            <ListboxLabel class="sr-only">Alterar o estado da encomenda</ListboxLabel>
             <div class="relative">
             <div class="inline-flex divide-x divide-white rounded-md outline-none">
                 <div class="inline-flex items-center gap-x-1.5 rounded-l-md bg-blue-900 px-3 py-1.5 text-white">
@@ -114,7 +114,7 @@ onMounted(() => {
                 <p class="text-sm font-semibold">{{ selectedStatus.name }}</p>
                 </div>
                 <ListboxButton class="inline-flex items-center rounded-l-none rounded-r-md bg-blue-900 p-2 outline-none hover:bg-blue-900 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-900">
-                <span class="sr-only">Change order status</span>
+                <span class="sr-only">Alterar o estado da encomenda</span>
                 <ChevronDownIcon class="size-5 text-white forced-colors:text-[Highlight]" aria-hidden="true" />
                 </ListboxButton>
             </div>

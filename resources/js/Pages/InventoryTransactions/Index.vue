@@ -53,7 +53,7 @@ const metrics = computed(() => [
         <div class="flex flex-wrap gap-3">
           <Link :href="route('inventory.index')" class="ds-button ds-button-secondary">
             <BuildingStorefrontIcon class="h-4 w-4" />
-            Ver stock
+            Ver existências
           </Link>
           <Link :href="route('vap-inventory.reports.stock-movement')" class="ds-button ds-button-primary">
             <ArrowTopRightOnSquareIcon class="h-4 w-4" />
@@ -80,7 +80,7 @@ const metrics = computed(() => [
       <ShieldCheckIcon class="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" />
       <div>
         <p class="text-sm font-semibold text-[var(--ds-text)]">Registo de auditoria em modo de consulta</p>
-        <p class="mt-1 text-sm leading-6 text-[var(--ds-text-muted)]">Novos movimentos e correções devem ser realizados no fluxo controlado do item, preservando o saldo e a rastreabilidade numa única operação.</p>
+        <p class="mt-1 text-sm leading-6 text-[var(--ds-text-muted)]">Novos movimentos e correcções devem ser realizados no fluxo controlado do item, preservando o saldo e a rastreabilidade numa única operação.</p>
       </div>
     </section>
 

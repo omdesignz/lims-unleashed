@@ -3,7 +3,7 @@
     <section aria-labelledby="announcements-title">
         <div class="overflow-hidden rounded-lg bg-white shadow">
             <div class="p-6">
-                <h2 class="text-base font-medium text-gray-900" id="announcements-title">Announcements</h2>
+                <h2 class="text-base font-medium text-gray-900" id="announcements-title">Comunicados</h2>
                 <div class="mt-6 flow-root">
                     <ul role="list" class="-my-5 divide-y divide-gray-200">
                         <li v-for="announcement in announcements" :key="announcement.id" class="py-5">
@@ -21,7 +21,7 @@
                     </ul>
                 </div>
                 <div class="mt-6">
-                    <a href="#" class="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">View all</a>
+                    <a href="#" class="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">Ver tudo</a>
                 </div>
             </div>
         </div>
@@ -32,24 +32,21 @@
 const announcements = [
     {
         id: 1,
-        title: 'Office closed on July 2nd',
+        title: 'Serviços encerrados no dia 2 de Julho',
         href: '#',
-        preview:
-            'Cum qui rem deleniti. Suscipit in dolor veritatis sequi aut. Vero ut earum quis deleniti. Ut a sunt eum cum ut repudiandae possimus. Nihil ex tempora neque cum consectetur dolores.',
+        preview: 'Os serviços estarão encerrados nesta data. Consulte o comunicado para conhecer os contactos disponíveis durante o período.',
     },
     {
         id: 2,
-        title: 'New password policy',
+        title: 'Nova política de palavras-passe',
         href: '#',
-        preview:
-            'Alias inventore ut autem optio voluptas et repellendus. Facere totam quaerat quam quo laudantium cumque eaque excepturi vel. Accusamus maxime ipsam reprehenderit rerum id repellendus rerum. Culpa cum vel natus. Est sit autem mollitia.',
+        preview: 'A política de acesso foi actualizada para reforçar a protecção das contas e dos registos laboratoriais.',
     },
     {
         id: 3,
-        title: 'Office closed on July 2nd',
+        title: 'Manutenção programada do sistema',
         href: '#',
-        preview:
-            'Tenetur libero voluptatem rerum occaecati qui est molestiae exercitationem. Voluptate quisquam iure assumenda consequatur ex et recusandae. Alias consectetur voluptatibus. Accusamus a ab dicta et. Consequatur quis dignissimos voluptatem nisi.',
+        preview: 'O sistema terá uma intervenção programada. Os detalhes e a janela prevista constam do comunicado.',
     },
 ]
 </script>

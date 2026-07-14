@@ -132,7 +132,7 @@ const operationsChartOptions = computed(() => ({
 const documentRows = computed(() => [
   { label: 'Proformas', count: props.stats.quotes?.total ?? 0, icon: DocumentTextIcon },
   { label: 'Recibos', count: props.stats.receipts?.total ?? 0, icon: ReceiptPercentIcon },
-  { label: 'Notas de credito', count: props.stats.credit_notes?.total ?? 0, icon: CreditCardIcon },
+  { label: 'Notas de crédito', count: props.stats.credit_notes?.total ?? 0, icon: CreditCardIcon },
   { label: 'Guias contratuais', count: props.stats.contract_guides?.total ?? 0, icon: DocumentArrowUpIcon },
   { label: 'Certificados fito', count: (props.stats.imports?.total ?? 0) + (props.stats.exports?.total ?? 0), icon: GlobeAltIcon },
 ])
@@ -230,7 +230,7 @@ function resolveActivityIcon(icon) {
       </div>
 
       <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2 xl:grid-cols-4">
-        <div class="bg-[var(--ds-panel)] p-5"><div class="flex items-start justify-between gap-3"><div><dt class="ds-field-label">Faturas</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ stats.invoices.total || 0 }}</dd><p class="ds-copy mt-1 text-xs">{{ stats.invoices.pending || 0 }} pendentes</p></div><DocumentTextIcon class="h-5 w-5 text-[var(--ds-text-soft)]" /></div></div>
+        <div class="bg-[var(--ds-panel)] p-5"><div class="flex items-start justify-between gap-3"><div><dt class="ds-field-label">Facturas</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ stats.invoices.total || 0 }}</dd><p class="ds-copy mt-1 text-xs">{{ stats.invoices.pending || 0 }} pendentes</p></div><DocumentTextIcon class="h-5 w-5 text-[var(--ds-text-soft)]" /></div></div>
         <div class="bg-[var(--ds-panel)] p-5"><div class="flex items-start justify-between gap-3"><div><dt class="ds-field-label">Colheitas</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ stats.collections.total || 0 }}</dd><p class="ds-copy mt-1 text-xs">{{ stats.collections.processed || 0 }} processadas</p></div><ArchiveBoxIcon class="h-5 w-5 text-[var(--ds-text-soft)]" /></div></div>
         <div class="bg-[var(--ds-panel)] p-5"><div class="flex items-start justify-between gap-3"><div><dt class="ds-field-label">Certificados</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ stats.quality_certificates.total || 0 }}</dd><p class="ds-copy mt-1 text-xs">{{ stats.quality_certificates.validated || 0 }} validados</p></div><DocumentCheckIcon class="h-5 w-5 text-[var(--ds-text-soft)]" /></div></div>
         <div class="bg-[var(--ds-panel)] p-5"><div class="flex items-start justify-between gap-3"><div><dt class="ds-field-label">Pedidos</dt><dd class="mt-2 text-2xl font-bold text-[var(--ds-text)]">{{ stats.requests.total || 0 }}</dd><p class="ds-copy mt-1 text-xs">{{ stats.requests.pending || 0 }} em aberto</p></div><ClockIcon class="h-5 w-5 text-[var(--ds-text-soft)]" /></div></div>
@@ -240,30 +240,30 @@ function resolveActivityIcon(icon) {
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
       <main class="space-y-6">
         <section class="ds-card overflow-hidden">
-          <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6"><h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]"><MapPinIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />Identificacao e contacto</h2></header>
+          <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6"><h2 class="flex items-center gap-2 text-base font-bold text-[var(--ds-text)]"><MapPinIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))]" />Identificação e contacto</h2></header>
           <dl class="grid gap-px bg-[var(--ds-border)] sm:grid-cols-2">
-            <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label">Cliente</dt><dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ site.customer || 'Nao associado' }}</dd></div>
-            <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label">NIF</dt><dd class="mt-2 break-words font-mono text-sm font-bold text-[var(--ds-text)]">{{ site.nif || 'Nao definido' }}</dd></div>
-            <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label inline-flex items-center gap-2"><EnvelopeIcon class="h-4 w-4" />Email operacional</dt><dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ site.email || 'Nao definido' }}</dd></div>
-            <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label inline-flex items-center gap-2"><EnvelopeIcon class="h-4 w-4" />Email de faturacao</dt><dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ site.invoicing_email || 'Nao definido' }}</dd></div>
-            <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label inline-flex items-center gap-2"><PhoneIcon class="h-4 w-4" />Telefone principal</dt><dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ site.primary_phone || 'Nao definido' }}</dd></div>
-            <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label">Telefone alternativo</dt><dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ site.alternative_phone || 'Nao definido' }}</dd></div>
-            <div class="bg-[var(--ds-panel)] p-5 sm:col-span-2"><dt class="ds-field-label inline-flex items-center gap-2"><MapPinIcon class="h-4 w-4" />Morada</dt><dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ site.address || 'Nao definida' }}<span v-if="site.municipality || site.province" class="font-semibold text-[var(--ds-text-muted)]"> · {{ [site.municipality, site.province].filter(Boolean).join(', ') }}</span></dd></div>
-            <div class="bg-[var(--ds-panel)] p-5 sm:col-span-2"><dt class="ds-field-label">Descricao operacional</dt><dd class="ds-copy mt-2 text-sm">{{ site.description || 'Sem observacoes adicionais.' }}</dd></div>
+            <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label">Cliente</dt><dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ site.customer || 'Não associado' }}</dd></div>
+            <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label">NIF</dt><dd class="mt-2 break-words font-mono text-sm font-bold text-[var(--ds-text)]">{{ site.nif || 'Não definido' }}</dd></div>
+            <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label inline-flex items-center gap-2"><EnvelopeIcon class="h-4 w-4" />Correio electrónico operacional</dt><dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ site.email || 'Não definido' }}</dd></div>
+            <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label inline-flex items-center gap-2"><EnvelopeIcon class="h-4 w-4" />Correio electrónico de facturação</dt><dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ site.invoicing_email || 'Não definido' }}</dd></div>
+            <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label inline-flex items-center gap-2"><PhoneIcon class="h-4 w-4" />Telefone principal</dt><dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ site.primary_phone || 'Não definido' }}</dd></div>
+            <div class="bg-[var(--ds-panel)] p-5"><dt class="ds-field-label">Telefone alternativo</dt><dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ site.alternative_phone || 'Não definido' }}</dd></div>
+            <div class="bg-[var(--ds-panel)] p-5 sm:col-span-2"><dt class="ds-field-label inline-flex items-center gap-2"><MapPinIcon class="h-4 w-4" />Morada</dt><dd class="mt-2 break-words text-sm font-bold text-[var(--ds-text)]">{{ site.address || 'Não definida' }}<span v-if="site.municipality || site.province" class="font-semibold text-[var(--ds-text-muted)]"> · {{ [site.municipality, site.province].filter(Boolean).join(', ') }}</span></dd></div>
+            <div class="bg-[var(--ds-panel)] p-5 sm:col-span-2"><dt class="ds-field-label">Descrição operacional</dt><dd class="ds-copy mt-2 text-sm">{{ site.description || 'Sem observações adicionais.' }}</dd></div>
           </dl>
 
           <div class="border-t border-[var(--ds-border)] px-5 py-5 sm:px-6">
-            <div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[var(--ds-text-muted)]"><UserCircleIcon class="h-4 w-4" /></span><div class="min-w-0"><p class="ds-field-label">Ponto focal</p><p class="mt-1 break-words text-sm font-bold text-[var(--ds-text)]">{{ site.focal_point || 'Nao definido' }}</p><p class="ds-copy mt-1 break-words text-xs">{{ [site.focal_point_email, site.focal_point_contact].filter(Boolean).join(' · ') || 'Sem canais directos registados' }}</p></div></div>
+            <div class="flex items-start gap-3"><span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[var(--ds-text-muted)]"><UserCircleIcon class="h-4 w-4" /></span><div class="min-w-0"><p class="ds-field-label">Ponto focal</p><p class="mt-1 break-words text-sm font-bold text-[var(--ds-text)]">{{ site.focal_point || 'Não definido' }}</p><p class="ds-copy mt-1 break-words text-xs">{{ [site.focal_point_email, site.focal_point_contact].filter(Boolean).join(' · ') || 'Sem canais directos registados' }}</p></div></div>
           </div>
         </section>
 
         <section class="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
           <article class="ds-card overflow-hidden">
-            <header class="flex items-start justify-between gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6"><div><h2 class="text-base font-bold text-[var(--ds-text)]">Saude da conta</h2><p class="ds-copy mt-1 text-xs">Faturacao e pedidos respondidos.</p></div><span class="ds-chip">{{ accountHealthTotal }} registos</span></header>
+            <header class="flex items-start justify-between gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6"><div><h2 class="text-base font-bold text-[var(--ds-text)]">Saúde da conta</h2><p class="ds-copy mt-1 text-xs">Facturação e pedidos respondidos.</p></div><span class="ds-chip">{{ accountHealthTotal }} registos</span></header>
             <div class="p-4 sm:p-5"><apexchart type="bar" height="270" :options="accountHealthChartOptions" :series="accountHealthChartSeries" /></div>
           </article>
           <article class="ds-card overflow-hidden">
-            <header class="flex items-start justify-between gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6"><div><h2 class="text-base font-bold text-[var(--ds-text)]">Execucao operacional</h2><p class="ds-copy mt-1 text-xs">Colheitas e certificados.</p></div><span class="ds-chip">{{ operationsTotal }} registos</span></header>
+            <header class="flex items-start justify-between gap-3 border-b border-[var(--ds-border)] px-5 py-4 sm:px-6"><div><h2 class="text-base font-bold text-[var(--ds-text)]">Execução operacional</h2><p class="ds-copy mt-1 text-xs">Colheitas e certificados.</p></div><span class="ds-chip">{{ operationsTotal }} registos</span></header>
             <div class="p-4 sm:p-5"><apexchart type="donut" height="270" :options="operationsChartOptions" :series="operationsChartSeries" /></div>
           </article>
         </section>
@@ -283,22 +283,22 @@ function resolveActivityIcon(icon) {
               </div>
               <div class="ds-field-group">
                 <label for="site-password-confirmation" class="ds-field-label">Confirmar palavra-passe</label>
-                <div class="relative"><BaseInput id="site-password-confirmation" v-model="passwordForm.password_confirmation" :type="showConfirmPassword ? 'text' : 'password'" class="ds-field pr-11" autocomplete="new-password" /><button type="button" class="ds-icon-button absolute right-1.5 top-1.5" :title="showConfirmPassword ? 'Ocultar confirmacao' : 'Mostrar confirmacao'" @click="showConfirmPassword = !showConfirmPassword"><EyeIcon v-if="showConfirmPassword" class="h-4 w-4" /><EyeSlashIcon v-else class="h-4 w-4" /></button></div>
+                <div class="relative"><BaseInput id="site-password-confirmation" v-model="passwordForm.password_confirmation" :type="showConfirmPassword ? 'text' : 'password'" class="ds-field pr-11" autocomplete="new-password" /><button type="button" class="ds-icon-button absolute right-1.5 top-1.5" :title="showConfirmPassword ? 'Ocultar confirmação' : 'Mostrar confirmação'" @click="showConfirmPassword = !showConfirmPassword"><EyeIcon v-if="showConfirmPassword" class="h-4 w-4" /><EyeSlashIcon v-else class="h-4 w-4" /></button></div>
                 <p v-if="passwordForm.errors.password_confirmation" class="ds-field-error">{{ passwordForm.errors.password_confirmation }}</p>
               </div>
 
               <div v-if="passwordForm.password" class="md:col-span-2">
                 <div class="flex items-center justify-between gap-3 text-xs"><span class="font-bold text-[var(--ds-text-muted)]">Forca da credencial</span><span class="font-bold text-[var(--ds-text)]">{{ passwordStrengthLabel }}</span></div>
                 <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ds-panel-subtle)]"><div class="h-full transition-all" :class="passwordStrengthBarClass" :style="{ width: `${passwordStrengthScore * 25}%` }" /></div>
-                <ul class="mt-3 grid gap-2 text-xs sm:grid-cols-2"><li v-for="(passed, label) in { '8 ou mais caracteres': passwordStrength.length, 'Maiusculas e minusculas': passwordStrength.mixed, 'Pelo menos um numero': passwordStrength.numbers, 'Pelo menos um simbolo': passwordStrength.special }" :key="label" class="flex items-center gap-2 font-semibold" :class="passed ? 'text-emerald-700 dark:text-emerald-200' : 'text-[var(--ds-text-soft)]'"><CheckCircleIcon class="h-4 w-4" />{{ label }}</li></ul>
+                <ul class="mt-3 grid gap-2 text-xs sm:grid-cols-2"><li v-for="(passed, label) in { '8 ou mais caracteres': passwordStrength.length, 'Maiúsculas e minúsculas': passwordStrength.mixed, 'Pelo menos um número': passwordStrength.numbers, 'Pelo menos um símbolo': passwordStrength.special }" :key="label" class="flex items-center gap-2 font-semibold" :class="passed ? 'text-emerald-700 dark:text-emerald-200' : 'text-[var(--ds-text-soft)]'"><CheckCircleIcon class="h-4 w-4" />{{ label }}</li></ul>
               </div>
             </div>
             <footer class="flex justify-end border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:px-6"><button type="submit" class="ds-button ds-button-primary" :disabled="passwordForm.processing || !isPasswordFormValid"><ArrowPathIcon v-if="passwordForm.processing" class="h-4 w-4 animate-spin" />{{ passwordForm.processing ? 'A actualizar...' : 'Guardar credencial' }}</button></footer>
           </form>
 
           <div v-if="hasPassword && !showPasswordForm" class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-            <div><p class="text-sm font-bold text-[var(--ds-text)]">Recuperacao pelo cliente</p><p class="ds-copy mt-1 text-sm">Envie uma ligacao de reposicao para {{ site.email || 'o email operacional' }}.</p></div>
-            <button type="button" class="ds-button ds-button-secondary" :disabled="resetEmailSending || !site.email" @click="sendPasswordResetEmail"><ArrowPathIcon v-if="resetEmailSending" class="h-4 w-4 animate-spin" /><EnvelopeIcon v-else class="h-4 w-4" />{{ resetEmailSending ? 'A enviar...' : 'Enviar reposicao' }}</button>
+            <div><p class="text-sm font-bold text-[var(--ds-text)]">Recuperação pelo cliente</p><p class="ds-copy mt-1 text-sm">Envie uma ligação de reposição para {{ site.email || 'o correio electrónico operacional' }}.</p></div>
+            <button type="button" class="ds-button ds-button-secondary" :disabled="resetEmailSending || !site.email" @click="sendPasswordResetEmail"><ArrowPathIcon v-if="resetEmailSending" class="h-4 w-4 animate-spin" /><EnvelopeIcon v-else class="h-4 w-4" />{{ resetEmailSending ? 'A enviar...' : 'Enviar reposição' }}</button>
           </div>
         </section>
 
@@ -315,7 +315,7 @@ function resolveActivityIcon(icon) {
         <section class="ds-card overflow-hidden">
           <header class="border-b border-[var(--ds-border)] px-5 py-4"><h2 class="text-sm font-bold text-[var(--ds-text)]">Fluxos relacionados</h2></header>
           <nav class="divide-y divide-[var(--ds-border)]">
-            <Link v-if="hasPermission('view_invoices')" :href="route('invoices.index', { warehouse: site.id })" class="flex items-center gap-3 px-5 py-3.5 hover:bg-[var(--ds-panel-subtle)]"><DocumentTextIcon class="h-4 w-4 text-[var(--ds-text-soft)]" /><span class="min-w-0 flex-1 text-sm font-bold text-[var(--ds-text)]">Faturas</span><span class="ds-chip">{{ stats.invoices.total || 0 }}</span><ChevronRightIcon class="h-4 w-4 text-[var(--ds-text-soft)]" /></Link>
+            <Link v-if="hasPermission('view_invoices')" :href="route('invoices.index', { warehouse: site.id })" class="flex items-center gap-3 px-5 py-3.5 hover:bg-[var(--ds-panel-subtle)]"><DocumentTextIcon class="h-4 w-4 text-[var(--ds-text-soft)]" /><span class="min-w-0 flex-1 text-sm font-bold text-[var(--ds-text)]">Facturas</span><span class="ds-chip">{{ stats.invoices.total || 0 }}</span><ChevronRightIcon class="h-4 w-4 text-[var(--ds-text-soft)]" /></Link>
             <Link v-if="hasPermission('view_direct_collections')" :href="route('directcollections.index', { warehouse: site.id })" class="flex items-center gap-3 px-5 py-3.5 hover:bg-[var(--ds-panel-subtle)]"><ArchiveBoxIcon class="h-4 w-4 text-[var(--ds-text-soft)]" /><span class="min-w-0 flex-1 text-sm font-bold text-[var(--ds-text)]">Colheitas</span><span class="ds-chip">{{ stats.collections.total || 0 }}</span><ChevronRightIcon class="h-4 w-4 text-[var(--ds-text-soft)]" /></Link>
             <Link v-if="hasPermission('view_quality_certificates')" :href="route('qualitycertificates.index', { warehouse: site.id })" class="flex items-center gap-3 px-5 py-3.5 hover:bg-[var(--ds-panel-subtle)]"><DocumentCheckIcon class="h-4 w-4 text-[var(--ds-text-soft)]" /><span class="min-w-0 flex-1 text-sm font-bold text-[var(--ds-text)]">Certificados</span><span class="ds-chip">{{ stats.quality_certificates.total || 0 }}</span><ChevronRightIcon class="h-4 w-4 text-[var(--ds-text-soft)]" /></Link>
             <Link v-if="hasPermission('view_contract_guides')" :href="route('contractguides.index', { warehouse: site.id })" class="flex items-center gap-3 px-5 py-3.5 hover:bg-[var(--ds-panel-subtle)]"><DocumentArrowUpIcon class="h-4 w-4 text-[var(--ds-text-soft)]" /><span class="min-w-0 flex-1 text-sm font-bold text-[var(--ds-text)]">Guias</span><span class="ds-chip">{{ stats.contract_guides.total || 0 }}</span><ChevronRightIcon class="h-4 w-4 text-[var(--ds-text-soft)]" /></Link>
@@ -328,7 +328,7 @@ function resolveActivityIcon(icon) {
             <div class="px-5 py-4"><dt class="ds-field-label">Receita total</dt><dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ formatCurrency(stats.financial.total_revenue) }}</dd></div>
             <div class="flex items-center justify-between gap-3 px-5 py-3"><dt class="text-xs font-semibold text-[var(--ds-text-muted)]">Pago</dt><dd class="text-sm font-bold text-emerald-700 dark:text-emerald-200">{{ formatCurrency(stats.financial.paid) }}</dd></div>
             <div class="flex items-center justify-between gap-3 px-5 py-3"><dt class="text-xs font-semibold text-[var(--ds-text-muted)]">Pendente</dt><dd class="text-sm font-bold text-amber-700 dark:text-amber-200">{{ formatCurrency(stats.financial.pending) }}</dd></div>
-            <div class="flex items-center justify-between gap-3 px-5 py-3"><dt class="text-xs font-semibold text-[var(--ds-text-muted)]">Notas de credito</dt><dd class="text-sm font-bold text-rose-700 dark:text-rose-200">{{ formatCurrency(stats.financial.credit_notes) }}</dd></div>
+            <div class="flex items-center justify-between gap-3 px-5 py-3"><dt class="text-xs font-semibold text-[var(--ds-text-muted)]">Notas de crédito</dt><dd class="text-sm font-bold text-rose-700 dark:text-rose-200">{{ formatCurrency(stats.financial.credit_notes) }}</dd></div>
           </dl>
         </section>
 

@@ -20,9 +20,9 @@ class ComplaintController extends Controller
             ->with(['customer', 'warehouse', 'assignedTo', 'relatedRequest'])
             ->when($request->search, function ($builder, $search) {
                 $builder->where(function ($nested) use ($search) {
-                    $nested->where('reference', 'like', '%' . $search . '%')
-                        ->orWhere('title', 'like', '%' . $search . '%')
-                        ->orWhere('description', 'like', '%' . $search . '%');
+                    $nested->where('reference', 'like', '%'.$search.'%')
+                        ->orWhere('title', 'like', '%'.$search.'%')
+                        ->orWhere('description', 'like', '%'.$search.'%');
                 });
             })
             ->when($request->status, fn ($builder, $status) => $builder->where('status', $status))
@@ -64,7 +64,7 @@ class ComplaintController extends Controller
         ]));
 
         $complaint->update([
-            'reference' => 'CMP-' . now()->format('Y') . '-' . str_pad((string) $complaint->id, 6, '0', STR_PAD_LEFT),
+            'reference' => 'CMP-'.now()->format('Y').'-'.str_pad((string) $complaint->id, 6, '0', STR_PAD_LEFT),
         ]);
 
         $targets = User::role('admin')->get()
@@ -124,6 +124,6 @@ class ComplaintController extends Controller
             ])
             ->log('Atualizou uma reclamação ISO 17025');
 
-        return redirect()->back()->with('success', 'Reclamação atualizada com sucesso.');
+        return redirect()->back()->with('success', 'Reclamação actualizada com sucesso.');
     }
 }

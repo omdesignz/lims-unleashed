@@ -23,7 +23,7 @@
         :key="device.id"
         :value="device"
         :aria-label="device.title"
-        :aria-description="`${device.description} to ${device.icon}`"
+        :aria-description="`${device.title}: ${device.description}`"
         v-slot="{ active, checked }"
       >
         <div
@@ -77,11 +77,11 @@
       v-if="deviceData"
       id="device_data"
       class="block mt-2 w-full h-screen rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-      placeholder="Device data will appear here"
+      placeholder="Os dados do equipamento serão apresentados aqui"
     />
   </div>
   <div v-if="errorMessage" style="color: red">
-    <p>Error: {{ errorMessage }}</p>
+    <p>Erro: {{ errorMessage }}</p>
   </div>
   </div>
 </template>
@@ -113,19 +113,19 @@ const deviceList = [
   {
     id: 1,
     title: "USB",
-    description: "Last message sent an hour ago",
+    description: "Última mensagem enviada há uma hora",
     icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L15 6H13V13.381L16 11.882L15.999 11H15V7H19V11H17.999L18 13.118L13 15.618L13.0009 17.171C14.1656 17.5831 15 18.6941 15 20C15 21.6569 13.6569 23 12 23C10.3431 23 9 21.6569 9 20C9 18.813 9.68934 17.7871 10.6895 17.3006L6 14L5.99892 11.7318C5.40172 11.3858 5 10.7398 5 10C5 8.89543 5.89543 8 7 8C8.10457 8 9 8.89543 9 10C9 10.7403 8.59783 11.3866 8.00007 11.7324L8 13L11 15.086V6H9L12 1ZM12 19C11.4477 19 11 19.4477 11 20C11 20.5523 11.4477 21 12 21C12.5523 21 13 20.5523 13 20C13 19.4477 12.5523 19 12 19Z"></path></svg>',
   },
   {
     id: 2,
     title: "Bluetooth",
-    description: "Last message sent 2 weeks ago",
+    description: "Última mensagem enviada há 2 semanas",
     icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M14.3113 12L18.6544 16.3431L12.9976 22H10.9976V15.3137L6.63359 19.6777L5.21938 18.2635L10.9976 12.4853V11.5147L5.21938 5.73654L6.63359 4.32233L10.9976 8.68629V2H12.9976L18.6544 7.65685L14.3113 12ZM12.9976 13.5147V19.1716L15.826 16.3431L12.9976 13.5147ZM12.9976 10.4853L15.826 7.65685L12.9976 4.82843V10.4853ZM19.5 13.5C18.6716 13.5 18 12.8284 18 12C18 11.1716 18.6716 10.5 19.5 10.5C20.3284 10.5 21 11.1716 21 12C21 12.8284 20.3284 13.5 19.5 13.5ZM6.5 13.5C5.67157 13.5 5 12.8284 5 12C5 11.1716 5.67157 10.5 6.5 10.5C7.32843 10.5 8 11.1716 8 12C8 12.8284 7.32843 13.5 6.5 13.5Z"></path></svg>',
   },
   {
     id: 3,
     title: "Serial",
-    description: "Last message sent 4 days ago",
+    description: "Última mensagem enviada há 4 dias",
     icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.7931 5.79285 12.586 12 18.7931 18.2071 20.2073 16.7928 15.4144 12 20.2073 7.20706 18.7931 5.79285ZM5.20697 18.2072 11.4141 12.0001 5.20697 5.793 3.79276 7.20721 8.58565 12.0001 3.79276 16.793 5.20697 18.2072Z"></path></svg>',
   },
 ];
@@ -238,14 +238,14 @@ const handleCharacteristicValueChanged = (event) => {
 const handleError = (error) => {
   console.error("There was an error:", error);
   if (error.name === "NotFoundError") {
-    errorMessage.value = "No compatible USB device found.";
+    errorMessage.value = "Não foi encontrado um equipamento USB compatível.";
   } else if (error.name === "SecurityError") {
-    errorMessage.value = "Permission to access the device was denied.";
+    errorMessage.value = "A permissão de acesso ao equipamento foi recusada.";
   } else if (error.name === "NetworkError") {
     errorMessage.value =
-      "The device was disconnected or there was a communication issue.";
+      "O equipamento foi desligado ou ocorreu uma falha de comunicação.";
   } else {
-    errorMessage.value = `An unexpected error occurred: ${error.message}`;
+    errorMessage.value = `Ocorreu um erro inesperado: ${error.message}`;
   }
 };
 </script>

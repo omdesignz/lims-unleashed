@@ -206,7 +206,7 @@ function handleParameterSelect(selected) {
           :has-error="form.errors['results.' + index + '.parameter_id']"
           :load-options="loadParameters"
           :disable-input="result.requires_calculation"
-          :placeholder="isInputVariable ? 'Selecione a variável de entrada' : 'Selecione o parâmetro'"
+          :placeholder="isInputVariable ? 'Seleccione a variável de entrada' : 'Seleccione o parâmetro'"
           @update:model-value="handleParameterSelect"
         />
         <p v-else class="mt-2 text-sm font-bold text-[var(--ds-text)]">
@@ -231,7 +231,7 @@ function handleParameterSelect(selected) {
           class="mt-2"
           :has-error="form.errors['results.' + index + '.unit_id']"
           :load-options="loadUnits"
-          placeholder="Selecione a unidade"
+          placeholder="Seleccione a unidade"
         />
         <p v-else class="mt-2 text-sm font-bold text-[var(--ds-text)]">
           {{ result.unit_id?.code || "-" }}

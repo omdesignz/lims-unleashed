@@ -3,12 +3,11 @@
 namespace App\Jobs;
 
 use App\Events\AnalysisResultsVerified;
+use App\Models\Analysis;
 use App\Models\Result;
 use App\Models\User;
-use App\Models\Analysis;
 use App\Support\LaboratoryWorkflowNotifier;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -19,8 +18,11 @@ class VerifyAnalysisResults implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $results;
+
     public $analysis_id;
+
     public $user;
+
     public $signature;
 
     /**
@@ -44,7 +46,7 @@ class VerifyAnalysisResults implements ShouldQueue
         // Verify The Results
         $lastResult = null;
         foreach ($this->results as $result) {
-            
+
             $obj = Result::with('code')->find($result['result_id']);
             $lastResult = $obj;
 
@@ -56,14 +58,14 @@ class VerifyAnalysisResults implements ShouldQueue
             activity()
                 ->by($u)
                 ->performedOn($obj)
-                ->log('Verificou o resultado ' .$obj->verified_value . ' no parâmetro: ' . $obj->parameter_label . ' da CL: ' . $obj->code_label);
+                ->log('Verificou o resultado '.$obj->verified_value.' no parâmetro: '.$obj->parameter_label.' da CL: '.$obj->code_label);
 
             if ($this->signature) {
                 $obj->addMediaFromBase64($this->signature)
-                    ->usingFileName('verification-signature-' . $obj->id . '.png')
+                    ->usingFileName('verification-signature-'.$obj->id.'.png')
                     ->toMediaCollection('verification_signature');
-            } elseif ($u?->getFirstMedia('signature')) {
-                $obj->copyMedia($u->getFirstMedia('signature'))
+            } elseif (($signatureMedia = $u?->getFirstMedia('signature')) && is_file($signatureMedia->getPath())) {
+                $obj->copyMedia($signatureMedia->getPath())
                     ->toMediaCollection('verification_signature');
             }
         }

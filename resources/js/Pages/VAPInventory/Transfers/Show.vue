@@ -12,7 +12,7 @@
             </span>
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-3">
-                <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">{{ transfer.item?.name || 'Transferência de stock' }}</h1>
+                <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">{{ transfer.item?.name || 'Transferência de existências' }}</h1>
                 <span :class="['ds-chip gap-2', statusClass]">
                   <span :class="['h-2 w-2 rounded-full', statusDotClass]"></span>
                   {{ transferStatus }}
@@ -32,7 +32,7 @@
           </Link>
           <button v-if="canReceive" type="button" class="ds-button ds-button-primary" @click="openReceiveModal">
             <CheckCircleIcon class="h-4 w-4" />
-            Confirmar receção
+            Confirmar recepção
           </button>
         </div>
       </div>
@@ -82,7 +82,7 @@
               <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Telemetria da transferência</p>
               <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Quantidade, prazo e capacidade de execução</h2>
             </div>
-            <span class="ds-chip">Atualizado com o registo atual</span>
+            <span class="ds-chip">Actualizado com o registo actual</span>
           </div>
 
           <div class="grid gap-4 p-4 lg:grid-cols-2">
@@ -116,7 +116,7 @@
               <div class="flex items-start justify-between gap-4">
                 <div>
                   <h3 class="text-sm font-black text-[var(--ds-text)]">Pulso de execução</h3>
-                  <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Gap no destino e disponibilidade das ações de receção ou cancelamento.</p>
+                  <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Gap no destino e disponibilidade das acções de recepção ou cancelamento.</p>
                 </div>
                 <BoltIcon class="h-5 w-5 text-amber-600 dark:text-amber-300" />
               </div>
@@ -151,8 +151,8 @@
         </section>
 
         <section class="ds-card p-5">
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Posição de stock</p>
-          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Após reserva / receção</h2>
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Posição de existências</p>
+          <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Após reserva / recepção</h2>
           <dl class="mt-5 divide-y divide-[var(--ds-border)] border-y border-[var(--ds-border)]">
             <div class="flex items-start justify-between gap-4 py-3">
               <dt>
@@ -172,11 +172,11 @@
         </section>
 
         <section class="ds-card p-5">
-          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Ações do registo</p>
+          <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Acções do registo</p>
           <div class="mt-4 grid gap-2">
             <button v-if="canReceive" type="button" class="ds-button ds-button-primary w-full" @click="openReceiveModal">
               <CheckCircleIcon class="h-4 w-4" />
-              Confirmar receção
+              Confirmar recepção
             </button>
             <button type="button" class="ds-button ds-button-secondary w-full" @click="printTransfer">
               <PrinterIcon class="h-4 w-4" />
@@ -188,7 +188,7 @@
             </button>
             <button type="button" class="ds-button ds-button-secondary w-full" @click="viewTransactions">
               <ArrowsRightLeftIcon class="h-4 w-4" />
-              Ver transações
+              Ver transacções
             </button>
             <button v-if="canCancel" type="button" class="ds-button ds-button-danger w-full" @click="openCancelModal">
               <XCircleIcon class="h-4 w-4" />
@@ -211,7 +211,7 @@
                 <form @submit.prevent="submitReceive">
                   <div class="flex items-start justify-between gap-4 border-b border-[var(--ds-border)] p-5">
                     <div>
-                      <DialogTitle class="text-lg font-black text-[var(--ds-text)]">Confirmar receção física</DialogTitle>
+                      <DialogTitle class="text-lg font-black text-[var(--ds-text)]">Confirmar recepção física</DialogTitle>
                       <p class="mt-1 text-sm font-medium text-[var(--ds-text-muted)]">TRF-{{ transfer.id }} · {{ transfer.item?.name }}</p>
                     </div>
                     <button type="button" class="ds-table-action" title="Fechar" @click="closeReceiveModal">
@@ -233,7 +233,7 @@
 
                     <div class="grid gap-4 sm:grid-cols-2">
                       <label class="ds-field-group">
-                        <span class="ds-field-label">Data de receção <span class="ds-field-required">*</span></span>
+                        <span class="ds-field-label">Data de recepção <span class="ds-field-required">*</span></span>
                         <DateTimePicker v-model="receiveForm.received_date" type="date" :max="maxDate" class="ds-field" required />
                         <span v-if="receiveForm.errors.received_date" class="ds-field-error">{{ receiveForm.errors.received_date }}</span>
                       </label>
@@ -246,7 +246,7 @@
                     </div>
 
                     <label class="ds-field-group">
-                      <span class="ds-field-label">Observações da receção</span>
+                      <span class="ds-field-label">Observações da recepção</span>
                       <textarea v-model="receiveForm.notes" rows="4" class="ds-field" placeholder="Condição da carga, divergências ou evidências"></textarea>
                       <span v-if="receiveForm.errors.notes" class="ds-field-error">{{ receiveForm.errors.notes }}</span>
                     </label>
@@ -410,14 +410,14 @@ const summaryCards = computed(() => [
     tone: 'text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200',
   },
   {
-    label: 'Stock na origem',
+    label: 'Existências na origem',
     value: props.sourceStock?.qty_available ?? 0,
     detail: props.transfer.source?.name || 'Armazém de origem',
     icon: MapPinIcon,
     tone: 'text-rose-700 dark:text-rose-300',
   },
   {
-    label: 'Stock no destino',
+    label: 'Existências no destino',
     value: props.destinationStock?.qty_available ?? 0,
     detail: props.transfer.destination?.name || 'Armazém de destino',
     icon: MapPinIcon,
@@ -454,14 +454,14 @@ const detailFields = computed(() => [
     detail: `Criada em ${formatDateTime(props.transfer.created_at)}`,
   },
   {
-    label: 'Receção esperada',
+    label: 'Recepção esperada',
     value: formatDate(props.transfer.expected_date) || 'Sem prazo definido',
     detail: props.transfer.is_overdue ? `${props.transfer.days_overdue || 0} dias de atraso` : 'Sem atraso registado',
   },
   {
-    label: 'Receção efetiva',
+    label: 'Recepção efectiva',
     value: formatDate(props.transfer.received_date) || 'Pendente',
-    detail: `Última atualização: ${formatDateTime(props.transfer.updated_at)}`,
+    detail: `Última actualização: ${formatDateTime(props.transfer.updated_at)}`,
   },
 ])
 
@@ -473,13 +473,13 @@ const workflowSteps = computed(() => [
     current: false,
   },
   {
-    label: 'Stock expedido',
+    label: 'Existências expedido',
     detail: props.transfer.sent_date ? formatDate(props.transfer.sent_date) : 'Aguardando expedição',
     complete: Boolean(props.transfer.sent_date),
     current: !props.transfer.sent_date,
   },
   {
-    label: 'Receção no destino',
+    label: 'Recepção no destino',
     detail: props.transfer.received_date ? formatDate(props.transfer.received_date) : 'Aguardando confirmação física',
     complete: Boolean(props.transfer.received_date),
     current: Boolean(props.transfer.sent_date && !props.transfer.received_date),

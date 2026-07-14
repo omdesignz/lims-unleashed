@@ -174,7 +174,7 @@ class MatrixRequest extends FormRequest
                 if ($profilesWithoutActiveParameters->isNotEmpty()) {
                     $validator->errors()->add(
                         'profiles',
-                        'Todos os perfis da matriz devem possuir parâmetros ativos configurados. Inválidos: '.$profilesWithoutActiveParameters->implode(', ')
+                        'Todos os perfis da matriz devem possuir parâmetros activos configurados. Inválidos: '.$profilesWithoutActiveParameters->implode(', ')
                     );
                 }
 
@@ -188,7 +188,7 @@ class MatrixRequest extends FormRequest
                 if ($departmentIds->count() > 1) {
                     $validator->errors()->add(
                         'profiles',
-                        'A matriz deve reunir perfis do mesmo departamento para manter o escopo analítico controlado.'
+                        'A matriz deve reunir perfis do mesmo departamento para manter o âmbito analítico controlado.'
                     );
                 }
 

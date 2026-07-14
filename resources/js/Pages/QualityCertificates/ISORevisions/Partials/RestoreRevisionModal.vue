@@ -41,42 +41,42 @@ const form = useForm({
 
 const restorableFields = [
   { name: "status", label: "Estado do certificado" },
-  { name: "obs", label: "Observacoes" },
+  { name: "obs", label: "Observações" },
   { name: "validated_by", label: "Validado por" },
-  { name: "validated_at", label: "Data de validacao" },
+  { name: "validated_at", label: "Data de validação" },
   { name: "extra_data", label: "Dados adicionais" },
 ];
 
 const sourceDetails = computed(() => [
   {
-    label: "Versao",
+    label: "Versão",
     value: `v${props.revision?.version || "-"}`,
   },
   {
-    label: "Revisao",
+    label: "Revisão",
     value: props.revision?.revision_number ?? "-",
   },
   {
-    label: "Data efetiva",
+    label: "Data efectiva",
     value: formatDate(props.revision?.effective_date),
   },
   {
     label: "Tipo",
-    value: props.revision?.change_type || "Nao indicado",
+    value: props.revision?.change_type || "Não indicado",
   },
 ]);
 
 const currentDetails = computed(() => [
   {
-    label: "Versao",
+    label: "Versão",
     value: `v${props.certificate?.current_revision?.version || "1.0"}`,
   },
   {
-    label: "Revisao",
+    label: "Revisão",
     value: props.certificate?.current_revision?.revision_number ?? "-",
   },
   {
-    label: "Data efetiva",
+    label: "Data efectiva",
     value: formatDate(
       props.certificate?.current_revision?.effective_date ||
       props.certificate?.validated_at,
@@ -84,7 +84,7 @@ const currentDetails = computed(() => [
   },
   {
     label: "Estado",
-    value: props.certificate?.status ? "Ativo" : "Inativo",
+    value: props.certificate?.status ? "Activo" : "Inactivo",
   },
 ]);
 
@@ -110,7 +110,7 @@ watch(
       return;
     }
 
-    form.restore_reason = `Reposicao controlada da revisao v${revision.version}: ${revision.change_reason || "motivo a documentar"}`;
+    form.restore_reason = `Reposição controlada da revisão v${revision.version}: ${revision.change_reason || "motivo a documentar"}`;
     form.iso_section = revision.compliance_metadata?.iso_section || "8.9.1";
     form.risk_assessment =
       revision.compliance_metadata?.risk_assessment || "MEDIUM";
@@ -120,7 +120,7 @@ watch(
 
 function formatDate(date) {
   if (!date) {
-    return "Nao registada";
+    return "Não registada";
   }
 
   return new Date(date).toLocaleString("pt-PT", {
@@ -158,7 +158,7 @@ function closeModal() {
 
 function restoreRevision() {
   if (form.restore_scope === "SELECTIVE" && !form.selected_fields.length) {
-    form.setError("selected_fields", "Selecione pelo menos um campo para repor.");
+    form.setError("selected_fields", "Seleccione pelo menos um campo para repor.");
     return;
   }
 
@@ -202,11 +202,9 @@ function restoreRevision() {
             <ArrowPathIcon class="h-5 w-5" />
           </div>
           <div>
-            <p class="ds-kicker">Acao controlada</p>
-            <h2 class="ds-heading mt-2 text-lg">Repor revisao v{{ revision?.version || "-" }}</h2>
-            <p class="ds-copy mt-1 text-xs">
-              A reposicao cria uma nova revisao e preserva todo o historico anterior.
-            </p>
+            <p class="ds-kicker">Acção controlada</p>
+            <h2 class="ds-heading mt-2 text-lg">Repor revisão v{{ revision?.version || "-" }}</h2>
+            <p class="ds-copy mt-1 text-xs"> A reposição cria uma nova revisão e preserva todo o histórico anterior. </p>
           </div>
         </div>
         <button type="button" class="ds-icon-button" title="Fechar" @click="closeModal">
@@ -220,11 +218,8 @@ function restoreRevision() {
           <div class="flex items-start gap-3">
             <ExclamationTriangleIcon class="h-5 w-5 shrink-0 text-[var(--lims-hold)]" />
             <div>
-              <h3 class="ds-heading text-sm">A versao atual sera substituida</h3>
-              <p class="ds-copy mt-1 text-xs">
-                Confirme o escopo, aprovador, secao ISO e justificacao. Esta
-                acao nao elimina revisoes existentes.
-              </p>
+              <h3 class="ds-heading text-sm">A versão actual será substituída</h3>
+              <p class="ds-copy mt-1 text-xs"> Confirme o âmbito, aprovador, secção ISO e justificação. Esta acção não elimina revisões existentes. </p>
             </div>
           </div>
         </section>
@@ -233,7 +228,7 @@ function restoreRevision() {
           <section class="ds-command-surface overflow-hidden">
             <div class="border-b border-[var(--ds-border)] px-4 py-3">
               <p class="ds-kicker">Origem</p>
-              <h3 class="ds-heading mt-2 text-sm">Revisao a repor</h3>
+              <h3 class="ds-heading mt-2 text-sm">Revisão a repor</h3>
             </div>
             <dl class="divide-y divide-[var(--ds-border)]">
               <div
@@ -250,7 +245,7 @@ function restoreRevision() {
           <section class="ds-command-surface overflow-hidden">
             <div class="border-b border-[var(--ds-border)] px-4 py-3">
               <p class="ds-kicker">Destino</p>
-              <h3 class="ds-heading mt-2 text-sm">Versao atualmente efetiva</h3>
+              <h3 class="ds-heading mt-2 text-sm">Versão atualmente efectiva</h3>
             </div>
             <dl class="divide-y divide-[var(--ds-border)]">
               <div
@@ -266,13 +261,13 @@ function restoreRevision() {
         </div>
 
         <div class="ds-command-toolbar p-4">
-          <p class="ds-table-heading">Motivo original da revisao</p>
-          <p class="ds-copy mt-2 text-sm">{{ revision?.change_reason || "Nao registado." }}</p>
+          <p class="ds-table-heading">Motivo original da revisão</p>
+          <p class="ds-copy mt-2 text-sm">{{ revision?.change_reason || "Não registado." }}</p>
         </div>
 
         <section class="ds-panel overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-5 py-4">
-            <p class="ds-kicker">Escopo de reposicao</p>
+            <p class="ds-kicker">Âmbito de reposição</p>
             <h3 class="ds-heading mt-2 text-base">Definir dados a recuperar</h3>
           </div>
           <div class="grid gap-3 px-5 py-5 sm:grid-cols-2">
@@ -296,8 +291,8 @@ function restoreRevision() {
                   <CheckIcon v-if="form.restore_scope === 'FULL'" class="h-3.5 w-3.5" />
                 </span>
                 <span>
-                  <span class="ds-heading block text-sm">Reposicao completa</span>
-                  <span class="ds-copy mt-1 block text-xs">Recupera todos os campos elegiveis do snapshot.</span>
+                  <span class="ds-heading block text-sm">Reposição completa</span>
+                  <span class="ds-copy mt-1 block text-xs">Recupera todos os campos elegíveis da captura.</span>
                 </span>
               </span>
             </button>
@@ -322,7 +317,7 @@ function restoreRevision() {
                   <CheckIcon v-if="form.restore_scope === 'SELECTIVE'" class="h-3.5 w-3.5" />
                 </span>
                 <span>
-                  <span class="ds-heading block text-sm">Reposicao seletiva</span>
+                  <span class="ds-heading block text-sm">Reposição selectiva</span>
                   <span class="ds-copy mt-1 block text-xs">Escolha campos especificos do certificado.</span>
                 </span>
               </span>
@@ -362,15 +357,14 @@ function restoreRevision() {
 
         <section class="grid gap-5 lg:grid-cols-2">
           <div class="ds-field-group lg:col-span-2">
-            <label class="ds-field-label" for="restore-reason">
-              Justificacao da reposicao <span class="ds-field-required">*</span>
+            <label class="ds-field-label" for="restore-reason"> Justificação da reposição <span class="ds-field-required">*</span>
             </label>
             <textarea
               id="restore-reason"
               v-model="form.restore_reason"
               class="ds-field min-h-28"
               :aria-invalid="Boolean(fieldError('restore_reason'))"
-              placeholder="Explique a decisao e o impacto esperado"
+              placeholder="Explique a decisão e o impacto esperado"
             />
             <p class="ds-field-hint">Minimo de 20 caracteres.</p>
             <p v-if="fieldError('restore_reason')" class="ds-field-error">
@@ -379,8 +373,7 @@ function restoreRevision() {
           </div>
 
           <div class="ds-field-group">
-            <label class="ds-field-label" for="restore-iso-section">
-              Secao ISO <span class="ds-field-required">*</span>
+            <label class="ds-field-label" for="restore-iso-section"> Secção ISO <span class="ds-field-required">*</span>
             </label>
             <BaseInput
               id="restore-iso-section"
@@ -403,7 +396,7 @@ function restoreRevision() {
               class="ds-field"
               :aria-invalid="Boolean(fieldError('approved_by_id'))"
             >
-              <option value="">Selecionar aprovador</option>
+              <option value="">Seleccionar aprovador</option>
               <option v-for="approver in approvers" :key="approver.id" :value="approver.id">
                 {{ approver.name }}
               </option>
@@ -446,11 +439,8 @@ function restoreRevision() {
         <label class="lims-status-strip flex items-start gap-3 p-4">
           <CheckboxInput v-model="form.confirmed" type="checkbox" class="ds-checkbox mt-0.5" />
           <span>
-            <span class="ds-heading block text-sm">Confirmo a reposicao controlada</span>
-            <span class="ds-copy mt-1 block text-xs">
-              Compreendo que uma nova revisao sera criada e passara a representar
-              o estado efetivo do certificado.
-            </span>
+            <span class="ds-heading block text-sm">Confirmo a reposição controlada</span>
+            <span class="ds-copy mt-1 block text-xs"> Compreendo que uma nova revisão será criada e passará a representar o estado efectivo do certificado. </span>
           </span>
         </label>
         <p v-if="fieldError('confirmed')" class="ds-field-error">
@@ -464,7 +454,7 @@ function restoreRevision() {
         </button>
         <button type="submit" class="ds-button ds-button-primary" :disabled="!isReady">
           <ArrowPathIcon class="h-4 w-4" />
-          {{ form.processing ? "A repor..." : "Repor versao" }}
+          {{ form.processing ? "A repor..." : "Repor versão" }}
         </button>
       </footer>
     </form>

@@ -41,10 +41,10 @@
                   <div class="-ml-4 -mt-4 flex justify-between items-center flex-wrap sm:flex-nowrap">
                     <div class="ml-4 mt-4">
                       <h3 class="text-lg leading-6 font-medium text-gray-900">
-                        Actualizar Senha
+                        Actualizar Palavra-passe
                       </h3>
                       <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                        Certifique-se de que sua conta está usando uma senha longa e aleatória para permanecer segura.
+                        Certifique-se de que a sua conta utiliza uma palavra-passe longa e aleatória para se manter segura.
                       </p>
                     </div>
                     <div class="ml-4 mt-4 flex-shrink-0">
@@ -56,7 +56,7 @@
 
                   <div class="space-y-1 m-4">
                     <label for="current_password" class="block text-sm font-medium text-gray-700">
-                    Senha Actual
+                    Palavra-passe Actual
                     </label>
                     <div class="mt-1">
                     <BaseInput v-model="UpdatePasswordForm.current_password" id="current_password" name="current_password" type="password" autocomplete="current_password" :class="[UpdatePasswordForm.errors.current_password ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
@@ -66,7 +66,7 @@
 
                 <div class="space-y-1 m-4">
                     <label for="password" class="block text-sm font-medium text-gray-700">
-                    Nova Senha
+                    Nova Palavra-passe
                     </label>
                     <div class="mt-1">
                     <BaseInput v-model="UpdatePasswordForm.password" id="password" name="password" type="password" autocomplete="password" :class="[UpdatePasswordForm.errors.password ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
@@ -76,7 +76,7 @@
 
                 <div class="space-y-1 m-4">
                     <label for="password_confirmation" class="block text-sm font-medium text-gray-700">
-                    Confirmar Senha
+                    Confirmar Palavra-passe
                     </label>
                     <div class="mt-1">
                     <BaseInput v-model="UpdatePasswordForm.password_confirmation" id="password_confirmation" name="password_confirmation" type="password" autocomplete="password_confirmation" :class="[UpdatePasswordForm.errors.password_confirmation ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' : '']" class="appearance-none block w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-ft-orange focus:border-ft-orange sm:text-sm" />
@@ -105,7 +105,7 @@
                         Autenticação de dois fatores
                       </h3>
                       <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                        Adicione segurança adicional à sua conta usando autenticação de dois fatores.
+                        Adicione protecção adicional à sua conta com autenticação de dois factores.
                       </p>
                     </div>
                     <div class="ml-4 mt-4 flex-shrink-0">
@@ -144,7 +144,7 @@
                       <div v-if="qrCode">
                           <div class="mt-4 max-w-xl text-sm text-gray-600">
                               <p class="font-semibold">
-                                  A autenticação de dois fatores agora está habilitada. Leia o seguinte código QR usando o aplicativo autenticador do seu telefone.
+                                  A autenticação de dois factores está agora activada. Leia o código QR seguinte com a aplicação de autenticação do seu telefone.
                               </p>
                           </div>
 
@@ -155,7 +155,7 @@
                       <div v-if="recoveryCodes.length > 0">
                           <div class="mt-4 max-w-xl text-sm text-gray-600">
                               <p class="font-semibold">
-                                  Armazene esses códigos de recuperação em um gerenciador de senhas seguro. Eles podem ser usados para recuperar o acesso à sua conta se o seu dispositivo de autenticação de dois fatores for perdido.
+                                  Guarde estes códigos de recuperação num gestor de palavras-passe seguro. Podem ser utilizados para recuperar o acesso à sua conta se perder o dispositivo de autenticação de dois factores.
                               </p>
                           </div>
 

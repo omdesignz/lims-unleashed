@@ -765,7 +765,7 @@ const exportTemplate = async () => {
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `modelo-proposta-${props.template.name.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.json`)
+    link.setAttribute('download', `template-proposta-${props.template.name.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.json`)
     document.body.appendChild(link)
     link.click()
     link.remove()

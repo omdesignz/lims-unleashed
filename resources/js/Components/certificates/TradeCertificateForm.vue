@@ -76,7 +76,7 @@ const form = useForm(isImport.value
       vat_cost: source.vat_cost ?? 0,
       authorized_personnel: source.authorized_personnel || "",
       invoiced: Boolean(source.invoiced),
-      invoice_id: option(source.invoice_id, null, "Fatura"),
+      invoice_id: option(source.invoice_id, null, "Factura"),
       obs: source.obs || "",
       items: existingItems.length ? existingItems : [emptyItem()],
     }
@@ -93,7 +93,7 @@ const form = useForm(isImport.value
       expedition_location: source.expedition_location || "",
       authorized_personnel: source.authorized_personnel || "",
       invoiced: Boolean(source.invoiced),
-      invoice_id: option(source.invoice_id, null, "Fatura"),
+      invoice_id: option(source.invoice_id, null, "Factura"),
       obs: source.obs || "",
       items: existingItems.length ? existingItems : [emptyItem()],
     });
@@ -327,7 +327,7 @@ function submit() {
         </div>
         <div class="ds-field-group">
           <label class="ds-field-label">Tipo de transporte <span class="ds-field-required">*</span></label>
-          <ComboboxEnhanced v-model="form.trans_type_id" :has-error="form.errors.trans_type_id" :load-options="loadTransportTypes" placeholder="Selecionar transporte" />
+          <ComboboxEnhanced v-model="form.trans_type_id" :has-error="form.errors.trans_type_id" :load-options="loadTransportTypes" placeholder="Seleccionar transporte" />
           <p v-if="form.errors.trans_type_id" class="ds-field-error">{{ form.errors.trans_type_id }}</p>
         </div>
         <div class="ds-field-group">
@@ -352,24 +352,24 @@ function submit() {
         <div v-if="isImport" class="grid gap-4 sm:grid-cols-2">
           <div class="ds-field-group">
             <label class="ds-field-label">Importador <span class="ds-field-required">*</span></label>
-            <ComboboxEnhanced v-model="form.importer_id" :has-error="form.errors.importer_id" :load-options="loadImporters" placeholder="Selecionar importador" />
+            <ComboboxEnhanced v-model="form.importer_id" :has-error="form.errors.importer_id" :load-options="loadImporters" placeholder="Seleccionar importador" />
             <p v-if="form.errors.importer_id" class="ds-field-error">{{ form.errors.importer_id }}</p>
           </div>
           <div class="ds-field-group">
             <label class="ds-field-label">Armazém do importador <span class="ds-field-required">*</span></label>
-            <ComboboxEnhanced v-model="form.importer_warehouse_id" :disable-input="!form.importer_id || loadingImporterWarehouses" :loading="loadingImporterWarehouses" :has-error="form.errors.importer_warehouse_id" :load-options="loadImporterWarehouses" placeholder="Selecionar armazém" />
+            <ComboboxEnhanced v-model="form.importer_warehouse_id" :disable-input="!form.importer_id || loadingImporterWarehouses" :loading="loadingImporterWarehouses" :has-error="form.errors.importer_warehouse_id" :load-options="loadImporterWarehouses" placeholder="Seleccionar armazém" />
             <p v-if="form.errors.importer_warehouse_id" class="ds-field-error">{{ form.errors.importer_warehouse_id }}</p>
           </div>
         </div>
         <div class="grid gap-4 sm:grid-cols-2" :class="!isImport ? 'lg:col-span-2' : ''">
           <div class="ds-field-group">
             <label class="ds-field-label">Exportador <span class="ds-field-required">*</span></label>
-            <ComboboxEnhanced v-model="form.exporter_id" :has-error="form.errors.exporter_id" :load-options="loadExporters" placeholder="Selecionar exportador" />
+            <ComboboxEnhanced v-model="form.exporter_id" :has-error="form.errors.exporter_id" :load-options="loadExporters" placeholder="Seleccionar exportador" />
             <p v-if="form.errors.exporter_id" class="ds-field-error">{{ form.errors.exporter_id }}</p>
           </div>
           <div class="ds-field-group">
             <label class="ds-field-label">Armazém do exportador <span class="ds-field-required">*</span></label>
-            <ComboboxEnhanced v-model="form.exporter_warehouse_id" :disable-input="!form.exporter_id || loadingExporterWarehouses" :loading="loadingExporterWarehouses" :has-error="form.errors.exporter_warehouse_id" :load-options="loadExporterWarehouses" placeholder="Selecionar armazém" />
+            <ComboboxEnhanced v-model="form.exporter_warehouse_id" :disable-input="!form.exporter_id || loadingExporterWarehouses" :loading="loadingExporterWarehouses" :has-error="form.errors.exporter_warehouse_id" :load-options="loadExporterWarehouses" placeholder="Seleccionar armazém" />
             <p v-if="form.errors.exporter_warehouse_id" class="ds-field-error">{{ form.errors.exporter_warehouse_id }}</p>
           </div>
         </div>
@@ -400,7 +400,7 @@ function submit() {
         </div>
         <div class="ds-field-group">
           <label class="ds-field-label">País de destino <span class="ds-field-required">*</span></label>
-          <ComboboxEnhanced v-model="form.destination_country_id" :has-error="form.errors.destination_country_id" :load-options="loadCountries" placeholder="Selecionar país" />
+          <ComboboxEnhanced v-model="form.destination_country_id" :has-error="form.errors.destination_country_id" :load-options="loadCountries" placeholder="Seleccionar país" />
           <p v-if="form.errors.destination_country_id" class="ds-field-error">{{ form.errors.destination_country_id }}</p>
         </div>
       </div>
@@ -408,7 +408,7 @@ function submit() {
       <div v-else class="grid gap-4 px-5 py-5 sm:grid-cols-2 sm:px-6 xl:grid-cols-4">
         <div class="ds-field-group">
           <label class="ds-field-label">País de origem <span class="ds-field-required">*</span></label>
-          <ComboboxEnhanced v-model="form.country_origin_id" :has-error="form.errors.country_origin_id" :load-options="loadCountries" placeholder="Selecionar país" />
+          <ComboboxEnhanced v-model="form.country_origin_id" :has-error="form.errors.country_origin_id" :load-options="loadCountries" placeholder="Seleccionar país" />
           <p v-if="form.errors.country_origin_id" class="ds-field-error">{{ form.errors.country_origin_id }}</p>
         </div>
         <div class="ds-field-group">
@@ -418,7 +418,7 @@ function submit() {
         </div>
         <div class="ds-field-group">
           <label class="ds-field-label">País de destino <span class="ds-field-required">*</span></label>
-          <ComboboxEnhanced v-model="form.country_destination_id" :has-error="form.errors.country_destination_id" :load-options="loadCountries" placeholder="Selecionar país" />
+          <ComboboxEnhanced v-model="form.country_destination_id" :has-error="form.errors.country_destination_id" :load-options="loadCountries" placeholder="Seleccionar país" />
           <p v-if="form.errors.country_destination_id" class="ds-field-error">{{ form.errors.country_destination_id }}</p>
         </div>
         <div class="ds-field-group">
@@ -447,7 +447,7 @@ function submit() {
       <div class="grid gap-4 px-5 py-5 sm:grid-cols-2 sm:px-6 xl:grid-cols-3">
         <div class="ds-field-group">
           <label class="ds-field-label">Moeda <span class="ds-field-required">*</span></label>
-          <ComboboxEnhanced v-model="form.currency_id" :has-error="form.errors.currency_id" :load-options="loadCurrencies" placeholder="Selecionar moeda" />
+          <ComboboxEnhanced v-model="form.currency_id" :has-error="form.errors.currency_id" :load-options="loadCurrencies" placeholder="Seleccionar moeda" />
           <p v-if="form.errors.currency_id" class="ds-field-error">{{ form.errors.currency_id }}</p>
         </div>
         <div v-for="field in [
@@ -501,13 +501,13 @@ function submit() {
                 <th class="ds-table-header min-w-36 px-4 py-3 text-left">Lote</th>
                 <th class="ds-table-header min-w-36 px-4 py-3 text-left">BL</th>
               </template>
-              <th class="ds-table-header w-16 px-5 py-3 sm:px-6"><span class="sr-only">Ações</span></th>
+              <th class="ds-table-header w-16 px-5 py-3 sm:px-6"><span class="sr-only">Acções</span></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-[var(--ds-border)]">
             <tr v-for="(item, index) in form.items" :key="index" class="ds-table-row align-top">
               <td class="ds-table-cell px-5 py-3 sm:px-6">
-                <ComboboxEnhanced v-model="item.product_id" :has-error="form.errors[`items.${index}.product_id`]" :load-options="loadProducts" placeholder="Selecionar produto" />
+                <ComboboxEnhanced v-model="item.product_id" :has-error="form.errors[`items.${index}.product_id`]" :load-options="loadProducts" placeholder="Seleccionar produto" />
               </td>
               <td class="ds-table-cell px-4 py-3">
                 <BaseInput v-model.number="item.qty" type="number" min="0.01" step="0.01" class="ds-field text-right tabular-nums" required />
@@ -542,7 +542,7 @@ function submit() {
         <div class="flex items-center gap-3">
           <CheckBadgeIcon class="h-5 w-5 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
           <div>
-            <h2 class="text-sm font-bold text-[var(--ds-text)]">Faturação e observações</h2>
+            <h2 class="text-sm font-bold text-[var(--ds-text)]">Facturação e observações</h2>
             <p class="ds-copy mt-1 text-xs">Vínculo financeiro e contexto complementar do certificado.</p>
           </div>
         </div>
@@ -550,13 +550,13 @@ function submit() {
       <div class="grid gap-5 px-5 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
         <div class="space-y-4">
           <div class="ds-field-group">
-            <label class="ds-field-label">Fatura associada</label>
-            <ComboboxEnhanced v-model="form.invoice_id" :has-error="form.errors.invoice_id" :load-options="loadInvoices" placeholder="Sem fatura associada" />
+            <label class="ds-field-label">Factura associada</label>
+            <ComboboxEnhanced v-model="form.invoice_id" :has-error="form.errors.invoice_id" :load-options="loadInvoices" placeholder="Sem factura associada" />
             <p v-if="form.errors.invoice_id" class="ds-field-error">{{ form.errors.invoice_id }}</p>
           </div>
           <label class="flex items-start gap-3 border-t border-[var(--ds-border)] pt-4 text-sm font-semibold text-[var(--ds-text-muted)]">
             <CheckboxInput v-model="form.invoiced" type="checkbox" class="ds-checkbox mt-0.5" />
-            Marcar certificado como faturado
+            Marcar certificado como facturado
           </label>
         </div>
         <div class="ds-field-group">

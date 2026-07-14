@@ -422,7 +422,7 @@ HTML;
             $settings->app_client_nif ? 'NIF: '.$settings->app_client_nif : ($settings->app_nif ? 'NIF: '.$settings->app_nif : null),
             $settings->app_client_contact ?: $settings->app_contact,
             $settings->app_client_email ?: $settings->app_email,
-            $settings->app_client_lab_director ? 'Direção técnica: '.$settings->app_client_lab_director : null,
+            $settings->app_client_lab_director ? 'Direcção técnica: '.$settings->app_client_lab_director : null,
         ], 'Laboratório');
     }
 

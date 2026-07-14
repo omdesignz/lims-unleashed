@@ -55,7 +55,7 @@ const scopeSummary = computed(() => [
 function addSheet() {
   form.worksheets.sheets.push({
     id: `sheet-${Date.now()}`,
-    name: `Sheet ${form.worksheets.sheets.length + 1}`,
+    name: `Folha ${form.worksheets.sheets.length + 1}`,
     data: [[""]],
   });
   activeSheetIndex.value = form.worksheets.sheets.length - 1;
@@ -156,22 +156,20 @@ function formatDate(date) {
       <nav aria-label="Breadcrumb" class="mb-5">
         <Link :href="route('worksheets.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ds-text-muted)] hover:text-[rgb(var(--primary-700-rgb))]">
           <ArrowLeftIcon class="h-4 w-4" />
-          Worksheets laboratoriais
+          Folhas de trabalho laboratoriais
         </Link>
       </nav>
 
       <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div class="min-w-0">
-          <p class="ds-kicker">Worksheet #{{ worksheet.id }}</p>
+          <p class="ds-kicker">Folha de trabalho #{{ worksheet.id }}</p>
           <div class="mt-3 flex items-start gap-3">
             <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
               <TableCellsIcon class="h-5 w-5" />
             </span>
             <div class="min-w-0">
-              <h1 class="ds-heading break-words text-2xl">{{ form.name || "Worksheet sem nome" }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">
-                Planilha de bancada baseada no escopo controlado da analise e preparada para registo tecnico rastreavel.
-              </p>
+              <h1 class="ds-heading break-words text-2xl">{{ form.name || "Folha de trabalho sem nome" }}</h1>
+              <p class="ds-copy mt-1 max-w-3xl text-sm"> Folha de bancada baseada no âmbito controlado da análise e preparada para registo técnico rastreável. </p>
               <ul class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-[var(--ds-text-muted)]">
                 <li class="inline-flex items-center gap-1.5">
                   <ClockIcon class="h-4 w-4 text-[var(--ds-text-soft)]" />
@@ -179,7 +177,7 @@ function formatDate(date) {
                 </li>
                 <li class="inline-flex items-center gap-1.5">
                   <QueueListIcon class="h-4 w-4 text-[var(--ds-text-soft)]" />
-                  {{ form.worksheets.sheets.length }} sheets
+                  {{ form.worksheets.sheets.length }} folhas
                 </li>
                 <li>
                   <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-bold" :class="statusClasses(scopeControl.status)">
@@ -194,7 +192,7 @@ function formatDate(date) {
         <div class="flex flex-wrap gap-2 lg:justify-end">
           <button type="button" class="ds-button ds-button-secondary" @click="addSheet">
             <PlusIcon class="h-4 w-4" />
-            Nova sheet
+            Nova folha
           </button>
           <button
             type="button"
@@ -203,11 +201,11 @@ function formatDate(date) {
             @click="removeActiveSheet"
           >
             <TrashIcon class="h-4 w-4" />
-            Remover sheet
+            Remover folha
           </button>
           <button type="button" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty" @click="saveWorksheet">
             <DocumentCheckIcon class="h-4 w-4" />
-            {{ form.processing ? "A guardar..." : form.isDirty ? "Guardar alteracoes" : "Sem alteracoes" }}
+            {{ form.processing ? "A guardar..." : form.isDirty ? "Guardar alterações" : "Sem alterações" }}
           </button>
         </div>
       </div>
@@ -235,9 +233,9 @@ function formatDate(date) {
       <div class="flex items-start gap-3">
         <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-200" />
         <div class="min-w-0">
-          <h2 class="text-sm font-black text-amber-900 dark:text-amber-100">Parametros ainda em falta no fluxo</h2>
+          <h2 class="text-sm font-black text-amber-900 dark:text-amber-100">Parâmetros ainda em falta no fluxo</h2>
           <p class="mt-1 text-sm font-semibold text-amber-800 dark:text-amber-200">
-            Confirme estes parametros antes da conclusao tecnica da worksheet.
+            Confirme estes parâmetros antes da conclusão técnica da folha de trabalho.
           </p>
           <ul class="mt-3 flex flex-wrap gap-2">
             <li
@@ -255,18 +253,18 @@ function formatDate(date) {
     <div class="grid gap-6 xl:grid-cols-[16rem_minmax(0,1fr)]">
       <aside class="ds-card self-start p-3 xl:sticky xl:top-24">
         <div class="border-b border-[var(--ds-border)] px-2 pb-4">
-          <label for="worksheet-name" class="ds-field-label">Nome da worksheet</label>
+          <label for="worksheet-name" class="ds-field-label">Nome da folha de trabalho</label>
           <BaseInput id="worksheet-name" v-model="form.name" type="text" class="ds-field mt-2 min-h-10" />
-          <p class="ds-field-hint mt-2">Identificacao visivel na fila e nos registos de bancada.</p>
+          <p class="ds-field-hint mt-2">Identificação visível na fila e nos registos de bancada.</p>
         </div>
 
         <div class="px-2 pt-4">
           <div class="flex items-center justify-between gap-3">
-            <h2 class="text-sm font-black text-[var(--ds-text)]">Sheets</h2>
+            <h2 class="text-sm font-black text-[var(--ds-text)]">Folhas</h2>
             <span class="ds-chip">{{ form.worksheets.sheets.length }}</span>
           </div>
 
-          <nav class="mt-3 flex gap-2 overflow-x-auto pb-1 xl:flex-col xl:overflow-visible" aria-label="Sheets da worksheet">
+          <nav class="mt-3 flex gap-2 overflow-x-auto pb-1 xl:flex-col xl:overflow-visible" aria-label="Folhas da folha de trabalho">
             <button
               v-for="(sheet, index) in form.worksheets.sheets"
               :key="sheet.id"
@@ -276,7 +274,7 @@ function formatDate(date) {
               @click="activeSheetIndex = index"
             >
               <TableCellsIcon class="h-4 w-4 shrink-0" />
-              <span class="min-w-0 flex-1 truncate text-left">{{ sheet.name || `Sheet ${index + 1}` }}</span>
+              <span class="min-w-0 flex-1 truncate text-left">{{ sheet.name || `Folha ${index + 1}` }}</span>
               <CheckCircleIcon v-if="activeSheetIndex === index" class="h-4 w-4 shrink-0" />
             </button>
           </nav>
@@ -286,7 +284,7 @@ function formatDate(date) {
       <section class="ds-table-shell min-w-0">
         <div class="ds-table-summary flex-col items-stretch px-4 py-4 lg:flex-row lg:items-center">
           <div class="min-w-0 flex-1">
-            <label for="active-sheet-name" class="ds-field-label">Sheet ativa</label>
+            <label for="active-sheet-name" class="ds-field-label">Folha activa</label>
             <BaseInput
               v-if="activeSheet"
               id="active-sheet-name"
@@ -370,9 +368,9 @@ function formatDate(date) {
         </div>
 
         <footer class="flex flex-col gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3 text-xs font-semibold text-[var(--ds-text-muted)] sm:flex-row sm:items-center sm:justify-between">
-          <span>{{ activeSheet?.name || "Sem sheet ativa" }} · {{ rowCount }} x {{ columnCount }}</span>
+          <span>{{ activeSheet?.name || "Sem folha activa" }} · {{ rowCount }} x {{ columnCount }}</span>
           <span :class="form.isDirty ? 'text-amber-700 dark:text-amber-200' : 'text-emerald-700 dark:text-emerald-200'">
-            {{ form.isDirty ? "Alteracoes por guardar" : "Worksheet sincronizada" }}
+            {{ form.isDirty ? "Alterações por guardar" : "Worksheet sincronizada" }}
           </span>
         </footer>
       </section>

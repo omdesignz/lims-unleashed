@@ -11,20 +11,20 @@
                 <th class="tg-0lax" style="padding:5px 5px;text-align:center;font-weight:bold;">
                     Unidades</th>
                 <th class="tg-s268" style="padding:5px 5px;text-align:center;font-weight:bold" colspan="2">
-                Limites <small style="font-weight: normal; font-style: italic">(Limits)</small></th>
+                Limites</th>
             </tr>
             <tr>
                 <th style="border-bottom: 0.25mm solid black;text-align:left">
-                    <small style="padding:5px 5px;font-weight: normal; font-style: italic;text-align:left">(Parameter)</small>
+                    <small style="padding:5px 5px;font-weight: normal; font-style: italic;text-align:left">(Parâmetro)</small>
                 </th>
                 <th style="border-bottom: 0.25mm solid black;text-align:left">
-                    <small style="padding:5px 5px;font-weight: normal; font-style: italic;text-align:left">(Method)</small>
+                    <small style="padding:5px 5px;font-weight: normal; font-style: italic;text-align:left">(Método)</small>
                 </th>
                 <th style="border-bottom: 0.25mm solid black;text-align:center">
-                    <small style="padding:5px 5px;font-weight: normal; font-style: italic;text-align:center">(Results and U)</small>
+                    <small style="padding:5px 5px;font-weight: normal; font-style: italic;text-align:center">(Resultados e U)</small>
                 </th>
                 <th style="border-bottom: 0.25mm solid black;text-align:center">
-                    <small style="padding:5px 5px;font-weight: normal; font-style: italic;text-align:center">(Units)</small>
+                    <small style="padding:5px 5px;font-weight: normal; font-style: italic;text-align:center">(Unidades)</small>
                 </th>
                 <th style="border-bottom: 0.25mm solid black">
                     <small style="padding:5px 5px;font-weight: normal;font-weight:bold">Min</small>

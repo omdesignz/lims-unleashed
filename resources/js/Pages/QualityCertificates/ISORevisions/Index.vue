@@ -68,9 +68,9 @@ const activeRevision = computed(() => {
 
 const revisionMetrics = computed(() => [
   {
-    label: "Revisoes controladas",
+    label: "Revisões controladas",
     value: props.revisions?.total ?? revisionRows.value.length,
-    note: "historico do certificado",
+    note: "histórico do certificado",
   },
   {
     label: "Conformidade documental",
@@ -78,28 +78,28 @@ const revisionMetrics = computed(() => [
     note: "eventos com metadados ISO",
   },
   {
-    label: "Eventos auditaveis",
+    label: "Eventos auditáveis",
     value: props.complianceStats?.activity_count ?? props.activityLogs.length,
-    note: "registos de atividade",
+    note: "registos de actividade",
   },
   {
-    label: "Versao efetiva",
+    label: "Versão efectiva",
     value: `v${activeRevision.value?.version ?? "1.0"}`,
-    note: activeRevision.value?.is_current ? "versao corrente" : "versao registada",
+    note: activeRevision.value?.is_current ? "versão corrente" : "versão registada",
   },
 ]);
 
 const currentRevisionDetails = computed(() => [
   {
-    label: "Versao",
+    label: "Versão",
     value: `v${activeRevision.value?.version ?? "1.0"}`,
   },
   {
-    label: "Numero da revisao",
+    label: "Número da revisão",
     value: activeRevision.value?.revision_number ?? "1",
   },
   {
-    label: "Data efetiva",
+    label: "Data efectiva",
     value: formatDate(
       activeRevision.value?.effective_date || props.certificate?.validated_at,
     ),
@@ -109,21 +109,21 @@ const currentRevisionDetails = computed(() => [
     value:
       activeRevision.value?.approved_by?.name ||
       props.certificate?.validated_by ||
-      "Aprovacao pendente",
+      "Aprovação pendente",
   },
 ]);
 
 const selectedCountLabel = computed(() => {
   if (!selectedRevisions.value.length) {
-    return "Selecione duas revisoes para comparar";
+    return "Seleccione duas revisões para comparar";
   }
 
-  return `${selectedRevisions.value.length}/2 revisoes selecionadas`;
+  return `${selectedRevisions.value.length}/2 revisões seleccionadas`;
 });
 
 function formatDate(date) {
   if (!date) {
-    return "Nao registada";
+    return "Não registada";
   }
 
   return new Date(date).toLocaleDateString("pt-PT", {
@@ -135,7 +135,7 @@ function formatDate(date) {
 
 function formatDateTime(date) {
   if (!date) {
-    return "Nao registada";
+    return "Não registada";
   }
 
   return new Date(date).toLocaleString("pt-PT", {
@@ -149,14 +149,14 @@ function formatDateTime(date) {
 
 function changeTypeLabel(changeType) {
   const labels = {
-    CREATED: "Criacao",
+    CREATED: "Criação",
     UPDATED: "Atualizacao",
     CORRECTED: "Correcao",
     REISSUED: "Reemissao",
     WITHDRAWN: "Retirada",
   };
 
-  return labels[changeType] || changeType || "Alteracao";
+  return labels[changeType] || changeType || "Alteração";
 }
 
 function changeTypeDot(changeType) {
@@ -242,13 +242,10 @@ function handleRevisionRestored() {
           </Link>
           <div class="flex flex-wrap items-center gap-2">
             <p class="ds-kicker">ISO/IEC 17025</p>
-            <span class="ds-chip font-mono">{{ certificate.code || "Sem codigo" }}</span>
+            <span class="ds-chip font-mono">{{ certificate.code || "Sem código" }}</span>
           </div>
-          <h1 class="ds-heading mt-2 text-2xl">Controlo de revisoes</h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm">
-            Historico imutavel de alteracoes, aprovacao, comparacao e reposicao
-            do certificado para auditoria e rastreabilidade.
-          </p>
+          <h1 class="ds-heading mt-2 text-2xl">Controlo de revisões</h1>
+          <p class="ds-copy mt-2 max-w-2xl text-sm"> Histórico imutável de alterações, aprovação, comparação e reposição do certificado para auditoria e rastreabilidade. </p>
         </div>
 
         <div class="flex flex-col gap-2 sm:flex-row">
@@ -256,16 +253,12 @@ function handleRevisionRestored() {
             :href="route('qualitycertificates.iso-revisions.export', certificate.id)"
             class="ds-button ds-button-secondary"
           >
-            <ArrowDownTrayIcon class="h-4 w-4" />
-            Exportar historico
-          </a>
+            <ArrowDownTrayIcon class="h-4 w-4" /> Exportar histórico </a>
           <Link
             :href="route('qualitycertificates.iso-revisions.create', certificate.id)"
             class="ds-button ds-button-primary"
           >
-            <DocumentPlusIcon class="h-4 w-4" />
-            Nova revisao
-          </Link>
+            <DocumentPlusIcon class="h-4 w-4" /> Nova revisão </Link>
         </div>
       </div>
 
@@ -292,12 +285,12 @@ function handleRevisionRestored() {
               <DocumentCheckIcon class="h-5 w-5" />
             </div>
             <div>
-              <p class="ds-kicker">Versao efetiva</p>
+              <p class="ds-kicker">Versão efectiva</p>
               <h2 class="ds-heading mt-2 text-base">
                 v{{ activeRevision?.version || "1.0" }}
               </h2>
               <p class="ds-copy mt-1 text-xs">
-                {{ activeRevision?.change_reason || "Emissao inicial do certificado." }}
+                {{ activeRevision?.change_reason || "Emissão inicial do certificado." }}
               </p>
             </div>
           </div>
@@ -318,8 +311,8 @@ function handleRevisionRestored() {
         <section class="ds-table-shell">
           <div class="ds-table-summary flex-col px-5 py-4 sm:flex-row sm:px-6">
             <div>
-              <p class="ds-kicker">Historico controlado</p>
-              <h2 class="ds-heading mt-2 text-base">Revisoes do certificado</h2>
+              <p class="ds-kicker">Histórico controlado</p>
+              <h2 class="ds-heading mt-2 text-base">Revisões do certificado</h2>
               <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">
                 {{ selectedCountLabel }}
               </p>
@@ -331,7 +324,7 @@ function handleRevisionRestored() {
               @click="compareSelected"
             >
               <ArrowsRightLeftIcon class="h-4 w-4" />
-              Comparar selecionadas
+              Comparar seleccionadas
             </button>
           </div>
 
@@ -364,11 +357,11 @@ function handleRevisionRestored() {
                         </span>
                       </span>
                       <span class="mt-1 block text-xs font-semibold text-[var(--ds-text-muted)]">
-                        Revisao {{ revision.revision_number }} - {{ formatDate(revision.effective_date) }}
+                        Revisão {{ revision.revision_number }} - {{ formatDate(revision.effective_date) }}
                       </span>
                     </span>
                   </button>
-                  <span v-if="revision.is_current" class="ds-chip">Atual</span>
+                  <span v-if="revision.is_current" class="ds-chip">Actual</span>
                 </div>
 
                 <p class="ds-copy text-sm">{{ revision.change_reason || "Sem motivo registado." }}</p>
@@ -423,11 +416,11 @@ function handleRevisionRestored() {
                 <thead class="ds-table-head">
                   <tr>
                     <th class="ds-table-heading px-5 py-4 text-left">Comparar</th>
-                    <th class="ds-table-heading px-4 py-4 text-left">Versao</th>
-                    <th class="ds-table-heading px-4 py-4 text-left">Alteracao</th>
-                    <th class="ds-table-heading px-4 py-4 text-left">Responsaveis</th>
-                    <th class="ds-table-heading px-4 py-4 text-left">Data efetiva</th>
-                    <th class="ds-table-heading px-5 py-4 text-right">Acoes</th>
+                    <th class="ds-table-heading px-4 py-4 text-left">Versão</th>
+                    <th class="ds-table-heading px-4 py-4 text-left">Alteração</th>
+                    <th class="ds-table-heading px-4 py-4 text-left">Responsáveis</th>
+                    <th class="ds-table-heading px-4 py-4 text-left">Data efectiva</th>
+                    <th class="ds-table-heading px-5 py-4 text-right">Acções</th>
                   </tr>
                 </thead>
                 <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
@@ -438,17 +431,17 @@ function handleRevisionRestored() {
                         class="ds-checkbox"
                         :checked="selectedRevisions.includes(revision.id)"
                         :disabled="selectedRevisions.length >= 2 && !selectedRevisions.includes(revision.id)"
-                        :aria-label="`Selecionar versao ${revision.version}`"
+                        :aria-label="`Seleccionar versão ${revision.version}`"
                         @change="toggleRevision(revision.id)"
                       />
                     </td>
                     <td class="px-4 py-4">
                       <div class="flex items-center gap-2">
                         <span class="ds-heading font-mono text-sm">v{{ revision.version }}</span>
-                        <span v-if="revision.is_current" class="ds-chip">Atual</span>
+                        <span v-if="revision.is_current" class="ds-chip">Actual</span>
                       </div>
                       <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">
-                        Revisao {{ revision.revision_number }}
+                        Revisão {{ revision.revision_number }}
                       </p>
                     </td>
                     <td class="max-w-sm px-4 py-4">
@@ -467,7 +460,7 @@ function handleRevisionRestored() {
                       </p>
                       <p class="mt-2 flex items-center gap-1.5 text-xs">
                         <CheckCircleIcon class="h-3.5 w-3.5" />
-                        {{ revision.approved_by?.name || "Aprovacao pendente" }}
+                        {{ revision.approved_by?.name || "Aprovação pendente" }}
                       </p>
                     </td>
                     <td class="ds-table-cell whitespace-nowrap px-4 py-4">
@@ -478,30 +471,30 @@ function handleRevisionRestored() {
                         <Link
                           :href="route('qualitycertificates.iso-revisions.show', { certificate: certificate.id, revision: revision.id })"
                           class="ds-table-action"
-                          title="Abrir revisao"
+                          title="Abrir revisão"
                         >
                           <EyeIcon class="h-4 w-4" />
-                          <span class="sr-only">Abrir revisao</span>
+                          <span class="sr-only">Abrir revisão</span>
                         </Link>
                         <button
                           v-if="activeRevision?.id && revision.id !== activeRevision.id"
                           type="button"
                           class="ds-table-action"
-                          title="Comparar com a versao atual"
+                          title="Comparar com a versão actual"
                           @click="compareWithCurrent(revision)"
                         >
                           <ArrowsRightLeftIcon class="h-4 w-4" />
-                          <span class="sr-only">Comparar com a versao atual</span>
+                          <span class="sr-only">Comparar com a versão actual</span>
                         </button>
                         <button
                           v-if="!revision.is_current"
                           type="button"
                           class="ds-table-action"
-                          title="Repor esta revisao"
+                          title="Repor esta revisão"
                           @click="openRestoreModal(revision)"
                         >
                           <ArrowPathIcon class="h-4 w-4" />
-                          <span class="sr-only">Repor esta revisao</span>
+                          <span class="sr-only">Repor esta revisão</span>
                         </button>
                       </div>
                     </td>
@@ -513,15 +506,13 @@ function handleRevisionRestored() {
 
           <div v-else class="ds-empty-state m-5 p-8 text-center">
             <DocumentDuplicateIcon class="mx-auto h-7 w-7 text-[var(--ds-text-soft)]" />
-            <h3 class="ds-heading mt-3 text-sm">Nenhuma revisao registada</h3>
-            <p class="ds-copy mt-1 text-xs">Crie a primeira revisao controlada deste certificado.</p>
+            <h3 class="ds-heading mt-3 text-sm">Nenhuma revisão registada</h3>
+            <p class="ds-copy mt-1 text-xs">Crie a primeira revisão controlada deste certificado.</p>
             <Link
               :href="route('qualitycertificates.iso-revisions.create', certificate.id)"
               class="ds-button ds-button-primary mt-4"
             >
-              <DocumentPlusIcon class="h-4 w-4" />
-              Criar revisao
-            </Link>
+              <DocumentPlusIcon class="h-4 w-4" /> Criar revisão </Link>
           </div>
 
           <div v-if="revisionRows.length" class="border-t border-[var(--ds-border)] px-5 py-4">
@@ -533,7 +524,7 @@ function handleRevisionRestored() {
       <aside class="space-y-6">
         <section class="ds-card p-5">
           <p class="ds-kicker">Comandos de auditoria</p>
-          <h2 class="ds-heading mt-2 text-base">Evidencia e rastreabilidade</h2>
+          <h2 class="ds-heading mt-2 text-base">Evidência e rastreabilidade</h2>
           <div class="mt-4 grid gap-2">
             <Link
               :href="route('qualitycertificates.iso-revisions.audit-trail', certificate.id)"
@@ -554,8 +545,8 @@ function handleRevisionRestored() {
 
         <section class="ds-command-surface overflow-hidden">
           <div class="border-b border-[var(--ds-border)] px-5 py-4">
-            <p class="ds-kicker">Atividade recente</p>
-            <h2 class="ds-heading mt-2 text-base">Ultimos eventos</h2>
+            <p class="ds-kicker">Actividade recente</p>
+            <h2 class="ds-heading mt-2 text-base">Últimos eventos</h2>
           </div>
 
           <ol v-if="activityLogs.length" class="px-5 py-5">

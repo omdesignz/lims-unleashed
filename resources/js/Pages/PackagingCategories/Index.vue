@@ -8,5 +8,5 @@ defineProps({ record: { type: Object, default: () => ({ data: [], meta: {} }) },
 </script>
 
 <template>
-  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="packagingcategories" route-parameter="category" permission-key="packaging_types" title="Tipos de embalagem" kicker="Cadeia de custodia" description="Recipientes e embalagens controlados para recolha, transporte e preservacao." entity-label="Tipo de embalagem" new-entity-label="Novo tipo" name-label="Nome" description-label="Condicoes de utilizacao" :supports-name="true" :supports-code="false" :icon="CubeIcon" />
+  <ReferenceCatalogManager :record="record" :fields="fields" :model="model" :abilities="abilities" :query="query" :slide-over-edit="slideOverEdit" route-prefix="packagingcategories" route-parameter="category" permission-key="packaging_types" title="Tipos de embalagem" kicker="Cadeia de custódia" description="Recipientes e embalagens controlados para recolha, transporte e preservação." entity-label="Tipo de embalagem" new-entity-label="Novo tipo" name-label="Nome" description-label="Condições de utilização" :supports-name="true" :supports-code="false" :icon="CubeIcon" />
 </template>

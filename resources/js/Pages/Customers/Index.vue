@@ -38,8 +38,8 @@ const focalPoints = computed(() => pageRecords.value.filter((customer) => custom
 
 const metrics = computed(() => [
   { label: "Clientes", value: totalRecords.value, detail: "carteira total", icon: BuildingOffice2Icon },
-  { label: "Ativos nesta pagina", value: activeRecords.value, detail: "disponiveis nos fluxos", icon: CheckBadgeIcon },
-  { label: "Local principal", value: primarySites.value, detail: "endereco operacional definido", icon: MapPinIcon },
+  { label: "Activos nesta página", value: activeRecords.value, detail: "disponíveis nos fluxos", icon: CheckBadgeIcon },
+  { label: "Local principal", value: primarySites.value, detail: "endereço operacional definido", icon: MapPinIcon },
   { label: "Ponto focal", value: focalPoints.value, detail: "contacto principal identificado", icon: UserCircleIcon },
 ]);
 
@@ -138,7 +138,7 @@ function executeBulkAction() {
       :description="confirmationDialogDescription"
       :variant="selectedAction === 'restore' ? 'question' : 'danger'"
       confirm="Sim"
-      cancel="Nao"
+      cancel="Não"
       @canceled="showActionConfirmation = false"
       @confirmed="executeBulkAction"
     />

@@ -69,10 +69,10 @@ import {ref, reactive, nextTick} from "vue";
 
 const props = defineProps({
     title: {
-        default: 'Confirmar Senha',
+        default: 'Confirmar Palavra-passe',
     },
     content: {
-        default: 'Para sua segurança, confirme sua senha para continuar.',
+        default: 'Para sua segurança, confirme sua palavra-passe para continuar.',
     },
     button: {
         default: 'Confirmar',

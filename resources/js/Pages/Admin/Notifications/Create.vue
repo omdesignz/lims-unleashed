@@ -53,7 +53,7 @@ const form = useForm({
 const recipientOptions = [
   { value: 'all', label: 'Todos', description: 'Todos os utilizadores registados', icon: UsersIcon },
   { value: 'group', label: 'Grupo', description: 'Segmento operacional predefinido', icon: UserGroupIcon },
-  { value: 'specific', label: 'Especificos', description: 'Selecao individual de utilizadores', icon: UserIcon },
+  { value: 'specific', label: 'Especificos', description: 'Selecção individual de utilizadores', icon: UserIcon },
 ]
 
 const selectedGroup = computed(() => props.userGroups.find((group) => group.id === form.group))
@@ -96,7 +96,7 @@ const submit = () => {
   <div class="space-y-5">
     <NotificationAdminHeader
       title="Compor notificacao"
-      description="Prepare uma mensagem operacional, defina a audiencia e confirme o alcance antes da emissao."
+      description="Prepare uma mensagem operacional, defina a audiencia e confirme o alcance antes da emissão."
     >
       <template #actions>
         <Link :href="route('admin.notifications.index')" class="ds-button ds-button-secondary">
@@ -128,19 +128,19 @@ const submit = () => {
 
         <section class="ds-panel overflow-hidden">
           <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
-            <p class="ds-kicker">Conteudo</p>
+            <p class="ds-kicker">Conteúdo</p>
             <h2 class="ds-heading mt-1 flex items-center gap-2 text-base"><EnvelopeIcon class="h-4 w-4" /> Mensagem operacional</h2>
           </header>
           <div class="space-y-5 p-5 sm:p-6">
             <div class="ds-field-group">
-              <label for="notification-title" class="ds-field-label">Titulo <span class="ds-field-required">*</span></label>
-              <BaseInput id="notification-title" v-model="form.title" type="text" maxlength="255" class="ds-field" :aria-invalid="Boolean(form.errors.title || (showValidation && !form.title.trim()))" placeholder="Ex.: Resultado do ensaio disponivel" />
-              <div class="flex justify-between gap-3"><p v-if="form.errors.title || (showValidation && !form.title.trim())" class="ds-field-error">{{ form.errors.title || 'Indique um titulo.' }}</p><p class="ml-auto text-xs font-semibold text-[var(--ds-text-soft)]">{{ form.title.length }}/255</p></div>
+              <label for="notification-title" class="ds-field-label">Título <span class="ds-field-required">*</span></label>
+              <BaseInput id="notification-title" v-model="form.title" type="text" maxlength="255" class="ds-field" :aria-invalid="Boolean(form.errors.title || (showValidation && !form.title.trim()))" placeholder="Ex.: Resultado do ensaio disponível" />
+              <div class="flex justify-between gap-3"><p v-if="form.errors.title || (showValidation && !form.title.trim())" class="ds-field-error">{{ form.errors.title || 'Indique um título.' }}</p><p class="ml-auto text-xs font-semibold text-[var(--ds-text-soft)]">{{ form.title.length }}/255</p></div>
             </div>
 
             <div class="ds-field-group">
               <label for="notification-message" class="ds-field-label">Mensagem <span class="ds-field-required">*</span></label>
-              <textarea id="notification-message" v-model="form.message" rows="7" class="ds-field resize-y" :aria-invalid="Boolean(form.errors.message || (showValidation && !form.message.trim()))" placeholder="Descreva a acao, prazo ou informacao que o destinatario deve conhecer." />
+              <textarea id="notification-message" v-model="form.message" rows="7" class="ds-field resize-y" :aria-invalid="Boolean(form.errors.message || (showValidation && !form.message.trim()))" placeholder="Descreva a acção, prazo ou informação que o destinatário deve conhecer." />
               <div class="flex justify-between gap-3"><p v-if="form.errors.message || (showValidation && !form.message.trim())" class="ds-field-error">{{ form.errors.message || 'Introduza a mensagem.' }}</p><p class="ml-auto text-xs font-semibold text-[var(--ds-text-soft)]">{{ form.message.length }} caracteres</p></div>
             </div>
 
@@ -172,7 +172,7 @@ const submit = () => {
         <section class="ds-panel overflow-hidden">
           <header class="border-b border-[var(--ds-border)] px-5 py-4 sm:px-6">
             <p class="ds-kicker">Audiencia</p>
-            <h2 class="ds-heading mt-1 flex items-center gap-2 text-base"><UsersIcon class="h-4 w-4" /> Destinatarios</h2>
+            <h2 class="ds-heading mt-1 flex items-center gap-2 text-base"><UsersIcon class="h-4 w-4" /> Destinatários</h2>
           </header>
           <div class="space-y-5 p-5 sm:p-6">
             <div class="grid gap-3 sm:grid-cols-3">
@@ -198,7 +198,7 @@ const submit = () => {
                   <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
                   <BaseInput v-model="userSearch" type="search" class="ds-field pl-9" placeholder="Pesquisar utilizador" />
                 </div>
-                <button type="button" class="ds-button ds-button-ghost" @click="toggleSelectAll">{{ isAllSelected ? 'Desmarcar todos' : 'Selecionar todos' }}</button>
+                <button type="button" class="ds-button ds-button-ghost" @click="toggleSelectAll">{{ isAllSelected ? 'Desmarcar todos' : 'Seleccionar todos' }}</button>
               </div>
               <div class="max-h-80 divide-y divide-[var(--ds-border)] overflow-y-auto">
                 <label v-for="user in filteredUsers" :key="user.id" class="flex cursor-pointer items-center gap-3 px-4 py-3 hover:bg-[var(--ds-panel-subtle)]">
@@ -208,7 +208,7 @@ const submit = () => {
                 </label>
                 <p v-if="!filteredUsers.length" class="px-4 py-8 text-center text-sm font-semibold text-[var(--ds-text-muted)]">Nenhum utilizador corresponde a pesquisa.</p>
               </div>
-              <p v-if="form.errors.recipients || (showValidation && form.recipients.length === 0)" class="ds-field-error border-t border-[var(--ds-border)] px-4 py-3">{{ form.errors.recipients || 'Selecione pelo menos um destinatario.' }}</p>
+              <p v-if="form.errors.recipients || (showValidation && form.recipients.length === 0)" class="ds-field-error border-t border-[var(--ds-border)] px-4 py-3">{{ form.errors.recipients || 'Seleccione pelo menos um destinatário.' }}</p>
             </div>
           </div>
         </section>
@@ -216,28 +216,24 @@ const submit = () => {
 
       <aside class="ds-panel overflow-hidden xl:sticky xl:top-5">
         <header class="border-b border-[var(--ds-border)] px-5 py-4">
-          <p class="ds-kicker">Confirmacao</p>
-          <h2 class="ds-heading mt-1 text-base">Pre-visualizacao</h2>
+          <p class="ds-kicker">Confirmação</p>
+          <h2 class="ds-heading mt-1 text-base">Pré-visualização</h2>
         </header>
         <div class="p-5">
           <div class="flex flex-wrap gap-2">
             <span class="ds-badge ring-1 ring-inset" :class="notificationTypeClasses(form.type)">{{ notificationTypeLabel(form.type) }}</span>
             <span class="ds-badge ring-1 ring-inset" :class="notificationPriorityClasses(form.priority)">{{ notificationPriorityLabel(form.priority) }}</span>
           </div>
-          <h3 class="mt-4 break-words text-lg font-black text-[var(--ds-text)]">{{ form.title || 'Titulo da notificacao' }}</h3>
-          <p class="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-[var(--ds-text-muted)]">{{ form.message || 'A mensagem sera apresentada aqui enquanto escreve.' }}</p>
+          <h3 class="mt-4 break-words text-lg font-black text-[var(--ds-text)]">{{ form.title || 'Título da notificacao' }}</h3>
+          <p class="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-[var(--ds-text-muted)]">{{ form.message || 'A mensagem será apresentada aqui enquanto escreve.' }}</p>
           <dl class="mt-6 divide-y divide-[var(--ds-border)] border-y border-[var(--ds-border)]">
             <div class="flex items-center justify-between gap-4 py-3"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Emissor</dt><dd class="truncate text-sm font-bold text-[var(--ds-text)]">{{ senderAlias }}</dd></div>
             <div class="flex items-center justify-between gap-4 py-3"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Alcance</dt><dd class="text-sm font-black tabular-nums text-[var(--ds-text)]">{{ estimatedRecipients }} utilizadores</dd></div>
             <div class="flex items-center justify-between gap-4 py-3"><dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Entrega</dt><dd class="flex items-center gap-1.5 text-sm font-bold text-[var(--ds-text)]"><ClockIcon class="h-4 w-4" /> Imediata</dd></div>
           </dl>
 
-          <div v-if="showValidation && !isFormValid" class="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
-            Complete os campos obrigatorios e confirme os destinatarios antes de enviar.
-          </div>
-          <div v-if="form.hasErrors" class="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
-            Nao foi possivel emitir a mensagem. Reveja os campos assinalados.
-          </div>
+          <div v-if="showValidation && !isFormValid" class="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300"> Complete os campos obrigatorios e confirme os destinatários antes de enviar. </div>
+          <div v-if="form.hasErrors" class="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300"> Não foi possível emitir a mensagem. Reveja os campos assinalados. </div>
         </div>
         <footer class="border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
           <button type="submit" class="ds-button ds-button-primary w-full" :disabled="form.processing">
@@ -245,7 +241,7 @@ const submit = () => {
             <span v-else class="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
             {{ form.processing ? 'A emitir...' : `Emitir para ${estimatedRecipients}` }}
           </button>
-          <p class="mt-3 flex items-center justify-center gap-1.5 text-center text-xs font-semibold text-[var(--ds-text-soft)]"><CheckIcon class="h-3.5 w-3.5" /> A mensagem sera registada no historico.</p>
+          <p class="mt-3 flex items-center justify-center gap-1.5 text-center text-xs font-semibold text-[var(--ds-text-soft)]"><CheckIcon class="h-3.5 w-3.5" /> A mensagem será registada no histórico.</p>
         </footer>
       </aside>
     </form>

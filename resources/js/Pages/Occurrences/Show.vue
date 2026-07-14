@@ -105,7 +105,7 @@ function booleanLabel(value, trueLabel = "Sim", falseLabel = "Não") {
             <div class="min-w-0">
               <p class="ds-kicker">Dossier de ocorrência</p>
               <h1 class="ds-heading mt-1 text-2xl">{{ occurrence.occurrence_no || `Ocorrência ${occurrence.id}` }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Evidência consolidada da triagem, investigação, ação corretiva e encerramento.</p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">Evidência consolidada da triagem, investigação, acção correctiva e encerramento.</p>
             </div>
           </div>
         </div>
@@ -147,7 +147,7 @@ function booleanLabel(value, trueLabel = "Sim", falseLabel = "Não") {
       <div class="flex gap-3">
         <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 shrink-0" />
         <div>
-          <h2 class="text-sm font-bold">Ação corretiva fora do prazo</h2>
+          <h2 class="text-sm font-bold">Acção correctiva fora do prazo</h2>
           <p class="mt-1 text-sm leading-6">O prazo de implementação terminou e o dossier ainda não tem encerramento registado.</p>
         </div>
       </div>
@@ -195,11 +195,11 @@ function booleanLabel(value, trueLabel = "Sim", falseLabel = "Não") {
             <WrenchScrewdriverIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
             <div>
               <p class="ds-kicker">CAPA</p>
-              <h2 class="ds-heading mt-2 text-lg">Ação corretiva e eficácia</h2>
+              <h2 class="ds-heading mt-2 text-lg">Acção correctiva e eficácia</h2>
             </div>
           </div>
           <div class="mt-5">
-            <p class="whitespace-pre-wrap text-sm leading-7 text-[var(--ds-text)]">{{ occurrence.corrective_action || "Sem ação corretiva registada." }}</p>
+            <p class="whitespace-pre-wrap text-sm leading-7 text-[var(--ds-text)]">{{ occurrence.corrective_action || "Sem acção correctiva registada." }}</p>
             <dl class="mt-5 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2">
               <div class="border-b border-[var(--ds-border)] px-4 py-3 sm:border-b-0 sm:border-r">
                 <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Prazo de implementação</dt>
@@ -314,7 +314,7 @@ function booleanLabel(value, trueLabel = "Sim", falseLabel = "Não") {
           </div>
           <dl class="mt-5 space-y-3">
             <div class="flex items-center justify-between gap-3">
-              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Orçamento corretivo</dt>
+              <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Orçamento correctivo</dt>
               <dd class="ds-badge" :class="occurrence.has_risk_correction_budget ? 'ds-badge-success' : 'ds-badge-neutral'">{{ booleanLabel(occurrence.has_risk_correction_budget) }}</dd>
             </div>
             <div class="flex items-center justify-between gap-3">

@@ -195,7 +195,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="3" style="text-align: center;">Sem dados de consumo para o período selecionado.</td>
+                        <td colspan="3" style="text-align: center;">Sem dados de consumo para o período seleccionado.</td>
                     </tr>
                 @endforelse
             </tbody>

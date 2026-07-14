@@ -4,7 +4,7 @@
       <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
         <div class="max-w-3xl">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Procurement workflow</span>
+            <span class="ds-kicker">Procurement fluxo de trabalho</span>
             <span class="ds-chip">
               <span class="lims-status-dot" :class="statusDotClass(form.status)" />
               {{ formatStatus(form.status) }}
@@ -95,7 +95,7 @@
                 :disabled="!canEditStatus"
                 :has-error="form.errors.status"
                 :options="statusOptions"
-                placeholder="Selecionar estado"
+                placeholder="Seleccionar estado"
               />
               <p v-if="form.errors.status" class="ds-field-error mt-1">{{ form.errors.status }}</p>
             </div>
@@ -118,7 +118,7 @@
             <div v-if="selectedSupplierAssessment" class="ds-card border-l-4 p-4" :class="supplierAssessmentBorderClass">
               <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p class="text-sm font-bold text-[color:var(--ds-text)]">Avaliação ativa do fornecedor</p>
+                  <p class="text-sm font-bold text-[color:var(--ds-text)]">Avaliação activa do fornecedor</p>
                   <p class="mt-1 text-xs text-[color:var(--ds-text-soft)]">
                     Score {{ selectedSupplierAssessment.total_score }}/100 · Revisão {{ supplierAssessmentReviewLabel }}
                   </p>
@@ -163,7 +163,7 @@
             <div class="ds-empty-state p-6 text-center">
               <ShoppingBagIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
               <h3 class="mt-3 text-sm font-bold text-[color:var(--ds-text)]">Nenhum item adicionado</h3>
-              <p class="mt-1 text-sm text-[color:var(--ds-text-soft)]">Adicione itens para criar ou atualizar o pedido de compra.</p>
+              <p class="mt-1 text-sm text-[color:var(--ds-text-soft)]">Adicione itens para criar ou actualizar o pedido de compra.</p>
               <button v-if="canEditItems" type="button" class="ds-button ds-button-primary mt-4" @click="addOrderItem">
                 <PlusCircleIcon class="h-4 w-4" />
                 Adicionar primeiro item
@@ -276,7 +276,7 @@
                 </div>
                 <div class="flex items-center gap-1">
                   <BuildingStorefrontIcon class="h-3 w-3" />
-                  <span>Stock: {{ getCurrentStock(item.item_id, item.warehouse_id) }}</span>
+                  <span>Existências: {{ getCurrentStock(item.item_id, item.warehouse_id) }}</span>
                 </div>
               </div>
             </div>
@@ -307,14 +307,14 @@
               {{ submitLabel }}
             </button>
             <button v-if="mode === 'create'" type="button" class="ds-button ds-button-secondary w-full" :disabled="form.processing" @click="saveAsDraft">
-              Salvar como rascunho
+              Guardar como rascunho
             </button>
             <button type="button" class="ds-button ds-button-secondary w-full" @click="goBack">
               Cancelar
             </button>
           </div>
           <p v-if="!isFormValid" class="mt-3 text-xs font-semibold text-[color:var(--ds-text-soft)]">
-            Selecione fornecedor, data e pelo menos uma linha válida para gravar.
+            Seleccione fornecedor, data e pelo menos uma linha válida para gravar.
           </p>
         </article>
       </aside>
@@ -401,14 +401,14 @@ const pageTitle = computed(() => (props.mode === 'create' ? 'Criar pedido de com
 const pageDescription = computed(() => (
   props.mode === 'create'
     ? 'Registe pedidos de compra com fornecedor avaliado, itens de inventário, destino de armazém e datas previstas de recepção.'
-    : 'Atualize fornecedor, estado, itens e armazéns de destino preservando bloqueios de linhas já recebidas.'
+    : 'Actualize fornecedor, estado, itens e armazéns de destino preservando bloqueios de linhas já recebidas.'
 ))
 const submitLabel = computed(() => {
   if (form.processing) {
     return 'Processando...'
   }
 
-  return props.mode === 'create' ? 'Criar pedido' : 'Atualizar pedido'
+  return props.mode === 'create' ? 'Criar pedido' : 'Actualizar pedido'
 })
 
 const supplierOptions = computed(() => props.suppliers.map((supplier) => ({
@@ -546,7 +546,7 @@ const summaryCards = computed(() => [
   },
   {
     label: 'Fornecedor',
-    value: selectedSupplier.value ? 'Selecionado' : 'Pendente',
+    value: selectedSupplier.value ? 'Seleccionado' : 'Pendente',
     caption: selectedSupplier.value?.name || 'Sem fornecedor',
     dotClass: selectedSupplier.value ? 'lims-status-dot-release' : 'lims-status-dot-hold',
     valueClass: 'text-[color:var(--ds-text)]',
@@ -757,7 +757,7 @@ function validateItemQuantity(index) {
   const errors = {}
 
   if (!orderItem.item_id) {
-    errors.item_id = 'Selecione o item.'
+    errors.item_id = 'Seleccione o item.'
   }
 
   if (!orderItem.qty || Number(orderItem.qty) <= 0) {
@@ -767,7 +767,7 @@ function validateItemQuantity(index) {
   }
 
   if (!orderItem.warehouse_id) {
-    errors.warehouse_id = 'Selecione o armazém.'
+    errors.warehouse_id = 'Seleccione o armazém.'
   }
 
   if (Number(orderItem.unit_price || 0) < 0) {

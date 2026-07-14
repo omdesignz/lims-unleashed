@@ -20,7 +20,7 @@ class signQuoteWithHash extends Command
      *
      * @var string
      */
-    protected $description = 'Sign Credit Note with hash and save to DB';
+    protected $description = 'Assinar a cotação com um resumo criptográfico e guardá-la na base de dados';
 
     /**
      * Execute the console command.
@@ -31,13 +31,13 @@ class signQuoteWithHash extends Command
 
         if (Quote::whereQuoteMonth(now()->format('Y'))->count() !== 1) {
             $prev_hash = Quote::where('id', '<', $quote->id)->orderBy('id', 'desc')->first()->unique_hash;
-            $data = $quote->date . ';' . $quote->created_at->toDateTimeLocalString() . ';' . $quote->quote_no . ';' . $quote->total . ';' . $prev_hash;
+            $data = $quote->date.';'.$quote->created_at->toDateTimeLocalString().';'.$quote->quote_no.';'.$quote->total.';'.$prev_hash;
 
             $quote->unique_hash = $documentSignature->sign($data);
         }
 
         if (Quote::whereQuoteMonth(now()->format('Y'))->count() == 1) {
-            $data = $quote->date . ';' . $quote->created_at->toDateTimeLocalString() . ';' . $quote->quote_no . ';' . $quote->total . ';';
+            $data = $quote->date.';'.$quote->created_at->toDateTimeLocalString().';'.$quote->quote_no.';'.$quote->total.';';
 
             $quote->unique_hash = $documentSignature->sign($data);
         }

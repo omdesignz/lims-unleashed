@@ -39,7 +39,7 @@ function submit() {
           <div class="min-w-0">
             <p class="ds-kicker">Matriz #{{ matrix.id }}</p>
             <h1 class="ds-heading mt-1 break-words text-2xl">{{ matrix.code }}</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Atualize o escopo de perfis, o preco comercial e a regra fiscal usada no catalogo.</p>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Actualize o âmbito de perfis, o preço comercial e a regra fiscal usada no catálogo.</p>
             <div class="mt-3 flex flex-wrap gap-2">
               <span class="ds-chip">{{ form.profiles.length }} perfil(is)</span>
               <span class="ds-chip">{{ form.charge_tax ? `${form.tax_percentage}% imposto` : "Isenta" }}</span>
@@ -52,7 +52,7 @@ function submit() {
             Ver matriz
           </Link>
           <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-            {{ form.processing ? "A guardar..." : "Guardar alteracoes" }}
+            {{ form.processing ? "A guardar..." : "Guardar alterações" }}
           </button>
         </div>
       </div>
@@ -63,7 +63,7 @@ function submit() {
       <footer class="flex flex-col-reverse gap-2 border-t border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
         <Link :href="route('matrixes.show', { matrix: matrix.id })" class="ds-button ds-button-secondary">Cancelar</Link>
         <button type="submit" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-          {{ form.processing ? "A guardar..." : "Guardar alteracoes" }}
+          {{ form.processing ? "A guardar..." : "Guardar alterações" }}
         </button>
       </footer>
     </section>

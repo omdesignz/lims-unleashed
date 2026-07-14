@@ -2,20 +2,25 @@
 
 namespace App\Traits;
 
+use App\Models\CollectionProduct;
+use App\Models\QualityCertificate;
 use App\Models\QualityCertificateRevision;
-use Spatie\Activitylog\LogOptions;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Result;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Models\Activity;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 trait ISO17025Revisionable
 {
     use LogsActivity;
 
     protected $isoChangeReason = null;
+
     protected $isoApprovalData = null;
-    
+
     /**
      * Configure activity logging
      */
@@ -25,7 +30,7 @@ trait ISO17025Revisionable
             ->logOnly($this->getLoggableAttributes())
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $eventName) => $this->getIsoDescription($eventName))
+            ->setDescriptionForEvent(fn (string $eventName) => $this->getIsoDescription($eventName))
             ->useLogName($this->getLogName())
             ->dontLogIfAttributesChangedOnly(['updated_at'])
             ->submitEmptyLogs(false);
@@ -34,19 +39,19 @@ trait ISO17025Revisionable
     /**
      * Custom method to log ISO 17025 compliant changes
      */
-   public function logIsoChange(array $attributes, string $reason, array $approvalData = null): ?QualityCertificateRevision
+    public function logIsoChange(array $attributes, string $reason, ?array $approvalData = null): ?QualityCertificateRevision
     {
         $this->isoChangeReason = $reason;
         $this->isoApprovalData = $approvalData;
-        
+
         // Update the model
         $this->update($attributes);
-        
+
         // If this is a quality certificate, create revision
-        if ($this instanceof \App\Models\QualityCertificate) {
+        if ($this instanceof QualityCertificate) {
             return $this->createIsoRevision($reason, $approvalData);
         }
-        
+
         return null;
     }
 
@@ -57,7 +62,7 @@ trait ISO17025Revisionable
     {
         return DB::transaction(function () use ($reason, $approvalData) {
             // Get latest activity logs for this certificate
-            $recentLogs = \Spatie\Activitylog\Models\Activity::where('subject_type', get_class($this))
+            $recentLogs = Activity::where('subject_type', get_class($this))
                 ->where('subject_id', $this->id)
                 ->where('created_at', '>=', now()->subMinutes(5))
                 ->orderBy('created_at', 'desc')
@@ -70,7 +75,7 @@ trait ISO17025Revisionable
                 ->where('is_current', true)
                 ->update([
                     'is_current' => false,
-                    'superseded_date' => now()
+                    'superseded_date' => now(),
                 ]);
 
             // Calculate next revision
@@ -126,7 +131,7 @@ trait ISO17025Revisionable
     /**
      * Create ISO-compliant snapshot
      */
-     protected function createIsoSnapshot(): array
+    protected function createIsoSnapshot(): array
     {
         $snapshot = [
             'certificate' => $this->fresh()->toArray(),
@@ -136,21 +141,21 @@ trait ISO17025Revisionable
                 'created_by' => Auth::user() ? Auth::user()->only(['id', 'name', 'email']) : null,
                 'system_version' => config('app.version'),
                 'iso_standard' => 'ISO/IEC 17025:2017',
-            ]
+            ],
         ];
 
         // Load and snapshot relations based on model type
-        if ($this instanceof \App\Models\QualityCertificate) {
+        if ($this instanceof QualityCertificate) {
             $snapshot['relations'] = [
-                'collection_product' => $this->collectionProduct ? 
+                'collection_product' => $this->collectionProduct ?
                     $this->collectionProduct->toArray() : null,
-                'results' => $this->collectionProduct ? 
+                'results' => $this->collectionProduct ?
                     $this->collectionProduct->results->map->toArray()->toArray() : [],
                 'customer' => $this->customer ? $this->customer->toArray() : null,
                 'product' => $this->product ? $this->product->toArray() : null,
                 'warehouse' => $this->warehouse ? $this->warehouse->toArray() : null,
             ];
-        } elseif ($this instanceof \App\Models\CollectionProduct) {
+        } elseif ($this instanceof CollectionProduct) {
             $snapshot['relations'] = [
                 'results' => $this->results->map->toArray()->toArray(),
                 'product' => $this->product ? $this->product->toArray() : null,
@@ -164,19 +169,19 @@ trait ISO17025Revisionable
     /**
      * Generate ISO-compliant change description
      */
-   protected function generateIsoChangeDescription(): string
+    protected function generateIsoChangeDescription(): string
     {
         $changes = [];
-        
+
         // Get activity logs for context
-        $lastActivity = \Spatie\Activitylog\Models\Activity::where('subject_type', get_class($this))
+        $lastActivity = Activity::where('subject_type', get_class($this))
             ->where('subject_id', $this->id)
             ->latest()
             ->first();
 
         if ($lastActivity) {
             $properties = $lastActivity->properties;
-            
+
             if ($properties && isset($properties['attributes']) && isset($properties['old'])) {
                 foreach ($properties['attributes'] as $key => $newValue) {
                     $oldValue = $properties['old'][$key] ?? null;
@@ -192,7 +197,7 @@ trait ISO17025Revisionable
             }
         }
 
-        return implode('; ', $changes) ?: 'No detectable field changes';
+        return implode('; ', $changes) ?: 'Sem alterações detectáveis nos campos';
     }
 
     /**
@@ -210,20 +215,25 @@ trait ISO17025Revisionable
     {
         $major = floor(($revision - 1) / 10) + 1;
         $minor = ($revision - 1) % 10;
+
         return sprintf('%d.%d', $major, $minor);
     }
 
     protected function determineIsoChangeType(): string
     {
         $dirty = $this->getDirty();
-        
+
         if ($this->wasRecentlyCreated) {
             return 'CREATED';
         }
 
         if (isset($dirty['status'])) {
-            if ($dirty['status'] == 2) return 'WITHDRAWN';
-            if ($dirty['status'] == 3) return 'REISSUED';
+            if ($dirty['status'] == 2) {
+                return 'WITHDRAWN';
+            }
+            if ($dirty['status'] == 3) {
+                return 'REISSUED';
+            }
         }
 
         if (isset($dirty['obs']) && preg_match('/\b(correction|error|mistake)\b/i', $dirty['obs'])) {
@@ -236,18 +246,18 @@ trait ISO17025Revisionable
     protected function getIsoDescription(string $eventName): string
     {
         $descriptions = [
-            'created' => 'Created new record',
-            'updated' => 'Updated record' . ($this->isoChangeReason ? ": {$this->isoChangeReason}" : ''),
-            'deleted' => 'Deleted record',
-            'restored' => 'Restored record',
+            'created' => 'Criou um novo registo',
+            'updated' => 'Actualizou o registo'.($this->isoChangeReason ? ": {$this->isoChangeReason}" : ''),
+            'deleted' => 'Eliminou o registo',
+            'restored' => 'Restaurou o registo',
         ];
 
-        return $descriptions[$eventName] ?? "{$eventName} record";
+        return $descriptions[$eventName] ?? "Acção {$eventName} no registo";
     }
 
     protected function getLogName(): string
     {
-        return class_basename($this) . 'Log';
+        return class_basename($this).'Log';
     }
 
     protected function getLoggableAttributes(): array
@@ -262,13 +272,13 @@ trait ISO17025Revisionable
         ];
 
         // Add model-specific attributes
-        if ($this instanceof \App\Models\QualityCertificate) {
+        if ($this instanceof QualityCertificate) {
             $loggable = array_merge($loggable, [
                 'file_path',
                 'validated_by_id',
                 'validated_on_behalf_of_id',
             ]);
-        } elseif ($this instanceof \App\Models\Result) {
+        } elseif ($this instanceof Result) {
             $loggable = array_merge($loggable, [
                 'inserted_value',
                 'verified_value',
@@ -284,10 +294,16 @@ trait ISO17025Revisionable
 
     protected function formatIsoValue($value): string
     {
-        if (is_null($value)) return 'NULL';
-        if (is_bool($value)) return $value ? 'TRUE' : 'FALSE';
-        if (is_array($value) || is_object($value)) return json_encode($value);
-        
+        if (is_null($value)) {
+            return 'NULL';
+        }
+        if (is_bool($value)) {
+            return $value ? 'TRUE' : 'FALSE';
+        }
+        if (is_array($value) || is_object($value)) {
+            return json_encode($value);
+        }
+
         return (string) $value;
     }
 

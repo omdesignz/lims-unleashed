@@ -121,7 +121,7 @@
               Disponível: {{ selectedInventory.qty_available }} {{ item.unit?.code || 'unidades' }}
               <template v-if="form.quantity_used && form.quantity_used > selectedInventory.qty_available">
                 <span class="text-red-600 font-semibold ml-2">
-                  Sem Estoque Disponível!
+                  Sem existências disponíveis!
                 </span>
               </template>
             </div>
@@ -170,7 +170,7 @@
             v-model="form.project"
             type="text"
             class="ds-field"
-            placeholder="Digite o nome do projeto ou experimento"
+            placeholder="Digite o nome do projecto ou experimento"
           />
         </div>
 
@@ -263,7 +263,7 @@
               <span class="font-medium">{{ formatDate(form.date) }}</span>
             </div>
             <div v-if="selectedInventory" class="flex items-center justify-between">
-              <span>Novo Nível de Estoque:</span>
+              <span>Novo nível de existências:</span>
               <span :class="getNewStockClass()">
                 {{ calculateNewStock() }} {{ item.unit?.code || 'unidades' }}
               </span>
@@ -325,7 +325,7 @@ const selectedInventory = ref(null)
 const usageTypes = [
   { value: 'experiment', label: 'Experimental' },
   { value: 'calibration', label: 'Calibração' },
-  { value: 'qc', label: 'Quality Control' },
+  { value: 'qc', label: 'Controlo de qualidade' },
   { value: 'maintenance', label: 'Manutenção' },
   { value: 'production', label: 'Produção' },
   { value: 'testing', label: 'Testes' },

@@ -22,9 +22,7 @@ function submit() {
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <nav aria-label="Breadcrumb" class="mb-5">
         <Link :href="route('profiles.index')" class="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--ds-text-muted)] hover:text-[rgb(var(--primary-700-rgb))]">
-          <ArrowLeftIcon class="h-4 w-4" />
-          Perfis analiticos
-        </Link>
+          <ArrowLeftIcon class="h-4 w-4" /> Perfis analíticos </Link>
       </nav>
 
       <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -33,9 +31,9 @@ function submit() {
             <ClipboardDocumentCheckIcon class="h-5 w-5" />
           </span>
           <div class="min-w-0">
-            <p class="ds-kicker">Novo pacote analitico</p>
+            <p class="ds-kicker">Novo pacote analítico</p>
             <h1 class="ds-heading mt-1 text-2xl">Adicionar perfil</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Defina o escopo departamental e componha os ensaios com metodos, criterios e rastreabilidade.</p>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Defina o âmbito departamental e componha os ensaios com métodos, critérios e rastreabilidade.</p>
           </div>
         </div>
         <div class="flex flex-wrap gap-2 lg:justify-end">

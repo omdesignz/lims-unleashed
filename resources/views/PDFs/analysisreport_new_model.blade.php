@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-AO">
 <head>
 <meta charset="UTF-8" />
     <style>
@@ -99,7 +99,7 @@
             <div style="padding-bottom: 0px; margin-bottom: 0px;">
                 <img src="{{ asset('/images/stamp_wgaspar.svg') }}" alt="" width="15%">
             </div>
-                <small><b>{{ ($settings ?? null)?->app_client_lab_director ?: 'Direcao tecnica' }}</b></small><br>
+                <small><b>{{ ($settings ?? null)?->app_client_lab_director ?: 'Direcção técnica' }}</b></small><br>
                 <small><b>Autorizado Por</b></small><br>
             </div>
             </td>
@@ -123,7 +123,7 @@
         <b>Nota 1</b> - “Ensaios realizados nas instalações permanentes do Laboratório”
         <b>Nota 2</b> – “Os resultados do presente relatório referem-se aos itens ensaiados”
         <b>Nota 3</b> – “Este relatório não pode ser reproduzido, a não ser na integra, sem a aprovação do Laboratório”
-        <b>Nota 4</b> - “Quando identificado como responsável da colheita o Cliente, todas as informações referentes à amostra são da sua responsabilidade e os resultados aplicam-se à amostra conforme rececionada”
+        <b>Nota 4</b> - “Quando identificado como responsável da colheita o Cliente, todas as informações referentes à amostra são da sua responsabilidade e os resultados aplicam-se à amostra conforme recepcionada”
         <b>Nota 5</b> – “A avaliação da conformidade face aos valores de referencia indicados e de acordo com a regra de decisão previamente acordada com o cliente: A incerteza da medição não é considerada na avaliaçãoda conformidade”
         <b>Nota 6</b> – “Opiniões e interpretações expressas neste relatório não estão incluidas no âmbito”
         <b>Nota 7</b> – “Quando identificado como responsável da colheita, o laboratório, o método utilizado é o PO005.

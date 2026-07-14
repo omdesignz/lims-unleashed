@@ -32,8 +32,8 @@ const showActionConfirmation = ref(false);
 const totalRecords = computed(() => props.record.meta?.total ?? props.record.data.length);
 const drawerTitle = computed(() => form.id ? "Editar armazém" : "Novo armazém");
 const drawerDescription = computed(() => form.id
-  ? "Atualize a zona física e as condições ambientais declaradas para este armazém."
-  : "Crie uma zona de stock com condições de conservação claramente identificadas.");
+  ? "Actualize a zona física e as condições ambientais declaradas para este armazém."
+  : "Crie uma zona de existências com condições de conservação claramente identificadas.");
 const confirmationDialogTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${actionId.value}`));
 const confirmationDialogDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${actionId.value}`));
 
@@ -151,7 +151,7 @@ function confirmAction() {
           </span>
           <div>
             <p class="ds-kicker">Conservação de materiais</p>
-            <h1 class="ds-heading mt-1 text-2xl">Armazéns e zonas de stock</h1>
+            <h1 class="ds-heading mt-1 text-2xl">Armazéns e zonas de existências</h1>
             <p class="ds-copy mt-1 max-w-3xl text-sm">Áreas controladas onde lotes e existências são mantidos com condições ambientais identificadas.</p>
           </div>
         </div>
@@ -222,7 +222,7 @@ function confirmAction() {
           <button type="button" class="ds-button ds-button-secondary" @click="closeDrawer">Cancelar</button>
           <button type="button" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty" @click="submit">
             <CheckIcon class="h-4 w-4" aria-hidden="true" />
-            {{ form.processing ? "A guardar..." : (form.id ? "Atualizar armazém" : "Guardar armazém") }}
+            {{ form.processing ? "A guardar..." : (form.id ? "Actualizar armazém" : "Guardar armazém") }}
           </button>
         </div>
       </template>

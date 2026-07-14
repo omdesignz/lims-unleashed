@@ -160,7 +160,7 @@
               class="md:col-span-2"
               :label="$t('gestlab.general.labels.vap_non_conformities.occurrence_area')"
               :error="form.errors.occurrence_area"
-              placeholder="Área, bancada, etapa do método ou processo afetado"
+              placeholder="Área, bancada, etapa do método ou processo afectado"
             />
           </div>
         </article>
@@ -172,7 +172,7 @@
               <div>
                 <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.vap_non_conformities.corrective_actions') }}</h2>
                 <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">
-                  Defina correções imediatas, ações corretivas e prazos de conclusão.
+                  Defina correcções imediatas, acções correctivas e prazos de conclusão.
                 </p>
               </div>
             </div>
@@ -286,7 +286,7 @@
             </div>
 
             <div class="space-y-4">
-              <BaseTextarea v-model="form.corrective_actions" :label="$t('gestlab.general.labels.vap_non_conformities.corrective_actions')" placeholder="Plano corretivo global, quando não for dividido em ações individuais" rows="4" />
+              <BaseTextarea v-model="form.corrective_actions" :label="$t('gestlab.general.labels.vap_non_conformities.corrective_actions')" placeholder="Plano correctivo global, quando não for dividido em acções individuais" rows="4" />
               <BaseTextarea v-model="form.preventive_actions" :label="$t('gestlab.general.labels.vap_non_conformities.preventive_actions')" :placeholder="$t('gestlab.general.labels.vap_non_conformities.preventive_actions_placeholder')" rows="4" />
               <BaseTextarea v-model="form.comments" :label="$t('gestlab.general.labels.vap_non_conformities.comments')" :placeholder="$t('gestlab.general.labels.vap_non_conformities.comments_placeholder')" rows="4" />
             </div>
@@ -301,7 +301,7 @@
             <div>
               <h2 class="ds-heading text-base">{{ $t('gestlab.general.labels.vap_non_conformities.timeline_assignment') }}</h2>
               <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">
-                Responsáveis, prazos e estado atual do fluxo.
+                Responsáveis, prazos e estado actual do fluxo.
               </p>
             </div>
           </div>
@@ -533,9 +533,9 @@ const workflowMetrics = computed(() => [
     valueClass: severityValueClasses[form.severity] || severityValueClasses.medium,
   },
   {
-    label: 'Ações CAPA',
+    label: 'Acções CAPA',
     value: actions.value.length,
-    caption: 'Itens de correção e prevenção',
+    caption: 'Itens de correcção e prevenção',
     valueClass: 'text-[var(--ds-text)]',
   },
   {

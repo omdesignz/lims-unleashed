@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -38,9 +37,9 @@ class ProposalComplianceAcknowledged extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-                ->subject('Compliance Agreement Acknowledged')
-                ->line('A compliance agreement for the proposal has been acknowledged.')
-                ->action('View Proposal', url("/proposals/{$this->proposal->id}"));
+            ->subject('Acordo de conformidade aceite')
+            ->line('O acordo de conformidade da proposta foi aceite.')
+            ->action('Ver proposta', url("/proposals/{$this->proposal->id}"));
     }
 
     /**

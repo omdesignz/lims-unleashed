@@ -3,7 +3,7 @@
     <section aria-labelledby="recent-hires-title">
         <div class="overflow-hidden rounded-lg bg-white shadow">
             <div class="p-6">
-                <h2 class="text-base font-medium text-gray-900" id="recent-hires-title">Recent Hires</h2>
+                <h2 class="text-base font-medium text-gray-900" id="recent-hires-title">Entradas recentes</h2>
                 <div class="mt-6 flow-root">
                     <ul role="list" class="-my-5 divide-y divide-gray-200">
                         <li v-for="person in recentHires" :key="person.handle" class="py-4">
@@ -16,14 +16,14 @@
                                     <p class="truncate text-sm text-gray-500">{{ '@' + person.handle }}</p>
                                 </div>
                                 <div>
-                                    <a :href="person.href" class="inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-sm font-medium leading-5 text-gray-700 shadow-sm hover:bg-gray-50">View</a>
+                                    <a :href="person.href" class="inline-flex items-center rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-sm font-medium leading-5 text-gray-700 shadow-sm hover:bg-gray-50">Ver</a>
                                 </div>
                             </div>
                         </li>
                     </ul>
                 </div>
                 <div class="mt-6">
-                    <a href="#" class="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">View all</a>
+                    <a href="#" class="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50">Ver tudo</a>
                 </div>
             </div>
         </div>

@@ -46,9 +46,9 @@ function updateCustomer(customer) {
   <div class="divide-y divide-[var(--ds-border)]">
     <section class="px-5 py-5 sm:px-6">
       <div class="mb-5">
-        <p class="ds-kicker">Classificacao</p>
+        <p class="ds-kicker">Classificação</p>
         <h2 class="ds-heading mt-1 text-base">Origem e encaminhamento</h2>
-        <p class="ds-copy mt-1 text-sm">Associe o pedido ao cliente, local e categoria operacional corretos.</p>
+        <p class="ds-copy mt-1 text-sm">Associe o pedido ao cliente, local e categoria operacional correctos.</p>
       </div>
 
       <div class="grid gap-5 lg:grid-cols-2">
@@ -82,7 +82,7 @@ function updateCustomer(customer) {
             :load-options="loadWarehouses"
             :disable-input="!form.customer_id"
             :title-label="$t('gestlab.general.labels.customer_requests.warehouse_id')"
-            :placeholder="form.customer_id ? 'Pesquisar local do cliente' : 'Selecione primeiro o cliente'"
+            :placeholder="form.customer_id ? 'Pesquisar local do cliente' : 'Seleccione primeiro o cliente'"
           />
           <p v-if="form.errors.warehouse_id" class="ds-field-error">{{ form.errors.warehouse_id }}</p>
           <p v-else class="ds-field-hint inline-flex items-center gap-1.5">
@@ -95,7 +95,7 @@ function updateCustomer(customer) {
 
     <section class="px-5 py-5 sm:px-6">
       <div class="mb-5">
-        <p class="ds-kicker">Solicitacao</p>
+        <p class="ds-kicker">Pedido</p>
         <h2 class="ds-heading mt-1 text-base">Necessidade comunicada</h2>
         <p class="ds-copy mt-1 text-sm">Registe o pedido com detalhe suficiente para triagem sem contacto adicional.</p>
       </div>
@@ -110,18 +110,18 @@ function updateCustomer(customer) {
           v-model="form.description"
           class="ds-field min-h-36 resize-y"
           :aria-invalid="Boolean(form.errors.description)"
-          placeholder="Descreva o servico, ensaio, prazo ou esclarecimento solicitado"
+          placeholder="Descreva o serviço, ensaio, prazo ou esclarecimento solicitado"
         />
         <p v-if="form.errors.description" class="ds-field-error">{{ form.errors.description }}</p>
-        <p v-else class="ds-field-hint">Inclua matriz, parametros, quantidade e prazo quando forem conhecidos.</p>
+        <p v-else class="ds-field-hint">Inclua matriz, parâmetros, quantidade e prazo quando forem conhecidos.</p>
       </div>
     </section>
 
     <section class="px-5 py-5 sm:px-6">
       <div class="mb-5">
         <p class="ds-kicker">Contacto</p>
-        <h2 class="ds-heading mt-1 text-base">Ponto de comunicacao</h2>
-        <p class="ds-copy mt-1 text-sm">Dados usados para confirmar o escopo e comunicar o seguimento.</p>
+        <h2 class="ds-heading mt-1 text-base">Ponto de comunicação</h2>
+        <p class="ds-copy mt-1 text-sm">Dados usados para confirmar o âmbito e comunicar o seguimento.</p>
       </div>
 
       <div class="grid gap-5 lg:grid-cols-2">

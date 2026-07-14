@@ -224,7 +224,7 @@ class ProfileRequest extends FormRequest
                 if ($inactiveParameters->isNotEmpty()) {
                     $validator->errors()->add(
                         'parameters',
-                        'Todos os parâmetros do perfil devem estar ativos. Inativos: '.$inactiveParameters->implode(', ')
+                        'Todos os parâmetros do perfil devem estar activos. Inactivos: '.$inactiveParameters->implode(', ')
                     );
                 }
 

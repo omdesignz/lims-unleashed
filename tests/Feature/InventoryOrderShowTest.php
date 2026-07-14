@@ -2,12 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Models\Inventory;
 use App\Models\InventoryItem;
 use App\Models\InventoryItemSupplier;
 use App\Models\InventoryItemWarehouse;
 use App\Models\InventoryOrder;
 use App\Models\InventoryOrderDetail;
 use App\Models\InventorySupplierAssessment;
+use App\Models\InventoryTransaction;
+use App\Models\InventoryTransactionType;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -66,16 +69,40 @@ class InventoryOrderShowTest extends TestCase
             'total_amount' => 1000,
         ]);
 
-        InventoryOrderDetail::query()->create([
+        $orderItem = InventoryOrderDetail::query()->create([
             'order_id' => $order->id,
             'item_id' => $inventoryItem->id,
             'qty' => 10,
-            'received_qty' => 4,
+            'received_qty' => 0,
             'unit_price' => 100,
             'warehouse_id' => $warehouse->id,
             'status' => 'PARTIALLY_RECEIVED',
             'currency' => 'AOA',
         ]);
+
+        $inventory = Inventory::query()->firstOrCreate(
+            ['item_id' => $inventoryItem->id, 'warehouse_id' => $warehouse->id],
+            ['qty_available' => 0, 'min_stock_level' => 0, 'reorder_point' => 0]
+        );
+        $receiptType = InventoryTransactionType::query()->firstOrCreate(
+            ['code' => 'RECEIPT'],
+            ['name' => 'Recepção', 'description' => 'Recepção de existências']
+        );
+
+        foreach ([
+            ['qty' => 2, 'notes' => "Received from Order #{$order->reference}"],
+            ['qty' => 3, 'notes' => "Recebido do pedido #{$order->reference}"],
+        ] as $transaction) {
+            InventoryTransaction::query()->create([
+                'inventory_id' => $inventory->id,
+                'type_id' => $receiptType->id,
+                'qty' => $transaction['qty'],
+                'user_id' => $user->id,
+                'item_id' => $inventoryItem->id,
+                'warehouse_id' => $warehouse->id,
+                'notes' => $transaction['notes'],
+            ]);
+        }
 
         $this->actingAs($user)
             ->get(route('vap-inventory.orders.show', $order))
@@ -83,6 +110,8 @@ class InventoryOrderShowTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('VAPInventory/Orders/Show')
                 ->where('order.id', $order->id)
+                ->where('order.items.0.id', $orderItem->id)
+                ->where('order.items.0.received_qty', 5)
                 ->where('charts.reception_progress.labels.0', 'Quantidade pedida')
                 ->where('charts.item_status_mix.labels.0', 'Itens pendentes')
                 ->where('charts.governance_summary.labels.0', 'Score fornecedor')

@@ -834,7 +834,7 @@ const generateLabDetailsHtml = () => {
     props.company?.nif ? `NIF: ${props.company.nif}` : null,
     props.company?.phone,
     props.company?.email,
-    props.company?.lab_director ? `Direção técnica: ${props.company.lab_director}` : null,
+    props.company?.lab_director ? `Direcção técnica: ${props.company.lab_director}` : null,
   ], 'Laboratório')
 }
 

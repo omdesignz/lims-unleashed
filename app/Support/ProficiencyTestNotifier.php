@@ -37,11 +37,11 @@ class ProficiencyTestNotifier
         }
 
         $title = $becameUnsatisfactory
-            ? 'Ensaio de proficiência requer ação corretiva'
-            : 'Ensaio de proficiência atualizado';
+            ? 'Ensaio de proficiência requer acção corretiva'
+            : 'Ensaio de proficiência actualizado';
 
         $message = $becameUnsatisfactory
-            ? sprintf('%s teve resultado insatisfatório e deve gerar análise de causa/ação corretiva.', $test->round_reference)
+            ? sprintf('%s teve resultado insatisfatório e deve gerar análise de causa/acção corretiva.', $test->round_reference)
             : sprintf('%s mudou para estado %s com resultado %s.', $test->round_reference, $test->status, $test->outcome);
 
         $this->send(
@@ -84,9 +84,9 @@ class ProficiencyTestNotifier
 
         $this->send(
             $test,
-            $hasCriticalResult ? 'Resultado insatisfatório em ensaio de proficiência' : 'Resultados de proficiência atualizados',
+            $hasCriticalResult ? 'Resultado insatisfatório em ensaio de proficiência' : 'Resultados de proficiência actualizados',
             $hasCriticalResult
-                ? sprintf('%s tem resultados insatisfatórios e requer ação corretiva documentada.', $test->round_reference)
+                ? sprintf('%s tem resultados insatisfatórios e requer acção corretiva documentada.', $test->round_reference)
                 : sprintf('%s recebeu novos resultados e está pronto para revisão técnica.', $test->round_reference),
             $hasCriticalResult ? 'danger' : 'info',
             'results-updated:'.$test->id.':'.$test->updated_at?->format('YmdHi')

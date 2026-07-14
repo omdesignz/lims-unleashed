@@ -65,7 +65,7 @@ class UncertaintySourceController extends Controller
 
         $uncertaintySource->update($validated);
 
-        return back()->with('success', 'Fonte de incerteza atualizada.');
+        return back()->with('success', 'Fonte de incerteza actualizada.');
     }
 
     public function destroy(UncertaintySource $uncertaintySource)

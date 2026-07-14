@@ -207,29 +207,29 @@ const dictionary = {
     receipts: 'Receipts',
     contractGuides: 'Contract guides',
     faq: 'FAQ',
-    profile: 'Profile',
-    security: 'Security',
-    newRequest: 'New request',
-    portalProfile: 'Portal profile',
-    portalSecurity: 'Security settings',
-    logout: 'Sign out',
+    profile: 'Perfil',
+    security: 'Segurança',
+    newRequest: 'Novo pedido',
+    portalProfile: 'Perfil do portal',
+    portalSecurity: 'Definições de segurança',
+    logout: 'Terminar sessão',
     navigation: 'Navigation',
-    portalArea: 'Customer portal',
-    customer: 'Customer',
+    portalArea: 'Portal do cliente',
+    customer: 'Cliente',
   },
   pt: {
     dashboard: 'Resumo',
     services: 'Serviços',
-    requests: 'Solicitações',
+    requests: 'Pedidos',
     collections: 'Colheitas',
     certificates: 'Certificados',
-    invoices: 'Faturas',
+    invoices: 'Facturas',
     receipts: 'Recibos',
     contractGuides: 'Guias contratuais',
     faq: 'FAQ',
     profile: 'Perfil',
     security: 'Segurança',
-    newRequest: 'Nova solicitação',
+    newRequest: 'Novo pedido',
     portalProfile: 'Perfil do portal',
     portalSecurity: 'Definições de segurança',
     logout: 'Terminar sessão',
@@ -244,7 +244,7 @@ const settings = computed(() => page.props?.settings ?? {})
 const brandingCssVariables = computed(() => buildBrandingCssVariables(settings.value))
 const themePreset = computed(() => settings.value.theme_preset || settings.value.app_theme_preset || 'corporate')
 const brandLogoUrl = computed(() => settings.value.logo_url || settings.value.app_logo_url || null)
-const brandAppName = computed(() => settings.value.app_name || 'Laboratory workspace')
+const brandAppName = computed(() => settings.value.app_name || 'Espaço laboratorial')
 const brandInitials = computed(() => brandAppName.value
   .split(/\s+/)
   .filter(Boolean)

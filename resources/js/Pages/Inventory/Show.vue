@@ -24,7 +24,7 @@ const quantity = computed(() => Number(position.value.qty_available ?? 0));
 const reorderPoint = computed(() => Number(position.value.reorder_point ?? 0));
 const stockStatus = computed(() => {
   if (quantity.value <= 0) {
-    return { label: "Sem stock", className: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300" };
+    return { label: "Sem existências", className: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300" };
   }
 
   if (quantity.value <= reorderPoint.value) {
@@ -49,18 +49,18 @@ const metrics = computed(() => [
             <BuildingStorefrontIcon class="h-5 w-5" />
           </span>
           <div>
-            <p class="ds-kicker">Posição de stock #{{ position.id }}</p>
+            <p class="ds-kicker">Posição de existências #{{ position.id }}</p>
             <div class="mt-1 flex flex-wrap items-center gap-2">
               <h1 class="ds-heading text-2xl">{{ position.item || "Item de inventário" }}</h1>
               <span class="rounded-full px-2.5 py-1 text-xs font-bold" :class="stockStatus.className">{{ stockStatus.label }}</span>
             </div>
-            <p class="ds-copy mt-1 text-sm">Saldo e limites operacionais na localização selecionada.</p>
+            <p class="ds-copy mt-1 text-sm">Saldo e limites operacionais na localização seleccionada.</p>
           </div>
         </div>
         <div class="flex flex-wrap gap-3">
           <Link :href="route('inventory.index')" class="ds-button ds-button-secondary">
             <ArrowLeftIcon class="h-4 w-4" />
-            Voltar ao stock
+            Voltar ao existências
           </Link>
           <Link
             v-if="hasPermission('view_iitems')"

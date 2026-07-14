@@ -266,7 +266,7 @@ class VAPInventoryItemController extends Controller
                     'series' => $warehouseStockSeries,
                 ],
                 'activity_mix' => [
-                    'labels' => ['Transações', 'Pedidos', 'Transferências', 'Consumos'],
+                    'labels' => ['Transacções', 'Pedidos', 'Transferências', 'Consumos'],
                     'series' => [
                         $item->transactions->count(),
                         $item->orders->count(),
@@ -275,7 +275,7 @@ class VAPInventoryItemController extends Controller
                     ],
                 ],
                 'compliance_pulse' => [
-                    'labels' => ['Estoque total', 'Armazéns críticos', 'Dias até caducar', 'Prontidão metrológica'],
+                    'labels' => ['Existências totais', 'Armazéns críticos', 'Dias até caducar', 'Prontidão metrológica'],
                     'series' => [
                         (float) $item->total_stock,
                         $lowStockWarehouses,
@@ -412,12 +412,12 @@ class VAPInventoryItemController extends Controller
             DB::commit();
 
             return redirect()->route('vap-inventory.items.show', $item)
-                ->with('success', 'Item de inventário atualizado com sucesso.');
+                ->with('success', 'Item de inventário actualizado com sucesso.');
         } catch (\Exception $e) {
             DB::rollBack();
 
             return redirect()->back()
-                ->with('error', 'Não foi possível atualizar o item de inventário.')
+                ->with('error', 'Não foi possível actualizar o item de inventário.')
                 ->withInput();
         }
     }
@@ -458,7 +458,7 @@ class VAPInventoryItemController extends Controller
             'item_id' => $item->id,
         ]), 30)) {
             return response()->json([
-                'error' => 'Uma solicitação idêntica de ajuste de estoque já está a ser processada.',
+                'error' => 'Um pedido idêntico de ajuste de existências já está a ser processado.',
             ], 429);
         }
 
@@ -470,7 +470,7 @@ class VAPInventoryItemController extends Controller
                 ->first();
 
             if (! $inventory) {
-                return response()->json(['error' => 'Item not found in specified warehouse'], 404);
+                return response()->json(['error' => 'Artigo não encontrado no armazém indicado.'], 404);
             }
 
             $oldQuantity = $inventory->qty_available;
@@ -488,7 +488,7 @@ class VAPInventoryItemController extends Controller
             }
 
             if ($newQuantity < 0) {
-                return response()->json(['error' => 'Cannot have negative stock'], 422);
+                return response()->json(['error' => 'As existências não podem ficar com quantidade negativa.'], 422);
             }
 
             $inventory->qty_available = $newQuantity;
@@ -508,8 +508,12 @@ class VAPInventoryItemController extends Controller
             $transactionTypeModel = InventoryTransactionType::firstOrCreate(
                 ['code' => $transactionType],
                 [
-                    'name' => ucfirst(str_replace('_', ' ', $transactionType)),
-                    'description' => 'Automatically registered inventory stock adjustment type.',
+                    'name' => match ($transactionType) {
+                        'stock_adjustment_add' => 'Adição às existências',
+                        'stock_adjustment_remove' => 'Remoção das existências',
+                        'stock_adjustment_set' => 'Rectificação das existências',
+                    },
+                    'description' => 'Tipo de ajuste de existências registado automaticamente.',
                 ]
             );
 
@@ -529,14 +533,14 @@ class VAPInventoryItemController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Stock adjusted successfully',
+                'message' => 'Existências ajustadas com êxito',
                 'old_quantity' => $oldQuantity,
                 'new_quantity' => $newQuantity,
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['error' => 'Failed to adjust stock: '.$e->getMessage()], 500);
+            return response()->json(['error' => 'Não foi possível ajustar as existências: '.$e->getMessage()], 500);
         }
     }
 
@@ -845,7 +849,7 @@ class VAPInventoryItemController extends Controller
 
         $inventory = $query->get();
 
-        $severityLabels = ['Sem stock', 'Crítico', 'Baixo'];
+        $severityLabels = ['Sem existências', 'Crítico', 'Baixo'];
         $severitySeries = [
             Inventory::query()
                 ->when($request->warehouse_id, fn ($query, $warehouseId) => $query->where('warehouse_id', $warehouseId))
@@ -1068,13 +1072,13 @@ class VAPInventoryItemController extends Controller
 
         if (! $inventory) {
             return redirect()->back()
-                ->with('error', 'Reagent not found in specified warehouse')
+                ->with('error', 'Reagente não encontrado no armazém indicado.')
                 ->withInput();
         }
 
         if ($inventory->qty_available < $validated['quantity_used']) {
             return redirect()->back()
-                ->with('error', 'Insufficient stock. Available: '.$inventory->qty_available)
+                ->with('error', 'Existências insuficientes. Quantidade disponível: '.$inventory->qty_available)
                 ->withInput();
         }
 
@@ -1110,7 +1114,7 @@ class VAPInventoryItemController extends Controller
                     'item_id' => $validated['reagent_id'],
                     'type_id' => $transactionType->id,
                     'qty' => '-'.$validated['quantity_used'],
-                    'reason' => 'Reagent consumption',
+                    'reason' => 'Consumo de reagente',
                     'notes' => $validated['remarks'] ?? null,
                 ]);
 
@@ -1167,11 +1171,11 @@ class VAPInventoryItemController extends Controller
             ->first();
 
         if (! $inventory) {
-            return response()->json(['error' => 'Reagent not found in specified warehouse'], 404);
+            return response()->json(['error' => 'Reagente não encontrado no armazém indicado.'], 404);
         }
 
         if ($inventory->qty_available < $validated['quantity_used']) {
-            return response()->json(['error' => 'Insufficient stock. Available: '.$inventory->qty_available], 422);
+            return response()->json(['error' => 'Existências insuficientes. Quantidade disponível: '.$inventory->qty_available], 422);
         }
 
         try {
@@ -1207,7 +1211,7 @@ class VAPInventoryItemController extends Controller
                     'type_id' => $transactionType->id,
                     'batch_id' => $validated['batch_id'] ?? null,
                     'qty' => '-'.$validated['quantity_used'],
-                    'reason' => 'Reagent consumption',
+                    'reason' => 'Consumo de reagente',
                     'notes' => $validated['remarks'] ?? null,
                 ]);
 
@@ -1220,14 +1224,14 @@ class VAPInventoryItemController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Reagent consumed successfully',
+                'message' => 'Consumo de reagente registado com êxito',
                 'consumption' => $consumption,
                 'new_quantity' => $inventory->fresh()->qty_available,
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
 
-            return response()->json(['error' => 'Failed to consume reagent: '.$e->getMessage()], 500);
+            return response()->json(['error' => 'Não foi possível registar o consumo do reagente: '.$e->getMessage()], 500);
         }
     }
 
@@ -1260,7 +1264,7 @@ class VAPInventoryItemController extends Controller
                     InventoryTransaction::where('item_id', $consumption->reagent_id)
                         ->where('warehouse_id', $consumption->warehouse_id)
                         ->where('qty', '-'.$consumption->quantity_used)
-                        ->where('reason', 'Reagent consumption')
+                        ->whereIn('reason', ['Reagent consumption', 'Consumo de reagente'])
                         ->whereDate('created_at', $consumption->created_at)
                         ->delete();
                 }
@@ -1272,7 +1276,7 @@ class VAPInventoryItemController extends Controller
             DB::commit();
 
             return redirect()->route('vap-inventory.reagents.consumption.index')
-                ->with('success', 'Registo de consumo eliminado com sucesso. O stock foi reposto.');
+                ->with('success', 'Registo de consumo eliminado com sucesso. As existências foram repostas.');
 
         } catch (\Exception $e) {
             DB::rollBack();

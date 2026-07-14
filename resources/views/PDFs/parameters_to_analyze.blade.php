@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-AO">
 <head>
     <meta charset="UTF-8">
     <style>
@@ -363,7 +363,7 @@
         </tr>
         <tr>
             <td class="info-label">Código da Amostra</td>
-            <td class="info-value">{{ $model->code->code ?? 'N/A' }}</td>
+            <td class="info-value">{{ $model->code->code ?? 'N/D' }}</td>
         </tr>
         <tr>
             <td class="info-label">Número de Amostras</td>
@@ -582,19 +582,19 @@
     
     <!-- Legend Section -->
     <div style="margin: 20px 0; padding: 15px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;">
-        <div class="h4" style="margin-bottom: 10px; color: #1e3a8a;">Legenda / Legend</div>
+        <div class="h4" style="margin-bottom: 10px; color: #1e3a8a;">Legenda</div>
         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <div style="width: 15px; height: 15px; background-color: white; border: 1px solid #e5e7eb;"></div>
-                <span class="small-text">Parâmetro a analisar / Parameter to analyze</span>
+                <span class="small-text">Parâmetro a analisar</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
                 <div style="width: 15px; height: 15px; background-color: #f9fafb; border: 1px solid #e5e7eb;"></div>
-                <span class="small-text">Parâmetro não aplicável / Not applicable</span>
+                <span class="small-text">Parâmetro não aplicável</span>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
                 <div style="width: 15px; height: 15px; background-color: #f8fafc; border: 1px solid #dbeafe;"></div>
-                <span class="small-text">Células de diluição / Dilution cells</span>
+                <span class="small-text">Células de diluição</span>
             </div>
         </div>
     </div>
@@ -609,7 +609,7 @@
             A amostra ainda não foi colocada em análise ou não possui dados de parâmetros associados.
         </div>
         <div class="status-badge status-pending">
-            STATUS: AGUARDANDO ANÁLISE
+            ESTADO: A AGUARDAR ANÁLISE
         </div>
     </div>
     @endif
@@ -622,10 +622,10 @@
         <div class="section-content">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px;">
                 <div>
-                    <div class="form-label">Técnico de Microbiologia / Fisico-Química</div>
+                    <div class="form-label">Técnico de microbiologia / Físico-química</div>
                     <div class="signature-line"></div>
                     <div class="small-text" style="margin-top: 5px;">
-                        <span class="muted">Assinatura / Signature</span>
+                        <span class="muted">Assinatura</span>
                     </div>
                 </div>
                 
@@ -633,7 +633,7 @@
                     <div class="form-label">Técnico de Codificação</div>
                     <div class="signature-line"></div>
                     <div class="small-text" style="margin-top: 5px;">
-                        <span class="muted">Assinatura / Signature</span>
+                        <span class="muted">Assinatura</span>
                     </div>
                 </div>
             </div>
@@ -644,7 +644,7 @@
                     <span class="value highlight-value">{{ now()->format('d/m/Y') }}</span>
                 </div>
                 <div class="muted small-text" style="margin-top: 5px;">
-                    Validation Date
+                    Data de validação
                 </div>
             </div>
         </div>

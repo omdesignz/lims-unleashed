@@ -27,7 +27,7 @@ function mapFormula(formula) {
   return {
     ...formula,
     value: formula.id,
-    label: [formula.code, formula.name].filter(Boolean).join(" · ") || `Formula #${formula.id}`,
+    label: [formula.code, formula.name].filter(Boolean).join(" · ") || `Fórmula #${formula.id}`,
   };
 }
 
@@ -52,7 +52,7 @@ const governanceIssues = computed(() => {
   const issues = [];
 
   if (props.form.result_is_qualitative && props.form.requires_calculation) {
-    issues.push("Resultados qualitativos nao podem depender de calculo automatico.");
+    issues.push("Resultados qualitativos não podem depender de cálculo automático.");
   }
 
   if (!props.form.requires_calculation) {
@@ -60,11 +60,11 @@ const governanceIssues = computed(() => {
   }
 
   if (!selectedFormula.value && !props.form.formula_expression?.trim()) {
-    issues.push("Selecione uma formula ativa ou defina uma expressao personalizada.");
+    issues.push("Seleccione uma fórmula activa ou defina uma expressão personalizada.");
   }
 
   if (!declaredCalculationParameters.value.length) {
-    issues.push("A expressao deve declarar pelo menos um parametro de entrada entre chavetas.");
+    issues.push("A expressão deve declarar pelo menos um parâmetro de entrada entre chavetas.");
   }
 
   const authoritativeVariables = expressionVariables.value.length
@@ -79,7 +79,7 @@ const governanceIssues = computed(() => {
   }
 
   if (extraVariables.length) {
-    issues.push(`Entradas fora da expressao: ${extraVariables.join(", ")}.`);
+    issues.push(`Entradas fora da expressão: ${extraVariables.join(", ")}.`);
   }
 
   return issues;
@@ -200,16 +200,16 @@ function updateTaxType(taxType) {
       <div class="mb-5 flex items-start gap-3">
         <IdentificationIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
         <div>
-          <p class="ds-kicker">Identidade tecnica</p>
-          <h2 class="ds-heading mt-1 text-base">Parametro e rastreabilidade</h2>
-          <p class="ds-copy mt-1 text-sm">Defina uma designacao inequívoca para perfis, worksheets e certificados.</p>
+          <p class="ds-kicker">Identidade técnica</p>
+          <h2 class="ds-heading mt-1 text-base">Parâmetro e rastreabilidade</h2>
+          <p class="ds-copy mt-1 text-sm">Defina uma designação inequívoca para perfis, folhas de trabalho e certificados.</p>
         </div>
       </div>
 
       <div class="grid gap-5 lg:grid-cols-2">
         <div class="ds-field-group">
           <label for="parameter-name" class="ds-field-label">{{ $t('gestlab.general.labels.parameters.name') }} <span class="ds-field-required">*</span></label>
-          <BaseInput id="parameter-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" placeholder="Nome analitico completo" />
+          <BaseInput id="parameter-name" v-model="form.name" type="text" class="ds-field" :aria-invalid="Boolean(form.errors.name)" placeholder="Nome analítico completo" />
           <p v-if="form.errors.name" class="ds-field-error">{{ form.errors.name }}</p>
         </div>
 
@@ -221,13 +221,13 @@ function updateTaxType(taxType) {
 
         <div class="ds-field-group lg:col-span-2">
           <label for="parameter-description" class="ds-field-label">{{ $t('gestlab.general.labels.parameters.description') }}</label>
-          <textarea id="parameter-description" v-model="form.description" class="ds-field min-h-28 resize-y" :aria-invalid="Boolean(form.errors.description)" placeholder="Matriz, principio do ensaio ou observacoes de utilizacao" />
+          <textarea id="parameter-description" v-model="form.description" class="ds-field min-h-28 resize-y" :aria-invalid="Boolean(form.errors.description)" placeholder="Matriz, principio do ensaio ou observações de utilização" />
           <p v-if="form.errors.description" class="ds-field-error">{{ form.errors.description }}</p>
         </div>
       </div>
 
       <div class="mt-5 overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)]">
-        <ToggleField v-model="form.active" id="parameter-active" :label="$t('gestlab.general.labels.parameters.active')" description="Disponibiliza o parametro para novos perfis e fluxos analiticos." />
+        <ToggleField v-model="form.active" id="parameter-active" :label="$t('gestlab.general.labels.parameters.active')" description="Disponibiliza o parâmetro para novos perfis e fluxos analíticos." />
       </div>
       <p v-if="form.errors.active" class="ds-field-error mt-2">{{ form.errors.active }}</p>
     </section>
@@ -236,9 +236,9 @@ function updateTaxType(taxType) {
       <div class="mb-5 flex items-start gap-3">
         <BanknotesIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
         <div>
-          <p class="ds-kicker">Servico e fiscalidade</p>
-          <h2 class="ds-heading mt-1 text-base">Prazo, preco e tributacao</h2>
-          <p class="ds-copy mt-1 text-sm">Dados usados no planeamento da bancada e na composicao comercial do ensaio.</p>
+          <p class="ds-kicker">Serviço e fiscalidade</p>
+          <h2 class="ds-heading mt-1 text-base">Prazo, preço e tributacao</h2>
+          <p class="ds-copy mt-1 text-sm">Dados usados no planeamento da bancada e na composição comercial do ensaio.</p>
         </div>
       </div>
 
@@ -257,8 +257,8 @@ function updateTaxType(taxType) {
       </div>
 
       <div class="mt-5 overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] divide-y divide-[var(--ds-border)]">
-        <ToggleField v-model="form.charge_tax" id="parameter-charge-tax" :label="$t('gestlab.general.labels.parameters.charge_tax')" description="Aplica a categoria fiscal selecionada ao preco do parametro." />
-        <ToggleField v-model="form.withhold_tax" id="parameter-withhold-tax" :label="$t('gestlab.general.labels.parameters.withhold_tax')" description="Marca o servico para retencao fiscal quando aplicavel." />
+        <ToggleField v-model="form.charge_tax" id="parameter-charge-tax" :label="$t('gestlab.general.labels.parameters.charge_tax')" description="Aplica a categoria fiscal seleccionada ao preço do parâmetro." />
+        <ToggleField v-model="form.withhold_tax" id="parameter-withhold-tax" :label="$t('gestlab.general.labels.parameters.withhold_tax')" description="Marca o serviço para retencao fiscal quando aplicavel." />
       </div>
 
       <div class="mt-5 ds-field-group">
@@ -268,7 +268,7 @@ function updateTaxType(taxType) {
           :has-error="Boolean(form.errors.tax_id)"
           :load-options="loadTaxTypes"
           :title-label="$t('gestlab.general.labels.parameters.tax_id')"
-          placeholder="Selecionar taxa"
+          placeholder="Seleccionar taxa"
           @update:model-value="updateTaxType"
         />
         <Combobox
@@ -277,7 +277,7 @@ function updateTaxType(taxType) {
           :has-error="Boolean(form.errors.exemption_id)"
           :load-options="loadExemptions"
           :title-label="$t('gestlab.general.labels.parameters.exemption_id')"
-          placeholder="Selecionar motivo de isencao"
+          placeholder="Seleccionar motivo de isencao"
         />
         <p v-if="form.errors.tax_id" class="ds-field-error">{{ form.errors.tax_id }}</p>
         <p v-if="form.errors.exemption_id" class="ds-field-error">{{ form.errors.exemption_id }}</p>
@@ -289,9 +289,9 @@ function updateTaxType(taxType) {
       <div class="mb-5 flex items-start gap-3">
         <BeakerIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
         <div>
-          <p class="ds-kicker">Definicao do resultado</p>
+          <p class="ds-kicker">Definição do resultado</p>
           <h2 class="ds-heading mt-1 text-base">Tipo e tratamento do valor</h2>
-          <p class="ds-copy mt-1 text-sm">O tipo selecionado governa a entrada, verificacao e apresentacao do resultado.</p>
+          <p class="ds-copy mt-1 text-sm">O tipo seleccionado governa a entrada, verificação e apresentacao do resultado.</p>
         </div>
       </div>
 
@@ -318,7 +318,7 @@ function updateTaxType(taxType) {
       <p v-if="form.errors.result_is_qualitative" class="ds-field-error mt-2">{{ form.errors.result_is_qualitative }}</p>
 
       <div v-if="!form.result_is_qualitative" class="mt-5 overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)]">
-        <ToggleField v-model="form.requires_calculation" id="parameter-calculated" :label="$t('gestlab.general.labels.parameters.requires_calculation')" description="Calcula o resultado a partir de entradas declaradas e de uma expressao controlada." />
+        <ToggleField v-model="form.requires_calculation" id="parameter-calculated" :label="$t('gestlab.general.labels.parameters.requires_calculation')" description="Calcula o resultado a partir de entradas declaradas e de uma expressão controlada." />
       </div>
       <p v-if="form.errors.requires_calculation" class="ds-field-error mt-2">{{ form.errors.requires_calculation }}</p>
     </section>
@@ -327,9 +327,9 @@ function updateTaxType(taxType) {
       <div class="mb-5 flex items-start gap-3">
         <CalculatorIcon class="mt-0.5 h-5 w-5 shrink-0 text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200" />
         <div>
-          <p class="ds-kicker">Governanca do calculo</p>
-          <h2 class="ds-heading mt-1 text-base">Formula, entradas e precisao</h2>
-          <p class="ds-copy mt-1 text-sm">A expressao e os parametros declarados devem permanecer coerentes para liberar o calculo.</p>
+          <p class="ds-kicker">Governação do cálculo</p>
+          <h2 class="ds-heading mt-1 text-base">Fórmula, entradas e precisão</h2>
+          <p class="ds-copy mt-1 text-sm">A expressão e os parâmetros declarados devem permanecer coerentes para permitir o cálculo.</p>
         </div>
       </div>
 
@@ -340,7 +340,7 @@ function updateTaxType(taxType) {
             :has-error="Boolean(form.errors.formula_id)"
             :load-options="loadFormulas"
             :title-label="$t('gestlab.general.labels.parameters.formula_id')"
-            placeholder="Selecionar formula ativa"
+            placeholder="Seleccionar fórmula activa"
             @update:model-value="selectFormula"
           />
           <p v-if="form.errors.formula_id" class="ds-field-error">{{ form.errors.formula_id }}</p>
@@ -369,15 +369,15 @@ function updateTaxType(taxType) {
       <div class="mt-5 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p class="text-sm font-black text-[var(--ds-text)]">Entradas de calculo</p>
-            <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">Extraidas automaticamente da expressao ativa.</p>
+            <p class="text-sm font-black text-[var(--ds-text)]">Entradas de cálculo</p>
+            <p class="mt-1 text-xs font-semibold text-[var(--ds-text-muted)]">Extraidas automaticamente da expressão activa.</p>
           </div>
           <span class="ds-chip">{{ declaredCalculationParameters.length }} entradas</span>
         </div>
         <div v-if="declaredCalculationParameters.length" class="mt-3 flex flex-wrap gap-2">
           <span v-for="parameter in declaredCalculationParameters" :key="parameter" class="ds-chip font-mono">{{ parameter }}</span>
         </div>
-        <p v-else class="mt-3 text-sm font-semibold text-amber-700 dark:text-amber-200">Nenhuma entrada foi declarada na expressao.</p>
+        <p v-else class="mt-3 text-sm font-semibold text-amber-700 dark:text-amber-200">Nenhuma entrada foi declarada na expressão.</p>
         <p v-if="form.errors.calculation_parameters" class="ds-field-error mt-3">{{ form.errors.calculation_parameters }}</p>
       </div>
 
@@ -392,12 +392,12 @@ function updateTaxType(taxType) {
           <CheckCircleIcon v-else class="mt-0.5 h-5 w-5 shrink-0 text-emerald-700 dark:text-emerald-200" />
           <div>
             <p class="text-sm font-black" :class="governanceIssues.length ? 'text-amber-900 dark:text-amber-100' : 'text-emerald-900 dark:text-emerald-100'">
-              {{ governanceIssues.length ? "Revisao necessaria" : "Escopo de calculo controlado" }}
+              {{ governanceIssues.length ? "Revisão necessária" : "Âmbito de cálculo controlado" }}
             </p>
             <ul v-if="governanceIssues.length" class="mt-2 space-y-1 text-sm font-semibold text-amber-800 dark:text-amber-200">
               <li v-for="issue in governanceIssues" :key="issue">{{ issue }}</li>
             </ul>
-            <p v-else class="mt-1 text-sm font-semibold text-emerald-800 dark:text-emerald-200">A formula, as entradas e o tipo de resultado estao coerentes.</p>
+            <p v-else class="mt-1 text-sm font-semibold text-emerald-800 dark:text-emerald-200">A fórmula, as entradas e o tipo de resultado estão coerentes.</p>
           </div>
         </div>
       </div>

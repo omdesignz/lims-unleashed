@@ -72,7 +72,7 @@ function associateTemplate(eventId) {
           <div>
             <p class="ds-kicker">Automação de notificações</p>
             <h1 class="ds-heading mt-1 text-2xl">Eventos da aplicação</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Associe eventos do LIMS aos modelos de email usados nas notificações transacionais.</p>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Associe eventos do LIMS aos modelos de correio electrónico usados nas notificações transacionais.</p>
           </div>
         </div>
         <button type="button" class="ds-button ds-button-secondary" :disabled="syncing" @click="syncEvents">
@@ -106,7 +106,7 @@ function associateTemplate(eventId) {
           <thead class="bg-[var(--ds-panel-subtle)]">
             <tr>
               <th class="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--ds-text-soft)] sm:px-5">Evento</th>
-              <th class="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--ds-text-soft)] sm:px-5">Modelo atual</th>
+              <th class="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--ds-text-soft)] sm:px-5">Modelo actual</th>
               <th class="px-4 py-3 text-left text-xs font-bold uppercase text-[var(--ds-text-soft)] sm:px-5">Associação</th>
             </tr>
           </thead>
@@ -124,7 +124,7 @@ function associateTemplate(eventId) {
               <td class="min-w-80 px-4 py-4 sm:px-5">
                 <div class="flex items-center gap-2">
                   <BaseSelect v-model="selectedTemplates[event.id]" class="ds-field min-w-56">
-                    <option value="">Selecionar modelo</option>
+                    <option value="">Seleccionar modelo</option>
                     <option v-for="template in templates" :key="template.id" :value="template.id">{{ template.name }}</option>
                   </BaseSelect>
                   <button

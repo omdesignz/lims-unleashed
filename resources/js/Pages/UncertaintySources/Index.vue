@@ -42,10 +42,10 @@
         <textarea v-model="form.control_strategy" rows="3" class="ds-field" placeholder="Como a fonte é monitorizada e controlada"></textarea>
         <label class="inline-flex items-center gap-3 text-sm font-semibold text-[var(--ds-text-muted)]">
           <CheckboxInput v-model="form.is_active" type="checkbox" class="ds-checkbox" />
-          Fonte ativa
+          Fonte activa
         </label>
         <div class="flex flex-wrap gap-3">
-          <button type="submit" class="ds-button ds-button-primary">{{ editingId ? 'Atualizar' : 'Guardar' }}</button>
+          <button type="submit" class="ds-button ds-button-primary">{{ editingId ? 'Actualizar' : 'Guardar' }}</button>
           <button v-if="editingId" type="button" class="ds-button ds-button-secondary" @click="resetForm">Cancelar</button>
         </div>
       </form>
@@ -62,7 +62,7 @@
               <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="rounded-full bg-[var(--ds-panel-muted)] px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-[var(--ds-text-muted)]">{{ source.source_type }}</span>
-                  <span v-if="source.is_active" class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Ativa</span>
+                  <span v-if="source.is_active" class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Activa</span>
                 </div>
                 <h2 class="mt-2 text-base font-semibold text-[var(--ds-text)]">{{ source.title }}</h2>
                 <p class="mt-2 text-sm text-[var(--ds-text-muted)]">{{ source.description || 'Sem descrição adicional.' }}</p>

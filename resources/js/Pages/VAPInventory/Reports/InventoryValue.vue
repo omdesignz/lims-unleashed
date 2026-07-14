@@ -4,7 +4,7 @@
       <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
         <div class="min-w-0">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Inventory control</span>
+            <span class="ds-kicker">Controlo de inventário</span>
             <span class="ds-chip">
               <span class="lims-status-dot lims-status-dot-instrument"></span>
               Valorização estimada
@@ -73,7 +73,7 @@
 
       <div class="ds-command-toolbar mt-5 grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div>
-          <p class="text-sm font-bold text-[var(--ds-text)]">{{ inventory.total || inventoryRows.length }} posições de stock valorizadas</p>
+          <p class="text-sm font-bold text-[var(--ds-text)]">{{ inventory.total || inventoryRows.length }} posições de existências valorizadas</p>
           <div v-if="activeFilterPills.length" class="mt-2 flex flex-wrap gap-2">
             <span v-for="pill in activeFilterPills" :key="pill" class="ds-chip">{{ pill }}</span>
           </div>
@@ -100,7 +100,7 @@
           <div class="flex items-start justify-between gap-4">
             <div>
               <h3 class="text-sm font-black text-[var(--ds-text)]">Valor por categoria</h3>
-              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Famílias com maior capital estimado em stock.</p>
+              <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Famílias com maior capital estimado em existências.</p>
             </div>
             <span class="text-xl font-black text-[var(--ds-text)]">{{ categoryValueTotal }}</span>
           </div>
@@ -114,7 +114,7 @@
             <div class="flex items-start justify-between gap-4">
               <div>
                 <h3 class="text-sm font-black text-[var(--ds-text)]">Exposição por armazém</h3>
-                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Distribuição do valor entre locais ativos.</p>
+                <p class="mt-1 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">Distribuição do valor entre locais activos.</p>
               </div>
               <span class="ds-chip">{{ warehouseValueTotal }} locais</span>
             </div>
@@ -151,7 +151,7 @@
 
         <div v-if="loading" class="ds-empty-state m-5 p-8 text-center">
           <span class="mx-auto block h-7 w-7 animate-spin rounded-full border-2 border-[var(--ds-border)] border-t-[rgb(var(--primary-700-rgb))]"></span>
-          <p class="mt-3 text-sm font-semibold text-[var(--ds-text-muted)]">A atualizar o relatório...</p>
+          <p class="mt-3 text-sm font-semibold text-[var(--ds-text-muted)]">A actualizar o relatório...</p>
         </div>
 
         <div v-else-if="inventoryRows.length" class="divide-y divide-[var(--ds-border)] lg:hidden">
@@ -184,7 +184,7 @@
         <div v-else-if="!loading" class="ds-empty-state m-5 p-8 text-center">
           <BanknotesIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
           <h3 class="mt-3 text-sm font-black text-[var(--ds-text)]">Sem posições valorizadas</h3>
-          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Ajuste os filtros ou confirme a existência de stock disponível.</p>
+          <p class="mt-1 text-sm font-semibold text-[var(--ds-text-muted)]">Ajuste os filtros ou confirme a existência de existências disponível.</p>
         </div>
 
         <div v-if="!loading && inventoryRows.length" class="hidden overflow-x-auto lg:block">
@@ -196,7 +196,7 @@
                 <th class="px-5 py-3 text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Armazém</th>
                 <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Quantidade</th>
                 <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Valor estimado</th>
-                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Ação</th>
+                <th class="px-5 py-3 text-right text-xs font-black uppercase tracking-[0.12em] text-[var(--ds-text-soft)]">Acção</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[var(--ds-border)] bg-[var(--ds-panel-raised)]">
@@ -245,7 +245,7 @@
               <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Base de cálculo</p>
               <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Estimativa técnica</h2>
               <p class="mt-2 text-xs font-semibold leading-5 text-[var(--ds-text-muted)]">
-                O valor atual usa uma referência fixa de {{ formatCurrency(valuationUnitPrice) }} por unidade. Use-o para exposição operacional, não para fecho contabilístico.
+                O valor actual usa uma referência fixa de {{ formatCurrency(valuationUnitPrice) }} por unidade. Use-o para exposição operacional, não para fecho contabilístico.
               </p>
             </div>
           </div>
@@ -414,7 +414,7 @@ const summaryCards = computed(() => [
   {
     label: 'Itens únicos',
     value: props.stats?.unique_items || 0,
-    detail: 'Referências com stock',
+    detail: 'Referências com existências',
     icon: CubeIcon,
     tone: 'text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200',
   },

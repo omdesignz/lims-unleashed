@@ -74,7 +74,7 @@
 
         .studio-first-page-shell {
             display: flex;
-            min-height: {{ $canvasPageMinHeight ?? 253 }}mm;
+            min-height: {{ $firstCanvasPageMinHeight ?? $canvasPageMinHeight ?? 215 }}mm;
             flex-direction: column;
         }
 

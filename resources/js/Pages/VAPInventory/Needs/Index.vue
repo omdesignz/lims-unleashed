@@ -4,7 +4,7 @@
       <div class="flex flex-col gap-5 border-b border-[color:var(--ds-border)] px-5 py-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
         <div class="max-w-3xl">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="ds-kicker">Procurement control</span>
+            <span class="ds-kicker">Controlo de aprovisionamento</span>
             <span class="ds-chip">
               <span class="lims-status-dot lims-status-dot-instrument" />
               Necessidades de laboratório
@@ -179,11 +179,11 @@
           <thead class="ds-table-head">
             <tr>
               <th class="ds-table-cell text-left">Necessidade</th>
-              <th class="ds-table-cell text-left">Escopo</th>
+              <th class="ds-table-cell text-left">Âmbito</th>
               <th class="ds-table-cell text-left">Estado</th>
               <th class="ds-table-cell text-left">Solicitante</th>
               <th class="ds-table-cell text-left">Prazo</th>
-              <th class="ds-table-cell text-left">Ação</th>
+              <th class="ds-table-cell text-left">Acção</th>
             </tr>
           </thead>
           <tbody>
@@ -218,7 +218,7 @@
       <div v-else class="p-5">
         <div class="ds-empty-state p-6 text-center">
           <QueueListIcon class="mx-auto h-8 w-8 text-[color:var(--ds-text-soft)]" />
-          <p class="mt-2 text-xs text-[color:var(--ds-text-soft)]">Ainda não existem necessidades registadas para os filtros atuais.</p>
+          <p class="mt-2 text-xs text-[color:var(--ds-text-soft)]">Ainda não existem necessidades registadas para os filtros actuais.</p>
         </div>
       </div>
 

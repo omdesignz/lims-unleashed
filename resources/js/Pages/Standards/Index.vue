@@ -52,10 +52,10 @@ const selectedAction = ref(null);
 const emptyForm = () => ({ code: "", description: "", id: null });
 const form = useForm(emptyForm());
 
-const panelTitle = computed(() => form.id ? `Editar norma ${form.code}` : "Nova referencia normativa");
+const panelTitle = computed(() => form.id ? `Editar norma ${form.code}` : "Nova referência normativa");
 const panelDescription = computed(() => form.id
-  ? "Atualize a identificacao e o escopo de aplicabilidade desta referencia."
-  : "Adicione uma norma para utilizacao nos perfis e metodos do laboratorio.");
+  ? "Actualize a identificação e o âmbito de aplicabilidade desta referência."
+  : "Adicione uma norma para utilização nos perfis e métodos do laboratório.");
 
 const confirmationDialogTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${selectedAction.value}`));
 const confirmationDialogDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${selectedAction.value}`));
@@ -67,10 +67,10 @@ const activeRecords = computed(() => pageRecords.value.length - archivedRecords.
 const describedRecords = computed(() => pageRecords.value.filter((record) => record.description?.trim()).length);
 
 const metrics = computed(() => [
-  { label: "Referencias", value: totalRecords.value, detail: "catalogo total", icon: BookOpenIcon },
-  { label: "Ativas nesta pagina", value: activeRecords.value, detail: "disponiveis para uso", icon: CheckBadgeIcon },
-  { label: "Com descricao", value: describedRecords.value, detail: "contexto documentado", icon: DocumentTextIcon },
-  { label: "Arquivadas nesta pagina", value: archivedRecords.value, detail: "fora da selecao ativa", icon: ArchiveBoxIcon },
+  { label: "Referências", value: totalRecords.value, detail: "catálogo total", icon: BookOpenIcon },
+  { label: "Activas nesta página", value: activeRecords.value, detail: "disponíveis para uso", icon: CheckBadgeIcon },
+  { label: "Com descrição", value: describedRecords.value, detail: "contexto documentado", icon: DocumentTextIcon },
+  { label: "Arquivadas nesta página", value: archivedRecords.value, detail: "fora da selecção activa", icon: ArchiveBoxIcon },
 ]);
 
 const actions = [
@@ -152,24 +152,20 @@ function executeBulkAction() {
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div class="min-w-0">
-          <p class="ds-kicker">Configuracao analitica</p>
+          <p class="ds-kicker">Configuração analítica</p>
           <div class="mt-3 flex items-start gap-3">
             <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
               <BookOpenIcon class="h-5 w-5" />
             </span>
             <div class="min-w-0">
               <h1 class="ds-heading text-2xl">{{ $t('gestlab.general.labels.standards.page_title') }}</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">
-                Catalogo controlado das referencias normativas usadas em perfis, metodos e evidencias laboratoriais.
-              </p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm"> Catálogo controlado das referências normativas usadas em perfis, métodos e evidências laboratoriais. </p>
             </div>
           </div>
         </div>
 
         <button v-if="hasPermission('add_standards')" type="button" class="ds-button ds-button-primary" @click="openCreatePanel">
-          <PlusIcon class="h-4 w-4" />
-          Nova referencia
-        </button>
+          <PlusIcon class="h-4 w-4" /> Nova referência </button>
       </div>
 
       <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">
@@ -215,7 +211,7 @@ function executeBulkAction() {
         <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button type="button" class="ds-button ds-button-secondary" @click="closePanel">{{ $t('gestlab.general.buttons.cancel') }}</button>
           <button type="submit" form="standard-form" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty">
-            {{ form.processing ? "A guardar..." : form.id ? "Guardar alteracoes" : "Adicionar referencia" }}
+            {{ form.processing ? "A guardar..." : form.id ? "Guardar alterações" : "Adicionar referência" }}
           </button>
         </div>
       </template>
@@ -227,7 +223,7 @@ function executeBulkAction() {
       :description="confirmationDialogDescription"
       :variant="selectedAction === 'restore' ? 'question' : 'danger'"
       confirm="Sim"
-      cancel="Nao"
+      cancel="Não"
       @canceled="showActionConfirmation = false"
       @confirmed="executeBulkAction"
     />

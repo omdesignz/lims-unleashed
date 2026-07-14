@@ -21,7 +21,13 @@ trait HasDocumentRevisions
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
             ->setDescriptionForEvent(
-                fn (string $eventName) => sprintf('%s %s', class_basename($this), $eventName)
+                fn (string $eventName) => 'Registo documental '.match ($eventName) {
+                    'created' => 'criado',
+                    'updated' => 'actualizado',
+                    'deleted' => 'eliminado',
+                    'restored' => 'restaurado',
+                    default => $eventName,
+                }
             );
     }
 

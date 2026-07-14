@@ -74,12 +74,12 @@ const registryMetrics = computed(() => [
     note: "total pesquisavel",
   },
   {
-    label: "Validados nesta pagina",
+    label: "Validados nesta página",
     value: validatedRecords.value,
-    note: "prontos para distribuicao",
+    note: "prontos para distribuição",
   },
   {
-    label: "Pendentes nesta pagina",
+    label: "Pendentes nesta página",
     value: pendingRecords.value,
     note: "a aguardar libertacao",
   },
@@ -243,19 +243,14 @@ function loadLabCodes(query, setOptions) {
         <div class="max-w-3xl">
           <p class="ds-kicker">Controlo documental</p>
           <h1 class="ds-heading mt-2 text-2xl">Certificados de qualidade</h1>
-          <p class="ds-copy mt-2 max-w-2xl text-sm">
-            Registo mestre dos certificados emitidos, com estado de validacao,
-            rastreabilidade laboratorial e acesso direto ao dossier final.
-          </p>
+          <p class="ds-copy mt-2 max-w-2xl text-sm"> Registo mestre dos certificados emitidos, com estado de validação, rastreabilidade laboratorial e acesso directo ao dossier final. </p>
         </div>
 
         <div class="lims-status-strip flex items-center gap-3 px-4 py-3">
           <span class="lims-status-dot lims-status-dot-instrument" />
           <div>
-            <p class="text-xs font-bold text-[var(--ds-text)]">Arquivo de emissao</p>
-            <p class="mt-0.5 text-xs font-semibold text-[var(--ds-text-muted)]">
-              Pesquisa, validacao e distribuicao
-            </p>
+            <p class="text-xs font-bold text-[var(--ds-text)]">Arquivo de emissão</p>
+            <p class="mt-0.5 text-xs font-semibold text-[var(--ds-text-muted)]"> Pesquisa, validação e distribuição </p>
           </div>
         </div>
       </div>
@@ -310,12 +305,9 @@ function loadLabCodes(query, setOptions) {
       <template #content>
         <div class="space-y-0">
           <div class="ds-command-surface m-5 p-5 sm:m-6">
-            <p class="ds-kicker">Dados de emissao</p>
-            <h2 class="ds-heading mt-2 text-base">Identificacao do certificado</h2>
-            <p class="ds-copy mt-1 text-sm">
-              Confirme o cliente, local, codigo laboratorial e disponibilidade
-              antes de guardar o registo.
-            </p>
+            <p class="ds-kicker">Dados de emissão</p>
+            <h2 class="ds-heading mt-2 text-base">Identificação do certificado</h2>
+            <p class="ds-copy mt-1 text-sm"> Confirme o cliente, local, código laboratorial e disponibilidade antes de guardar o registo. </p>
           </div>
 
           <div class="grid gap-5 border-t border-[var(--ds-border)] px-5 py-5 sm:grid-cols-2 sm:px-6">
@@ -357,7 +349,7 @@ function loadLabCodes(query, setOptions) {
                 v-model="form.cl_id"
                 :has-error="Boolean(form.errors.cl_id)"
                 :load-options="loadLabCodes"
-                placeholder="Pesquisar codigo laboratorial"
+                placeholder="Pesquisar código laboratorial"
               />
               <p v-if="form.errors.cl_id" class="ds-field-error">
                 {{ form.errors.cl_id }}
@@ -369,9 +361,7 @@ function loadLabCodes(query, setOptions) {
                 <span class="ds-field-label block">
                   {{ $t("gestlab.general.labels.quality_certificates.status") }}
                 </span>
-                <span class="ds-field-hint mt-1 block">
-                  Disponivel para operacoes de emissao.
-                </span>
+                <span class="ds-field-hint mt-1 block"> Disponível para operações de emissão. </span>
               </span>
               <CheckboxInput
                 v-model="form.status"
@@ -391,7 +381,7 @@ function loadLabCodes(query, setOptions) {
               rows="6"
               class="ds-field"
               :aria-invalid="Boolean(form.errors.obs)"
-              placeholder="Observacoes tecnicas ou comerciais do certificado"
+              placeholder="Observações técnicas ou comerciais do certificado"
             />
             <p v-if="form.errors.obs" class="ds-field-error">
               {{ form.errors.obs }}
@@ -427,7 +417,7 @@ function loadLabCodes(query, setOptions) {
       :title="confirmationDialogTitle"
       :description="confirmationDialogDescription"
       confirm="Sim"
-      cancel="Nao"
+      cancel="Não"
       @canceled="resetBulkAction"
       @close="resetBulkAction"
       @confirmed="confirmAction"

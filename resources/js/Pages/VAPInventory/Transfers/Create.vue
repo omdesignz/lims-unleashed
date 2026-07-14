@@ -13,7 +13,7 @@
             <div class="min-w-0">
               <h1 class="text-2xl font-black tracking-tight text-[var(--ds-text)]">Criar transferência</h1>
               <p class="mt-1 max-w-3xl text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                Reserve stock na origem, defina o destino e registe o prazo de receção numa única operação rastreável.
+                Reserve existências na origem, defina o destino e registe o prazo de recepção numa única operação rastreável.
               </p>
             </div>
           </div>
@@ -41,7 +41,7 @@
                 <h3 class="font-black">Reserva na origem</h3>
               </div>
               <p class="mt-2 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">
-                Apenas armazéns com saldo disponível podem ser selecionados como origem. O destino deve ser diferente.
+                Apenas armazéns com saldo disponível podem ser seleccionados como origem. O destino deve ser diferente.
               </p>
             </div>
 
@@ -52,7 +52,7 @@
                   v-model="selectedItemOption"
                   :has-error="Boolean(form.errors.item_id)"
                   :options="itemOptions"
-                  placeholder="Pesquisar item com stock disponível"
+                  placeholder="Pesquisar item com existências disponível"
                 />
                 <p v-if="form.errors.item_id" class="ds-field-error">{{ form.errors.item_id }}</p>
               </div>
@@ -64,7 +64,7 @@
                   :disabled="!form.item_id || loadingStock"
                   :has-error="Boolean(form.errors.source_id)"
                   :options="sourceWarehouseOptions"
-                  placeholder="Selecionar origem"
+                  placeholder="Seleccionar origem"
                 />
                 <p v-if="form.errors.source_id" class="ds-field-error">{{ form.errors.source_id }}</p>
               </div>
@@ -76,7 +76,7 @@
                   :disabled="!form.item_id"
                   :has-error="Boolean(form.errors.destination_id)"
                   :options="destinationWarehouseOptions"
-                  placeholder="Selecionar destino"
+                  placeholder="Seleccionar destino"
                 />
                 <p v-if="form.errors.destination_id" class="ds-field-error">{{ form.errors.destination_id }}</p>
               </div>
@@ -135,7 +135,7 @@
               </label>
 
               <label class="ds-field-group">
-                <span class="ds-field-label">Receção esperada</span>
+                <span class="ds-field-label">Recepção esperada</span>
                 <DateTimePicker v-model="form.expected_date" type="date" :min="form.sent_date || minDate" class="ds-field" :aria-invalid="Boolean(form.errors.expected_date)" />
                 <span v-if="form.errors.expected_date" class="ds-field-error">{{ form.errors.expected_date }}</span>
               </label>
@@ -159,11 +159,11 @@
           <div class="ds-table-summary px-5 py-4">
             <div>
               <p class="text-xs font-black uppercase tracking-[0.14em] text-[var(--ds-text-soft)]">Disponibilidade</p>
-              <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Stock do item por armazém</h2>
+              <h2 class="mt-1 text-base font-black text-[var(--ds-text)]">Existências do item por armazém</h2>
             </div>
             <button type="button" class="ds-button ds-button-secondary" :disabled="!form.item_id || loadingStock" @click="fetchRealTimeStock">
               <ArrowPathIcon :class="['h-4 w-4', loadingStock ? 'animate-spin' : '']" />
-              Atualizar
+              Actualizar
             </button>
           </div>
 
@@ -198,7 +198,7 @@
 
           <div v-else class="ds-empty-state p-8 text-center">
             <CubeIcon class="mx-auto h-8 w-8 text-[var(--ds-text-soft)]" />
-            <p class="mt-3 text-sm font-black text-[var(--ds-text)]">Selecione um item para consultar o stock distribuído.</p>
+            <p class="mt-3 text-sm font-black text-[var(--ds-text)]">Seleccione um item para consultar o existências distribuído.</p>
           </div>
 
           <div v-if="stockRefreshError" class="border-t border-[var(--ds-border)] px-5 py-3 text-sm font-bold text-rose-700 dark:text-rose-300">
@@ -226,15 +226,15 @@
           <dl class="mt-6 divide-y divide-[var(--ds-border)] border-y border-[var(--ds-border)]">
             <div class="flex items-start justify-between gap-4 py-3">
               <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Item</dt>
-              <dd class="max-w-[11rem] text-right text-sm font-black text-[var(--ds-text)]">{{ selectedItem?.name || 'Por selecionar' }}</dd>
+              <dd class="max-w-[11rem] text-right text-sm font-black text-[var(--ds-text)]">{{ selectedItem?.name || 'Por seleccionar' }}</dd>
             </div>
             <div class="flex items-start justify-between gap-4 py-3">
               <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Origem</dt>
-              <dd class="max-w-[11rem] text-right text-sm font-black text-[var(--ds-text)]">{{ sourceWarehouse?.name || 'Por selecionar' }}</dd>
+              <dd class="max-w-[11rem] text-right text-sm font-black text-[var(--ds-text)]">{{ sourceWarehouse?.name || 'Por seleccionar' }}</dd>
             </div>
             <div class="flex items-start justify-between gap-4 py-3">
               <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Destino</dt>
-              <dd class="max-w-[11rem] text-right text-sm font-black text-[var(--ds-text)]">{{ destinationWarehouse?.name || 'Por selecionar' }}</dd>
+              <dd class="max-w-[11rem] text-right text-sm font-black text-[var(--ds-text)]">{{ destinationWarehouse?.name || 'Por seleccionar' }}</dd>
             </div>
             <div class="flex items-start justify-between gap-4 py-3">
               <dt class="text-sm font-semibold text-[var(--ds-text-muted)]">Quantidade</dt>
@@ -332,7 +332,7 @@ const destinationWarehouses = computed(() => props.warehouses.filter((warehouse)
 
 const itemOptions = computed(() => props.items.map((item) => ({
   value: item.id,
-  label: `${item.name}${item.internal_code || item.code ? ` (${item.internal_code || item.code})` : ''}${hasStockInAnyWarehouse(item) ? '' : ' - Sem stock disponível'}`,
+  label: `${item.name}${item.internal_code || item.code ? ` (${item.internal_code || item.code})` : ''}${hasStockInAnyWarehouse(item) ? '' : ' - Sem existências disponível'}`,
   disabled: !hasStockInAnyWarehouse(item),
 })))
 
@@ -358,7 +358,7 @@ const isFormValid = computed(() => (
 const readinessSteps = computed(() => [
   {
     label: 'Item identificado',
-    detail: selectedItem.value?.name || 'Selecione o material a movimentar.',
+    detail: selectedItem.value?.name || 'Seleccione o material a movimentar.',
     complete: Boolean(form.item_id),
   },
   {
@@ -421,7 +421,7 @@ async function fetchRealTimeStock() {
     })
 
     if (!response.ok) {
-      throw new Error('Stock request failed')
+      throw new Error('O pedido de existências falhou')
     }
 
     const data = await response.json()
@@ -431,7 +431,7 @@ async function fetchRealTimeStock() {
     })
     stockInfo.value = { ...stockInfo.value, ...updates }
   } catch (error) {
-    stockRefreshError.value = 'Não foi possível atualizar o stock neste momento.'
+    stockRefreshError.value = 'Não foi possível actualizar as existências neste momento.'
   } finally {
     loadingStock.value = false
   }

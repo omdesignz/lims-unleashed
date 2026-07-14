@@ -19,7 +19,8 @@ class VAPLabelController extends Controller
 {
     public function index(Request $request)
     {
-        $query = VAPLabel::with(['lab', 'department', 'user'])
+        $baseQuery = VAPLabel::query()->where('tenant_id', $this->tenantId());
+        $query = (clone $baseQuery)->with(['lab', 'department', 'user'])
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($searchQuery) use ($search) {
                     $searchQuery->where('name', 'like', "%{$search}%")
@@ -44,9 +45,9 @@ class VAPLabelController extends Controller
             'labels' => $labels,
             'filters' => $request->only(['search', 'type', 'lab_id', 'status']),
             'stats' => [
-                'total' => VAPLabel::count(),
-                'active' => VAPLabel::where('is_active', true)->count(),
-                'by_type' => VAPLabel::groupBy('type')->selectRaw('type, count(*) as count')->get(),
+                'total' => (clone $baseQuery)->count(),
+                'active' => (clone $baseQuery)->where('is_active', true)->count(),
+                'by_type' => (clone $baseQuery)->groupBy('type')->selectRaw('type, count(*) as count')->get(),
             ],
             'labs' => $labs,
             'departments' => $departments,
@@ -124,6 +125,7 @@ class VAPLabelController extends Controller
 
     public function show(VAPLabel $label, LabelStudioSourceResolver $resolver, VAPLabelPdfRenderer $renderer)
     {
+        $this->ensureTenantOwns($label);
         $label->load(['lab', 'department', 'user']);
         $templates = VAPLabelTemplate::where('is_active', true)
             ->orderBy('is_featured', 'desc')
@@ -159,6 +161,7 @@ class VAPLabelController extends Controller
 
     public function edit(VAPLabel $label, LabelStudioSourceResolver $resolver)
     {
+        $this->ensureTenantOwns($label);
         $templates = VAPLabelTemplate::where('is_active', true)
             ->orderBy('is_featured', 'desc')
             ->orderBy('name')
@@ -184,6 +187,7 @@ class VAPLabelController extends Controller
 
     public function update(Request $request, VAPLabel $label, LabelStudioSourceResolver $resolver)
     {
+        $this->ensureTenantOwns($label);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|in:equipment,material,sample,custom',
@@ -223,6 +227,7 @@ class VAPLabelController extends Controller
 
     public function destroy(VAPLabel $label)
     {
+        $this->ensureTenantOwns($label);
         $label->delete();
 
         return redirect()->route('vap_labels.labels.index')
@@ -231,6 +236,7 @@ class VAPLabelController extends Controller
 
     public function duplicate(VAPLabel $label)
     {
+        $this->ensureTenantOwns($label);
         $duplicate = $label->replicate();
         $duplicate->name = $label->name.' (Copy)';
         $duplicate->tenant_id = auth()->user()->tenant_id;
@@ -243,6 +249,7 @@ class VAPLabelController extends Controller
 
     public function previewPdf(VAPLabel $label, LabelStudioSourceResolver $resolver, VAPLabelPdfRenderer $renderer)
     {
+        $this->ensureTenantOwns($label);
         $renderedPdf = $renderer->renderPreview($label, $resolver);
 
         return response($renderedPdf['content'])
@@ -253,6 +260,7 @@ class VAPLabelController extends Controller
 
     public function generatePdf(Request $request, VAPLabel $label, LabelStudioSourceResolver $resolver, VAPLabelPdfRenderer $renderer)
     {
+        $this->ensureTenantOwns($label);
         $validated = $request->validate([
             'data' => 'required|array',
             'data.*.content' => 'required|string',
@@ -283,9 +291,12 @@ class VAPLabelController extends Controller
 
     public function generateBatchPdf(Request $request, VAPLabel $label, VAPLabelPdfRenderer $renderer)
     {
+        $this->ensureTenantOwns($label);
         $validated = $request->validate([
             'data' => 'required|array',
             'data.*.content' => 'required|string',
+            'data.*.qr_content' => 'nullable|string',
+            'data.*.barcode_content' => 'nullable|string',
             'columns' => 'integer|min:1|max:10',
             'rows' => 'integer|min:1|max:50',
             'spacing' => 'numeric|min:0|max:20',
@@ -313,6 +324,7 @@ class VAPLabelController extends Controller
 
     public function toggleStatus(VAPLabel $label)
     {
+        $this->ensureTenantOwns($label);
         $label->update(['is_active' => ! $label->is_active]);
 
         return back()->with('success', __('gestlab.general.labels.vap_labels.status_updated'));
@@ -323,6 +335,7 @@ class VAPLabelController extends Controller
         if (request()->filled('lab_id')) {
             return response()->json(
                 VAPLabel::query()
+                    ->where('tenant_id', $this->tenantId())
                     ->where('is_active', true)
                     ->where('lab_id', request('lab_id'))
                     ->orderBy('name')
@@ -340,6 +353,7 @@ class VAPLabelController extends Controller
 
     public function applyTemplate(Request $request, VAPLabel $label)
     {
+        $this->ensureTenantOwns($label);
         $validated = $request->validate([
             'template_id' => 'required|exists:label_templates,id',
         ]);
@@ -375,7 +389,7 @@ class VAPLabelController extends Controller
         $template = VAPLabelTemplate::findOrFail($validated['template_id']);
         $sourcePayload = $resolver->resolve($validated['source_type'], $validated['source_id']);
 
-        abort_if(! $sourcePayload, 404, 'Source record not found.');
+        abort_if(! $sourcePayload, 404, 'Registo de origem não encontrado.');
 
         $templateData = $template->template_data ?? [];
 
@@ -554,5 +568,17 @@ class VAPLabelController extends Controller
             'page_size' => in_array($pageSize, ['A3', 'A4', 'LETTER', 'LEGAL'], true) ? Str::title(strtolower($pageSize)) : 'A4',
             'orientation' => in_array($settings['orientation'] ?? 'portrait', ['portrait', 'landscape'], true) ? (string) $settings['orientation'] : 'portrait',
         ];
+    }
+
+    private function ensureTenantOwns(VAPLabel $label): void
+    {
+        abort_unless((string) $label->tenant_id === (string) $this->tenantId(), 404);
+    }
+
+    private function tenantId(): ?int
+    {
+        $tenantId = auth()->user()?->tenant_id;
+
+        return is_numeric($tenantId) ? (int) $tenantId : null;
     }
 }

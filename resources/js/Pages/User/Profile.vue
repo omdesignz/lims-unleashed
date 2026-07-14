@@ -14,15 +14,15 @@
                       </h1>
                     </div>
                     <dl class="mt-6 flex flex-col sm:ml-3 sm:mt-1 sm:flex-row sm:flex-wrap">
-                      <dt class="sr-only">Company</dt>
+                      <dt class="sr-only">Empresa</dt>
                       <dd class="flex items-center text-sm text-gray-500 font-medium capitalize sm:mr-6">
                         <BuildingOfficeIcon class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" aria-hidden="true" />
-                        Duke street studio
+                        Unidade laboratorial
                       </dd>
-                      <dt class="sr-only">Account status</dt>
+                      <dt class="sr-only">Estado da conta</dt>
                       <dd class="mt-3 flex items-center text-sm text-gray-500 font-medium sm:mr-6 sm:mt-0 capitalize">
                         <CheckCircleIcon class="flex-shrink-0 mr-1.5 h-5 w-5 text-green-400" aria-hidden="true" />
-                        Verified account
+                        Conta verificada
                       </dd>
                     </dl>
                   </div>
@@ -30,10 +30,10 @@
               </div>
               <div class="mt-6 flex space-x-3 md:mt-0 md:ml-4">
                 <button @click="editPersonalInformation = !editPersonalInformation" type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
-                  Edit Profile
+                  Editar perfil
                 </button>
                 <Link class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500" :href="route('logout')" method="post" as="button">
-                  Logout
+                  Terminar sessão
                 </Link>
               </div>
             </div>
@@ -49,7 +49,7 @@
             <div class="bg-white shadow sm:rounded-lg">
               <!-- <div class="px-4 py-5 sm:px-6">
                 <h2 id="applicant-information-title" class="text-lg leading-6 font-medium text-gray-900">
-                  Informações Gerais <span>Update</span>
+                  Informações gerais <span>Actualizar</span>
                 </h2>
                 <p class="mt-1 max-w-2xl text-sm text-gray-500">
                   Dados relacionados à sua conta
@@ -81,7 +81,7 @@
                 <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
                   <div class="sm:col-span-1">
                     <dt class="text-sm font-medium text-gray-500">
-                      Usuário
+                      Utilizador
                     </dt>
                     <dd v-if="!editPersonalInformation" class="mt-1 text-sm text-gray-900">
                       {{ username }}
@@ -109,7 +109,7 @@
                   </div>
                   <div class="sm:col-span-1">
                     <dt class="text-sm font-medium text-gray-500">
-                      Gênero Sexual
+                      Género
                     </dt>
                     <dd v-if="!editPersonalInformation" class="mt-1 text-sm text-gray-900">
                       {{ gender }}
@@ -127,7 +127,7 @@
                   </div>
                   <div class="sm:col-span-1">
                     <dt class="text-sm font-medium text-gray-500">
-                      Endereço de Email
+                      Endereço de Correio electrónico
                     </dt>
                     <dd v-if="!editPersonalInformation" class="mt-1 text-sm text-gray-900">
                       {{ email }}

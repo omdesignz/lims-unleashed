@@ -46,7 +46,7 @@
           <BaseInput v-model="query.search" type="search" class="ds-field pl-9" placeholder="Nome, código ou categoria" />
         </label>
         <BaseSelect v-model="query.filter" class="ds-field" aria-label="Estado das fórmulas">
-          <option value="">Fórmulas ativas</option>
+          <option value="">Fórmulas activas</option>
           <option value="trashed">Incluir arquivadas</option>
         </BaseSelect>
       </div>
@@ -59,7 +59,7 @@
               <th class="ds-table-heading px-4 py-3 text-left">Expressão</th>
               <th class="ds-table-heading px-4 py-3 text-left">Aplicação</th>
               <th class="ds-table-heading px-4 py-3 text-left">Dependências</th>
-              <th class="ds-table-heading px-4 py-3 text-right sm:px-5"><span class="sr-only">Ações</span></th>
+              <th class="ds-table-heading px-4 py-3 text-right sm:px-5"><span class="sr-only">Acções</span></th>
             </tr>
           </thead>
           <tbody class="ds-table-body divide-y divide-[var(--ds-border)]">
@@ -73,7 +73,7 @@
                     <p class="font-bold text-[var(--ds-text)]">{{ formula.name }}</p>
                     <p class="mt-1 font-mono text-xs text-[var(--ds-text-soft)]">{{ formula.code }}</p>
                     <span class="mt-2 ds-badge" :class="formula.deleted ? 'ds-badge-danger' : formula.is_active ? 'ds-badge-success' : 'ds-badge-neutral'">
-                      {{ formula.deleted ? 'Arquivada' : formula.is_active ? 'Ativa' : 'Inativa' }}
+                      {{ formula.deleted ? 'Arquivada' : formula.is_active ? 'Activa' : 'Inactiva' }}
                     </span>
                   </div>
                 </div>
@@ -188,7 +188,7 @@ const actionRecord = ref(null)
 const records = computed(() => props.record.data || [])
 const metrics = computed(() => [
   { label: 'Registos', value: props.record.meta?.total ?? records.value.length, detail: 'na biblioteca' },
-  { label: 'Ativas nesta página', value: records.value.filter((formula) => formula.is_active && !formula.deleted).length, detail: 'disponíveis' },
+  { label: 'Activas nesta página', value: records.value.filter((formula) => formula.is_active && !formula.deleted).length, detail: 'disponíveis' },
   { label: 'Categorias', value: new Set(records.value.map((formula) => formula.category).filter(Boolean)).size, detail: 'representadas' },
   { label: 'Parâmetros ligados', value: records.value.reduce((total, formula) => total + (formula.parameters_count || 0), 0), detail: 'nesta página' },
 ])

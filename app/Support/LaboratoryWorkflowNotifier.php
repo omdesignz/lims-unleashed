@@ -4,7 +4,6 @@ namespace App\Support;
 
 use App\Models\CounterAnalysis;
 use App\Models\Result;
-use App\Models\Sample;
 use App\Models\User;
 use App\Models\VAPSampleEntry;
 use App\Notifications\GlobalNotification;
@@ -21,7 +20,7 @@ class LaboratoryWorkflowNotifier
         $title = 'Resultados aguardam verificação';
         $message = sprintf(
             'Os resultados da amostra %s foram inseridos e aguardam verificação.',
-            $result->code_label ?? ('Amostra #' . $result->sample_id)
+            $result->code_label ?? ('Amostra #'.$result->sample_id)
         );
 
         $this->sendOperationalNotification(
@@ -32,7 +31,7 @@ class LaboratoryWorkflowNotifier
                 $this->usersWithPermission('verify_results'),
                 collect([$result->sample?->collection?->collection?->warehouse])
             ),
-            'results-verified:' . $result->sample_id . ':' . now()->format('YmdHi')
+            'results-verified:'.$result->sample_id.':'.now()->format('YmdHi')
         );
     }
 
@@ -41,7 +40,7 @@ class LaboratoryWorkflowNotifier
         $title = 'Resultados aguardam aprovação';
         $message = sprintf(
             'Os resultados da amostra %s foram verificados e aguardam aprovação final.',
-            $result->code_label ?? ('Amostra #' . $result->sample_id)
+            $result->code_label ?? ('Amostra #'.$result->sample_id)
         );
 
         $this->sendOperationalNotification(
@@ -52,7 +51,7 @@ class LaboratoryWorkflowNotifier
                 $this->usersWithPermission('approve_results'),
                 collect([$result->sample?->collection?->collection?->warehouse])
             ),
-            'results-approved:' . $result->sample_id . ':' . now()->format('YmdHi')
+            'results-approved:'.$result->sample_id.':'.now()->format('YmdHi')
         );
     }
 
@@ -61,7 +60,7 @@ class LaboratoryWorkflowNotifier
         $title = 'Resultados aprovados';
         $message = sprintf(
             'Os resultados da amostra %s foram aprovados e podem seguir para emissão de relatório/certificado.',
-            $result->code_label ?? ('Amostra #' . $result->sample_id)
+            $result->code_label ?? ('Amostra #'.$result->sample_id)
         );
 
         $this->sendOperationalNotification(
@@ -73,7 +72,7 @@ class LaboratoryWorkflowNotifier
                 $this->usersWithPermission('view_qualitycertificates'),
                 collect([$result->inserted_by, $result->verified_by, $result->approved_by])
             ),
-            'results-finalized:' . $result->sample_id . ':' . now()->format('YmdHi')
+            'results-finalized:'.$result->sample_id.':'.now()->format('YmdHi')
         );
     }
 
@@ -82,8 +81,8 @@ class LaboratoryWorkflowNotifier
         $title = 'Contra-análise solicitada';
         $message = sprintf(
             'Foi solicitada uma contra-análise para o parâmetro %s da amostra %s.',
-            $result->parameter_label ?? ('Parâmetro #' . $result->parameter_id),
-            $result->code_label ?? ('Amostra #' . $result->sample_id)
+            $result->parameter_label ?? ('Parâmetro #'.$result->parameter_id),
+            $result->code_label ?? ('Amostra #'.$result->sample_id)
         );
 
         $this->sendOperationalNotification(
@@ -95,7 +94,7 @@ class LaboratoryWorkflowNotifier
                 $this->usersWithPermission('insert_results'),
                 collect([$result->sample?->collection?->collection?->warehouse])
             ),
-            'counter-analysis-request:' . $result->id
+            'counter-analysis-request:'.$result->id
         );
     }
 
@@ -110,7 +109,7 @@ class LaboratoryWorkflowNotifier
         $message = sprintf(
             'A amostra %s foi validada e integrada na colheita/lote %s do fluxo normal com %d parâmetros previstos.',
             $sampleEntry->code ?: $sampleEntry->name,
-            $sampleEntry->collectionProduct->code?->code ?? ('#' . $sampleEntry->collection_product_id),
+            $sampleEntry->collectionProduct->code?->code ?? ('#'.$sampleEntry->collection_product_id),
             $requiredParameterCount
         );
 
@@ -119,7 +118,7 @@ class LaboratoryWorkflowNotifier
             $this->usersWithPermission('view_analysis')
         );
 
-        if (! Cache::add('workflow-notification:linked-sample:' . $sampleEntry->id, true, now()->addHours(6))) {
+        if (! Cache::add('workflow-notification:linked-sample:'.$sampleEntry->id, true, now()->addHours(6))) {
             return;
         }
 
@@ -130,7 +129,7 @@ class LaboratoryWorkflowNotifier
     {
         $title = 'Amostra sem avanço há demasiado tempo';
         $message = sprintf(
-            'A amostra %s continua em %s desde %s e precisa de ação.',
+            'A amostra %s continua em %s desde %s e precisa de acção.',
             $sampleEntry->code ?: $sampleEntry->name,
             $sampleEntry->status,
             optional($sampleEntry->updated_at)->format('d/m/Y H:i') ?? 'data desconhecida'
@@ -141,7 +140,7 @@ class LaboratoryWorkflowNotifier
             $this->usersWithPermission('view_analysis')
         );
 
-        if (! Cache::add('workflow-notification:stale-sample:' . $sampleEntry->id . ':' . now()->format('Ymd'), true, now()->addHours(12))) {
+        if (! Cache::add('workflow-notification:stale-sample:'.$sampleEntry->id.':'.now()->format('Ymd'), true, now()->addHours(12))) {
             return;
         }
 
@@ -155,8 +154,8 @@ class LaboratoryWorkflowNotifier
             : 'Resultados pendentes de aprovação';
 
         $message = $stage === 'verify'
-            ? sprintf('A amostra %s tem resultados inseridos há demasiado tempo sem verificação.', $result->code_label ?? ('Amostra #' . $result->sample_id))
-            : sprintf('A amostra %s tem resultados verificados há demasiado tempo sem aprovação.', $result->code_label ?? ('Amostra #' . $result->sample_id));
+            ? sprintf('A amostra %s tem resultados inseridos há demasiado tempo sem verificação.', $result->code_label ?? ('Amostra #'.$result->sample_id))
+            : sprintf('A amostra %s tem resultados verificados há demasiado tempo sem aprovação.', $result->code_label ?? ('Amostra #'.$result->sample_id));
 
         $permission = $stage === 'verify' ? 'verify_results' : 'approve_results';
 
@@ -168,7 +167,7 @@ class LaboratoryWorkflowNotifier
                 $this->usersWithPermission($permission),
                 collect([$result->sample?->collection?->collection?->warehouse])
             ),
-            'stale-result:' . $stage . ':' . $result->id . ':' . now()->format('Ymd')
+            'stale-result:'.$stage.':'.$result->id.':'.now()->format('Ymd')
         );
     }
 
@@ -180,14 +179,14 @@ class LaboratoryWorkflowNotifier
             'Contra-análise sem avanço',
             sprintf(
                 'A contra-análise da amostra %s continua pendente e precisa de acompanhamento.',
-                $result?->code_label ?? ('Amostra #' . $counterAnalysis->sample_id)
+                $result?->code_label ?? ('Amostra #'.$counterAnalysis->sample_id)
             ),
             $sender,
             $this->mergeRecipients(
                 $this->usersWithPermission('view_counter_analysis'),
                 collect([$result?->sample?->collection?->collection?->warehouse])
             ),
-            'stale-counter-analysis:' . $counterAnalysis->id . ':' . now()->format('Ymd')
+            'stale-counter-analysis:'.$counterAnalysis->id.':'.now()->format('Ymd')
         );
     }
 
@@ -215,14 +214,14 @@ class LaboratoryWorkflowNotifier
         Collection $recipients,
         string $cacheKey
     ): void {
-        if (! Cache::add('workflow-notification:' . $cacheKey, true, now()->addHours(12))) {
+        if (! Cache::add('workflow-notification:'.$cacheKey, true, now()->addHours(12))) {
             return;
         }
 
         $filteredRecipients = $recipients
             ->filter()
             ->reject(fn ($recipient) => $recipient instanceof User && $recipient->is($sender))
-            ->unique(fn ($recipient) => get_class($recipient) . ':' . $recipient->getKey())
+            ->unique(fn ($recipient) => get_class($recipient).':'.$recipient->getKey())
             ->values();
 
         if ($filteredRecipients->isEmpty()) {

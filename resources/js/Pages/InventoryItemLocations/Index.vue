@@ -26,7 +26,7 @@ const showActionConfirmation = ref(false);
 const totalRecords = computed(() => props.record.meta?.total ?? props.record.data.length);
 const drawerTitle = computed(() => form.id ? "Editar localização" : "Nova localização");
 const drawerDescription = computed(() => form.id
-  ? "Atualize a responsabilidade organizacional e a identificação física desta área."
+  ? "Actualize a responsabilidade organizacional e a identificação física desta área."
   : "Defina uma área física controlada antes de criar armazéns ou zonas de conservação.");
 const confirmationDialogTitle = computed(() => trans(`gestlab.actions.confirmation_dialog_title.${actionId.value}`));
 const confirmationDialogDescription = computed(() => trans(`gestlab.actions.confirmation_dialog_description.${actionId.value}`));
@@ -135,7 +135,7 @@ function confirmAction() {
           <div>
             <p class="ds-kicker">Estrutura física</p>
             <h1 class="ds-heading mt-1 text-2xl">Localizações de inventário</h1>
-            <p class="ds-copy mt-1 max-w-3xl text-sm">Áreas físicas sob responsabilidade departamental usadas para organizar armazéns, equipamentos e zonas de stock.</p>
+            <p class="ds-copy mt-1 max-w-3xl text-sm">Áreas físicas sob responsabilidade departamental usadas para organizar armazéns, equipamentos e zonas de existências.</p>
           </div>
         </div>
 
@@ -205,7 +205,7 @@ function confirmAction() {
           <button type="button" class="ds-button ds-button-secondary" @click="closeDrawer">Cancelar</button>
           <button type="button" class="ds-button ds-button-primary" :disabled="form.processing || !form.isDirty" @click="submit">
             <CheckIcon class="h-4 w-4" aria-hidden="true" />
-            {{ form.processing ? "A guardar..." : (form.id ? "Atualizar localização" : "Guardar localização") }}
+            {{ form.processing ? "A guardar..." : (form.id ? "Actualizar localização" : "Guardar localização") }}
           </button>
         </div>
       </template>

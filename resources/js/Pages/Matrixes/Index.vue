@@ -36,10 +36,10 @@ const taxableRecords = computed(() => pageRecords.value.filter((record) => recor
 const pageValue = computed(() => pageRecords.value.reduce((total, record) => total + Number(record.fixed_price || record.price || 0), 0));
 
 const metrics = computed(() => [
-  { label: "Matrizes", value: totalRecords.value, detail: "catalogo total", icon: RectangleGroupIcon },
-  { label: "Ativas nesta pagina", value: activeRecords.value, detail: "disponiveis para produtos", icon: ArchiveBoxIcon },
+  { label: "Matrizes", value: totalRecords.value, detail: "catálogo total", icon: RectangleGroupIcon },
+  { label: "Activas nesta página", value: activeRecords.value, detail: "disponíveis para produtos", icon: ArchiveBoxIcon },
   { label: "Com imposto", value: taxableRecords.value, detail: "regra fiscal configurada", icon: ReceiptPercentIcon },
-  { label: "Valor fixo", value: formatCurrency(pageValue.value), detail: "total desta pagina", icon: BanknotesIcon },
+  { label: "Valor fixo", value: formatCurrency(pageValue.value), detail: "total desta página", icon: BanknotesIcon },
 ]);
 
 const actions = [
@@ -83,14 +83,14 @@ function formatCurrency(value) {
     <section class="ds-panel overflow-hidden p-5 sm:p-6">
       <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div class="min-w-0">
-          <p class="ds-kicker">Catalogo de servicos</p>
+          <p class="ds-kicker">Catálogo de serviços</p>
           <div class="mt-3 flex items-start gap-3">
             <span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] text-[rgb(var(--primary-700-rgb))] dark:text-cyan-200">
               <RectangleGroupIcon class="h-5 w-5" />
             </span>
             <div>
               <h1 class="ds-heading text-2xl">Matrizes</h1>
-              <p class="ds-copy mt-1 max-w-3xl text-sm">Escopos comerciais que combinam perfis analiticos compativeis por departamento, preco e regra fiscal.</p>
+              <p class="ds-copy mt-1 max-w-3xl text-sm">Âmbitos comerciais que combinam perfis analíticos compativeis por departamento, preço e regra fiscal.</p>
             </div>
           </div>
         </div>
@@ -140,7 +140,7 @@ function formatCurrency(value) {
       :description="confirmationDialogDescription"
       :variant="selectedAction === 'restore' ? 'question' : 'danger'"
       confirm="Sim"
-      cancel="Nao"
+      cancel="Não"
       @canceled="showActionConfirmation = false"
       @confirmed="executeBulkAction"
     />
