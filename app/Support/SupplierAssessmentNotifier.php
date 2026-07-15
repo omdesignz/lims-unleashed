@@ -4,14 +4,14 @@ namespace App\Support;
 
 use App\Models\InventorySupplierAssessment;
 use App\Models\User;
-use App\Notifications\GlobalNotification;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Notification;
 
 class SupplierAssessmentNotifier
 {
+    public function __construct(private readonly NotificationTemplateService $templates) {}
+
     public function notifySensitiveAssessment(InventorySupplierAssessment $assessment, User $sender): void
     {
         if (! in_array($assessment->status, ['conditional', 'suspended', 'rejected'], true)
@@ -19,17 +19,9 @@ class SupplierAssessmentNotifier
             return;
         }
 
-        $title = 'Fornecedor sob monitorização reforçada';
-        $message = sprintf(
-            'O fornecedor %s foi classificado como %s com risco %s.',
-            $assessment->supplier?->name ?? ('Fornecedor #'.$assessment->inventory_item_supplier_id),
-            $assessment->status,
-            $assessment->risk_level
-        );
-
         $this->sendNotification(
-            $title,
-            $message,
+            $assessment,
+            'Monitorização reforçada.',
             $sender,
             $this->stakeholders(),
             'supplier-assessment-sensitive:'.$assessment->id.':'.$assessment->updated_at?->format('YmdHi')
@@ -39,12 +31,8 @@ class SupplierAssessmentNotifier
     public function notifyDueSoon(InventorySupplierAssessment $assessment, User $sender): void
     {
         $this->sendNotification(
-            'Avaliação de fornecedor próxima da revisão',
-            sprintf(
-                'A avaliação do fornecedor %s deve ser revista até %s.',
-                $assessment->supplier?->name ?? ('Fornecedor #'.$assessment->inventory_item_supplier_id),
-                $assessment->next_review_at?->format('d/m/Y') ?? 'data em aberto'
-            ),
+            $assessment,
+            'Revisão prevista para '.($assessment->next_review_at?->format('d/m/Y') ?? 'data em aberto').'.',
             $sender,
             $this->stakeholders(),
             'supplier-assessment-due-soon:'.$assessment->id.':'.now()->format('Ymd')
@@ -54,11 +42,8 @@ class SupplierAssessmentNotifier
     public function notifyOverdue(InventorySupplierAssessment $assessment, User $sender): void
     {
         $this->sendNotification(
-            'Avaliação de fornecedor vencida',
-            sprintf(
-                'A avaliação do fornecedor %s ultrapassou o prazo de revisão e requer acção imediata.',
-                $assessment->supplier?->name ?? ('Fornecedor #'.$assessment->inventory_item_supplier_id)
-            ),
+            $assessment,
+            'O prazo de revisão foi ultrapassado e requer acção imediata.',
             $sender,
             $this->stakeholders(),
             'supplier-assessment-overdue:'.$assessment->id.':'.now()->format('Ymd')
@@ -68,11 +53,8 @@ class SupplierAssessmentNotifier
     public function notifyCriticalRisk(InventorySupplierAssessment $assessment, User $sender): void
     {
         $this->sendNotification(
-            'Fornecedor com risco crítico',
-            sprintf(
-                'O fornecedor %s permanece com risco crítico e deve ser revisto antes de novas aquisições.',
-                $assessment->supplier?->name ?? ('Fornecedor #'.$assessment->inventory_item_supplier_id)
-            ),
+            $assessment,
+            'Rever antes de novas aquisições.',
             $sender,
             $this->stakeholders(),
             'supplier-assessment-critical:'.$assessment->id.':'.now()->format('Ymd')
@@ -103,8 +85,8 @@ class SupplierAssessmentNotifier
     }
 
     private function sendNotification(
-        string $title,
-        string $message,
+        InventorySupplierAssessment $assessment,
+        string $detail,
         User $sender,
         Collection $recipients,
         string $cacheKey
@@ -123,7 +105,13 @@ class SupplierAssessmentNotifier
             return;
         }
 
-        Notification::send($targets, new GlobalNotification($title, $message, $sender));
+        $this->templates->notify($targets, 'inventory.supplier_assessment', [
+            'supplier_name' => $assessment->supplier?->name ?? ('Fornecedor #'.$assessment->inventory_item_supplier_id),
+            'status' => $assessment->status,
+            'risk_level' => $assessment->risk_level,
+            'detail' => $detail,
+            'document_url' => route('supplier-assessments.index'),
+        ]);
     }
 
     private function mergeRecipients(EloquentCollection|Collection ...$recipientGroups): Collection

@@ -23,9 +23,9 @@ use App\Models\VAPLab;
 use App\Models\VAPSampleDiscard;
 use App\Models\VAPSampleEntry;
 use App\Models\Warehouse;
-use App\Notifications\SampleTrackingNotification;
 use App\Settings\GeneralSettings;
 use App\Support\LaboratoryWorkflowNotifier;
+use App\Support\NotificationTemplateService;
 use App\Support\PdfResponse;
 use App\Support\PersonnelQualificationGate;
 use App\Support\SampleEntryCollectionFlowService;
@@ -36,7 +36,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -47,6 +46,8 @@ use PDF;
 
 class VAPSampleEntryController extends Controller
 {
+    public function __construct(private readonly NotificationTemplateService $notificationTemplates) {}
+
     private function buildSampleIntakeTrendChart(): array
     {
         $window = collect(range(6, 0))
@@ -2427,28 +2428,16 @@ class VAPSampleEntryController extends Controller
             return;
         }
 
-        $title = match ($action) {
-            'created' => 'Nova amostra registada',
-            'status_updated' => 'Estado da amostra actualizado',
-            'quality_control_decision' => 'Decisão de CQ interno registada',
-            default => 'Amostra actualizada',
+        $templateKey = match ($action) {
+            'created' => 'lab.sample.created',
+            'status_updated' => 'lab.sample.status_updated',
+            'quality_control_decision' => 'lab.sample.quality_decision',
+            default => null,
         };
 
-        $message = match ($action) {
-            'created' => sprintf('A amostra %s foi registada e aguarda validação operacional.', $sample->code ?: $sample->name),
-            'status_updated' => sprintf(
-                'A amostra %s mudou de %s para %s.',
-                $sample->code ?: $sample->name,
-                $context['previous_status'] ?? 'estado anterior',
-                $sample->status
-            ),
-            'quality_control_decision' => sprintf(
-                'A decisão final de CQ interno da amostra %s foi registada como: %s.',
-                $sample->code ?: $sample->name,
-                $context['decision_label'] ?? 'decisão registada'
-            ),
-            default => sprintf('A amostra %s recebeu uma actualização no fluxo de rastreio.', $sample->code ?: $sample->name),
-        };
+        if (! $templateKey) {
+            return;
+        }
 
         $recipients = collect([
             $sample->warehouse,
@@ -2456,6 +2445,12 @@ class VAPSampleEntryController extends Controller
             $sender,
         ])->filter()->unique(fn ($recipient) => get_class($recipient).':'.$recipient->getKey());
 
-        Notification::send($recipients, new SampleTrackingNotification($sample, $title, $message, $sender));
+        $this->notificationTemplates->notify($recipients, $templateKey, [
+            'sample_code' => $sample->code ?: $sample->name,
+            'previous_status' => $context['previous_status'] ?? 'estado anterior',
+            'status' => $sample->status,
+            'decision_label' => $context['decision_label'] ?? 'decisão registada',
+            'document_url' => route('vap_samples.show', $sample),
+        ]);
     }
 }

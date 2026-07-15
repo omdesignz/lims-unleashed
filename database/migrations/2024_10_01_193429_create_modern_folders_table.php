@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('path')->nullable();
             $table->string('slug')->unique();
-            $table->foreighId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
 
             $table->nestedSet();
 

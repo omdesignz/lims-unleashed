@@ -7,9 +7,8 @@ use App\Models\Customer;
 use App\Models\CustomerRequest;
 use App\Models\User;
 use App\Models\Warehouse;
-use App\Notifications\ComplaintLoggedNotification;
+use App\Support\NotificationTemplateService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 
 class ComplaintController extends Controller
@@ -43,7 +42,7 @@ class ComplaintController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, NotificationTemplateService $templates)
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -72,15 +71,11 @@ class ComplaintController extends Controller
             ->unique('id');
 
         if ($targets->isNotEmpty()) {
-            Notification::send(
-                $targets,
-                new ComplaintLoggedNotification(
-                    $complaint,
-                    'Nova reclamação registada',
-                    sprintf('A reclamação %s foi registada e requer análise.', $complaint->reference),
-                    auth()->user()
-                )
-            );
+            $templates->notify($targets, 'quality.complaint.created', [
+                'document_number' => $complaint->reference,
+                'severity' => $complaint->severity,
+                'document_url' => route('complaints.index'),
+            ]);
         }
 
         activity()

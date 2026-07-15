@@ -20,12 +20,10 @@ use App\Models\Result;
 use App\Models\Role;
 use App\Models\Sample;
 use App\Models\User;
-use App\Support\LaboratoryWorkflowNotifier;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
-use Mockery;
 use Tests\TestCase;
 
 class AnalysisLifecycleIntegrityTest extends TestCase
@@ -170,9 +168,6 @@ class AnalysisLifecycleIntegrityTest extends TestCase
         $analysis->update(['end_date' => null, 'status' => false]);
         QualityCertificate::query()->where('collection_id', $collectionProduct->id)->delete();
 
-        $notifier = Mockery::mock(LaboratoryWorkflowNotifier::class);
-        $notifier->shouldReceive('notifyResultsApproved')->once();
-
         (new ApproveAnalysisResults([
             [
                 'result_id' => $result->id,
@@ -181,7 +176,7 @@ class AnalysisLifecycleIntegrityTest extends TestCase
                 'approved_date' => now(),
                 'approved_value' => $result->verified_value ?? $result->inserted_value ?? '1',
             ],
-        ], $analysis->id, $user))->handle($notifier);
+        ], $analysis->id, $user))->handle();
 
         $collectionProduct->refresh();
         $this->assertTrue($collectionProduct->status);

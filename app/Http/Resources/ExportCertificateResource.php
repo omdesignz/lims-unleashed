@@ -22,6 +22,11 @@ class ExportCertificateResource extends JsonResource
             'trans_type' => TransportCategoryResource::make($this->whenLoaded('trans_type'))?->name ?? null,
             'exporter_warehouse_id' => $this->exporter_warehouse_id,
             'exporter_warehouse' => WarehouseResource::make($this->whenLoaded('exporter_warehouse'))?->address ?? null,
+            'recipient_emails' => collect([
+                $this->exporter_warehouse?->invoicing_email,
+                $this->exporter_warehouse?->email,
+                $this->exporter_warehouse?->focal_point_email,
+            ])->filter()->unique()->values(),
             'user_id' => $this->user_id,
             'user' => UserResource::make($this->whenLoaded('user'))?->name ?? null,
             'authorized_personnel' => $this->authorized_personnel,
@@ -44,12 +49,12 @@ class ExportCertificateResource extends JsonResource
             'links' => [
                 'edit_path' => route('exportcertificates.edit', $this->id),
                 'delete_path' => route('exportcertificates.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('exportcertificates.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

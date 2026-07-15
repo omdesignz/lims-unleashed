@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3'
 import {
   BellAlertIcon,
   ChartBarSquareIcon,
+  Cog6ToothIcon,
   ListBulletIcon,
   PaperAirplaneIcon,
   Squares2X2Icon,
@@ -23,6 +24,7 @@ const navigation = [
   { label: 'Visao geral', route: 'admin.notifications.dashboard', icon: Squares2X2Icon },
   { label: 'Registo', route: 'admin.notifications.index', icon: ListBulletIcon },
   { label: 'Nova mensagem', route: 'admin.notifications.create', icon: PaperAirplaneIcon },
+  { label: 'Modelos', route: 'admin.notification-templates.index', icon: Cog6ToothIcon },
   { label: 'Analítica', route: 'admin.notifications.analytics', icon: ChartBarSquareIcon },
 ]
 </script>

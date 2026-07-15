@@ -22,6 +22,11 @@ class QualityCertificateResource extends JsonResource
             'code' => $this->code,
             'warehouse_id' => $this->warehouse_id,
             'warehouse' => WarehouseResource::make($this->whenLoaded('warehouse'))?->address ?? null,
+            'recipient_emails' => collect([
+                $this->warehouse?->invoicing_email,
+                $this->warehouse?->email,
+                $this->warehouse?->focal_point_email,
+            ])->filter()->unique()->values(),
             'invoice_id' => $this->invoice_id,
             'customer_id' => $this->customer_id,
             'customer' => CustomerResource::make($this->whenLoaded('customer'))?->name ?? null,
@@ -44,12 +49,12 @@ class QualityCertificateResource extends JsonResource
                 'show_path' => route('qualitycertificates.show', $this->id),
                 'pdf_path' => route('qualitycertificates.getPDF', ['id' => $this->id]),
                 'delete_path' => route('qualitycertificates.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('qualitycertificates.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

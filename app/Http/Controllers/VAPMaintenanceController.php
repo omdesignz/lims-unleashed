@@ -10,13 +10,10 @@ use App\Models\InventoryItemSupplier;
 use App\Models\MaintenanceCategory;
 use App\Models\MaintenanceTask;
 use App\Models\User;
-use App\Notifications\MaintenanceCompleted;
-use App\Notifications\MaintenanceOverdue;
-use App\Notifications\MaintenanceReminder;
 use App\Settings\GeneralSettings;
+use App\Support\NotificationTemplateService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Excel as ExcelWriter;
 use Maatwebsite\Excel\Facades\Excel;
@@ -428,7 +425,7 @@ class VAPMaintenanceController extends Controller
     /**
      * Send maintenance notifications
      */
-    public function sendNotifications(Request $request)
+    public function sendNotifications(Request $request, NotificationTemplateService $templates)
     {
         $request->validate([
             'days_threshold' => 'required|integer|min:1|max:365',
@@ -452,10 +449,9 @@ class VAPMaintenanceController extends Controller
             $upcomingCount = $upcomingTasks->count();
 
             if ($upcomingCount > 0) {
-                Notification::send($users, new MaintenanceReminder(
-                    $upcomingTasks->get(),
-                    $request->days_threshold
-                ));
+                foreach ($upcomingTasks->get() as $task) {
+                    $templates->notify($users, 'maintenance.reminder', $this->maintenanceNotificationContext($task));
+                }
             }
         }
 
@@ -466,9 +462,9 @@ class VAPMaintenanceController extends Controller
             $overdueCount = $overdueTasks->count();
 
             if ($overdueCount > 0) {
-                Notification::send($users, new MaintenanceOverdue(
-                    $overdueTasks->get()
-                ));
+                foreach ($overdueTasks->get() as $task) {
+                    $templates->notify($users, 'maintenance.overdue', $this->maintenanceNotificationContext($task));
+                }
             }
         }
 
@@ -483,18 +479,30 @@ class VAPMaintenanceController extends Controller
     /**
      * Notify task completion
      */
-    public function notifyCompletion(MaintenanceTask $task)
+    public function notifyCompletion(MaintenanceTask $task, NotificationTemplateService $templates)
     {
         $users = User::whereHas('roles', function ($query) {
             $query->whereIn('name', ['maintenance_manager', 'lab_manager', 'admin']);
         })->get();
 
-        Notification::send($users, new MaintenanceCompleted($task));
+        $templates->notify($users, 'maintenance.completed', $this->maintenanceNotificationContext($task));
 
         return response()->json([
             'success' => true,
             'message' => 'Notificação de conclusão enviada com sucesso.',
         ]);
+    }
+
+    /** @return array<string, scalar|null> */
+    private function maintenanceNotificationContext(MaintenanceTask $task): array
+    {
+        $task->loadMissing('equipment');
+
+        return [
+            'equipment_name' => $task->equipment?->name ?? $task->name,
+            'due_date' => $task->due_date?->format('d/m/Y') ?? 'sem data definida',
+            'document_url' => route('vap-maintenance.tasks.show', $task),
+        ];
     }
 
     /**

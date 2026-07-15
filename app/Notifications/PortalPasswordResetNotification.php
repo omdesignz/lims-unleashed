@@ -2,13 +2,21 @@
 
 namespace App\Notifications;
 
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Lang;
 
-class PortalPasswordResetNotification extends Notification
+class PortalPasswordResetNotification extends Notification implements ShouldQueue
 {
-    public function __construct(private readonly string $url) {}
+    use Queueable;
+
+    public function __construct(private readonly string $url)
+    {
+        $this->afterCommit();
+        $this->onQueue('notifications');
+    }
 
     /**
      * @return array<int, string>

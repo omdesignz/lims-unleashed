@@ -1,8 +1,9 @@
 <script setup>
 import { computed } from 'vue'
-import { Head, usePage } from '@inertiajs/vue3'
+import { Head, Link, usePage } from '@inertiajs/vue3'
 import {
   ArrowRightStartOnRectangleIcon,
+  BellAlertIcon,
   ExclamationTriangleIcon,
   FingerPrintIcon,
   IdentificationIcon,
@@ -56,6 +57,9 @@ const navigation = computed(() => [
         </div>
 
         <div class="flex flex-wrap gap-2" aria-label="Estado da conta">
+          <Link :href="route('notification-preferences.edit')" class="ds-button ds-button-secondary">
+            <BellAlertIcon class="h-4 w-4" /> Notificações
+          </Link>
           <span class="ds-chip" :class="user.email_verified_at ? 'ds-chip-success' : 'ds-chip-warning'">
             <span class="h-1.5 w-1.5 rounded-full bg-current" />
             Correio electrónico {{ user.email_verified_at ? 'verificado' : 'por verificar' }}

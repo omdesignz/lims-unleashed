@@ -10,8 +10,11 @@ use App\Models\User;
 use App\Models\VAPLab;
 use App\Models\VAPSampleEntry;
 use App\Models\Warehouse;
+use App\Notifications\OperationalNotification;
+use App\Support\LaboratoryWorkflowNotifier;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class WorkflowNotificationStalenessTest extends TestCase
@@ -37,6 +40,8 @@ class WorkflowNotificationStalenessTest extends TestCase
 
     public function test_staleness_job_creates_notifications_for_pending_samples(): void
     {
+        Notification::fake();
+
         $admin = $this->verifiedAdmin();
         $customer = Customer::query()->firstOrFail();
         $department = Department::query()->firstOrFail();
@@ -63,13 +68,12 @@ class WorkflowNotificationStalenessTest extends TestCase
             'updated_at' => now()->subDays(5),
         ])->saveQuietly();
 
-        $initialNotificationCount = $warehouse->notifications()->count() + $admin->notifications()->count();
+        app(CheckLaboratoryWorkflowStaleness::class)->handle(app(LaboratoryWorkflowNotifier::class));
 
-        app(CheckLaboratoryWorkflowStaleness::class)->handle(app(\App\Support\LaboratoryWorkflowNotifier::class));
-
-        $this->assertGreaterThan(
-            $initialNotificationCount,
-            $warehouse->fresh()->notifications()->count() + $admin->fresh()->notifications()->count()
+        Notification::assertSentTo(
+            $warehouse,
+            OperationalNotification::class,
+            fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'lab.sample.stale'
         );
     }
 }

@@ -126,6 +126,16 @@ class User extends Authenticatable implements HasMedia, HasPasskeysContract, Mus
         return $this?->getMedia('signature')->count() ? $this?->getMedia('signature')?->first()->getFullUrl() : '';
     }
 
+    public function receivesBroadcastNotificationsOn(): string
+    {
+        return 'users.'.$this->getKey();
+    }
+
+    public function notificationPreferences(): HasMany
+    {
+        return $this->hasMany(NotificationPreference::class);
+    }
+
     public function scopeIsBirthday()
     {
         return $this->dob->isBirthday();

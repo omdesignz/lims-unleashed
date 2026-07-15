@@ -6,7 +6,7 @@ use App\Http\Requests\InventoryRequest;
 use App\Http\Resources\InventoryResource;
 use App\Models\Inventory;
 use App\Models\ReagentConsumption;
-use App\Notifications\LowStockAlert;
+use App\Support\NotificationTemplateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -270,7 +270,7 @@ class InventoryController extends Controller
 
     // Decrement Inventory Quantity
 
-    public function decrement(Request $request, $id)
+    public function decrement(Request $request, $id, NotificationTemplateService $templates)
     {
         abort_if(! auth()->user()->can('edit_inventory'), 403, '');
 
@@ -285,7 +285,12 @@ class InventoryController extends Controller
 
         // Notify when stock is low
         if ($data->qty_available < $data->min_stock_level) {
-            auth()->user()->notify(new LowStockAlert($data, auth()->user()));
+            $templates->notifyPermission('inventory.low_stock', [
+                'item_name' => $data->item?->name ?? 'Item',
+                'quantity' => $data->qty_available,
+                'minimum' => $data->min_stock_level,
+                'document_url' => route('inventory.index'),
+            ], auth()->id());
         }
 
         // If Inventory Item Is Reagent, then also update the reagent consumption

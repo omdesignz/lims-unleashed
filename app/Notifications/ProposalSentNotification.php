@@ -5,10 +5,11 @@ namespace App\Notifications;
 use App\Models\Proposal;
 use App\Models\VAPProposal;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ProposalSentNotification extends Notification
+class ProposalSentNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -17,6 +18,8 @@ class ProposalSentNotification extends Notification
      */
     public function __construct(protected Proposal|VAPProposal $proposal)
     {
+        $this->afterCommit();
+        $this->onQueue('notifications');
     }
 
     /**

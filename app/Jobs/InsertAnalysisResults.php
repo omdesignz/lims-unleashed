@@ -7,7 +7,6 @@ use App\Models\Analysis;
 use App\Models\CollectionProduct;
 use App\Models\Result;
 use App\Models\User;
-use App\Support\LaboratoryWorkflowNotifier;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -37,14 +36,12 @@ class InsertAnalysisResults implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(LaboratoryWorkflowNotifier $workflowNotifier): void
+    public function handle(): void
     {
         // Insert The Results
-        $lastResult = null;
         foreach ($this->results as $result) {
 
             $res = Result::create($result);
-            $lastResult = $res;
 
             $u = User::find($this->user->id);
 
@@ -83,12 +80,10 @@ class InsertAnalysisResults implements ShouldQueue
                 'analysis_start_date' => now()->format('Y-m-d'),
             ]);
 
-            // Notify User
-            broadcast(new AnalysisResultsInserted($this->user, $analysis->sample->collection));
         }
 
-        if ($lastResult) {
-            $workflowNotifier->notifyResultsInserted($lastResult->fresh(['sample.collection.collection.warehouse']), User::find($this->user->id));
+        if (isset($analysis)) {
+            broadcast(new AnalysisResultsInserted($this->user, $analysis->sample->collection));
         }
 
     }

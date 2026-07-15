@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('theme', 20)->default('light')->after('last_activity_at');
+            $table->string('theme', 20)->default('light')->after('is_active');
         });
     }
 

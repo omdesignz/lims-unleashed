@@ -48,7 +48,12 @@ class NotificationAdminFlowTest extends TestCase
 
         $response->assertRedirect(route('admin.notifications.index'));
 
-        Notification::assertSentTo($recipient, GlobalNotification::class);
+        Notification::assertSentTo(
+            $recipient,
+            GlobalNotification::class,
+            fn (GlobalNotification $notification): bool => $notification->type === 'info'
+                && $notification->priority === 'normal'
+        );
     }
 
     public function test_admin_cannot_use_unimplemented_notification_scheduling_path(): void

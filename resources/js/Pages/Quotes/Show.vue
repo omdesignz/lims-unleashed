@@ -534,12 +534,23 @@
     </Link>
       </div>
     </div>
+
+    <DocumentShareModal
+      :open="shareOpen"
+      document-type="quote"
+      :document-id="props.record.data?.id"
+      document-label="Cotação"
+      :document-number="props.record.data?.quote_no"
+      :default-recipients="defaultRecipients"
+      @close="shareOpen = false"
+    />
   </div>
 </template>
 
 <script setup>
 import '../CommercialDocumentSurface.css';
 import Layout from "@/Shared/Layouts/Layout.vue";
+import DocumentShareModal from '@/Components/documents/DocumentShareModal.vue';
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed } from "vue";
 import { router } from "@inertiajs/vue3";
@@ -568,6 +579,13 @@ defineOptions({
 const props = defineProps({
   record: Object
 });
+
+const shareOpen = ref(false);
+const defaultRecipients = computed(() => [
+  props.record.data?.warehouse_id?.invoicing_email,
+  props.record.data?.warehouse_id?.email,
+  props.record.data?.warehouse_id?.focal_point_email,
+].filter(Boolean));
 
 // Formatting functions
 const formatDate = (dateString) => {
@@ -602,8 +620,7 @@ const downloadPDF = () => {
 };
 
 const sendEmail = () => {
-  // Implement email sending logic
-  router.visit(`/quotes/${props.record.data?.id}/send-email`);
+  shareOpen.value = true;
 };
 
 const duplicateQuote = () => {

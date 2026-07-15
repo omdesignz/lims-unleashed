@@ -4,19 +4,18 @@ namespace App\Jobs;
 
 use App\Models\User;
 use App\Models\VAPSampleEntry;
-use App\Notifications\SampleRetentionDeadlineNotification;
+use App\Support\NotificationTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Notification;
 
 class CheckSampleRetentionDeadlines implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function handle(): void
+    public function handle(NotificationTemplateService $templates): void
     {
         $recipients = User::role('admin')->get();
 
@@ -43,17 +42,12 @@ class CheckSampleRetentionDeadlines implements ShouldQueue
                 ->filter()
                 ->unique('id');
 
-            Notification::send(
-                $targets,
-                new SampleRetentionDeadlineNotification(
-                    $sample,
-                    $status === 'overdue' ? 'Retenção de amostra vencida' : 'Retenção de amostra próxima do vencimento',
-                    $status === 'overdue'
-                        ? sprintf('A amostra %s ultrapassou o prazo de retenção definido.', $sample->code ?: $sample->name)
-                        : sprintf('A amostra %s atinge o prazo de retenção nos próximos 7 dias.', $sample->code ?: $sample->name),
-                    $targets->first()
-                )
-            );
+            $templates->notify($targets, 'lab.sample.retention_due', [
+                'sample_code' => $sample->code ?: $sample->name,
+                'retention_status' => $status === 'overdue' ? 'com o prazo vencido' : 'próxima do vencimento',
+                'due_date' => $sample->retention_due_at?->format('d/m/Y'),
+                'document_url' => route('vap_samples.show', $sample),
+            ]);
         }
     }
 }

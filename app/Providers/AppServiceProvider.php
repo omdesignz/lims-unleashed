@@ -11,6 +11,8 @@ use App\Models\CreditNoteItem;
 use App\Models\CustomerRequest;
 use App\Models\Department;
 use App\Models\DirectCollection;
+use App\Models\ExportCertificate;
+use App\Models\ImportCertificate;
 use App\Models\IntegrationConnector;
 use App\Models\IntegrationDelivery;
 use App\Models\IntegrationMapping;
@@ -44,6 +46,7 @@ use App\Models\VAPProposal;
 use App\Models\VAPProposalItem;
 use App\Models\VAPSampleEntry;
 use App\Models\Warehouse;
+use App\Observers\OperationalModelObserver;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Vite as FoundationVite;
 use Illuminate\Support\Facades\Vite;
@@ -113,6 +116,10 @@ class AppServiceProvider extends ServiceProvider
             'quality_certificate_revision' => QualityCertificateRevision::class,
             'paid_service' => PaidService::class,
         ]);
+
+        foreach ([Invoice::class, Quote::class, CreditNote::class, Receipt::class, ImportCertificate::class, ExportCertificate::class, QualityCertificate::class] as $model) {
+            $model::observe(OperationalModelObserver::class);
+        }
 
         Vite::prefetch(3);
     }

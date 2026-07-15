@@ -6,39 +6,34 @@ use App\Models\Permission;
 use App\Models\Rating;
 use App\Models\User;
 use App\Models\VAPNonConformity;
-use App\Notifications\NonConformityWorkflowNotification;
-use App\Notifications\RatingSubmittedNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Notification;
 
 class QualityModuleNotifier
 {
+    public function __construct(private readonly NotificationTemplateService $templates) {}
+
     public function notifyRatingSubmitted(Rating $rating): void
     {
         $this->send(
             $this->qualityStakeholders(),
-            new RatingSubmittedNotification($rating),
+            'quality.rating.received',
+            [
+                'channel' => $rating->channel === 'portal' ? 'do portal' : 'interna',
+                'rateable_type' => $rating->rateable_type,
+                'rateable_id' => $rating->rateable_id,
+                'document_url' => route('ratings.index'),
+            ],
             'rating-submitted:'.$rating->id
         );
     }
 
     public function notifyNonConformityCreated(VAPNonConformity $nonConformity): void
     {
-        $title = $nonConformity->severity === 'critical'
-            ? 'Não conformidade crítica registada'
-            : 'Nova não conformidade registada';
-
-        $message = sprintf(
-            '%s foi registada com severidade %s e estado %s.',
-            $nonConformity->nc_number,
-            $nonConformity->severity,
-            $nonConformity->status
-        );
-
         $this->send(
             $this->nonConformityStakeholders($nonConformity),
-            new NonConformityWorkflowNotification($nonConformity, $title, $message),
+            'quality.nonconformity.created',
+            $this->nonConformityContext($nonConformity),
             'nc-created:'.$nonConformity->id
         );
     }
@@ -52,14 +47,13 @@ class QualityModuleNotifier
             return;
         }
 
-        $title = $becameCritical ? 'Não conformidade escalada para crítica' : 'Estado de não conformidade actualizado';
-        $message = $becameCritical
-            ? sprintf('%s foi escalada para severidade crítica.', $nonConformity->nc_number)
-            : sprintf('%s mudou de %s para %s.', $nonConformity->nc_number, $before['status'] ?? 'n/a', $nonConformity->status);
-
         $this->send(
             $this->nonConformityStakeholders($nonConformity),
-            new NonConformityWorkflowNotification($nonConformity, $title, $message),
+            'quality.nonconformity.updated',
+            [
+                ...$this->nonConformityContext($nonConformity),
+                'status' => $becameCritical ? 'crítica' : $nonConformity->status,
+            ],
             'nc-updated:'.$nonConformity->id.':'.$nonConformity->updated_at?->format('YmdHi')
         );
     }
@@ -106,7 +100,8 @@ class QualityModuleNotifier
             ->get();
     }
 
-    private function send(Collection $recipients, object $notification, string $cacheKey): void
+    /** @param array<string, scalar|null> $context */
+    private function send(Collection $recipients, string $key, array $context, string $cacheKey): void
     {
         if (! Cache::add('quality-module-notification:'.$cacheKey, true, now()->addHours(6))) {
             return;
@@ -118,6 +113,17 @@ class QualityModuleNotifier
             return;
         }
 
-        Notification::send($targets, $notification);
+        $this->templates->notify($targets, $key, $context);
+    }
+
+    /** @return array<string, scalar|null> */
+    private function nonConformityContext(VAPNonConformity $nonConformity): array
+    {
+        return [
+            'document_number' => $nonConformity->nc_number,
+            'severity' => $nonConformity->severity,
+            'status' => $nonConformity->status,
+            'document_url' => route('vap_non_conformities.show', $nonConformity),
+        ];
     }
 }

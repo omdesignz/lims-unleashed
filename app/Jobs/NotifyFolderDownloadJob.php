@@ -2,10 +2,9 @@
 
 namespace App\Jobs;
 
-use App\Notifications\FolderDownloadReadyNotification;
+use App\Support\NotificationTemplateService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use ZipArchive;
 
@@ -14,6 +13,7 @@ class NotifyFolderDownloadJob implements ShouldQueue
     use Queueable;
 
     protected $folder;
+
     protected $user;
 
     /**
@@ -28,14 +28,14 @@ class NotifyFolderDownloadJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(): void
+    public function handle(NotificationTemplateService $templates): void
     {
         $timestamp = now()->timestamp;
         // $zipFilePath = storage_path("app/temp/{$this->folder->name}_{$timestamp}.zip");
         $zipFilePath = public_path("storage/temp/{$this->folder->name}_{$timestamp}.zip");
 
         // Create the ZIP file
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         if ($zip->open($zipFilePath, ZipArchive::CREATE) === true) {
             $this->addFolderToZip(storage_path("app/{$this->folder->path}"), $zip);
             $zip->close();
@@ -51,10 +51,13 @@ class NotifyFolderDownloadJob implements ShouldQueue
             // );
 
             // Generate the public URL
-            $publicUrl = asset("storage/temp/" . basename($zipFilePath));
+            $publicUrl = asset('storage/temp/'.basename($zipFilePath));
 
             // Notify the user
-            $this->user->notify(new FolderDownloadReadyNotification($publicUrl));
+            $templates->notify([$this->user], 'documents.export.ready', [
+                'document_label' => 'A pasta '.$this->folder->name,
+                'document_url' => $publicUrl,
+            ]);
         } else {
             // Handle errors
             \Log::error("Failed to create ZIP file for folder: {$this->folder->id}");
@@ -76,12 +79,12 @@ class NotifyFolderDownloadJob implements ShouldQueue
                 continue;
             }
 
-            $filePath = $folderPath . DIRECTORY_SEPARATOR . $file;
+            $filePath = $folderPath.DIRECTORY_SEPARATOR.$file;
 
             if (is_dir($filePath)) {
-                $this->addFolderToZip($filePath, $zip, $parentFolder . $file . '/');
+                $this->addFolderToZip($filePath, $zip, $parentFolder.$file.'/');
             } else {
-                $zip->addFile($filePath, $parentFolder . $file);
+                $zip->addFile($filePath, $parentFolder.$file);
             }
         }
     }

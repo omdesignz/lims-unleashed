@@ -662,12 +662,23 @@
         </button>
       </div>
     </div>
+
+    <DocumentShareModal
+      :open="shareOpen"
+      document-type="credit_note"
+      :document-id="creditNote.id"
+      document-label="Nota de crédito"
+      :document-number="creditNote.note_no"
+      :default-recipients="defaultRecipients"
+      @close="shareOpen = false"
+    />
   </div>
 </template>
 
 <script setup>
 import '../CommercialDocumentSurface.css';
 import Layout from "@/Shared/Layouts/Layout.vue";
+import DocumentShareModal from '@/Components/documents/DocumentShareModal.vue';
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import { ref, computed } from "vue";
 import { router } from "@inertiajs/vue3";
@@ -700,6 +711,13 @@ const props = defineProps({
     required: true
   }
 });
+
+const shareOpen = ref(false);
+const defaultRecipients = computed(() => [
+  props.creditNote.warehouse?.invoicing_email,
+  props.creditNote.warehouse?.email,
+  props.creditNote.warehouse?.focal_point_email,
+].filter(Boolean));
 
 // Formatting functions
 const formatDate = (dateString) => {
@@ -760,7 +778,7 @@ const downloadPDF = () => {
 };
 
 const sendEmail = () => {
-  router.visit(`/creditnotes/${props.creditNote.id}/send-email`);
+  shareOpen.value = true;
 };
 
 const applyToInvoice = () => {

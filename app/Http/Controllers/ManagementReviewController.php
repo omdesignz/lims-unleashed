@@ -4,9 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ManagementReview;
 use App\Models\User;
-use App\Notifications\ManagementReviewNotification;
+use App\Support\NotificationTemplateService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 
 class ManagementReviewController extends Controller
@@ -30,7 +29,7 @@ class ManagementReviewController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, NotificationTemplateService $templates)
     {
         $validated = $request->validate([
             'review_date' => 'required|date',
@@ -55,15 +54,11 @@ class ManagementReviewController extends Controller
             ->unique('id');
 
         if ($targets->isNotEmpty()) {
-            Notification::send(
-                $targets,
-                new ManagementReviewNotification(
-                    $review,
-                    'Nova revisão pela gestão agendada',
-                    sprintf('A revisão %s foi agendada para %s.', $review->reference, $review->review_date?->format('d/m/Y')),
-                    auth()->user()
-                )
-            );
+            $templates->notify($targets, 'quality.management_review.scheduled', [
+                'document_number' => $review->reference,
+                'review_date' => $review->review_date?->format('d/m/Y') ?? 'data em aberto',
+                'document_url' => route('management-reviews.index'),
+            ]);
         }
 
         activity()
@@ -78,7 +73,7 @@ class ManagementReviewController extends Controller
         return redirect()->back()->with('success', 'Revisão pela gestão registada com sucesso.');
     }
 
-    public function update(Request $request, ManagementReview $managementReview)
+    public function update(Request $request, ManagementReview $managementReview, NotificationTemplateService $templates)
     {
         $validated = $request->validate([
             'status' => 'required|in:planned,in_progress,completed',
@@ -96,15 +91,10 @@ class ManagementReviewController extends Controller
         $managementReview->update($validated);
 
         if ($managementReview->status === 'completed') {
-            Notification::send(
-                User::role('admin')->get()->unique('id'),
-                new ManagementReviewNotification(
-                    $managementReview,
-                    'Revisão pela gestão concluída',
-                    sprintf('A revisão %s foi concluída com decisões e acções registadas.', $managementReview->reference),
-                    auth()->user()
-                )
-            );
+            $templates->notify(User::role('admin')->get()->unique('id'), 'quality.management_review.completed', [
+                'document_number' => $managementReview->reference,
+                'document_url' => route('management-reviews.index'),
+            ]);
         }
 
         activity()

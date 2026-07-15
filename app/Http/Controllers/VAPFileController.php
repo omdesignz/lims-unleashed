@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\VAPFileResource;
+use App\Models\User;
 use App\Models\VAPFile;
 use App\Models\VAPFilePermission;
 use App\Models\VAPFileShare;
 use App\Models\VAPFileVersion;
 use App\Models\WorkflowTask;
+use App\Support\NotificationTemplateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -410,7 +412,7 @@ class VAPFileController extends Controller
         ]);
     }
 
-    public function share(Request $request, VAPFile $file)
+    public function share(Request $request, VAPFile $file, NotificationTemplateService $templates)
     {
         $this->authorizeApprove($request, $file);
 
@@ -435,6 +437,17 @@ class VAPFileController extends Controller
             'shared_with' => $validated['user_id'],
             'access_level' => $validated['access_level'],
         ]);
+
+        $recipient = User::query()->find($validated['user_id']);
+
+        if ($recipient && ! $recipient->is($request->user())) {
+            $templates->notify([$recipient], 'documents.controlled_file.shared', [
+                'actor_name' => $request->user()->name,
+                'access_level' => $validated['access_level'],
+                'document_label' => $file->name,
+                'document_url' => route('file-manager'),
+            ]);
+        }
 
         return new VAPFileResource($file->fresh(['permissions.user', 'shares.sharedWithUser', 'creator', 'owner']));
     }

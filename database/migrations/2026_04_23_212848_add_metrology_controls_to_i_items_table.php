@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('metrological_uncertainty_unit')->nullable()->after('metrological_uncertainty_value');
             $table->string('metrological_traceability_reference')->nullable()->after('metrological_uncertainty_unit');
             $table->date('metrology_review_due_at')->nullable()->after('next_calibration_date');
-            $table->text('metrology_notes')->nullable()->after('acceptance_criteria');
+            $table->text('metrology_notes')->nullable()->after('obs');
         });
     }
 

@@ -7,7 +7,8 @@ use App\Models\InventoryItemSupplier;
 use App\Models\InventorySupplierAssessment;
 use App\Models\Role;
 use App\Models\User;
-use App\Notifications\GlobalNotification;
+use App\Notifications\OperationalNotification;
+use App\Support\SupplierAssessmentNotifier;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -57,7 +58,11 @@ class SupplierAssessmentNotificationsTest extends TestCase
             'is_active' => true,
         ])->assertRedirect();
 
-        Notification::assertSentTo($otherAdmin, GlobalNotification::class);
+        Notification::assertSentTo(
+            $otherAdmin,
+            OperationalNotification::class,
+            fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'inventory.supplier_assessment'
+        );
     }
 
     public function test_scheduled_supplier_assessment_checks_emit_due_notifications(): void
@@ -93,8 +98,12 @@ class SupplierAssessmentNotificationsTest extends TestCase
             'is_active' => true,
         ]);
 
-        app(CheckSupplierAssessmentDeadlines::class)->handle(app(\App\Support\SupplierAssessmentNotifier::class));
+        app(CheckSupplierAssessmentDeadlines::class)->handle(app(SupplierAssessmentNotifier::class));
 
-        Notification::assertSentTo($otherAdmin, GlobalNotification::class);
+        Notification::assertSentTo(
+            $otherAdmin,
+            OperationalNotification::class,
+            fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'inventory.supplier_assessment'
+        );
     }
 }

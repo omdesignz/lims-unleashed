@@ -7,6 +7,8 @@ import { router } from "@inertiajs/vue3";
 import { trans } from 'laravel-vue-i18n';
 import { commercialDocumentThemeClasses } from "@/Composables/useCommercialDocumentTheme";
 import ModuleHero from '@/Components/base/ModuleHero.vue'
+import DocumentShareModal from '@/Components/documents/DocumentShareModal.vue'
+import { DocumentArrowDownIcon, EnvelopeIcon } from '@heroicons/vue/24/outline'
 
 
 const props = defineProps({
@@ -26,6 +28,13 @@ defineOptions({
 });
 
 const actionId = ref(null);
+const selectedReceipt = ref(null);
+const shareOpen = ref(false);
+
+const openShare = (receipt) => {
+  selectedReceipt.value = receipt;
+  shareOpen.value = true;
+}
 
 
 const confirmationDialogTitle = computed(() => {
@@ -126,7 +135,31 @@ const showDeleteConfirmation = ref(false);
   </div>
 </ModuleHero>
 
-<records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="handleEdit"/>
+<records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="handleEdit">
+  <template #actions="slotProps">
+    <a :href="slotProps.data.links.pdf_path" target="_blank" rel="noopener" class="ds-table-action" title="Abrir PDF">
+      <DocumentArrowDownIcon class="h-5 w-5" />
+    </a>
+    <button type="button" class="ds-table-action" title="Enviar por email" @click="openShare(slotProps.data)">
+      <EnvelopeIcon class="h-5 w-5" />
+    </button>
+  </template>
+</records-table>
+
+<DocumentShareModal
+  v-if="selectedReceipt"
+  :open="shareOpen"
+  document-type="receipt"
+  :document-id="selectedReceipt.id"
+  document-label="Recibo"
+  :document-number="selectedReceipt.rec_no"
+  :default-recipients="[
+    selectedReceipt.warehouse_id?.invoicing_email,
+    selectedReceipt.warehouse_id?.email,
+    selectedReceipt.warehouse_id?.focal_point_email,
+  ].filter(Boolean)"
+  @close="shareOpen = false"
+/>
 
 <confirm-dialog @canceled="showDeleteConfirmation=false" @close="showDeleteConfirmation=false" @confirmed="confirmAction" v-if="showDeleteConfirmation" :title="confirmationDialogTitle" :description="confirmationDialogDescription" :confirm="trans('gestlab.general.buttons.yes')" :cancel="trans('gestlab.general.buttons.no')" />
 </div>

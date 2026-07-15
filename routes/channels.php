@@ -28,10 +28,6 @@ Broadcast::channel('orders.{orderId}', function (User $user, $orderId) {
     return true;
 });
 
-Broadcast::channel('things', function ($user) {
-    return true;
-}); 
-
 Broadcast::channel('inventory', function ($user) {
     return $user !== null && $user->can('view_inventory');
 });

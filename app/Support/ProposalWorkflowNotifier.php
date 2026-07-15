@@ -3,27 +3,27 @@
 namespace App\Support;
 
 use App\Models\VAPProposal;
-use App\Notifications\GlobalNotification;
-use App\Notifications\ProposalSentNotification;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 
 class ProposalWorkflowNotifier
 {
+    public function __construct(private readonly NotificationTemplateService $templates) {}
+
     public function notifySent(VAPProposal $proposal): void
     {
         $proposal->loadMissing(['customer', 'warehouse', 'user']);
 
         if ($proposal->warehouse) {
-            rescue(function () use ($proposal): void {
-                $proposal->warehouse->notify(new ProposalSentNotification($proposal));
-            }, report: false);
+            $this->templates->notify([$proposal->warehouse], 'commercial.proposal.sent_customer', [
+                'document_number' => $proposal->proposal_number,
+                'document_url' => route('vap-proposals.public.show', $proposal->unique_hash),
+            ]);
         }
 
         $this->notifyInternalUsers(
             $proposal,
-            'Proposta enviada',
-            "A proposta {$proposal->proposal_number} foi enviada ao cliente e está disponível para acompanhamento."
+            'enviada',
+            'Disponível para acompanhamento.'
         );
     }
 
@@ -32,18 +32,13 @@ class ProposalWorkflowNotifier
         $proposal->loadMissing(['customer', 'warehouse', 'user']);
 
         if ($proposal->warehouse) {
-            $this->notifyDatabase(
-                $proposal->warehouse,
-                $proposal->user ?? $proposal->warehouse,
-                'Proposta revista',
-                "A proposta {$proposal->proposal_number} foi revista. Consulte a versão actualizada no portal."
-            );
+            $this->notifyPortalCustomer($proposal, 'revista', 'Consulte a versão actualizada no portal.');
         }
 
         $this->notifyInternalUsers(
             $proposal,
-            'Proposta revista',
-            "A proposta {$proposal->proposal_number} foi revista e requer acompanhamento comercial."
+            'revista',
+            'Requer acompanhamento comercial.'
         );
     }
 
@@ -51,21 +46,14 @@ class ProposalWorkflowNotifier
     {
         $proposal->loadMissing(['customer', 'warehouse', 'user']);
 
-        $sender = $proposal->warehouse ?? $proposal->user;
-
         $this->notifyInternalUsers(
             $proposal,
-            'Proposta aceite',
-            "O cliente aceitou a proposta {$proposal->proposal_number}. O trabalho já pode seguir para execução."
+            'aceite',
+            'O trabalho já pode seguir para execução.'
         );
 
         if ($proposal->warehouse) {
-            $this->notifyDatabase(
-                $proposal->warehouse,
-                $sender,
-                'Aceitação registada',
-                "A aceitação da proposta {$proposal->proposal_number} foi registada com sucesso."
-            );
+            $this->notifyPortalCustomer($proposal, 'aceite', 'A aceitação foi registada com sucesso.');
         }
     }
 
@@ -73,30 +61,25 @@ class ProposalWorkflowNotifier
     {
         $proposal->loadMissing(['customer', 'warehouse', 'user']);
 
-        $sender = $proposal->warehouse ?? $proposal->user;
-
         $this->notifyInternalUsers(
             $proposal,
-            'Proposta rejeitada',
-            "O cliente rejeitou a proposta {$proposal->proposal_number}. Reveja os detalhes comerciais antes de avançar."
+            'rejeitada',
+            'Reveja os detalhes comerciais antes de avançar.'
         );
 
         if ($proposal->warehouse) {
-            $this->notifyDatabase(
-                $proposal->warehouse,
-                $sender,
-                'Rejeição registada',
-                "A rejeição da proposta {$proposal->proposal_number} foi registada no portal do cliente."
-            );
+            $this->notifyPortalCustomer($proposal, 'rejeitada', 'A rejeição foi registada no portal do cliente.');
         }
     }
 
-    private function notifyInternalUsers(VAPProposal $proposal, string $title, string $message): void
+    private function notifyInternalUsers(VAPProposal $proposal, string $status, string $detail): void
     {
-        foreach ($this->internalRecipients($proposal) as $recipient) {
-            $sender = $proposal->warehouse ?? $proposal->user ?? $recipient;
-            $this->notifyDatabase($recipient, $sender, $title, $message);
-        }
+        $this->templates->notify($this->internalRecipients($proposal), 'commercial.proposal.updated', [
+            'document_number' => $proposal->proposal_number,
+            'status' => $status,
+            'detail' => $detail,
+            'document_url' => route('vap-proposals.show', $proposal),
+        ]);
     }
 
     /**
@@ -110,14 +93,13 @@ class ProposalWorkflowNotifier
             ->values();
     }
 
-    private function notifyDatabase(object $recipient, object $sender, string $title, string $message): void
+    private function notifyPortalCustomer(VAPProposal $proposal, string $status, string $detail): void
     {
-        if (! in_array(Notifiable::class, class_uses_recursive($recipient), true)) {
-            return;
-        }
-
-        rescue(function () use ($recipient, $sender, $title, $message): void {
-            $recipient->notify(new GlobalNotification($title, $message, $sender));
-        }, report: false);
+        $this->templates->notify([$proposal->warehouse], 'commercial.proposal.updated', [
+            'document_number' => $proposal->proposal_number,
+            'status' => $status,
+            'detail' => $detail,
+            'document_url' => route('vap-proposals.public.show', $proposal->unique_hash),
+        ]);
     }
 }

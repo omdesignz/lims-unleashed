@@ -6,7 +6,6 @@ use App\Events\AnalysisResultsVerified;
 use App\Models\Analysis;
 use App\Models\Result;
 use App\Models\User;
-use App\Support\LaboratoryWorkflowNotifier;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -39,16 +38,14 @@ class VerifyAnalysisResults implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(LaboratoryWorkflowNotifier $workflowNotifier): void
+    public function handle(): void
     {
         $analysis = Analysis::with('sample.collection.collection')->find($this->analysis_id);
 
         // Verify The Results
-        $lastResult = null;
         foreach ($this->results as $result) {
 
             $obj = Result::with('code')->find($result['result_id']);
-            $lastResult = $obj;
 
             $obj->update($result);
 
@@ -73,8 +70,5 @@ class VerifyAnalysisResults implements ShouldQueue
         // Notify User
         broadcast(new AnalysisResultsVerified($this->user, $analysis->sample->collection));
 
-        if ($lastResult) {
-            $workflowNotifier->notifyResultsVerified($lastResult->fresh(['sample.collection.collection.warehouse']), User::find($this->user->id));
-        }
     }
 }

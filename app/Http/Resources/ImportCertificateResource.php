@@ -24,6 +24,11 @@ class ImportCertificateResource extends JsonResource
             'vat_cost' => $this->vat_cost,
             'importer_warehouse_id' => $this->importer_warehouse_id,
             'importer_warehouse' => WarehouseResource::make($this->whenLoaded('importer_warehouse'))?->address ?? null,
+            'recipient_emails' => collect([
+                $this->importer_warehouse?->invoicing_email,
+                $this->importer_warehouse?->email,
+                $this->importer_warehouse?->focal_point_email,
+            ])->filter()->unique()->values(),
             'user_id' => $this->user_id,
             'user' => UserResource::make($this->whenLoaded('user'))?->name ?? null,
             'exporter_id' => $this->exporter_id,
@@ -51,12 +56,12 @@ class ImportCertificateResource extends JsonResource
             'links' => [
                 'edit_path' => route('importcertificates.edit', $this->id),
                 'delete_path' => route('importcertificates.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('importcertificates.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

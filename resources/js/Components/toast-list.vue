@@ -1,52 +1,43 @@
 <script setup>
-import ToastListItem from "@/Components/toast-list-item.vue";
-import {onUnmounted, ref} from "vue";
-import {router, usePage} from "@inertiajs/vue3";
-import toast from "@/Stores/toast";
+import ToastListItem from '@/Components/toast-list-item.vue'
+import toast from '@/Stores/toast'
+import { router, usePage } from '@inertiajs/vue3'
+import { onMounted, onUnmounted } from 'vue'
 
-const page = usePage();
-const props = defineProps({
-    duration: {
-        type: Number,
-        default: 5000,
-    },
-});
+const page = usePage()
 
-let removeFinishEventListener = router.on("finish", () => {
-    if (page.props.toast) {
-        toast.add({
-            message: page.props.toast.message,
-            title: page.props.toast?.title,
-        });
-    }
-});
+const enqueueFlash = () => {
+  if (!page.props.toast) return
 
-onUnmounted(() => removeFinishEventListener());
-
-function remove(index) {
-    toast.remove(index);
+  toast.add({
+    ...page.props.toast,
+    dedupeKey: page.props.toast.dedupeKey || `flash:${page.url}:${page.props.toast.title || ''}:${page.props.toast.message || ''}`,
+  })
 }
+
+const removeFinishEventListener = router.on('finish', enqueueFlash)
+
+onMounted(enqueueFlash)
+onUnmounted(removeFinishEventListener)
 </script>
+
 <template>
-    <div aria-live="assertive" class="pointer-events-none fixed inset-0 z-50 flex items-start justify-end px-4 py-4 sm:px-6 sm:py-6">
-        <div class="flex w-full max-w-md flex-col items-stretch gap-3 sm:items-end">
-            <!-- Notification panel, dynamically insert this into the live region when it needs to be displayed -->
-            <TransitionGroup
-                enter-from-class="translate-x-full opacity-0"
-                enter-active-class="duration-500"
-                leave-active-class="duration-500"
-                leave-to-class="translate-x-full opacity-0"
-            >
-                <ToastListItem
-                    v-for="(item, index) in toast.items"
-                    :key="item.key"
-                    :message="item.message"
-                    :title="item.title"
-                    :variant="item.variant"
-                    :duration="item.duration || props.duration"
-                    @remove="remove(index)"
-                />
-            </TransitionGroup>
-        </div>
+  <div class="pointer-events-none fixed inset-x-0 top-0 z-[90] flex justify-end p-3 sm:p-5" aria-live="polite" aria-atomic="false">
+    <div class="flex w-full max-w-[26rem] flex-col items-stretch gap-2">
+      <TransitionGroup
+        enter-from-class="translate-x-8 opacity-0"
+        enter-active-class="transition duration-200 ease-out"
+        leave-active-class="transition duration-150 ease-in"
+        leave-to-class="translate-x-8 opacity-0"
+        move-class="transition-transform duration-200"
+      >
+        <ToastListItem
+          v-for="item in toast.items"
+          :key="`${item.id}:${item.generation}`"
+          :item="item"
+          @remove="toast.remove(item.id)"
+        />
+      </TransitionGroup>
     </div>
+  </div>
 </template>

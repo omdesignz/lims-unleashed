@@ -1,5 +1,6 @@
 <script setup>
 import { usePermission } from "@/Composables/usePermissions";
+import DocumentShareModal from '@/Components/documents/DocumentShareModal.vue';
 import { Link, router } from "@inertiajs/vue3";
 import {
   ArrowDownTrayIcon,
@@ -9,6 +10,7 @@ import {
   CheckBadgeIcon,
   CubeIcon,
   DocumentCheckIcon,
+  EnvelopeIcon,
   GlobeAltIcon,
   MapPinIcon,
   PaperClipIcon,
@@ -17,7 +19,7 @@ import {
   TruckIcon,
   UserCircleIcon,
 } from "@heroicons/vue/24/outline";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 const props = defineProps({
   kind: { type: String, required: true, validator: (value) => ["import", "export"].includes(value) },
@@ -26,6 +28,7 @@ const props = defineProps({
 
 const { hasPermission } = usePermission();
 const certificate = computed(() => props.record?.data || props.record || {});
+const shareOpen = ref(false);
 const isImport = computed(() => props.kind === "import");
 const config = computed(() => isImport.value
   ? {
@@ -181,6 +184,10 @@ function openInvoice() {
           <button type="button" class="ds-button ds-button-secondary" @click="downloadPdf">
             <ArrowDownTrayIcon class="h-4 w-4" />
             PDF
+          </button>
+          <button type="button" class="ds-button ds-button-secondary" @click="shareOpen = true">
+            <EnvelopeIcon class="h-4 w-4" />
+            Enviar
           </button>
           <Link v-if="canEdit" :href="route(`${config.routePrefix}.edit`, certificate.id)" class="ds-button ds-button-primary">
             <PencilSquareIcon class="h-4 w-4" />
@@ -384,5 +391,15 @@ function openInvoice() {
         </section>
       </aside>
     </div>
+
+    <DocumentShareModal
+      :open="shareOpen"
+      :document-type="isImport ? 'import_certificate' : 'export_certificate'"
+      :document-id="certificate.id"
+      :document-label="config.title"
+      :document-number="certificate.cert_no"
+      :default-recipients="certificate.recipient_emails || []"
+      @close="shareOpen = false"
+    />
   </div>
 </template>

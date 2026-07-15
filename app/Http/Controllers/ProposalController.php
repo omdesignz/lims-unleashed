@@ -15,9 +15,8 @@ use App\Models\ProposalItem;
 use App\Models\ProposalTemplate;
 use App\Models\VAPProposal;
 use App\Models\VAPProposalTemplate;
-use App\Notifications\ProposalComplianceAcknowledged;
-use App\Notifications\ProposalSentNotification;
 use App\Settings\GeneralSettings;
+use App\Support\NotificationTemplateService;
 use App\Support\ReportStudioPdfBuilder;
 use App\Support\ReportStudioPdfRenderer;
 use Illuminate\Http\Request;
@@ -81,12 +80,12 @@ class ProposalController extends Controller
     }
 
     //
-    public function store(ProposalRequest $request)
+    public function store(ProposalRequest $request, NotificationTemplateService $templates)
     {
         // Send proposal via email
         // $proposal->warehouse->notify(new ProposalSentNotification($proposal));
 
-        DB::transaction(function () use ($request): void {
+        DB::transaction(function () use ($request, $templates): void {
             $proposal = Proposal::create($request->safe()->except(['items']));
 
             foreach (collect($request->safe()->only(['items']))->first() as $item) {
@@ -127,7 +126,10 @@ class ProposalController extends Controller
                 'client_ip' => null,
             ]);
 
-            $proposal->warehouse->notify(new ProposalSentNotification($proposal));
+            $templates->notify([$proposal->warehouse], 'commercial.proposal.sent_customer', [
+                'document_number' => $proposal->proposal_number,
+                'document_url' => route('vap-proposals.public.show', $proposal->unique_hash),
+            ]);
 
         });
 
@@ -404,7 +406,7 @@ class ProposalController extends Controller
         ]);
     }
 
-    public function accept(Request $request, Proposal $proposal)
+    public function accept(Request $request, Proposal $proposal, NotificationTemplateService $templates)
     {
         // Validate acknowledgment
         $request->validate([
@@ -437,7 +439,12 @@ class ProposalController extends Controller
             'status' => ProposalTrackingStatus::ACCEPTED,
         ]);
 
-        $proposal->warehouse?->notify(new ProposalComplianceAcknowledged($proposal));
+        if ($proposal->warehouse) {
+            $templates->notify([$proposal->warehouse], 'commercial.proposal.compliance_acknowledged', [
+                'document_number' => $proposal->proposal_number,
+                'document_url' => route('vap-proposals.public.show', $proposal->unique_hash),
+            ]);
+        }
 
         return redirect()->back()->with([
             'toast' => [

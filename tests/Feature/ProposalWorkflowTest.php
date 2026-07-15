@@ -18,8 +18,7 @@ use App\Models\VAPProposal;
 use App\Models\VAPProposalItem;
 use App\Models\VAPProposalTemplate;
 use App\Models\Warehouse;
-use App\Notifications\GlobalNotification;
-use App\Notifications\ProposalSentNotification;
+use App\Notifications\OperationalNotification;
 use App\Settings\GeneralSettings;
 use App\Support\ReportStudioPdfBuilder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -141,8 +140,16 @@ class ProposalWorkflowTest extends TestCase
         $this->assertNotNull($proposal->file_path);
         $this->assertStringContainsString('vap-proposals/', $proposal->file_path);
 
-        Notification::assertSentTo($proposal->warehouse, ProposalSentNotification::class);
-        Notification::assertSentTo($user, GlobalNotification::class);
+        Notification::assertSentTo(
+            $proposal->warehouse,
+            OperationalNotification::class,
+            fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'commercial.proposal.sent_customer'
+        );
+        Notification::assertSentTo(
+            $user,
+            OperationalNotification::class,
+            fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'commercial.proposal.updated'
+        );
     }
 
     public function test_revising_a_vap_proposal_invalidates_stale_pdf_and_send_regenerates_it(): void

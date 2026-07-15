@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('responsibility_matrix_entries', function (Blueprint $table) {
             $table->id();
             $table->foreignId('department_id')->nullable()->constrained('departments')->nullOnDelete();
-            $table->foreignId('lab_id')->nullable()->constrained('labs')->nullOnDelete();
+            $table->foreignId('lab_id')->nullable();
             $table->string('process_area');
             $table->string('activity');
             $table->foreignId('responsible_user_id')->nullable()->constrained('users')->nullOnDelete();

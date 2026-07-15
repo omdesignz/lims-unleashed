@@ -10,10 +10,9 @@ use App\Models\Inventory;
 use App\Models\InventoryOrder;
 use App\Models\InventoryOrderDetail;
 use App\Models\RatingRequest;
-use App\Notifications\RatingRequestNotification;
+use App\Support\NotificationTemplateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rules\Enum;
 use Inertia\Inertia;
 
@@ -264,7 +263,7 @@ class InventoryOrderController extends Controller
         ]);
     }
 
-    public function completeOrder($orderId)
+    public function completeOrder($orderId, NotificationTemplateService $templates)
     {
         $order = InventoryOrder::find($orderId);
 
@@ -280,8 +279,14 @@ class InventoryOrderController extends Controller
             'status' => 'pending',
         ]);
 
-        // Send notification to the user
-        Notification::send($order->user, new RatingRequestNotification($ratingRequest));
+        $templates->notify([$order->user], 'quality.rating.requested', [
+            'rateable_type' => $ratingRequest->rateable_type,
+            'rateable_id' => $ratingRequest->rateable_id,
+            'document_url' => route('rating.create', [
+                'rateableType' => $ratingRequest->rateable_type,
+                'rateableId' => $ratingRequest->rateable_id,
+            ]),
+        ]);
 
         return response()->json(['message' => 'Pedido concluído e pedido de avaliação enviado.']);
     }
@@ -333,9 +338,6 @@ class InventoryOrderController extends Controller
         //     'rateable_id' => $order->id,
         //     'status' => 'pending',
         // ]);
-
-        // Send notification to the user
-        // Notification::send($order->user, new RatingRequestNotification($ratingRequest));
 
         // return redirect()->route('iorders.show', $order->id);
 

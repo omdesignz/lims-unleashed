@@ -6,7 +6,7 @@ use App\Jobs\CheckProficiencyTestDeadlines;
 use App\Models\ProficiencyTest;
 use App\Models\Role;
 use App\Models\User;
-use App\Notifications\ProficiencyTestWorkflowNotification;
+use App\Notifications\OperationalNotification;
 use App\Support\ProficiencyTestNotifier;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
@@ -66,8 +66,9 @@ class ProficiencyManagementTest extends TestCase
 
         Notification::assertSentTo(
             $user,
-            ProficiencyTestWorkflowNotification::class,
-            fn (ProficiencyTestWorkflowNotification $notification) => $notification->title === 'Novo ensaio de proficiência registado'
+            OperationalNotification::class,
+            fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'quality.proficiency_test.updated'
+                && $notification->payload['context']['document_number'] === 'ILC-2026-04'
         );
 
         $programme = ProficiencyTest::query()->where('round_reference', 'ILC-2026-04')->first();
@@ -86,8 +87,9 @@ class ProficiencyManagementTest extends TestCase
 
         Notification::assertSentTo(
             $user,
-            ProficiencyTestWorkflowNotification::class,
-            fn (ProficiencyTestWorkflowNotification $notification) => $notification->title === 'Ensaio de proficiência atualizado'
+            OperationalNotification::class,
+            fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'quality.proficiency_test.updated'
+                && $notification->payload['context']['status'] === 'reviewed'
         );
 
         $programme->refresh();
@@ -207,8 +209,9 @@ class ProficiencyManagementTest extends TestCase
 
         Notification::assertSentTo(
             $user,
-            ProficiencyTestWorkflowNotification::class,
-            fn (ProficiencyTestWorkflowNotification $notification) => $notification->title === 'Resultado insatisfatório em ensaio de proficiência'
+            OperationalNotification::class,
+            fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'quality.proficiency_test.updated'
+                && $notification->payload['context']['outcome'] === 'unsatisfactory'
         );
     }
 
@@ -299,16 +302,16 @@ class ProficiencyManagementTest extends TestCase
 
         Notification::assertSentTo(
             $user,
-            ProficiencyTestWorkflowNotification::class,
-            fn (ProficiencyTestWorkflowNotification $notification) => $notification->proficiencyTest->is($dueSoon)
-                && $notification->title === 'Ensaio de proficiência próximo do prazo'
+            OperationalNotification::class,
+            fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'quality.proficiency_test.updated'
+                && $notification->payload['context']['document_number'] === $dueSoon->round_reference
         );
 
         Notification::assertSentTo(
             $user,
-            ProficiencyTestWorkflowNotification::class,
-            fn (ProficiencyTestWorkflowNotification $notification) => $notification->proficiencyTest->is($overdue)
-                && $notification->title === 'Ensaio de proficiência vencido'
+            OperationalNotification::class,
+            fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'quality.proficiency_test.updated'
+                && $notification->payload['context']['document_number'] === $overdue->round_reference
         );
     }
 }

@@ -9,7 +9,6 @@ use App\Models\CollectionProduct;
 use App\Models\QualityCertificate;
 use App\Models\Result;
 use App\Models\User;
-use App\Support\LaboratoryWorkflowNotifier;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -42,17 +41,15 @@ class ApproveAnalysisResults implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(LaboratoryWorkflowNotifier $workflowNotifier): void
+    public function handle(): void
     {
         $analysis = Analysis::with('sample.collection.collection')->findOrFail($this->analysis_id);
         $user = User::findOrFail($this->user->id);
 
-        $lastResult = null;
         foreach ($this->results as $result) {
             $obj = Result::with('code')
                 ->whereBelongsTo($analysis->sample)
                 ->findOrFail($result['result_id']);
-            $lastResult = $obj;
 
             $obj->update($result);
 
@@ -103,8 +100,5 @@ class ApproveAnalysisResults implements ShouldQueue
 
         broadcast(new AnalysisResultsApproved($this->user, $analysis->sample->collection));
 
-        if ($lastResult) {
-            $workflowNotifier->notifyResultsApproved($lastResult->fresh(['sample.collection.collection.warehouse', 'inserted_by', 'verified_by', 'approved_by']), $user);
-        }
     }
 }

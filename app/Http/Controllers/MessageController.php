@@ -2,27 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Http\Requests\MessageRequest;
 use App\Http\Resources\MessageResource;
-use Illuminate\Support\Facades\DB;
 use App\Models\Attachment;
 use App\Models\Message;
 use App\Models\User;
-use App\Notifications\MessageReceivedNotification;
+use App\Support\NotificationTemplateService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class MessageController extends Controller
 {
-
     /**
      * Display a listing of the resource.
-     *
      */
     public function index()
     {
-        abort_if(!auth()->user()->can('view_' . Message::MENU_NAME), 403, '');
+        abort_if(! auth()->user()->can('view_'.Message::MENU_NAME), 403, '');
 
         return Inertia::render('Messages/Index', [
             'record' => MessageResource::collection(
@@ -44,38 +42,37 @@ class MessageController extends Controller
             'fields' => [
                 [
                     'name' => trans('gestlab.general.labels.messages.sender_id'),
-                    'value' => 'sender'
+                    'value' => 'sender',
                 ],
                 [
                     'name' => trans('gestlab.general.labels.messages.receiver_id'),
-                    'value' => 'receiver'
+                    'value' => 'receiver',
                 ],
                 [
                     'name' => trans('gestlab.general.labels.messages.message'),
-                    'value' => 'message'
+                    'value' => 'message',
                 ],
                 [
                     'name' => trans('gestlab.general.labels.messages.attachments'),
-                    'value' => 'attachments'
+                    'value' => 'attachments',
                 ],
             ],
             'model' => Message::MENU_NAME,
             'abilities' => method_exists(Message::class, 'getAbilities') ? collect(Message::ABILITIES)->map(function ($item) {
-                return $item . '_' . Message::MENU_NAME;
+                return $item.'_'.Message::MENU_NAME;
             }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
-                return $item . '_' . Message::MENU_NAME;
+                return $item.'_'.Message::MENU_NAME;
             }),
-            'query' => request()->only(['search', 'filter'])
+            'query' => request()->only(['search', 'filter']),
         ]);
     }
 
     /**
      * Show the form for creating a new resource.
-     *
      */
     public function create()
     {
-        abort_if(!auth()->user()->can('add_' . Message::MENU_NAME), 403, '');
+        abort_if(! auth()->user()->can('add_'.Message::MENU_NAME), 403, '');
 
         return Inertia::render('Messages/Create', [
             'receivers' => User::query()->select('id', 'name', 'email')->orderBy('name')->get(),
@@ -84,13 +81,12 @@ class MessageController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     *
      */
-    public function store(MessageRequest $request)
+    public function store(MessageRequest $request, NotificationTemplateService $templates)
     {
-        abort_if(!auth()->user()->can('add_' . Message::MENU_NAME), 403, '');
+        abort_if(! auth()->user()->can('add_'.Message::MENU_NAME), 403, '');
 
-        DB::transaction(function () use ($request): void {
+        DB::transaction(function () use ($request, $templates): void {
             $record = Message::create($request->safe()->except(['attachments']));
 
             if ($request->hasFile('attachments')) {
@@ -108,7 +104,11 @@ class MessageController extends Controller
             $receiver = User::query()->find($request->receiver_id);
 
             if ($receiver) {
-                $receiver->notify(new MessageReceivedNotification($record));
+                $templates->notify([$receiver], 'system.message.received', [
+                    'actor_name' => $request->user()->name,
+                    'message_excerpt' => Str::limit($record->message, 240),
+                    'document_url' => route('messages.index'),
+                ]);
             }
         });
 
@@ -116,13 +116,12 @@ class MessageController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_created'),
-            ]
+            ],
         ]);
     }
 
     /**
      * Display the specified resource.
-     *
      */
     public function show($id)
     {
@@ -131,11 +130,10 @@ class MessageController extends Controller
 
     /**
      * Show the form for editing the specified resource.
-     *
      */
     public function edit($id)
     {
-        abort_if(!auth()->user()->can('edit_' . Message::MENU_NAME), 403, '');
+        abort_if(! auth()->user()->can('edit_'.Message::MENU_NAME), 403, '');
 
         // Find the record
         $record = Message::findOrFail($id);
@@ -151,17 +149,16 @@ class MessageController extends Controller
                     'file_path' => $item->file_path,
                     'file_type' => $item->file_type,
                 ];
-            })
+            }),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
-     *
      */
     public function update(MessageRequest $request, $id)
     {
-        abort_if(!auth()->user()->can('edit_' . Message::MENU_NAME), 403, '');
+        abort_if(! auth()->user()->can('edit_'.Message::MENU_NAME), 403, '');
 
         DB::transaction(function () use ($request, $id): void {
 
@@ -196,20 +193,19 @@ class MessageController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_updated'),
-            ]
+            ],
         ]);
     }
 
     /**
      * Remove the specified resource from storage.
-     *
      */
     public function destroy()
     {
-        abort_if(!auth()->user()->can('delete_' . Message::MENU_NAME), 403, '');
+        abort_if(! auth()->user()->can('delete_'.Message::MENU_NAME), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and delete the record
         foreach (Message::withTrashed()->findOrFail(request('recordIds')) as $record) {
@@ -226,20 +222,19 @@ class MessageController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_deleted'),
-            ]
+            ],
         ]);
     }
 
     /**
      * restore the specified resource from storage.
-     *
      */
     public function restore()
     {
-        abort_if(!auth()->user()->can('restore_' . Message::MENU_NAME), 403, '');
+        abort_if(! auth()->user()->can('restore_'.Message::MENU_NAME), 403, '');
 
         request()->validate([
-            'recordIds' => ['required', 'array']
+            'recordIds' => ['required', 'array'],
         ]);
         // Find and restore the record
         foreach (Message::withTrashed()->findOrFail(request('recordIds')) as $record) {
@@ -250,10 +245,9 @@ class MessageController extends Controller
             'toast' => [
                 'title' => trans('gestlab.toasts.notification'),
                 'message' => trans('gestlab.toasts.record_successfully_restored'),
-            ]
+            ],
         ]);
     }
-
 
     public function getMessage()
     {
@@ -262,7 +256,7 @@ class MessageController extends Controller
         if (request()->has('q')) {
             $search = request()->q;
 
-            $data = DB::table("messages")
+            $data = DB::table('messages')
                 ->select('messages.*')
                 ->where('message', 'LIKE', "%$search%")
                 ->get();

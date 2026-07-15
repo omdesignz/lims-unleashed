@@ -35,9 +35,9 @@ return new class extends Migration
         });
         Schema::table('contract_guides', fn (Blueprint $table) => $table->index(['deleted_at', 'date'], 'contract_guides_export_status_date_index'));
         Schema::table('import_certificates', function (Blueprint $table): void {
-            $table->index(['importer_id', 'date'], 'import_cert_export_customer_date_index');
-            $table->index(['invoiced', 'date'], 'import_cert_export_invoice_date_index');
-            $table->index(['deleted_at', 'date'], 'import_cert_export_status_date_index');
+            $table->index(['importer_id', 'created_at'], 'import_cert_export_customer_date_index');
+            $table->index(['invoiced', 'created_at'], 'import_cert_export_invoice_date_index');
+            $table->index(['deleted_at', 'created_at'], 'import_cert_export_status_date_index');
         });
         Schema::table('export_certificates', function (Blueprint $table): void {
             $table->index(['exporter_id', 'date'], 'export_cert_export_customer_date_index');

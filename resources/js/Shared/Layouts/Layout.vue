@@ -89,7 +89,7 @@
 
         <Link prefetch :href="route('notifications.index')" class="relative grid h-9 w-9 place-items-center rounded-lg text-[var(--ds-text-soft)] hover:bg-[var(--ds-panel-subtle)] hover:text-[var(--ds-text)]">
           <span class="sr-only">Ver notificações</span><BellIcon class="h-5 w-5" aria-hidden="true" />
-          <span v-if="auth?.user?.unread_notifications?.length" class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-[var(--ds-panel)]" />
+          <span v-if="unreadNotificationCount" class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-[var(--ds-panel)]" />
         </Link>
 
         <Menu as="div" class="relative">
@@ -207,6 +207,7 @@ import { useTheme } from '@/Composables/useTheme'
 import { trans, loadLanguageAsync } from 'laravel-vue-i18n'
 import backendModal from '@/Components/backend-modal.vue'
 import { getEcho } from '@/lib/echo'
+import toast from '@/Stores/toast'
 import { buildBrandingCssVariables } from '@/Utils/brandingPalette'
 
 const { hasPermission } = usePermission()
@@ -218,6 +219,8 @@ const props = defineProps({
 
 const { isDark, toggle: toggleTheme } = useTheme(props.auth?.user?.theme, Boolean(props.auth?.user))
 const page = usePage()
+const unreadNotificationCount = ref(props.auth?.user?.unread_notifications?.length ?? 0)
+let realtimeNotificationChannel = null
 const settings = computed(() => page.props?.settings ?? {})
 const brandingCssVariables = computed(() => buildBrandingCssVariables(settings.value))
 const themePreset = computed(() => settings.value.theme_preset || 'corporate')
@@ -686,12 +689,27 @@ onMounted(() => {
   const userId = usePage().props?.auth?.user?.id
   if (!userId) return
 
-  echo.private(`users.${userId}`)
+  realtimeNotificationChannel = `users.${userId}`
+  echo.private(realtimeNotificationChannel).notification((notification) => {
+    unreadNotificationCount.value += 1
+    toast.add({
+      ...notification,
+      dedupeKey: notification.id || `${notification.key || 'notification'}:${notification.action_url || ''}:${notification.message || ''}`,
+    })
+  })
+})
+
+watch(() => props.auth?.user?.unread_notifications?.length, (count) => {
+  if (typeof count === 'number') unreadNotificationCount.value = count
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleCommandPaletteShortcut)
 
   if (countdownInterval) clearInterval(countdownInterval)
+
+  if (realtimeNotificationChannel) {
+    getEcho()?.leave(realtimeNotificationChannel)
+  }
 })
 </script>

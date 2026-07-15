@@ -415,7 +415,9 @@ class NotificationController extends Controller
                 $user->notify(new GlobalNotification(
                     $request->title,
                     $request->message,
-                    $sender
+                    $sender,
+                    $request->type,
+                    $request->priority
                 ));
                 $sentCount++;
             } catch (\Exception $e) {

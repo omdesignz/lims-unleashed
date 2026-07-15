@@ -3,10 +3,11 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ProposalComplianceAcknowledged extends Notification
+class ProposalComplianceAcknowledged extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -17,8 +18,9 @@ class ProposalComplianceAcknowledged extends Notification
      */
     public function __construct($proposal)
     {
-        //
         $this->proposal = $proposal;
+        $this->afterCommit();
+        $this->onQueue('notifications');
     }
 
     /**

@@ -31,9 +31,9 @@ use App\Models\QualityCertificate;
 use App\Models\Quote;
 use App\Models\Receipt;
 use App\Models\User;
-use App\Notifications\GlobalNotification;
 use App\Settings\GeneralSettings;
 use App\Support\DuplicateSubmissionGuard;
+use App\Support\NotificationTemplateService;
 use App\Support\PdfResponse;
 use App\Support\ReportStudioPdfBuilder;
 use App\Support\ReportStudioPdfRenderer;
@@ -44,7 +44,6 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 use Jenssegers\Agent\Agent;
 use PDF;
@@ -960,7 +959,7 @@ class PortalController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function storerequest(StorePortalCustomerRequest $request)
+    public function storerequest(StorePortalCustomerRequest $request, NotificationTemplateService $templates)
     {
         $warehouse = $this->portalWarehouse();
         $validated = $request->validated();
@@ -988,7 +987,7 @@ class PortalController extends Controller
             ])->withInput();
         }
 
-        DB::transaction(function () use ($validated, $warehouse): void {
+        DB::transaction(function () use ($templates, $validated, $warehouse): void {
             $customerRequest = CustomerRequest::create([
                 'category_id' => $this->resolvePortalCategoryId($validated['request_type'], $validated['category_id'] ?? null),
                 'title' => $validated['title'],
@@ -1010,23 +1009,16 @@ class PortalController extends Controller
                 'reference' => 'REQ-'.now()->format('Y').'-'.str_pad((string) $customerRequest->id, 6, '0', STR_PAD_LEFT),
             ]);
 
-            $sender = User::query()->role('admin')->whereNotNull('email_verified_at')->first();
-
-            if ($sender) {
-                Notification::send(
-                    User::query()->role('admin')->whereNotNull('email_verified_at')->get(),
-                    new GlobalNotification(
-                        'Nova pedido do portal',
-                        sprintf(
-                            'O cliente %s submeteu o pedido %s (%s).',
-                            $warehouse->name ?? ('Armazém #'.$warehouse->id),
-                            $customerRequest->reference,
-                            $customerRequest->request_type
-                        ),
-                        $sender
-                    )
-                );
-            }
+            $templates->notify(
+                User::query()->role('admin')->whereNotNull('email_verified_at')->get(),
+                'commercial.portal_request.created',
+                [
+                    'customer_name' => $warehouse->name ?? ('Armazém #'.$warehouse->id),
+                    'document_number' => $customerRequest->reference,
+                    'request_type' => $customerRequest->request_type,
+                    'document_url' => route('customerrequests.index'),
+                ]
+            );
         });
 
         return redirect()->back()->with([

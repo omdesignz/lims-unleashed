@@ -1,6 +1,5 @@
 <?php
 
-use App\Events\TestEvent;
 use App\Http\Controllers\AnalysisCategoryController;
 use App\Http\Controllers\AnalysisController;
 use App\Http\Controllers\Api\UserThemeController;
@@ -33,6 +32,7 @@ use App\Http\Controllers\CustomerRequestController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DirectCollectionController;
 use App\Http\Controllers\DiscountCategoryController;
+use App\Http\Controllers\DocumentShareController;
 use App\Http\Controllers\DownloadBackupController;
 use App\Http\Controllers\EnvironmentalConditionController;
 use App\Http\Controllers\EquipmentCategoryController;
@@ -83,6 +83,8 @@ use App\Http\Controllers\MetricController;
 use App\Http\Controllers\ModernFolderController;
 use App\Http\Controllers\NormativeWorkProcedureController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\NotificationPreferenceController;
+use App\Http\Controllers\NotificationTemplateController;
 use App\Http\Controllers\OccurrenceCategoryController;
 use App\Http\Controllers\OccurrenceController;
 use App\Http\Controllers\OccurrenceImportController;
@@ -203,14 +205,6 @@ use Laravel\Fortify\RoutePath;
 //         'worksheetData' => []
 //     ]);
 // });
-
-Route::get('broadcast', function () {
-
-    // TestEvent::dispatch("Hey ma! I'm famous");
-
-    broadcast(new TestEvent('hi there kids'));
-    // broadcast(new TestEvent('hi there kids'))->toOthers();
-});
 
 Route::get('/sgs', function () {
     return view('PDFs.sgs_report_template');
@@ -360,6 +354,9 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('/security', 'show')->name('security');
         Route::delete('/user', 'destroy')->name('current-user.destroy');
     });
+
+    Route::get('/notification-preferences', [NotificationPreferenceController::class, 'edit'])->name('notification-preferences.edit');
+    Route::put('/notification-preferences', [NotificationPreferenceController::class, 'update'])->name('notification-preferences.update');
 
     // Browser Sessions
     Route::controller(BrowserSessionController::class)->group(function () {
@@ -985,11 +982,15 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::get('/notifications/dashboard', [NotificationController::class, 'adminDashboard'])->name('notifications.dashboard');
         Route::get('/notifications', [NotificationController::class, 'adminIndex'])->name('notifications.index');
         Route::get('/notifications/create', [NotificationController::class, 'adminCreate'])->name('notifications.create');
-        Route::post('/notifications', [NotificationController::class, 'adminStore'])->name('notifications.store');
-        Route::get('/notifications/{id}', [NotificationController::class, 'adminShow'])->name('notifications.show');
+        Route::get('/notifications/templates', [NotificationTemplateController::class, 'index'])->name('notification-templates.index');
+        Route::put('/notifications/templates/{notificationTemplate}', [NotificationTemplateController::class, 'update'])->name('notification-templates.update');
         Route::get('/notifications/analytics', [NotificationController::class, 'adminAnalytics'])->name('notifications.analytics');
         Route::get('/notifications/export', [NotificationController::class, 'adminExport'])->name('notifications.export');
+        Route::post('/notifications', [NotificationController::class, 'adminStore'])->name('notifications.store');
+        Route::get('/notifications/{id}', [NotificationController::class, 'adminShow'])->name('notifications.show');
     });
+
+    Route::post('/documents/share', [DocumentShareController::class, 'store'])->name('documents.share');
 
     // Customer Request Categories
     Route::controller(CustomerRequestCategoryController::class)->group(function () {

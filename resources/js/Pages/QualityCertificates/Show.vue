@@ -1,6 +1,7 @@
 <script setup>
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { computed } from "vue";
+import DocumentShareModal from '@/Components/documents/DocumentShareModal.vue';
+import { computed, ref } from "vue";
 import { Link, router } from "@inertiajs/vue3";
 import { usePermission } from "@/Composables/usePermissions";
 import {
@@ -13,6 +14,7 @@ import {
   DocumentMagnifyingGlassIcon,
   DocumentTextIcon,
   EyeIcon,
+  EnvelopeIcon,
   PencilIcon,
   UserIcon,
 } from "@heroicons/vue/24/outline";
@@ -31,6 +33,7 @@ defineOptions({
 const { hasPermission } = usePermission();
 
 const certificate = computed(() => props.record?.data ?? {});
+const shareOpen = ref(false);
 
 const laboratoryReference = computed(() => {
   if (certificate.value.lab_code || certificate.value.cl_code) {
@@ -317,6 +320,10 @@ function openRevisionHistory() {
             <DocumentMagnifyingGlassIcon class="h-4 w-4" />
             Ver PDF
           </a>
+          <button type="button" class="ds-button ds-button-secondary" @click="shareOpen = true">
+            <EnvelopeIcon class="h-4 w-4" />
+            Enviar
+          </button>
           <button
             v-if="!certificate.validated_at && hasPermission('validate_quality_certificates')"
             type="button"
@@ -561,5 +568,15 @@ function openRevisionHistory() {
         </section>
       </aside>
     </div>
+
+    <DocumentShareModal
+      :open="shareOpen"
+      document-type="quality_certificate"
+      :document-id="certificate.id"
+      document-label="Boletim analítico"
+      :document-number="certificate.code"
+      :default-recipients="certificate.recipient_emails || []"
+      @close="shareOpen = false"
+    />
   </div>
 </template>

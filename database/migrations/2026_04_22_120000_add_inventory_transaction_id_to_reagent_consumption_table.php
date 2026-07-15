@@ -15,7 +15,7 @@ return new class extends Migration
             if (! Schema::hasColumn('reagent_consumption', 'inventory_transaction_id')) {
                 $table->foreignId('inventory_transaction_id')
                     ->nullable()
-                    ->after('warehouse_id')
+                    ->after('reagent_id')
                     ->constrained('itransactions')
                     ->nullOnDelete();
             }

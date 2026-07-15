@@ -3,15 +3,14 @@
 namespace App\Events;
 
 use App\Models\InventoryTransaction;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class StockUpdated implements ShouldBroadcast
+class StockUpdated implements ShouldBroadcast, ShouldDispatchAfterCommit
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -22,17 +21,18 @@ class StockUpdated implements ShouldBroadcast
         $this->transaction = $transaction;
     }
 
-    public function broadcastOn()
+    public function broadcastOn(): PrivateChannel
     {
-        return new Channel('inventory');
+        return new PrivateChannel('inventory');
     }
 
-    public function broadcastAs()
+    public function broadcastAs(): string
     {
         return 'StockUpdated';
     }
 
-    public function broadcastWith()
+    /** @return array<string, int|float|string|null> */
+    public function broadcastWith(): array
     {
         return [
             'id' => $this->transaction->id,

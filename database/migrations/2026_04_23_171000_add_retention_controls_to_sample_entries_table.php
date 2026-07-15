@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('sample_entries')) {
+            return;
+        }
+
         Schema::table('sample_entries', function (Blueprint $table) {
             if (! Schema::hasColumn('sample_entries', 'retention_period_days')) {
                 $table->unsignedInteger('retention_period_days')->nullable()->after('client_submitted_info');
@@ -29,6 +33,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (! Schema::hasTable('sample_entries')) {
+            return;
+        }
+
         Schema::table('sample_entries', function (Blueprint $table) {
             foreach (['retention_status', 'discard_scheduled_at', 'retention_due_at', 'retention_period_days'] as $column) {
                 if (Schema::hasColumn('sample_entries', $column)) {

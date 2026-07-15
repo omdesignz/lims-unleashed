@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('reference')->unique();
             $table->foreignId('department_id')->constrained('departments');
-            $table->foreignId('lab_id')->nullable()->constrained('labs')->nullOnDelete();
+            $table->foreignId('lab_id')->nullable();
             $table->foreignId('requested_by_id')->constrained('users');
             $table->foreignId('approved_by_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('inventory_order_id')->nullable()->constrained('i_orders')->nullOnDelete();

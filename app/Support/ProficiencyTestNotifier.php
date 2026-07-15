@@ -5,20 +5,18 @@ namespace App\Support;
 use App\Models\Permission;
 use App\Models\ProficiencyTest;
 use App\Models\User;
-use App\Notifications\ProficiencyTestWorkflowNotification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Notification;
 
 class ProficiencyTestNotifier
 {
+    public function __construct(private readonly NotificationTemplateService $templates) {}
+
     public function notifyCreated(ProficiencyTest $test): void
     {
         $this->send(
             $test,
-            'Novo ensaio de proficiência registado',
-            sprintf('%s foi planeado com o provedor %s.', $test->round_reference, $test->provider_name),
-            'info',
+            sprintf('Planeado com o provedor %s.', $test->provider_name),
             'created:'.$test->id
         );
     }
@@ -36,19 +34,13 @@ class ProficiencyTestNotifier
             return;
         }
 
-        $title = $becameUnsatisfactory
-            ? 'Ensaio de proficiência requer acção corretiva'
-            : 'Ensaio de proficiência actualizado';
-
         $message = $becameUnsatisfactory
             ? sprintf('%s teve resultado insatisfatório e deve gerar análise de causa/acção corretiva.', $test->round_reference)
             : sprintf('%s mudou para estado %s com resultado %s.', $test->round_reference, $test->status, $test->outcome);
 
         $this->send(
             $test,
-            $title,
             $message,
-            $becameUnsatisfactory ? 'danger' : 'info',
             'updated:'.$test->id.':'.$test->updated_at?->format('YmdHi')
         );
     }
@@ -57,9 +49,7 @@ class ProficiencyTestNotifier
     {
         $this->send(
             $test,
-            'Ensaio de proficiência próximo do prazo',
             sprintf('%s deve ser acompanhado até %s.', $test->round_reference, $test->deadlineDate()?->format('d/m/Y') ?? 'data em aberto'),
-            'warning',
             'due-soon:'.$test->id.':'.now()->format('Ymd'),
             now()->addHours(18)
         );
@@ -69,9 +59,7 @@ class ProficiencyTestNotifier
     {
         $this->send(
             $test,
-            'Ensaio de proficiência vencido',
             sprintf('%s ultrapassou o prazo e requer revisão operacional.', $test->round_reference),
-            'danger',
             'overdue:'.$test->id.':'.now()->format('Ymd'),
             now()->addHours(18)
         );
@@ -84,11 +72,9 @@ class ProficiencyTestNotifier
 
         $this->send(
             $test,
-            $hasCriticalResult ? 'Resultado insatisfatório em ensaio de proficiência' : 'Resultados de proficiência actualizados',
             $hasCriticalResult
                 ? sprintf('%s tem resultados insatisfatórios e requer acção corretiva documentada.', $test->round_reference)
                 : sprintf('%s recebeu novos resultados e está pronto para revisão técnica.', $test->round_reference),
-            $hasCriticalResult ? 'danger' : 'info',
             'results-updated:'.$test->id.':'.$test->updated_at?->format('YmdHi')
         );
     }
@@ -120,9 +106,7 @@ class ProficiencyTestNotifier
 
     private function send(
         ProficiencyTest $test,
-        string $title,
-        string $message,
-        string $tone,
+        string $detail,
         string $cacheKey,
         mixed $ttl = null,
     ): void {
@@ -136,6 +120,12 @@ class ProficiencyTestNotifier
             return;
         }
 
-        Notification::send($targets, new ProficiencyTestWorkflowNotification($test, $title, $message, $tone));
+        $this->templates->notify($targets, 'quality.proficiency_test.updated', [
+            'document_number' => $test->round_reference,
+            'status' => $test->status,
+            'outcome' => $test->outcome ?: 'pendente',
+            'detail' => $detail,
+            'document_url' => route('proficiency_tests.index'),
+        ]);
     }
 }

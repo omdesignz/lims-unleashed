@@ -4,18 +4,26 @@ namespace App\Notifications;
 
 use App\Support\WhiteLabelMessageDefaults;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class GlobalNotification extends Notification
+class GlobalNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
     public function __construct(
         public ?string $title,
         public ?string $message,
-        public object $sender
+        public object $sender,
+        public string $type = 'info',
+        public string $priority = 'normal',
+        public ?string $actionUrl = null,
+        public ?string $actionLabel = null
     ) {
+        $this->afterCommit();
+        $this->onQueue('notifications');
     }
 
     /**
@@ -26,8 +34,8 @@ class GlobalNotification extends Notification
     public function via(object $notifiable): array
     {
         return [
-            'database', 
-            // TwilioChannel::class
+            'database',
+            'broadcast',
         ];
     }
 
@@ -55,9 +63,18 @@ class GlobalNotification extends Notification
         return [
             'title' => $this->title ?: $defaults->notificationTitle(),
             'message' => $this->message ?: $defaults->notificationMessage(),
-            'sender_id' => $this->sender->id,
+            'type' => $this->type,
+            'priority' => $this->priority,
+            'sender_id' => $this->sender->id ?? null,
             'sender_name' => $defaults->senderAlias($this->sender->name ?? null),
+            'action_url' => $this->actionUrl,
+            'action_label' => $this->actionLabel,
         ];
+    }
+
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return (new BroadcastMessage($this->toDatabase($notifiable)))->onQueue('broadcasts');
     }
 
     /**
@@ -67,9 +84,6 @@ class GlobalNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
-        return [
-            //
-        ];
+        return $this->toDatabase($notifiable);
     }
-
 }

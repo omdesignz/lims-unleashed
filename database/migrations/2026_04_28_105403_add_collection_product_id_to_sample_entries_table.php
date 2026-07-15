@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (! Schema::hasTable('sample_entries')) {
+            return;
+        }
+
         Schema::table('sample_entries', function (Blueprint $table) {
             if (! Schema::hasColumn('sample_entries', 'collection_product_id')) {
                 $table->foreignId('collection_product_id')
@@ -27,6 +31,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasTable('sample_entries')) {
+            return;
+        }
+
         Schema::table('sample_entries', function (Blueprint $table) {
             if (Schema::hasColumn('sample_entries', 'collection_product_id')) {
                 $table->dropConstrainedForeignId('collection_product_id');

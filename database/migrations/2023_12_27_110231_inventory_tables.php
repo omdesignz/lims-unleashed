@@ -88,7 +88,7 @@ return new class extends Migration
             $table->boolean('refrigerated')->default(false);
             $table->unsignedBigInteger('status_id')->nullable();
             $table->boolean('has_safety_documentation')->default(true);
-            $table->foreignId('packaging_type_id')->nullable()->constrained('packaging_types');
+            $table->foreignId('packaging_type_id')->nullable()->constrained('packaging_categories');
             $table->foreignId('category_id')->nullable()->constrained('item_categories');
             $table->foreignId('unit_id')->nullable()->constrained('i_units');
             $table->foreignId('type_id')->nullable()->constrained('i_types');
@@ -117,7 +117,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-
         // Item Warehouses
         Schema::create('i_warehouses', function (Blueprint $table) {
             $table->id();
@@ -129,7 +128,6 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
         });
-
 
         // Inventory
         Schema::create('inventory', function (Blueprint $table) {
@@ -143,7 +141,6 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
         });
-
 
         // Orders
         Schema::create('i_orders', function (Blueprint $table) {
@@ -159,7 +156,6 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
         });
-
 
         // Order Detail
         Schema::create('i_order_details', function (Blueprint $table) {
@@ -184,7 +180,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-
         // Delivery Detail
         Schema::create('i_delivery_details', function (Blueprint $table) {
             $table->id();
@@ -197,7 +192,6 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
         });
-
 
         // Transfers
         Schema::create('i_transfers', function (Blueprint $table) {

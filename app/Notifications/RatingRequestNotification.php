@@ -5,10 +5,11 @@ namespace App\Notifications;
 use App\Models\RatingRequest;
 use App\Support\WhiteLabelMessageDefaults;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class RatingRequestNotification extends Notification
+class RatingRequestNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -19,8 +20,9 @@ class RatingRequestNotification extends Notification
      */
     public function __construct(RatingRequest $ratingRequest)
     {
-        //
         $this->ratingRequest = $ratingRequest;
+        $this->afterCommit();
+        $this->onQueue('notifications');
     }
 
     /**

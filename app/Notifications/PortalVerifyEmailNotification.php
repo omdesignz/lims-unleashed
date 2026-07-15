@@ -2,13 +2,23 @@
 
 namespace App\Notifications;
 
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\URL;
 
-class PortalVerifyEmailNotification extends Notification
+class PortalVerifyEmailNotification extends Notification implements ShouldQueue
 {
+    use Queueable;
+
+    public function __construct()
+    {
+        $this->afterCommit();
+        $this->onQueue('notifications');
+    }
+
     /**
      * @return array<int, string>
      */

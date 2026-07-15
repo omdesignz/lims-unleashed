@@ -6,88 +6,23 @@ use App\Models\CounterAnalysis;
 use App\Models\Result;
 use App\Models\User;
 use App\Models\VAPSampleEntry;
-use App\Notifications\GlobalNotification;
-use App\Notifications\SampleTrackingNotification;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Notification;
 
 class LaboratoryWorkflowNotifier
 {
-    public function notifyResultsInserted(Result $result, User $sender): void
-    {
-        $title = 'Resultados aguardam verificação';
-        $message = sprintf(
-            'Os resultados da amostra %s foram inseridos e aguardam verificação.',
-            $result->code_label ?? ('Amostra #'.$result->sample_id)
-        );
-
-        $this->sendOperationalNotification(
-            $title,
-            $message,
-            $sender,
-            $this->mergeRecipients(
-                $this->usersWithPermission('verify_results'),
-                collect([$result->sample?->collection?->collection?->warehouse])
-            ),
-            'results-verified:'.$result->sample_id.':'.now()->format('YmdHi')
-        );
-    }
-
-    public function notifyResultsVerified(Result $result, User $sender): void
-    {
-        $title = 'Resultados aguardam aprovação';
-        $message = sprintf(
-            'Os resultados da amostra %s foram verificados e aguardam aprovação final.',
-            $result->code_label ?? ('Amostra #'.$result->sample_id)
-        );
-
-        $this->sendOperationalNotification(
-            $title,
-            $message,
-            $sender,
-            $this->mergeRecipients(
-                $this->usersWithPermission('approve_results'),
-                collect([$result->sample?->collection?->collection?->warehouse])
-            ),
-            'results-approved:'.$result->sample_id.':'.now()->format('YmdHi')
-        );
-    }
-
-    public function notifyResultsApproved(Result $result, User $sender): void
-    {
-        $title = 'Resultados aprovados';
-        $message = sprintf(
-            'Os resultados da amostra %s foram aprovados e podem seguir para emissão de relatório/certificado.',
-            $result->code_label ?? ('Amostra #'.$result->sample_id)
-        );
-
-        $this->sendOperationalNotification(
-            $title,
-            $message,
-            $sender,
-            $this->mergeRecipients(
-                collect([$result->sample?->collection?->collection?->warehouse]),
-                $this->usersWithPermission('view_qualitycertificates'),
-                collect([$result->inserted_by, $result->verified_by, $result->approved_by])
-            ),
-            'results-finalized:'.$result->sample_id.':'.now()->format('YmdHi')
-        );
-    }
+    public function __construct(private readonly NotificationTemplateService $templates) {}
 
     public function notifyCounterAnalysisRequested(Result $result, User $sender): void
     {
-        $title = 'Contra-análise solicitada';
-        $message = sprintf(
-            'Foi solicitada uma contra-análise para o parâmetro %s da amostra %s.',
-            $result->parameter_label ?? ('Parâmetro #'.$result->parameter_id),
-            $result->code_label ?? ('Amostra #'.$result->sample_id)
-        );
-
         $this->sendOperationalNotification(
-            $title,
-            $message,
+            'lab.counter_analysis.requested',
+            [
+                'parameter_name' => $result->parameter_label ?? ('Parâmetro #'.$result->parameter_id),
+                'sample_code' => $result->code_label ?? ('Amostra #'.$result->sample_id),
+                'document_url' => route('counteranalysis.index'),
+            ],
             $sender,
             $this->mergeRecipients(
                 $this->usersWithPermission('view_counter_analysis'),
@@ -104,15 +39,6 @@ class LaboratoryWorkflowNotifier
             return;
         }
 
-        $requiredParameterCount = (int) data_get($sampleEntry->client_submitted_info, 'required_parameter_count', 0);
-        $title = 'Pedido convertido no fluxo laboratorial';
-        $message = sprintf(
-            'A amostra %s foi validada e integrada na colheita/lote %s do fluxo normal com %d parâmetros previstos.',
-            $sampleEntry->code ?: $sampleEntry->name,
-            $sampleEntry->collectionProduct->code?->code ?? ('#'.$sampleEntry->collection_product_id),
-            $requiredParameterCount
-        );
-
         $recipients = $this->mergeRecipients(
             collect([$sampleEntry->warehouse, $sampleEntry->receivedBy]),
             $this->usersWithPermission('view_analysis')
@@ -122,19 +48,16 @@ class LaboratoryWorkflowNotifier
             return;
         }
 
-        Notification::send($recipients, new SampleTrackingNotification($sampleEntry, $title, $message, $sender));
+        $this->templates->notify($recipients, 'lab.sample.linked', [
+            'sample_code' => $sampleEntry->code ?: $sampleEntry->name,
+            'collection_code' => $sampleEntry->collectionProduct->code?->code ?? ('#'.$sampleEntry->collection_product_id),
+            'parameter_count' => (int) data_get($sampleEntry->client_submitted_info, 'required_parameter_count', 0),
+            'document_url' => route('vap_samples.show', $sampleEntry),
+        ]);
     }
 
     public function notifyStaleSample(VAPSampleEntry $sampleEntry, User $sender): void
     {
-        $title = 'Amostra sem avanço há demasiado tempo';
-        $message = sprintf(
-            'A amostra %s continua em %s desde %s e precisa de acção.',
-            $sampleEntry->code ?: $sampleEntry->name,
-            $sampleEntry->status,
-            optional($sampleEntry->updated_at)->format('d/m/Y H:i') ?? 'data desconhecida'
-        );
-
         $recipients = $this->mergeRecipients(
             collect([$sampleEntry->warehouse, $sampleEntry->receivedBy]),
             $this->usersWithPermission('view_analysis')
@@ -144,24 +67,25 @@ class LaboratoryWorkflowNotifier
             return;
         }
 
-        Notification::send($recipients, new SampleTrackingNotification($sampleEntry, $title, $message, $sender));
+        $this->templates->notify($recipients, 'lab.sample.stale', [
+            'sample_code' => $sampleEntry->code ?: $sampleEntry->name,
+            'status' => $sampleEntry->status,
+            'last_updated_at' => optional($sampleEntry->updated_at)->format('d/m/Y H:i') ?? 'data desconhecida',
+            'document_url' => route('vap_samples.show', $sampleEntry),
+        ]);
     }
 
     public function notifyStaleResult(Result $result, string $stage, User $sender): void
     {
-        $title = $stage === 'verify'
-            ? 'Resultados pendentes de verificação'
-            : 'Resultados pendentes de aprovação';
-
-        $message = $stage === 'verify'
-            ? sprintf('A amostra %s tem resultados inseridos há demasiado tempo sem verificação.', $result->code_label ?? ('Amostra #'.$result->sample_id))
-            : sprintf('A amostra %s tem resultados verificados há demasiado tempo sem aprovação.', $result->code_label ?? ('Amostra #'.$result->sample_id));
-
         $permission = $stage === 'verify' ? 'verify_results' : 'approve_results';
 
         $this->sendOperationalNotification(
-            $title,
-            $message,
+            'lab.results.stale',
+            [
+                'sample_code' => $result->code_label ?? ('Amostra #'.$result->sample_id),
+                'stage' => $stage === 'verify' ? 'verificação' : 'aprovação',
+                'document_url' => route('analysis.index'),
+            ],
             $sender,
             $this->mergeRecipients(
                 $this->usersWithPermission($permission),
@@ -176,11 +100,11 @@ class LaboratoryWorkflowNotifier
         $result = $counterAnalysis->requested_result;
 
         $this->sendOperationalNotification(
-            'Contra-análise sem avanço',
-            sprintf(
-                'A contra-análise da amostra %s continua pendente e precisa de acompanhamento.',
-                $result?->code_label ?? ('Amostra #'.$counterAnalysis->sample_id)
-            ),
+            'lab.counter_analysis.stale',
+            [
+                'sample_code' => $result?->code_label ?? ('Amostra #'.$counterAnalysis->sample_id),
+                'document_url' => route('counteranalysis.index'),
+            ],
             $sender,
             $this->mergeRecipients(
                 $this->usersWithPermission('view_counter_analysis'),
@@ -208,8 +132,8 @@ class LaboratoryWorkflowNotifier
     }
 
     private function sendOperationalNotification(
-        string $title,
-        string $message,
+        string $templateKey,
+        array $context,
         User $sender,
         Collection $recipients,
         string $cacheKey
@@ -228,7 +152,7 @@ class LaboratoryWorkflowNotifier
             return;
         }
 
-        Notification::send($filteredRecipients, new GlobalNotification($title, $message, $sender));
+        $this->templates->notify($filteredRecipients, $templateKey, $context);
     }
 
     private function mergeRecipients(EloquentCollection|Collection ...$recipientGroups): Collection

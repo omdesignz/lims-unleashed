@@ -45,7 +45,7 @@ return new class extends Migration
                 $table->string('border_color', 7)->default('#000000');
                 $table->json('template_data')->nullable();
                 $table->boolean('is_active')->default(true);
-                $table->foreignId('lab_id')->nullable()->constrained('labs');
+                $table->foreignId('lab_id')->nullable();
                 $table->foreignId('department_id')->nullable()->constrained('departments');
                 $table->foreignId('user_id')->nullable()->constrained('users');
                 $table->json('text_position')->nullable();

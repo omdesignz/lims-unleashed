@@ -6,8 +6,10 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\VAPFile;
 use App\Models\WorkflowTask;
+use App\Notifications\OperationalNotification;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
@@ -145,8 +147,42 @@ class DocumentControlTest extends TestCase
             2,
             Activity::query()
                 ->where('log_name', 'document_control')
-                ->where('properties', 'like', '%' . $fileId . '%')
+                ->where('properties', 'like', '%'.$fileId.'%')
                 ->count()
+        );
+    }
+
+    public function test_sharing_a_controlled_document_notifies_the_recipient(): void
+    {
+        Storage::fake(config('filesystems.default', 'local'));
+        Notification::fake();
+
+        $admin = $this->verifiedAdmin();
+        $recipient = User::query()->whereKeyNot($admin->id)->firstOrFail();
+
+        $uploadResponse = $this->actingAs($admin)->post(route('files.upload'), [
+            'file' => UploadedFile::fake()->create('procedimento-partilhado.pdf', 80, 'application/pdf'),
+            'document_number' => 'DOC-SHARE-001',
+            'document_type' => 'Procedimento',
+            'category' => 'Qualidade',
+            'change_reason' => 'Emissão para partilha controlada',
+        ]);
+
+        $fileId = $uploadResponse->json('data.id');
+        $this->assertNotNull($fileId);
+
+        $this->actingAs($admin)
+            ->post(route('files.share', $fileId), [
+                'user_id' => $recipient->id,
+                'access_level' => 'read',
+            ])
+            ->assertOk();
+
+        Notification::assertSentTo(
+            $recipient,
+            OperationalNotification::class,
+            fn (OperationalNotification $notification): bool => $notification->payload['key'] === 'documents.controlled_file.shared'
+                && $notification->payload['context']['access_level'] === 'read'
         );
     }
 }
