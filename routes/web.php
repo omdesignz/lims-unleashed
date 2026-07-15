@@ -39,6 +39,7 @@ use App\Http\Controllers\EquipmentCategoryController;
 use App\Http\Controllers\EquipmentImportController;
 use App\Http\Controllers\ExecutiveDashboardController;
 use App\Http\Controllers\ExportCertificateController;
+use App\Http\Controllers\ExportHubController;
 use App\Http\Controllers\FAQAnswerController;
 use App\Http\Controllers\FAQCategoryController;
 use App\Http\Controllers\FAQController;
@@ -68,6 +69,7 @@ use App\Http\Controllers\ISORevisionController;
 use App\Http\Controllers\ItemCategoryController;
 use App\Http\Controllers\ItemStatusController;
 use App\Http\Controllers\LabCodeController;
+use App\Http\Controllers\LaboratoryDataExportController;
 use App\Http\Controllers\LaboratoryWorkflowController;
 use App\Http\Controllers\LanguageStoreController;
 use App\Http\Controllers\MaintenanceCategoryController;
@@ -1026,6 +1028,11 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
     });
 
     // Analysis
+    Route::controller(LaboratoryDataExportController::class)->group(function () {
+        Route::get('analysis/data-exports', 'index')->name('analysis.data-exports.index');
+        Route::get('analysis/data-exports/download', 'download')->name('analysis.data-exports.download');
+    });
+
     Route::controller(AnalysisController::class)->group(function () {
         Route::get('analysis', 'index')->name('analysis.index');
         Route::get('analysis/create', 'create')->name('analysis.create');
@@ -1492,6 +1499,11 @@ Route::middleware(['auth', 'account.deactivated', 'verified'])->group(function (
         Route::delete('system-activity/', 'destroyAll')->name('systemactivity.destroyAll');
         Route::post('system-activity/archive', 'archive')->name('systemactivity.archive');
         Route::post('system-activity/restore-archive', 'restoreArchive')->name('systemactivity.restore.archive');
+    });
+
+    Route::controller(ExportHubController::class)->group(function () {
+        Route::get('exports', 'index')->name('exports.index');
+        Route::get('exports/download', 'download')->name('exports.download');
     });
 
     // API Routes for Vue components - FIXED VERSION

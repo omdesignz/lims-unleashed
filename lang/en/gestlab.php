@@ -2052,7 +2052,17 @@ return [
                 'customer_info' => 'Dados do cliente',
                 'pricing_mode' => 'Modo de precificação',
                 'matrix_pricing' => 'Matriz',
-                'payment_status' => 'Estado de payment',
+                'payment_status' => 'Payment status',
+                'filters' => [
+                    'all' => 'All invoices',
+                    'paid' => 'Paid',
+                    'unpaid' => 'Unpaid',
+                ],
+                'payment_statuses' => [
+                    'paid' => 'Paid',
+                    'unpaid' => 'Unpaid',
+                    'canceled' => 'Canceled',
+                ],
                 'amount_paid' => 'Valor pago',
                 'payment_progress' => 'Progresso do payment',
                 'status' => 'Estado',

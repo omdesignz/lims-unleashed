@@ -9,14 +9,16 @@ use App\Http\Resources\SystemActivityResource;
 use App\Http\Resources\UserResource;
 use App\Models\SystemActivity;
 use App\Models\User;
+use App\Support\ExportHubQuery;
+use App\Support\SpreadsheetDownloadResponder;
 use Carbon\Carbon;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
-use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Activitylog\Models\Activity;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SystemActivityController extends Controller
 {
@@ -236,32 +238,20 @@ class SystemActivityController extends Controller
 
     //     return Excel::download(new ActivityLogExport($activities), $filename);
     // }
-    public function export(ExportActivityLogRequest $request)
+    public function export(ExportActivityLogRequest $request, ExportHubQuery $exportHubQuery): BinaryFileResponse
     {
-        // REMOVE THIS LINE
-        // dd($request->all());
+        $filters = $request->validated();
+        $query = $exportHubQuery->activityLog([
+            ...$filters,
+            'search' => $filters['description'] ?? null,
+            'date_from' => $filters['start_date'] ?? null,
+            'date_to' => $filters['end_date'] ?? null,
+        ]);
 
-        if (! auth()->user()->can('export_activity_log')) {
-            abort(403, 'Acção não autorizada.');
-        }
-
-        $query = Activity::with(['causer' => function ($query) {
-            $query->select('id', 'name', 'email');
-        }]);
-
-        // Apply same filters as index
-        $this->applyFilters($query, $request);
-
-        // Get all results for export
-        $activities = $query->get();
-
-        $filename = 'activity-logs-'.Carbon::now()->format('Y-m-d-His').'.xlsx';
-
-        // Fix the export response
-        // return (new ActivityLogExport($activities))->download($filename);
-
-        return Excel::download(new ActivityLogExport($activities), $filename);
-
+        return SpreadsheetDownloadResponder::download(
+            new ActivityLogExport($query),
+            'registo-actividade-'.now()->format('Ymd-His').'.xlsx'
+        );
     }
 
     /**
@@ -404,7 +394,7 @@ class SystemActivityController extends Controller
         // Causer filter
         if ($request->filled('causer_id')) {
             $query->where('causer_id', $request->get('causer_id'))
-                ->where('causer_type', User::class);
+                ->whereIn('causer_type', ['user', User::class]);
         }
 
         // Subject filter

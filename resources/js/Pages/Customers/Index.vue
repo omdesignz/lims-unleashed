@@ -6,6 +6,7 @@ import Layout from "@/Shared/Layouts/Layout.vue";
 import { Link, router } from "@inertiajs/vue3";
 import {
   ArchiveBoxIcon,
+  ArrowDownTrayIcon,
   BuildingOffice2Icon,
   CheckBadgeIcon,
   EyeIcon,
@@ -92,10 +93,16 @@ function executeBulkAction() {
           </div>
         </div>
 
-        <Link v-if="hasPermission('add_customers')" :href="route('customers.create')" class="ds-button ds-button-primary">
-          <PlusIcon class="h-4 w-4" />
-          Novo cliente
-        </Link>
+        <div class="flex flex-wrap gap-2">
+          <Link v-if="hasPermission('export_customers')" :href="route('exports.index', { dataset: 'customers' })" class="ds-button ds-button-secondary">
+            <ArrowDownTrayIcon class="h-4 w-4" />
+            Exportar
+          </Link>
+          <Link v-if="hasPermission('add_customers')" :href="route('customers.create')" class="ds-button ds-button-primary">
+            <PlusIcon class="h-4 w-4" />
+            Novo cliente
+          </Link>
+        </div>
       </div>
 
       <dl class="mt-6 grid overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] sm:grid-cols-2 xl:grid-cols-4">

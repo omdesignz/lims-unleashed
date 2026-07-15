@@ -58,6 +58,10 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
+  filterOptions: {
+    type: Array,
+    default: () => [],
+  },
 });
 
 const emit = defineEmits(["execute-action", "slideover-on", "create-record"]);
@@ -123,7 +127,7 @@ const resultSummary = computed(() => {
   return `${from}–${to} de ${total}`;
 });
 
-const filters = [
+const defaultFilterOptions = [
   {
     id: null,
     label: "gestlab.filter.filter",
@@ -133,6 +137,10 @@ const filters = [
     label: "gestlab.filter.excluded",
   },
 ];
+
+const filters = computed(() => {
+  return props.filterOptions.length ? props.filterOptions : defaultFilterOptions;
+});
 
 watch(
   query,
@@ -286,7 +294,11 @@ const masks = ref({
           </div>
 
           <div class="grid min-w-0 gap-2 sm:grid-cols-2 lg:flex lg:items-center lg:justify-end">
-            <select-filter :filters="filters" @execute="changeFilter" />
+            <select-filter
+              :filters="filters"
+              :model-value="query.filter"
+              @execute="changeFilter"
+            />
 
             <date-picker
               v-model.range.string="query.date"

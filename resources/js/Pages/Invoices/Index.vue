@@ -13,6 +13,25 @@ import ModuleHero from '@/Components/base/ModuleHero.vue'
 
 const { hasPermission } = usePermission();
 
+const invoiceFilterOptions = [
+  {
+    id: null,
+    label: 'gestlab.general.labels.invoices.filters.all',
+  },
+  {
+    id: 'unpaid',
+    label: 'gestlab.general.labels.invoices.filters.unpaid',
+  },
+  {
+    id: 'paid',
+    label: 'gestlab.general.labels.invoices.filters.paid',
+  },
+  {
+    id: 'trashed',
+    label: 'gestlab.filter.excluded',
+  },
+];
+
 
 const props = defineProps({
     record: Object,
@@ -165,7 +184,7 @@ const showPaymentConfirmation = ref(false);
   </div>
 </ModuleHero>
 
-<records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="handleEdit">
+<records-table :record="props.record" :model="props.model" :abilities="props.abilities" :fields="props.fields" :slideOverEdit="props.slideOverEdit" :query="props.query" :filter-options="invoiceFilterOptions" :actions="actions" @execute-action="($event) => {showDeleteConfirmation = true; actionId = $event}" @create-record="handleEdit">
   <template v-slot:actions="id">
       <Link
                     :href="route('invoices.show', {invoice: id})"

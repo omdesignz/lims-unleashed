@@ -194,6 +194,7 @@ import {
   Cog6ToothIcon,
   BeakerIcon,
   ArrowsRightLeftIcon,
+  ArrowDownTrayIcon,
   ChevronRightIcon,
   MagnifyingGlassIcon,
   XMarkIcon,
@@ -384,6 +385,15 @@ const switchLanguage = async (language) => {
 }
 
 // --- Navigation (shared with side-nav) ---
+const exportHubPermissions = [
+  'export_activity_log', 'export_customers', 'export_warehouses', 'export_products', 'export_parameters',
+  'export_profiles', 'export_matrixes', 'export_invoices', 'export_quotes', 'export_credit_notes',
+  'export_receipts', 'export_contract_guides', 'export_import_certificates', 'export_export_certificates',
+  'export_quality_certificates', 'export_customer_requests', 'export_occurrences',
+]
+const canUseExportHub = exportHubPermissions.some((permission) => hasPermission(permission))
+  || ['view_analysis', 'view_results', 'view_samples', 'view_inventory', 'view_maintenance_tasks'].some((permission) => hasPermission(permission))
+
 const navigation = [
   { title: 'gestlab.menu.dashboard', name: '/dashboard', href: route('dashboard'), icon: HomeIcon, show: true },
   { title: 'gestlab.menu.notifications', name: '/notifications', href: route('notifications.index'), icon: BellIcon, show: true },
@@ -450,6 +460,7 @@ const navigation = [
       { title: 'Fluxo laboratorial', name: '/laboratory-workflow', href: route('laboratory-workflow.index'), show: hasPermission('view_proposals') || hasPermission('view_samples') || hasPermission('view_analysis') || hasPermission('view_quality_certificates') },
       { title: 'gestlab.menu.parameters', name: '/parameters', href: route('parameters.index'), show: hasPermission('view_parameters') },
       { title: 'gestlab.menu.analysis', name: '/analysis', href: route('analysis.index'), show: hasPermission('view_analysis') },
+      { title: 'Dados laboratoriais', name: '/analysis/data-exports', href: route('analysis.data-exports.index'), show: hasPermission('view_analysis') || hasPermission('view_results') },
       { title: 'gestlab.menu.analysis_categories', name: '/analysiscategories', href: route('analysiscategories.index'), show: hasPermission('view_analysis_categories') },
       { title: 'gestlab.menu.pending_samples', name: '/vap-samples', href: route('vap_samples.index'), show: hasPermission('view_samples') },
       { title: 'gestlab.menu.sample_reports', name: '/vap-samples/reports', href: route('vap_samples.reports'), show: hasPermission('view_samples') },
@@ -543,6 +554,7 @@ const navigation = [
   { title: 'gestlab.menu.permissions', name: '/permissions', href: route('permissions.index'), icon: FingerPrintIcon, show: hasPermission('view_permissions') },
   { title: 'gestlab.menu.security', name: '/security', href: route('security'), icon: ShieldCheckIcon, show: true },
   { title: 'gestlab.menu.activity_log', name: '/system-activity', href: route('systemactivity.index'), icon: StopIcon, show: hasPermission('view_activity_log') },
+  { title: 'Central de exportações', name: '/exports', href: route('exports.index'), icon: ArrowDownTrayIcon, show: canUseExportHub },
   { title: 'gestlab.menu.backups', name: '/system-backups/backups', href: route('systembackups.backups'), icon: ServerIcon, show: hasPermission('view_backups') },
 ]
 

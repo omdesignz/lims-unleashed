@@ -27,7 +27,7 @@ class InvoiceResource extends JsonResource
             'discount_category' => DiscountCategoryResource::make($this->whenLoaded('discount_category'))?->name ?? null,
             'type_id' => InvoiceCategoryResource::make($this->whenLoaded('invoice_category')),
             'invoice_category' => InvoiceCategoryResource::make($this->whenLoaded('invoice_category'))?->code ?? null,
-            'items' => InvoiceItemResource::collection($this->whenLoaded('items')) ?? [], 
+            'items' => InvoiceItemResource::collection($this->whenLoaded('items')) ?? [],
             'description' => $this->description,
             'internal_ref' => $this->internal_ref,
             'file_path' => $this->file_path,
@@ -42,6 +42,8 @@ class InvoiceResource extends JsonResource
             'unique_hash' => $this->unique_hash,
             'status_code' => $this->status_code,
             'status' => $this->status,
+            'payment_status' => $this->resource->paymentStatus(),
+            'payment_status_label' => trans('gestlab.general.labels.invoices.payment_statuses.'.$this->resource->paymentStatus()),
             'is_original' => $this->is_original,
             'use_matrix_price' => $this->use_matrix_price,
             'is_service' => $this->is_service,
@@ -58,12 +60,12 @@ class InvoiceResource extends JsonResource
                 'edit_path' => route('invoices.edit', $this->id),
                 'pdf_path' => route('invoices.getPDF', ['id' => $this->id]),
                 'delete_path' => route('invoices.destroy', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
                 'restore_path' => route('invoices.restore', [
-                    'recordIds' => [$this->id]
+                    'recordIds' => [$this->id],
                 ]),
-            ]
+            ],
         ];
     }
 }

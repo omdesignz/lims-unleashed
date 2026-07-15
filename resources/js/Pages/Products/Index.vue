@@ -1,9 +1,10 @@
 <script setup>
 import ConfirmDialog from "@/Components/confirm-dialog.vue";
 import RecordsTable from "@/Components/records-table.vue";
+import { usePermission } from "@/Composables/usePermissions";
 import Layout from "@/Shared/Layouts/Layout.vue";
-import { BeakerIcon, CubeIcon, ReceiptPercentIcon } from "@heroicons/vue/24/outline";
-import { router } from "@inertiajs/vue3";
+import { ArrowDownTrayIcon, BeakerIcon, CubeIcon, ReceiptPercentIcon } from "@heroicons/vue/24/outline";
+import { Link, router } from "@inertiajs/vue3";
 import { trans } from "laravel-vue-i18n";
 import { computed, ref } from "vue";
 
@@ -19,6 +20,7 @@ const props = defineProps({
 });
 
 const actionId = ref(null);
+const { hasPermission } = usePermission();
 const showActionConfirmation = ref(false);
 const totalRecords = computed(() => props.record.meta?.total ?? props.record.data.length);
 const taxableRecords = computed(() => props.record.data.filter((product) => product.charge_tax).length);
@@ -77,20 +79,26 @@ function confirmAction() {
           </div>
         </div>
 
-        <dl class="grid w-full grid-cols-3 overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] lg:w-auto lg:min-w-[24rem]">
-          <div class="border-r border-[var(--ds-border)] px-4 py-3">
+        <div class="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
+          <dl class="grid w-full grid-cols-3 overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] lg:min-w-[24rem]">
+            <div class="border-r border-[var(--ds-border)] px-4 py-3">
             <dt class="text-xs font-bold uppercase text-[var(--ds-text-soft)]">Produtos</dt>
             <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ totalRecords }}</dd>
-          </div>
-          <div class="border-r border-[var(--ds-border)] px-4 py-3">
+            </div>
+            <div class="border-r border-[var(--ds-border)] px-4 py-3">
             <dt class="flex items-center gap-1 text-xs font-bold uppercase text-[var(--ds-text-soft)]"><BeakerIcon class="h-3.5 w-3.5" /> Matrizes</dt>
             <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ matrixCount }}</dd>
-          </div>
-          <div class="px-4 py-3">
+            </div>
+            <div class="px-4 py-3">
             <dt class="flex items-center gap-1 text-xs font-bold uppercase text-[var(--ds-text-soft)]"><ReceiptPercentIcon class="h-3.5 w-3.5" /> Tributados</dt>
             <dd class="mt-2 text-xl font-bold text-[var(--ds-text)]">{{ taxableRecords }}</dd>
-          </div>
-        </dl>
+            </div>
+          </dl>
+          <Link v-if="hasPermission('export_products')" :href="route('exports.index', { dataset: 'products' })" class="ds-button ds-button-secondary">
+            <ArrowDownTrayIcon class="h-4 w-4" />
+            Exportar
+          </Link>
+        </div>
       </div>
     </section>
 

@@ -1,133 +1,71 @@
 <template>
-  <div :class="commercialDocumentThemeClasses" class="space-y-8 text-[#18241f] dark:text-slate-100">
-    <section class="overflow-hidden rounded-[34px] border border-[#ded2bb] bg-[#fbfaf6] shadow-[0_26px_70px_-44px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950">
-      <div class="bg-[radial-gradient(circle_at_top_left,rgba(199,154,67,0.22),transparent_34%),linear-gradient(135deg,#fffaf0,#f7f1e6_58%,#143d37_58%,#143d37)] px-6 py-7 dark:bg-[radial-gradient(circle_at_top_left,rgba(199,154,67,0.18),transparent_34%),linear-gradient(135deg,#17231f,#101815_58%,#0b1210_58%,#0b1210)] sm:px-8">
-        <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-          <div class="max-w-4xl">
-            <div class="flex flex-wrap items-center gap-3">
-              <span class="inline-flex items-center gap-2 rounded-full border border-[#c79a43]/40 bg-white/85 px-3 py-1 text-xs font-black uppercase tracking-[0.24em] text-[#143d37] shadow-sm dark:bg-white/10 dark:text-amber-100">
-                <DocumentTextIcon class="h-4 w-4 text-[#c79a43]" />
-                {{ $t('gestlab.general.labels.vap_proposals.surface.commercial_management') }}
-              </span>
-              <span v-if="selectedTemplate" class="inline-flex items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200">
-                {{ $t('gestlab.general.labels.vap_proposals.surface.template_badge', { name: selectedTemplate.name }) }}
-              </span>
-            </div>
-            <h1 class="mt-5 text-3xl font-black tracking-[-0.04em] text-[#10221d] dark:text-white sm:text-5xl">
-              {{ $t('gestlab.general.labels.vap_proposals.title') }}
-            </h1>
-            <p class="mt-4 max-w-3xl text-base font-medium leading-7 text-[#59665f] dark:text-slate-300">
-              {{ $t('gestlab.general.labels.vap_proposals.description') }}
-              <span class="font-black text-[#143d37] dark:text-emerald-100">{{ $t('gestlab.general.labels.vap_proposals.surface.proposals_count', { count: formatNumber(stats.total) }) }}</span>
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="ds-chip">
+            <DocumentTextIcon class="h-4 w-4" />
+            {{ $t('gestlab.general.labels.vap_proposals.surface.commercial_management') }}
+          </span>
+          <span v-if="selectedTemplate" class="ds-badge ds-badge-info max-w-full truncate">
+            {{ $t('gestlab.general.labels.vap_proposals.surface.template_badge', { name: selectedTemplate.name }) }}
+          </span>
+        </div>
+        <h1 class="ds-heading mt-3 text-2xl sm:text-3xl">{{ $t('gestlab.general.labels.vap_proposals.title') }}</h1>
+        <p class="ds-copy mt-1 max-w-3xl text-sm">
+          {{ $t('gestlab.general.labels.vap_proposals.description') }}
+          <span class="font-bold text-[var(--ds-text)]">{{ $t('gestlab.general.labels.vap_proposals.surface.proposals_count', { count: formatNumber(stats.total) }) }}</span>
+        </p>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <Link :href="route('vap-proposals.templates.index')" class="ds-button ds-button-secondary">
+          <DocumentDuplicateIcon class="h-4 w-4" />
+          {{ $t('gestlab.general.labels.vap_proposals.surface.templates') }}
+        </Link>
+        <Link :href="route('vap-proposals.create')" class="ds-button ds-button-primary">
+          <PlusCircleIcon class="h-4 w-4" />
+          {{ $t('gestlab.general.labels.vap_proposals.create_new') }}
+        </Link>
+      </div>
+    </header>
+
+    <section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6" :aria-label="$t('gestlab.general.labels.vap_proposals.stats.title')">
+      <article v-for="stat in statCards" :key="stat.key" class="ds-card p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-xs font-bold text-[var(--ds-text-soft)]">{{ $t(stat.labelKey) }}</p>
+            <p class="mt-2 truncate text-xl font-bold text-[var(--ds-text)]" :title="String(stat.value)">
+              {{ stat.currency ? formatCurrency(stat.value) : formatNumber(stat.value) }}
             </p>
           </div>
-
-          <div class="flex flex-col gap-3 sm:flex-row">
-            <Link
-              :href="route('vap-proposals.templates.index')"
-              class="inline-flex items-center justify-center gap-2 rounded-[20px] border border-white/45 bg-white/85 px-5 py-3 text-sm font-black text-[#143d37] shadow-[0_18px_42px_-28px_rgba(20,61,55,0.65)] transition hover:bg-[#fff7e5] dark:border-white/10 dark:bg-white/10 dark:text-emerald-100 dark:hover:bg-white/15"
-            >
-              <DocumentDuplicateIcon class="h-5 w-5 text-[#c79a43]" />
-              {{ $t('gestlab.general.labels.vap_proposals.surface.templates') }}
-            </Link>
-            <Link
-              :href="route('vap-proposals.create')"
-              class="inline-flex items-center justify-center gap-2 rounded-[20px] bg-[#143d37] px-5 py-3 text-sm font-black text-white shadow-[0_18px_42px_-24px_rgba(20,61,55,0.75)] transition hover:bg-[#0f302b] focus:outline-none focus:ring-2 focus:ring-[#c79a43] focus:ring-offset-2 dark:ring-offset-slate-950"
-            >
-              <PlusCircleIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.vap_proposals.create_new') }}
-            </Link>
-          </div>
+          <span :class="['flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', stat.tone]">
+            <component :is="stat.icon" class="h-4 w-4" />
+          </span>
         </div>
-      </div>
-
-      <div class="grid gap-4 border-t border-[#ded2bb] bg-white/55 px-6 py-5 dark:border-white/10 dark:bg-white/5 sm:grid-cols-2 xl:grid-cols-6 sm:px-8">
-        <article
-          v-for="stat in statCards"
-          :key="stat.key"
-          class="rounded-[24px] border border-[#ded2bb] bg-white/85 p-4 shadow-[0_18px_48px_-36px_rgba(20,61,55,0.48)] dark:border-white/10 dark:bg-white/5"
-        >
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <p class="text-xs font-black uppercase tracking-[0.18em] text-[#78847c] dark:text-slate-400">{{ $t(stat.labelKey) }}</p>
-              <p class="mt-3 text-2xl font-black tracking-[-0.04em] text-[#10221d] dark:text-white">
-                {{ stat.currency ? formatCurrency(stat.value) : formatNumber(stat.value) }}
-              </p>
-            </div>
-            <span :class="['flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px]', stat.tone]">
-              <component :is="stat.icon" class="h-5 w-5" />
-            </span>
-          </div>
-        </article>
-      </div>
+      </article>
     </section>
 
-    <section class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_25rem]">
-      <div class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90 sm:p-7">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p class="text-xs font-black uppercase tracking-[0.28em] text-[#c79a43]">{{ $t('gestlab.general.labels.vap_proposals.filters.indicators') }}</p>
-            <h2 class="mt-2 flex items-center gap-2 text-2xl font-black tracking-[-0.03em] text-[#10221d] dark:text-white">
-              <ChartBarIcon class="h-6 w-6 text-[#143d37] dark:text-emerald-100" />
-              {{ $t('gestlab.general.labels.vap_proposals.chart.title') }}
-            </h2>
-          </div>
-          <BaseSelect
-            v-model="period"
-            class="rounded-[18px] border border-[#ded2bb] bg-[#fbfaf6] px-4 py-3 text-sm font-black text-[#143d37] outline-none transition focus:border-[#c79a43] focus:ring-2 focus:ring-[#c79a43]/30 dark:border-white/10 dark:bg-white/5 dark:text-emerald-100"
-          >
-            <option value="7">{{ $t('gestlab.general.labels.vap_proposals.chart.last_7_days') }}</option>
-            <option value="30">{{ $t('gestlab.general.labels.vap_proposals.chart.last_30_days') }}</option>
-            <option value="90">{{ $t('gestlab.general.labels.vap_proposals.chart.last_90_days') }}</option>
-          </BaseSelect>
-        </div>
-
-        <div class="mt-7 h-80 rounded-[26px] border border-[#ded2bb] bg-[#fbfaf6] p-4 dark:border-white/10 dark:bg-white/5">
-          <apexchart
-            v-if="chartData.length"
-            type="area"
-            height="100%"
-            :options="chartOptions"
-            :series="chartData"
-          />
-          <div v-else class="flex h-full items-center justify-center text-center">
-            <p class="max-w-sm text-sm font-semibold text-[#78847c] dark:text-slate-400">
-              {{ $t('gestlab.general.labels.vap_proposals.chart.empty') }}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <aside class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
-        <div class="flex items-center justify-between gap-4">
-          <div>
-            <p class="text-xs font-black uppercase tracking-[0.28em] text-[#c79a43]">{{ $t('gestlab.general.labels.vap_proposals.filters.search') }}</p>
-            <h2 class="mt-2 text-2xl font-black tracking-[-0.03em] text-[#10221d] dark:text-white">{{ $t('gestlab.general.labels.vap_proposals.filters.title') }}</h2>
-          </div>
-          <FunnelIcon class="h-6 w-6 text-[#143d37] dark:text-emerald-100" />
-        </div>
-
-        <div class="mt-6 space-y-4">
-          <label class="block">
-            <span class="text-xs font-black uppercase tracking-[0.18em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.filters.search') }}</span>
-            <span class="relative mt-2 block">
-              <MagnifyingGlassIcon class="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#9aa59d] dark:text-slate-500" />
+    <section class="ds-command-surface p-4 sm:p-5">
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-end">
+        <div class="grid min-w-0 flex-1 gap-4 md:grid-cols-[minmax(15rem,1fr)_13rem_13rem]">
+          <label class="ds-field-group">
+            <span class="ds-field-label">{{ $t('gestlab.general.labels.vap_proposals.filters.search') }}</span>
+            <span class="relative block">
+              <MagnifyingGlassIcon class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-soft)]" />
               <BaseInput
                 v-model="search"
                 type="search"
                 :placeholder="$t('gestlab.general.labels.vap_proposals.filters.search_placeholder')"
-                class="w-full rounded-[20px] border border-[#ded2bb] bg-[#fbfaf6] py-3 pl-12 pr-4 text-sm font-semibold text-[#33413a] outline-none transition placeholder:text-[#9aa59d] focus:border-[#c79a43] focus:ring-2 focus:ring-[#c79a43]/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:placeholder:text-slate-500"
+                class="ds-field pl-10"
                 @input="debouncedApplyFilters"
               />
             </span>
           </label>
 
-          <label class="block">
-            <span class="text-xs font-black uppercase tracking-[0.18em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.filters.status') }}</span>
-            <BaseSelect
-              v-model="statusFilter"
-              class="mt-2 w-full rounded-[20px] border border-[#ded2bb] bg-[#fbfaf6] px-4 py-3 text-sm font-black text-[#143d37] outline-none transition focus:border-[#c79a43] focus:ring-2 focus:ring-[#c79a43]/30 dark:border-white/10 dark:bg-white/5 dark:text-emerald-100"
-            >
+          <label class="ds-field-group">
+            <span class="ds-field-label">{{ $t('gestlab.general.labels.vap_proposals.filters.status') }}</span>
+            <BaseSelect v-model="statusFilter" class="ds-field">
               <option value="all">{{ $t('gestlab.general.labels.vap_proposals.filters.all_statuses') }}</option>
               <option value="PENDING">{{ $t('gestlab.general.labels.vap_proposals.status.pending') }}</option>
               <option value="SENT">{{ $t('gestlab.general.labels.vap_proposals.status.sent') }}</option>
@@ -139,180 +77,155 @@
             </BaseSelect>
           </label>
 
-          <div v-if="selectedTemplate" class="rounded-[22px] border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-300/20 dark:bg-emerald-400/10">
-            <p class="text-xs font-black uppercase tracking-[0.18em] text-emerald-800 dark:text-emerald-200">{{ $t('gestlab.general.labels.vap_proposals.filters.active_template') }}</p>
-            <p class="mt-2 text-sm font-black text-emerald-950 dark:text-emerald-100">{{ selectedTemplate.name }}</p>
-            <Link :href="route('vap-proposals.index')" class="mt-3 inline-flex text-sm font-black text-emerald-800 underline decoration-emerald-500/50 underline-offset-4 dark:text-emerald-200">
+          <label class="ds-field-group">
+            <span class="ds-field-label">{{ $t('gestlab.general.labels.vap_proposals.filters.indicators') }}</span>
+            <BaseSelect v-model="period" class="ds-field">
+              <option value="7">{{ $t('gestlab.general.labels.vap_proposals.chart.last_7_days') }}</option>
+              <option value="30">{{ $t('gestlab.general.labels.vap_proposals.chart.last_30_days') }}</option>
+              <option value="90">{{ $t('gestlab.general.labels.vap_proposals.chart.last_90_days') }}</option>
+            </BaseSelect>
+          </label>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <div v-if="selectedTemplate" class="flex min-h-10 items-center gap-2 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-3 text-xs font-semibold text-[var(--ds-text-muted)]">
+            <span class="max-w-52 truncate">{{ selectedTemplate.name }}</span>
+            <Link :href="route('vap-proposals.index')" class="font-bold text-primary-700 hover:text-primary-900 dark:text-primary-200">
               {{ $t('gestlab.general.labels.vap_proposals.filters.clear_template') }}
             </Link>
           </div>
-
-          <button
-            type="button"
-            @click="resetFilters"
-            class="inline-flex w-full items-center justify-center gap-2 rounded-[20px] border border-[#ded2bb] bg-[#fbfaf6] px-4 py-3 text-sm font-black text-[#143d37] transition hover:border-[#c79a43] hover:bg-[#fff7e5] dark:border-white/10 dark:bg-white/5 dark:text-emerald-100 dark:hover:bg-white/10"
-          >
-            <ArrowPathIcon class="h-5 w-5" />
+          <button type="button" class="ds-button ds-button-secondary" @click="resetFilters">
+            <ArrowPathIcon class="h-4 w-4" />
             {{ $t('gestlab.general.labels.vap_proposals.filters.clear_search') }}
           </button>
         </div>
-      </aside>
+      </div>
     </section>
 
-    <section class="overflow-hidden rounded-[34px] border border-[#ded2bb] bg-white/90 shadow-[0_26px_70px_-44px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
-      <div class="flex flex-col gap-4 border-b border-[#ded2bb] px-6 py-6 dark:border-white/10 lg:flex-row lg:items-end lg:justify-between sm:px-8">
-        <div>
-          <p class="text-xs font-black uppercase tracking-[0.28em] text-[#c79a43]">{{ $t('gestlab.general.labels.vap_proposals.filters.pipeline') }}</p>
-          <h2 class="mt-2 flex items-center gap-2 text-2xl font-black tracking-[-0.03em] text-[#10221d] dark:text-white">
-            <ListBulletIcon class="h-6 w-6 text-[#143d37] dark:text-emerald-100" />
-            {{ $t('gestlab.general.labels.vap_proposals.list.title') }}
-          </h2>
-          <p class="mt-1 text-sm font-semibold text-[#78847c] dark:text-slate-400">
-            {{ $t('gestlab.general.labels.vap_proposals.filters.proposals_count', { from: proposals.from || 0, to: proposals.to || 0, total: proposals.total || 0 }) }}
-          </p>
+    <div class="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <section class="ds-table-shell min-w-0">
+        <div class="ds-table-summary px-4 py-3 sm:px-5">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <ListBulletIcon class="h-4 w-4 text-primary-700 dark:text-primary-200" />
+              <h2 class="ds-heading text-sm">{{ $t('gestlab.general.labels.vap_proposals.list.title') }}</h2>
+            </div>
+            <p class="mt-1 text-xs font-semibold text-[var(--ds-text-soft)]">
+              {{ $t('gestlab.general.labels.vap_proposals.filters.proposals_count', { from: proposals.from || 0, to: proposals.to || 0, total: proposals.total || 0 }) }}
+            </p>
+          </div>
+          <Link :href="route('vap-proposals.create')" class="ds-button ds-button-primary shrink-0">
+            <PlusCircleIcon class="h-4 w-4" />
+            <span class="hidden sm:inline">{{ $t('gestlab.general.labels.vap_proposals.create_new') }}</span>
+          </Link>
         </div>
-        <Link
-          :href="route('vap-proposals.create')"
-          class="inline-flex items-center justify-center gap-2 rounded-[20px] bg-[#143d37] px-5 py-3 text-sm font-black text-white transition hover:bg-[#0f302b]"
-        >
-          <PlusCircleIcon class="h-5 w-5" />
-          {{ $t('gestlab.general.labels.vap_proposals.create_new') }}
-        </Link>
-      </div>
 
-      <div v-if="!proposals.data.length" class="px-6 py-16 text-center sm:px-8">
-        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-[24px] bg-[#f7f1e6] text-[#143d37] ring-1 ring-[#ded2bb] dark:bg-white/10 dark:text-emerald-100 dark:ring-white/10">
-          <DocumentTextIcon class="h-8 w-8" />
+        <div v-if="!proposals.data.length" class="ds-empty-state m-5 px-5 py-12 text-center">
+          <DocumentTextIcon class="mx-auto h-9 w-9 text-[var(--ds-text-soft)]" />
+          <h3 class="ds-heading mt-4 text-base">{{ $t('gestlab.general.labels.vap_proposals.empty_state.title') }}</h3>
+          <p class="ds-copy mx-auto mt-1 max-w-md text-sm">{{ $t('gestlab.general.labels.vap_proposals.empty_state.description') }}</p>
+          <Link :href="route('vap-proposals.create')" class="ds-button ds-button-primary mt-5">
+            <PlusCircleIcon class="h-4 w-4" />
+            {{ $t('gestlab.general.labels.vap_proposals.create_first') }}
+          </Link>
         </div>
-        <h3 class="mt-5 text-xl font-black text-[#10221d] dark:text-white">{{ $t('gestlab.general.labels.vap_proposals.empty_state.title') }}</h3>
-        <p class="mx-auto mt-2 max-w-md text-sm font-medium leading-6 text-[#59665f] dark:text-slate-300">
-          {{ $t('gestlab.general.labels.vap_proposals.empty_state.description') }}
-        </p>
-        <Link
-          :href="route('vap-proposals.create')"
-          class="mt-6 inline-flex items-center gap-2 rounded-[20px] bg-[#143d37] px-5 py-3 text-sm font-black text-white transition hover:bg-[#0f302b]"
-        >
-          <PlusCircleIcon class="h-5 w-5" />
-          {{ $t('gestlab.general.labels.vap_proposals.create_first') }}
-        </Link>
-      </div>
 
-      <div v-else class="overflow-x-auto">
-        <DataTable class="min-w-[1040px] w-full">
-          <thead>
-            <tr class="border-b border-[#ded2bb] bg-[#f7f1e6] text-left dark:border-white/10 dark:bg-white/5">
-              <th class="px-6 py-4 text-xs font-black uppercase tracking-[0.24em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.table.proposal_no') }}</th>
-              <th class="px-6 py-4 text-xs font-black uppercase tracking-[0.24em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.table.customer') }}</th>
-              <th class="px-6 py-4 text-xs font-black uppercase tracking-[0.24em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.table.department') }}</th>
-              <th class="px-6 py-4 text-xs font-black uppercase tracking-[0.24em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.table.total') }}</th>
-              <th class="px-6 py-4 text-xs font-black uppercase tracking-[0.24em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.table.status') }}</th>
-              <th class="px-6 py-4 text-xs font-black uppercase tracking-[0.24em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.table.expiry') }}</th>
-              <th class="px-6 py-4 text-right text-xs font-black uppercase tracking-[0.24em] text-[#78847c] dark:text-slate-400">{{ $t('gestlab.general.labels.vap_proposals.table.actions') }}</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-[#ebe1cf] dark:divide-white/10">
-            <tr
-              v-for="proposal in proposals.data"
-              :key="proposal.id"
-              class="transition hover:bg-[#fbfaf6] dark:hover:bg-white/5"
-            >
-              <td class="px-6 py-5">
-                <div class="flex items-center gap-4">
-                  <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-[#f7f1e6] text-[#143d37] ring-1 ring-[#ded2bb] dark:bg-white/10 dark:text-emerald-100 dark:ring-white/10">
-                    <DocumentTextIcon class="h-6 w-6" />
-                  </span>
-                  <div>
-                    <Link :href="route('vap-proposals.show', proposal.id)" class="text-sm font-black text-[#10221d] transition hover:text-[#143d37] dark:text-white dark:hover:text-emerald-100">
-                      {{ proposal.proposal_number }}
+        <div v-else class="overflow-x-auto">
+          <DataTable class="ds-data-table min-w-[980px]">
+            <thead>
+              <tr>
+                <th>{{ $t('gestlab.general.labels.vap_proposals.table.proposal_no') }}</th>
+                <th>{{ $t('gestlab.general.labels.vap_proposals.table.customer') }}</th>
+                <th>{{ $t('gestlab.general.labels.vap_proposals.table.department') }}</th>
+                <th>{{ $t('gestlab.general.labels.vap_proposals.table.total') }}</th>
+                <th>{{ $t('gestlab.general.labels.vap_proposals.table.status') }}</th>
+                <th>{{ $t('gestlab.general.labels.vap_proposals.table.expiry') }}</th>
+                <th class="text-right">{{ $t('gestlab.general.labels.vap_proposals.table.actions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="proposal in proposals.data" :key="proposal.id">
+                <td>
+                  <Link :href="route('vap-proposals.show', proposal.id)" class="font-mono text-sm font-bold text-[var(--ds-text)] hover:text-primary-700 dark:hover:text-primary-200">
+                    {{ proposal.proposal_number }}
+                  </Link>
+                  <p class="mt-1 text-xs text-[var(--ds-text-soft)]">{{ formatDate(proposal.created_at) }}</p>
+                </td>
+                <td>
+                  <p class="font-bold text-[var(--ds-text)]">{{ proposal.customer?.name || '—' }}</p>
+                  <p class="mt-1 text-xs text-[var(--ds-text-soft)]">{{ proposal.customer?.code || $t('gestlab.general.labels.vap_proposals.row.no_customer_code') }}</p>
+                </td>
+                <td>
+                  <p>{{ proposal.department?.name || '—' }}</p>
+                  <p v-if="proposal.template" class="mt-1 max-w-48 truncate text-xs text-[var(--ds-text-soft)]" :title="proposal.template.name">{{ proposal.template.name }}</p>
+                </td>
+                <td>
+                  <p class="font-bold text-[var(--ds-text)]">{{ formatCurrency(proposal.total) }}</p>
+                  <p class="mt-1 text-xs text-[var(--ds-text-soft)]">{{ proposal.items_count }} {{ proposal.items_count === 1 ? $t('gestlab.general.labels.vap_proposals.row.single_item') : $t('gestlab.general.labels.vap_proposals.row.multiple_items') }}</p>
+                </td>
+                <td><span :class="statusBadgeClass(proposal.status)">{{ proposal.status_badge?.text || proposal.status }}</span></td>
+                <td>
+                  <p class="text-[var(--ds-text)]">{{ formatDate(proposal.expiry_date) }}</p>
+                  <p :class="['mt-1 text-xs font-bold', proposal.days_until_expiry <= 3 ? 'text-red-600 dark:text-red-300' : 'text-[var(--ds-text-soft)]']">
+                    {{ expiryLabel(proposal.days_until_expiry) }}
+                  </p>
+                </td>
+                <td>
+                  <div class="flex justify-end gap-1">
+                    <Link :href="route('vap-proposals.show', proposal.id)" class="ds-table-action px-2" :title="$t('gestlab.general.labels.vap_proposals.row.view')">
+                      <EyeIcon class="h-4 w-4" />
                     </Link>
-                    <p class="mt-1 text-xs font-semibold text-[#78847c] dark:text-slate-400">{{ formatDate(proposal.created_at) }}</p>
+                    <Link v-if="canRevise(proposal)" :href="route('vap-proposals.edit', proposal.id)" class="ds-table-action px-2" :title="$t('gestlab.general.labels.vap_proposals.row.revise')">
+                      <PencilSquareIcon class="h-4 w-4" />
+                    </Link>
+                    <a v-if="proposal.file_path" :href="route('vap-proposals.download.pdf', proposal.id)" class="ds-table-action px-2" :title="$t('gestlab.general.labels.vap_proposals.row.download_pdf')">
+                      <ArrowDownTrayIcon class="h-4 w-4" />
+                    </a>
+                    <button v-if="canDelete(proposal)" type="button" class="ds-table-action ds-table-action-danger px-2" :title="$t('gestlab.general.labels.vap_proposals.row.delete')" @click="confirmDelete(proposal)">
+                      <TrashIcon class="h-4 w-4" />
+                    </button>
                   </div>
-                </div>
-              </td>
-              <td class="px-6 py-5">
-                <p class="text-sm font-black text-[#10221d] dark:text-white">{{ proposal.customer?.name || '—' }}</p>
-                <p class="mt-1 text-xs font-semibold text-[#78847c] dark:text-slate-400">{{ proposal.customer?.code || $t('gestlab.general.labels.vap_proposals.row.no_customer_code') }}</p>
-              </td>
-              <td class="px-6 py-5">
-                <p class="text-sm font-semibold text-[#33413a] dark:text-slate-200">{{ proposal.department?.name || '—' }}</p>
-                <p v-if="proposal.template" class="mt-1 text-xs font-semibold text-[#78847c] dark:text-slate-400">{{ proposal.template.name }}</p>
-              </td>
-              <td class="px-6 py-5">
-                <p class="text-sm font-black text-[#143d37] dark:text-emerald-100">{{ formatCurrency(proposal.total) }}</p>
-                <p class="mt-1 text-xs font-semibold text-[#78847c] dark:text-slate-400">{{ proposal.items_count }} {{ proposal.items_count === 1 ? $t('gestlab.general.labels.vap_proposals.row.single_item') : $t('gestlab.general.labels.vap_proposals.row.multiple_items') }}</p>
-              </td>
-              <td class="px-6 py-5">
-                <span :class="['inline-flex items-center rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.14em]', statusBadgeClass(proposal.status)]">
-                  {{ proposal.status_badge?.text || proposal.status }}
-                </span>
-              </td>
-              <td class="px-6 py-5">
-                <p class="text-sm font-semibold text-[#33413a] dark:text-slate-200">{{ formatDate(proposal.expiry_date) }}</p>
-                <p :class="['mt-1 text-xs font-black', proposal.days_until_expiry <= 3 ? 'text-red-600 dark:text-red-300' : 'text-[#78847c] dark:text-slate-400']">
-                  {{ expiryLabel(proposal.days_until_expiry) }}
-                </p>
-              </td>
-              <td class="px-6 py-5">
-                <div class="flex justify-end gap-2">
-                  <Link
-                    :href="route('vap-proposals.show', proposal.id)"
-                    class="rounded-[14px] p-2 text-[#143d37] transition hover:bg-[#f7f1e6] dark:text-emerald-100 dark:hover:bg-white/10"
-                    :title="$t('gestlab.general.labels.vap_proposals.row.view')"
-                  >
-                    <EyeIcon class="h-5 w-5" />
-                  </Link>
-                  <Link
-                    v-if="canRevise(proposal)"
-                    :href="route('vap-proposals.edit', proposal.id)"
-                    class="rounded-[14px] p-2 text-amber-700 transition hover:bg-amber-50 dark:text-amber-200 dark:hover:bg-amber-400/10"
-                    :title="$t('gestlab.general.labels.vap_proposals.row.revise')"
-                  >
-                    <PencilSquareIcon class="h-5 w-5" />
-                  </Link>
-                  <a
-                    v-if="proposal.file_path"
-                    :href="route('vap-proposals.download.pdf', proposal.id)"
-                    class="rounded-[14px] p-2 text-emerald-700 transition hover:bg-emerald-50 dark:text-emerald-200 dark:hover:bg-emerald-400/10"
-                    :title="$t('gestlab.general.labels.vap_proposals.row.download_pdf')"
-                  >
-                    <ArrowDownTrayIcon class="h-5 w-5" />
-                  </a>
-                  <button
-                    v-if="canDelete(proposal)"
-                    type="button"
-                    @click="confirmDelete(proposal)"
-                    class="rounded-[14px] p-2 text-red-600 transition hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-400/10"
-                    :title="$t('gestlab.general.labels.vap_proposals.row.delete')"
-                  >
-                    <TrashIcon class="h-5 w-5" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </DataTable>
-      </div>
+                </td>
+              </tr>
+            </tbody>
+          </DataTable>
+        </div>
 
-      <div v-if="proposals.data.length > 0" class="border-t border-[#ded2bb] px-6 py-5 dark:border-white/10 sm:px-8">
-        <Pagination
-          :links="proposals.links"
-          :from="proposals.from"
-          :to="proposals.to"
-          :total="proposals.total"
-          :current_page="proposals.current_page"
-          :last_page="proposals.last_page"
-        />
-      </div>
-    </section>
+        <div v-if="proposals.data.length > 0" class="border-t border-[var(--ds-border)] px-4 py-4 sm:px-5">
+          <Pagination
+            :links="proposals.links"
+            :from="proposals.from"
+            :to="proposals.to"
+            :total="proposals.total"
+            :current_page="proposals.current_page"
+            :last_page="proposals.last_page"
+          />
+        </div>
+      </section>
+
+      <aside class="ds-panel h-fit overflow-hidden">
+        <div class="flex items-center justify-between border-b border-[var(--ds-border)] px-4 py-3">
+          <div class="flex items-center gap-2">
+            <ChartBarIcon class="h-4 w-4 text-primary-700 dark:text-primary-200" />
+            <h2 class="ds-heading text-sm">{{ $t('gestlab.general.labels.vap_proposals.chart.title') }}</h2>
+          </div>
+          <span class="ds-badge ds-badge-neutral">{{ period }}d</span>
+        </div>
+        <div class="h-72 p-3">
+          <apexchart v-if="chartData.length" type="area" height="100%" :options="chartOptions" :series="chartData" />
+          <div v-else class="flex h-full items-center justify-center p-5 text-center">
+            <p class="ds-copy text-sm">{{ $t('gestlab.general.labels.vap_proposals.chart.empty') }}</p>
+          </div>
+        </div>
+      </aside>
+    </div>
 
     <ConfirmationModal :show="showDeleteModal" @close="showDeleteModal = false" @confirm="deleteProposal">
-      <template #title>
-        {{ $t('gestlab.general.labels.vap_proposals.delete.title') }}
-      </template>
+      <template #title>{{ $t('gestlab.general.labels.vap_proposals.delete.title') }}</template>
       <template #content>
-        <div class="space-y-3 text-sm font-medium text-[#59665f] dark:text-slate-300">
+        <div class="space-y-3 text-sm font-medium text-[var(--ds-text-muted)]">
           <p>{{ $t('gestlab.general.labels.vap_proposals.delete.message', { number: selectedProposal?.proposal_number }) }}</p>
-          <p class="font-black text-red-600 dark:text-red-300">{{ $t('gestlab.general.labels.vap_proposals.delete.warning') }}</p>
+          <p class="font-bold text-red-600 dark:text-red-300">{{ $t('gestlab.general.labels.vap_proposals.delete.warning') }}</p>
         </div>
       </template>
     </ConfirmationModal>
@@ -333,7 +246,6 @@ import {
   DocumentTextIcon,
   ExclamationTriangleIcon,
   EyeIcon,
-  FunnelIcon,
   ListBulletIcon,
   MagnifyingGlassIcon,
   PencilSquareIcon,
@@ -345,7 +257,6 @@ import debounce from 'lodash/debounce'
 import { trans } from 'laravel-vue-i18n'
 import Pagination from '@/Components/Pagination.vue'
 import ConfirmationModal from '@/Components/dialog-modal.vue'
-import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 
 const props = defineProps({
   proposals: {
@@ -380,12 +291,12 @@ const isDark = ref(false)
 let darkModeObserver = null
 
 const statCards = computed(() => [
-  { key: 'total', labelKey: 'gestlab.general.labels.vap_proposals.stats.total', value: props.stats.total, icon: DocumentTextIcon, tone: 'bg-[#f7f1e6] text-[#143d37] dark:bg-white/10 dark:text-emerald-100' },
+  { key: 'total', labelKey: 'gestlab.general.labels.vap_proposals.stats.total', value: props.stats.total, icon: DocumentTextIcon, tone: 'bg-primary-50 text-primary-800 dark:bg-primary-500/10 dark:text-primary-100' },
   { key: 'pending', labelKey: 'gestlab.general.labels.vap_proposals.stats.pending', value: props.stats.pending, icon: ClockIcon, tone: 'bg-amber-50 text-amber-800 dark:bg-amber-400/10 dark:text-amber-200' },
   { key: 'accepted', labelKey: 'gestlab.general.labels.vap_proposals.stats.accepted', value: props.stats.accepted, icon: CheckCircleIcon, tone: 'bg-emerald-50 text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200' },
   { key: 'rejected', labelKey: 'gestlab.general.labels.vap_proposals.stats.rejected', value: props.stats.rejected, icon: XCircleIcon, tone: 'bg-red-50 text-red-800 dark:bg-red-400/10 dark:text-red-200' },
   { key: 'expired', labelKey: 'gestlab.general.labels.vap_proposals.stats.expired', value: props.stats.expired, icon: ExclamationTriangleIcon, tone: 'bg-orange-50 text-orange-800 dark:bg-orange-400/10 dark:text-orange-200' },
-  { key: 'total_value', labelKey: 'gestlab.general.labels.vap_proposals.stats.accepted_value', value: props.stats.total_value, icon: BanknotesIcon, currency: true, tone: 'bg-[#143d37] text-white dark:bg-emerald-400/15 dark:text-emerald-100' },
+  { key: 'total_value', labelKey: 'gestlab.general.labels.vap_proposals.stats.accepted_value', value: props.stats.total_value, icon: BanknotesIcon, currency: true, tone: 'bg-indigo-50 text-indigo-800 dark:bg-indigo-500/10 dark:text-indigo-100' },
 ])
 
 const chartData = computed(() => props.chartSeries || [])
@@ -396,9 +307,9 @@ const chartOptions = computed(() => ({
     height: 350,
     toolbar: { show: false },
     zoom: { enabled: false },
-    foreColor: isDark.value ? '#cbd5e1' : '#59665f',
+    foreColor: isDark.value ? '#cbd5e1' : '#64748b',
   },
-  colors: ['#143d37', '#c79a43'],
+  colors: ['#0f766e', '#4f46e5'],
   dataLabels: { enabled: false },
   fill: {
     type: 'gradient',
@@ -410,7 +321,7 @@ const chartOptions = computed(() => ({
     },
   },
   grid: {
-    borderColor: isDark.value ? 'rgba(255,255,255,0.1)' : '#ded2bb',
+    borderColor: isDark.value ? 'rgba(255,255,255,0.1)' : '#e2e8f0',
     strokeDashArray: 5,
   },
   markers: {
@@ -430,7 +341,7 @@ const chartOptions = computed(() => ({
     type: 'datetime',
     labels: {
       style: {
-        colors: isDark.value ? '#94a3b8' : '#78847c',
+        colors: isDark.value ? '#94a3b8' : '#64748b',
         fontWeight: 700,
       },
     },
@@ -439,7 +350,7 @@ const chartOptions = computed(() => ({
     labels: {
       formatter: (value) => Number(value || 0).toFixed(0),
       style: {
-        colors: isDark.value ? '#94a3b8' : '#78847c',
+        colors: isDark.value ? '#94a3b8' : '#64748b',
         fontWeight: 700,
       },
     },
@@ -523,13 +434,13 @@ const formatCurrency = (amount) => new Intl.NumberFormat('pt-AO', {
 
 const statusBadgeClass = (status) => {
   const classes = {
-    PENDING: 'bg-amber-50 text-amber-800 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-200 dark:ring-amber-300/20',
-    SENT: 'bg-[#f7f1e6] text-[#143d37] ring-1 ring-[#ded2bb] dark:bg-white/10 dark:text-emerald-100 dark:ring-white/10',
-    VIEWED: 'bg-cyan-50 text-cyan-800 ring-1 ring-cyan-200 dark:bg-cyan-400/10 dark:text-cyan-200 dark:ring-cyan-300/20',
-    ACCEPTED: 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-400/10 dark:text-emerald-200 dark:ring-emerald-300/20',
-    REJECTED: 'bg-red-50 text-red-800 ring-1 ring-red-200 dark:bg-red-400/10 dark:text-red-200 dark:ring-red-300/20',
-    REVISED: 'bg-orange-50 text-orange-800 ring-1 ring-orange-200 dark:bg-orange-400/10 dark:text-orange-200 dark:ring-orange-300/20',
-    EXPIRED: 'bg-slate-100 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-white/10',
+    PENDING: 'ds-badge ds-badge-warning',
+    SENT: 'ds-badge ds-badge-info',
+    VIEWED: 'ds-badge ds-badge-info',
+    ACCEPTED: 'ds-badge ds-badge-success',
+    REJECTED: 'ds-badge ds-badge-danger',
+    REVISED: 'ds-badge ds-badge-warning',
+    EXPIRED: 'ds-badge ds-badge-neutral',
   }
 
   return classes[status] || classes.PENDING

@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6" :class="commercialDocumentThemeClasses">
+  <div class="min-w-0 space-y-6 overflow-x-clip">
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-6 py-7 sm:px-8">
         <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
@@ -49,7 +49,7 @@
 
     <div
       v-if="formErrorMessage"
-      class="rounded-[22px] border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-800 shadow-[0_18px_40px_-30px_rgba(185,28,28,0.45)] dark:border-red-300/20 dark:bg-red-400/10 dark:text-red-200"
+      class="rounded-lg border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-800 dark:border-red-300/20 dark:bg-red-400/10 dark:text-red-200"
     >
       {{ formErrorMessage }}
     </div>
@@ -330,7 +330,7 @@
             <div 
               v-for="(item, index) in form.items"
               :key="index"
-              class="group relative overflow-hidden rounded-[1.5rem] border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] shadow-[var(--ds-shadow-control)] transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
+              class="group relative overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] shadow-[var(--ds-shadow-control)] transition duration-200 hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
             >
               <!-- ITEM HEADER -->
               <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3">
@@ -832,7 +832,6 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import { useForm, Link } from '@inertiajs/vue3'
 import { 
   DocumentPlusIcon, ArrowLeftIcon, InformationCircleIcon,

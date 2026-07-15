@@ -3,87 +3,66 @@
 namespace App\Exports;
 
 use Carbon\Carbon;
-use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithTitle;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class ActivityLogExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithTitle
+class ActivityLogExport extends StreamedQueryExport
 {
-    protected $activities;
-
-    public function __construct($activities)
-    {
-        $this->activities = $activities;
-    }
-
-    public function collection()
-    {
-        return $this->activities;
-    }
-
     public function headings(): array
     {
         return [
             'ID',
+            'Data e hora',
             'Nome do registo',
-            'Descrição',
             'Evento',
+            'Descrição',
+            'ID do responsável',
             'Responsável',
-            'Correio electrónico do responsável',
-            'Tipo de registo',
-            'ID do registo',
-            'Propriedades',
+            'Correio electrónico',
+            'Tipo de entidade',
+            'ID da entidade',
             'UUID do lote',
-            'Criado em',
-            'Actualizado em',
+            'Propriedades',
+            'Última alteração',
         ];
     }
 
-    public function map($activity): array
+    public function columnWidths(): array
     {
-        return [
-            $activity->id,
-            $activity->log_name ?? 'Sistema',
-            $activity->description,
-            $activity->event ?? 'N/A',
-            $activity->causer->name ?? 'Sistema',
-            $activity->causer->email ?? 'N/A',
-            class_basename($activity->subject_type) ?? 'N/A',
-            $activity->subject_id ?? 'N/A',
-            json_encode($activity->properties, JSON_PRETTY_PRINT),
-            $activity->batch_uuid ?? 'N/A',
-            Carbon::parse($activity->created_at)->format('Y-m-d H:i:s'),
-            Carbon::parse($activity->updated_at)->format('Y-m-d H:i:s'),
-        ];
-    }
-
-    public function styles(Worksheet $sheet)
-    {
-        return [
-            // Style the first row as bold text
-            1 => ['font' => ['bold' => true]],
-
-            // Auto-size columns
-            'A' => ['width' => 10],
-            'B' => ['width' => 15],
-            'C' => ['width' => 50],
-            'D' => ['width' => 15],
-            'E' => ['width' => 20],
-            'F' => ['width' => 25],
-            'G' => ['width' => 20],
-            'H' => ['width' => 15],
-            'I' => ['width' => 40],
-            'J' => ['width' => 36],
-            'K' => ['width' => 20],
-            'L' => ['width' => 20],
-        ];
+        return ['A' => 10, 'B' => 20, 'C' => 22, 'D' => 16, 'E' => 48, 'F' => 16, 'G' => 24, 'H' => 30, 'I' => 24, 'J' => 16, 'K' => 38, 'L' => 60, 'M' => 20];
     }
 
     public function title(): string
     {
-        return 'Registos de actividade';
+        return 'Registo de actividade';
+    }
+
+    protected function map(object $row): array
+    {
+        $properties = json_decode((string) $row->properties, true);
+
+        return [
+            $row->id,
+            $row->created_at ? Carbon::parse($row->created_at)->format('Y-m-d H:i:s') : null,
+            $row->log_name ?? 'Sistema',
+            $row->event,
+            $row->description,
+            $row->causer_id,
+            $row->causer_name ?? 'Sistema',
+            $row->causer_email,
+            $row->subject_type ? class_basename($row->subject_type) : null,
+            $row->subject_id,
+            $row->batch_uuid,
+            is_array($properties) ? json_encode($properties, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : $row->properties,
+            $row->updated_at ? Carbon::parse($row->updated_at)->format('Y-m-d H:i:s') : null,
+        ];
+    }
+
+    protected function headerColor(): string
+    {
+        return '1F4B68';
+    }
+
+    protected function wrappedColumns(): array
+    {
+        return ['E', 'L'];
     }
 }

@@ -1,8 +1,5 @@
 <template>
-  <div
-    :class="commercialDocumentThemeClasses"
-    class="space-y-6"
-  >
+  <div class="min-w-0 space-y-6 overflow-x-clip">
     <ModuleHero
       :eyebrow="$t('gestlab.general.labels.vap_proposal_templates.surface.library')"
       :title="$t('gestlab.general.labels.vap_proposal_templates.title')"
@@ -208,7 +205,7 @@
           <article
             v-for="template in templateRows"
             :key="template.id"
-            class="group flex min-h-full flex-col overflow-hidden rounded-[1.55rem] border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] shadow-[var(--ds-shadow-control)] transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
+            class="group flex min-h-full flex-col overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] shadow-[var(--ds-shadow-control)] transition duration-200 hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
           >
             <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4">
               <div class="flex items-start justify-between gap-4">
@@ -355,7 +352,7 @@
           v-for="preset in presetRows"
           :key="preset.slug"
           :href="route('vap-proposals.templates.create', { preset: preset.slug })"
-          class="rounded-[1.35rem] border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4 text-left shadow-[var(--ds-shadow-control)] transition hover:-translate-y-0.5 hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
+          class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-4 text-left shadow-[var(--ds-shadow-control)] transition hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
         >
           <div class="flex items-start justify-between gap-3">
             <div>
@@ -414,7 +411,7 @@
         </div>
 
         <div
-          class="mt-5 cursor-pointer rounded-[1.5rem] border-2 border-dashed p-8 text-center transition"
+          class="mt-5 cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition"
           :class="dragOver ? 'border-[rgb(var(--primary-500-rgb))] bg-[rgb(var(--primary-50-rgb))] dark:bg-[rgb(var(--primary-400-rgb)/0.12)]' : 'border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] hover:border-[rgb(var(--primary-300-rgb))]'"
           @click="openFilePicker"
           @dragover.prevent="dragOver = true"
@@ -442,7 +439,7 @@
 
         <div
           v-if="importFile"
-          class="mt-4 rounded-[1.25rem] border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4"
+          class="mt-4 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4"
         >
           <div class="flex items-center justify-between gap-4">
             <div class="min-w-0">
@@ -520,7 +517,6 @@ import ConfirmDialog from '@/Components/confirm-dialog.vue'
 import Modal from '@/Components/modal.vue'
 import ModuleHero from '@/Components/base/ModuleHero.vue'
 import Pagination from '@/Components/Pagination.vue'
-import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 
 const props = defineProps({
   templates: {
@@ -648,9 +644,18 @@ const statusBadgeClass = (isActive) => {
 }
 
 const getCategoryLabel = (category) => {
-  const key = category === 'field-services' ? 'field_services' : category
+  const translationKeys = {
+    chemical: 'gestlab.general.labels.vap_proposal_templates.categories.chemical',
+    microbiology: 'gestlab.general.labels.vap_proposal_templates.categories.microbiology',
+    physical: 'gestlab.general.labels.vap_proposal_templates.categories.physical',
+    environmental: 'gestlab.general.labels.vap_proposal_templates.categories.environmental',
+    food: 'gestlab.general.labels.vap_proposal_templates.categories.food',
+    compliance: 'gestlab.general.labels.vap_proposal_templates.categories.compliance',
+    'field-services': 'gestlab.general.labels.vap_proposal_templates.categories.field_services',
+    general: 'gestlab.general.labels.vap_proposal_templates.categories.general',
+  }
 
-  return trans(`gestlab.general.labels.vap_proposal_templates.categories.${key}`) || trans('gestlab.general.labels.vap_proposal_templates.categories.general')
+  return trans(translationKeys[category] || translationKeys.general)
 }
 
 const applyFilters = debounce(() => {

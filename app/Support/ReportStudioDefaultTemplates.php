@@ -319,6 +319,13 @@ class ReportStudioDefaultTemplates
             ]),
             'invoice' => array_merge($common, self::commercialVariableCatalog(), [
                 '{due_date}' => 'Data de vencimento',
+                '{payment_status}' => 'Estado do pagamento',
+                '{payment_status_badge}' => 'Painel do estado do pagamento',
+                '{paid_date}' => 'Data de pagamento',
+                '{payment_method}' => 'Método de pagamento',
+                '{amount_due}' => 'Valor pendente',
+                '{is_paid}' => 'Factura paga',
+                '{is_unpaid}' => 'Factura por pagar',
             ]),
             'receipt' => array_merge($common, self::commercialVariableCatalog(), [
                 '{payment_type}' => 'Forma de pagamento',
@@ -408,7 +415,7 @@ CSS;
             'export_certificate' => self::exportCertificateBodyHtml(),
             'import_certificate' => self::importCertificateBodyHtml(),
             'quote' => self::commercialBodyHtml('Proforma {quote_number}', 'Condições', 'Emissão: {issue_date}<br>Validade: {expiry_date}<br>Local: {service_location}'),
-            'invoice' => self::commercialBodyHtml('Factura {document_number}', 'Condições', 'Emissão: {issue_date}<br>Vencimento: {due_date}<br>Local: {service_location}'),
+            'invoice' => '{payment_status_badge}'.self::commercialBodyHtml('Factura {document_number}', 'Condições', 'Emissão: {issue_date}<br>Vencimento: {due_date}<br>Local: {service_location}'),
             'receipt' => self::commercialBodyHtml('Recibo {document_number}', 'Recepção', 'Data: {issue_date}<br>Forma de pagamento: {payment_type}<br>Local: {service_location}'),
             'credit_note' => self::commercialBodyHtml('Nota de crédito {document_number}', 'Motivo', '{reason_label}<br>Data: {issue_date}<br>Local: {service_location}'),
             default => self::analysisBodyHtml(),

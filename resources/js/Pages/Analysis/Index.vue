@@ -341,6 +341,10 @@ function handleBulkAction(event) {
               @update:model-value="changeAnalysisDepartment"
             />
           </div>
+          <Link :href="route('analysis.data-exports.index')" class="ds-button ds-button-secondary">
+            <ClipboardDocumentCheckIcon class="h-4 w-4" aria-hidden="true" />
+            Folha diária
+          </Link>
           <button type="button" class="ds-button ds-button-primary" @click="handleCreateAnalysis">
             <DocumentPlusIcon class="h-4 w-4" aria-hidden="true" />
             Receber amostra

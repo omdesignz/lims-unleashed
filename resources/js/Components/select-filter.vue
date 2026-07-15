@@ -60,7 +60,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, TransitionRoot } from '@headlessui/vue'
 import { CheckIcon, ChevronUpDownIcon, FunnelIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 
@@ -69,11 +69,22 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  modelValue: {
+    type: [String, Number],
+    default: null,
+  },
 })
 
 const emit = defineEmits(['execute'])
 
-const filterId = ref(null)
+const filterId = ref(props.modelValue)
+
+watch(
+  () => props.modelValue,
+  value => {
+    filterId.value = value
+  },
+)
 
 const normalizedFilters = computed(() => {
   return props.filters.length ? props.filters : [{ id: null, label: 'gestlab.filter.filter' }]

@@ -1109,6 +1109,7 @@ class ReportStudioPdfBuilder
         $surfaceContext = $this->buildSurfaceContext($headerContext, $placeholderValues, $settings);
         $bodyHtml = data_get($layout, 'body_html') ?: $this->defaultInvoiceBodyHtml();
         $bodyHtml = $this->renderTemplateHtml((string) $bodyHtml, $placeholderValues);
+        $bodyHtml = $this->ensureInvoicePaymentStatusBody($bodyHtml, $placeholderValues);
 
         return [
             'view' => 'PDFs.studios.document',
@@ -1313,6 +1314,13 @@ class ReportStudioPdfBuilder
                 '{issue_date}' => now()->format('d/m/Y'),
                 '{due_date}' => now()->addDays(30)->format('d/m/Y'),
                 '{service_location}' => 'Luanda · Unidade Industrial',
+                '{payment_status}' => 'Por pagar',
+                '{payment_status_badge}' => $this->invoicePaymentStatusHtml('unpaid', 59850),
+                '{paid_date}' => '—',
+                '{payment_method}' => '—',
+                '{amount_due}' => '59.850,00',
+                '{is_paid}' => false,
+                '{is_unpaid}' => true,
                 '{items_table}' => $this->reportTableHtml(
                     [
                         ['label' => 'Item', 'translation' => 'Item'],
@@ -1980,6 +1988,91 @@ HTML;
         return $bodyHtml."\n".$evidenceHtml;
     }
 
+    /**
+     * @param  array<string, mixed>  $placeholderValues
+     */
+    private function ensureInvoicePaymentStatusBody(string $bodyHtml, array $placeholderValues): string
+    {
+        if (str_contains($bodyHtml, 'invoice-payment-status')) {
+            return $bodyHtml;
+        }
+
+        $paymentStatusHtml = trim((string) ($placeholderValues['{payment_status_badge}'] ?? ''));
+
+        if ($paymentStatusHtml === '') {
+            return $bodyHtml;
+        }
+
+        return $paymentStatusHtml."\n".$bodyHtml;
+    }
+
+    private function invoicePaymentStatusHtml(
+        string $paymentStatus,
+        float $amountDue,
+        ?string $paidDate = null,
+        ?string $paymentMethod = null
+    ): string {
+        $presentation = match ($paymentStatus) {
+            'paid' => [
+                'label' => 'PAGA',
+                'eyebrow' => 'Pagamento confirmado',
+                'background' => '#ecfdf5',
+                'border' => '#86efac',
+                'text' => '#166534',
+            ],
+            'canceled' => [
+                'label' => 'ANULADA',
+                'eyebrow' => 'Documento anulado',
+                'background' => '#f8fafc',
+                'border' => '#cbd5e1',
+                'text' => '#475569',
+            ],
+            default => [
+                'label' => 'POR PAGAR',
+                'eyebrow' => 'Pagamento pendente',
+                'background' => '#fff7ed',
+                'border' => '#fdba74',
+                'text' => '#9a3412',
+            ],
+        };
+
+        $paidDetails = array_filter([
+            $paidDate ? 'Liquidada em '.$paidDate : null,
+            $paymentMethod ? 'Método: '.$paymentMethod : null,
+        ]);
+
+        $detail = match ($paymentStatus) {
+            'paid' => $paidDetails !== []
+                ? implode(' · ', $paidDetails)
+                : 'Pagamento integral confirmado.',
+            'canceled' => 'Este documento não está elegível para liquidação.',
+            default => 'Valor pendente: AOA '.number_format(max(0, $amountDue), 2, ',', '.'),
+        };
+
+        $label = e($presentation['label']);
+        $eyebrow = e($presentation['eyebrow']);
+        $detail = e($detail);
+        $background = e($presentation['background']);
+        $border = e($presentation['border']);
+        $text = e($presentation['text']);
+
+        return <<<HTML
+<section class="invoice-payment-status studio-avoid-break" style="margin-bottom:16px; border:1px solid {$border}; background:{$background}; padding:12px 14px; color:{$text};">
+    <table style="width:100%; border-collapse:collapse;">
+        <tr>
+            <td style="vertical-align:middle;">
+                <div style="font-size:8px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase;">{$eyebrow}</div>
+                <div style="margin-top:4px; font-size:10px; color:{$text};">{$detail}</div>
+            </td>
+            <td style="vertical-align:middle; text-align:right;">
+                <span style="display:inline-block; border:1px solid {$border}; background:#ffffff; padding:6px 10px; font-size:12px; font-weight:900; letter-spacing:0.08em; color:{$text};">{$label}</span>
+            </td>
+        </tr>
+    </table>
+</section>
+HTML;
+    }
+
     private function documentKeywordsHtml(GeneralSettings $settings, string $fallback): string
     {
         $keywords = $settings->app_document_keywords ?: $fallback;
@@ -2277,7 +2370,7 @@ HTML;
 
     private function defaultInvoiceBodyHtml(): string
     {
-        return $this->defaultCommercialDocumentBodyHtml();
+        return '{payment_status_badge}'."\n".$this->defaultCommercialDocumentBodyHtml();
     }
 
     private function defaultReceiptFirstPageHeader(GeneralSettings $settings): string
@@ -2482,6 +2575,10 @@ HTML;
 
     private function invoicePlaceholderValues(Invoice $invoice, GeneralSettings $settings): array
     {
+        $paymentStatus = $invoice->paymentStatus();
+        $amountDue = max(0, (float) ($invoice->amount_due ?? 0));
+        $paidDate = optional($invoice->paid_date)->format('d/m/Y');
+
         $itemsTable = $this->reportTableHtml(
             [
                 ['label' => 'Item', 'translation' => 'Item'],
@@ -2505,6 +2602,22 @@ HTML;
             '{service_location}' => $invoice->warehouse?->name ?: 'Local do serviço',
             '{issue_date}' => optional($invoice->date ?: $invoice->created_at)->format('d/m/Y') ?: now()->format('d/m/Y'),
             '{due_date}' => optional($invoice->due_date)->format('d/m/Y') ?: now()->addDays(30)->format('d/m/Y'),
+            '{payment_status}' => match ($paymentStatus) {
+                'paid' => 'Paga',
+                'canceled' => 'Anulada',
+                default => 'Por pagar',
+            },
+            '{payment_status_badge}' => $this->invoicePaymentStatusHtml(
+                $paymentStatus,
+                $amountDue,
+                $paidDate,
+                $invoice->payment_method
+            ),
+            '{paid_date}' => $paidDate ?: '—',
+            '{payment_method}' => $invoice->payment_method ?: '—',
+            '{amount_due}' => number_format($amountDue, 2, ',', '.'),
+            '{is_paid}' => $paymentStatus === 'paid',
+            '{is_unpaid}' => $paymentStatus === 'unpaid',
             '{items_table}' => $itemsTable,
             '{summary_table}' => $this->financialSummaryTableHtml([
                 ['label' => 'Subtotal', 'value' => number_format((float) ($invoice->sub_total ?? 0), 2, ',', '.')],

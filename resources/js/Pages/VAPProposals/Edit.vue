@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8" :class="commercialDocumentThemeClasses">
+  <div class="min-w-0 space-y-6 overflow-x-clip">
     <section class="ds-panel overflow-hidden">
       <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-6 py-7 sm:px-8">
         <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
@@ -43,7 +43,7 @@
       </div>
 
       <div class="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        <div v-if="!proposal.is_original" class="inline-flex items-start gap-3 rounded-[22px] border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-100">
+        <div v-if="!proposal.is_original" class="inline-flex items-start gap-3 rounded-lg border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-100">
           <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-200" />
           <span>
             {{ $t('gestlab.general.labels.vap_proposals.edit.revision_warning') }}
@@ -71,7 +71,7 @@
 
     <div
       v-if="formErrorMessage"
-      class="rounded-[22px] border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-800 shadow-[0_18px_40px_-30px_rgba(185,28,28,0.45)] dark:border-red-300/20 dark:bg-red-400/10 dark:text-red-200"
+      class="rounded-lg border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-800 dark:border-red-300/20 dark:bg-red-400/10 dark:text-red-200"
     >
       {{ formErrorMessage }}
     </div>
@@ -356,7 +356,7 @@
             <div 
               v-for="(item, index) in form.items"
               :key="index"
-              class="group relative overflow-hidden rounded-[1.5rem] border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] shadow-[var(--ds-shadow-control)] transition duration-200 hover:-translate-y-0.5 hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
+              class="group relative overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] shadow-[var(--ds-shadow-control)] transition duration-200 hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
             >
               <!-- ITEM HEADER -->
               <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-4 py-3">
@@ -870,7 +870,6 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import { useForm, Link } from '@inertiajs/vue3'
 import { 
   DocumentTextIcon, ArrowLeftIcon, InformationCircleIcon,

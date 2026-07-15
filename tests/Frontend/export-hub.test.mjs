@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import test from 'node:test'
+
+const hubSource = readFileSync(new URL('../../resources/js/Pages/Exports/Index.vue', import.meta.url), 'utf8')
+const layoutSource = readFileSync(new URL('../../resources/js/Shared/Layouts/Layout.vue', import.meta.url), 'utf8')
+const customersSource = readFileSync(new URL('../../resources/js/Pages/Customers/Index.vue', import.meta.url), 'utf8')
+const productsSource = readFileSync(new URL('../../resources/js/Pages/Products/Index.vue', import.meta.url), 'utf8')
+
+test('export hub exposes governed datasets and dataset-specific controls', () => {
+    assert.match(hubSource, /Central de exportações/)
+    assert.match(hubSource, /activity_log/)
+    assert.match(hubSource, /customers/)
+    assert.match(hubSource, /products/)
+    assert.match(hubSource, /parameters/)
+    assert.match(hubSource, /profiles/)
+    assert.match(hubSource, /matrixes/)
+    assert.match(hubSource, /invoices/)
+    assert.match(hubSource, /credit_notes/)
+    assert.match(hubSource, /receipts/)
+    assert.match(hubSource, /trade_certificates/)
+    assert.match(hubSource, /quality_certificates/)
+    assert.match(hubSource, /customer_requests/)
+    assert.match(hubSource, /occurrences/)
+    assert.match(hubSource, /pending_analysis/)
+    assert.match(hubSource, /results_audit/)
+    assert.match(hubSource, /exports\.download/)
+    assert.match(hubSource, /tax_status/)
+    assert.match(hubSource, /batch_uuid/)
+    assert.match(hubSource, /date_from/)
+    assert.match(hubSource, /catalogSearch/)
+    assert.match(hubSource, /payment_status/)
+    assert.match(hubSource, /validation_status/)
+})
+
+test('export hub is integrated with navigation and master-data pages', () => {
+    assert.match(layoutSource, /Central de exportações/)
+    assert.match(layoutSource, /export_activity_log/)
+    assert.match(layoutSource, /export_customers/)
+    assert.match(layoutSource, /export_products/)
+    assert.match(layoutSource, /export_parameters/)
+    assert.match(layoutSource, /export_invoices/)
+    assert.match(layoutSource, /export_quality_certificates/)
+    assert.match(customersSource, /dataset: 'customers'/)
+    assert.match(productsSource, /dataset: 'products'/)
+})

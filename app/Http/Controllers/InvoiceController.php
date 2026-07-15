@@ -17,15 +17,18 @@ use App\Support\ReportStudioPdfRenderer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class InvoiceController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request): Response
     {
         abort_if(! auth()->user()->can('view_invoices'), 403, '');
+
+        $filter = $request->string('filter')->toString();
 
         return Inertia::render('Invoices/Index', [
             'record' => InvoiceResource::collection(
@@ -33,14 +36,11 @@ class InvoiceController extends Controller
                     ->with('warehouse', 'customer')
                     ->withCount('activities as revision_count')
                     ->withMax('activities as last_revision_at', 'created_at')
-                    ->when(request()->input('search'), function ($query, $search) {
+                    ->when($request->input('search'), function ($query, $search) {
                         $query->where('inv_no', 'like', "%{$search}%");
                     })
-                    ->when(request()->input('filter'), function ($query, $filter) {
-                        if ($filter === 'trashed') {
-                            $query->withTrashed();
-                        }
-                    })
+                    ->when($filter === 'trashed', fn ($query) => $query->withTrashed())
+                    ->paymentStatus($filter)
                     ->latest()
                     ->paginate(10)
                     ->withQueryString()
@@ -67,6 +67,10 @@ class InvoiceController extends Controller
                     'name' => trans('gestlab.general.labels.invoices.total'),
                     'value' => 'total',
                 ],
+                [
+                    'name' => trans('gestlab.general.labels.invoices.payment_status'),
+                    'value' => 'payment_status_label',
+                ],
             ],
             'model' => Invoice::MENU_NAME,
             'abilities' => method_exists(Invoice::class, 'getAbilities') ? collect(Invoice::ABILITIES)->map(function ($item) {
@@ -74,7 +78,7 @@ class InvoiceController extends Controller
             }) : collect(config('gestlab.default_abilities'))->map(function ($item) {
                 return $item.'_'.Invoice::MENU_NAME;
             }),
-            'query' => request()->only(['search', 'trashed']),
+            'query' => $request->only(['search', 'filter']),
         ]);
     }
 

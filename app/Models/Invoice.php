@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasDocumentRevisions;
 use HighSolutions\EloquentSequence\Sequence;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,13 +13,13 @@ use Illuminate\Support\Facades\Artisan;
 
 class Invoice extends Model
 {
-    use HasFactory, SoftDeletes, Sequence, HasDocumentRevisions;
+    use HasDocumentRevisions, HasFactory, Sequence, SoftDeletes;
 
     public const MENU_NAME = 'invoices';
 
     public const STATUS_CODE_NORMAL = 'N';
-    public const STATUS_CODE_CANCELED = 'A';
 
+    public const STATUS_CODE_CANCELED = 'A';
 
     /**
      * The attributes that are mass assignable.
@@ -60,8 +61,8 @@ class Invoice extends Model
     ];
 
     protected $table = 'invoices';
-    protected $dates = ['created_at', 'updated_at', 'deleted_at', 'date', 'paid_date', 'due_date'];
 
+    protected $dates = ['created_at', 'updated_at', 'deleted_at', 'date', 'paid_date', 'due_date'];
 
     /**
      * The attributes that should be cast.
@@ -156,7 +157,6 @@ class Invoice extends Model
         return $this->hasOne(CreditNote::class);
     }
 
-
     /**
      * Invoiceable
      *
@@ -166,7 +166,6 @@ class Invoice extends Model
     {
         return $this->morphTo()->withTrashed();
     }
-
 
     /**
      * Receipt
@@ -204,6 +203,33 @@ class Invoice extends Model
             ->where('status_code', self::STATUS_CODE_NORMAL);
     }
 
+    public function scopePaymentStatus(Builder $query, ?string $paymentStatus): Builder
+    {
+        return match ($paymentStatus) {
+            'paid' => $query
+                ->where('status_code', self::STATUS_CODE_NORMAL)
+                ->where('amount_due', '<=', 0),
+            'unpaid' => $query
+                ->where('status_code', self::STATUS_CODE_NORMAL)
+                ->where('amount_due', '>', 0),
+            default => $query,
+        };
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->status_code === self::STATUS_CODE_NORMAL
+            && (float) $this->amount_due <= 0;
+    }
+
+    public function paymentStatus(): string
+    {
+        if ($this->status_code === self::STATUS_CODE_CANCELED) {
+            return 'canceled';
+        }
+
+        return $this->isPaid() ? 'paid' : 'unpaid';
+    }
 
     public static function boot()
     {
@@ -213,7 +239,7 @@ class Invoice extends Model
 
             $type = InvoiceCategory::findOrFail($invoice->type_id);
 
-            $invoice->inv_no = $type->code . ' ' . $invoice->invoice_month . '/' . $invoice->seq;
+            $invoice->inv_no = $type->code.' '.$invoice->invoice_month.'/'.$invoice->seq;
         });
 
         static::created(function ($invoice) {

@@ -2219,34 +2219,34 @@ function submit() {
 </script>
 
 <template>
-  <Head :title="props.title" />
+  <div class="min-w-0 space-y-6 overflow-x-clip">
+    <Head :title="props.title" />
 
-  <div class="space-y-8">
-    <div class="overflow-hidden rounded-[2rem] border border-[#ded2bb] bg-[#fbfaf6] p-6 text-[#15231f] shadow-[0_26px_70px_-44px_rgba(20,61,55,0.5)] ring-1 ring-white/70 dark:border-white/10 dark:bg-slate-950 dark:text-[#f7f1e7] dark:ring-white/10 sm:p-8">
-      <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <div class="ds-panel overflow-hidden">
+      <div class="flex flex-col gap-5 border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-5 lg:flex-row lg:items-end lg:justify-between lg:p-6">
         <div class="max-w-4xl">
-          <div class="inline-flex rounded-full border border-[#c79a43]/35 bg-[#fff7e5] px-3 py-1 text-xs font-black uppercase tracking-[0.22em] text-[#143d37] dark:border-[#c79a43]/30 dark:bg-white/10 dark:text-amber-100">
+          <div class="ds-chip">
             Canvas de proposta
           </div>
-          <h1 class="mt-4 text-3xl font-black tracking-[-0.04em] text-[#10221d] dark:text-white sm:text-4xl">{{ props.title }}</h1>
-          <p class="mt-3 max-w-3xl text-sm font-medium leading-6 text-[#59665f] dark:text-slate-300">
+          <h1 class="ds-heading mt-3 text-2xl sm:text-3xl">{{ props.title }}</h1>
+          <p class="ds-copy mt-1 max-w-3xl text-sm">
             {{ props.intro }}
           </p>
-          <p v-if="props.initialDraftLabel" class="mt-4 inline-flex rounded-full bg-[#143d37] px-3 py-1 text-xs font-black text-white ring-1 ring-[#143d37]/20 dark:bg-white/10 dark:text-emerald-100 dark:ring-white/15">
+          <p v-if="props.initialDraftLabel" class="ds-badge ds-badge-info mt-3">
             {{ props.initialDraftLabel }}
           </p>
         </div>
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap gap-2">
           <Link
             :href="props.backHref"
-            class="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#ded2bb] bg-white/80 px-4 py-3 text-sm font-black text-[#143d37] transition hover:bg-[#fff7e5] dark:border-white/10 dark:bg-white/10 dark:text-emerald-100 dark:hover:bg-white/15"
+            class="ds-button ds-button-secondary"
           >
             <ArrowUturnLeftIcon class="h-4 w-4" />
             {{ props.backLabel }}
           </Link>
           <button
             type="button"
-            class="inline-flex items-center justify-center rounded-2xl border border-[#ded2bb] bg-white/80 px-4 py-3 text-sm font-black text-[#143d37] transition hover:bg-[#fff7e5] disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/10 dark:text-emerald-100 dark:hover:bg-white/15"
+            class="ds-button ds-button-secondary"
             :disabled="draftPreviewBusy || props.form.processing"
             @click="previewDraftPdf"
           >
@@ -2254,7 +2254,7 @@ function submit() {
           </button>
           <button
             type="button"
-            class="inline-flex items-center justify-center rounded-2xl bg-[#143d37] px-4 py-3 text-sm font-black text-white shadow-[0_18px_42px_-24px_rgba(20,61,55,0.75)] transition hover:bg-[#0f302b] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400"
+            class="ds-button ds-button-primary"
             :disabled="props.form.processing || draftPreviewBusy"
             @click="submit"
           >
@@ -2262,27 +2262,27 @@ function submit() {
           </button>
         </div>
       </div>
-      <p v-if="draftPreviewError" class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+      <p v-if="draftPreviewError" class="m-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
         {{ draftPreviewError }}
       </p>
     </div>
 
-    <div v-if="props.presets.length" class="rounded-[30px] border border-[#ded2bb] bg-white/90 p-6 shadow-[0_22px_70px_-46px_rgba(20,61,55,0.5)] dark:border-white/10 dark:bg-slate-950/90">
-      <h2 class="text-lg font-black text-[#10221d] dark:text-white">Modelos base</h2>
-      <p class="mt-1 text-sm font-medium text-[#59665f] dark:text-slate-300">Escolha uma estrutura inicial e refine a área de desenho abaixo sem sair da página.</p>
-      <div class="mt-5 grid gap-4 lg:grid-cols-3">
+    <div v-if="props.presets.length" class="ds-panel p-5 sm:p-6">
+      <h2 class="ds-heading text-base">Modelos base</h2>
+      <p class="ds-copy mt-1 text-sm">Escolha uma estrutura inicial e refine a área de desenho abaixo sem sair da página.</p>
+      <div class="mt-4 grid gap-3 lg:grid-cols-3">
         <article
           v-for="preset in props.presets"
           :key="preset.slug"
-          class="rounded-[24px] border border-[#ded2bb] bg-[#fbfaf6] p-4 transition hover:-translate-y-0.5 hover:border-[#c79a43] hover:bg-[#fff7e5] hover:shadow-[0_20px_48px_-34px_rgba(20,61,55,0.55)] dark:border-white/10 dark:bg-white/5 dark:hover:border-[#c79a43]/60 dark:hover:bg-white/10"
+          class="rounded-lg border border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] p-4 transition hover:border-primary-300 dark:hover:border-primary-500/40"
         >
-          <div class="text-sm font-black text-[#10221d] dark:text-white">{{ preset.name }}</div>
-          <div class="mt-1 text-xs font-black uppercase tracking-[0.18em] text-[#c79a43]">{{ presetCategoryLabel(preset.category) }}</div>
-          <p class="mt-3 text-sm font-medium leading-6 text-[#59665f] dark:text-slate-300">{{ preset.description }}</p>
+          <div class="text-sm font-bold text-[var(--ds-text)]">{{ preset.name }}</div>
+          <div class="mt-1 text-xs font-bold text-primary-700 dark:text-primary-200">{{ presetCategoryLabel(preset.category) }}</div>
+          <p class="mt-2 text-sm font-medium leading-6 text-[var(--ds-text-muted)]">{{ preset.description }}</p>
           <button
             v-if="props.presetActionLabel"
             type="button"
-            class="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-[#143d37] px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-[#0f302b] focus:outline-none focus:ring-2 focus:ring-[#c79a43]/30 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400"
+            class="ds-button ds-button-secondary mt-4 w-full"
             @click="emit('select-preset', preset)"
           >
             {{ props.presetActionLabel }}

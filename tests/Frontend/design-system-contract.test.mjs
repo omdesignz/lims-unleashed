@@ -317,9 +317,15 @@ const vapLabelsCreateSource = readFileSync(new URL('../../resources/js/Pages/Vap
 const vapLabelsShowSource = readFileSync(new URL('../../resources/js/Pages/VapLabels/Show.vue', import.meta.url), 'utf8')
 const vapLabelTemplatesIndexSource = readFileSync(new URL('../../resources/js/Pages/VAPLabelTemplates/Index.vue', import.meta.url), 'utf8')
 const vapLabelTemplateFormSource = readFileSync(new URL('../../resources/js/Pages/VAPLabelTemplates/LabelTemplateForm.vue', import.meta.url), 'utf8')
+const vapProposalsIndexSource = readFileSync(new URL('../../resources/js/Pages/VAPProposals/Index.vue', import.meta.url), 'utf8')
 const vapProposalsCreateSource = readFileSync(new URL('../../resources/js/Pages/VAPProposals/Create.vue', import.meta.url), 'utf8')
 const vapProposalsEditSource = readFileSync(new URL('../../resources/js/Pages/VAPProposals/Edit.vue', import.meta.url), 'utf8')
+const vapProposalsShowSource = readFileSync(new URL('../../resources/js/Pages/VAPProposals/Show.vue', import.meta.url), 'utf8')
 const vapProposalTemplatesIndexSource = readFileSync(new URL('../../resources/js/Pages/VAPProposalTemplates/Index.vue', import.meta.url), 'utf8')
+const vapProposalTemplatesCreateSource = readFileSync(new URL('../../resources/js/Pages/VAPProposalTemplates/Create.vue', import.meta.url), 'utf8')
+const vapProposalTemplatesEditSource = readFileSync(new URL('../../resources/js/Pages/VAPProposalTemplates/Edit.vue', import.meta.url), 'utf8')
+const vapProposalTemplatesShowSource = readFileSync(new URL('../../resources/js/Pages/VAPProposalTemplates/Show.vue', import.meta.url), 'utf8')
+const proposalTemplateStudioSource = readFileSync(new URL('../../resources/js/Components/proposal-template/studio-workbench.vue', import.meta.url), 'utf8')
 const invoicesIndexSource = readFileSync(new URL('../../resources/js/Pages/Invoices/Index.vue', import.meta.url), 'utf8')
 const quotesIndexSource = readFileSync(new URL('../../resources/js/Pages/Quotes/Index.vue', import.meta.url), 'utf8')
 const creditNotesIndexSource = readFileSync(new URL('../../resources/js/Pages/CreditNotes/Index.vue', import.meta.url), 'utf8')
@@ -1233,10 +1239,42 @@ test('VAP proposal template library uses shared studio surfaces', () => {
   assert.match(vapProposalTemplatesIndexSource, /class="ds-command-surface/)
   assert.match(vapProposalTemplatesIndexSource, /class="ds-table-shell"/)
   assert.match(vapProposalTemplatesIndexSource, /vap_proposal_templates\.list\.summary/)
+  assert.match(vapProposalTemplatesIndexSource, /return trans\(translationKeys\[category\] \|\| translationKeys\.general\)/)
   assert.match(vapProposalTemplatesIndexSource, /router\.delete/)
   assert.doesNotMatch(vapProposalTemplatesIndexSource, /<style scoped>/)
   assert.doesNotMatch(vapProposalTemplatesIndexSource, /v-motion|\$refs|ConfirmationModal/)
-  assert.doesNotMatch(vapProposalTemplatesIndexSource, /border-\[#|bg-\[#|text-\[#|bg-gradient-to-r/)
+  assert.doesNotMatch(vapProposalTemplatesIndexSource, /commercialDocumentThemeClasses|categories\.\$\{key\}|border-\[#|bg-\[#|text-\[#|bg-gradient-to-r/)
+})
+
+test('VAP proposal workspace uses the operational LIMS design system', () => {
+  assert.match(vapProposalsIndexSource, /class="ds-command-surface/)
+  assert.match(vapProposalsIndexSource, /class="ds-table-shell/)
+  assert.match(vapProposalsIndexSource, /class="ds-data-table/)
+  assert.match(vapProposalsShowSource, /class="ds-panel overflow-hidden"/)
+  assert.match(vapProposalsShowSource, /class="ds-table-shell"/)
+  assert.match(vapProposalsShowSource, /laboratoryDossier/)
+
+  for (const source of [vapProposalsIndexSource, vapProposalsCreateSource, vapProposalsEditSource, vapProposalsShowSource]) {
+    assert.doesNotMatch(source, /commercialDocumentThemeClasses/)
+  }
+
+  for (const source of [vapProposalsIndexSource, vapProposalsShowSource]) {
+    assert.doesNotMatch(source, /#143d37|#c79a43|#ded2bb|#fbfaf6|#f7f1e6|bg-\[radial-gradient|rounded-\[(?:2|3)\dpx\]/)
+  }
+})
+
+test('VAP proposal template routes keep application chrome on semantic surfaces', () => {
+  assert.match(vapProposalTemplatesShowSource, /class="ds-panel overflow-hidden"/)
+  assert.match(vapProposalTemplatesShowSource, /gestlab\.general\.buttons\.copied/)
+  assert.match(proposalTemplateStudioSource, /class="ds-panel overflow-hidden"/)
+  assert.match(proposalTemplateStudioSource, /class="ds-button ds-button-primary"/)
+
+  for (const source of [vapProposalTemplatesIndexSource, vapProposalTemplatesCreateSource, vapProposalTemplatesEditSource, vapProposalTemplatesShowSource]) {
+    assert.doesNotMatch(source, /commercialDocumentThemeClasses/)
+  }
+
+  assert.doesNotMatch(vapProposalTemplatesShowSource, /#143d37|#c79a43|#ded2bb|#fbfaf6|#f7f1e6|bg-\[radial-gradient|rounded-\[(?:2|3)\dpx\]/)
+  assert.doesNotMatch(proposalTemplateStudioSource, /class="overflow-hidden rounded-\[2rem\]|class="rounded-\[30px\] border border-\[#ded2bb\]/)
 })
 
 test('VAP proposal create screen uses semantic commercial form surfaces', () => {
@@ -1293,6 +1331,12 @@ test('commercial document indexes use shared hero surfaces and localized copy', 
   assert.match(invoicesIndexSource, /combobox-enhanced/)
   assert.match(invoicesIndexSource, /class="ds-field-label"/)
   assert.match(invoicesIndexSource, /class="ds-table-action"/)
+  assert.match(invoicesIndexSource, /const invoiceFilterOptions =/)
+  assert.match(invoicesIndexSource, /id: 'unpaid'/)
+  assert.match(invoicesIndexSource, /id: 'paid'/)
+  assert.match(invoicesIndexSource, /:filter-options="invoiceFilterOptions"/)
+  assert.match(recordsTableSource, /filterOptions:/)
+  assert.match(recordsTableSource, /:model-value="query\.filter"/)
   assert.match(quotesIndexSource, /class="ds-table-action"/)
 })
 

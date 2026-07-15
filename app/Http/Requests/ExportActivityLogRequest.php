@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ExportActivityLogRequest extends FormRequest
@@ -11,15 +12,15 @@ class ExportActivityLogRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('export_activity_log') ?? false;
     }
 
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             'log_name' => 'nullable|string|max:255',
@@ -30,7 +31,8 @@ class ExportActivityLogRequest extends FormRequest
             'description' => 'nullable|string|max:255',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'format' => 'nullable|in:xlsx,csv,pdf',
+            'property' => 'nullable|string|max:120',
+            'batch_uuid' => 'nullable|uuid',
         ];
     }
 }

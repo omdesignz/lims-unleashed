@@ -1,7 +1,6 @@
 <script setup>
 import Layout from '@/Shared/Layouts/Layout.vue'
 import studioWorkbench from '@/Components/proposal-template/studio-workbench.vue'
-import { commercialDocumentThemeClasses } from '@/Composables/useCommercialDocumentTheme'
 import { ref } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 
@@ -116,7 +115,7 @@ function selectPreset(preset) {
 </script>
 
 <template>
-  <div :class="commercialDocumentThemeClasses">
+  <div class="min-w-0 overflow-x-clip">
     <studio-workbench
       :title="$t('gestlab.general.labels.vap_proposal_templates.create.studio_title')"
       :intro="$t('gestlab.general.labels.vap_proposal_templates.create.studio_intro')"
