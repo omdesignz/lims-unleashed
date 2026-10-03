@@ -262,13 +262,14 @@ class InventoryItem extends Model implements HasMedia
         return now()->gt($this->reagent_expiry_date);
     }
 
-    public function getDaysToExpiryAttribute()
+    /** Whole calendar days until the reagent expires; negative once expired. */
+    public function getDaysToExpiryAttribute(): ?int
     {
         if (! $this->is_reagent || ! $this->reagent_expiry_date) {
             return null;
         }
 
-        return now()->diffInDays($this->reagent_expiry_date, false);
+        return (int) today()->diffInDays($this->reagent_expiry_date->copy()->startOfDay(), false);
     }
 
     public function getNeedsCalibrationAttribute()

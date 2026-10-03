@@ -260,7 +260,7 @@ const summaryCards = computed(() => [
   },
   {
     label: 'Existências baixas',
-    value: Math.max(Number(props.stats?.total_low_stock || 0) - Number(props.stats?.critical_stock || 0), 0),
+    value: Math.max(Number(props.stats?.total_low_stock || 0) - Number(props.stats?.critical_stock || 0) - Number(props.stats?.out_of_stock || 0), 0),
     detail: 'Abaixo do ponto de reposição',
   },
   {

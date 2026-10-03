@@ -408,15 +408,15 @@ const lede = computed(() => {
 const nextStep = computed(() => {
   const nextCalibration = props.item.next_calibration_date
 
-  if (nextCalibration && props.item.needs_calibration) {
+  if (nextCalibration && calibrationFacts.value.overdue) {
     return { action: 'calibration', text: `Calibração em atraso desde ${formatDate(nextCalibration)}. Não use o equipamento em ensaios até registar a calibração.` }
   }
 
-  if (nextCalibration && Number(props.item.days_to_calibration) <= 30) {
+  if (nextCalibration && calibrationFacts.value.days !== null && calibrationFacts.value.days <= 30) {
     return { action: 'calibration', text: `Calibração prevista para ${formatDate(nextCalibration)}. Registe-a quando o certificado for emitido.` }
   }
 
-  if (isReagent.value && props.item.is_expired) {
+  if (isReagent.value && expiryFacts.value.expired) {
     return { action: 'order', text: 'Reagente fora de validade: não o use em ensaios e abra um pedido de reposição.' }
   }
 
@@ -523,29 +523,54 @@ const statusTone = (status) => {
   return 'neutral'
 }
 
-const expiryTone = (item) => {
-  if (item.is_expired || item.days_to_expiry <= 30) return 'bad'
-  if (item.days_to_expiry <= 60) return 'wait'
+/** Whole calendar days from today to a date-only value; null when absent. */
+const daysUntil = (value) => {
+  if (!value) return null
+  const target = new Date(`${String(value).slice(0, 10)}T00:00:00`)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  return Math.round((target - today) / 86400000)
+}
+
+// The item payload does not carry the model's expiry/calibration accessors; the
+// controller sends them as separate props, and calibration days derive from the date.
+const expiryFacts = computed(() => ({
+  expired: Boolean(props.isExpired),
+  days: props.daysToExpiry ?? daysUntil(props.item.reagent_expiry_date),
+}))
+const calibrationFacts = computed(() => ({
+  overdue: Boolean(props.needsCalibration),
+  days: daysUntil(props.item.next_calibration_date),
+}))
+
+const expiryTone = () => {
+  const { expired, days } = expiryFacts.value
+  if (expired || (days !== null && days <= 30)) return 'bad'
+  if (days !== null && days <= 60) return 'wait'
   return 'ok'
 }
 
-const getExpiryStatusText = (item) => {
-  if (item.is_expired) return 'Expirado'
-  if (item.days_to_expiry <= 30) return 'Expira em breve'
-  if (item.days_to_expiry <= 60) return 'Prestes a expirar'
+const getExpiryStatusText = () => {
+  const { expired, days } = expiryFacts.value
+  if (expired) return 'Expirado'
+  if (days !== null && days <= 30) return 'Expira em breve'
+  if (days !== null && days <= 60) return 'Prestes a expirar'
   return 'Dentro da validade'
 }
 
-const calibrationTone = (item) => {
-  if (item.needs_calibration || item.days_to_calibration <= 30) return 'bad'
-  if (item.days_to_calibration <= 90) return 'wait'
+const calibrationTone = () => {
+  const { overdue, days } = calibrationFacts.value
+  if (overdue || (days !== null && days <= 30)) return 'bad'
+  if (days !== null && days <= 90) return 'wait'
   return 'ok'
 }
 
-const getCalibrationStatusText = (item) => {
-  if (item.needs_calibration) return 'Atrasada'
-  if (item.days_to_calibration <= 30) return 'A vencer em breve'
-  if (item.days_to_calibration <= 90) return 'Em breve'
+const getCalibrationStatusText = () => {
+  const { overdue, days } = calibrationFacts.value
+  if (overdue) return 'Atrasada'
+  if (days !== null && days <= 30) return 'A vencer em breve'
+  if (days !== null && days <= 90) return 'Em breve'
   return 'Agendada'
 }
 

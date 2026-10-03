@@ -318,6 +318,27 @@ class InventoryOperationalReportAccessTest extends TestCase
         }
     }
 
+    public function test_low_stock_screen_and_export_list_empty_positions_first(): void
+    {
+        [, , $data] = $this->fixture('both');
+        Inventory::query()->where('item_id', $data['material']['item']->id)->update(['qty_available' => 0, 'min_stock_level' => 2, 'reorder_point' => 4]);
+        Inventory::query()->where('item_id', $data['equipment']['item']->id)->update(['qty_available' => 1, 'min_stock_level' => 2, 'reorder_point' => 4]);
+
+        $props = $this->get(route('vap-inventory.reports.low-stock'))->assertOk()->viewData('page')['props'];
+        $rows = $props['inventory']['data'];
+        $quantities = array_map(fn (array $row): float => (float) $row['qty_available'], $rows);
+        $this->assertContains($data['material']['item']->id, array_column(array_column($rows, 'item'), 'id'));
+        $this->assertSame($data['equipment']['item']->id, end($rows)['item']['id'], 'Positions with stock follow the empty ones.');
+        $this->assertSame(array_values(array_filter($quantities, fn (float $qty): bool => $qty <= 0)), array_slice($quantities, 0, count($quantities) - 1));
+        $series = $props['charts']['severity_mix']['series'];
+        $this->assertSame(count($rows), array_sum($series), 'Severity buckets do not overlap.');
+        $this->assertSame([count($rows) - 1, 1, 0], $series);
+
+        $csv = $this->post(route('vap-inventory.reports.export'), ['report_type' => 'low_stock', 'format' => 'csv'])->assertOk()->getContent();
+        $this->assertStringContainsString('SEM EXISTÊNCIAS', $csv);
+        $this->assertLessThan(strpos($csv, $data['equipment']['item']->name), strpos($csv, $data['material']['item']->name));
+    }
+
     #[DataProvider('reports')]
     public function test_database_rejects_mismatched_foreign_warehouse_and_item_links(string $report): void
     {

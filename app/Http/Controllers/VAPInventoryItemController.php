@@ -673,7 +673,6 @@ class VAPInventoryItemController extends Controller
             'warehouse.location:id,name',
         ])
             ->lowStock()
-            ->where('qty_available', '>', 0)
             ->when($request->warehouse_id, function ($query, $warehouseId) {
                 $query->where('warehouse_id', $warehouseId);
             })
@@ -697,9 +696,10 @@ class VAPInventoryItemController extends Controller
         if ($request->sort_by === 'severity' || $request->sort_by === null) {
             $query->orderByRaw(
                 'CASE
-                    WHEN qty_available <= min_stock_level THEN 0
-                    WHEN qty_available <= reorder_point THEN 1
-                    ELSE 2
+                    WHEN qty_available <= 0 THEN 0
+                    WHEN qty_available <= min_stock_level THEN 1
+                    WHEN qty_available <= reorder_point THEN 2
+                    ELSE 3
                 END'
             )->orderByRaw('qty_available / NULLIF(reorder_point, 0)');
         } elseif ($sortBy !== null) {
@@ -712,13 +712,9 @@ class VAPInventoryItemController extends Controller
 
         $severityLabels = ['Sem existências', 'Crítico', 'Baixo'];
         $severitySeries = [
-            $this->readableStock($labId)
-                ->when($request->warehouse_id, fn ($query, $warehouseId) => $query->where('warehouse_id', $warehouseId))
-                ->when($request->category_id, fn ($query, $categoryId) => $query->whereHas('item', fn ($item) => $item->withTrashed()->where('category_id', $categoryId)))
-                ->where('qty_available', '<=', 0)
-                ->count(),
-            $inventory->filter(fn ($item) => $item->qty_available <= $item->min_stock_level)->count(),
-            $inventory->filter(fn ($item) => $item->qty_available > $item->min_stock_level)->count(),
+            $inventory->filter(fn ($item) => (float) $item->qty_available <= 0)->count(),
+            $inventory->filter(fn ($item) => (float) $item->qty_available > 0 && (float) $item->qty_available <= (float) $item->min_stock_level)->count(),
+            $inventory->filter(fn ($item) => (float) $item->qty_available > (float) $item->min_stock_level)->count(),
         ];
 
         $warehouseExposure = $inventory

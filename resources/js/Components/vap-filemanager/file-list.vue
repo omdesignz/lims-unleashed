@@ -59,7 +59,7 @@
         </div>
       </div>
 
-      <div v-if="filteredFiles.length" class="overflow-x-auto" data-testid="document-register">
+      <div v-if="filteredFiles.length" class="relative overflow-x-auto" data-testid="document-register">
         <DataTable class="min-w-full">
           <thead>
             <tr>

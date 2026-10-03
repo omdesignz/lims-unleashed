@@ -2859,11 +2859,12 @@ input[type="checkbox"]:not(.peer):not(.sr-only):disabled {
 .pl-page-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
 
 /* --- Panels, strips, banners --- */
-.pl-panel { border: 1px solid var(--pl-line); background: var(--pl-bg); }
+.pl-panel { min-width: 0; border: 1px solid var(--pl-line); background: var(--pl-bg); }
 
 /* Wide tables scroll inside their panel instead of spilling out of it. */
-.pl-panel:has(> .ds-data-table) { overflow-x: auto; }
-.pl-panel [role='tabpanel']:has(> .ds-data-table) { overflow-x: auto; }
+/* Positioned, so screen-reader-only labels in header cells stay inside the scroller. */
+.pl-panel:has(> .ds-data-table) { position: relative; overflow-x: auto; }
+.pl-panel [role='tabpanel']:has(> .ds-data-table) { position: relative; overflow-x: auto; }
 .pl-panel > .ds-data-table td.pl-num,
 .pl-panel > .ds-data-table td:first-child { white-space: nowrap; }
 

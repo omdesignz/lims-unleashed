@@ -336,3 +336,23 @@ test('quick reagent consumption submits the selected event time through Inertia 
     date: '2026-09-30', used_at: '2026-09-30T10:15:00', quantity_used: '0.0001',
   });
 });
+
+test('item dossier derives stock, expiry and calibration state from what the payload carries', () => {
+  const dossier = readFileSync(new URL('../../resources/js/Pages/VAPInventory/Items/Show.vue', import.meta.url), 'utf8');
+  // Model accessors that are not serialized must not drive the status chips or the next step.
+  assert.doesNotMatch(dossier, /item\.is_expired|item\.days_to_expiry|item\.days_to_calibration|item\.needs_calibration|\.stock_status\b/);
+  assert.match(dossier, /expired: Boolean\(props\.isExpired\)/);
+  assert.match(dossier, /overdue: Boolean\(props\.needsCalibration\)/);
+
+  const stockStatus = new Function(`return ${dossier.match(/const stockStatus = (\(inventory\) => \{[\s\S]*?\n\})/)[1]}`)();
+  assert.equal(stockStatus({ qty_available: '0', min_stock_level: '1', reorder_point: '2' }), 'out_of_stock');
+  assert.equal(stockStatus({ qty_available: '0.4', min_stock_level: '0.5', reorder_point: '1' }), 'critical_stock');
+  assert.equal(stockStatus({ qty_available: '1.5', min_stock_level: '1', reorder_point: '2' }), 'low_stock');
+  assert.equal(stockStatus({ qty_available: '2.25', min_stock_level: '1', reorder_point: '2' }), 'in_stock');
+
+  const daysUntil = new Function(`return ${dossier.match(/const daysUntil = (\(value\) => \{[\s\S]*?\n\})/)[1]}`)();
+  const inFiveDays = new Date(Date.now() + 5 * 86400000);
+  const iso = `${inFiveDays.getFullYear()}-${String(inFiveDays.getMonth() + 1).padStart(2, '0')}-${String(inFiveDays.getDate()).padStart(2, '0')}`;
+  assert.equal(daysUntil(iso), 5);
+  assert.equal(daysUntil(null), null);
+});
