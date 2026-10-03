@@ -1483,41 +1483,40 @@ test('quality certificate release workflow uses controlled dossier surfaces', ()
   ]
 
   for (const source of certificateWorkflowSources) {
-    assert.match(source, /min-w-0 space-y-/)
-    assert.match(source, /ds-/)
+    assert.match(source, /pl-|<PageHeader|<StateCells/)
     assert.doesNotMatch(source, /ModuleHero|ModuleCard|commercialDocumentThemeClasses|bg-gradient-to|rounded-3xl|rounded-2xl|rounded-\[|from-blue-|from-purple-|from-gray-50|to-gray-100|border-gray-300|bg-white|bg-slate|border-slate|text-slate|shadow-sm|#143d37|#d9b05f|#fffdf7|#ded3bf|v-motion|<style|confirm\(|alert\(|axios|console\.error|console\.log|window\.open/)
   }
 
-  assert.match(qualityCertificatesIndexSource, /class="ds-panel overflow-hidden"/)
-  assert.match(qualityCertificatesIndexSource, />Certificados de qualidade</)
-  assert.match(qualityCertificatesIndexSource, /<RecordsTable/)
-  assert.match(qualityCertificatesIndexSource, /<slide-over/)
+  // The queue: state cells, bounded search, archive behind a confirmation with real verbs.
+  assert.match(qualityCertificatesIndexSource, /<PageHeader/)
+  assert.match(qualityCertificatesIndexSource, /<StateCells/)
   assert.match(qualityCertificatesIndexSource, /<confirm-dialog/)
-  assert.match(qualityCertificatesIndexSource, /const registryMetrics = computed/)
-  assert.match(qualityCertificatesIndexSource, /routeName = selectedActionId === "restore"/)
-  assert.match(qualityCertificatesIndexSource, /router\.get\(/)
+  assert.match(qualityCertificatesIndexSource, /method: restoring \? "patch" : "delete"/)
+  assert.doesNotMatch(qualityCertificatesIndexSource, /qualitycertificates\.create/)
 
-  assert.match(qualityCertificatesShowSource, /const certificateMetrics = computed/)
-  assert.match(qualityCertificatesShowSource, /const laboratoryReference = computed/)
-  assert.match(qualityCertificatesShowSource, /const certificateDetails = computed/)
-  assert.match(qualityCertificatesShowSource, /const releaseChecks = computed/)
-  assert.match(qualityCertificatesShowSource, /const activityHistory = computed/)
-  assert.match(qualityCertificatesShowSource, /class="ds-command-surface overflow-hidden"/)
-  assert.match(qualityCertificatesShowSource, /:href="pdfUrl"/)
-  assert.match(qualityCertificatesShowSource, /route\("qualitycertificates\.getApprove"/)
-  assert.match(qualityCertificatesShowSource, /route\("qualitycertificates\.iso-revisions\.index"/)
+  // The dossier shows the same release rule the validation enforces.
+  assert.match(qualityCertificatesShowSource, /data-template="dossier"/)
+  assert.match(qualityCertificatesShowSource, /release: \{ type: Object/)
+  assert.match(qualityCertificatesShowSource, /<NextStepBar>/)
+  assert.match(qualityCertificatesShowSource, /route\(['"]qualitycertificates\.getApprove['"]/)
+  assert.match(qualityCertificatesShowSource, /route\(['"]qualitycertificates\.iso-revisions\.index['"]/)
+  assert.match(qualityCertificatesShowSource, /hasPermission\('edit_quality_certificates'\)/)
+  assert.match(qualityCertificatesShowSource, /validated_on_behalf_of_user/)
 
-  assert.match(qualityCertificatesEditSource, /const editMetrics = computed/)
-  assert.match(qualityCertificatesEditSource, /Registo laboratorial/)
-  assert.match(qualityCertificatesEditSource, /const releaseContext = computed/)
-  assert.match(qualityCertificatesEditSource, /role="switch"/)
-  assert.match(qualityCertificatesEditSource, /class="ds-field"/)
+  // Identity is fixed; only the observation is edited, until validation.
+  assert.match(qualityCertificatesEditSource, /data-template="form"/)
+  assert.match(qualityCertificatesEditSource, /useForm\(\{ obs:/)
   assert.match(qualityCertificatesEditSource, /form\.put\(/)
+  assert.doesNotMatch(qualityCertificatesEditSource, /customer_id|warehouse_id|cl_id/)
 
-  assert.match(validationModalSource, /class="ds-command-surface p-5"/)
-  assert.match(validationModalSource, /class="ds-panel overflow-hidden"/)
+  // Signing shows every result with who inserted, verified and approved it, and
+  // signing on behalf of an absent validator stays available.
+  assert.match(validationModalSource, /results: \{ type: Array/)
+  assert.match(validationModalSource, /\['inserted', 'verified', 'approved'\]/)
   assert.match(validationModalSource, /role="switch"/)
-  assert.match(validationModalSource, /class="ds-button ds-button-primary"/)
+  assert.match(validationModalSource, /approve_on_behalf_of/)
+  assert.match(validationModalSource, /signed_by_user_id/)
+  assert.match(validationModalSource, /:disabled="form\.processing \|\| !ready/)
 })
 
 test('quality certificate ISO revision workflow uses controlled audit surfaces', () => {
@@ -1586,8 +1585,8 @@ test('validation and process progress components follow the shared contract', ()
   assert.doesNotMatch(validationSignatureSource, /console\.log|alert\(/)
   assert.doesNotMatch(validationSignatureSource, /bg-white sm:rounded-lg/)
 
-  assert.match(validationModalSource, /form\.transform\(\(\) => payload\)\.post/)
-  assert.match(validationModalSource, /quality_certificates\.verify_description/)
+  assert.match(validationModalSource, /form\s*\.transform\(\(data\) => \(\{[\s\S]*\.post\(props\.url/)
+  assert.match(validationModalSource, /<DocumentValidationSignature/)
   assert.doesNotMatch(validationModalSource, /Por favor, assine digitalmente/)
   assert.doesNotMatch(validationModalSource, /bg-gradient-to-r/)
 

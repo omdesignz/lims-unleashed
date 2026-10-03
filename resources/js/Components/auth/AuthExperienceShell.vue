@@ -51,7 +51,7 @@ const currentYear = new Date().getFullYear()
 // The journey every sample takes through the system, traced once on arrival.
 const lifecycle = [
   { label: 'Recepção', claim: 'Registo único', note: 'Uma amostra, um dossier. Sem folhas paralelas.' },
-  { label: 'Análise', claim: 'Quatro olhos', note: 'Quem analisa não verifica. Quem verifica não aprova.' },
+  { label: 'Análise', claim: 'Três etapas', note: 'Inserção, verificação e aprovação, cada uma com autor e data.' },
   { label: 'Verificação', claim: 'Prazos visíveis', note: 'Cada fila mostra o que vence primeiro.' },
   { label: 'Aprovação', claim: 'Auditável', note: 'Toda a alteração guarda autor, hora e motivo.' },
   { label: 'Certificado', claim: 'Certificado assinado', note: 'Emitido só depois da aprovação técnica.' },
