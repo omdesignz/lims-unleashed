@@ -26,7 +26,6 @@ use App\Models\VAPProposalTemplate;
 use App\Models\Warehouse;
 use App\Settings\GeneralSettings;
 use App\Support\LaboratoryDossierService;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -70,11 +69,11 @@ class VAPProposalController extends Controller
 
         if (filled($search)) {
             $query->where(function ($q) use ($search) {
-                $q->where('proposal_no', 'like', "%{$search}%")
-                    ->orWhere('proposal_year', 'like', "%{$search}%")
+                $q->where('proposal_no', 'ilike', "%{$search}%")
+                    ->orWhere('proposal_year', 'ilike', "%{$search}%")
                     ->orWhereHas('customer', function ($customer) use ($search) {
-                        $customer->where('name', 'like', "%{$search}%")
-                            ->orWhere('code', 'like', "%{$search}%");
+                        $customer->where('name', 'ilike', "%{$search}%")
+                            ->orWhere('code', 'ilike', "%{$search}%");
                     });
             });
         }
@@ -94,39 +93,6 @@ class VAPProposalController extends Controller
             'total_value' => (clone $statsQuery)->where('status', 'ACCEPTED')->sum('total'),
         ];
 
-        $dailyActivity = VAPProposal::query()
-            ->selectRaw('DATE(created_at) as proposal_date')
-            ->selectRaw('COUNT(*) as created_count')
-            ->selectRaw("SUM(CASE WHEN status = 'ACCEPTED' THEN 1 ELSE 0 END) as accepted_count")
-            ->when($templateId, fn ($builder) => $builder->where('template_id', $templateId))
-            ->where('created_at', '>=', now()->subDays($period)->startOfDay())
-            ->groupBy('proposal_date')
-            ->orderBy('proposal_date')
-            ->get();
-
-        $chartSeries = [
-            [
-                'name' => 'Propostas criadas',
-                'data' => $dailyActivity
-                    ->map(fn ($row) => [
-                        Carbon::parse($row->proposal_date)->timestamp * 1000,
-                        (int) $row->created_count,
-                    ])
-                    ->values()
-                    ->all(),
-            ],
-            [
-                'name' => 'Propostas aceites',
-                'data' => $dailyActivity
-                    ->map(fn ($row) => [
-                        Carbon::parse($row->proposal_date)->timestamp * 1000,
-                        (int) $row->accepted_count,
-                    ])
-                    ->values()
-                    ->all(),
-            ],
-        ];
-
         return Inertia::render('VAPProposals/Index', [
             'proposals' => $proposals,
             'filters' => [
@@ -136,7 +102,6 @@ class VAPProposalController extends Controller
                 'period' => $period,
             ],
             'stats' => $stats,
-            'chartSeries' => $chartSeries,
             'selectedTemplate' => $templateId
                 ? VAPProposalTemplate::query()->select(['id', 'name', 'category'])->find($templateId)
                 : null,
@@ -322,8 +287,8 @@ class VAPProposalController extends Controller
             })
             ->when($query, function ($builder) use ($query): void {
                 $builder->where(function ($nested) use ($query): void {
-                    $nested->where('address', 'like', "%{$query}%")
-                        ->orWhere('name', 'like', "%{$query}%");
+                    $nested->where('address', 'ilike', "%{$query}%")
+                        ->orWhere('name', 'ilike', "%{$query}%");
                 });
             })
             ->orderBy('address')
@@ -353,9 +318,9 @@ class VAPProposalController extends Controller
             VAPProposal::query()
                 ->when($query, function ($builder) use ($query): void {
                     $builder->where(function ($nested) use ($query): void {
-                        $nested->where('proposal_no', 'like', "%{$query}%")
-                            ->orWhere('service_location', 'like', "%{$query}%")
-                            ->orWhere('status', 'like', "%{$query}%");
+                        $nested->where('proposal_no', 'ilike', "%{$query}%")
+                            ->orWhere('service_location', 'ilike', "%{$query}%")
+                            ->orWhere('status', 'ilike', "%{$query}%");
                     });
                 })
                 ->latest('id')
@@ -391,7 +356,7 @@ class VAPProposalController extends Controller
             LabCode::query()
                 ->forLaboratory((int) $request->attributes->get('proposal_laboratory_id', 0))
                 ->when($query, function ($builder) use ($query): void {
-                    $builder->where('code', 'like', "%{$query}%");
+                    $builder->where('code', 'ilike', "%{$query}%");
                 })
                 ->orderByDesc('id')
                 ->limit(20)
@@ -413,8 +378,8 @@ class VAPProposalController extends Controller
         $matrixes = Matrix::query()
             ->when($query, function ($builder) use ($query): void {
                 $builder->where(function ($nested) use ($query): void {
-                    $nested->where('description', 'like', "%{$query}%")
-                        ->orWhere('code', 'like', "%{$query}%");
+                    $nested->where('description', 'ilike', "%{$query}%")
+                        ->orWhere('code', 'ilike', "%{$query}%");
                 });
             })
             ->orderBy('description')
@@ -447,8 +412,8 @@ class VAPProposalController extends Controller
             ->where('active', true)
             ->when($query, function ($builder) use ($query): void {
                 $builder->where(function ($nested) use ($query): void {
-                    $nested->where('name', 'like', "%{$query}%")
-                        ->orWhere('code', 'like', "%{$query}%");
+                    $nested->where('name', 'ilike', "%{$query}%")
+                        ->orWhere('code', 'ilike', "%{$query}%");
                 });
             })
             ->orderBy('name')

@@ -1329,12 +1329,13 @@ test('VAP proposal template library uses shared studio surfaces', () => {
 })
 
 test('VAP proposal workspace uses the operational LIMS design system', () => {
-  assert.match(vapProposalsIndexSource, /class="ds-command-surface/)
-  assert.match(vapProposalsIndexSource, /class="ds-table-shell/)
-  assert.match(vapProposalsIndexSource, /class="ds-data-table/)
-  assert.match(vapProposalsShowSource, /class="ds-panel overflow-hidden"/)
-  assert.match(vapProposalsShowSource, /class="ds-table-shell"/)
+  assert.match(vapProposalsIndexSource, /data-template="queue"/)
+  assert.match(vapProposalsIndexSource, /<StateCells/)
+  assert.match(vapProposalsIndexSource, /<DataTable/)
+  assert.match(vapProposalsShowSource, /data-template="dossier"/)
+  assert.match(vapProposalsShowSource, /<NextStepBar>/)
   assert.match(vapProposalsShowSource, /laboratoryDossier/)
+  assert.match(vapProposalsShowSource, /props\.proposal\.unique_hash \? route\('vap-proposals\.public\.show'/)
 
   for (const source of [vapProposalsIndexSource, vapProposalsCreateSource, vapProposalsEditSource, vapProposalsShowSource]) {
     assert.doesNotMatch(source, /commercialDocumentThemeClasses/)
@@ -1361,7 +1362,10 @@ test('VAP proposal template routes keep application chrome on semantic surfaces'
 
 test('VAP proposal create screen uses semantic commercial form surfaces', () => {
   assert.match(vapProposalsCreateSource, /class="ds-panel overflow-hidden"/)
-  assert.match(vapProposalsCreateSource, /class="ds-card bg-\[var\(--ds-panel-raised\)\] p-4"/)
+  assert.match(vapProposalsCreateSource, /data-template="form"/)
+  assert.match(vapProposalsCreateSource, /<PageHeader/)
+  assert.match(vapProposalsCreateSource, /<NextStepBar>/)
+  assert.doesNotMatch(vapProposalsCreateSource, /saveDraft|quickItems|nextProposalNo \}\}/)
   assert.match(vapProposalsCreateSource, /class="ds-field"/)
   assert.match(vapProposalsCreateSource, /class="ds-checkbox"/)
   assert.match(vapProposalsCreateSource, /class="ds-table-action/)
@@ -1378,7 +1382,10 @@ test('VAP proposal create screen uses semantic commercial form surfaces', () => 
 
 test('VAP proposal edit screen keeps revision controls on semantic surfaces', () => {
   assert.match(vapProposalsEditSource, /class="ds-panel overflow-hidden"/)
-  assert.match(vapProposalsEditSource, /class="ds-card bg-\[var\(--ds-panel-raised\)\] p-4"/)
+  assert.match(vapProposalsEditSource, /data-template="form"/)
+  assert.match(vapProposalsEditSource, /<PageHeader/)
+  assert.match(vapProposalsEditSource, /<NextStepBar>/)
+  assert.doesNotMatch(vapProposalsEditSource, /saveDraft|quickItems|nextProposalNo \}\}/)
   assert.match(vapProposalsEditSource, /class="ds-field"/)
   assert.match(vapProposalsEditSource, /class="ds-checkbox"/)
   assert.match(vapProposalsEditSource, /class="ds-table-action/)

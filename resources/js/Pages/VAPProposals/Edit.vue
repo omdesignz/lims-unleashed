@@ -1,73 +1,15 @@
 <template>
-  <div class="min-w-0 space-y-6 overflow-x-clip">
-    <section class="ds-panel overflow-hidden">
-      <div class="border-b border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] px-6 py-7 sm:px-8">
-        <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-          <div class="max-w-4xl">
-            <div class="flex flex-wrap items-center gap-3">
-              <span class="inline-flex items-center gap-2 rounded-full border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] px-3 py-1 text-xs font-black uppercase tracking-[0.24em] text-[var(--ds-text)] shadow-sm">
-                <DocumentTextIcon class="h-4 w-4 text-[var(--ds-text-soft)]" />
-                {{ $t('gestlab.general.labels.vap_proposals.surface.commercial_revision') }}
-              </span>
-              <span :class="[
-                'inline-flex items-center rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.18em]',
-                proposal.status_badge.class
-              ]">
-                {{ proposal.status_badge.text }}
-              </span>
-            </div>
-            <h1 class="mt-5 text-3xl font-black tracking-[-0.04em] text-[var(--ds-text)] sm:text-5xl">
-              {{ proposal.proposal_number }}
-            </h1>
-            <p class="ds-copy mt-4 max-w-3xl text-base leading-7">
-              {{ $t('gestlab.general.labels.vap_proposals.edit.editing_proposal') }}:
-              <span class="font-black text-[var(--ds-text)]">{{ proposal.customer?.name || proposal.proposal_number }}</span>
-            </p>
-          </div>
-
-          <div class="grid gap-3 sm:grid-cols-3 xl:min-w-[35rem]">
-            <div class="ds-card bg-[var(--ds-panel-raised)] p-4">
-              <p class="text-xs font-black uppercase tracking-[0.2em] text-[var(--ds-text-muted)]">{{ $t('gestlab.general.labels.vap_proposals.surface.items') }}</p>
-              <p class="mt-2 text-lg font-black text-[var(--ds-text)]">{{ form.items.length }}</p>
-            </div>
-            <div class="ds-card bg-[var(--ds-panel-raised)] p-4">
-              <p class="text-xs font-black uppercase tracking-[0.2em] text-[var(--ds-text-muted)]">{{ $t('gestlab.general.labels.vap_proposals.surface.expiry') }}</p>
-              <p class="mt-2 text-lg font-black text-[var(--ds-text)]">{{ calculateExpiryDate }}</p>
-            </div>
-            <div class="ds-card bg-[var(--ds-panel-raised)] p-4">
-              <p class="text-xs font-black uppercase tracking-[0.2em] text-[var(--ds-text-muted)]">{{ $t('gestlab.general.labels.vap_proposals.surface.total') }}</p>
-              <p class="mt-2 text-lg font-black text-[var(--ds-text)]">AOA {{ formatNumber(proposalTotal) }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        <div v-if="!proposal.is_original" class="inline-flex items-start gap-3 rounded-lg border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-100">
-          <ExclamationTriangleIcon class="mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-200" />
-          <span>
-            {{ $t('gestlab.general.labels.vap_proposals.edit.revision_warning') }}
-            {{ $t('gestlab.general.labels.vap_proposals.edit.original_proposal') }}: {{ proposal.proposal_number }}
-          </span>
-        </div>
-        <div class="flex flex-col gap-3 sm:ml-auto sm:flex-row">
-          <Link
-            :href="route('vap-proposals.show', proposal.id)"
-            class="ds-button ds-button-secondary"
-          >
-            <ArrowLeftIcon class="h-5 w-5" />
-            {{ $t('gestlab.general.buttons.back') }}
-          </Link>
-          <Link
-            :href="route('vap-proposals.index')"
-            class="ds-button ds-button-secondary"
-          >
-            <ListBulletIcon class="h-5 w-5" />
-            {{ $t('gestlab.general.labels.vap_proposals.title') }}
-          </Link>
-        </div>
-      </div>
-    </section>
+  <div class="pl-page min-w-0 space-y-6" data-template="form">
+    <PageHeader
+      :crumbs="[{ title: 'Propostas', url: route('vap-proposals.index') }, { title: proposal.proposal_number, url: route('vap-proposals.show', proposal.id) }, { title: 'Revisão' }]"
+      :title="`Rever ${proposal.proposal_number}`"
+      :lede="`${$t('gestlab.general.labels.vap_proposals.edit.editing_proposal')}: ${proposal.customer?.name || proposal.proposal_number}. A versão anterior fica no histórico.`"
+    >
+      <template #badges><StatusChip tone="wait">{{ proposal.status_badge?.text || proposal.status }}</StatusChip></template>
+      <template #actions>
+        <Link :href="route('vap-proposals.show', proposal.id)" class="ds-button ds-button-quiet">{{ $t('gestlab.general.buttons.back') }}</Link>
+      </template>
+    </PageHeader>
 
     <div
       v-if="formErrorMessage"
@@ -77,7 +19,7 @@
     </div>
 
     <!-- MAIN CONTENT SECTION -->
-    <div class="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_25rem]">
+    <div class="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
       <!-- LEFT COLUMN (2/3 width) -->
       <div class="space-y-6">
         <!-- BASIC INFORMATION CARD -->
@@ -92,7 +34,7 @@
           
           <!-- CARD CONTENT -->
           <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
               <!-- CLIENT SELECTION -->
               <div class="space-y-2">
                 <label class="ds-field-label flex items-center gap-1">
@@ -400,9 +342,9 @@
               
               <!-- ITEM CONTENT -->
               <div class="p-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <!-- ITEM SELECTION (Matrix or Parameter) -->
-                  <div class="space-y-2">
+                  <div class="space-y-2 sm:col-span-2">
                     <label class="ds-field-label text-xs">
                       {{ $t('gestlab.general.labels.vap_proposals.edit.items.item') }}
                       <span class="text-red-500">*</span>
@@ -418,7 +360,7 @@
                   </div>
 
                   <!-- ITEM DESCRIPTION -->
-                  <div class="space-y-2">
+                  <div class="space-y-2 sm:col-span-2">
                     <label class="ds-field-label text-xs">
                       {{ $t('gestlab.general.labels.vap_proposals.edit.items.item_description') }}
                       <span class="text-red-500">*</span>
@@ -663,67 +605,6 @@
 
       <!-- RIGHT COLUMN (1/3 width) -->
       <div class="space-y-6 xl:sticky xl:top-6 xl:self-start">
-        <!-- ACTIONS CARD -->
-        <div class="ds-panel p-6">
-          <p class="ds-kicker">{{ $t('gestlab.general.labels.vap_proposals.surface.decision') }}</p>
-          <h3 class="ds-heading mb-4 mt-2 text-2xl">
-            {{ $t('gestlab.general.labels.vap_proposals.edit.actions.title') }}
-          </h3>
-          <div class="space-y-4">
-            <button 
-              @click="submit"
-              :disabled="form.processing || !isFormValid || !form.revision_reason"
-              :class="[
-                'ds-button w-full justify-center',
-                form.processing || !isFormValid || !form.revision_reason
-                  ? 'cursor-not-allowed border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[var(--ds-text-soft)]'
-                  : 'ds-button-primary'
-              ]"
-            >
-              <CheckCircleIcon class="h-5 w-5" />
-              {{ form.processing ? $t('actions.processing') : $t('gestlab.general.labels.vap_proposals.edit.submit') }}
-            </button>
-            
-            <button 
-              @click="resetForm"
-              type="button"
-              class="ds-button ds-button-secondary w-full justify-center"
-            >
-              <ArrowPathIcon class="h-5 w-5" />
-              {{ $t('gestlab.general.labels.vap_proposals.edit.reset_changes') }}
-            </button>
-            
-            <!-- QUICK STATS -->
-            <div class="border-t border-[var(--ds-border)] pt-4">
-              <h4 class="mb-2 text-sm font-black text-[var(--ds-text)]">
-                {{ $t('gestlab.general.labels.vap_proposals.edit.stats.title') }}
-              </h4>
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-[var(--ds-text-muted)]">{{ $t('gestlab.general.labels.vap_proposals.edit.stats.total_items') }}</span>
-                  <span class="font-black text-[var(--ds-text)]">{{ form.items.length }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-[var(--ds-text-muted)]">{{ $t('gestlab.general.labels.vap_proposals.edit.items.subtotal') }}</span>
-                  <span class="font-black text-[var(--ds-text)]">AOA {{ formatNumber(calculateSubtotal) }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-[var(--ds-text-muted)]">{{ $t('gestlab.general.labels.vap_proposals.edit.items.discount') }}</span>
-                  <span class="font-black text-emerald-700 dark:text-emerald-200">-AOA {{ formatNumber(discountTotal) }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-[var(--ds-text-muted)]">{{ $t('gestlab.general.labels.vap_proposals.edit.tolerance_days') }}</span>
-                  <span class="font-black text-[var(--ds-text)]">{{ form.tolerance_days || 7 }}</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-[var(--ds-text-muted)]">{{ $t('gestlab.general.labels.vap_proposals.edit.items.total') }}</span>
-                  <span class="font-black text-[var(--ds-text)]">AOA {{ formatNumber(proposalTotal) }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- PROPOSAL STATUS CARD -->
         <div class="ds-panel p-6">
           <p class="ds-kicker">{{ $t('gestlab.general.labels.vap_proposals.surface.status') }}</p>
@@ -793,61 +674,18 @@
           </div>
         </div>
 
-        <!-- QUICK ADD ITEMS -->
-        <div v-if="quickItems.length" class="ds-panel p-6">
-          <h3 class="mb-4 flex items-center gap-2 text-lg font-black text-[var(--ds-text)]">
-            <BoltIcon class="h-5 w-5 text-[var(--ds-text-soft)]" />
-            {{ $t('gestlab.general.labels.vap_proposals.edit.quick_add') }}
-          </h3>
-          <div class="space-y-3">
-            <button 
-              v-for="quickItem in quickItems"
-              :key="quickItem.name"
-              @click="addQuickItem(quickItem)"
-              class="w-full rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-panel-raised)] p-3 text-left transition hover:border-[rgb(var(--primary-300-rgb)/0.72)]"
-            >
-              <div class="flex items-center justify-between">
-                <div>
-                  <div class="text-sm font-black text-[var(--ds-text)]">{{ quickItem.name }}</div>
-                  <div class="text-xs font-semibold text-[var(--ds-text-muted)]">{{ quickItem.description }}</div>
-                </div>
-                <div class="text-sm font-black text-[var(--ds-text)]">AOA {{ formatNumber(quickItem.price) }}</div>
-              </div>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
 
-    <!-- FOOTER ACTIONS -->
-    <div class="ds-panel flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-      <div class="ds-copy text-sm">
-        {{ $t('gestlab.general.labels.vap_proposals.edit.footer_note') }}
-      </div>
-      <div class="flex items-center gap-4">
-        <button 
-          @click="resetForm"
-          type="button"
-          class="ds-button ds-button-secondary"
-        >
-          <ArrowPathIcon class="h-5 w-5" />
-          {{ $t('gestlab.general.labels.vap_proposals.edit.reset_changes') }}
-        </button>
-        <button 
-          @click="submit"
-          :disabled="form.processing || !isFormValid || !form.revision_reason"
-          :class="[
-            'ds-button',
-            form.processing || !isFormValid || !form.revision_reason
-              ? 'cursor-not-allowed border-[var(--ds-border)] bg-[var(--ds-panel-subtle)] text-[var(--ds-text-soft)]'
-              : 'ds-button-primary'
-          ]"
-        >
-          <CheckCircleIcon class="h-5 w-5" />
+    <NextStepBar>
+      Indique o motivo da revisão e guarde. Depois envie a nova versão ao cliente no dossier. <span class="pl-num">{{ form.items.length }} {{ $t('gestlab.general.buttons.items') }} · AOA {{ formatNumber(proposalTotal) }}</span>
+      <template #actions>
+        <button type="button" class="ds-button ds-button-quiet" @click="resetForm">{{ $t('gestlab.general.buttons.reset') }}</button>
+        <button type="button" class="ds-button ds-button-primary" :disabled="form.processing || !isFormValid || !form.revision_reason" @click="submit">
           {{ form.processing ? $t('actions.processing') : $t('gestlab.general.labels.vap_proposals.edit.submit') }}
         </button>
-      </div>
-    </div>
+      </template>
+    </NextStepBar>
 
     <!-- TEMPLATE PREVIEW MODAL -->
     <Modal :show="showTemplatePreview" @close="showTemplatePreview = false" max-width="4xl">
@@ -869,6 +707,9 @@
 </template>
 
 <script setup>
+import PageHeader from '@/Components/plano/PageHeader.vue'
+import NextStepBar from '@/Components/plano/NextStepBar.vue'
+import StatusChip from '@/Components/plano/StatusChip.vue'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useForm, Link } from '@inertiajs/vue3'
 import {
@@ -1210,7 +1051,6 @@ const onStandardChange = (item, index) => {
   }
 }
 
-const quickItems = ref([])
 
 // Computed Properties
 const selectedTemplate = computed(() => {
@@ -1381,33 +1221,6 @@ const removeItem = (index) => {
   }
 }
 
-const addQuickItem = (quickItem) => {
-  const defaultUnitId = quickItem.unit_id || props.units[0]?.id || null
-  const defaultUnitDisplay = unitOptions.value.find(u => u.value === defaultUnitId) || null
-  
-  const newItem = {
-    item_id: null,
-    itemable_type: null,
-    itemable_id: null,
-    item_selection: null,
-    item_description: quickItem.item_description,
-    standard_id: null,
-    standard_display: null,
-    unit_id: defaultUnitId,
-    unit_display: defaultUnitDisplay,
-    qty: quickItem.qty,
-    unit_price: quickItem.unit_price,
-    discount_percentage: 0,
-    discount_id: 1,
-    discount_amount: 0,
-    total: quickItem.qty * quickItem.unit_price,
-    tax_percentage: 0,
-    tax_amount: 0,
-    charge_tax: true,
-    withhold_tax: false,
-  }
-  form.items.push(newItem)
-}
 
 const calculateItemTotal = (index) => {
   const item = form.items[index]

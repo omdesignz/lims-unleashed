@@ -131,6 +131,24 @@ class LaboratoryJourneyEndToEndTest extends TestCase
         // Laboratory B shares the customer but never the proposal.
         $this->asPeer()->get(route('vap-proposals.show', $proposal))->assertNotFound();
 
+        $this->assertSame('30000.00', (string) $proposal->sub_total);
+        $this->as('commercial')->get(route('vap-proposals.index', ['search' => 'cliente partilhado']))
+            ->assertInertia(fn (Assert $page) => $page->where('proposals.data.0.id', $proposal->id));
+        $this->asPeer()->get(route('vap-proposals.index', ['search' => 'cliente partilhado']))
+            ->assertInertia(fn (Assert $page) => $page->has('proposals.data', 0));
+
+        // A revision recalculates totals on the server and keeps the previous version in history.
+        $revision = ['customer_id' => $this->customer->id, 'warehouse_id' => $this->site->id, 'department_id' => $this->department->id,
+            'template_id' => $template->id, 'service_location' => 'Fábrica de Viana', 'tolerance_days' => 15, 'revision_reason' => 'Cliente pediu mais uma amostra.',
+            'items' => [['item_description' => 'Água de processo — físico-química', 'unit_id' => $unit->id, 'qty' => 3, 'unit_price' => 15000, 'sub_total' => 1, 'total' => 1]]];
+        $this->as('commercial')->put(route('vap-proposals.update', $proposal), $revision)->assertRedirect()->assertSessionHasNoErrors();
+        $proposal->refresh();
+        $this->assertSame(['REVISED', '45000.00'], [$proposal->status, (string) $proposal->sub_total]);
+        $history = DB::table('activity_log')->where('subject_type', $proposal->getMorphClass())->where('subject_id', $proposal->id)->where('event', 'revised')->sole();
+        $this->assertSame('30.000,00', number_format((float) data_get(json_decode($history->properties, true), 'old_values.sub_total'), 2, ',', '.'));
+        $this->as('commercial')->put(route('vap-proposals.update', $proposal), $revision)->assertStatus(409);
+        $this->asPeer()->put(route('vap-proposals.update', $proposal), $revision)->assertNotFound();
+
         // 2. Sent, then accepted by the customer through the public link.
         $this->as('commercial')->post(route('vap-proposals.send', $proposal))->assertRedirect();
         $this->assertSame('SENT', $proposal->fresh()->status);
@@ -280,6 +298,18 @@ class LaboratoryJourneyEndToEndTest extends TestCase
         $this->assertCount(1, $certificate->getMedia('validation_signature'));
         $this->as('releaser')->get(route('qualitycertificates.show', $certificate))
             ->assertInertia(fn (Assert $page) => $page->where('record.data.validated_on_behalf_of_user', $absent->name));
+    }
+
+    public function test_a_proposal_created_outside_the_authoring_form_still_gets_a_public_link(): void
+    {
+        $template = VAPProposalTemplate::query()->create(['name' => 'Modelo importado', 'content' => '<p>Condições</p>', 'user_id' => $this->people['commercial']->id, 'is_active' => true]);
+        $proposal = new VAPProposal;
+        $proposal->forceFill(['lab_id' => $this->lab->id, 'customer_id' => $this->customer->id, 'warehouse_id' => $this->site->id, 'template_id' => $template->id,
+            'department_id' => $this->department->id, 'user_id' => $this->people['commercial']->id, 'status' => 'PENDING'])->save();
+
+        $this->assertTrue(Str::isUuid($proposal->unique_hash));
+        $this->as('commercial')->get(route('vap-proposals.show', $proposal))->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('VAPProposals/Show')->where('proposal.unique_hash', $proposal->unique_hash));
     }
 
     public function test_the_verifier_cannot_also_approve(): void
